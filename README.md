@@ -55,6 +55,25 @@ SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
 DEBUG_SNAPSHOTS=false
 LOG_LEVEL=INFO
+TELEGRAM_ENABLED=false
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+TELEGRAM_NOTIFY_UNAVAILABLE=false
+```
+
+Para activar Telegram, crear un bot con BotFather, enviarle un mensaje y obtener el `chat.id` con `getUpdates`. Luego configurar solo el `.env` local:
+
+```env
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=token_real
+TELEGRAM_CHAT_ID=chat_id_real
+TELEGRAM_NOTIFY_UNAVAILABLE=false
+```
+
+Para probar Telegram sin abrir la pagina web:
+
+```bash
+appointment-bot-test-telegram
 ```
 
 Para depurar visualmente cada paso, usar:

@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 appointment-bot = "appointment_bot.main:run"
+appointment-bot-test-telegram = "appointment_bot.services.notifier:run_telegram_test"
 
 [tool.setuptools.packages.find]
 where = ["src"]

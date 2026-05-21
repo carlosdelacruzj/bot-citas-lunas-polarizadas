@@ -29,6 +29,10 @@ class Settings:
     screenshot_on_relevant_result: bool
     debug_snapshots: bool
     log_level: str
+    telegram_enabled: bool
+    telegram_bot_token: str
+    telegram_chat_id: str
+    telegram_notify_unavailable: bool
     logs_dir: Path
     screenshots_dir: Path
     diagnostics_dir: Path
@@ -58,6 +62,13 @@ def load_settings() -> Settings:
         ),
         debug_snapshots=_parse_bool(os.getenv("DEBUG_SNAPSHOTS"), default=False),
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
+        telegram_enabled=_parse_bool(os.getenv("TELEGRAM_ENABLED"), default=False),
+        telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
+        telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
+        telegram_notify_unavailable=_parse_bool(
+            os.getenv("TELEGRAM_NOTIFY_UNAVAILABLE"),
+            default=False,
+        ),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
         diagnostics_dir=Path("diagnostics"),
@@ -75,5 +86,18 @@ def load_settings() -> Settings:
     if missing:
         joined = ", ".join(missing)
         raise ValueError(f"Missing required environment variables: {joined}")
+
+    if settings.telegram_enabled:
+        telegram_missing = [
+            name
+            for name, value in {
+                "TELEGRAM_BOT_TOKEN": settings.telegram_bot_token,
+                "TELEGRAM_CHAT_ID": settings.telegram_chat_id,
+            }.items()
+            if not value
+        ]
+        if telegram_missing:
+            joined = ", ".join(telegram_missing)
+            raise ValueError(f"Missing required Telegram environment variables: {joined}")
 
     return settings

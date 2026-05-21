@@ -58,7 +58,7 @@ def run() -> int:
                 if result.status == "unknown":
                     save_unknown_result_diagnostic(page, settings)
                 _save_relevant_result_snapshot(page, settings, result.status)
-                notify_result(result)
+                notify_result(result, settings)
                 logger.info("Finished appointment check: %s", result.status)
             except Exception:
                 save_error_screenshot(page, settings)
@@ -67,7 +67,7 @@ def run() -> int:
         return 0
     except Exception as exc:
         logger.exception("Appointment check failed")
-        notify_error(exc)
+        notify_error(exc, locals().get("settings"))
         return 1
 
 
