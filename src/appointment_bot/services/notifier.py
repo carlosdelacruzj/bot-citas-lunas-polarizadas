@@ -18,11 +18,11 @@ def notify_result(result: AvailabilityResult, settings: Settings) -> None:
     print(message)
 
     if result.status in {"available", "partial", "unknown"}:
-        send_telegram_message(settings, message)
+        send_telegram_message(settings, _format_result_message(result))
         return
 
     if result.status == "unavailable" and settings.telegram_notify_unavailable:
-        send_telegram_message(settings, message)
+        send_telegram_message(settings, _format_result_message(result))
 
 
 def notify_error(error: Exception, settings: Settings | None = None) -> None:
@@ -30,7 +30,7 @@ def notify_error(error: Exception, settings: Settings | None = None) -> None:
     print(message.encode("ascii", errors="replace").decode("ascii"))
 
     if settings is not None:
-        send_telegram_message(settings, message)
+        send_telegram_message(settings, _format_error_message(error))
 
 
 def send_telegram_message(settings: Settings, message: str) -> bool:
@@ -75,9 +75,56 @@ def run_telegram_test() -> int:
         if not settings.telegram_enabled:
             raise ValueError("TELEGRAM_ENABLED must be true to send a test message.")
 
-        sent = send_telegram_message(settings, "[TEST] Telegram notifications are configured.")
+        sent = send_telegram_message(
+            settings,
+            "Prueba de Telegram correcta.\n\n"
+            "El bot ya puede enviarte avisos cuando detecte disponibilidad o errores.",
+        )
         return 0 if sent else 1
     except Exception as exc:
         logger.exception("Telegram notification test failed")
         print(f"[ERROR] {exc}".encode("ascii", errors="replace").decode("ascii"))
         return 1
+
+
+def format_heartbeat_message() -> str:
+    return (
+        "Bot activo.\n\n"
+        "La ultima revision termino sin errores. Seguire revisando segun la programacion."
+    )
+
+
+def _format_result_message(result: AvailabilityResult) -> str:
+    if result.status == "available":
+        return (
+            "Cita posiblemente disponible.\n\n"
+            f"Detalle: {result.message}\n\n"
+            "Revisa la pagina cuanto antes para confirmar manualmente."
+        )
+
+    if result.status == "partial":
+        return (
+            "Cambio detectado en la disponibilidad.\n\n"
+            f"Detalle: {result.message}\n\n"
+            "Puede ser una disponibilidad parcial. Conviene revisar manualmente."
+        )
+
+    if result.status == "unknown":
+        return (
+            "No pude interpretar el resultado de la pagina.\n\n"
+            f"Detalle: {result.message}\n\n"
+            "Revise la pagina y guarde un diagnostico para ajustar el bot si hace falta."
+        )
+
+    if result.status == "unavailable":
+        return f"Revision completada: no hay cupos por ahora.\n\nDetalle: {result.message}"
+
+    return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}"
+
+
+def _format_error_message(error: Exception) -> str:
+    return (
+        "El bot encontro un error durante la revision.\n\n"
+        f"Detalle: {error}\n\n"
+        "Si se repite varias veces, el bot entrara en pausa automatica para no insistir."
+    )

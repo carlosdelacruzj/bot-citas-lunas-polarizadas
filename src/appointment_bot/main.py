@@ -13,7 +13,12 @@ from appointment_bot.flows.appointments import (
 from appointment_bot.flows.login import login
 from appointment_bot.services.cleanup import cleanup_old_files
 from appointment_bot.services.logger import setup_logging
-from appointment_bot.services.notifier import notify_error, notify_result, send_telegram_message
+from appointment_bot.services.notifier import (
+    format_heartbeat_message,
+    notify_error,
+    notify_result,
+    send_telegram_message,
+)
 from appointment_bot.services.runtime import (
     LockBusyError,
     load_run_state,
@@ -96,7 +101,7 @@ def run() -> int:
         if should_send_heartbeat(settings, state):
             sent = send_telegram_message(
                 settings,
-                "[HEARTBEAT] Bot activo. Ultima revision completada sin errores.",
+                format_heartbeat_message(),
             )
             if sent:
                 record_heartbeat(settings, state)
