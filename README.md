@@ -9,25 +9,25 @@ La primera version se ejecuta a mano, muestra el resultado por consola, escribe 
 - Python 3.12
 - Navegadores de Playwright
 
-## Instalacion
+## Instalacion Local En Windows
 
 Crear y activar un entorno virtual:
 
-```bash
+```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
 Instalar dependencias:
 
-```bash
+```powershell
 python -m pip install -e .
 python -m playwright install chromium
 ```
 
 Crear el archivo de configuracion local:
 
-```bash
+```powershell
 Copy-Item .env.example .env
 ```
 
@@ -35,7 +35,7 @@ Editar `.env` con la URL y credenciales reales. No compartas ese archivo.
 
 ## Ejecucion
 
-```bash
+```powershell
 python -m appointment_bot.main
 ```
 
@@ -81,7 +81,7 @@ TELEGRAM_NOTIFY_UNAVAILABLE=false
 
 Para probar Telegram sin abrir la pagina web:
 
-```bash
+```powershell
 appointment-bot-test-telegram
 ```
 
@@ -112,9 +112,43 @@ Variables operativas para ejecucion frecuente:
 - `HEARTBEAT_ENABLED`: envia un aviso periodico de que el bot sigue activo.
 - `HEARTBEAT_INTERVAL_HOURS`: frecuencia del aviso periodico.
 
-## Ejecucion En Servidor
+## Instalacion En VPS Ubuntu
 
-Para VPS o servidor, usar una configuracion local similar:
+Instalar dependencias base:
+
+```bash
+sudo apt update
+sudo apt install -y git python3 python3-venv python3-pip
+```
+
+Clonar el repositorio:
+
+```bash
+git clone https://github.com/carlosdelacruzj/bot-citas-lunas-polarizadas.git
+cd bot-citas-lunas-polarizadas
+```
+
+Crear entorno virtual e instalar el proyecto:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+python -m playwright install --with-deps chromium
+```
+
+Crear `.env` en el VPS:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+No subir `.env` a GitHub. Cada maquina debe tener su propio `.env`.
+
+## Configuracion Recomendada En VPS
+
+Para DigitalOcean o cualquier VPS Ubuntu, usar una configuracion similar:
 
 ```env
 HEADLESS=true
@@ -135,21 +169,49 @@ HEARTBEAT_ENABLED=true
 HEARTBEAT_INTERVAL_HOURS=24
 ```
 
+Probar Telegram:
+
+```bash
+appointment-bot-test-telegram
+```
+
+Probar una revision manual:
+
+```bash
+python -m appointment_bot.main
+```
+
+## Ejecucion Programada
+
 Ejecutar el bot con una frecuencia frecuente pero controlada usando `cron` o `systemd timer`. Para buscar cita de forma activa, usar cada 5 o 10 minutos. Evitar loops infinitos sin pausa y ejecuciones simultaneas.
 
 Ejemplo de `cron` cada 10 minutos:
 
 ```cron
-*/10 * * * * cd /ruta/al/proyecto && /ruta/al/python -m appointment_bot.main
+*/10 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/python -m appointment_bot.main
 ```
 
 Ejemplo mas intensivo cada 5 minutos:
 
 ```cron
-*/5 * * * * cd /ruta/al/proyecto && /ruta/al/python -m appointment_bot.main
+*/5 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/python -m appointment_bot.main
 ```
 
 El bot evita solapamientos con un lock en `state/`, agrega jitter antes de cada revision y entra en backoff si acumula errores consecutivos.
+
+Para editar cron en el VPS:
+
+```bash
+crontab -e
+```
+
+Para ver logs del cron del sistema:
+
+```bash
+grep CRON /var/log/syslog
+```
+
+Los logs propios del bot quedan en `logs/`.
 
 ## Ajuste De Selectores
 
