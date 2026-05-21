@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obtener-lunas-polarizadas"
+version = "0.1.0"
+description = "Automatizador personal para revisar disponibilidad de citas."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "playwright>=1.44.0",
+    "python-dotenv>=1.0.1",
+    "ruff>=0.5.0",
+]
+
+[project.scripts]
+appointment-bot = "appointment_bot.main:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
