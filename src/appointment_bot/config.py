@@ -18,6 +18,21 @@ def _parse_bool(value: str | None, *, default: bool) -> bool:
     raise ValueError(f"Invalid boolean value: {value!r}")
 
 
+def _parse_int(value: str | None, *, default: int, minimum: int | None = None) -> int:
+    if value is None or value == "":
+        return default
+
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"Invalid integer value: {value!r}") from exc
+
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"Integer value must be greater than or equal to {minimum}: {value!r}")
+
+    return parsed
+
+
 @dataclass(frozen=True)
 class Settings:
     target_url: str
@@ -33,9 +48,19 @@ class Settings:
     telegram_bot_token: str
     telegram_chat_id: str
     telegram_notify_unavailable: bool
+    cleanup_retention_days: int
+    run_jitter_min_seconds: int
+    run_jitter_max_seconds: int
+    run_timeout_seconds: int
+    lock_stale_minutes: int
+    error_backoff_threshold: int
+    error_backoff_seconds: int
+    heartbeat_enabled: bool
+    heartbeat_interval_hours: int
     logs_dir: Path
     screenshots_dir: Path
     diagnostics_dir: Path
+    state_dir: Path
 
     @property
     def safe_username(self) -> str:
@@ -69,10 +94,57 @@ def load_settings() -> Settings:
             os.getenv("TELEGRAM_NOTIFY_UNAVAILABLE"),
             default=False,
         ),
+        cleanup_retention_days=_parse_int(
+            os.getenv("CLEANUP_RETENTION_DAYS"),
+            default=14,
+            minimum=1,
+        ),
+        run_jitter_min_seconds=_parse_int(
+            os.getenv("RUN_JITTER_MIN_SECONDS"),
+            default=0,
+            minimum=0,
+        ),
+        run_jitter_max_seconds=_parse_int(
+            os.getenv("RUN_JITTER_MAX_SECONDS"),
+            default=0,
+            minimum=0,
+        ),
+        run_timeout_seconds=_parse_int(
+            os.getenv("RUN_TIMEOUT_SECONDS"),
+            default=180,
+            minimum=30,
+        ),
+        lock_stale_minutes=_parse_int(
+            os.getenv("LOCK_STALE_MINUTES"),
+            default=10,
+            minimum=1,
+        ),
+        error_backoff_threshold=_parse_int(
+            os.getenv("ERROR_BACKOFF_THRESHOLD"),
+            default=3,
+            minimum=1,
+        ),
+        error_backoff_seconds=_parse_int(
+            os.getenv("ERROR_BACKOFF_SECONDS"),
+            default=1800,
+            minimum=60,
+        ),
+        heartbeat_enabled=_parse_bool(os.getenv("HEARTBEAT_ENABLED"), default=False),
+        heartbeat_interval_hours=_parse_int(
+            os.getenv("HEARTBEAT_INTERVAL_HOURS"),
+            default=24,
+            minimum=1,
+        ),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
         diagnostics_dir=Path("diagnostics"),
+        state_dir=Path("state"),
     )
+
+    if settings.run_jitter_max_seconds < settings.run_jitter_min_seconds:
+        raise ValueError(
+            "RUN_JITTER_MAX_SECONDS must be greater than or equal to RUN_JITTER_MIN_SECONDS"
+        )
 
     missing = [
         name

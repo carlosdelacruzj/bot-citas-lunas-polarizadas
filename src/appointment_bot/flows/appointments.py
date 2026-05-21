@@ -14,6 +14,12 @@ RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
 SITE_SELECTOR = "#MainContent_idUcitas_cbosede"
 DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
+FINAL_CONFIRMATION_SELECTOR = (
+    'button:has-text("Confirmar"), input[type="submit"][value*="Confirmar"], '
+    'button:has-text("Guardar"), input[type="submit"][value*="Guardar"], '
+    'button:has-text("Reservar"), input[type="submit"][value*="Reservar"], '
+    'button:has-text("Finalizar"), input[type="submit"][value*="Finalizar"]'
+)
 
 AVAILABLE_TEXTS = [
     "cupo disponible",
@@ -69,23 +75,24 @@ def _wait_for_program_detail(page: Page) -> None:
     page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=15_000)
 
 
-def click_reserve_appointment(page: Page) -> Page:
-    logger.info("Clicking reserve appointment button")
+def open_appointment_panel(page: Page) -> Page:
+    logger.info("Opening appointment availability panel")
     button = page.locator(RESERVE_APPOINTMENT_SELECTOR)
     button_count = button.count()
-    logger.info("Reserve appointment buttons found: %s", button_count)
+    logger.info("Appointment panel buttons found: %s", button_count)
 
     if button_count == 0:
         raise RuntimeError(
-            "Could not find the reserve appointment button. "
+            "Could not find the appointment panel button. "
             "Review RESERVE_APPOINTMENT_SELECTOR in flows/appointments.py."
         )
 
     button.first.scroll_into_view_if_needed(timeout=15_000)
     button.first.click(timeout=15_000)
     _wait_for_reservation_panel(page)
+    assert_no_final_confirmation_action(page)
 
-    logger.info("Current page after reserve appointment action: %s", page.url)
+    logger.info("Current page after opening appointment panel: %s", page.url)
     return page
 
 
@@ -145,8 +152,39 @@ def select_available_site(page: Page) -> Page:
     site_select.select_option(value=selected["value"], timeout=15_000)
     site_select.dispatch_event("change", timeout=15_000)
     _wait_for_appointment_options(page)
+    assert_no_final_confirmation_action(page)
     logger.info("Current page after site selection: %s", page.url)
     return page
+
+
+def assert_no_final_confirmation_action(page: Page) -> None:
+    final_actions = page.locator(FINAL_CONFIRMATION_SELECTOR)
+    count = final_actions.count()
+    if count == 0:
+        logger.info("No final confirmation action is visible")
+        return
+
+    visible_labels = final_actions.evaluate_all(
+        """elements => elements
+            .filter(element => {
+                const style = window.getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                return style.visibility !== "hidden"
+                    && style.display !== "none"
+                    && rect.width > 0
+                    && rect.height > 0;
+            })
+            .map(element => (
+                element.innerText || element.value || element.id || element.name
+            ).trim())
+            .filter(Boolean)
+        """
+    )
+    if visible_labels:
+        logger.warning(
+            "Final confirmation actions are visible and will not be clicked: %s",
+            visible_labels,
+        )
 
 
 def read_appointment_availability(page: Page) -> AvailabilityResult:
