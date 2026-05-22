@@ -43,6 +43,29 @@ UNAVAILABLE_TEXTS = [
 class AvailabilityResult:
     status: str
     message: str
+    details: dict[str, str] | None = None
+
+
+@dataclass(frozen=True)
+class AppointmentSnapshot:
+    site_options: list[str]
+    date_options: list[str]
+    hour_options: list[str]
+    site: str
+    date: str
+    hour: str
+    slots: str
+
+    def signature(self) -> tuple[str, ...]:
+        return (
+            "|".join(self.site_options),
+            "|".join(self.date_options),
+            "|".join(self.hour_options),
+            self.site,
+            self.date,
+            self.hour,
+            self.slots,
+        )
 
 
 def click_program_action(page: Page) -> Page:
@@ -191,36 +214,54 @@ def read_appointment_availability(page: Page) -> AvailabilityResult:
     logger.info("Checking appointment availability")
     page.wait_for_load_state("domcontentloaded", timeout=30_000)
 
-    date_options = _select_options_text(page, DATE_SELECTOR)
-    hour_options = _select_options_text(page, HOUR_SELECTOR)
-    logger.info("Date options: %s", date_options)
-    logger.info("Hour options: %s", hour_options)
+    snapshot = _read_stable_appointment_snapshot(page)
+    result = _availability_result_from_snapshot(page, snapshot)
+    if result.status != "partial":
+        return result
+
+    logger.info("Partial availability detected; rechecking before notifying")
+    page.wait_for_timeout(1_500)
+    snapshot = _read_stable_appointment_snapshot(page)
+    return _availability_result_from_snapshot(page, snapshot)
+
+
+def _availability_result_from_snapshot(
+    page: Page,
+    snapshot: AppointmentSnapshot,
+) -> AvailabilityResult:
+    date_options = snapshot.date_options
+    hour_options = snapshot.hour_options
 
     has_date_options = _has_real_options(date_options)
     has_hour_options = _has_real_options(hour_options)
+    details = _snapshot_details(snapshot)
 
     if has_date_options and has_hour_options:
         return AvailabilityResult(
             status="available",
             message="Se detectaron opciones seleccionables de fecha y hora.",
+            details=details,
         )
 
     if has_date_options and not has_hour_options:
         return AvailabilityResult(
             status="partial",
             message="Se detecto fecha disponible, pero aun no hay hora seleccionable.",
+            details=details,
         )
 
     if has_hour_options and not has_date_options:
         return AvailabilityResult(
             status="partial",
             message="Se detecto hora disponible, pero no se detecto fecha seleccionable.",
+            details=details,
         )
 
     if _only_no_slots(date_options) and _only_no_slots(hour_options):
         return AvailabilityResult(
             status="unavailable",
             message="La pagina muestra 'Sin Cupos' en fecha y hora.",
+            details=details,
         )
 
     content = page.locator("body").inner_text(timeout=15_000).lower()
@@ -229,12 +270,14 @@ def read_appointment_availability(page: Page) -> AvailabilityResult:
         return AvailabilityResult(
             status="available",
             message="Se detecto texto compatible con cupo disponible.",
+            details=details,
         )
 
     if any(text in content for text in UNAVAILABLE_TEXTS):
         return AvailabilityResult(
             status="unavailable",
             message="Se detecto texto compatible con falta de cupos.",
+            details=details,
         )
 
     return AvailabilityResult(
@@ -243,7 +286,62 @@ def read_appointment_availability(page: Page) -> AvailabilityResult:
             "No se pudo determinar la disponibilidad con los textos actuales. "
             "Ajusta AVAILABLE_TEXTS o UNAVAILABLE_TEXTS en flows/appointments.py."
         ),
+        details=details,
     )
+
+
+def _read_stable_appointment_snapshot(page: Page) -> AppointmentSnapshot:
+    previous_snapshot: AppointmentSnapshot | None = None
+    current_snapshot: AppointmentSnapshot | None = None
+    for attempt in range(1, 5):
+        current_snapshot = _read_appointment_snapshot(page)
+        logger.info("Appointment snapshot %s: %s", attempt, _snapshot_details(current_snapshot))
+        logger.info("Date options: %s", current_snapshot.date_options)
+        logger.info("Hour options: %s", current_snapshot.hour_options)
+
+        if (
+            previous_snapshot is not None
+            and current_snapshot.signature() == previous_snapshot.signature()
+        ):
+            return current_snapshot
+
+        previous_snapshot = current_snapshot
+        page.wait_for_timeout(750)
+
+    if current_snapshot is None:
+        raise RuntimeError("Could not read appointment availability controls.")
+    return current_snapshot
+
+
+def _read_appointment_snapshot(page: Page) -> AppointmentSnapshot:
+    site_options = _select_options_text(page, SITE_SELECTOR)
+    date_options = _select_options_text(page, DATE_SELECTOR)
+    hour_options = _select_options_text(page, HOUR_SELECTOR)
+    return AppointmentSnapshot(
+        site_options=site_options,
+        date_options=date_options,
+        hour_options=hour_options,
+        site=_selected_option_text(page, SITE_SELECTOR),
+        date=_selected_option_text(page, DATE_SELECTOR),
+        hour=_selected_option_text(page, HOUR_SELECTOR),
+        slots=_read_slots_value(page),
+    )
+
+
+def _snapshot_details(snapshot: AppointmentSnapshot) -> dict[str, str]:
+    details = {
+        "sede": _real_or_selected(snapshot.site, snapshot.site_options),
+        "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
+        "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
+        "cupos": snapshot.slots,
+    }
+    return {key: value for key, value in details.items() if value}
+
+
+def _real_or_selected(selected: str, options: list[str]) -> str:
+    if selected and _has_real_options([selected]):
+        return selected
+    return next((option for option in options if _has_real_options([option])), selected)
 
 
 def _select_options_text(page: Page, selector: str) -> list[str]:
@@ -260,6 +358,47 @@ def _select_options(page: Page, selector: str) -> list[dict[str, str]]:
             text: option.innerText.trim(),
             value: option.value
         }))"""
+    )
+
+
+def _selected_option_text(page: Page, selector: str) -> str:
+    select = page.locator(selector)
+    if select.count() == 0:
+        return ""
+
+    return select.evaluate(
+        """element => {
+            const selected = element.options[element.selectedIndex];
+            return selected ? selected.innerText.trim() : "";
+        }"""
+    )
+
+
+def _read_slots_value(page: Page) -> str:
+    return page.evaluate(
+        """() => {
+            const normalize = value => (value || "").trim().toLowerCase();
+            const directInput = Array.from(document.querySelectorAll("input")).find(input => {
+                const id = normalize(input.id);
+                const name = normalize(input.name);
+                return id.includes("cupo") || name.includes("cupo");
+            });
+            if (directInput && directInput.value.trim()) {
+                return directInput.value.trim();
+            }
+
+            const labels = Array.from(document.querySelectorAll("label, span, th, td, div"));
+            const cuposLabel = labels.find(element => normalize(element.innerText) === "cupos");
+            if (!cuposLabel) {
+                return "";
+            }
+
+            const container = cuposLabel.closest("tr, .row, div, fieldset, table") || document.body;
+            const nearbyInput = Array.from(container.querySelectorAll("input")).find(
+                input => input.value.trim()
+            );
+            return nearbyInput ? nearbyInput.value.trim() : "";
+        }"""
     )
 
 

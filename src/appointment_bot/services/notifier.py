@@ -95,31 +95,43 @@ def format_heartbeat_message() -> str:
 
 
 def _format_result_message(result: AvailabilityResult) -> str:
+    details = _format_result_details(result)
     if result.status == "available":
         return (
             "Cita posiblemente disponible.\n\n"
-            f"Detalle: {result.message}\n\n"
+            f"Detalle: {result.message}{details}\n\n"
             "Revisa la pagina cuanto antes para confirmar manualmente."
         )
 
     if result.status == "partial":
         return (
             "Cambio detectado en la disponibilidad.\n\n"
-            f"Detalle: {result.message}\n\n"
+            f"Detalle: {result.message}{details}\n\n"
             "Puede ser una disponibilidad parcial. Conviene revisar manualmente."
         )
 
     if result.status == "unknown":
         return (
             "No pude interpretar el resultado de la pagina.\n\n"
-            f"Detalle: {result.message}\n\n"
+            f"Detalle: {result.message}{details}\n\n"
             "Revise la pagina y guarde un diagnostico para ajustar el bot si hace falta."
         )
 
     if result.status == "unavailable":
-        return f"Revision completada: no hay cupos por ahora.\n\nDetalle: {result.message}"
+        return (
+            "Revision completada: no hay cupos por ahora.\n\n"
+            f"Detalle: {result.message}{details}"
+        )
 
-    return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}"
+    return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}{details}"
+
+
+def _format_result_details(result: AvailabilityResult) -> str:
+    if not result.details:
+        return ""
+
+    lines = [f"{key.capitalize()}: {value}" for key, value in result.details.items()]
+    return "\n\n" + "\n".join(lines)
 
 
 def _format_error_message(error: Exception) -> str:

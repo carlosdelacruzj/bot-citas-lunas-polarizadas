@@ -9,14 +9,24 @@ BLOCKED_RESOURCE_TYPES = {"font", "image", "media"}
 
 
 @contextmanager
-def open_page(settings: Settings) -> Iterator[Page]:
+def open_page(
+    settings: Settings,
+    *,
+    headless: bool | None = None,
+    block_heavy_assets: bool | None = None,
+) -> Iterator[Page]:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
 
+    effective_headless = settings.headless if headless is None else headless
+    effective_block_heavy_assets = (
+        settings.block_heavy_assets if block_heavy_assets is None else block_heavy_assets
+    )
+
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=settings.headless)
+        browser = playwright.chromium.launch(headless=effective_headless)
         context = browser.new_context()
-        if settings.block_heavy_assets:
+        if effective_block_heavy_assets:
             context.route(
                 "**/*",
                 lambda route: (
