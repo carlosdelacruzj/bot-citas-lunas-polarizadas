@@ -48,8 +48,6 @@ class Settings:
     telegram_bot_token: str
     telegram_chat_id: str
     telegram_notify_unavailable: bool
-    open_visible_on_available: bool
-    visible_session_timeout_seconds: int
     cleanup_retention_days: int
     run_jitter_min_seconds: int
     run_jitter_max_seconds: int
@@ -95,15 +93,6 @@ def load_settings() -> Settings:
         telegram_notify_unavailable=_parse_bool(
             os.getenv("TELEGRAM_NOTIFY_UNAVAILABLE"),
             default=False,
-        ),
-        open_visible_on_available=_parse_bool(
-            os.getenv("OPEN_VISIBLE_ON_AVAILABLE"),
-            default=True,
-        ),
-        visible_session_timeout_seconds=_parse_int(
-            os.getenv("VISIBLE_SESSION_TIMEOUT_SECONDS"),
-            default=0,
-            minimum=0,
         ),
         cleanup_retention_days=_parse_int(
             os.getenv("CLEANUP_RETENTION_DAYS"),

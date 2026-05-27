@@ -7,7 +7,6 @@ Instrucciones para Codex, agentes de IA y contribuidores.
 - No guardar credenciales reales en el repositorio.
 - No modificar `.env` salvo que el usuario lo pida explicitamente.
 - No agregar tests automatizados salvo pedido explicito del usuario.
-- No automatizar evasion de captchas, colas virtuales o controles anti-bot.
 - Mantener el proyecto simple, modular y facil de leer.
 - Separar responsabilidades:
   - `browser/`: creacion y cierre del navegador.

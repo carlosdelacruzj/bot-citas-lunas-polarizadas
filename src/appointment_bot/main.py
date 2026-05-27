@@ -1,11 +1,12 @@
 import logging
 
-from playwright.sync_api import Error as PlaywrightError
-
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import load_settings
 from appointment_bot.debug.page_inspector import inspect_page
 from appointment_bot.flows.appointments import (
+    APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+    AppointmentWorkflowUnavailable,
+    AvailabilityResult,
     assert_no_final_confirmation_action,
     click_program_action,
     open_appointment_panel,
@@ -56,48 +57,12 @@ def _save_relevant_result_snapshot(page, settings, status: str) -> None:
     if status not in {"available", "partial"}:
         return
 
-    save_result_screenshot(page, settings, label=f"result-{status}")
-
-
-def _open_visible_manual_session(settings) -> None:
-    if not settings.open_visible_on_available:
-        return
-
-    logger.info("Opening visible browser for manual completion")
-    try:
-        with open_page(settings, headless=False, block_heavy_assets=False) as page:
-            login(page, settings)
-            page = click_program_action(page)
-            page = open_appointment_panel(page)
-            page = select_available_site(page)
-            assert_no_final_confirmation_action(page)
-            result = read_appointment_availability(page)
-            logger.info("Visible manual session availability: %s", result.status)
-            if result.status != "available":
-                logger.info("Visible manual session did not keep availability: %s", result.message)
-                return
-
-            logger.info("Visible browser is ready for manual captcha and reservation")
-            _wait_for_manual_session(page, settings)
-    except PlaywrightError as exc:
-        logger.warning("Could not open visible browser for manual completion: %s", exc)
-    except Exception:
-        logger.exception("Visible manual session failed")
-
-
-def _wait_for_manual_session(page, settings) -> None:
-    elapsed_seconds = 0
-    timeout_seconds = settings.visible_session_timeout_seconds
-    try:
-        while not page.is_closed():
-            if timeout_seconds and elapsed_seconds >= timeout_seconds:
-                logger.info("Visible manual session timeout reached")
-                return
-
-            page.wait_for_timeout(1_000)
-            elapsed_seconds += 1
-    except PlaywrightError:
-        logger.info("Visible manual session was closed")
+    save_result_screenshot(
+        page,
+        settings,
+        label=f"result-{status}",
+        selectors=APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+    )
 
 
 def run() -> int:
@@ -136,12 +101,10 @@ def run() -> int:
                 _save_relevant_result_snapshot(page, settings, result.status)
                 notify_result(result, settings)
                 logger.info("Finished appointment check: %s", result.status)
-                if result.status == "available" and settings.open_visible_on_available:
-                    if settings.headless:
-                        _open_visible_manual_session(settings)
-                    else:
-                        logger.info("Keeping current visible browser open for manual completion")
-                        _wait_for_manual_session(page, settings)
+            except AppointmentWorkflowUnavailable as exc:
+                result = AvailabilityResult(status="completed", message=str(exc))
+                notify_result(result, settings)
+                logger.info("Finished appointment check: %s", result.status)
             except Exception:
                 save_error_screenshot(page, settings)
                 raise

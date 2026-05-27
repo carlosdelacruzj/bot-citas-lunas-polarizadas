@@ -14,6 +14,14 @@ RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
 SITE_SELECTOR = "#MainContent_idUcitas_cbosede"
 DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
+APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
+    ".modal:has(#MainContent_idUcitas_cbosede)",
+    ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
+    "[role='dialog']:has(#MainContent_idUcitas_cbosede)",
+    "#MainContent_idUcitas",
+    "fieldset:has(#MainContent_idUcitas_cbosede)",
+    "table:has(#MainContent_idUcitas_cbosede)",
+]
 FINAL_CONFIRMATION_SELECTOR = (
     'button:has-text("Confirmar"), input[type="submit"][value*="Confirmar"], '
     'button:has-text("Guardar"), input[type="submit"][value*="Guardar"], '
@@ -46,6 +54,10 @@ class AvailabilityResult:
     details: dict[str, str] | None = None
 
 
+class AppointmentWorkflowUnavailable(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class AppointmentSnapshot:
     site_options: list[str]
@@ -75,9 +87,9 @@ def click_program_action(page: Page) -> Page:
     logger.info("Program action buttons found: %s", button_count)
 
     if button_count == 0:
-        raise RuntimeError(
-            "Could not find the program action button. "
-            "Review PROGRAM_ACTION_SELECTOR in flows/appointments.py."
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro una accion de programacion disponible. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         )
 
     first_button = button.first
@@ -95,7 +107,13 @@ def _wait_for_program_detail(page: Page) -> None:
     except PlaywrightTimeoutError:
         logger.info("Program detail page did not reach load state; checking detail selector")
 
-    page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=15_000)
+    try:
+        page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=15_000)
+    except PlaywrightTimeoutError as exc:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro el boton para abrir el panel de citas. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
+        ) from exc
 
 
 def open_appointment_panel(page: Page) -> Page:
@@ -105,9 +123,9 @@ def open_appointment_panel(page: Page) -> Page:
     logger.info("Appointment panel buttons found: %s", button_count)
 
     if button_count == 0:
-        raise RuntimeError(
-            "Could not find the appointment panel button. "
-            "Review RESERVE_APPOINTMENT_SELECTOR in flows/appointments.py."
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro el boton para abrir el panel de citas. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         )
 
     button.first.scroll_into_view_if_needed(timeout=15_000)
@@ -127,7 +145,13 @@ def _wait_for_reservation_panel(page: Page) -> None:
         logger.info("Reservation panel did not appear after click; trying ASP.NET postback")
 
     _trigger_reserve_appointment_postback(page)
-    _wait_for_reservation_controls(page, timeout=15_000)
+    try:
+        _wait_for_reservation_controls(page, timeout=15_000)
+    except PlaywrightTimeoutError as exc:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontraron controles de sede, fecha y hora. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
+        ) from exc
 
 
 def _wait_for_reservation_controls(page: Page, *, timeout: int) -> None:
@@ -169,7 +193,10 @@ def select_available_site(page: Page) -> Page:
 
     selected = next((option for option in options if _is_real_site_option(option["text"])), None)
     if selected is None:
-        raise RuntimeError("Could not find a selectable site option.")
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro una sede seleccionable. "
+            "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
+        )
 
     logger.info("Selecting site: %s", selected["text"])
     site_select.select_option(value=selected["value"], timeout=15_000)

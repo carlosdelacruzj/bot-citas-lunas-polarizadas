@@ -68,8 +68,6 @@ TELEGRAM_ENABLED=false
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 TELEGRAM_NOTIFY_UNAVAILABLE=false
-OPEN_VISIBLE_ON_AVAILABLE=true
-VISIBLE_SESSION_TIMEOUT_SECONDS=0
 ```
 
 Para activar Telegram, crear un bot con BotFather, enviarle un mensaje y obtener el `chat.id` con `getUpdates`. Luego configurar solo el `.env` local:
@@ -100,7 +98,6 @@ HEADLESS=true
 BLOCK_HEAVY_ASSETS=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
 DEBUG_SNAPSHOTS=false
-OPEN_VISIBLE_ON_AVAILABLE=true
 ```
 
 `CLEANUP_RETENTION_DAYS` borra automaticamente logs, screenshots y diagnosticos antiguos al inicio de cada ejecucion.
@@ -114,8 +111,6 @@ Variables operativas para ejecucion frecuente:
 - `ERROR_BACKOFF_SECONDS`: pausa aplicada luego de demasiados errores.
 - `HEARTBEAT_ENABLED`: envia un aviso periodico de que el bot sigue activo.
 - `HEARTBEAT_INTERVAL_HOURS`: frecuencia del aviso periodico.
-- `OPEN_VISIBLE_ON_AVAILABLE`: luego de avisar por Telegram, abre una segunda sesion visible si detecta disponibilidad.
-- `VISIBLE_SESSION_TIMEOUT_SECONDS`: segundos para mantener abierta la sesion visible; `0` significa hasta que cierres la ventana.
 
 ## Instalacion En VPS Ubuntu
 
@@ -172,7 +167,6 @@ ERROR_BACKOFF_THRESHOLD=3
 ERROR_BACKOFF_SECONDS=1800
 HEARTBEAT_ENABLED=true
 HEARTBEAT_INTERVAL_HOURS=24
-OPEN_VISIBLE_ON_AVAILABLE=false
 ```
 
 Probar Telegram:
@@ -241,9 +235,3 @@ Al ejecutar, revisar:
 - que guarda screenshot en `screenshots/` cuando falla
 - que guarda diagnosticos en `diagnostics/` si el resultado queda como indeterminado
 - que actualiza estado operativo en `state/` para lock, backoff y heartbeat
-
-## Seguridad Y Limites
-
-Este proyecto no debe usarse para saltar captchas, colas virtuales, controles anti-bot ni restricciones del sitio. Si aparece un captcha o control manual, el flujo debe detenerse o requerir intervencion humana.
-
-El bot solo revisa disponibilidad. No selecciona fecha, no selecciona hora y no confirma reservas. Si detecta botones finales como Confirmar, Guardar, Reservar o Finalizar, los registra en logs y no los presiona.

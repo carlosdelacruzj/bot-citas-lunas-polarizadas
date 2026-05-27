@@ -23,6 +23,10 @@ def notify_result(result: AvailabilityResult, settings: Settings) -> None:
 
     if result.status == "unavailable" and settings.telegram_notify_unavailable:
         send_telegram_message(settings, _format_result_message(result))
+        return
+
+    if result.status == "completed":
+        logger.info("Appointment workflow is no longer available: %s", result.message)
 
 
 def notify_error(error: Exception, settings: Settings | None = None) -> None:
