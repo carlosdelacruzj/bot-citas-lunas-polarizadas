@@ -7,11 +7,11 @@ from appointment_bot.flows.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentWorkflowUnavailable,
     AvailabilityResult,
-    assert_no_final_confirmation_action,
     click_program_action,
     open_appointment_panel,
     read_appointment_availability,
     select_available_site,
+    solve_reservation_captcha_and_click_reserve,
 )
 from appointment_bot.flows.login import login
 from appointment_bot.services.cleanup import cleanup_old_files
@@ -94,11 +94,18 @@ def run() -> int:
                 _debug_snapshot(page, settings, "after-appointment-panel")
                 page = select_available_site(page)
                 _debug_snapshot(page, settings, "after-site-selection")
-                assert_no_final_confirmation_action(page)
                 result = read_appointment_availability(page)
                 if result.status == "unknown":
                     save_unknown_result_diagnostic(page, settings)
                 _save_relevant_result_snapshot(page, settings, result.status)
+                if result.status == "available":
+                    page = solve_reservation_captcha_and_click_reserve(page, settings)
+                    _debug_snapshot(page, settings, "after-reservation-click")
+                    result = AvailabilityResult(
+                        status="registered",
+                        message="Se resolvio el captcha y se hizo click en Reservar.",
+                        details=result.details,
+                    )
                 notify_result(result, settings)
                 logger.info("Finished appointment check: %s", result.status)
             except AppointmentWorkflowUnavailable as exc:

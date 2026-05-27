@@ -1,8 +1,14 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+from appointment_bot.config import Settings
+from appointment_bot.services.captcha import solve_normal_captcha
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +20,8 @@ RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
 SITE_SELECTOR = "#MainContent_idUcitas_cbosede"
 DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
+RESERVATION_FIELD_SELECTOR = "#MainContent_idUcitas_txtimg"
+RESERVATION_BUTTON_SELECTOR = "#MainContent_idUcitas_btgSiguiente"
 APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     ".modal:has(#MainContent_idUcitas_cbosede)",
     ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
@@ -22,12 +30,6 @@ APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     "fieldset:has(#MainContent_idUcitas_cbosede)",
     "table:has(#MainContent_idUcitas_cbosede)",
 ]
-FINAL_CONFIRMATION_SELECTOR = (
-    'button:has-text("Confirmar"), input[type="submit"][value*="Confirmar"], '
-    'button:has-text("Guardar"), input[type="submit"][value*="Guardar"], '
-    'button:has-text("Reservar"), input[type="submit"][value*="Reservar"], '
-    'button:has-text("Finalizar"), input[type="submit"][value*="Finalizar"]'
-)
 
 AVAILABLE_TEXTS = [
     "cupo disponible",
@@ -67,6 +69,7 @@ class AppointmentSnapshot:
     date: str
     hour: str
     slots: str
+    person_name: str
 
     def signature(self) -> tuple[str, ...]:
         return (
@@ -77,6 +80,7 @@ class AppointmentSnapshot:
             self.date,
             self.hour,
             self.slots,
+            self.person_name,
         )
 
 
@@ -131,7 +135,6 @@ def open_appointment_panel(page: Page) -> Page:
     button.first.scroll_into_view_if_needed(timeout=15_000)
     button.first.click(timeout=15_000)
     _wait_for_reservation_panel(page)
-    assert_no_final_confirmation_action(page)
 
     logger.info("Current page after opening appointment panel: %s", page.url)
     return page
@@ -202,39 +205,8 @@ def select_available_site(page: Page) -> Page:
     site_select.select_option(value=selected["value"], timeout=15_000)
     site_select.dispatch_event("change", timeout=15_000)
     _wait_for_appointment_options(page)
-    assert_no_final_confirmation_action(page)
     logger.info("Current page after site selection: %s", page.url)
     return page
-
-
-def assert_no_final_confirmation_action(page: Page) -> None:
-    final_actions = page.locator(FINAL_CONFIRMATION_SELECTOR)
-    count = final_actions.count()
-    if count == 0:
-        logger.info("No final confirmation action is visible")
-        return
-
-    visible_labels = final_actions.evaluate_all(
-        """elements => elements
-            .filter(element => {
-                const style = window.getComputedStyle(element);
-                const rect = element.getBoundingClientRect();
-                return style.visibility !== "hidden"
-                    && style.display !== "none"
-                    && rect.width > 0
-                    && rect.height > 0;
-            })
-            .map(element => (
-                element.innerText || element.value || element.id || element.name
-            ).trim())
-            .filter(Boolean)
-        """
-    )
-    if visible_labels:
-        logger.warning(
-            "Final confirmation actions are visible and will not be clicked: %s",
-            visible_labels,
-        )
 
 
 def read_appointment_availability(page: Page) -> AvailabilityResult:
@@ -250,6 +222,59 @@ def read_appointment_availability(page: Page) -> AvailabilityResult:
     page.wait_for_timeout(1_500)
     snapshot = _read_stable_appointment_snapshot(page)
     return _availability_result_from_snapshot(page, snapshot)
+
+
+def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) -> Page:
+    captcha_path = _save_reservation_panel_image(page, settings)
+    captcha_solution = solve_normal_captcha(captcha_path, settings)
+
+    logger.info("Filling reservation captcha field")
+    reservation_field = page.locator(RESERVATION_FIELD_SELECTOR).first
+    reservation_field.wait_for(state="visible", timeout=15_000)
+    reservation_field.fill(captcha_solution, timeout=15_000)
+
+    logger.info("Clicking reservation button")
+    reserve_button = page.locator(RESERVATION_BUTTON_SELECTOR).first
+    reserve_button.wait_for(state="visible", timeout=15_000)
+    reserve_button.scroll_into_view_if_needed(timeout=15_000)
+    reserve_button.click(timeout=15_000)
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=15_000)
+    except PlaywrightTimeoutError:
+        logger.info("Reservation click did not trigger domcontentloaded before timeout")
+
+    logger.info("Current page after reservation click: %s", page.url)
+    return page
+
+
+def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
+    logger.info("Saving reservation panel image for captcha solving")
+    settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
+    captcha_path = settings.screenshots_dir / (
+        f"reservation-panel-captcha-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
+    )
+
+    page.locator(RESERVATION_FIELD_SELECTOR).first.wait_for(state="visible", timeout=15_000)
+    for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
+        panel = page.locator(selector).first
+        try:
+            if panel.count() == 0:
+                continue
+
+            panel.scroll_into_view_if_needed(timeout=5_000)
+            panel.screenshot(path=str(captcha_path), timeout=10_000)
+            logger.info(
+                "Saved reservation panel image: %s using selector %s", captcha_path, selector
+            )
+            return captcha_path
+        except PlaywrightError as exc:
+            logger.warning(
+                "Could not save reservation panel image with selector %s: %s",
+                selector,
+                exc,
+            )
+
+    raise RuntimeError("Could not save the reservation panel image for captcha solving.")
 
 
 def _availability_result_from_snapshot(
@@ -352,6 +377,7 @@ def _read_appointment_snapshot(page: Page) -> AppointmentSnapshot:
         date=_selected_option_text(page, DATE_SELECTOR),
         hour=_selected_option_text(page, HOUR_SELECTOR),
         slots=_read_slots_value(page),
+        person_name=_read_person_name(page),
     )
 
 
@@ -361,6 +387,7 @@ def _snapshot_details(snapshot: AppointmentSnapshot) -> dict[str, str]:
         "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
         "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
         "cupos": snapshot.slots,
+        "nombre": snapshot.person_name,
     }
     return {key: value for key, value in details.items() if value}
 
@@ -425,6 +452,79 @@ def _read_slots_value(page: Page) -> str:
                 input => input.value.trim()
             );
             return nearbyInput ? nearbyInput.value.trim() : "";
+        }"""
+    )
+
+
+def _read_person_name(page: Page) -> str:
+    return page.evaluate(
+        """() => {
+            const normalize = value => (value || "").trim();
+            const normalizeKey = value => normalize(value).toLowerCase();
+            const visibleValue = element => {
+                const value = normalize(element.value || element.innerText || element.textContent);
+                if (!value || value.length > 120) return "";
+                return value;
+            };
+            const fieldKey = element => normalizeKey([
+                element.id,
+                element.name,
+                element.placeholder,
+                element.getAttribute("aria-label")
+            ].join(" "));
+            const controls = Array.from(document.querySelectorAll("input, textarea"))
+                .filter(element => {
+                    const type = normalizeKey(element.type);
+                    return !["hidden", "password", "submit", "button", "image"].includes(type);
+                });
+
+            const findControlValue = parts => {
+                const control = controls.find(element => {
+                    const key = fieldKey(element);
+                    return parts.some(part => key.includes(part)) && visibleValue(element);
+                });
+                return control ? visibleValue(control) : "";
+            };
+
+            const names = findControlValue(["nombres", "nombre"]);
+            const paternal = findControlValue(["paterno"]);
+            const maternal = findControlValue(["materno"]);
+            const surname = findControlValue(["apellidos", "apellido"]);
+            const controlName = [names, paternal || surname, maternal]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\\s+/g, " ")
+                .trim();
+            if (controlName) return controlName;
+
+            const bodyText = normalize(document.body ? document.body.innerText : "");
+            const lines = bodyText.split("\\n").map(line => normalize(line)).filter(Boolean);
+            const valueAfterLabel = labels => {
+                for (const label of labels) {
+                    const normalizedLabel = label.toLowerCase();
+                    for (let index = 0; index < lines.length; index += 1) {
+                        const line = lines[index];
+                        const lowerLine = line.toLowerCase();
+                        if (lowerLine === normalizedLabel && lines[index + 1]) {
+                            return lines[index + 1];
+                        }
+                        if (lowerLine.startsWith(`${normalizedLabel}:`)) {
+                            return normalize(line.slice(label.length + 1));
+                        }
+                    }
+                }
+                return "";
+            };
+
+            const textNames = valueAfterLabel(["Nombres", "Nombre"]);
+            const textPaternal = valueAfterLabel(["Apellido Paterno", "Paterno"]);
+            const textMaternal = valueAfterLabel(["Apellido Materno", "Materno"]);
+            const textSurname = valueAfterLabel(["Apellidos", "Apellido"]);
+            return [textNames, textPaternal || textSurname, textMaternal]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\\s+/g, " ")
+                .trim();
         }"""
     )
 

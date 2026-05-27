@@ -17,7 +17,7 @@ def notify_result(result: AvailabilityResult, settings: Settings) -> None:
     message = f"[{result.status.upper()}] {result.message}"
     print(message)
 
-    if result.status in {"available", "partial", "unknown"}:
+    if result.status in {"available", "partial", "unknown", "registered"}:
         send_telegram_message(settings, _format_result_message(result))
         return
 
@@ -107,6 +107,9 @@ def _format_result_message(result: AvailabilityResult) -> str:
             "Revisa la pagina cuanto antes para confirmar manualmente."
         )
 
+    if result.status == "registered":
+        return _format_registered_message(result)
+
     if result.status == "partial":
         return (
             "Cambio detectado en la disponibilidad.\n\n"
@@ -122,12 +125,35 @@ def _format_result_message(result: AvailabilityResult) -> str:
         )
 
     if result.status == "unavailable":
-        return (
-            "Revision completada: no hay cupos por ahora.\n\n"
-            f"Detalle: {result.message}{details}"
-        )
+        return f"Revision completada: no hay cupos por ahora.\n\nDetalle: {result.message}{details}"
 
     return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}{details}"
+
+
+def _format_registered_message(result: AvailabilityResult) -> str:
+    details = result.details or {}
+    person_name = details.get("nombre")
+    site = details.get("sede")
+    date = details.get("fecha")
+    hour = details.get("hora")
+
+    if person_name:
+        heading = f"Estimado/a {person_name}, su cita ha sido reservada con exito."
+    else:
+        heading = "Su cita ha sido reservada con exito."
+
+    lines = [heading]
+    if date:
+        lines.append(f"Fecha: {date}")
+    if hour:
+        lines.append(f"Hora: {hour}")
+    if site:
+        lines.append(f"Sede: {site}")
+
+    if len(lines) == 1:
+        return lines[0]
+
+    return f"{lines[0]}\n\n" + "\n".join(lines[1:])
 
 
 def _format_result_details(result: AvailabilityResult) -> str:

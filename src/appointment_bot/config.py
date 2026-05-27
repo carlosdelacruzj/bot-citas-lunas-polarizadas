@@ -38,6 +38,7 @@ class Settings:
     target_url: str
     login_username: str
     login_password: str
+    captcha_api_key: str
     headless: bool
     block_heavy_assets: bool
     screenshot_on_error: bool
@@ -78,6 +79,7 @@ def load_settings() -> Settings:
         target_url=os.getenv("TARGET_URL", "").strip(),
         login_username=os.getenv("LOGIN_USERNAME", "").strip(),
         login_password=os.getenv("LOGIN_PASSWORD", ""),
+        captcha_api_key=os.getenv("APIKEY_2CAPTCHA", "").strip(),
         headless=_parse_bool(os.getenv("HEADLESS"), default=False),
         block_heavy_assets=_parse_bool(os.getenv("BLOCK_HEAVY_ASSETS"), default=True),
         screenshot_on_error=_parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True),
