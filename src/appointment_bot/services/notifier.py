@@ -1,5 +1,8 @@
 import json
 import logging
+import mimetypes
+import uuid
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -13,12 +16,18 @@ logger = logging.getLogger(__name__)
 TELEGRAM_API_TIMEOUT_SECONDS = 15
 
 
-def notify_result(result: AvailabilityResult, settings: Settings) -> None:
+def notify_result(
+    result: AvailabilityResult,
+    settings: Settings,
+    screenshot_path: Path | None = None,
+    screenshot_paths: list[Path] | None = None,
+) -> None:
     message = f"[{result.status.upper()}] {result.message}"
     print(message)
+    effective_screenshot_paths = _normalize_screenshot_paths(screenshot_path, screenshot_paths)
 
     if result.status in {"available", "partial", "unknown", "registered"}:
-        send_telegram_message(settings, _format_result_message(result))
+        _send_result_notification(result, settings, effective_screenshot_paths)
         return
 
     if result.status == "unavailable" and settings.telegram_notify_unavailable:
@@ -26,15 +35,32 @@ def notify_result(result: AvailabilityResult, settings: Settings) -> None:
         return
 
     if result.status == "completed":
+        if effective_screenshot_paths and _send_telegram_photos(
+            settings,
+            effective_screenshot_paths,
+            _format_result_message(result),
+        ):
+            return
         logger.info("Appointment workflow is no longer available: %s", result.message)
 
 
-def notify_error(error: Exception, settings: Settings | None = None) -> None:
+def notify_error(
+    error: Exception,
+    settings: Settings | None = None,
+    screenshot_path: Path | None = None,
+) -> None:
     message = f"[ERROR] {error}"
     print(message.encode("ascii", errors="replace").decode("ascii"))
 
     if settings is not None:
-        send_telegram_message(settings, _format_error_message(error))
+        formatted = _format_error_message(error)
+        if screenshot_path is not None and send_telegram_photo(
+            settings,
+            screenshot_path,
+            formatted,
+        ):
+            return
+        send_telegram_message(settings, formatted)
 
 
 def send_telegram_message(settings: Settings, message: str) -> bool:
@@ -70,6 +96,97 @@ def send_telegram_message(settings: Settings, message: str) -> bool:
 
     logger.info("Telegram notification sent")
     return True
+
+
+def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> bool:
+    if not settings.telegram_enabled:
+        return False
+
+    if not image_path.exists():
+        logger.warning("Telegram photo does not exist: %s", image_path)
+        return False
+
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendPhoto"
+    boundary = f"----appointment-bot-{uuid.uuid4().hex}"
+    content_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
+    body = _multipart_form_data(
+        boundary,
+        fields={
+            "chat_id": settings.telegram_chat_id,
+            "caption": caption,
+        },
+        files={
+            "photo": (image_path.name, content_type, image_path.read_bytes()),
+        },
+    )
+    request = Request(
+        url,
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
+            response_body = response.read().decode("utf-8")
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        logger.warning("Could not send Telegram photo: %s", exc)
+        return False
+
+    try:
+        data = json.loads(response_body)
+    except json.JSONDecodeError:
+        logger.warning("Telegram returned a non-JSON response for photo")
+        return False
+
+    if not data.get("ok"):
+        logger.warning("Telegram rejected photo notification: %s", data)
+        return False
+
+    logger.info("Telegram photo sent: %s", image_path)
+    return True
+
+
+def _send_result_notification(
+    result: AvailabilityResult,
+    settings: Settings,
+    screenshot_paths: list[Path],
+) -> None:
+    message = _format_result_message(result)
+    if screenshot_paths and _send_telegram_photos(settings, screenshot_paths, message):
+        return
+
+    send_telegram_message(settings, message)
+
+
+def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
+    sent_any = False
+    for index, image_path in enumerate(image_paths):
+        photo_caption = caption if index == 0 else "Evidencia adicional del tramite."
+        sent_any = send_telegram_photo(settings, image_path, photo_caption) or sent_any
+
+    return sent_any
+
+
+def _normalize_screenshot_paths(
+    screenshot_path: Path | None,
+    screenshot_paths: list[Path] | None,
+) -> list[Path]:
+    paths = []
+    if screenshot_path is not None:
+        paths.append(screenshot_path)
+    if screenshot_paths:
+        paths.extend(screenshot_paths)
+
+    unique_paths = []
+    seen = set()
+    for path in paths:
+        path_key = str(path)
+        if path_key in seen:
+            continue
+        seen.add(path_key)
+        unique_paths.append(path)
+    return unique_paths
 
 
 def run_telegram_test() -> int:
@@ -170,3 +287,38 @@ def _format_error_message(error: Exception) -> str:
         f"Detalle: {error}\n\n"
         "Si se repite varias veces, el bot entrara en pausa automatica para no insistir."
     )
+
+
+def _multipart_form_data(
+    boundary: str,
+    *,
+    fields: dict[str, str],
+    files: dict[str, tuple[str, str, bytes]],
+) -> bytes:
+    chunks = []
+    for name, value in fields.items():
+        chunks.extend(
+            [
+                f"--{boundary}\r\n".encode(),
+                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+                str(value).encode(),
+                b"\r\n",
+            ]
+        )
+
+    for name, (filename, content_type, content) in files.items():
+        chunks.extend(
+            [
+                f"--{boundary}\r\n".encode(),
+                (
+                    f'Content-Disposition: form-data; name="{name}"; '
+                    f'filename="{filename}"\r\n'
+                ).encode(),
+                f"Content-Type: {content_type}\r\n\r\n".encode(),
+                content,
+                b"\r\n",
+            ]
+        )
+
+    chunks.append(f"--{boundary}--\r\n".encode())
+    return b"".join(chunks)

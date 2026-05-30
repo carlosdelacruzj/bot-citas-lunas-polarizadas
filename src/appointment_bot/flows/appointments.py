@@ -22,6 +22,14 @@ DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
 RESERVATION_FIELD_SELECTOR = "#MainContent_idUcitas_txtimg"
 RESERVATION_BUTTON_SELECTOR = "#MainContent_idUcitas_btgSiguiente"
+CONFIRMATION_TEXTS = [
+    "cita ha sido registrado",
+    "cita ha sido registrada",
+    "registrado satisfactoriamente",
+    "registrada satisfactoriamente",
+    "reservada con exito",
+    "reservado con exito",
+]
 APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     ".modal:has(#MainContent_idUcitas_cbosede)",
     ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
@@ -29,6 +37,21 @@ APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     "#MainContent_idUcitas",
     "fieldset:has(#MainContent_idUcitas_cbosede)",
     "table:has(#MainContent_idUcitas_cbosede)",
+]
+PROCESS_STAGES_SCREENSHOT_SELECTORS = [
+    "table:has-text('Separa Cita Peritaje')",
+    "table:has-text('Ingresa Solicitud')",
+    "xpath=//*[normalize-space()='Etapas Trámite']/following-sibling::*[1]",
+    "xpath=//*[normalize-space()='Etapas Tramite']/following-sibling::*[1]",
+    "xpath=//*[normalize-space()='Etapas Tràmite']/following-sibling::*[1]",
+    (
+        "xpath=//*[contains(normalize-space(), 'Etapas') "
+        "and contains(normalize-space(), 'Trámite')]/following-sibling::*[1]"
+    ),
+    (
+        "xpath=//*[contains(normalize-space(), 'Etapas') "
+        "and contains(normalize-space(), 'Tramite')]/following-sibling::*[1]"
+    ),
 ]
 
 AVAILABLE_TEXTS = [
@@ -54,6 +77,14 @@ class AvailabilityResult:
     status: str
     message: str
     details: dict[str, str] | None = None
+
+
+@dataclass(frozen=True)
+class ProcessStage:
+    stage: str
+    date: str
+    status: str
+    message: str
 
 
 class AppointmentWorkflowUnavailable(RuntimeError):
@@ -112,10 +143,22 @@ def _wait_for_program_detail(page: Page) -> None:
         logger.info("Program detail page did not reach load state; checking detail selector")
 
     try:
-        page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=15_000)
+        page.locator(RESERVE_APPOINTMENT_SELECTOR).wait_for(state="visible", timeout=5_000)
+        return
+    except PlaywrightTimeoutError:
+        logger.info("Reserve button is not visible; checking process stages table")
+
+    try:
+        page.get_by_text("Separa Cita Peritaje").wait_for(state="visible", timeout=15_000)
+        return
+    except PlaywrightTimeoutError:
+        logger.info("Process stages table was not detected by Separa Cita Peritaje text")
+
+    try:
+        page.get_by_text("Ingresa Solicitud").wait_for(state="visible", timeout=5_000)
     except PlaywrightTimeoutError as exc:
         raise AppointmentWorkflowUnavailable(
-            "No se encontro el boton para abrir el panel de citas. "
+            "No se encontro el detalle del tramite despues de hacer click. "
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         ) from exc
 
@@ -132,12 +175,101 @@ def open_appointment_panel(page: Page) -> Page:
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         )
 
-    button.first.scroll_into_view_if_needed(timeout=15_000)
-    button.first.click(timeout=15_000)
+    try:
+        button.first.wait_for(state="visible", timeout=5_000)
+        button.first.scroll_into_view_if_needed(timeout=15_000)
+        button.first.click(timeout=15_000)
+    except PlaywrightTimeoutError as exc:
+        raise AppointmentWorkflowUnavailable(
+            "El boton para abrir el panel de citas existe, pero no esta visible. "
+            "Es posible que la etapa de cita no este pendiente."
+        ) from exc
+
     _wait_for_reservation_panel(page)
 
     logger.info("Current page after opening appointment panel: %s", page.url)
     return page
+
+
+def read_process_stages(page: Page) -> list[ProcessStage]:
+    logger.info("Reading process stages")
+    stages = page.evaluate(
+        """() => {
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const tables = Array.from(document.querySelectorAll("table"));
+            const table = tables.find(candidate => {
+                const text = normalize(candidate.innerText);
+                return text.includes("Separa Cita Peritaje")
+                    || text.includes("Ingresa Solicitud");
+            });
+            if (!table) return [];
+
+            return Array.from(table.querySelectorAll("tr")).map(row => {
+                const cells = Array.from(row.querySelectorAll("td"));
+                return cells.map(cell => normalize(cell.innerText));
+            }).filter(cells => cells.length >= 3).map(cells => ({
+                stage: cells[0] || "",
+                date: cells[1] || "",
+                status: cells[2] || "",
+                message: cells[3] || "",
+            }));
+        }"""
+    )
+    return [
+        ProcessStage(
+            stage=str(stage.get("stage") or ""),
+            date=str(stage.get("date") or ""),
+            status=str(stage.get("status") or ""),
+            message=str(stage.get("message") or ""),
+        )
+        for stage in stages
+    ]
+
+
+def appointment_stage_result(stages: list[ProcessStage]) -> AvailabilityResult | None:
+    appointment_stage = next(
+        (
+            stage
+            for stage in stages
+            if stage.stage.strip().lower() == "separa cita peritaje"
+        ),
+        None,
+    )
+    if appointment_stage is None:
+        logger.warning("Could not find Separa Cita Peritaje stage")
+        return None
+
+    normalized_status = appointment_stage.status.strip().lower()
+    details = {
+        "etapa": appointment_stage.stage,
+        "estado": appointment_stage.status,
+    }
+    if appointment_stage.date:
+        details["fecha"] = appointment_stage.date
+    if appointment_stage.message:
+        details["mensaje"] = appointment_stage.message
+
+    if normalized_status == "programado":
+        return AvailabilityResult(
+            status="completed",
+            message=(
+                "La etapa Separa Cita Peritaje ya esta en estado Programado. "
+                "No hay una cita pendiente por reservar."
+            ),
+            details=details,
+        )
+
+    if normalized_status == "pendiente":
+        return None
+
+    return AvailabilityResult(
+        status="completed",
+        message=(
+            "La etapa Separa Cita Peritaje no esta pendiente. "
+            f"Estado actual: {appointment_stage.status}."
+        ),
+        details=details,
+    )
 
 
 def _wait_for_reservation_panel(page: Page) -> None:
@@ -245,6 +377,50 @@ def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) 
 
     logger.info("Current page after reservation click: %s", page.url)
     return page
+
+
+def wait_for_reservation_confirmation(page: Page) -> None:
+    logger.info("Waiting for reservation confirmation")
+    try:
+        page.wait_for_function(
+            """texts => {
+                const bodyText = (document.body ? document.body.innerText : "").toLowerCase();
+                return texts.some(text => bodyText.includes(text));
+            }""",
+            arg=CONFIRMATION_TEXTS,
+            timeout=10_000,
+        )
+    except PlaywrightTimeoutError:
+        logger.info("Reservation confirmation text was not detected before timeout")
+
+
+def dismiss_reservation_confirmation(page: Page) -> None:
+    logger.info("Trying to dismiss reservation confirmation")
+    selectors = [
+        ".swal2-confirm",
+        "button:has-text('OK')",
+        "button:has-text('Aceptar')",
+        "button:has-text('Salir')",
+        "button:has-text('Cerrar')",
+        "input[type='button'][value='OK']",
+        "input[type='button'][value='Aceptar']",
+        "input[type='button'][value='Salir']",
+        "input[type='button'][value='Cerrar']",
+    ]
+    for selector in selectors:
+        control = page.locator(selector).first
+        try:
+            if control.count() == 0 or not control.is_visible(timeout=1_000):
+                continue
+
+            control.click(timeout=5_000)
+            page.wait_for_timeout(1_000)
+            logger.info("Dismissed reservation confirmation using selector %s", selector)
+            return
+        except PlaywrightError as exc:
+            logger.info("Could not dismiss confirmation with selector %s: %s", selector, exc)
+
+    logger.info("No reservation confirmation control was dismissed")
 
 
 def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
