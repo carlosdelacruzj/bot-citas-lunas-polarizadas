@@ -8,6 +8,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from appointment_bot.main import run_with_report
+from appointment_bot.services.queue_runner import run_queue_with_report
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +32,14 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
         self._send_json(
             HTTPStatus.NOT_FOUND,
-            {"status": "not_found", "message": "Use GET /health or POST /run."},
+            {"status": "not_found", "message": "Use GET /health, POST /run or POST /run-queue."},
         )
 
     def do_POST(self) -> None:
-        if self.path != "/run":
+        if self.path not in {"/run", "/run-queue"}:
             self._send_json(
                 HTTPStatus.NOT_FOUND,
-                {"status": "not_found", "message": "Use POST /run."},
+                {"status": "not_found", "message": "Use POST /run or POST /run-queue."},
             )
             return
 
@@ -49,7 +50,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             )
             return
 
-        report = run_with_report()
+        if self.path == "/run-queue":
+            report = run_queue_with_report()
+        else:
+            report = run_with_report()
         http_status = HTTPStatus.OK if report.exit_code == 0 else HTTPStatus.INTERNAL_SERVER_ERROR
         self._send_json(http_status, asdict(report))
 

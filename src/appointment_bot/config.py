@@ -41,6 +41,7 @@ class Settings:
     captcha_api_key: str
     headless: bool
     block_heavy_assets: bool
+    auto_reserve: bool
     screenshot_on_error: bool
     screenshot_on_relevant_result: bool
     debug_snapshots: bool
@@ -56,8 +57,15 @@ class Settings:
     lock_stale_minutes: int
     error_backoff_threshold: int
     error_backoff_seconds: int
+    monitor_window_seconds: int
+    monitor_interval_min_seconds: int
+    monitor_interval_max_seconds: int
+    queue_max_reservations_per_run: int
+    queue_delay_min_seconds: int
+    queue_delay_max_seconds: int
     heartbeat_enabled: bool
     heartbeat_interval_hours: int
+    database_path: Path
     logs_dir: Path
     screenshots_dir: Path
     diagnostics_dir: Path
@@ -72,7 +80,7 @@ class Settings:
         return f"{self.login_username[:2]}***{self.login_username[-1]}"
 
 
-def load_settings() -> Settings:
+def load_settings(*, require_login: bool = True) -> Settings:
     load_dotenv()
 
     settings = Settings(
@@ -82,6 +90,7 @@ def load_settings() -> Settings:
         captcha_api_key=os.getenv("APIKEY_2CAPTCHA", "").strip(),
         headless=_parse_bool(os.getenv("HEADLESS"), default=False),
         block_heavy_assets=_parse_bool(os.getenv("BLOCK_HEAVY_ASSETS"), default=True),
+        auto_reserve=_parse_bool(os.getenv("AUTO_RESERVE"), default=True),
         screenshot_on_error=_parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True),
         screenshot_on_relevant_result=_parse_bool(
             os.getenv("SCREENSHOT_ON_RELEVANT_RESULT"),
@@ -131,12 +140,43 @@ def load_settings() -> Settings:
             default=1800,
             minimum=60,
         ),
+        monitor_window_seconds=_parse_int(
+            os.getenv("MONITOR_WINDOW_SECONDS"),
+            default=0,
+            minimum=0,
+        ),
+        monitor_interval_min_seconds=_parse_int(
+            os.getenv("MONITOR_INTERVAL_MIN_SECONDS"),
+            default=60,
+            minimum=1,
+        ),
+        monitor_interval_max_seconds=_parse_int(
+            os.getenv("MONITOR_INTERVAL_MAX_SECONDS"),
+            default=90,
+            minimum=1,
+        ),
+        queue_max_reservations_per_run=_parse_int(
+            os.getenv("QUEUE_MAX_RESERVATIONS_PER_RUN"),
+            default=3,
+            minimum=1,
+        ),
+        queue_delay_min_seconds=_parse_int(
+            os.getenv("QUEUE_DELAY_MIN_SECONDS"),
+            default=30,
+            minimum=0,
+        ),
+        queue_delay_max_seconds=_parse_int(
+            os.getenv("QUEUE_DELAY_MAX_SECONDS"),
+            default=60,
+            minimum=0,
+        ),
         heartbeat_enabled=_parse_bool(os.getenv("HEARTBEAT_ENABLED"), default=False),
         heartbeat_interval_hours=_parse_int(
             os.getenv("HEARTBEAT_INTERVAL_HOURS"),
             default=24,
             minimum=1,
         ),
+        database_path=Path(os.getenv("DATABASE_PATH", "data/appointment_bot.sqlite")),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
         diagnostics_dir=Path("diagnostics"),
@@ -148,6 +188,18 @@ def load_settings() -> Settings:
             "RUN_JITTER_MAX_SECONDS must be greater than or equal to RUN_JITTER_MIN_SECONDS"
         )
 
+    if settings.monitor_interval_max_seconds < settings.monitor_interval_min_seconds:
+        raise ValueError(
+            "MONITOR_INTERVAL_MAX_SECONDS must be greater than or equal to "
+            "MONITOR_INTERVAL_MIN_SECONDS"
+        )
+
+    if settings.queue_delay_max_seconds < settings.queue_delay_min_seconds:
+        raise ValueError(
+            "QUEUE_DELAY_MAX_SECONDS must be greater than or equal to "
+            "QUEUE_DELAY_MIN_SECONDS"
+        )
+
     missing = [
         name
         for name, value in {
@@ -155,7 +207,7 @@ def load_settings() -> Settings:
             "LOGIN_USERNAME": settings.login_username,
             "LOGIN_PASSWORD": settings.login_password,
         }.items()
-        if not value
+        if not value and (require_login or name == "TARGET_URL")
     ]
     if missing:
         joined = ", ".join(missing)

@@ -9,7 +9,9 @@ logs/*
 screenshots/*
 diagnostics/*
 state/*
+data/*
 !logs/.gitkeep
 !screenshots/.gitkeep
 !diagnostics/.gitkeep
 !state/.gitkeep
+!data/.gitkeep

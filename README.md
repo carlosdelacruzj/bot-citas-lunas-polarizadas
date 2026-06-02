@@ -36,10 +36,14 @@ Editar `.env` con la URL y credenciales reales. No compartas ese archivo.
 ## Ejecucion
 
 ```powershell
-python -m appointment_bot.main
+appointment-bot
 ```
 
-Por defecto el navegador se abre visible (`HEADLESS=false`) para poder mirar que pasa paso a paso.
+`appointment-bot` ejecuta la cola multi-cliente con SQLite. El modo de una sola cuenta queda disponible solo para depuracion manual:
+
+```powershell
+python -m appointment_bot.main
+```
 
 ## Configuracion
 
@@ -52,6 +56,7 @@ LOGIN_PASSWORD=
 APIKEY_2CAPTCHA=
 HEADLESS=false
 BLOCK_HEAVY_ASSETS=true
+AUTO_RESERVE=true
 SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
 DEBUG_SNAPSHOTS=false
@@ -63,6 +68,13 @@ RUN_TIMEOUT_SECONDS=180
 LOCK_STALE_MINUTES=10
 ERROR_BACKOFF_THRESHOLD=3
 ERROR_BACKOFF_SECONDS=1800
+MONITOR_WINDOW_SECONDS=0
+MONITOR_INTERVAL_MIN_SECONDS=60
+MONITOR_INTERVAL_MAX_SECONDS=90
+DATABASE_PATH=data/appointment_bot.sqlite
+QUEUE_MAX_RESERVATIONS_PER_RUN=3
+QUEUE_DELAY_MIN_SECONDS=30
+QUEUE_DELAY_MAX_SECONDS=60
 HEARTBEAT_ENABLED=false
 HEARTBEAT_INTERVAL_HOURS=24
 TELEGRAM_ENABLED=false
@@ -106,16 +118,38 @@ DEBUG_SNAPSHOTS=false
 Variables operativas para ejecucion frecuente:
 
 - `RUN_JITTER_MIN_SECONDS` y `RUN_JITTER_MAX_SECONDS`: espera aleatoria antes de revisar.
+- `AUTO_RESERVE`: si es `true`, cuando detecta fecha y hora intenta resolver captcha y reservar. Si es `false`, solo avisa disponibilidad.
 - `RUN_TIMEOUT_SECONDS`: limite global de una revision en Linux.
 - `LOCK_STALE_MINUTES`: tiempo para considerar viejo un lock abandonado.
 - `ERROR_BACKOFF_THRESHOLD`: errores consecutivos antes de pausar.
 - `ERROR_BACKOFF_SECONDS`: pausa aplicada luego de demasiados errores.
+- `MONITOR_WINDOW_SECONDS`: segundos que una ejecucion permanece revisando dentro de la misma sesion. `0` conserva una sola revision.
+- `MONITOR_INTERVAL_MIN_SECONDS` y `MONITOR_INTERVAL_MAX_SECONDS`: espera aleatoria entre revisiones internas cuando `MONITOR_WINDOW_SECONDS` esta activo.
+- `DATABASE_PATH`: ruta local de SQLite para historial, clientes y estados.
+- `QUEUE_MAX_RESERVATIONS_PER_RUN`: maximo de reservas confirmadas por ejecucion de cola.
+- `QUEUE_DELAY_MIN_SECONDS` y `QUEUE_DELAY_MAX_SECONDS`: pausa aleatoria entre clientes despues de una reserva o intento relevante.
 - `HEARTBEAT_ENABLED`: envia un aviso periodico de que el bot sigue activo.
 - `HEARTBEAT_INTERVAL_HOURS`: frecuencia del aviso periodico.
 
+## Instalacion En PC Local
+
+Por ahora la PC local es el entorno recomendado porque la pagina valida IP peruana. Mantener la PC encendida, con internet estable y con el Programador de tareas de Windows o n8n disparando el bot.
+
+Para ejecutar la cola multi-cliente:
+
+```powershell
+appointment-bot
+```
+
+Para ejecutar una revision personal de depuracion, sin usar la cola:
+
+```powershell
+python -m appointment_bot.main
+```
+
 ## Instalacion En VPS Ubuntu
 
-Instalar dependencias base:
+Usar VPS solo si la IP de salida es aceptada por la pagina. Instalar dependencias base:
 
 ```bash
 sudo apt update
@@ -147,13 +181,14 @@ nano .env
 
 No subir `.env` a GitHub. Cada maquina debe tener su propio `.env`.
 
-## Configuracion Recomendada En VPS
+## Configuracion Recomendada
 
-Para DigitalOcean o cualquier VPS Ubuntu, usar una configuracion similar:
+Para la PC local o un servidor con IP aceptada por la pagina, usar una configuracion similar:
 
 ```env
 HEADLESS=true
 BLOCK_HEAVY_ASSETS=true
+AUTO_RESERVE=true
 SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
 DEBUG_SNAPSHOTS=false
@@ -166,6 +201,13 @@ RUN_TIMEOUT_SECONDS=180
 LOCK_STALE_MINUTES=10
 ERROR_BACKOFF_THRESHOLD=3
 ERROR_BACKOFF_SECONDS=1800
+MONITOR_WINDOW_SECONDS=0
+MONITOR_INTERVAL_MIN_SECONDS=60
+MONITOR_INTERVAL_MAX_SECONDS=90
+DATABASE_PATH=data/appointment_bot.sqlite
+QUEUE_MAX_RESERVATIONS_PER_RUN=3
+QUEUE_DELAY_MIN_SECONDS=30
+QUEUE_DELAY_MAX_SECONDS=60
 HEARTBEAT_ENABLED=true
 HEARTBEAT_INTERVAL_HOURS=24
 ```
@@ -176,11 +218,60 @@ Probar Telegram:
 appointment-bot-test-telegram
 ```
 
-Probar una revision manual:
+Probar la cola:
 
 ```bash
-python -m appointment_bot.main
+appointment-bot
 ```
+
+## Endpoint Local Para n8n
+
+Para pruebas locales con n8n en Docker, iniciar el endpoint:
+
+```powershell
+python -m appointment_bot.services.local_api
+```
+
+Desde n8n, llamar la cola:
+
+```text
+POST http://host.docker.internal:8765/run-queue
+```
+
+El endpoint devuelve JSON con `status`, `message`, `exit_code`, `details` y rutas de screenshots cuando existan. Las alertas de Telegram y las imagenes las envia el bot Python, no n8n.
+
+El endpoint de una sola cuenta sigue disponible solo para depuracion:
+
+```text
+POST http://host.docker.internal:8765/run
+```
+
+## Clientes Y Cola Local
+
+La cola usa SQLite local en `data/appointment_bot.sqlite`. Esta base guarda credenciales de clientes en texto plano para esta primera version; no la subas al repositorio y protege la PC donde se ejecuta.
+
+Agregar o actualizar un cliente:
+
+```powershell
+appointment-bot-client add --id cliente-001 --name "Nombre Cliente" --username DNI --password CLAVE --priority 10
+```
+
+Comandos utiles:
+
+```powershell
+appointment-bot-client list
+appointment-bot-client pause cliente-001
+appointment-bot-client activate cliente-001
+appointment-bot-client done cliente-001
+```
+
+Ejecutar la cola:
+
+```powershell
+appointment-bot
+```
+
+La cola procesa clientes activos por prioridad. Cada cliente abre una sesion nueva, hace login con sus propios datos, revisa cupos, intenta reservar si `AUTO_RESERVE=true`, cierra el navegador y luego pasa al siguiente. Si confirma una reserva, marca el cliente como completado. Por defecto intenta como maximo 3 reservas confirmadas por ejecucion y espera entre 30 y 60 segundos despues de reservas o intentos relevantes.
 
 ## Ejecucion Programada
 
@@ -189,16 +280,35 @@ Ejecutar el bot con una frecuencia frecuente pero controlada usando `cron` o `sy
 Ejemplo de `cron` cada 10 minutos:
 
 ```cron
-*/10 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/python -m appointment_bot.main
+*/10 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/appointment-bot
 ```
 
 Ejemplo mas intensivo cada 5 minutos:
 
 ```cron
-*/5 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/python -m appointment_bot.main
+*/5 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/appointment-bot
 ```
 
 El bot evita solapamientos con un lock en `state/`, agrega jitter antes de cada revision y entra en backoff si acumula errores consecutivos.
+
+Para aumentar revisiones sin hacer login en cada intento, activar una ventana corta de monitoreo:
+
+```env
+RUN_TIMEOUT_SECONDS=360
+MONITOR_WINDOW_SECONDS=180
+MONITOR_INTERVAL_MIN_SECONDS=60
+MONITOR_INTERVAL_MAX_SECONDS=90
+```
+
+Con esa configuracion, cada ejecucion abre sesion una vez, revisa `Etapas Tramite`, y si `Separa Cita Peritaje` esta `Pendiente`, revisa el modal durante hasta 3 minutos. Si no hay cupo, espera entre 60 y 90 segundos y vuelve a revisar dentro de la misma sesion. Si la etapa ya esta `Programado`, termina sin intentar reservar. `RUN_TIMEOUT_SECONDS` debe ser mayor que la ventana para dejar margen al login, capturas, captcha y cierre del navegador.
+
+Con n8n, el flujo recomendado es:
+
+```text
+Schedule Trigger -> HTTP Request POST http://host.docker.internal:8765/run-queue
+```
+
+n8n debe orquestar la ejecucion; las alertas de Telegram las envia el bot.
 
 Para editar cron en el VPS:
 
@@ -236,3 +346,5 @@ Al ejecutar, revisar:
 - que guarda screenshot en `screenshots/` cuando falla
 - que guarda diagnosticos en `diagnostics/` si el resultado queda como indeterminado
 - que actualiza estado operativo en `state/` para lock, backoff y heartbeat
+- que `appointment-bot-client list` muestra clientes sin exponer claves
+- que `appointment-bot-run-queue` crea historial en `data/appointment_bot.sqlite`

@@ -26,7 +26,13 @@ def notify_result(
     print(message)
     effective_screenshot_paths = _normalize_screenshot_paths(screenshot_path, screenshot_paths)
 
-    if result.status in {"available", "partial", "unknown", "registered"}:
+    if result.status in {
+        "available",
+        "partial",
+        "unknown",
+        "registered",
+        "reservation_unconfirmed",
+    }:
         _send_result_notification(result, settings, effective_screenshot_paths)
         return
 
@@ -226,6 +232,13 @@ def _format_result_message(result: AvailabilityResult) -> str:
 
     if result.status == "registered":
         return _format_registered_message(result)
+
+    if result.status == "reservation_unconfirmed":
+        return (
+            "Reserva no confirmada automaticamente.\n\n"
+            f"Detalle: {result.message}{details}\n\n"
+            "Revisa la pagina cuanto antes para confirmar el estado real de la cita."
+        )
 
     if result.status == "partial":
         return (

@@ -379,7 +379,7 @@ def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) 
     return page
 
 
-def wait_for_reservation_confirmation(page: Page) -> None:
+def wait_for_reservation_confirmation(page: Page) -> bool:
     logger.info("Waiting for reservation confirmation")
     try:
         page.wait_for_function(
@@ -390,8 +390,10 @@ def wait_for_reservation_confirmation(page: Page) -> None:
             arg=CONFIRMATION_TEXTS,
             timeout=10_000,
         )
+        return True
     except PlaywrightTimeoutError:
         logger.info("Reservation confirmation text was not detected before timeout")
+        return False
 
 
 def dismiss_reservation_confirmation(page: Page) -> None:
