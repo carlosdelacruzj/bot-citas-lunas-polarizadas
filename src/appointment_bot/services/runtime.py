@@ -5,9 +5,11 @@ import logging
 import os
 import random
 import signal
+import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from ctypes import c_ulong, py_object, pythonapi
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,7 +27,8 @@ class RunState:
 
 
 class RunTimeoutError(TimeoutError):
-    pass
+    def __init__(self, message: str = "Run exceeded the configured timeout") -> None:
+        super().__init__(message)
 
 
 class LockBusyError(RuntimeError):
@@ -67,8 +70,12 @@ class ProcessLock:
         if not self.path.exists():
             return
 
+        owner_pid = _read_lock_pid(self.path)
+        if owner_pid is not None and _process_is_running(owner_pid):
+            return
+
         modified_at = datetime.fromtimestamp(self.path.stat().st_mtime)
-        if datetime.now() - modified_at < self.stale_after:
+        if owner_pid is None and datetime.now() - modified_at < self.stale_after:
             return
 
         logger.warning("Removing stale run lock: %s", self.path)
@@ -99,21 +106,83 @@ def single_run_lock(settings: Settings) -> Iterator[None]:
 
 @contextmanager
 def run_timeout(settings: Settings) -> Iterator[None]:
-    if not hasattr(signal, "SIGALRM"):
-        logger.info("Global run timeout is not supported on this platform")
-        yield
+    if hasattr(signal, "SIGALRM") and threading.current_thread() is threading.main_thread():
+        with _signal_timeout(settings.run_timeout_seconds):
+            yield
         return
 
+    thread_id = threading.get_ident()
+    timer = threading.Timer(
+        settings.run_timeout_seconds,
+        _raise_in_thread,
+        args=(
+            thread_id,
+            RunTimeoutError,
+        ),
+    )
+    timer.daemon = True
+    timer.start()
+    logger.info(
+        "Started thread watchdog with a %s second timeout",
+        settings.run_timeout_seconds,
+    )
+    try:
+        yield
+    finally:
+        timer.cancel()
+
+
+@contextmanager
+def _signal_timeout(timeout_seconds: int) -> Iterator[None]:
     def _handle_timeout(signum, frame) -> None:
-        raise RunTimeoutError(f"Run exceeded {settings.run_timeout_seconds} seconds")
+        raise RunTimeoutError(f"Run exceeded {timeout_seconds} seconds")
 
     previous_handler = signal.signal(signal.SIGALRM, _handle_timeout)
-    signal.alarm(settings.run_timeout_seconds)
+    signal.alarm(timeout_seconds)
     try:
         yield
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, previous_handler)
+
+
+def _raise_in_thread(thread_id: int, exception_type: type[BaseException]) -> None:
+    result = pythonapi.PyThreadState_SetAsyncExc(
+        c_ulong(thread_id),
+        py_object(exception_type),
+    )
+    if result == 0:
+        logger.warning("Could not find thread %s to enforce run timeout", thread_id)
+    elif result > 1:
+        pythonapi.PyThreadState_SetAsyncExc(c_ulong(thread_id), None)
+        logger.error("Run timeout affected multiple threads; reverted interruption")
+
+
+def _read_lock_pid(path: Path) -> int | None:
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("pid="):
+                return int(line.removeprefix("pid="))
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _process_is_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if pid == os.getpid():
+        return True
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
 
 
 def load_run_state(settings: Settings) -> RunState:

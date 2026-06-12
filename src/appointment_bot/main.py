@@ -7,6 +7,7 @@ from contextlib import nullcontext
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from appointment_bot.browser.session import open_page
@@ -15,16 +16,18 @@ from appointment_bot.debug.page_inspector import inspect_page
 from appointment_bot.flows.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     PROCESS_STAGES_SCREENSHOT_SELECTORS,
-    AppointmentWorkflowUnavailable,
     AvailabilityResult,
     appointment_stage_result,
     click_program_action,
     dismiss_reservation_confirmation,
+    has_available_date_options,
     open_appointment_panel,
     read_appointment_availability,
     read_process_stages,
+    select_available_appointment,
     select_available_site,
     solve_reservation_captcha_and_click_reserve,
+    wait_for_programmed_appointment_stage,
     wait_for_reservation_confirmation,
 )
 from appointment_bot.flows.login import login
@@ -72,7 +75,7 @@ class RunReport:
     duration_seconds: float | None = None
     reservation_attempted: bool = False
     reservation_confirmed: bool = False
-    details: dict[str, str] | None = None
+    details: dict[str, Any] | None = None
     screenshot_path: str | None = None
     screenshot_paths: list[str] | None = None
 
@@ -223,7 +226,7 @@ def _complete_available_reservation(
     screenshot_path: Path | None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     page = solve_reservation_captcha_and_click_reserve(page, settings)
-    confirmation_detected = wait_for_reservation_confirmation(page)
+    confirmation_text_detected = wait_for_reservation_confirmation(page)
     reservation_confirmation_screenshot_path = save_screenshot(
         page,
         settings,
@@ -231,6 +234,7 @@ def _complete_available_reservation(
     )
     _debug_snapshot(page, settings, "after-reservation-click")
     dismiss_reservation_confirmation(page)
+    programmed_stage = wait_for_programmed_appointment_stage(page, result.details)
     updated_process_stages_screenshot_path = _save_process_stages_snapshot(
         page,
         settings,
@@ -247,15 +251,23 @@ def _complete_available_reservation(
     if screenshot_paths:
         screenshot_path = screenshot_paths[0]
 
-    if not confirmation_detected:
-        details = dict(result.details or {})
-        details["confirmacion"] = "No se detecto texto de confirmacion despues de reservar."
+    details = dict(result.details or {})
+    details["confirmacion_texto"] = (
+        "detectada" if confirmation_text_detected else "no detectada"
+    )
+    details["confirmacion_etapa"] = (
+        "Programado" if programmed_stage is not None else "no confirmada"
+    )
+    if programmed_stage is not None:
+        details["fecha_programada"] = programmed_stage.date
+
+    if not confirmation_text_detected or programmed_stage is None:
         return (
             AvailabilityResult(
                 status="reservation_unconfirmed",
                 message=(
                     "Se resolvio el captcha y se hizo click en Reservar, "
-                    "pero no se detecto confirmacion de reserva."
+                    "pero no se confirmaron el mensaje y la etapa Programado."
                 ),
                 details=details,
             ),
@@ -266,8 +278,8 @@ def _complete_available_reservation(
     return (
         AvailabilityResult(
             status="registered",
-            message="Se resolvio el captcha y se hizo click en Reservar.",
-            details=result.details,
+            message="La reserva fue confirmada por mensaje y etapa Programado.",
+            details=details,
         ),
         screenshot_path,
         screenshot_paths,
@@ -278,7 +290,9 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
     deadline = time.monotonic() + settings.monitor_window_seconds
     attempt = 1
     screenshot_path = None
-    screenshot_paths = []
+    screenshot_paths = (
+        [process_stages_screenshot_path] if process_stages_screenshot_path is not None else []
+    )
 
     while True:
         logger.info("Appointment availability check attempt %s", attempt)
@@ -288,39 +302,62 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
 
         if result.status == "unknown":
             save_unknown_result_diagnostic(page, settings)
-            screenshot_path = process_stages_screenshot_path or save_result_screenshot(
+            result_screenshot_path = save_result_screenshot(
                 page,
                 settings,
                 "result-unknown",
             )
+            screenshot_path = result_screenshot_path or process_stages_screenshot_path
             return result, screenshot_path, screenshot_paths
 
-        screenshot_path = process_stages_screenshot_path or _save_relevant_result_snapshot(
+        result_screenshot_path = _save_relevant_result_snapshot(
             page,
             settings,
             result.status,
         )
+        screenshot_path = result_screenshot_path or process_stages_screenshot_path
 
-        if result.status == "available":
+        can_attempt_reservation = result.status == "available" or (
+            result.status == "partial" and has_available_date_options(page)
+        )
+        if can_attempt_reservation:
+            selected_result = select_available_appointment(page)
             if not settings.auto_reserve:
-                return (
-                    AvailabilityResult(
-                        status="available",
-                        message=(
-                            "Se detectaron opciones seleccionables de fecha y hora. "
-                            "La reserva automatica esta desactivada."
+                if selected_result.status == "available":
+                    return (
+                        AvailabilityResult(
+                            status="available",
+                            message=(
+                                "Se verificaron fecha y hora seleccionables. "
+                                "La reserva automatica esta desactivada."
+                            ),
+                            details=selected_result.details,
                         ),
-                        details=result.details,
-                    ),
+                        screenshot_path,
+                        screenshot_paths,
+                    )
+                result = selected_result
+            if selected_result.status == "available":
+                return _complete_available_reservation(
+                    page,
+                    settings,
+                    selected_result,
                     screenshot_path,
-                    screenshot_paths,
                 )
-            return _complete_available_reservation(page, settings, result, screenshot_path)
+            if settings.auto_reserve:
+                result = selected_result
 
-        if result.status != "unavailable":
+        # TEMP REVIEW: Una disponibilidad parcial tambien se vuelve a comprobar dentro
+        # de la misma sesion; una fecha puede cargar sus horas en un intento posterior.
+        if result.status not in {"unavailable", "partial"}:
             return result, screenshot_path, screenshot_paths
 
-        if settings.monitor_window_seconds <= 0:
+        # TEMP REVIEW: El modo rapido usa una sola revision; el monitor respeta ademas
+        # un maximo explicito para no consultar la pagina indefinidamente.
+        if (
+            settings.monitor_window_seconds <= 0
+            or attempt >= settings.monitor_max_attempts
+        ):
             return result, screenshot_path, screenshot_paths
 
         remaining_seconds = deadline - time.monotonic()
@@ -340,6 +377,9 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
             wait_seconds,
         )
         page.wait_for_timeout(wait_seconds * 1_000)
+        if time.monotonic() >= deadline:
+            logger.info("Monitor window finished after %s attempts", attempt)
+            return result, screenshot_path, screenshot_paths
         attempt += 1
 
 
@@ -421,11 +461,6 @@ def run_with_report(
                     )
                     logger.info("Finished appointment check: %s", result.status)
                     final_result = result
-            except AppointmentWorkflowUnavailable as exc:
-                result = AvailabilityResult(status="completed", message=str(exc))
-                notify_result(result, settings, screenshot_path)
-                logger.info("Finished appointment check: %s", result.status)
-                final_result = result
             except Exception:
                 screenshot_path = save_error_screenshot(page, settings)
                 raise

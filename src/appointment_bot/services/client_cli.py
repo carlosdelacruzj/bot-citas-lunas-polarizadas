@@ -135,7 +135,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "done":
-        mark_client_done(args.client_id)
+        mark_client_done(args.client_id, status="completed")
         print(f"Cliente completado: {args.client_id}")
         return 0
 

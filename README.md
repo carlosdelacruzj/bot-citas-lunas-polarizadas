@@ -64,17 +64,18 @@ LOG_LEVEL=INFO
 CLEANUP_RETENTION_DAYS=14
 RUN_JITTER_MIN_SECONDS=30
 RUN_JITTER_MAX_SECONDS=120
-RUN_TIMEOUT_SECONDS=180
+RUN_TIMEOUT_SECONDS=420
 LOCK_STALE_MINUTES=10
 ERROR_BACKOFF_THRESHOLD=3
 ERROR_BACKOFF_SECONDS=1800
-MONITOR_WINDOW_SECONDS=0
-MONITOR_INTERVAL_MIN_SECONDS=60
-MONITOR_INTERVAL_MAX_SECONDS=90
+MONITOR_WINDOW_SECONDS=300
+MONITOR_MAX_ATTEMPTS=4
+MONITOR_INTERVAL_MIN_SECONDS=80
+MONITOR_INTERVAL_MAX_SECONDS=100
 DATABASE_PATH=data/appointment_bot.sqlite
-QUEUE_MAX_RESERVATIONS_PER_RUN=3
-QUEUE_DELAY_MIN_SECONDS=30
-QUEUE_DELAY_MAX_SECONDS=60
+QUEUE_MAX_RESERVATIONS_PER_RUN=0
+QUEUE_DELAY_MIN_SECONDS=5
+QUEUE_DELAY_MAX_SECONDS=15
 HEARTBEAT_ENABLED=false
 HEARTBEAT_INTERVAL_HOURS=24
 TELEGRAM_ENABLED=false
@@ -118,15 +119,25 @@ DEBUG_SNAPSHOTS=false
 Variables operativas para ejecucion frecuente:
 
 - `RUN_JITTER_MIN_SECONDS` y `RUN_JITTER_MAX_SECONDS`: espera aleatoria antes de revisar.
-- `AUTO_RESERVE`: si es `true`, cuando detecta fecha y hora intenta resolver captcha y reservar. Si es `false`, solo avisa disponibilidad.
-- `RUN_TIMEOUT_SECONDS`: limite global de una revision en Linux.
-- `LOCK_STALE_MINUTES`: tiempo para considerar viejo un lock abandonado.
+- `AUTO_RESERVE`: si es `true`, cuando detecta fecha y hora seleccionables elige ambas,
+  recorre las fechas hasta encontrar una hora, valida la seleccion, resuelve captcha e
+  intenta reservar. Los textos generales de disponibilidad sin opciones reales solo
+  generan una alerta parcial.
+- `BLOCK_HEAVY_ASSETS`: bloquea recursos pesados para reducir consumo. En el flujo actual
+  no afecta al captcha de reserva, porque el captcha utilizado por el bot sigue visible
+  dentro del panel capturado. Si la web cambia la forma de cargarlo, se debe volver a validar.
+- `RUN_TIMEOUT_SECONDS`: limite global de una revision en Windows y Linux. Debe superar
+  `MONITOR_WINDOW_SECONDS` por al menos 60 segundos.
+- `LOCK_STALE_MINUTES`: respaldo para limpiar locks ilegibles; si el lock contiene un PID
+  activo, no se elimina aunque la ejecucion sea larga.
 - `ERROR_BACKOFF_THRESHOLD`: errores consecutivos antes de pausar.
 - `ERROR_BACKOFF_SECONDS`: pausa aplicada luego de demasiados errores.
 - `MONITOR_WINDOW_SECONDS`: segundos que una ejecucion permanece revisando dentro de la misma sesion. `0` conserva una sola revision.
+- `MONITOR_MAX_ATTEMPTS`: maximo de revisiones dentro de la sesion de monitoreo.
 - `MONITOR_INTERVAL_MIN_SECONDS` y `MONITOR_INTERVAL_MAX_SECONDS`: espera aleatoria entre revisiones internas cuando `MONITOR_WINDOW_SECONDS` esta activo.
 - `DATABASE_PATH`: ruta local de SQLite para historial, clientes y estados.
 - `QUEUE_MAX_RESERVATIONS_PER_RUN`: maximo de reservas confirmadas por ejecucion de cola.
+  `0` permite procesar todos los clientes pendientes.
 - `QUEUE_DELAY_MIN_SECONDS` y `QUEUE_DELAY_MAX_SECONDS`: pausa aleatoria entre clientes despues de una reserva o intento relevante.
 - `HEARTBEAT_ENABLED`: envia un aviso periodico de que el bot sigue activo.
 - `HEARTBEAT_INTERVAL_HOURS`: frecuencia del aviso periodico.
@@ -197,17 +208,18 @@ TELEGRAM_NOTIFY_UNAVAILABLE=false
 CLEANUP_RETENTION_DAYS=14
 RUN_JITTER_MIN_SECONDS=30
 RUN_JITTER_MAX_SECONDS=120
-RUN_TIMEOUT_SECONDS=180
+RUN_TIMEOUT_SECONDS=420
 LOCK_STALE_MINUTES=10
 ERROR_BACKOFF_THRESHOLD=3
 ERROR_BACKOFF_SECONDS=1800
-MONITOR_WINDOW_SECONDS=0
-MONITOR_INTERVAL_MIN_SECONDS=60
-MONITOR_INTERVAL_MAX_SECONDS=90
+MONITOR_WINDOW_SECONDS=300
+MONITOR_MAX_ATTEMPTS=4
+MONITOR_INTERVAL_MIN_SECONDS=80
+MONITOR_INTERVAL_MAX_SECONDS=100
 DATABASE_PATH=data/appointment_bot.sqlite
-QUEUE_MAX_RESERVATIONS_PER_RUN=3
-QUEUE_DELAY_MIN_SECONDS=30
-QUEUE_DELAY_MAX_SECONDS=60
+QUEUE_MAX_RESERVATIONS_PER_RUN=0
+QUEUE_DELAY_MIN_SECONDS=5
+QUEUE_DELAY_MAX_SECONDS=15
 HEARTBEAT_ENABLED=true
 HEARTBEAT_INTERVAL_HOURS=24
 ```
@@ -238,7 +250,7 @@ Desde n8n, llamar la cola:
 POST http://host.docker.internal:8765/run-queue
 ```
 
-El endpoint devuelve JSON con `status`, `message`, `exit_code`, `details` y rutas de screenshots cuando existan. Las alertas de Telegram y las imagenes las envia el bot Python, no n8n.
+El endpoint devuelve JSON con `status`, `message`, `exit_code`, `details` y rutas de screenshots cuando existan. `details.results` es una lista JSON con el resultado de cada cliente. Si uno o mas clientes terminan con error o existe una reserva no confirmada, la cola devuelve `status=error`, `exit_code=1` y HTTP 500 para que n8n detecte el fallo. Una reserva solo se considera confirmada cuando aparecen el mensaje de exito y la etapa `Programado` con la fecha y hora seleccionadas. Las alertas de Telegram y las imagenes las envia el bot Python, no n8n.
 
 El endpoint de una sola cuenta sigue disponible solo para depuracion:
 
@@ -263,7 +275,11 @@ appointment-bot-client list
 appointment-bot-client pause cliente-001
 appointment-bot-client activate cliente-001
 appointment-bot-client done cliente-001
+appointment-bot-probe-availability --json
 ```
+
+`activate` vuelve a abrir un cliente completado, limpia su marca `done` y elimina cualquier
+backoff anterior para que pueda regresar a la cola.
 
 Ejecutar la cola:
 
@@ -271,7 +287,31 @@ Ejecutar la cola:
 appointment-bot
 ```
 
-La cola procesa clientes activos por prioridad. Cada cliente abre una sesion nueva, hace login con sus propios datos, revisa cupos, intenta reservar si `AUTO_RESERVE=true`, cierra el navegador y luego pasa al siguiente. Si confirma una reserva, marca el cliente como completado. Por defecto intenta como maximo 3 reservas confirmadas por ejecucion y espera entre 30 y 60 segundos despues de reservas o intentos relevantes.
+La cola limpia archivos antiguos una vez al inicio y procesa clientes activos por prioridad.
+Los clientes registrados o en estado `Programado` quedan fuera de ejecuciones posteriores.
+El primer cliente pendiente mantiene una sola sesion abierta hasta 5 minutos y realiza como
+maximo 4 revisiones. Si no confirma una reserva, la cola termina sin saltar al siguiente
+cliente. Cuando confirma una reserva, cambia a modo rapido: espera entre 5 y 15 segundos,
+abre una sesion nueva para el siguiente cliente y realiza una sola revision. Continua de
+esta forma mientras se confirmen reservas y se detiene al primer resultado sin cupos,
+parcial, incierto o con error.
+
+Cuando no quedan clientes activos, la misma ejecucion usa las credenciales generales de
+`.env` como cuenta observadora. El observador abre el panel mediante el postback ASP.NET
+del boton oculto, revisa hasta 4 veces durante 5 minutos y nunca llama a 2Captcha ni pulsa
+el boton final de reserva. Si encuentra fecha y hora, envia Telegram y devuelve
+`status=available` con `details.mode=observer`.
+
+Para identificar de donde llegan las fechas sin intentar reservar:
+
+```powershell
+appointment-bot-probe-availability --json
+```
+
+El comando abre Chromium visible y guarda en `diagnostics/` un HAR sanitizado y un resumen
+JSON. No guarda cookies, cabeceras, cuerpos POST, respuestas, credenciales ni valores de
+query string. `details.network_source` indica `webforms_postback`, `ajax`, `preloaded` o
+`unknown`.
 
 ## Ejecucion Programada
 
@@ -294,13 +334,19 @@ El bot evita solapamientos con un lock en `state/`, agrega jitter antes de cada 
 Para aumentar revisiones sin hacer login en cada intento, activar una ventana corta de monitoreo:
 
 ```env
-RUN_TIMEOUT_SECONDS=360
-MONITOR_WINDOW_SECONDS=180
-MONITOR_INTERVAL_MIN_SECONDS=60
-MONITOR_INTERVAL_MAX_SECONDS=90
+RUN_TIMEOUT_SECONDS=420
+MONITOR_WINDOW_SECONDS=300
+MONITOR_MAX_ATTEMPTS=4
+MONITOR_INTERVAL_MIN_SECONDS=80
+MONITOR_INTERVAL_MAX_SECONDS=100
 ```
 
-Con esa configuracion, cada ejecucion abre sesion una vez, revisa `Etapas Tramite`, y si `Separa Cita Peritaje` esta `Pendiente`, revisa el modal durante hasta 3 minutos. Si no hay cupo, espera entre 60 y 90 segundos y vuelve a revisar dentro de la misma sesion. Si la etapa ya esta `Programado`, termina sin intentar reservar. `RUN_TIMEOUT_SECONDS` debe ser mayor que la ventana para dejar margen al login, capturas, captcha y cierre del navegador.
+Con esa configuracion, el primer cliente pendiente abre sesion una vez, revisa `Etapas
+Tramite` y, si `Separa Cita Peritaje` esta `Pendiente`, revisa el modal hasta 4 veces
+dentro de una ventana de 5 minutos. Si no hay cupo completo, termina la cola. Si reserva,
+los siguientes clientes usan una sesion nueva y una sola revision para aprovechar los
+cupos. Si la etapa ya esta `Programado`, el cliente se marca como terminado y se busca el
+siguiente pendiente. El timeout deja margen para login, capturas, captcha y cierre.
 
 Con n8n, el flujo recomendado es:
 

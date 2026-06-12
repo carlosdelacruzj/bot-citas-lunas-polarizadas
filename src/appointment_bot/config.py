@@ -58,6 +58,7 @@ class Settings:
     error_backoff_threshold: int
     error_backoff_seconds: int
     monitor_window_seconds: int
+    monitor_max_attempts: int
     monitor_interval_min_seconds: int
     monitor_interval_max_seconds: int
     queue_max_reservations_per_run: int
@@ -122,7 +123,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         run_timeout_seconds=_parse_int(
             os.getenv("RUN_TIMEOUT_SECONDS"),
-            default=180,
+            default=420,
             minimum=30,
         ),
         lock_stale_minutes=_parse_int(
@@ -142,32 +143,37 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         monitor_window_seconds=_parse_int(
             os.getenv("MONITOR_WINDOW_SECONDS"),
-            default=0,
+            default=300,
             minimum=0,
+        ),
+        monitor_max_attempts=_parse_int(
+            os.getenv("MONITOR_MAX_ATTEMPTS"),
+            default=4,
+            minimum=1,
         ),
         monitor_interval_min_seconds=_parse_int(
             os.getenv("MONITOR_INTERVAL_MIN_SECONDS"),
-            default=60,
+            default=80,
             minimum=1,
         ),
         monitor_interval_max_seconds=_parse_int(
             os.getenv("MONITOR_INTERVAL_MAX_SECONDS"),
-            default=90,
+            default=100,
             minimum=1,
         ),
         queue_max_reservations_per_run=_parse_int(
             os.getenv("QUEUE_MAX_RESERVATIONS_PER_RUN"),
-            default=3,
-            minimum=1,
+            default=0,
+            minimum=0,
         ),
         queue_delay_min_seconds=_parse_int(
             os.getenv("QUEUE_DELAY_MIN_SECONDS"),
-            default=30,
+            default=5,
             minimum=0,
         ),
         queue_delay_max_seconds=_parse_int(
             os.getenv("QUEUE_DELAY_MAX_SECONDS"),
-            default=60,
+            default=15,
             minimum=0,
         ),
         heartbeat_enabled=_parse_bool(os.getenv("HEARTBEAT_ENABLED"), default=False),
@@ -192,6 +198,16 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "MONITOR_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "MONITOR_INTERVAL_MIN_SECONDS"
+        )
+
+    # TEMP REVIEW: El timeout necesita margen para login, captcha, capturas y cierre.
+    if (
+        settings.monitor_window_seconds > 0
+        and settings.run_timeout_seconds < settings.monitor_window_seconds + 60
+    ):
+        raise ValueError(
+            "RUN_TIMEOUT_SECONDS must be at least 60 seconds greater than "
+            "MONITOR_WINDOW_SECONDS"
         )
 
     if settings.queue_delay_max_seconds < settings.queue_delay_min_seconds:

@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.flows.appointments import AvailabilityResult
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.runtime import RunTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -24,30 +25,41 @@ def notify_result(
 ) -> None:
     message = f"[{result.status.upper()}] {result.message}"
     print(message)
-    effective_screenshot_paths = _normalize_screenshot_paths(screenshot_path, screenshot_paths)
+    try:
+        effective_screenshot_paths = _normalize_screenshot_paths(
+            screenshot_path,
+            screenshot_paths,
+        )
 
-    if result.status in {
-        "available",
-        "partial",
-        "unknown",
-        "registered",
-        "reservation_unconfirmed",
-    }:
-        _send_result_notification(result, settings, effective_screenshot_paths)
-        return
-
-    if result.status == "unavailable" and settings.telegram_notify_unavailable:
-        send_telegram_message(settings, _format_result_message(result))
-        return
-
-    if result.status == "completed":
-        if effective_screenshot_paths and _send_telegram_photos(
-            settings,
-            effective_screenshot_paths,
-            _format_result_message(result),
-        ):
+        if result.status in {
+            "available",
+            "partial",
+            "unknown",
+            "registered",
+            "reservation_unconfirmed",
+        }:
+            _send_result_notification(result, settings, effective_screenshot_paths)
             return
-        logger.info("Appointment workflow is no longer available: %s", result.message)
+
+        if result.status == "unavailable" and settings.telegram_notify_unavailable:
+            send_telegram_message(settings, _format_result_message(result))
+            return
+
+        if result.status == "completed":
+            if effective_screenshot_paths:
+                _send_telegram_photos(
+                    settings,
+                    effective_screenshot_paths,
+                    _format_result_message(result),
+                )
+                return
+            logger.info("Appointment workflow is no longer available: %s", result.message)
+    except RunTimeoutError:
+        raise
+    except Exception:
+        # TEMP REVIEW: Una alerta secundaria nunca debe cambiar el resultado real de
+        # una reserva que ya fue confirmada por la pagina.
+        logger.exception("Unexpected error while sending result notification")
 
 
 def notify_error(
@@ -59,14 +71,19 @@ def notify_error(
     print(message.encode("ascii", errors="replace").decode("ascii"))
 
     if settings is not None:
-        formatted = _format_error_message(error)
-        if screenshot_path is not None and send_telegram_photo(
-            settings,
-            screenshot_path,
-            formatted,
-        ):
-            return
-        send_telegram_message(settings, formatted)
+        try:
+            formatted = _format_error_message(error)
+            if screenshot_path is not None and send_telegram_photo(
+                settings,
+                screenshot_path,
+                formatted,
+            ):
+                return
+            send_telegram_message(settings, formatted)
+        except RunTimeoutError:
+            raise
+        except Exception:
+            logger.exception("Unexpected error while sending error notification")
 
 
 def send_telegram_message(settings: Settings, message: str) -> bool:
@@ -86,6 +103,8 @@ def send_telegram_message(settings: Settings, message: str) -> bool:
     try:
         with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
             response_body = response.read().decode("utf-8")
+    except RunTimeoutError:
+        raise
     except (HTTPError, URLError, TimeoutError) as exc:
         logger.warning("Could not send Telegram notification: %s", exc)
         return False
@@ -135,6 +154,8 @@ def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> b
     try:
         with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
             response_body = response.read().decode("utf-8")
+    except RunTimeoutError:
+        raise
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         logger.warning("Could not send Telegram photo: %s", exc)
         return False
@@ -159,19 +180,25 @@ def _send_result_notification(
     screenshot_paths: list[Path],
 ) -> None:
     message = _format_result_message(result)
-    if screenshot_paths and _send_telegram_photos(settings, screenshot_paths, message):
+    if screenshot_paths:
+        _send_telegram_photos(settings, screenshot_paths, message)
         return
 
     send_telegram_message(settings, message)
 
 
 def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
-    sent_any = False
-    for index, image_path in enumerate(image_paths):
-        photo_caption = caption if index == 0 else "Evidencia adicional del tramite."
-        sent_any = send_telegram_photo(settings, image_path, photo_caption) or sent_any
+    if not image_paths:
+        return False
 
-    return sent_any
+    primary_delivered = send_telegram_photo(settings, image_paths[0], caption)
+    if not primary_delivered:
+        primary_delivered = send_telegram_message(settings, caption)
+
+    for image_path in image_paths[1:]:
+        send_telegram_photo(settings, image_path, "Evidencia adicional del tramite.")
+
+    return primary_delivered
 
 
 def _normalize_screenshot_paths(

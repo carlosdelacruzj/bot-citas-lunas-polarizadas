@@ -50,10 +50,24 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if self.path == "/run-queue":
-            report = run_queue_with_report()
-        else:
-            report = run_with_report()
+        try:
+            if self.path == "/run-queue":
+                report = run_queue_with_report()
+            else:
+                report = run_with_report()
+        except Exception as exc:
+            logger.exception("Local API request failed")
+            self._send_json(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                {
+                    "status": "error",
+                    "message": str(exc),
+                    "exit_code": 1,
+                    "details": {"error_type": type(exc).__name__},
+                },
+            )
+            return
+
         http_status = HTTPStatus.OK if report.exit_code == 0 else HTTPStatus.INTERNAL_SERVER_ERROR
         self._send_json(http_status, asdict(report))
 

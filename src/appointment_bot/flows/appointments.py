@@ -1,4 +1,5 @@
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -191,6 +192,61 @@ def open_appointment_panel(page: Page) -> Page:
     return page
 
 
+def open_hidden_appointment_panel_for_observer(page: Page) -> Page:
+    button = page.locator(RESERVE_APPOINTMENT_SELECTOR)
+    if button.count() == 0:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro el boton oculto de citas para ejecutar el modo observador."
+        )
+
+    # TEMP REVIEW: Este click DOM se permite solo en el observador. No elimina estilos
+    # ni pulsa el boton final de reserva y nunca llama al servicio de captcha.
+    button.evaluate("element => element.click()")
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=10_000)
+    except PlaywrightTimeoutError:
+        logger.info("Hidden appointment button did not trigger a page load")
+    try:
+        _wait_for_reservation_controls_attached(page, timeout=15_000)
+    except PlaywrightTimeoutError as exc:
+        raise AppointmentWorkflowUnavailable(
+            "El postback oculto no entrego los controles de sede, fecha y hora."
+        ) from exc
+    return page
+
+
+def read_observer_dom_state(page: Page) -> dict[str, object]:
+    return page.evaluate(
+        """selectors => {
+            const [buttonSelector, siteSelector, dateSelector, hourSelector] = selectors;
+            const options = selector => {
+                const select = document.querySelector(selector);
+                if (!select) return [];
+                return Array.from(select.options).map(option => ({
+                    text: (option.innerText || "").trim(),
+                    value_present: Boolean(option.value)
+                }));
+            };
+            const button = document.querySelector(buttonSelector);
+            return {
+                url: window.location.href,
+                reserve_button_exists: Boolean(button),
+                reserve_button_visible: Boolean(
+                    button && button.getClientRects().length
+                    && getComputedStyle(button).visibility !== "hidden"
+                ),
+                reserve_button_type: button ? button.type : "",
+                reserve_button_name: button ? button.name : "",
+                reserve_button_onclick: button ? button.getAttribute("onclick") : "",
+                site_options: options(siteSelector),
+                date_options: options(dateSelector),
+                hour_options: options(hourSelector)
+            };
+        }""",
+        [RESERVE_APPOINTMENT_SELECTOR, SITE_SELECTOR, DATE_SELECTOR, HOUR_SELECTOR],
+    )
+
+
 def read_process_stages(page: Page) -> list[ProcessStage]:
     logger.info("Reading process stages")
     stages = page.evaluate(
@@ -263,10 +319,10 @@ def appointment_stage_result(stages: list[ProcessStage]) -> AvailabilityResult |
         return None
 
     return AvailabilityResult(
-        status="completed",
+        status="unknown",
         message=(
-            "La etapa Separa Cita Peritaje no esta pendiente. "
-            f"Estado actual: {appointment_stage.status}."
+            "La etapa Separa Cita Peritaje tiene un estado no reconocido para este flujo. "
+            f"Estado actual: {appointment_stage.status}. Requiere revision manual."
         ),
         details=details,
     )
@@ -291,6 +347,11 @@ def _wait_for_reservation_panel(page: Page) -> None:
 
 def _wait_for_reservation_controls(page: Page, *, timeout: int) -> None:
     page.locator(SITE_SELECTOR).wait_for(state="visible", timeout=timeout)
+    _wait_for_reservation_controls_attached(page, timeout=timeout)
+
+
+def _wait_for_reservation_controls_attached(page: Page, *, timeout: int) -> None:
+    page.locator(SITE_SELECTOR).wait_for(state="attached", timeout=timeout)
     page.locator(DATE_SELECTOR).wait_for(state="attached", timeout=timeout)
     page.locator(HOUR_SELECTOR).wait_for(state="attached", timeout=timeout)
 
@@ -335,25 +396,135 @@ def select_available_site(page: Page) -> Page:
 
     logger.info("Selecting site: %s", selected["text"])
     site_select.select_option(value=selected["value"], timeout=15_000)
-    site_select.dispatch_event("change", timeout=15_000)
     _wait_for_appointment_options(page)
     logger.info("Current page after site selection: %s", page.url)
     return page
 
 
-def read_appointment_availability(page: Page) -> AvailabilityResult:
+def select_available_site_for_observer(page: Page) -> Page:
+    site_select = page.locator(SITE_SELECTOR)
+    site_select.wait_for(state="attached", timeout=15_000)
+    options = _select_options(page, SITE_SELECTOR)
+    selected = next((option for option in options if _is_real_site_option(option["text"])), None)
+    if selected is None:
+        raise AppointmentWorkflowUnavailable(
+            "El observador no encontro una sede seleccionable."
+        )
+
+    # TEMP REVIEW: El select permanece oculto para esta cuenta. Cambiar su valor y
+    # emitir change reproduce el postback de consulta sin mostrar el modal ni reservar.
+    site_select.evaluate(
+        """(element, value) => {
+            element.value = value;
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+        }""",
+        selected["value"],
+    )
+    _wait_for_appointment_options(page)
+    return page
+
+
+def read_appointment_availability(
+    page: Page,
+    *,
+    include_person: bool = True,
+) -> AvailabilityResult:
     logger.info("Checking appointment availability")
     page.wait_for_load_state("domcontentloaded", timeout=30_000)
 
-    snapshot = _read_stable_appointment_snapshot(page)
-    result = _availability_result_from_snapshot(page, snapshot)
+    snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
+    result = _availability_result_from_snapshot(
+        page,
+        snapshot,
+        include_person=include_person,
+    )
     if result.status != "partial":
         return result
 
     logger.info("Partial availability detected; rechecking before notifying")
     page.wait_for_timeout(1_500)
-    snapshot = _read_stable_appointment_snapshot(page)
-    return _availability_result_from_snapshot(page, snapshot)
+    snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
+    return _availability_result_from_snapshot(
+        page,
+        snapshot,
+        include_person=include_person,
+    )
+
+
+def select_available_appointment(
+    page: Page,
+    *,
+    allow_hidden: bool = False,
+    include_person: bool = True,
+) -> AvailabilityResult:
+    logger.info("Selecting available appointment date and hour")
+    date_options = _real_options(_select_options(page, DATE_SELECTOR))
+    if not date_options:
+        raise AppointmentWorkflowUnavailable(
+            "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
+        )
+
+    for date_option in date_options:
+        previous_date = _selected_option_text(page, DATE_SELECTOR)
+        previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
+        date_select = page.locator(DATE_SELECTOR)
+        logger.info("Selecting appointment date: %s", date_option["text"])
+        _select_appointment_option(
+            date_select,
+            date_option["value"],
+            allow_hidden=allow_hidden,
+        )
+        hour_options = _wait_for_options_after_selection(
+            page,
+            HOUR_SELECTOR,
+            previous_signature=previous_hour_signature,
+            require_change=not _same_option(previous_date, date_option["text"]),
+            timeout=15_000,
+        )
+        hour_option = _first_real_option(hour_options)
+        if hour_option is None:
+            logger.info("No selectable hours found for date %s", date_option["text"])
+            continue
+
+        hour_select = page.locator(HOUR_SELECTOR)
+        logger.info("Selecting appointment hour: %s", hour_option["text"])
+        _select_appointment_option(
+            hour_select,
+            hour_option["value"],
+            allow_hidden=allow_hidden,
+        )
+        page.wait_for_timeout(500)
+
+        snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
+        if (
+            _same_option(snapshot.date, date_option["text"])
+            and _same_option(snapshot.hour, hour_option["text"])
+        ):
+            return AvailabilityResult(
+                status="available",
+                message="Se seleccionaron una fecha y una hora disponibles.",
+                details=_snapshot_details(snapshot, include_person=include_person),
+            )
+
+        logger.warning(
+            "Appointment selection was not preserved for date %s and hour %s",
+            date_option["text"],
+            hour_option["text"],
+        )
+
+    snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
+    return AvailabilityResult(
+        status="partial",
+        message=(
+            "Se encontraron fechas disponibles, pero ninguna tiene una hora "
+            "seleccionable y estable por ahora."
+        ),
+        details=_snapshot_details(snapshot, include_person=include_person),
+    )
+
+
+def has_available_date_options(page: Page) -> bool:
+    return bool(_real_options(_select_options(page, DATE_SELECTOR)))
 
 
 def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) -> Page:
@@ -394,6 +565,55 @@ def wait_for_reservation_confirmation(page: Page) -> bool:
     except PlaywrightTimeoutError:
         logger.info("Reservation confirmation text was not detected before timeout")
         return False
+
+
+def wait_for_programmed_appointment_stage(
+    page: Page,
+    expected_details: dict[str, str] | None,
+    *,
+    timeout: int = 15_000,
+) -> ProcessStage | None:
+    expected_details = expected_details or {}
+    expected_date = _normalize_option(expected_details.get("fecha", ""))
+    expected_hour = _normalize_option(expected_details.get("hora", ""))
+    deadline = time.monotonic() + timeout / 1_000
+    mismatch_logged = False
+
+    while time.monotonic() < deadline:
+        try:
+            stages = read_process_stages(page)
+        except PlaywrightError:
+            page.wait_for_timeout(500)
+            continue
+        stage = next(
+            (
+                item
+                for item in stages
+                if item.stage.strip().lower() == "separa cita peritaje"
+                and item.status.strip().lower() == "programado"
+            ),
+            None,
+        )
+        if stage is not None:
+            programmed_text = _normalize_option(f"{stage.date} {stage.message}")
+            date_matches = not expected_date or expected_date in programmed_text
+            hour_matches = not expected_hour or expected_hour in programmed_text
+            if date_matches and hour_matches:
+                return stage
+            if not mismatch_logged:
+                logger.warning(
+                    "Programmed stage does not match selected appointment: "
+                    "expected %s %s, got %s",
+                    expected_date,
+                    expected_hour,
+                    programmed_text,
+                )
+                mismatch_logged = True
+
+        page.wait_for_timeout(500)
+
+    logger.info("Programmed appointment stage was not confirmed before timeout")
+    return None
 
 
 def dismiss_reservation_confirmation(page: Page) -> None:
@@ -458,13 +678,15 @@ def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
 def _availability_result_from_snapshot(
     page: Page,
     snapshot: AppointmentSnapshot,
+    *,
+    include_person: bool = True,
 ) -> AvailabilityResult:
     date_options = snapshot.date_options
     hour_options = snapshot.hour_options
 
     has_date_options = _has_real_options(date_options)
     has_hour_options = _has_real_options(hour_options)
-    details = _snapshot_details(snapshot)
+    details = _snapshot_details(snapshot, include_person=include_person)
 
     if has_date_options and has_hour_options:
         return AvailabilityResult(
@@ -498,8 +720,11 @@ def _availability_result_from_snapshot(
 
     if any(text in content for text in AVAILABLE_TEXTS):
         return AvailabilityResult(
-            status="available",
-            message="Se detecto texto compatible con cupo disponible.",
+            status="partial",
+            message=(
+                "Se detecto texto compatible con cupo disponible, "
+                "pero no hay fecha y hora seleccionables."
+            ),
             details=details,
         )
 
@@ -520,12 +745,20 @@ def _availability_result_from_snapshot(
     )
 
 
-def _read_stable_appointment_snapshot(page: Page) -> AppointmentSnapshot:
+def _read_stable_appointment_snapshot(
+    page: Page,
+    *,
+    log_person: bool = True,
+) -> AppointmentSnapshot:
     previous_snapshot: AppointmentSnapshot | None = None
     current_snapshot: AppointmentSnapshot | None = None
     for attempt in range(1, 5):
         current_snapshot = _read_appointment_snapshot(page)
-        logger.info("Appointment snapshot %s: %s", attempt, _snapshot_details(current_snapshot))
+        logger.info(
+            "Appointment snapshot %s: %s",
+            attempt,
+            _snapshot_details(current_snapshot, include_person=log_person),
+        )
         logger.info("Date options: %s", current_snapshot.date_options)
         logger.info("Hour options: %s", current_snapshot.hour_options)
 
@@ -559,14 +792,19 @@ def _read_appointment_snapshot(page: Page) -> AppointmentSnapshot:
     )
 
 
-def _snapshot_details(snapshot: AppointmentSnapshot) -> dict[str, str]:
+def _snapshot_details(
+    snapshot: AppointmentSnapshot,
+    *,
+    include_person: bool = True,
+) -> dict[str, str]:
     details = {
         "sede": _real_or_selected(snapshot.site, snapshot.site_options),
         "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
         "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
         "cupos": snapshot.slots,
-        "nombre": snapshot.person_name,
     }
+    if include_person:
+        details["nombre"] = snapshot.person_name
     return {key: value for key, value in details.items() if value}
 
 
@@ -591,6 +829,34 @@ def _select_options(page: Page, selector: str) -> list[dict[str, str]]:
             value: option.value
         }))"""
     )
+
+
+def _first_real_option(options: list[dict[str, str]]) -> dict[str, str] | None:
+    return next(iter(_real_options(options)), None)
+
+
+def _select_appointment_option(locator, value: str, *, allow_hidden: bool) -> None:
+    if not allow_hidden:
+        locator.select_option(value=value, timeout=15_000)
+        return
+
+    # TEMP REVIEW: Solo el observador usa esta rama para consultar selects ocultos.
+    # El evento change puede cargar datos, pero no ejecuta captcha ni reserva.
+    locator.evaluate(
+        """(element, optionValue) => {
+            element.value = optionValue;
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+        }""",
+        value,
+    )
+
+
+def _real_options(options: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [option for option in options if _is_real_appointment_option(option["text"])]
+
+
+def _options_signature(options: list[dict[str, str]]) -> tuple[tuple[str, str], ...]:
+    return tuple((option["value"], option["text"]) for option in options)
 
 
 def _selected_option_text(page: Page, selector: str) -> str:
@@ -740,10 +1006,57 @@ def _wait_for_appointment_options(page: Page) -> None:
         logger.info("Appointment date/hour options did not populate after site selection")
 
 
+def _wait_for_options_after_selection(
+    page: Page,
+    selector: str,
+    *,
+    previous_signature: tuple[tuple[str, str], ...],
+    require_change: bool,
+    timeout: int,
+) -> list[dict[str, str]]:
+    deadline = time.monotonic() + timeout / 1_000
+    last_signature = None
+    stable_reads = 0
+    changed = False
+    current_options = []
+
+    while time.monotonic() < deadline:
+        current_options = _select_options(page, selector)
+        current_signature = _options_signature(current_options)
+        changed = changed or current_signature != previous_signature
+        if current_signature == last_signature:
+            stable_reads += 1
+        else:
+            stable_reads = 1
+            last_signature = current_signature
+
+        has_real_options = _has_real_options([option["text"] for option in current_options])
+        if stable_reads >= 2 and has_real_options and (changed or not require_change):
+            return current_options
+
+        page.wait_for_timeout(250)
+
+    return current_options if changed or not require_change else []
+
+
 def _only_no_slots(options: list[str]) -> bool:
     return bool(options) and all(option.lower() == "sin cupos" for option in options)
 
 
 def _has_real_options(options: list[str]) -> bool:
-    ignored = {"", "sin cupos", "seleccione", "seleccione la fecha", "seleccione la hora"}
-    return any(option.strip().lower() not in ignored for option in options)
+    return any(_is_real_appointment_option(option) for option in options)
+
+
+def _is_real_appointment_option(text: str) -> bool:
+    normalized = text.strip().lower()
+    return (
+        bool(normalized) and normalized != "sin cupos" and not normalized.startswith("seleccione")
+    )
+
+
+def _same_option(actual: str, expected: str) -> bool:
+    return _normalize_option(actual) == _normalize_option(expected)
+
+
+def _normalize_option(value: str) -> str:
+    return " ".join(value.strip().lower().split())

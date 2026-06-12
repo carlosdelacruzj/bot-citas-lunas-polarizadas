@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -43,7 +44,7 @@ class RunRecord:
 def init_database(settings: Settings | None = None) -> None:
     settings = _settings(settings)
     settings.database_path.parent.mkdir(parents=True, exist_ok=True)
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS clients (
@@ -112,7 +113,7 @@ def add_client(
     settings = _settings(settings)
     init_database(settings)
     now = _now()
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         connection.execute(
             """
             INSERT INTO clients (
@@ -139,7 +140,7 @@ def add_client(
 def list_clients(settings: Settings | None = None) -> list[Client]:
     settings = _settings(settings)
     init_database(settings)
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         rows = connection.execute(
             """
             SELECT client_id, name, username, password, priority, active, done,
@@ -154,38 +155,78 @@ def list_clients(settings: Settings | None = None) -> list[Client]:
 def list_active_clients(settings: Settings | None = None) -> list[Client]:
     settings = _settings(settings)
     init_database(settings)
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         rows = connection.execute(
             """
             SELECT c.client_id, c.name, c.username, c.password, c.priority,
                    c.active, c.done, c.created_at, c.updated_at
             FROM clients c
-            LEFT JOIN client_state s ON s.client_id = c.client_id
             WHERE c.active = 1
               AND c.done = 0
-              AND (s.next_allowed_at IS NULL OR s.next_allowed_at <= ?)
             ORDER BY c.priority DESC, c.created_at ASC
-            """,
-            (_now(),),
+            """
         ).fetchall()
     return [_client_from_row(row) for row in rows]
+
+
+def client_backoff_seconds(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> int:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        row = connection.execute(
+            "SELECT next_allowed_at FROM client_state WHERE client_id = ?",
+            (client_id,),
+        ).fetchone()
+
+    if row is None or not row["next_allowed_at"]:
+        return 0
+
+    try:
+        next_allowed_at = datetime.fromisoformat(str(row["next_allowed_at"]))
+    except ValueError:
+        return 0
+    return max(0, int((next_allowed_at - datetime.now()).total_seconds()))
 
 
 def set_client_active(client_id: str, active: bool, *, settings: Settings | None = None) -> None:
     settings = _settings(settings)
     init_database(settings)
-    with _connect(settings.database_path) as connection:
-        connection.execute(
-            "UPDATE clients SET active = ?, updated_at = ? WHERE client_id = ?",
-            (1 if active else 0, _now(), client_id),
-        )
+    with _connection(settings.database_path) as connection:
+        now = _now()
+        if active:
+            connection.execute(
+                "UPDATE clients SET active = 1, done = 0, updated_at = ? WHERE client_id = ?",
+                (now, client_id),
+            )
+            connection.execute(
+                """
+                UPDATE client_state
+                SET next_allowed_at = NULL, consecutive_errors = 0, programmed_at = NULL
+                WHERE client_id = ?
+                """,
+                (client_id,),
+            )
+        else:
+            connection.execute(
+                "UPDATE clients SET active = 0, updated_at = ? WHERE client_id = ?",
+                (now, client_id),
+            )
 
 
-def mark_client_done(client_id: str, *, settings: Settings | None = None) -> None:
+def mark_client_done(
+    client_id: str,
+    *,
+    status: str = "registered",
+    settings: Settings | None = None,
+) -> None:
     settings = _settings(settings)
     init_database(settings)
     now = _now()
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         connection.execute(
             "UPDATE clients SET done = 1, active = 0, updated_at = ? WHERE client_id = ?",
             (now, client_id),
@@ -193,7 +234,7 @@ def mark_client_done(client_id: str, *, settings: Settings | None = None) -> Non
         connection.execute(
             """
             INSERT INTO client_state (client_id, programmed_at, last_status, last_run_at)
-            VALUES (?, ?, 'registered', ?)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(client_id) DO UPDATE SET
                 programmed_at = excluded.programmed_at,
                 last_status = excluded.last_status,
@@ -201,7 +242,7 @@ def mark_client_done(client_id: str, *, settings: Settings | None = None) -> Non
                 next_allowed_at = NULL,
                 consecutive_errors = 0
             """,
-            (client_id, now, now),
+            (client_id, now, status, now),
         )
 
 
@@ -222,8 +263,12 @@ def update_client_state(
         next_allowed_at = (datetime.now() + timedelta(seconds=backoff_seconds)).isoformat(
             timespec="seconds"
         )
-    is_error = exit_code != 0 or status == "error"
-    with _connect(settings.database_path) as connection:
+    is_error = exit_code != 0 or status in {
+        "error",
+        "unknown",
+        "reservation_unconfirmed",
+    }
+    with _connection(settings.database_path) as connection:
         connection.execute(
             """
             INSERT INTO client_state (
@@ -266,7 +311,7 @@ def create_run_record(
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
-    with _connect(settings.database_path) as connection:
+    with _connection(settings.database_path) as connection:
         connection.execute(
             """
             INSERT OR REPLACE INTO runs (
@@ -309,6 +354,16 @@ def _connect(path: Path) -> sqlite3.Connection:
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA busy_timeout = 5000")
     return connection
+
+
+@contextmanager
+def _connection(path: Path) -> Iterator[sqlite3.Connection]:
+    connection = _connect(path)
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
 
 
 def _client_from_row(row: sqlite3.Row) -> Client:
