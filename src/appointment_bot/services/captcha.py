@@ -13,7 +13,14 @@ def solve_normal_captcha(image_path: Path, settings: Settings) -> str:
         raise ValueError("APIKEY_2CAPTCHA is required to solve the reservation captcha.")
 
     logger.info("Sending reservation captcha to 2captcha: %s", image_path)
-    result = TwoCaptcha(settings.captcha_api_key).normal(str(image_path))
+    solver = TwoCaptcha(
+        settings.captcha_api_key,
+        defaultTimeout=settings.reservation_timeout_seconds,
+    )
+    result = solver.normal(
+        str(image_path),
+        timeout=settings.reservation_timeout_seconds,
+    )
     solution = str(result.get("code") or "").strip()
     if not solution:
         raise RuntimeError(f"2captcha returned an empty captcha solution: {result}")

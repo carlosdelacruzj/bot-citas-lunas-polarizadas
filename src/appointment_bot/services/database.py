@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -10,6 +11,16 @@ from pathlib import Path
 from typing import Any
 
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.domain import (
+    ClientStateStatus,
+    ResultStatus,
+    sanitize_details,
+)
+from appointment_bot.utils.sanitization import sanitize_text
+
+_INITIALIZED_PATHS: set[Path] = set()
+_INITIALIZATION_LOCK = threading.Lock()
+SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -41,12 +52,36 @@ class RunRecord:
     screenshot_path: str | None
 
 
+@dataclass(frozen=True)
+class WorkerState:
+    phase: str = "stopped"
+    paused: bool = False
+    current_client_id: str | None = None
+    masked_account: str | None = None
+    session_started_at: str | None = None
+    last_check_at: str | None = None
+    next_check_at: str | None = None
+    confirmed_reservations: int = 0
+    consecutive_errors: int = 0
+    last_error: str | None = None
+    availability_signature: str | None = None
+    owner_token: str | None = None
+    updated_at: str | None = None
+
+
 def init_database(settings: Settings | None = None) -> None:
     settings = _settings(settings)
-    settings.database_path.parent.mkdir(parents=True, exist_ok=True)
-    with _connection(settings.database_path) as connection:
-        connection.executescript(
-            """
+    database_path = settings.database_path.resolve()
+    if database_path in _INITIALIZED_PATHS:
+        return
+
+    with _INITIALIZATION_LOCK:
+        if database_path in _INITIALIZED_PATHS:
+            return
+        database_path.parent.mkdir(parents=True, exist_ok=True)
+        with _connection(database_path) as connection:
+            connection.executescript(
+                """
             CREATE TABLE IF NOT EXISTS clients (
                 client_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -93,12 +128,34 @@ def init_database(settings: Settings | None = None) -> None:
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS worker_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                phase TEXT NOT NULL DEFAULT 'stopped',
+                paused INTEGER NOT NULL DEFAULT 0,
+                current_client_id TEXT,
+                masked_account TEXT,
+                session_started_at TEXT,
+                last_check_at TEXT,
+                next_check_at TEXT,
+                confirmed_reservations INTEGER NOT NULL DEFAULT 0,
+                consecutive_errors INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                availability_signature TEXT,
+                owner_token TEXT,
+                updated_at TEXT NOT NULL
+            );
+
+            INSERT OR IGNORE INTO worker_state (id, updated_at)
+            VALUES (1, CURRENT_TIMESTAMP);
+
             CREATE INDEX IF NOT EXISTS idx_clients_queue
                 ON clients(active, done, priority DESC, created_at ASC);
             CREATE INDEX IF NOT EXISTS idx_runs_client_started
                 ON runs(client_id, started_at DESC);
             """
-        )
+            )
+            _migrate_database(connection)
+        _INITIALIZED_PATHS.add(database_path)
 
 
 def add_client(
@@ -135,6 +192,18 @@ def add_client(
             "INSERT OR IGNORE INTO client_state (client_id) VALUES (?)",
             (client_id,),
         )
+        connection.execute(
+            """
+            UPDATE client_state
+            SET last_status = NULL,
+                last_message = NULL,
+                consecutive_errors = 0,
+                next_allowed_at = NULL,
+                programmed_at = NULL
+            WHERE client_id = ?
+            """,
+            (client_id,),
+        )
 
 
 def list_clients(settings: Settings | None = None) -> list[Client]:
@@ -150,6 +219,26 @@ def list_clients(settings: Settings | None = None) -> list[Client]:
             """
         ).fetchall()
     return [_client_from_row(row) for row in rows]
+
+
+def get_client(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> Client | None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        row = connection.execute(
+            """
+            SELECT client_id, name, username, password, priority, active, done,
+                   created_at, updated_at
+            FROM clients
+            WHERE client_id = ?
+            """,
+            (client_id,),
+        ).fetchone()
+    return _client_from_row(row) if row is not None else None
 
 
 def list_active_clients(settings: Settings | None = None) -> list[Client]:
@@ -192,6 +281,121 @@ def client_backoff_seconds(
     return max(0, int((next_allowed_at - datetime.now()).total_seconds()))
 
 
+def client_reservation_pending(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> bool:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        row = connection.execute(
+            "SELECT last_status FROM client_state WHERE client_id = ?",
+            (client_id,),
+        ).fetchone()
+    return row is not None and row["last_status"] in {
+        ClientStateStatus.SUBMISSION_INTENT,
+        ClientStateStatus.SUBMISSION_PENDING,
+        ClientStateStatus.RESERVATION_UNCONFIRMED,
+    }
+
+
+def mark_client_submission_pending(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    with _connection(settings.database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO client_state (client_id, last_status, last_message, last_run_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(client_id) DO UPDATE SET
+                last_status = excluded.last_status,
+                last_message = excluded.last_message,
+                last_run_at = excluded.last_run_at,
+                next_allowed_at = NULL
+            """,
+            (
+                client_id,
+                ClientStateStatus.SUBMISSION_PENDING,
+                "Se inicio el envio de una reserva; falta confirmar el resultado.",
+                now,
+            ),
+        )
+
+
+def mark_client_submission_intent(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    _set_client_submission_state(
+        client_id,
+        ClientStateStatus.SUBMISSION_INTENT,
+        "Se iniciara el click de reserva; todavia no se confirma su envio.",
+        settings=settings,
+    )
+
+
+def clear_client_submission_state(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        connection.execute(
+            """
+            UPDATE client_state
+            SET last_status = NULL,
+                last_message = NULL,
+                next_allowed_at = NULL
+            WHERE client_id = ?
+              AND last_status IN (?, ?, ?)
+            """,
+            (
+                client_id,
+                ClientStateStatus.SUBMISSION_INTENT,
+                ClientStateStatus.SUBMISSION_PENDING,
+                ClientStateStatus.RESERVATION_UNCONFIRMED,
+            ),
+        )
+
+
+def client_submission_age_seconds(
+    client_id: str,
+    *,
+    settings: Settings | None = None,
+) -> int | None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        row = connection.execute(
+            """
+            SELECT last_status, last_run_at
+            FROM client_state
+            WHERE client_id = ?
+            """,
+            (client_id,),
+        ).fetchone()
+    if row is None or row["last_status"] not in {
+        ClientStateStatus.SUBMISSION_INTENT,
+        ClientStateStatus.SUBMISSION_PENDING,
+        ClientStateStatus.RESERVATION_UNCONFIRMED,
+    }:
+        return None
+    try:
+        started_at = datetime.fromisoformat(str(row["last_run_at"]))
+    except (TypeError, ValueError):
+        return None
+    return max(0, int((datetime.now() - started_at).total_seconds()))
+
+
 def set_client_active(client_id: str, active: bool, *, settings: Settings | None = None) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -205,7 +409,11 @@ def set_client_active(client_id: str, active: bool, *, settings: Settings | None
             connection.execute(
                 """
                 UPDATE client_state
-                SET next_allowed_at = NULL, consecutive_errors = 0, programmed_at = NULL
+                SET last_status = NULL,
+                    last_message = NULL,
+                    next_allowed_at = NULL,
+                    consecutive_errors = 0,
+                    programmed_at = NULL
                 WHERE client_id = ?
                 """,
                 (client_id,),
@@ -264,9 +472,9 @@ def update_client_state(
             timespec="seconds"
         )
     is_error = exit_code != 0 or status in {
-        "error",
-        "unknown",
-        "reservation_unconfirmed",
+        ResultStatus.ERROR,
+        ResultStatus.UNKNOWN,
+        ResultStatus.RESERVATION_UNCONFIRMED,
     }
     with _connection(settings.database_path) as connection:
         connection.execute(
@@ -293,7 +501,7 @@ def update_client_state(
             (
                 client_id,
                 status,
-                message,
+                sanitize_text(message),
                 1 if is_error else 0,
                 next_allowed_at,
                 now,
@@ -325,14 +533,18 @@ def create_run_record(
                 record.run_id,
                 record.client_id,
                 record.status,
-                record.message,
+                sanitize_text(record.message),
                 record.exit_code,
                 record.started_at,
                 record.finished_at,
                 record.duration_seconds,
                 1 if record.reservation_attempted else 0,
                 1 if record.reservation_confirmed else 0,
-                json.dumps(record.details, ensure_ascii=False) if record.details else None,
+                (
+                    json.dumps(sanitize_details(record.details), ensure_ascii=False)
+                    if record.details
+                    else None
+                ),
                 record.screenshot_path,
                 _now(),
             ),
@@ -344,8 +556,148 @@ def create_run_record(
         )
 
 
+def get_worker_state(settings: Settings | None = None) -> WorkerState:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(settings.database_path) as connection:
+        row = connection.execute(
+            """
+            SELECT phase, paused, current_client_id, masked_account,
+                   session_started_at, last_check_at, next_check_at,
+                   confirmed_reservations, consecutive_errors, last_error,
+                   availability_signature, owner_token, updated_at
+            FROM worker_state
+            WHERE id = 1
+            """
+        ).fetchone()
+    if row is None:
+        return WorkerState()
+    return WorkerState(
+        phase=str(row["phase"]),
+        paused=bool(row["paused"]),
+        current_client_id=row["current_client_id"],
+        masked_account=row["masked_account"],
+        session_started_at=row["session_started_at"],
+        last_check_at=row["last_check_at"],
+        next_check_at=row["next_check_at"],
+        confirmed_reservations=int(row["confirmed_reservations"]),
+        consecutive_errors=int(row["consecutive_errors"]),
+        last_error=row["last_error"],
+        availability_signature=row["availability_signature"],
+        owner_token=row["owner_token"],
+        updated_at=row["updated_at"],
+    )
+
+
+def update_worker_state(
+    settings: Settings | None = None,
+    *,
+    expected_owner_token: str | None = None,
+    **changes: Any,
+) -> WorkerState:
+    settings = _settings(settings)
+    init_database(settings)
+    allowed = {
+        "phase",
+        "paused",
+        "current_client_id",
+        "masked_account",
+        "session_started_at",
+        "last_check_at",
+        "next_check_at",
+        "confirmed_reservations",
+        "consecutive_errors",
+        "last_error",
+        "availability_signature",
+        "owner_token",
+    }
+    invalid = set(changes) - allowed
+    if invalid:
+        raise ValueError(f"Invalid worker state fields: {sorted(invalid)}")
+    if not changes:
+        return get_worker_state(settings)
+
+    assignments = []
+    values = []
+    for key, value in changes.items():
+        assignments.append(f"{key} = ?")
+        values.append(1 if key == "paused" and value else 0 if key == "paused" else value)
+    assignments.append("updated_at = ?")
+    values.append(_now())
+    values.append(1)
+    where = "id = ?"
+    if expected_owner_token is not None:
+        where += " AND owner_token = ?"
+        values.append(expected_owner_token)
+    with _connection(settings.database_path) as connection:
+        cursor = connection.execute(
+            f"UPDATE worker_state SET {', '.join(assignments)} WHERE {where}",
+            values,
+        )
+        if expected_owner_token is not None and cursor.rowcount != 1:
+            raise RuntimeError("Worker state ownership changed during the update.")
+    return get_worker_state(settings)
+
+
+def cleanup_database_history(
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    cutoff = (datetime.now() - timedelta(days=settings.cleanup_retention_days)).isoformat(
+        timespec="seconds"
+    )
+    with _connection(settings.database_path) as connection:
+        connection.execute("DELETE FROM runs WHERE created_at < ?", (cutoff,))
+        connection.execute(
+            """
+            DELETE FROM run_screenshots
+            WHERE run_id NOT IN (SELECT run_id FROM runs)
+            """
+        )
+
+
 def _settings(settings: Settings | None) -> Settings:
     return settings or load_settings(require_login=False)
+
+
+def _set_client_submission_state(
+    client_id: str,
+    status: ClientStateStatus,
+    message: str,
+    *,
+    settings: Settings | None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    with _connection(settings.database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO client_state (client_id, last_status, last_message, last_run_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(client_id) DO UPDATE SET
+                last_status = excluded.last_status,
+                last_message = excluded.last_message,
+                last_run_at = excluded.last_run_at,
+                next_allowed_at = NULL
+            """,
+            (client_id, status, message, now),
+        )
+
+
+def _migrate_database(connection: sqlite3.Connection) -> None:
+    version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+    if version < 1:
+        version = 1
+    if version < 2:
+        worker_columns = {
+            str(row["name"]) for row in connection.execute("PRAGMA table_info(worker_state)")
+        }
+        if "owner_token" not in worker_columns:
+            connection.execute("ALTER TABLE worker_state ADD COLUMN owner_token TEXT")
+        version = 2
+    connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
 def _connect(path: Path) -> sqlite3.Connection:
@@ -353,6 +705,7 @@ def _connect(path: Path) -> sqlite3.Connection:
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA busy_timeout = 5000")
+    connection.execute("PRAGMA journal_mode = WAL")
     return connection
 
 

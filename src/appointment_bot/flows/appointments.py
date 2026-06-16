@@ -1,14 +1,19 @@
 import logging
+import threading
 import time
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from appointment_bot.config import Settings
+from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.captcha import solve_normal_captcha
 
 logger = logging.getLogger(__name__)
@@ -32,6 +37,10 @@ CONFIRMATION_TEXTS = [
     "reservado con exito",
 ]
 APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
+    (
+        "xpath=//*[@id='MainContent_idUcitas_cbosede']"
+        "/ancestor::*[.//*[@id='MainContent_idUcitas_btgSiguiente']][1]"
+    ),
     ".modal:has(#MainContent_idUcitas_cbosede)",
     ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
     "[role='dialog']:has(#MainContent_idUcitas_cbosede)",
@@ -73,22 +82,19 @@ UNAVAILABLE_TEXTS = [
 ]
 
 
-@dataclass(frozen=True)
-class AvailabilityResult:
-    status: str
-    message: str
-    details: dict[str, str] | None = None
-
-
-@dataclass(frozen=True)
-class ProcessStage:
-    stage: str
-    date: str
-    status: str
-    message: str
-
-
 class AppointmentWorkflowUnavailable(RuntimeError):
+    pass
+
+
+class AppointmentWorkflowCancelled(RuntimeError):
+    pass
+
+
+class ReservationSubmissionUncertain(RuntimeError):
+    pass
+
+
+class AppointmentOptionsNotRefreshed(RuntimeError):
     pass
 
 
@@ -199,7 +205,7 @@ def open_hidden_appointment_panel_for_observer(page: Page) -> Page:
             "No se encontro el boton oculto de citas para ejecutar el modo observador."
         )
 
-    # TEMP REVIEW: Este click DOM se permite solo en el observador. No elimina estilos
+    # Este click DOM se permite solo en el observador. No elimina estilos
     # ni pulsa el boton final de reserva y nunca llama al servicio de captcha.
     button.evaluate("element => element.click()")
     try:
@@ -244,87 +250,6 @@ def read_observer_dom_state(page: Page) -> dict[str, object]:
             };
         }""",
         [RESERVE_APPOINTMENT_SELECTOR, SITE_SELECTOR, DATE_SELECTOR, HOUR_SELECTOR],
-    )
-
-
-def read_process_stages(page: Page) -> list[ProcessStage]:
-    logger.info("Reading process stages")
-    stages = page.evaluate(
-        """() => {
-            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
-            const tables = Array.from(document.querySelectorAll("table"));
-            const table = tables.find(candidate => {
-                const text = normalize(candidate.innerText);
-                return text.includes("Separa Cita Peritaje")
-                    || text.includes("Ingresa Solicitud");
-            });
-            if (!table) return [];
-
-            return Array.from(table.querySelectorAll("tr")).map(row => {
-                const cells = Array.from(row.querySelectorAll("td"));
-                return cells.map(cell => normalize(cell.innerText));
-            }).filter(cells => cells.length >= 3).map(cells => ({
-                stage: cells[0] || "",
-                date: cells[1] || "",
-                status: cells[2] || "",
-                message: cells[3] || "",
-            }));
-        }"""
-    )
-    return [
-        ProcessStage(
-            stage=str(stage.get("stage") or ""),
-            date=str(stage.get("date") or ""),
-            status=str(stage.get("status") or ""),
-            message=str(stage.get("message") or ""),
-        )
-        for stage in stages
-    ]
-
-
-def appointment_stage_result(stages: list[ProcessStage]) -> AvailabilityResult | None:
-    appointment_stage = next(
-        (
-            stage
-            for stage in stages
-            if stage.stage.strip().lower() == "separa cita peritaje"
-        ),
-        None,
-    )
-    if appointment_stage is None:
-        logger.warning("Could not find Separa Cita Peritaje stage")
-        return None
-
-    normalized_status = appointment_stage.status.strip().lower()
-    details = {
-        "etapa": appointment_stage.stage,
-        "estado": appointment_stage.status,
-    }
-    if appointment_stage.date:
-        details["fecha"] = appointment_stage.date
-    if appointment_stage.message:
-        details["mensaje"] = appointment_stage.message
-
-    if normalized_status == "programado":
-        return AvailabilityResult(
-            status="completed",
-            message=(
-                "La etapa Separa Cita Peritaje ya esta en estado Programado. "
-                "No hay una cita pendiente por reservar."
-            ),
-            details=details,
-        )
-
-    if normalized_status == "pendiente":
-        return None
-
-    return AvailabilityResult(
-        status="unknown",
-        message=(
-            "La etapa Separa Cita Peritaje tiene un estado no reconocido para este flujo. "
-            f"Estado actual: {appointment_stage.status}. Requiere revision manual."
-        ),
-        details=details,
     )
 
 
@@ -379,15 +304,15 @@ def _trigger_reserve_appointment_postback(page: Page) -> None:
     )
 
 
-def select_available_site(page: Page) -> Page:
+def select_available_site(page: Page, *, timeout: int = 15_000) -> Page:
     logger.info("Selecting available site")
     site_select = page.locator(SITE_SELECTOR)
-    site_select.wait_for(state="visible", timeout=15_000)
+    site_select.wait_for(state="visible", timeout=timeout)
 
     options = _select_options(page, SITE_SELECTOR)
     logger.info("Site options: %s", [option["text"] for option in options])
 
-    selected = next((option for option in options if _is_real_site_option(option["text"])), None)
+    selected = next((option for option in options if _is_real_site_option(option)), None)
     if selected is None:
         raise AppointmentWorkflowUnavailable(
             "No se encontro una sede seleccionable. "
@@ -395,24 +320,34 @@ def select_available_site(page: Page) -> Page:
         )
 
     logger.info("Selecting site: %s", selected["text"])
-    site_select.select_option(value=selected["value"], timeout=15_000)
-    _wait_for_appointment_options(page)
+    refresh_token = _mark_select_for_refresh(page, SITE_SELECTOR)
+    previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
+    previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
+    site_select.select_option(value=selected["value"], timeout=timeout)
+    _wait_for_appointment_options(
+        page,
+        refresh_token=refresh_token,
+        previous_date_signature=previous_date,
+        previous_hour_signature=previous_hour,
+        timeout=timeout,
+    )
     logger.info("Current page after site selection: %s", page.url)
     return page
 
 
-def select_available_site_for_observer(page: Page) -> Page:
+def select_available_site_for_observer(page: Page, *, timeout: int = 15_000) -> Page:
     site_select = page.locator(SITE_SELECTOR)
-    site_select.wait_for(state="attached", timeout=15_000)
+    site_select.wait_for(state="attached", timeout=timeout)
     options = _select_options(page, SITE_SELECTOR)
-    selected = next((option for option in options if _is_real_site_option(option["text"])), None)
+    selected = next((option for option in options if _is_real_site_option(option)), None)
     if selected is None:
-        raise AppointmentWorkflowUnavailable(
-            "El observador no encontro una sede seleccionable."
-        )
+        raise AppointmentWorkflowUnavailable("El observador no encontro una sede seleccionable.")
 
-    # TEMP REVIEW: El select permanece oculto para esta cuenta. Cambiar su valor y
+    # El select permanece oculto para esta cuenta. Cambiar su valor y
     # emitir change reproduce el postback de consulta sin mostrar el modal ni reservar.
+    refresh_token = _mark_select_for_refresh(page, SITE_SELECTOR)
+    previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
+    previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
     site_select.evaluate(
         """(element, value) => {
             element.value = value;
@@ -420,7 +355,13 @@ def select_available_site_for_observer(page: Page) -> Page:
         }""",
         selected["value"],
     )
-    _wait_for_appointment_options(page)
+    _wait_for_appointment_options(
+        page,
+        refresh_token=refresh_token,
+        previous_date_signature=previous_date,
+        previous_hour_signature=previous_hour,
+        timeout=timeout,
+    )
     return page
 
 
@@ -428,9 +369,10 @@ def read_appointment_availability(
     page: Page,
     *,
     include_person: bool = True,
+    timeout: int = 30_000,
 ) -> AvailabilityResult:
     logger.info("Checking appointment availability")
-    page.wait_for_load_state("domcontentloaded", timeout=30_000)
+    page.wait_for_load_state("domcontentloaded", timeout=timeout)
 
     snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
     result = _availability_result_from_snapshot(
@@ -456,6 +398,7 @@ def select_available_appointment(
     *,
     allow_hidden: bool = False,
     include_person: bool = True,
+    timeout: int = 15_000,
 ) -> AvailabilityResult:
     logger.info("Selecting available appointment date and hour")
     date_options = _real_options(_select_options(page, DATE_SELECTOR))
@@ -479,7 +422,7 @@ def select_available_appointment(
             HOUR_SELECTOR,
             previous_signature=previous_hour_signature,
             require_change=not _same_option(previous_date, date_option["text"]),
-            timeout=15_000,
+            timeout=timeout,
         )
         hour_option = _first_real_option(hour_options)
         if hour_option is None:
@@ -496,9 +439,8 @@ def select_available_appointment(
         page.wait_for_timeout(500)
 
         snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
-        if (
-            _same_option(snapshot.date, date_option["text"])
-            and _same_option(snapshot.hour, hour_option["text"])
+        if _same_option(snapshot.date, date_option["text"]) and _same_option(
+            snapshot.hour, hour_option["text"]
         ):
             return AvailabilityResult(
                 status="available",
@@ -527,9 +469,37 @@ def has_available_date_options(page: Page) -> bool:
     return bool(_real_options(_select_options(page, DATE_SELECTOR)))
 
 
-def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) -> Page:
+def solve_reservation_captcha_and_click_reserve(
+    page: Page,
+    settings: Settings,
+    *,
+    cancel_event: threading.Event | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    expected_details: dict[str, Any] | None = None,
+    on_submission_intent: Callable[[], None] | None = None,
+    on_submission_started: Callable[[], None] | None = None,
+) -> Page:
+    if can_submit is not None and not can_submit():
+        raise AppointmentWorkflowCancelled("El cliente fue pausado antes de resolver el captcha.")
+    validate_selected_appointment(page, expected_details)
     captcha_path = _save_reservation_panel_image(page, settings)
-    captcha_solution = solve_normal_captcha(captcha_path, settings)
+    try:
+        captcha_solution = solve_normal_captcha(captcha_path, settings)
+    finally:
+        try:
+            captcha_path.unlink()
+            logger.info("Removed temporary captcha image: %s", captcha_path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            logger.warning("Could not remove temporary captcha image %s: %s", captcha_path, exc)
+    if cancel_event is not None and cancel_event.is_set():
+        raise AppointmentWorkflowCancelled(
+            "La pausa se aplico antes de enviar el captcha de reserva."
+        )
+    if can_submit is not None and not can_submit():
+        raise AppointmentWorkflowCancelled("El cliente fue pausado antes de enviar la reserva.")
+    validate_selected_appointment(page, expected_details)
 
     logger.info("Filling reservation captcha field")
     reservation_field = page.locator(RESERVATION_FIELD_SELECTOR).first
@@ -537,16 +507,37 @@ def solve_reservation_captcha_and_click_reserve(page: Page, settings: Settings) 
     reservation_field.fill(captcha_solution, timeout=15_000)
 
     logger.info("Clicking reservation button")
+    if cancel_event is not None and cancel_event.is_set():
+        raise AppointmentWorkflowCancelled(
+            "La pausa se aplico antes de pulsar el boton de reserva."
+        )
     reserve_button = page.locator(RESERVATION_BUTTON_SELECTOR).first
     reserve_button.wait_for(state="visible", timeout=15_000)
     reserve_button.scroll_into_view_if_needed(timeout=15_000)
-    reserve_button.click(timeout=15_000)
+    if on_submission_intent is not None:
+        on_submission_intent()
     try:
-        page.wait_for_load_state("domcontentloaded", timeout=15_000)
-    except PlaywrightTimeoutError:
-        logger.info("Reservation click did not trigger domcontentloaded before timeout")
-
-    logger.info("Current page after reservation click: %s", page.url)
+        reserve_button.click(timeout=15_000)
+    except PlaywrightError as exc:
+        if on_submission_started is not None:
+            on_submission_started()
+        raise ReservationSubmissionUncertain(
+            "El click en Reservar pudo haber sido enviado, pero Playwright no pudo "
+            "confirmar la respuesta."
+        ) from exc
+    if on_submission_started is not None:
+        on_submission_started()
+    try:
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=15_000)
+        except PlaywrightTimeoutError:
+            logger.info("Reservation click did not trigger domcontentloaded before timeout")
+        logger.info("Current page after reservation click: %s", page.url)
+    except PlaywrightError as exc:
+        raise ReservationSubmissionUncertain(
+            "La solicitud de reserva fue enviada, pero la pagina se desconecto antes "
+            "de iniciar la verificacion."
+        ) from exc
     return page
 
 
@@ -565,55 +556,6 @@ def wait_for_reservation_confirmation(page: Page) -> bool:
     except PlaywrightTimeoutError:
         logger.info("Reservation confirmation text was not detected before timeout")
         return False
-
-
-def wait_for_programmed_appointment_stage(
-    page: Page,
-    expected_details: dict[str, str] | None,
-    *,
-    timeout: int = 15_000,
-) -> ProcessStage | None:
-    expected_details = expected_details or {}
-    expected_date = _normalize_option(expected_details.get("fecha", ""))
-    expected_hour = _normalize_option(expected_details.get("hora", ""))
-    deadline = time.monotonic() + timeout / 1_000
-    mismatch_logged = False
-
-    while time.monotonic() < deadline:
-        try:
-            stages = read_process_stages(page)
-        except PlaywrightError:
-            page.wait_for_timeout(500)
-            continue
-        stage = next(
-            (
-                item
-                for item in stages
-                if item.stage.strip().lower() == "separa cita peritaje"
-                and item.status.strip().lower() == "programado"
-            ),
-            None,
-        )
-        if stage is not None:
-            programmed_text = _normalize_option(f"{stage.date} {stage.message}")
-            date_matches = not expected_date or expected_date in programmed_text
-            hour_matches = not expected_hour or expected_hour in programmed_text
-            if date_matches and hour_matches:
-                return stage
-            if not mismatch_logged:
-                logger.warning(
-                    "Programmed stage does not match selected appointment: "
-                    "expected %s %s, got %s",
-                    expected_date,
-                    expected_hour,
-                    programmed_text,
-                )
-                mismatch_logged = True
-
-        page.wait_for_timeout(500)
-
-    logger.info("Programmed appointment stage was not confirmed before timeout")
-    return None
 
 
 def dismiss_reservation_confirmation(page: Page) -> None:
@@ -660,6 +602,22 @@ def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
                 continue
 
             panel.scroll_into_view_if_needed(timeout=5_000)
+            bounds = panel.bounding_box()
+            if bounds is None or bounds["width"] < 120 or bounds["height"] < 80:
+                logger.warning(
+                    "Reservation panel has invalid dimensions using selector %s",
+                    selector,
+                )
+                continue
+            if not ensure_reservation_captcha_loaded(
+                panel,
+                timeout=settings.read_timeout_seconds * 1_000,
+            ):
+                logger.warning(
+                    "Reservation panel captcha was not loaded using selector %s",
+                    selector,
+                )
+                continue
             panel.screenshot(path=str(captcha_path), timeout=10_000)
             logger.info(
                 "Saved reservation panel image: %s using selector %s", captcha_path, selector
@@ -757,7 +715,7 @@ def _read_stable_appointment_snapshot(
         logger.info(
             "Appointment snapshot %s: %s",
             attempt,
-            _snapshot_details(current_snapshot, include_person=log_person),
+            _snapshot_details(current_snapshot, include_person=False),
         )
         logger.info("Date options: %s", current_snapshot.date_options)
         logger.info("Hour options: %s", current_snapshot.hour_options)
@@ -796,12 +754,14 @@ def _snapshot_details(
     snapshot: AppointmentSnapshot,
     *,
     include_person: bool = True,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     details = {
         "sede": _real_or_selected(snapshot.site, snapshot.site_options),
         "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
         "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
         "cupos": snapshot.slots,
+        "date_options": snapshot.date_options,
+        "hour_options": snapshot.hour_options,
     }
     if include_person:
         details["nombre"] = snapshot.person_name
@@ -818,7 +778,7 @@ def _select_options_text(page: Page, selector: str) -> list[str]:
     return [option["text"] for option in _select_options(page, selector) if option["text"]]
 
 
-def _select_options(page: Page, selector: str) -> list[dict[str, str]]:
+def _select_options(page: Page, selector: str) -> list[dict[str, Any]]:
     select = page.locator(selector)
     if select.count() == 0:
         return []
@@ -826,12 +786,14 @@ def _select_options(page: Page, selector: str) -> list[dict[str, str]]:
     return select.locator("option").evaluate_all(
         """options => options.map(option => ({
             text: option.innerText.trim(),
-            value: option.value
+            value: option.value,
+            disabled: option.disabled,
+            hidden: option.hidden
         }))"""
     )
 
 
-def _first_real_option(options: list[dict[str, str]]) -> dict[str, str] | None:
+def _first_real_option(options: list[dict[str, Any]]) -> dict[str, Any] | None:
     return next(iter(_real_options(options)), None)
 
 
@@ -840,7 +802,7 @@ def _select_appointment_option(locator, value: str, *, allow_hidden: bool) -> No
         locator.select_option(value=value, timeout=15_000)
         return
 
-    # TEMP REVIEW: Solo el observador usa esta rama para consultar selects ocultos.
+    # Solo el observador usa esta rama para consultar selects ocultos.
     # El evento change puede cargar datos, pero no ejecuta captcha ni reserva.
     locator.evaluate(
         """(element, optionValue) => {
@@ -851,11 +813,11 @@ def _select_appointment_option(locator, value: str, *, allow_hidden: bool) -> No
     )
 
 
-def _real_options(options: list[dict[str, str]]) -> list[dict[str, str]]:
-    return [option for option in options if _is_real_appointment_option(option["text"])]
+def _real_options(options: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [option for option in options if _is_real_appointment_option(option)]
 
 
-def _options_signature(options: list[dict[str, str]]) -> tuple[tuple[str, str], ...]:
+def _options_signature(options: list[dict[str, Any]]) -> tuple[tuple[str, str], ...]:
     return tuple((option["value"], option["text"]) for option in options)
 
 
@@ -973,37 +935,57 @@ def _read_person_name(page: Page) -> str:
     )
 
 
-def _is_real_site_option(text: str) -> bool:
-    normalized = text.strip().lower()
+def _is_real_site_option(option: dict[str, Any]) -> bool:
+    normalized = str(option["text"]).strip().lower()
     return (
-        bool(normalized) and not normalized.startswith("seleccione") and normalized != "sin cupos"
+        bool(option.get("value"))
+        and not option.get("disabled")
+        and not option.get("hidden")
+        and bool(normalized)
+        and not normalized.startswith("seleccione")
+        and normalized != "sin cupos"
     )
 
 
-def _wait_for_appointment_options(page: Page) -> None:
+def _wait_for_appointment_options(
+    page: Page,
+    *,
+    refresh_token: str,
+    previous_date_signature: tuple[tuple[str, str], ...],
+    previous_hour_signature: tuple[tuple[str, str], ...],
+    timeout: int = 15_000,
+) -> None:
     try:
-        page.wait_for_load_state("load", timeout=10_000)
+        page.wait_for_load_state("load", timeout=min(timeout, 10_000))
     except PlaywrightTimeoutError:
         logger.info("Site selection page did not reach load state; checking appointment options")
 
-    page.locator(DATE_SELECTOR).wait_for(state="attached", timeout=15_000)
-    page.locator(HOUR_SELECTOR).wait_for(state="attached", timeout=15_000)
-    try:
-        page.wait_for_function(
-            """selectors => {
-                const [dateSelector, hourSelector] = selectors;
-                const hasTextOption = selector => {
-                    const select = document.querySelector(selector);
-                    if (!select) return false;
-                    return Array.from(select.options).some(option => option.innerText.trim());
-                };
-                return hasTextOption(dateSelector) || hasTextOption(hourSelector);
-            }""",
-            arg=[DATE_SELECTOR, HOUR_SELECTOR],
-            timeout=15_000,
+    page.locator(DATE_SELECTOR).wait_for(state="attached", timeout=timeout)
+    page.locator(HOUR_SELECTOR).wait_for(state="attached", timeout=timeout)
+    deadline = time.monotonic() + timeout / 1_000
+    last_pair = None
+    stable_reads = 0
+    refreshed = False
+    while time.monotonic() < deadline:
+        current_date = _options_signature(_select_options(page, DATE_SELECTOR))
+        current_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
+        marker_present = page.locator(
+            f'{SITE_SELECTOR}[data-appointment-bot-refresh="{refresh_token}"]'
+        ).count()
+        refreshed = (
+            refreshed
+            or marker_present == 0
+            or (current_date != previous_date_signature or current_hour != previous_hour_signature)
         )
-    except PlaywrightTimeoutError:
-        logger.info("Appointment date/hour options did not populate after site selection")
+        pair = (current_date, current_hour)
+        stable_reads = stable_reads + 1 if pair == last_pair else 1
+        last_pair = pair
+        if refreshed and stable_reads >= 2 and (current_date or current_hour):
+            return
+        page.wait_for_timeout(250)
+    raise AppointmentOptionsNotRefreshed(
+        "La pagina no confirmo que las opciones de cita se actualizaran despues de elegir sede."
+    )
 
 
 def _wait_for_options_after_selection(
@@ -1018,7 +1000,7 @@ def _wait_for_options_after_selection(
     last_signature = None
     stable_reads = 0
     changed = False
-    current_options = []
+    current_options: list[dict[str, Any]] = []
 
     while time.monotonic() < deadline:
         current_options = _select_options(page, selector)
@@ -1047,11 +1029,107 @@ def _has_real_options(options: list[str]) -> bool:
     return any(_is_real_appointment_option(option) for option in options)
 
 
-def _is_real_appointment_option(text: str) -> bool:
+def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
+    if isinstance(option, str):
+        text = option
+        value_present = True
+        disabled = False
+        hidden = False
+    else:
+        text = str(option.get("text") or "")
+        value_present = bool(option.get("value"))
+        disabled = bool(option.get("disabled"))
+        hidden = bool(option.get("hidden"))
     normalized = text.strip().lower()
     return (
-        bool(normalized) and normalized != "sin cupos" and not normalized.startswith("seleccione")
+        value_present
+        and not disabled
+        and not hidden
+        and bool(normalized)
+        and normalized != "sin cupos"
+        and not normalized.startswith("seleccione")
     )
+
+
+def validate_selected_appointment(
+    page: Page,
+    expected_details: dict[str, Any] | None,
+) -> None:
+    expected_details = expected_details or {}
+    expected_site = str(expected_details.get("sede") or "")
+    expected_date = str(expected_details.get("fecha") or "")
+    expected_hour = str(expected_details.get("hora") or "")
+    actual_site = _selected_option_text(page, SITE_SELECTOR)
+    actual_date = _selected_option_text(page, DATE_SELECTOR)
+    actual_hour = _selected_option_text(page, HOUR_SELECTOR)
+    if (
+        (expected_site and not _same_option(actual_site, expected_site))
+        or (expected_date and not _same_option(actual_date, expected_date))
+        or (expected_hour and not _same_option(actual_hour, expected_hour))
+    ):
+        raise AppointmentWorkflowUnavailable(
+            "La sede, fecha u hora seleccionadas cambiaron antes de enviar la reserva."
+        )
+
+
+def _mark_select_for_refresh(page: Page, selector: str) -> str:
+    token = uuid.uuid4().hex
+    page.locator(selector).evaluate(
+        "(element, value) => { element.dataset.appointmentBotRefresh = value; }",
+        token,
+    )
+    return token
+
+
+def _panel_has_loaded_captcha(panel) -> bool:
+    return bool(
+        panel.locator("img, canvas").evaluate_all(
+            """elements => elements.some(element => {
+                const rect = element.getBoundingClientRect();
+                if (rect.width < 40 || rect.height < 20) return false;
+                if (element.tagName === "IMG") {
+                    return element.complete && element.naturalWidth > 0;
+                }
+                return true;
+            })"""
+        )
+    )
+
+
+def ensure_reservation_captcha_loaded(panel, *, timeout: int = 15_000) -> bool:
+    if _wait_for_panel_captcha(panel, timeout=timeout):
+        return True
+
+    logger.warning("Reservation CAPTCHA did not load; retrying its image resource")
+    reloaded = panel.locator("img").evaluate_all(
+        """elements => {
+            let changed = false;
+            for (const image of elements) {
+                const rect = image.getBoundingClientRect();
+                if (rect.width < 40 || rect.height < 20) continue;
+                if (image.complete && image.naturalWidth > 0) continue;
+                const source = image.getAttribute("src");
+                if (!source) continue;
+                const url = new URL(source, window.location.href);
+                url.searchParams.set("_appointment_bot_retry", Date.now().toString());
+                image.src = url.toString();
+                changed = true;
+            }
+            return changed;
+        }"""
+    )
+    if not reloaded:
+        return False
+    return _wait_for_panel_captcha(panel, timeout=timeout)
+
+
+def _wait_for_panel_captcha(panel, *, timeout: int) -> bool:
+    deadline = time.monotonic() + timeout / 1_000
+    while time.monotonic() < deadline:
+        if _panel_has_loaded_captcha(panel):
+            return True
+        panel.page.wait_for_timeout(250)
+    return False
 
 
 def _same_option(actual: str, expected: str) -> bool:

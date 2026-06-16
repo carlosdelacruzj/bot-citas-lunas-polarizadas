@@ -12,6 +12,10 @@ dependencies = [
     "2captcha-python>=1.5.1",
     "playwright>=1.44.0",
     "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
     "ruff>=0.5.0",
 ]
 
@@ -22,6 +26,7 @@ appointment-bot-test-telegram = "appointment_bot.services.notifier:run_telegram_
 appointment-bot-local-api = "appointment_bot.services.local_api:run_local_api"
 appointment-bot-client = "appointment_bot.services.client_cli:run"
 appointment-bot-probe-availability = "appointment_bot.services.observer:main"
+appointment-bot-worker = "appointment_bot.services.continuous_host:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

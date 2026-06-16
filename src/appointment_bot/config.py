@@ -33,6 +33,18 @@ def _parse_int(value: str | None, *, default: int, minimum: int | None = None) -
     return parsed
 
 
+def _parse_int_list(value: str | None, *, default: tuple[int, ...]) -> tuple[int, ...]:
+    if value is None or value.strip() == "":
+        return default
+    try:
+        parsed = tuple(int(item.strip()) for item in value.split(",") if item.strip())
+    except ValueError as exc:
+        raise ValueError(f"Invalid integer list value: {value!r}") from exc
+    if not parsed or any(item < 0 for item in parsed):
+        raise ValueError(f"Integer list must contain non-negative values: {value!r}")
+    return parsed
+
+
 @dataclass(frozen=True)
 class Settings:
     target_url: str
@@ -44,6 +56,7 @@ class Settings:
     auto_reserve: bool
     screenshot_on_error: bool
     screenshot_on_relevant_result: bool
+    screenshot_device_scale_factor: int
     debug_snapshots: bool
     log_level: str
     telegram_enabled: bool
@@ -66,6 +79,15 @@ class Settings:
     queue_delay_max_seconds: int
     heartbeat_enabled: bool
     heartbeat_interval_hours: int
+    continuous_worker_enabled: bool
+    continuous_interval_min_seconds: int
+    continuous_interval_max_seconds: int
+    session_rotation_seconds: int
+    session_retry_delays_seconds: tuple[int, ...]
+    login_timeout_seconds: int
+    postback_timeout_seconds: int
+    read_timeout_seconds: int
+    reservation_timeout_seconds: int
     database_path: Path
     logs_dir: Path
     screenshots_dir: Path
@@ -96,6 +118,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         screenshot_on_relevant_result=_parse_bool(
             os.getenv("SCREENSHOT_ON_RELEVANT_RESULT"),
             default=True,
+        ),
+        screenshot_device_scale_factor=_parse_int(
+            os.getenv("SCREENSHOT_DEVICE_SCALE_FACTOR"),
+            default=2,
+            minimum=1,
         ),
         debug_snapshots=_parse_bool(os.getenv("DEBUG_SNAPSHOTS"), default=False),
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
@@ -182,6 +209,49 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=24,
             minimum=1,
         ),
+        continuous_worker_enabled=_parse_bool(
+            os.getenv("CONTINUOUS_WORKER_ENABLED"),
+            default=False,
+        ),
+        continuous_interval_min_seconds=_parse_int(
+            os.getenv("CONTINUOUS_INTERVAL_MIN_SECONDS"),
+            default=45,
+            minimum=1,
+        ),
+        continuous_interval_max_seconds=_parse_int(
+            os.getenv("CONTINUOUS_INTERVAL_MAX_SECONDS"),
+            default=75,
+            minimum=1,
+        ),
+        session_rotation_seconds=_parse_int(
+            os.getenv("SESSION_ROTATION_SECONDS"),
+            default=1500,
+            minimum=60,
+        ),
+        session_retry_delays_seconds=_parse_int_list(
+            os.getenv("SESSION_RETRY_DELAYS_SECONDS"),
+            default=(10, 30, 60),
+        ),
+        login_timeout_seconds=_parse_int(
+            os.getenv("LOGIN_TIMEOUT_SECONDS"),
+            default=60,
+            minimum=10,
+        ),
+        postback_timeout_seconds=_parse_int(
+            os.getenv("POSTBACK_TIMEOUT_SECONDS"),
+            default=30,
+            minimum=5,
+        ),
+        read_timeout_seconds=_parse_int(
+            os.getenv("READ_TIMEOUT_SECONDS"),
+            default=15,
+            minimum=5,
+        ),
+        reservation_timeout_seconds=_parse_int(
+            os.getenv("RESERVATION_TIMEOUT_SECONDS"),
+            default=180,
+            minimum=30,
+        ),
         database_path=Path(os.getenv("DATABASE_PATH", "data/appointment_bot.sqlite")),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
@@ -200,20 +270,24 @@ def load_settings(*, require_login: bool = True) -> Settings:
             "MONITOR_INTERVAL_MIN_SECONDS"
         )
 
-    # TEMP REVIEW: El timeout necesita margen para login, captcha, capturas y cierre.
+    # El timeout necesita margen para login, captcha, capturas y cierre.
     if (
         settings.monitor_window_seconds > 0
         and settings.run_timeout_seconds < settings.monitor_window_seconds + 60
     ):
         raise ValueError(
-            "RUN_TIMEOUT_SECONDS must be at least 60 seconds greater than "
-            "MONITOR_WINDOW_SECONDS"
+            "RUN_TIMEOUT_SECONDS must be at least 60 seconds greater than MONITOR_WINDOW_SECONDS"
         )
 
     if settings.queue_delay_max_seconds < settings.queue_delay_min_seconds:
         raise ValueError(
-            "QUEUE_DELAY_MAX_SECONDS must be greater than or equal to "
-            "QUEUE_DELAY_MIN_SECONDS"
+            "QUEUE_DELAY_MAX_SECONDS must be greater than or equal to QUEUE_DELAY_MIN_SECONDS"
+        )
+
+    if settings.continuous_interval_max_seconds < settings.continuous_interval_min_seconds:
+        raise ValueError(
+            "CONTINUOUS_INTERVAL_MAX_SECONDS must be greater than or equal to "
+            "CONTINUOUS_INTERVAL_MIN_SECONDS"
         )
 
     missing = [

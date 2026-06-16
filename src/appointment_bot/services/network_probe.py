@@ -4,10 +4,11 @@ import json
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, Request, Response
+
+from appointment_bot.utils.sanitization import sanitize_url
 
 
 class SanitizedNetworkTrace:
@@ -22,10 +23,6 @@ class SanitizedNetworkTrace:
 
     def mark(self, phase: str) -> None:
         self.phase = phase
-
-    @property
-    def entries(self) -> list[dict[str, object]]:
-        return list(self._entries)
 
     def classify(self, *, preloaded: bool) -> str:
         if preloaded:
@@ -164,11 +161,3 @@ class SanitizedNetworkTrace:
             "timings": {"send": 0, "wait": entry["duration_ms"] or 0, "receive": 0},
             "comment": f"phase={entry['phase']}; resource_type={entry['resource_type']}",
         }
-
-
-def sanitize_url(url: str) -> str:
-    parsed = urlsplit(url)
-    redacted_query = urlencode(
-        [(key, "***") for key, _value in parse_qsl(parsed.query)]
-    )
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, redacted_query, ""))

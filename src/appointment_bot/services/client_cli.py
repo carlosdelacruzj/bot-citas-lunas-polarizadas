@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, is_dataclass
 from typing import Any
@@ -20,7 +21,10 @@ def _build_parser() -> argparse.ArgumentParser:
     add_parser.add_argument("--id", dest="client_id", required=True, help="ID interno del cliente.")
     add_parser.add_argument("--name", required=True, help="Nombre visible del cliente.")
     add_parser.add_argument("--username", required=True, help="Usuario de acceso del cliente.")
-    add_parser.add_argument("--password", required=True, help="Clave de acceso del cliente.")
+    add_parser.add_argument(
+        "--password",
+        help="Clave de acceso. Si se omite, se solicita de forma oculta.",
+    )
     add_parser.add_argument(
         "--priority",
         required=True,
@@ -116,7 +120,10 @@ def run(argv: Sequence[str] | None = None) -> int:
     init_database()
 
     if args.command == "add":
-        add_client(args.client_id, args.name, args.username, args.password, args.priority)
+        password = args.password or getpass.getpass("Clave del cliente: ")
+        if not password:
+            parser.error("La clave del cliente no puede estar vacia.")
+        add_client(args.client_id, args.name, args.username, password, args.priority)
         print(f"Cliente guardado: {args.client_id}")
         return 0
 

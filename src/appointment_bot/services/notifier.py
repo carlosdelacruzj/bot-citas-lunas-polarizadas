@@ -8,9 +8,11 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from appointment_bot.config import Settings, load_settings
-from appointment_bot.flows.appointments import AvailabilityResult
+from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.runtime import RunTimeoutError
+from appointment_bot.utils.sanitization import sanitize_text
+from appointment_bot.utils.screenshots import normalize_screenshot_paths
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +24,11 @@ def notify_result(
     settings: Settings,
     screenshot_path: Path | None = None,
     screenshot_paths: list[Path] | None = None,
-) -> None:
+) -> bool:
     message = f"[{result.status.upper()}] {result.message}"
     print(message)
     try:
-        effective_screenshot_paths = _normalize_screenshot_paths(
+        effective_screenshot_paths = normalize_screenshot_paths(
             screenshot_path,
             screenshot_paths,
         )
@@ -38,28 +40,27 @@ def notify_result(
             "registered",
             "reservation_unconfirmed",
         }:
-            _send_result_notification(result, settings, effective_screenshot_paths)
-            return
+            return _send_result_notification(result, settings, effective_screenshot_paths)
 
         if result.status == "unavailable" and settings.telegram_notify_unavailable:
-            send_telegram_message(settings, _format_result_message(result))
-            return
+            return send_telegram_message(settings, _format_result_message(result))
 
         if result.status == "completed":
             if effective_screenshot_paths:
-                _send_telegram_photos(
+                return _send_telegram_photos(
                     settings,
                     effective_screenshot_paths,
                     _format_result_message(result),
                 )
-                return
             logger.info("Appointment workflow is no longer available: %s", result.message)
+        return not settings.telegram_enabled
     except RunTimeoutError:
         raise
     except Exception:
-        # TEMP REVIEW: Una alerta secundaria nunca debe cambiar el resultado real de
+        # Una alerta secundaria nunca debe cambiar el resultado real de
         # una reserva que ya fue confirmada por la pagina.
         logger.exception("Unexpected error while sending result notification")
+        return False
 
 
 def notify_error(
@@ -178,13 +179,12 @@ def _send_result_notification(
     result: AvailabilityResult,
     settings: Settings,
     screenshot_paths: list[Path],
-) -> None:
+) -> bool:
     message = _format_result_message(result)
     if screenshot_paths:
-        _send_telegram_photos(settings, screenshot_paths, message)
-        return
+        return _send_telegram_photos(settings, screenshot_paths, message)
 
-    send_telegram_message(settings, message)
+    return send_telegram_message(settings, message)
 
 
 def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
@@ -199,27 +199,6 @@ def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: 
         send_telegram_photo(settings, image_path, "Evidencia adicional del tramite.")
 
     return primary_delivered
-
-
-def _normalize_screenshot_paths(
-    screenshot_path: Path | None,
-    screenshot_paths: list[Path] | None,
-) -> list[Path]:
-    paths = []
-    if screenshot_path is not None:
-        paths.append(screenshot_path)
-    if screenshot_paths:
-        paths.extend(screenshot_paths)
-
-    unique_paths = []
-    seen = set()
-    for path in paths:
-        path_key = str(path)
-        if path_key in seen:
-            continue
-        seen.add(path_key)
-        unique_paths.append(path)
-    return unique_paths
 
 
 def run_telegram_test() -> int:
@@ -324,7 +303,7 @@ def _format_result_details(result: AvailabilityResult) -> str:
 def _format_error_message(error: Exception) -> str:
     return (
         "El bot encontro un error durante la revision.\n\n"
-        f"Detalle: {error}\n\n"
+        f"Detalle: {sanitize_text(str(error))}\n\n"
         "Si se repite varias veces, el bot entrara en pausa automatica para no insistir."
     )
 
@@ -351,8 +330,7 @@ def _multipart_form_data(
             [
                 f"--{boundary}\r\n".encode(),
                 (
-                    f'Content-Disposition: form-data; name="{name}"; '
-                    f'filename="{filename}"\r\n'
+                    f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'
                 ).encode(),
                 f"Content-Type: {content_type}\r\n\r\n".encode(),
                 content,

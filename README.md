@@ -59,6 +59,7 @@ BLOCK_HEAVY_ASSETS=true
 AUTO_RESERVE=true
 SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
+SCREENSHOT_DEVICE_SCALE_FACTOR=2
 DEBUG_SNAPSHOTS=false
 LOG_LEVEL=INFO
 CLEANUP_RETENTION_DAYS=14
@@ -78,6 +79,18 @@ QUEUE_DELAY_MIN_SECONDS=5
 QUEUE_DELAY_MAX_SECONDS=15
 HEARTBEAT_ENABLED=false
 HEARTBEAT_INTERVAL_HOURS=24
+CONTINUOUS_WORKER_ENABLED=false
+CONTINUOUS_INTERVAL_MIN_SECONDS=45
+CONTINUOUS_INTERVAL_MAX_SECONDS=75
+SESSION_ROTATION_SECONDS=1500
+SESSION_RETRY_DELAYS_SECONDS=10,30,60
+LOGIN_TIMEOUT_SECONDS=60
+POSTBACK_TIMEOUT_SECONDS=30
+READ_TIMEOUT_SECONDS=15
+RESERVATION_TIMEOUT_SECONDS=180
+APPOINTMENT_BOT_API_HOST=127.0.0.1
+APPOINTMENT_BOT_API_PORT=8765
+APPOINTMENT_BOT_API_TOKEN=
 TELEGRAM_ENABLED=false
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
@@ -111,6 +124,7 @@ Para ejecucion mas rapida, mantener:
 HEADLESS=true
 BLOCK_HEAVY_ASSETS=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
+SCREENSHOT_DEVICE_SCALE_FACTOR=2
 DEBUG_SNAPSHOTS=false
 ```
 
@@ -123,13 +137,15 @@ Variables operativas para ejecucion frecuente:
   recorre las fechas hasta encontrar una hora, valida la seleccion, resuelve captcha e
   intenta reservar. Los textos generales de disponibilidad sin opciones reales solo
   generan una alerta parcial.
-- `BLOCK_HEAVY_ASSETS`: bloquea recursos pesados para reducir consumo. En el flujo actual
-  no afecta al captcha de reserva, porque el captcha utilizado por el bot sigue visible
-  dentro del panel capturado. Si la web cambia la forma de cargarlo, se debe volver a validar.
-- `RUN_TIMEOUT_SECONDS`: limite global de una revision en Windows y Linux. Debe superar
-  `MONITOR_WINDOW_SECONDS` por al menos 60 segundos.
-- `LOCK_STALE_MINUTES`: respaldo para limpiar locks ilegibles; si el lock contiene un PID
-  activo, no se elimina aunque la ejecucion sea larga.
+- `BLOCK_HEAVY_ASSETS`: bloquea fuentes y multimedia, pero nunca imagenes porque el
+  CAPTCHA de reserva depende de ellas.
+- `SCREENSHOT_DEVICE_SCALE_FACTOR`: escala de captura. El valor recomendado `2` mejora la
+  legibilidad de la evidencia enviada como foto a Telegram.
+- `RUN_TIMEOUT_SECONDS`: limite global mediante `SIGALRM` en sistemas compatibles. En
+  Windows no existe ese timeout global; los timeouts de Playwright y el supervisor de
+  salud del worker limitan y reinician operaciones estancadas.
+- `LOCK_STALE_MINUTES`: compatibilidad con locks antiguos. El lock actual usa propiedad
+  verificable y bloqueo del sistema operativo durante toda la vida del proceso.
 - `ERROR_BACKOFF_THRESHOLD`: errores consecutivos antes de pausar.
 - `ERROR_BACKOFF_SECONDS`: pausa aplicada luego de demasiados errores.
 - `MONITOR_WINDOW_SECONDS`: segundos que una ejecucion permanece revisando dentro de la misma sesion. `0` conserva una sola revision.
@@ -141,6 +157,101 @@ Variables operativas para ejecucion frecuente:
 - `QUEUE_DELAY_MIN_SECONDS` y `QUEUE_DELAY_MAX_SECONDS`: pausa aleatoria entre clientes despues de una reserva o intento relevante.
 - `HEARTBEAT_ENABLED`: envia un aviso periodico de que el bot sigue activo.
 - `HEARTBEAT_INTERVAL_HOURS`: frecuencia del aviso periodico.
+- `CONTINUOUS_WORKER_ENABLED`: activa el trabajador residente de Windows.
+- `CONTINUOUS_INTERVAL_MIN_SECONDS` y `CONTINUOUS_INTERVAL_MAX_SECONDS`: intervalo
+  aleatorio entre consultas dentro de una misma sesion.
+- `SESSION_ROTATION_SECONDS`: edad maxima de la sesion antes de cerrar y volver a iniciar
+  con la misma cuenta prioritaria.
+- `SESSION_RETRY_DELAYS_SECONDS`: esperas progresivas después de fallos de sesion.
+- `LOGIN_TIMEOUT_SECONDS`, `POSTBACK_TIMEOUT_SECONDS`, `READ_TIMEOUT_SECONDS` y
+  `RESERVATION_TIMEOUT_SECONDS`: limites por operacion del trabajador continuo.
+
+## Worker Continuo En Windows
+
+La V2 mantiene un solo trabajador y una sola sesion Playwright activa. Cuando existen
+clientes pendientes monitorea el primero por prioridad; cuando no existen usa la cuenta
+observadora de `.env`. El trabajador ignora `MONITOR_WINDOW_SECONDS` y
+`MONITOR_MAX_ATTEMPTS`, consulta cada 45 a 75 segundos y rota preventivamente la sesion
+cada 25 minutos.
+
+Configurar en `.env`:
+
+```env
+CONTINUOUS_WORKER_ENABLED=true
+CONTINUOUS_INTERVAL_MIN_SECONDS=45
+CONTINUOUS_INTERVAL_MAX_SECONDS=75
+SESSION_ROTATION_SECONDS=1500
+SESSION_RETRY_DELAYS_SECONDS=10,30,60
+LOGIN_TIMEOUT_SECONDS=60
+POSTBACK_TIMEOUT_SECONDS=30
+READ_TIMEOUT_SECONDS=15
+RESERVATION_TIMEOUT_SECONDS=180
+```
+
+Probar el worker en primer plano:
+
+```powershell
+appointment-bot-worker
+```
+
+Para operacion diaria se recomienda el Programador de tareas de Windows, ejecutando
+`pythonw.exe` para no abrir una consola. Crear la tarea una sola vez:
+
+```powershell
+$project = (Get-Location).Path
+$action = New-ScheduledTaskAction `
+  -Execute "$project\.venv\Scripts\pythonw.exe" `
+  -Argument "-m appointment_bot.services.continuous_host" `
+  -WorkingDirectory $project
+$trigger = New-ScheduledTaskTrigger -AtLogOn
+$settings = New-ScheduledTaskSettingsSet `
+  -StartWhenAvailable `
+  -RestartCount 999 `
+  -RestartInterval (New-TimeSpan -Minutes 1) `
+  -ExecutionTimeLimit ([TimeSpan]::Zero) `
+  -MultipleInstances IgnoreNew
+Register-ScheduledTask `
+  -TaskName AppointmentBotContinuousWorker `
+  -Action $action `
+  -Trigger $trigger `
+  -Settings $settings `
+  -Force
+Start-ScheduledTask AppointmentBotContinuousWorker
+```
+
+La tarea usa el directorio del repositorio como carpeta de trabajo. Si se ejecuta desde
+otro entorno, definir `APPOINTMENT_BOT_WORKDIR` con la ruta que contiene `.env`.
+
+La API alojada por el mismo proceso expone:
+
+```text
+GET  http://127.0.0.1:8765/health
+GET  http://127.0.0.1:8765/status
+POST http://127.0.0.1:8765/pause
+POST http://127.0.0.1:8765/resume
+```
+
+`/pause` interrumpe la espera actual y cierra la sesion. `/resume` abre una sesion nueva.
+`/run` y `/run-queue` devuelven HTTP 409 mientras el trabajador continuo esta activo.
+El estado se persiste en SQLite para que `/status` conserve la ultima actividad despues
+de un reinicio. En este modo n8n no programa revisiones: solo supervisa `/health` y
+`/status`, o solicita pausa y reanudacion.
+
+`/health` permanece publico y solo informa salud operativa, sin datos de clientes.
+`/status` y todos los endpoints POST requieren
+`Authorization: Bearer <token>` cuando `APPOINTMENT_BOT_API_TOKEN` esta definido. La
+salud tambien comprueba la antiguedad de la ultima revision; si el worker queda vivo pero
+estancado, el proceso termina para que el Programador de tareas lo reinicie.
+
+En n8n, supervisar `/health` sin token y considerar sano solo HTTP `200`,
+`status=ok` y `worker_running=true`. Enviar alerta despues de tres fallos consecutivos.
+Reservar `/status` para diagnostico y enviar `Authorization: Bearer <token>`; un `401` de
+`/status` indica autenticacion ausente o incorrecta, no que la API este caida. Diferenciar
+las alertas entre API inaccesible, worker degradado y autenticacion rechazada.
+
+La API escucha en `127.0.0.1` por defecto. Si `APPOINTMENT_BOT_API_HOST` se cambia para
+aceptar conexiones externas, es obligatorio definir el token. No publicar el puerto en
+Internet.
 
 ## Instalacion En PC Local
 
@@ -202,6 +313,7 @@ BLOCK_HEAVY_ASSETS=true
 AUTO_RESERVE=true
 SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
+SCREENSHOT_DEVICE_SCALE_FACTOR=2
 DEBUG_SNAPSHOTS=false
 TELEGRAM_ENABLED=true
 TELEGRAM_NOTIFY_UNAVAILABLE=false
@@ -236,7 +348,13 @@ Probar la cola:
 appointment-bot
 ```
 
-## Endpoint Local Para n8n
+## Modo Programado Por n8n
+
+Este modo es alternativo al worker continuo. Usarlo solo con:
+
+```env
+CONTINUOUS_WORKER_ENABLED=false
+```
 
 Para pruebas locales con n8n en Docker, iniciar el endpoint:
 
@@ -250,9 +368,15 @@ Desde n8n, llamar la cola:
 POST http://host.docker.internal:8765/run-queue
 ```
 
-El endpoint devuelve JSON con `status`, `message`, `exit_code`, `details` y rutas de screenshots cuando existan. `details.results` es una lista JSON con el resultado de cada cliente. Si uno o mas clientes terminan con error o existe una reserva no confirmada, la cola devuelve `status=error`, `exit_code=1` y HTTP 500 para que n8n detecte el fallo. Una reserva solo se considera confirmada cuando aparecen el mensaje de exito y la etapa `Programado` con la fecha y hora seleccionadas. Las alertas de Telegram y las imagenes las envia el bot Python, no n8n.
+El endpoint devuelve JSON sanitizado con `status`, `message`, `exit_code`, `details` y
+nombres de screenshots cuando existan. `details.results` es una lista JSON con el
+resultado de cada cliente. Si uno o mas clientes terminan con error o existe una reserva
+no confirmada, la cola devuelve `status=error`, `exit_code=1` y HTTP 500 para que n8n
+detecte el fallo. La etapa `Programado` es la evidencia principal de una reserva
+confirmada. Las alertas de Telegram y las imagenes las envia el bot Python, no n8n.
 
-El endpoint de una sola cuenta sigue disponible solo para depuracion:
+El endpoint de una sola cuenta sigue disponible solo para depuracion y fuerza
+`AUTO_RESERVE=false`; puede revisar disponibilidad, pero nunca enviar una reserva:
 
 ```text
 POST http://host.docker.internal:8765/run
@@ -260,13 +384,19 @@ POST http://host.docker.internal:8765/run
 
 ## Clientes Y Cola Local
 
-La cola usa SQLite local en `data/appointment_bot.sqlite`. Esta base guarda credenciales de clientes en texto plano para esta primera version; no la subas al repositorio y protege la PC donde se ejecuta.
+La cola usa SQLite local en `data/appointment_bot.sqlite`. El esquema tiene version y
+migraciones incrementales aplicadas al abrir la base. El mantenimiento elimina historial
+antiguo y referencias de capturas que ya no pertenecen a una ejecucion conservada. Esta
+base guarda credenciales de clientes en texto plano para esta primera version; no la
+subas al repositorio y protege la PC donde se ejecuta.
 
 Agregar o actualizar un cliente:
 
 ```powershell
-appointment-bot-client add --id cliente-001 --name "Nombre Cliente" --username DNI --password CLAVE --priority 10
+appointment-bot-client add --id cliente-001 --name "Nombre Cliente" --username DNI --priority 10
 ```
+
+La clave se solicita de forma oculta para evitar dejarla en el historial de PowerShell.
 
 Comandos utiles:
 
@@ -329,7 +459,8 @@ Ejemplo mas intensivo cada 5 minutos:
 */5 * * * * cd /ruta/al/proyecto && /ruta/al/proyecto/.venv/bin/appointment-bot
 ```
 
-El bot evita solapamientos con un lock en `state/`, agrega jitter antes de cada revision y entra en backoff si acumula errores consecutivos.
+El bot evita solapamientos con un lock en `state/` que registra propietario y token,
+agrega jitter antes de cada revision y entra en backoff si acumula errores consecutivos.
 
 Para aumentar revisiones sin hacer login en cada intento, activar una ventana corta de monitoreo:
 
@@ -348,13 +479,19 @@ los siguientes clientes usan una sesion nueva y una sola revision para aprovecha
 cupos. Si la etapa ya esta `Programado`, el cliente se marca como terminado y se busca el
 siguiente pendiente. El timeout deja margen para login, capturas, captcha y cierre.
 
-Con n8n, el flujo recomendado es:
+Para 2Captcha se captura solamente el panel modal de reserva. Esa imagen temporal se
+elimina inmediatamente despues de enviarla al proveedor y no se incluye entre las
+evidencias remitidas a Telegram.
+
+Si se eligio el modo programado por n8n, el flujo es:
 
 ```text
 Schedule Trigger -> HTTP Request POST http://host.docker.internal:8765/run-queue
 ```
 
-n8n debe orquestar la ejecucion; las alertas de Telegram las envia el bot.
+n8n orquesta la ejecucion solo en este modo. Con el worker continuo activo, n8n debe
+supervisar `/health` y `/status` y no debe llamar `/run-queue`. Las alertas de Telegram
+las envia el bot en ambos modos.
 
 Para editar cron en el VPS:
 
@@ -380,6 +517,15 @@ Como cada pagina web tiene formularios y textos distintos, probablemente haya qu
 La primera version usa selectores genericos para el login y textos comunes para detectar disponibilidad. Si la web cambia o no coincide, el programa debe fallar con logs y screenshot para facilitar el ajuste.
 
 ## Validacion Manual
+
+Antes de desplegar:
+
+```powershell
+python -m compileall src tests
+python -m ruff check src tests
+python -m ruff format --check src tests
+python -m unittest discover
+```
 
 Al ejecutar, revisar:
 

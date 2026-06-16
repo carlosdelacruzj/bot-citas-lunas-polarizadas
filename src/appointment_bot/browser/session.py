@@ -5,7 +5,7 @@ from playwright.sync_api import Page, sync_playwright
 
 from appointment_bot.config import Settings
 
-BLOCKED_RESOURCE_TYPES = {"font", "image", "media"}
+BLOCKED_RESOURCE_TYPES = {"font", "media"}
 
 
 @contextmanager
@@ -25,7 +25,9 @@ def open_page(
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=effective_headless)
-        context = browser.new_context()
+        context = browser.new_context(
+            device_scale_factor=settings.screenshot_device_scale_factor,
+        )
         if effective_block_heavy_assets:
             context.route(
                 "**/*",

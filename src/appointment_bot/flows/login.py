@@ -21,16 +21,17 @@ POST_LOGIN_SELECTOR = 'input[type="image"][onclick*="gvProgramacion"], input#Mai
 
 
 def login(page: Page, settings: Settings) -> None:
+    timeout = settings.login_timeout_seconds * 1_000
     logger.info("Opening target URL")
-    page.goto(settings.target_url, wait_until="domcontentloaded", timeout=60_000)
+    page.goto(settings.target_url, wait_until="domcontentloaded", timeout=timeout)
 
     logger.info("Filling login form")
     try:
-        page.locator(DOCUMENT_TYPE_SELECTOR).select_option(DOCUMENT_TYPE_VALUE, timeout=15_000)
-        page.locator(USERNAME_SELECTOR).first.fill(settings.login_username, timeout=15_000)
-        page.locator(PASSWORD_SELECTOR).first.fill(settings.login_password, timeout=15_000)
-        page.locator(SUBMIT_SELECTOR).first.click(timeout=15_000)
-        page.locator(POST_LOGIN_SELECTOR).first.wait_for(state="visible", timeout=15_000)
+        page.locator(DOCUMENT_TYPE_SELECTOR).select_option(DOCUMENT_TYPE_VALUE, timeout=timeout)
+        page.locator(USERNAME_SELECTOR).first.fill(settings.login_username, timeout=timeout)
+        page.locator(PASSWORD_SELECTOR).first.fill(settings.login_password, timeout=timeout)
+        page.locator(SUBMIT_SELECTOR).first.click(timeout=timeout)
+        page.locator(POST_LOGIN_SELECTOR).first.wait_for(state="visible", timeout=timeout)
     except PlaywrightTimeoutError as exc:
         raise RuntimeError(
             "Could not complete login with the configured selectors. "

@@ -7,9 +7,9 @@ import random
 import signal
 import threading
 import time
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from ctypes import c_ulong, py_object, pythonapi
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -40,46 +40,47 @@ class ProcessLock:
         self.path = path
         self.stale_after = stale_after
         self._fd: int | None = None
+        self.owner_token: str | None = None
 
     def __enter__(self) -> ProcessLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._remove_stale_lock()
-        try:
-            self._fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError as exc:
+        if _legacy_lock_is_active(self.path):
             raise LockBusyError(
-                f"Another appointment check is already running: {self.path}"
+                f"Another appointment check is already running: {self.path} "
+                f"({_read_lock_description(self.path)})"
+            )
+        self._fd = os.open(str(self.path), os.O_CREAT | os.O_RDWR)
+        try:
+            _lock_file_descriptor(self._fd)
+        except OSError as exc:
+            os.close(self._fd)
+            self._fd = None
+            owner = _read_lock_description(self.path)
+            raise LockBusyError(
+                f"Another appointment check is already running: {self.path} ({owner})"
             ) from exc
 
-        payload = f"pid={os.getpid()}\ncreated_at={datetime.now().isoformat()}\n"
+        self.owner_token = uuid.uuid4().hex
+        payload = (
+            f"pid={os.getpid()}\n"
+            f"owner_token={self.owner_token}\n"
+            f"created_at={datetime.now().isoformat()}\n"
+        )
+        os.lseek(self._fd, 0, os.SEEK_SET)
+        os.ftruncate(self._fd, 0)
         os.write(self._fd, payload.encode("utf-8"))
+        os.fsync(self._fd)
         logger.info("Acquired run lock: %s", self.path)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self._fd is not None:
-            os.close(self._fd)
+            try:
+                _unlock_file_descriptor(self._fd)
+            finally:
+                os.close(self._fd)
             self._fd = None
-        try:
-            self.path.unlink()
-            logger.info("Released run lock: %s", self.path)
-        except FileNotFoundError:
-            return
-
-    def _remove_stale_lock(self) -> None:
-        if not self.path.exists():
-            return
-
-        owner_pid = _read_lock_pid(self.path)
-        if owner_pid is not None and _process_is_running(owner_pid):
-            return
-
-        modified_at = datetime.fromtimestamp(self.path.stat().st_mtime)
-        if owner_pid is None and datetime.now() - modified_at < self.stale_after:
-            return
-
-        logger.warning("Removing stale run lock: %s", self.path)
-        self.path.unlink()
+        logger.info("Released run lock: %s", self.path)
 
 
 def sleep_with_jitter(settings: Settings) -> None:
@@ -95,13 +96,13 @@ def sleep_with_jitter(settings: Settings) -> None:
 
 
 @contextmanager
-def single_run_lock(settings: Settings) -> Iterator[None]:
+def single_run_lock(settings: Settings) -> Iterator[ProcessLock]:
     lock = ProcessLock(
         settings.state_dir / "appointment_bot.lock",
         stale_after=timedelta(minutes=settings.lock_stale_minutes),
     )
     with lock:
-        yield
+        yield lock
 
 
 @contextmanager
@@ -111,25 +112,10 @@ def run_timeout(settings: Settings) -> Iterator[None]:
             yield
         return
 
-    thread_id = threading.get_ident()
-    timer = threading.Timer(
-        settings.run_timeout_seconds,
-        _raise_in_thread,
-        args=(
-            thread_id,
-            RunTimeoutError,
-        ),
+    logger.debug(
+        "Global run timeout is unavailable in this thread; operation-level timeouts apply."
     )
-    timer.daemon = True
-    timer.start()
-    logger.info(
-        "Started thread watchdog with a %s second timeout",
-        settings.run_timeout_seconds,
-    )
-    try:
-        yield
-    finally:
-        timer.cancel()
+    yield
 
 
 @contextmanager
@@ -146,18 +132,6 @@ def _signal_timeout(timeout_seconds: int) -> Iterator[None]:
         signal.signal(signal.SIGALRM, previous_handler)
 
 
-def _raise_in_thread(thread_id: int, exception_type: type[BaseException]) -> None:
-    result = pythonapi.PyThreadState_SetAsyncExc(
-        c_ulong(thread_id),
-        py_object(exception_type),
-    )
-    if result == 0:
-        logger.warning("Could not find thread %s to enforce run timeout", thread_id)
-    elif result > 1:
-        pythonapi.PyThreadState_SetAsyncExc(c_ulong(thread_id), None)
-        logger.error("Run timeout affected multiple threads; reverted interruption")
-
-
 def _read_lock_pid(path: Path) -> int | None:
     try:
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -168,11 +142,71 @@ def _read_lock_pid(path: Path) -> int | None:
     return None
 
 
+def _read_lock_description(path: Path) -> str:
+    try:
+        values = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            key, separator, value = line.partition("=")
+            if separator:
+                values[key] = value
+        pid = values.get("pid", "unknown")
+        created_at = values.get("created_at", "unknown")
+        return f"pid={pid}, created_at={created_at}"
+    except OSError:
+        return "owner unavailable"
+
+
+def _legacy_lock_is_active(path: Path) -> bool:
+    if not path.exists():
+        return False
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if "owner_token=" in content:
+        return False
+    owner_pid = _read_lock_pid(path)
+    return owner_pid is not None and _process_is_running(owner_pid)
+
+
+def _lock_file_descriptor(fd: int) -> None:
+    if os.name == "nt":
+        import msvcrt
+
+        os.lseek(fd, 0, os.SEEK_SET)
+        if os.fstat(fd).st_size == 0:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+            os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        return
+
+    import fcntl
+
+    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock_file_descriptor(fd: int) -> None:
+    if os.name == "nt":
+        import msvcrt
+
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        return
+
+    import fcntl
+
+    fcntl.flock(fd, fcntl.LOCK_UN)
+
+
 def _process_is_running(pid: int) -> bool:
     if pid <= 0:
         return False
     if pid == os.getpid():
         return True
+
+    if os.name == "nt":
+        return _windows_process_is_running(pid)
 
     try:
         os.kill(pid, 0)
@@ -183,6 +217,32 @@ def _process_is_running(pid: int) -> bool:
     except OSError:
         return False
     return True
+
+
+def _windows_process_is_running(pid: int) -> bool:
+    from ctypes import POINTER, WinDLL, byref, get_last_error
+    from ctypes.wintypes import BOOL, DWORD, HANDLE
+
+    process_query_limited_information = 0x1000
+    still_active = 259
+    error_access_denied = 5
+    kernel32 = WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [DWORD, BOOL, DWORD]
+    kernel32.OpenProcess.restype = HANDLE
+    kernel32.GetExitCodeProcess.argtypes = [HANDLE, POINTER(DWORD)]
+    kernel32.GetExitCodeProcess.restype = BOOL
+    kernel32.CloseHandle.argtypes = [HANDLE]
+    kernel32.CloseHandle.restype = BOOL
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if not handle:
+        return get_last_error() == error_access_denied
+    try:
+        exit_code = DWORD()
+        if not kernel32.GetExitCodeProcess(handle, byref(exit_code)):
+            return True
+        return exit_code.value == still_active
+    finally:
+        kernel32.CloseHandle(handle)
 
 
 def load_run_state(settings: Settings) -> RunState:

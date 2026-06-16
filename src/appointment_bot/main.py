@@ -2,43 +2,55 @@ import argparse
 import json
 import logging
 import random
+import threading
 import time
+from collections.abc import Callable
 from contextlib import nullcontext
-from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 from uuid import uuid4
 
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.debug.page_inspector import inspect_page
+from appointment_bot.domain import (
+    AvailabilityResult,
+    RunReport,
+    public_report_dict,
+)
 from appointment_bot.flows.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     PROCESS_STAGES_SCREENSHOT_SELECTORS,
-    AvailabilityResult,
-    appointment_stage_result,
+    AppointmentOptionsNotRefreshed,
+    AppointmentWorkflowCancelled,
+    ReservationSubmissionUncertain,
     click_program_action,
     dismiss_reservation_confirmation,
     has_available_date_options,
     open_appointment_panel,
     read_appointment_availability,
-    read_process_stages,
     select_available_appointment,
     select_available_site,
     solve_reservation_captcha_and_click_reserve,
-    wait_for_programmed_appointment_stage,
     wait_for_reservation_confirmation,
 )
 from appointment_bot.flows.login import login
+from appointment_bot.flows.stages import (
+    appointment_stage_result,
+    read_process_stages,
+    wait_for_programmed_appointment_stage,
+)
 from appointment_bot.services.cleanup import cleanup_old_files
-from appointment_bot.services.database import RunRecord, create_run_record
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.notifier import (
     format_heartbeat_message,
     notify_error,
     notify_result,
     send_telegram_message,
+)
+from appointment_bot.services.run_reporting import (
+    finalize_report,
+    report_from_result,
 )
 from appointment_bot.services.runtime import (
     LockBusyError,
@@ -63,131 +75,8 @@ from appointment_bot.utils.screenshots import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class RunReport:
-    status: str
-    message: str
-    exit_code: int
-    run_id: str | None = None
-    client_id: str | None = None
-    started_at: str | None = None
-    finished_at: str | None = None
-    duration_seconds: float | None = None
-    reservation_attempted: bool = False
-    reservation_confirmed: bool = False
-    details: dict[str, Any] | None = None
-    screenshot_path: str | None = None
-    screenshot_paths: list[str] | None = None
-
-
-def _report_from_result(
-    result: AvailabilityResult,
-    *,
-    exit_code: int = 0,
-    run_id: str | None = None,
-    client_id: str | None = None,
-    started_at: str | None = None,
-    finished_at: str | None = None,
-    duration_seconds: float | None = None,
-    screenshot_path: Path | None = None,
-    screenshot_paths: list[Path] | None = None,
-) -> RunReport:
-    all_screenshot_paths = _normalize_report_screenshot_paths(
-        screenshot_path,
-        screenshot_paths,
-    )
-    return RunReport(
-        status=result.status,
-        message=result.message,
-        exit_code=exit_code,
-        run_id=run_id,
-        client_id=client_id,
-        started_at=started_at,
-        finished_at=finished_at,
-        duration_seconds=duration_seconds,
-        reservation_attempted=result.status in {"registered", "reservation_unconfirmed"},
-        reservation_confirmed=result.status == "registered",
-        details=result.details,
-        screenshot_path=str(all_screenshot_paths[0]) if all_screenshot_paths else None,
-        screenshot_paths=[str(path) for path in all_screenshot_paths] or None,
-    )
-
-
 def _json_report(report: RunReport) -> str:
-    return json.dumps(asdict(report), ensure_ascii=False)
-
-
-def settings_for_client(settings: Settings, *, username: str, password: str) -> Settings:
-    return replace(settings, login_username=username, login_password=password)
-
-
-def _finalize_report(
-    report: RunReport,
-    settings: Settings | None,
-    *,
-    record_history: bool,
-    started_at_dt: datetime,
-) -> RunReport:
-    finished_at_dt = datetime.now()
-    finished_at = finished_at_dt.isoformat(timespec="seconds")
-    duration_seconds = round((finished_at_dt - started_at_dt).total_seconds(), 3)
-    finalized = replace(
-        report,
-        finished_at=finished_at,
-        duration_seconds=duration_seconds,
-    )
-    if record_history and settings is not None and finalized.run_id is not None:
-        _record_run_history(settings, finalized)
-    return finalized
-
-
-def _record_run_history(settings: Settings, report: RunReport) -> None:
-    screenshot_paths = report.screenshot_paths or []
-    if report.screenshot_path and report.screenshot_path not in screenshot_paths:
-        screenshot_paths = [report.screenshot_path, *screenshot_paths]
-
-    try:
-        create_run_record(
-            settings,
-            RunRecord(
-                run_id=report.run_id or "",
-                client_id=report.client_id,
-                status=report.status,
-                message=report.message,
-                exit_code=report.exit_code,
-                started_at=report.started_at or "",
-                finished_at=report.finished_at or "",
-                duration_seconds=report.duration_seconds or 0,
-                reservation_attempted=report.reservation_attempted,
-                reservation_confirmed=report.reservation_confirmed,
-                details=report.details,
-                screenshot_path=report.screenshot_path,
-            ),
-            screenshot_paths=screenshot_paths,
-        )
-    except Exception as exc:
-        logger.warning("Could not record run history: %s", exc)
-
-
-def _normalize_report_screenshot_paths(
-    screenshot_path: Path | None,
-    screenshot_paths: list[Path] | None,
-) -> list[Path]:
-    paths = []
-    if screenshot_path is not None:
-        paths.append(screenshot_path)
-    if screenshot_paths:
-        paths.extend(screenshot_paths)
-
-    unique_paths = []
-    seen = set()
-    for path in paths:
-        path_key = str(path)
-        if path_key in seen:
-            continue
-        seen.add(path_key)
-        unique_paths.append(path)
-    return unique_paths
+    return json.dumps(public_report_dict(report), ensure_ascii=False)
 
 
 def _debug_snapshot(page, settings, label: str) -> None:
@@ -224,21 +113,63 @@ def _complete_available_reservation(
     settings,
     result: AvailabilityResult,
     screenshot_path: Path | None,
+    cancel_event: threading.Event | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    on_submission_intent: Callable[[], None] | None = None,
+    on_submission_started: Callable[[], None] | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
-    page = solve_reservation_captcha_and_click_reserve(page, settings)
-    confirmation_text_detected = wait_for_reservation_confirmation(page)
-    reservation_confirmation_screenshot_path = save_screenshot(
-        page,
-        settings,
-        "reservation-confirmation",
-    )
-    _debug_snapshot(page, settings, "after-reservation-click")
-    dismiss_reservation_confirmation(page)
-    programmed_stage = wait_for_programmed_appointment_stage(page, result.details)
-    updated_process_stages_screenshot_path = _save_process_stages_snapshot(
-        page,
-        settings,
-    )
+    submission_started = False
+
+    def mark_submission_started() -> None:
+        nonlocal submission_started
+        if on_submission_started is not None:
+            on_submission_started()
+        submission_started = True
+
+    try:
+        page = solve_reservation_captcha_and_click_reserve(
+            page,
+            settings,
+            cancel_event=cancel_event,
+            can_submit=can_submit,
+            expected_details=result.details,
+            on_submission_intent=on_submission_intent,
+            on_submission_started=mark_submission_started,
+        )
+        confirmation_text_detected = wait_for_reservation_confirmation(page)
+        reservation_confirmation_screenshot_path = save_screenshot(
+            page,
+            settings,
+            "reservation-confirmation",
+        )
+        _debug_snapshot(page, settings, "after-reservation-click")
+        dismiss_reservation_confirmation(page)
+        programmed_stage = wait_for_programmed_appointment_stage(page, result.details)
+        updated_process_stages_screenshot_path = _save_process_stages_snapshot(
+            page,
+            settings,
+        )
+    except ReservationSubmissionUncertain as exc:
+        submission_started = True
+        confirmation_text_detected = False
+        programmed_stage = None
+        reservation_confirmation_screenshot_path = None
+        updated_process_stages_screenshot_path = None
+        submission_error = str(exc)
+    except Exception as exc:
+        if not submission_started:
+            raise
+        confirmation_text_detected = False
+        programmed_stage = None
+        reservation_confirmation_screenshot_path = None
+        updated_process_stages_screenshot_path = None
+        submission_error = (
+            "La solicitud de reserva fue enviada, pero fallo la verificacion posterior "
+            f"({type(exc).__name__})."
+        )
+        logger.exception("Reservation was submitted but confirmation failed")
+    else:
+        submission_error = None
     screenshot_paths = [
         path
         for path in [
@@ -252,22 +183,22 @@ def _complete_available_reservation(
         screenshot_path = screenshot_paths[0]
 
     details = dict(result.details or {})
-    details["confirmacion_texto"] = (
-        "detectada" if confirmation_text_detected else "no detectada"
-    )
+    details["confirmacion_texto"] = "detectada" if confirmation_text_detected else "no detectada"
     details["confirmacion_etapa"] = (
         "Programado" if programmed_stage is not None else "no confirmada"
     )
+    if submission_error:
+        details["confirmacion_error"] = submission_error
     if programmed_stage is not None:
         details["fecha_programada"] = programmed_stage.date
 
-    if not confirmation_text_detected or programmed_stage is None:
+    if programmed_stage is None:
         return (
             AvailabilityResult(
                 status="reservation_unconfirmed",
                 message=(
                     "Se resolvio el captcha y se hizo click en Reservar, "
-                    "pero no se confirmaron el mensaje y la etapa Programado."
+                    "pero no se confirmo la etapa Programado."
                 ),
                 details=details,
             ),
@@ -278,7 +209,11 @@ def _complete_available_reservation(
     return (
         AvailabilityResult(
             status="registered",
-            message="La reserva fue confirmada por mensaje y etapa Programado.",
+            message=(
+                "La reserva fue confirmada por la etapa Programado."
+                if not confirmation_text_detected
+                else "La reserva fue confirmada por mensaje y etapa Programado."
+            ),
             details=details,
         ),
         screenshot_path,
@@ -286,7 +221,16 @@ def _complete_available_reservation(
     )
 
 
-def _monitor_appointment_availability(page, settings, process_stages_screenshot_path):
+def _monitor_appointment_availability(
+    page,
+    settings,
+    process_stages_screenshot_path,
+    cancel_event: threading.Event | None = None,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    on_submission_intent: Callable[[], None] | None = None,
+    on_submission_started: Callable[[], None] | None = None,
+):
     deadline = time.monotonic() + settings.monitor_window_seconds
     attempt = 1
     screenshot_path = None
@@ -295,12 +239,35 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
     )
 
     while True:
+        if cancel_event is not None and cancel_event.is_set():
+            return (
+                AvailabilityResult(
+                    status="paused",
+                    message="La revision fue interrumpida por una pausa del trabajador.",
+                ),
+                screenshot_path,
+                screenshot_paths,
+            )
         logger.info("Appointment availability check attempt %s", attempt)
-        page = select_available_site(page)
+        try:
+            page = select_available_site(
+                page,
+                timeout=settings.postback_timeout_seconds * 1_000,
+            )
+        except AppointmentOptionsNotRefreshed as exc:
+            result = AvailabilityResult(status="unknown", message=str(exc))
+            if on_check is not None:
+                on_check(result, attempt, None)
+            return result, screenshot_path, screenshot_paths
         _debug_snapshot(page, settings, f"after-site-selection-{attempt}")
-        result = read_appointment_availability(page)
+        result = read_appointment_availability(
+            page,
+            timeout=settings.read_timeout_seconds * 1_000,
+        )
 
         if result.status == "unknown":
+            if on_check is not None:
+                on_check(result, attempt, None)
             save_unknown_result_diagnostic(page, settings)
             result_screenshot_path = save_result_screenshot(
                 page,
@@ -321,7 +288,10 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
             result.status == "partial" and has_available_date_options(page)
         )
         if can_attempt_reservation:
-            selected_result = select_available_appointment(page)
+            selected_result = select_available_appointment(
+                page,
+                timeout=settings.postback_timeout_seconds * 1_000,
+            )
             if not settings.auto_reserve:
                 if selected_result.status == "available":
                     return (
@@ -338,26 +308,49 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
                     )
                 result = selected_result
             if selected_result.status == "available":
-                return _complete_available_reservation(
-                    page,
-                    settings,
-                    selected_result,
-                    screenshot_path,
-                )
+                if cancel_event is not None and cancel_event.is_set():
+                    return (
+                        AvailabilityResult(
+                            status="paused",
+                            message=("La pausa se aplico antes de iniciar la reserva."),
+                        ),
+                        screenshot_path,
+                        screenshot_paths,
+                    )
+                if on_check is not None:
+                    on_check(selected_result, attempt, None)
+                try:
+                    return _complete_available_reservation(
+                        page,
+                        settings,
+                        selected_result,
+                        screenshot_path,
+                        cancel_event,
+                        can_submit,
+                        on_submission_intent,
+                        on_submission_started,
+                    )
+                except AppointmentWorkflowCancelled as exc:
+                    return (
+                        AvailabilityResult(status="paused", message=str(exc)),
+                        screenshot_path,
+                        screenshot_paths,
+                    )
             if settings.auto_reserve:
                 result = selected_result
 
-        # TEMP REVIEW: Una disponibilidad parcial tambien se vuelve a comprobar dentro
+        # Una disponibilidad parcial tambien se vuelve a comprobar dentro
         # de la misma sesion; una fecha puede cargar sus horas en un intento posterior.
         if result.status not in {"unavailable", "partial"}:
+            if on_check is not None:
+                on_check(result, attempt, None)
             return result, screenshot_path, screenshot_paths
 
-        # TEMP REVIEW: El modo rapido usa una sola revision; el monitor respeta ademas
+        # El modo rapido usa una sola revision; el monitor respeta ademas
         # un maximo explicito para no consultar la pagina indefinidamente.
-        if (
-            settings.monitor_window_seconds <= 0
-            or attempt >= settings.monitor_max_attempts
-        ):
+        if settings.monitor_window_seconds <= 0 or attempt >= settings.monitor_max_attempts:
+            if on_check is not None:
+                on_check(result, attempt, None)
             return result, screenshot_path, screenshot_paths
 
         remaining_seconds = deadline - time.monotonic()
@@ -376,7 +369,20 @@ def _monitor_appointment_availability(page, settings, process_stages_screenshot_
             "No appointment availability detected; waiting %s seconds before retry",
             wait_seconds,
         )
-        page.wait_for_timeout(wait_seconds * 1_000)
+        if on_check is not None:
+            on_check(result, attempt, wait_seconds)
+        if cancel_event is not None:
+            if cancel_event.wait(wait_seconds):
+                return (
+                    AvailabilityResult(
+                        status="paused",
+                        message="La revision fue interrumpida por una pausa del trabajador.",
+                    ),
+                    screenshot_path,
+                    screenshot_paths,
+                )
+        else:
+            page.wait_for_timeout(wait_seconds * 1_000)
         if time.monotonic() >= deadline:
             logger.info("Monitor window finished after %s attempts", attempt)
             return result, screenshot_path, screenshot_paths
@@ -391,6 +397,13 @@ def run_with_report(
     apply_jitter: bool = True,
     cleanup_files: bool = True,
     record_history: bool = True,
+    cancel_event: threading.Event | None = None,
+    use_run_state: bool = True,
+    enforce_run_timeout: bool = True,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    on_submission_intent: Callable[[], None] | None = None,
+    on_submission_started: Callable[[], None] | None = None,
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
     started_at_dt = datetime.now()
@@ -406,13 +419,13 @@ def run_with_report(
             cleanup_old_files(settings)
         if apply_jitter:
             sleep_with_jitter(settings)
-        state = load_run_state(settings)
-        if should_skip_for_backoff(state):
+        state = load_run_state(settings) if use_run_state else None
+        if state is not None and should_skip_for_backoff(state):
             wait_seconds = seconds_until_next_run(state)
             logger.warning(
                 "Skipping appointment check during backoff: %s seconds left", wait_seconds
             )
-            return _finalize_report(
+            return finalize_report(
                 RunReport(
                     status="skipped",
                     message=f"Revision omitida por backoff. Faltan {wait_seconds} segundos.",
@@ -429,9 +442,25 @@ def run_with_report(
         logger.info("Starting appointment check for %s", settings.target_url)
         logger.info("Using login username %s", settings.safe_username)
 
+        if cancel_event is not None and cancel_event.is_set():
+            return finalize_report(
+                RunReport(
+                    status="paused",
+                    message="El trabajador esta pausado.",
+                    exit_code=0,
+                    run_id=run_id,
+                    client_id=client_id,
+                    started_at=started_at,
+                ),
+                settings,
+                record_history=record_history,
+                started_at_dt=started_at_dt,
+            )
+
         final_result = None
         lock_context = single_run_lock(settings) if use_lock else nullcontext()
-        with lock_context, run_timeout(settings), open_page(settings) as page:
+        timeout_context = run_timeout(settings) if enforce_run_timeout else nullcontext()
+        with lock_context, timeout_context, open_page(settings) as page:
             try:
                 login(page, settings)
                 _debug_snapshot(page, settings, "after-login")
@@ -452,6 +481,11 @@ def run_with_report(
                         page,
                         settings,
                         process_stages_screenshot_path,
+                        cancel_event,
+                        on_check,
+                        can_submit,
+                        on_submission_intent,
+                        on_submission_started,
                     )
                     notify_result(
                         result,
@@ -465,21 +499,25 @@ def run_with_report(
                 screenshot_path = save_error_screenshot(page, settings)
                 raise
 
-        state = record_success(settings, state)
-        if should_send_heartbeat(settings, state):
-            sent = send_telegram_message(
-                settings,
-                format_heartbeat_message(),
-            )
-            if sent:
-                record_heartbeat(settings, state)
-
         if final_result is None:
             final_result = AvailabilityResult(
                 status="completed",
                 message="La revision termino sin devolver un resultado especifico.",
             )
-        report = _report_from_result(
+        if state is not None:
+            if final_result.status in {"unknown", "reservation_unconfirmed"}:
+                state = record_failure(settings, state)
+            elif final_result.status != "paused":
+                state = record_success(settings, state)
+                if should_send_heartbeat(settings, state):
+                    sent = send_telegram_message(
+                        settings,
+                        format_heartbeat_message(),
+                    )
+                    if sent:
+                        record_heartbeat(settings, state)
+
+        report = report_from_result(
             final_result,
             run_id=run_id,
             client_id=client_id,
@@ -487,7 +525,7 @@ def run_with_report(
             screenshot_path=screenshot_path,
             screenshot_paths=screenshot_paths,
         )
-        return _finalize_report(
+        return finalize_report(
             report,
             settings,
             record_history=record_history,
@@ -495,7 +533,7 @@ def run_with_report(
         )
     except LockBusyError as exc:
         logger.warning("%s", exc)
-        return _finalize_report(
+        return finalize_report(
             RunReport(
                 status="skipped",
                 message=str(exc),
@@ -513,7 +551,7 @@ def run_with_report(
         if settings is not None and state is not None:
             record_failure(settings, state)
         notify_error(exc, settings, screenshot_path)
-        return _finalize_report(
+        return finalize_report(
             RunReport(
                 status="error",
                 message=str(exc),
