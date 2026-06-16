@@ -253,6 +253,37 @@ La API escucha en `127.0.0.1` por defecto. Si `APPOINTMENT_BOT_API_HOST` se camb
 aceptar conexiones externas, es obligatorio definir el token. No publicar el puerto en
 Internet.
 
+## API Para Panel Futuro
+
+El panel web futuro debe consumir la API local; no debe conectarse directo a PostgreSQL.
+Todos los endpoints `/api/v1/*` requieren:
+
+```text
+Authorization: Bearer <APPOINTMENT_BOT_API_TOKEN>
+```
+
+Endpoints disponibles:
+
+```text
+GET  /api/v1/worker
+GET  /api/v1/clients
+POST /api/v1/clients
+PATCH /api/v1/clients/{client_id}
+POST /api/v1/clients/{client_id}/pause
+POST /api/v1/clients/{client_id}/activate
+POST /api/v1/clients/{client_id}/done
+GET  /api/v1/runs?limit=50&offset=0
+GET  /api/v1/runs/{run_id}
+```
+
+La API nunca devuelve contraseñas. La clave del cliente solo se acepta como campo de
+escritura al crear o editar un cliente. El panel se agregara mas adelante en
+`src/appointment_bot/panel/` y se servira desde:
+
+```text
+http://127.0.0.1:8765/panel
+```
+
 ## Instalacion En PC Local
 
 Por ahora la PC local es el entorno recomendado porque la pagina valida IP peruana. Mantener la PC encendida, con internet estable y con el Programador de tareas de Windows o n8n disparando el bot.

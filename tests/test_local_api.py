@@ -19,12 +19,22 @@ from tests.helpers import make_settings
 class _Controller:
     is_running = True
     is_starting_or_running = True
+    pause_called = False
+    resume_called = False
 
     def health(self):
         return True, "ok"
 
     def status(self):
         return {"phase": "monitoring_observer"}
+
+    def pause(self):
+        self.pause_called = True
+        return {"phase": "paused", "paused": True}
+
+    def resume(self):
+        self.resume_called = True
+        return {"phase": "starting", "paused": False}
 
 
 @contextmanager
@@ -93,6 +103,105 @@ class LocalApiTests(unittest.TestCase):
             self.assertEqual(payload["clients"][0]["client_id"], "client-1")
             self.assertEqual(payload["clients"][0]["username_masked"], "12***8")
             self.assertNotIn("password", payload["clients"][0])
+
+    def test_client_create_update_and_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
+                create_payload = {
+                    "client_id": "client-2",
+                    "name": "Client Two",
+                    "username": "87654321",
+                    "password": "secret",
+                    "priority": 5,
+                }
+                response = _json_request(
+                    f"{base_url}/api/v1/clients",
+                    method="POST",
+                    token="secret",
+                    payload=create_payload,
+                )
+                self.assertEqual(response["status"], "created")
+
+                update = _json_request(
+                    f"{base_url}/api/v1/clients/client-2",
+                    method="PATCH",
+                    token="secret",
+                    payload={"name": "Updated", "priority": 7},
+                )
+                self.assertEqual(update["status"], "ok")
+
+                for action in ("pause", "activate", "done"):
+                    result = _json_request(
+                        f"{base_url}/api/v1/clients/client-2/{action}",
+                        method="POST",
+                        token="secret",
+                    )
+                    self.assertEqual(result["status"], "ok")
+
+                request = Request(
+                    f"{base_url}/api/v1/clients",
+                    headers={"Authorization": "Bearer secret"},
+                )
+                with urlopen(request, timeout=3) as response:
+                    clients = json.loads(response.read())["clients"]
+
+            self.assertEqual(clients[0]["client_id"], "client-2")
+            self.assertEqual(clients[0]["priority"], 7)
+            self.assertTrue(clients[0]["done"])
+
+    def test_runs_endpoints_and_legacy_worker_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            from appointment_bot.services.database import create_run_record
+            from appointment_bot.services.database_models import RunRecord
+
+            create_run_record(
+                settings,
+                RunRecord(
+                    run_id="run-api-1",
+                    client_id=None,
+                    status="unavailable",
+                    message="No slots",
+                    exit_code=0,
+                    started_at="2026-06-16T01:00:00",
+                    finished_at="2026-06-16T01:00:01",
+                    duration_seconds=1.0,
+                    reservation_attempted=False,
+                    reservation_confirmed=False,
+                    details={"dni": "12345678", "sede": "LIMA"},
+                    screenshot_path="C:/tmp/evidence.png",
+                ),
+                ["C:/tmp/evidence.png"],
+            )
+            with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
+                runs = _json_request(f"{base_url}/api/v1/runs?limit=1", token="secret")
+                detail = _json_request(f"{base_url}/api/v1/runs/run-api-1", token="secret")
+                pause = _json_request(f"{base_url}/pause", method="POST", token="secret")
+                resume = _json_request(f"{base_url}/resume", method="POST", token="secret")
+
+            self.assertEqual(len(runs["runs"]), 1)
+            self.assertEqual(detail["screenshot_paths"], ["evidence.png"])
+            self.assertEqual(detail["details"], {"sede": "LIMA"})
+            self.assertTrue(pause["paused"])
+            self.assertFalse(resume["paused"])
+
+
+def _json_request(
+    url: str,
+    *,
+    method: str = "GET",
+    token: str,
+    payload: dict | None = None,
+) -> dict:
+    data = None
+    headers = {"Authorization": f"Bearer {token}"}
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = Request(url, data=data, headers=headers, method=method)
+    with urlopen(request, timeout=3) as response:
+        return json.loads(response.read())
 
 
 if __name__ == "__main__":
