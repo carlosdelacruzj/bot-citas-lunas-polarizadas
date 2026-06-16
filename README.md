@@ -39,7 +39,7 @@ Editar `.env` con la URL y credenciales reales. No compartas ese archivo.
 appointment-bot
 ```
 
-`appointment-bot` ejecuta la cola multi-cliente con SQLite. El modo de una sola cuenta queda disponible solo para depuracion manual:
+`appointment-bot` ejecuta la cola multi-cliente con PostgreSQL. El modo de una sola cuenta queda disponible solo para depuracion manual:
 
 ```powershell
 python -m appointment_bot.main
@@ -73,7 +73,7 @@ MONITOR_WINDOW_SECONDS=300
 MONITOR_MAX_ATTEMPTS=4
 MONITOR_INTERVAL_MIN_SECONDS=80
 MONITOR_INTERVAL_MAX_SECONDS=100
-DATABASE_PATH=data/appointment_bot.sqlite
+APPOINTMENT_DATABASE_URL=
 QUEUE_MAX_RESERVATIONS_PER_RUN=0
 QUEUE_DELAY_MIN_SECONDS=5
 QUEUE_DELAY_MAX_SECONDS=15
@@ -151,7 +151,7 @@ Variables operativas para ejecucion frecuente:
 - `MONITOR_WINDOW_SECONDS`: segundos que una ejecucion permanece revisando dentro de la misma sesion. `0` conserva una sola revision.
 - `MONITOR_MAX_ATTEMPTS`: maximo de revisiones dentro de la sesion de monitoreo.
 - `MONITOR_INTERVAL_MIN_SECONDS` y `MONITOR_INTERVAL_MAX_SECONDS`: espera aleatoria entre revisiones internas cuando `MONITOR_WINDOW_SECONDS` esta activo.
-- `DATABASE_PATH`: ruta local de SQLite para historial, clientes y estados.
+- `APPOINTMENT_DATABASE_URL`: conexion PostgreSQL obligatoria para historial, clientes y estados.
 - `QUEUE_MAX_RESERVATIONS_PER_RUN`: maximo de reservas confirmadas por ejecucion de cola.
   `0` permite procesar todos los clientes pendientes.
 - `QUEUE_DELAY_MIN_SECONDS` y `QUEUE_DELAY_MAX_SECONDS`: pausa aleatoria entre clientes despues de una reserva o intento relevante.
@@ -233,7 +233,7 @@ POST http://127.0.0.1:8765/resume
 
 `/pause` interrumpe la espera actual y cierra la sesion. `/resume` abre una sesion nueva.
 `/run` y `/run-queue` devuelven HTTP 409 mientras el trabajador continuo esta activo.
-El estado se persiste en SQLite para que `/status` conserve la ultima actividad despues
+El estado se persiste en PostgreSQL para que `/status` conserve la ultima actividad despues
 de un reinicio. En este modo n8n no programa revisiones: solo supervisa `/health` y
 `/status`, o solicita pausa y reanudacion.
 
@@ -285,6 +285,7 @@ git clone https://github.com/carlosdelacruzj/bot-citas-lunas-polarizadas.git
 cd bot-citas-lunas-polarizadas
 ```
 
+
 Crear entorno virtual e instalar el proyecto:
 
 ```bash
@@ -328,7 +329,7 @@ MONITOR_WINDOW_SECONDS=300
 MONITOR_MAX_ATTEMPTS=4
 MONITOR_INTERVAL_MIN_SECONDS=80
 MONITOR_INTERVAL_MAX_SECONDS=100
-DATABASE_PATH=data/appointment_bot.sqlite
+APPOINTMENT_DATABASE_URL=postgresql://appointment_bot:cambia-esto-localmente@127.0.0.1:5432/appointment_bot
 QUEUE_MAX_RESERVATIONS_PER_RUN=0
 QUEUE_DELAY_MIN_SECONDS=5
 QUEUE_DELAY_MAX_SECONDS=15
@@ -382,13 +383,52 @@ El endpoint de una sola cuenta sigue disponible solo para depuracion y fuerza
 POST http://host.docker.internal:8765/run
 ```
 
+## PostgreSQL Para Datos Del Bot
+
+PostgreSQL es la base operativa del bot. n8n no cambia: esta configuracion es solo para
+los datos del appointment bot.
+
+Levantar PostgreSQL:
+
+```powershell
+$env:APPOINTMENT_POSTGRES_PASSWORD = "cambia-esto-localmente"
+docker compose up -d postgres
+docker compose ps
+```
+
+Configurar la conexion en `.env` local:
+
+```env
+APPOINTMENT_DATABASE_URL=postgresql://appointment_bot:cambia-esto-localmente@127.0.0.1:5432/appointment_bot
+```
+
+Si `APPOINTMENT_DATABASE_URL` falta o PostgreSQL no esta disponible, el bot no arranca.
+
+Validar conexion y datos:
+
+```powershell
+appointment-bot-client list
+appointment-bot-worker
+```
+
+Backup manual de PostgreSQL:
+
+```powershell
+docker exec appointment-bot-postgres pg_dump `
+  -U appointment_bot `
+  -d appointment_bot `
+  -F c `
+  -f /tmp/appointment_bot.dump
+docker cp appointment-bot-postgres:/tmp/appointment_bot.dump data/backups/appointment_bot.dump
+```
+
 ## Clientes Y Cola Local
 
-La cola usa SQLite local en `data/appointment_bot.sqlite`. El esquema tiene version y
-migraciones incrementales aplicadas al abrir la base. El mantenimiento elimina historial
-antiguo y referencias de capturas que ya no pertenecen a una ejecucion conservada. Esta
-base guarda credenciales de clientes en texto plano para esta primera version; no la
-subas al repositorio y protege la PC donde se ejecuta.
+La cola usa PostgreSQL mediante `APPOINTMENT_DATABASE_URL`. El esquema tiene version y
+migraciones aplicadas al abrir la base. El mantenimiento elimina historial antiguo y
+referencias de capturas que ya no pertenecen a una ejecucion conservada. La base guarda
+credenciales de clientes en texto plano para esta primera version; no la subas al
+repositorio y protege la PC donde se ejecuta.
 
 Agregar o actualizar un cliente:
 
@@ -539,4 +579,4 @@ Al ejecutar, revisar:
 - que guarda diagnosticos en `diagnostics/` si el resultado queda como indeterminado
 - que actualiza estado operativo en `state/` para lock, backoff y heartbeat
 - que `appointment-bot-client list` muestra clientes sin exponer claves
-- que `appointment-bot-run-queue` crea historial en `data/appointment_bot.sqlite`
+- que `appointment-bot-run-queue` crea historial en PostgreSQL

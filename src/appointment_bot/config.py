@@ -88,7 +88,7 @@ class Settings:
     postback_timeout_seconds: int
     read_timeout_seconds: int
     reservation_timeout_seconds: int
-    database_path: Path
+    database_url: str
     logs_dir: Path
     screenshots_dir: Path
     diagnostics_dir: Path
@@ -252,7 +252,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=180,
             minimum=30,
         ),
-        database_path=Path(os.getenv("DATABASE_PATH", "data/appointment_bot.sqlite")),
+        database_url=os.getenv("APPOINTMENT_DATABASE_URL", "").strip(),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
         diagnostics_dir=Path("diagnostics"),
@@ -294,10 +294,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         name
         for name, value in {
             "TARGET_URL": settings.target_url,
+            "APPOINTMENT_DATABASE_URL": settings.database_url,
             "LOGIN_USERNAME": settings.login_username,
             "LOGIN_PASSWORD": settings.login_password,
         }.items()
-        if not value and (require_login or name == "TARGET_URL")
+        if not value and (require_login or name in {"TARGET_URL", "APPOINTMENT_DATABASE_URL"})
     ]
     if missing:
         joined = ", ".join(missing)

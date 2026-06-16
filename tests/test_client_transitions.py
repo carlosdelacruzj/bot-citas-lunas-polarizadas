@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import sqlite3
 import tempfile
 import unittest
-from contextlib import closing
 from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -19,7 +17,7 @@ from appointment_bot.services.database import (
     mark_client_submission_pending,
     set_client_active,
 )
-from tests.helpers import make_settings
+from tests.helpers import database_connection, make_settings
 
 
 class ClientTransitionTests(unittest.TestCase):
@@ -40,12 +38,11 @@ class ClientTransitionTests(unittest.TestCase):
             add_client("client-1", "Test", "user", "password", 1, settings=settings)
             mark_client_submission_pending("client-1", settings=settings)
             old = (datetime.now() - timedelta(minutes=2)).isoformat(timespec="seconds")
-            with closing(sqlite3.connect(settings.database_path)) as connection:
-                with connection:
-                    connection.execute(
-                        "UPDATE client_state SET last_run_at = ? WHERE client_id = ?",
-                        (old, "client-1"),
-                    )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE client_state SET last_run_at = %s WHERE client_id = %s",
+                    (old, "client-1"),
+                )
 
             reconciled = reconcile_pending_submission(
                 "client-1",
