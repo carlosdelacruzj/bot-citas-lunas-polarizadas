@@ -35,6 +35,7 @@ from appointment_bot.services.run_reporting import finalize_report
 from appointment_bot.services.runtime import run_timeout, single_run_lock
 from appointment_bot.utils.sanitization import sanitize_url
 from appointment_bot.utils.screenshots import (
+    remove_screenshot_paths,
     save_result_screenshot,
     save_revealed_element_screenshot,
     save_screenshot,
@@ -154,7 +155,7 @@ def run_observer_with_report(
                         screenshot_paths=screenshot_paths,
                     )
 
-                return finalize_report(
+                report = finalize_report(
                     RunReport(
                         status=result.status,
                         message=result.message,
@@ -172,6 +173,9 @@ def run_observer_with_report(
                     record_history=record_history,
                     started_at_dt=started_at_dt,
                 )
+                if notify:
+                    remove_screenshot_paths(_report_screenshot_paths(report))
+                return report
             except Exception:
                 if settings.screenshot_on_error:
                     error_screenshot_path = _save_sanitized_observer_screenshot(
@@ -203,7 +207,7 @@ def run_observer_with_report(
                 logger.exception("Could not save observer network diagnostics")
         if notify:
             notify_error(exc, settings, error_screenshot_path)
-        return finalize_report(
+        report = finalize_report(
             RunReport(
                 status="error",
                 message=str(exc),
@@ -221,6 +225,26 @@ def run_observer_with_report(
             record_history=record_history,
             started_at_dt=started_at_dt,
         )
+        if notify:
+            remove_screenshot_paths(_report_screenshot_paths(report))
+        return report
+
+
+def _report_screenshot_paths(report: RunReport) -> list[Path]:
+    paths = []
+    if report.screenshot_path:
+        paths.append(Path(report.screenshot_path))
+    paths.extend(Path(item) for item in report.screenshot_paths or [])
+
+    unique_paths = []
+    seen = set()
+    for path in paths:
+        path_key = str(path)
+        if path_key in seen:
+            continue
+        seen.add(path_key)
+        unique_paths.append(path)
+    return unique_paths
 
 
 def _monitor_observer(

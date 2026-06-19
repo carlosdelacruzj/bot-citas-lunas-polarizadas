@@ -33,6 +33,15 @@ def normalize_screenshot_paths(
     return unique_paths
 
 
+def remove_screenshot_paths(paths: list[Path]) -> None:
+    for path in paths:
+        try:
+            path.unlink(missing_ok=True)
+            logger.info("Removed screenshot: %s", path)
+        except OSError as exc:
+            logger.warning("Could not remove screenshot %s: %s", path, exc)
+
+
 @contextmanager
 def mask_sensitive_page(page: Page) -> Iterator[None]:
     page.evaluate(

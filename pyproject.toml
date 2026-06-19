@@ -28,6 +28,8 @@ appointment-bot-local-api = "appointment_bot.services.local_api:run_local_api"
 appointment-bot-client = "appointment_bot.services.client_cli:run"
 appointment-bot-probe-availability = "appointment_bot.services.observer:main"
 appointment-bot-worker = "appointment_bot.services.continuous_host:main"
+appointment-bot-record-video = "appointment_bot.services.video_diagnostic:run_video_diagnostic"
+appointment-bot-tiktok-video = "appointment_bot.services.tiktok_video:run_tiktok_video"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -6,6 +6,7 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import nullcontext
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -15,6 +16,7 @@ from appointment_bot.config import Settings, load_settings
 from appointment_bot.debug.page_inspector import inspect_page
 from appointment_bot.domain import (
     AvailabilityResult,
+    ResultStatus,
     RunReport,
     public_report_dict,
 )
@@ -41,6 +43,7 @@ from appointment_bot.flows.stages import (
     wait_for_programmed_appointment_stage,
 )
 from appointment_bot.services.cleanup import cleanup_old_files
+from appointment_bot.services.client_video import ClientSessionVideoRecorder
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.notifier import (
     format_heartbeat_message,
@@ -67,6 +70,7 @@ from appointment_bot.services.runtime import (
 )
 from appointment_bot.utils.diagnostics import save_unknown_result_diagnostic
 from appointment_bot.utils.screenshots import (
+    remove_screenshot_paths,
     save_error_screenshot,
     save_result_screenshot,
     save_screenshot,
@@ -393,6 +397,7 @@ def run_with_report(
     settings_override: Settings | None = None,
     *,
     client_id: str | None = None,
+    client_name: str | None = None,
     use_lock: bool = True,
     apply_jitter: bool = True,
     cleanup_files: bool = True,
@@ -412,11 +417,24 @@ def run_with_report(
     state = None
     screenshot_path = None
     screenshot_paths = []
+    video_recorder: ClientSessionVideoRecorder | None = None
     try:
         settings = settings_override or load_settings()
         setup_logging(settings)
         if cleanup_files:
             cleanup_old_files(settings)
+        video_recorder = ClientSessionVideoRecorder.create(
+            settings,
+            client_id=client_id,
+            client_name=client_name,
+            started_at=started_at_dt,
+        )
+        if video_recorder is not None:
+            settings = replace(
+                settings,
+                record_video=True,
+                videos_dir=video_recorder.record_video_dir,
+            )
         if apply_jitter:
             sleep_with_jitter(settings)
         state = load_run_state(settings) if use_run_state else None
@@ -425,6 +443,8 @@ def run_with_report(
             logger.warning(
                 "Skipping appointment check during backoff: %s seconds left", wait_seconds
             )
+            if video_recorder is not None:
+                video_recorder.cleanup()
             return finalize_report(
                 RunReport(
                     status="skipped",
@@ -443,6 +463,8 @@ def run_with_report(
         logger.info("Using login username %s", settings.safe_username)
 
         if cancel_event is not None and cancel_event.is_set():
+            if video_recorder is not None:
+                video_recorder.cleanup()
             return finalize_report(
                 RunReport(
                     status="paused",
@@ -460,21 +482,32 @@ def run_with_report(
         final_result = None
         lock_context = single_run_lock(settings) if use_lock else nullcontext()
         timeout_context = run_timeout(settings) if enforce_run_timeout else nullcontext()
-        with lock_context, timeout_context, open_page(settings) as page:
+        with (
+            lock_context,
+            timeout_context,
+            open_page(
+                settings,
+                init_script=(video_recorder.init_script if video_recorder is not None else None),
+                video_path_callback=(
+                    video_recorder.capture_source_path if video_recorder is not None else None
+                ),
+            ) as page,
+        ):
             try:
                 login(page, settings)
                 _debug_snapshot(page, settings, "after-login")
                 page = click_program_action(page)
                 _debug_snapshot(page, settings, "after-program-action")
-                process_stages_screenshot_path = _save_process_stages_snapshot(page, settings)
                 stages = read_process_stages(page)
                 stage_result = appointment_stage_result(stages)
                 if stage_result is not None:
+                    process_stages_screenshot_path = _save_process_stages_snapshot(page, settings)
                     screenshot_path = process_stages_screenshot_path
                     notify_result(stage_result, settings, screenshot_path)
                     logger.info("Finished appointment check: %s", stage_result.status)
                     final_result = stage_result
                 else:
+                    process_stages_screenshot_path = None
                     page = open_appointment_panel(page)
                     _debug_snapshot(page, settings, "after-appointment-panel")
                     result, screenshot_path, screenshot_paths = _monitor_appointment_availability(
@@ -525,14 +558,22 @@ def run_with_report(
             screenshot_path=screenshot_path,
             screenshot_paths=screenshot_paths,
         )
-        return finalize_report(
+        if video_recorder is not None:
+            video_path = video_recorder.finalize(report)
+            if video_path is not None:
+                logger.info("Client session video saved: %s", video_path)
+        finalized_report = finalize_report(
             report,
             settings,
             record_history=record_history,
             started_at_dt=started_at_dt,
         )
+        _cleanup_unconfirmed_session_screenshots(finalized_report)
+        return finalized_report
     except LockBusyError as exc:
         logger.warning("%s", exc)
+        if video_recorder is not None:
+            video_recorder.cleanup()
         return finalize_report(
             RunReport(
                 status="skipped",
@@ -551,21 +592,58 @@ def run_with_report(
         if settings is not None and state is not None:
             record_failure(settings, state)
         notify_error(exc, settings, screenshot_path)
-        return finalize_report(
-            RunReport(
-                status="error",
-                message=str(exc),
-                exit_code=1,
-                run_id=run_id,
-                client_id=client_id,
-                started_at=started_at,
-                screenshot_path=str(screenshot_path) if screenshot_path is not None else None,
-                screenshot_paths=[str(path) for path in screenshot_paths] or None,
-            ),
+        error_report = RunReport(
+            status="error",
+            message=str(exc),
+            exit_code=1,
+            run_id=run_id,
+            client_id=client_id,
+            started_at=started_at,
+            screenshot_path=str(screenshot_path) if screenshot_path is not None else None,
+            screenshot_paths=[str(path) for path in screenshot_paths] or None,
+        )
+        if video_recorder is not None:
+            video_recorder.finalize(error_report)
+        finalized_report = finalize_report(
+            error_report,
             settings,
             record_history=record_history,
             started_at_dt=started_at_dt,
         )
+        _cleanup_unconfirmed_session_screenshots(finalized_report)
+        return finalized_report
+
+
+def _cleanup_unconfirmed_session_screenshots(report: RunReport) -> None:
+    if _reservation_confirmed(report):
+        return
+
+    remove_screenshot_paths(_report_screenshot_paths(report))
+
+
+def _reservation_confirmed(report: RunReport) -> bool:
+    if report.status == ResultStatus.REGISTERED or report.reservation_confirmed:
+        return True
+    details = report.details or {}
+    status = str(details.get("estado") or "").strip().lower()
+    return report.status == ResultStatus.COMPLETED and status == "programado"
+
+
+def _report_screenshot_paths(report: RunReport) -> list[Path]:
+    paths = []
+    if report.screenshot_path:
+        paths.append(Path(report.screenshot_path))
+    paths.extend(Path(item) for item in report.screenshot_paths or [])
+
+    unique_paths = []
+    seen = set()
+    for path in paths:
+        path_key = str(path)
+        if path_key in seen:
+            continue
+        seen.add(path_key)
+        unique_paths.append(path)
+    return unique_paths
 
 
 def run() -> int:

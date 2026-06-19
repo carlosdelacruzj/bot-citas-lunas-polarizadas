@@ -60,6 +60,14 @@ AUTO_RESERVE=true
 SCREENSHOT_ON_ERROR=true
 SCREENSHOT_ON_RELEVANT_RESULT=true
 SCREENSHOT_DEVICE_SCALE_FACTOR=2
+RECORD_VIDEO=false
+RECORD_VIDEO_DIR=videos
+RECORD_VIDEO_WIDTH=1920
+RECORD_VIDEO_HEIGHT=1080
+RECORD_VIDEO_SEND_TELEGRAM=false
+RECORD_CLIENT_SESSIONS=false
+RECORD_CLIENT_VIDEO_FINAL_MP4=true
+RECORD_CLIENT_VIDEO_DIR=videos/reservations
 DEBUG_SNAPSHOTS=false
 LOG_LEVEL=INFO
 CLEANUP_RETENTION_DAYS=14
@@ -118,6 +126,59 @@ Para depurar visualmente cada paso, usar:
 DEBUG_SNAPSHOTS=true
 ```
 
+Para grabar un video diagnostico real del flujo observador sin reservar:
+
+```powershell
+appointment-bot-record-video
+```
+
+El comando pausa temporalmente el worker si la API local esta disponible, inicia sesion sin
+grabar, abre una segunda sesion autenticada con grabacion y guarda el `.webm` en `videos/`.
+No pulsa el boton final `Reservar`. Para enviarlo por Telegram si el archivo no es demasiado
+grande:
+
+```powershell
+appointment-bot-record-video --send-telegram
+```
+
+El video diagnostico es horizontal y esta pensado para revision interna. Para TikTok conviene
+crear despues una version vertical editada y sin datos reales.
+
+Para una demo movil real con mejor encuadre:
+
+```powershell
+appointment-bot-record-video --mobile-demo
+```
+
+Este comando genera el WebM base, un MP4 `appointment-bot-mobile-demo-final-...mp4` y una
+version adicional `appointment-bot-mobile-demo-zoom-final-...mp4` con zoom al modal y al boton
+`Reservar Cita`.
+
+Para generar una version vertical MP4 lista para revisar antes de publicar en TikTok:
+
+```powershell
+appointment-bot-tiktok-video
+```
+
+El comando usa el ultimo `videos/appointment-bot-diagnostic-*.webm` y exporta un MP4 en
+`videos/tiktok/`. Por defecto usa el estilo `scenes`: arma una demo vertical con portada,
+zoom por escenas y capturas sanitizadas del flujo, para evitar que el portal horizontal se
+vea diminuto en celular. Tambien se puede indicar la entrada manualmente:
+
+```powershell
+appointment-bot-tiktok-video --input videos\appointment-bot-diagnostic-YYYYMMDD-HHMMSS.webm
+```
+
+Para generar una version de respaldo con el video horizontal completo dentro del formato
+vertical:
+
+```powershell
+appointment-bot-tiktok-video --style full-frame
+```
+
+Requiere `ffmpeg` y `ffprobe` instalados en Windows. Si no estan en el `PATH`, el comando
+intenta encontrarlos en la instalacion local de winget.
+
 Para ejecucion mas rapida, mantener:
 
 ```env
@@ -141,6 +202,18 @@ Variables operativas para ejecucion frecuente:
   CAPTCHA de reserva depende de ellas.
 - `SCREENSHOT_DEVICE_SCALE_FACTOR`: escala de captura. El valor recomendado `2` mejora la
   legibilidad de la evidencia enviada como foto a Telegram.
+- `RECORD_VIDEO`: activa grabacion de video en contextos Playwright que usen la configuracion.
+  El comando `appointment-bot-record-video` fuerza la grabacion aunque esta variable siga en
+  `false`.
+- `RECORD_VIDEO_DIR`: carpeta local para videos diagnosticos. No se versiona.
+- `RECORD_VIDEO_WIDTH` y `RECORD_VIDEO_HEIGHT`: resolucion del video. Para diagnostico se
+  recomienda `1920x1080`.
+- `RECORD_VIDEO_SEND_TELEGRAM`: envia el video diagnostico por Telegram si el archivo no supera
+  el limite configurado.
+- `RECORD_CLIENT_SESSIONS`: graba sesiones de clientes reales durante el worker continuo o cola.
+  Si no hay reserva confirmada, el video temporal se elimina.
+- `RECORD_CLIENT_VIDEO_FINAL_MP4`: convierte el video confirmado a MP4 local con mejor calidad.
+- `RECORD_CLIENT_VIDEO_DIR`: carpeta local para videos de reservas confirmadas. No se versiona.
 - `RUN_TIMEOUT_SECONDS`: limite global mediante `SIGALRM` en sistemas compatibles. En
   Windows no existe ese timeout global; los timeouts de Playwright y el supervisor de
   salud del worker limitan y reinician operaciones estancadas.
@@ -194,14 +267,17 @@ Probar el worker en primer plano:
 appointment-bot-worker
 ```
 
-Para operacion diaria se recomienda el Programador de tareas de Windows, ejecutando
-`pythonw.exe` para no abrir una consola. Crear la tarea una sola vez:
+Para operacion diaria se recomienda el Programador de tareas de Windows. La tarea debe
+ejecutar `scripts/start-worker.ps1`, que inicia Docker Desktop si hace falta, levanta
+PostgreSQL con `docker compose up -d`, espera a que el contenedor este `healthy` y recien
+despues inicia el worker. Crear la tarea una sola vez:
 
 ```powershell
 $project = (Get-Location).Path
+$script = Join-Path $project "scripts\start-worker.ps1"
 $action = New-ScheduledTaskAction `
-  -Execute "$project\.venv\Scripts\pythonw.exe" `
-  -Argument "-m appointment_bot.services.continuous_host" `
+  -Execute "powershell.exe" `
+  -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`"" `
   -WorkingDirectory $project
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet `

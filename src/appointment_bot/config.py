@@ -57,6 +57,12 @@ class Settings:
     screenshot_on_error: bool
     screenshot_on_relevant_result: bool
     screenshot_device_scale_factor: int
+    record_video: bool
+    record_video_width: int
+    record_video_height: int
+    record_video_send_telegram: bool
+    record_client_sessions: bool
+    record_client_video_final_mp4: bool
     debug_snapshots: bool
     log_level: str
     telegram_enabled: bool
@@ -92,6 +98,8 @@ class Settings:
     logs_dir: Path
     screenshots_dir: Path
     diagnostics_dir: Path
+    videos_dir: Path
+    client_videos_dir: Path
     state_dir: Path
 
     @property
@@ -123,6 +131,29 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("SCREENSHOT_DEVICE_SCALE_FACTOR"),
             default=2,
             minimum=1,
+        ),
+        record_video=_parse_bool(os.getenv("RECORD_VIDEO"), default=False),
+        record_video_width=_parse_int(
+            os.getenv("RECORD_VIDEO_WIDTH"),
+            default=1920,
+            minimum=320,
+        ),
+        record_video_height=_parse_int(
+            os.getenv("RECORD_VIDEO_HEIGHT"),
+            default=1080,
+            minimum=240,
+        ),
+        record_video_send_telegram=_parse_bool(
+            os.getenv("RECORD_VIDEO_SEND_TELEGRAM"),
+            default=False,
+        ),
+        record_client_sessions=_parse_bool(
+            os.getenv("RECORD_CLIENT_SESSIONS"),
+            default=False,
+        ),
+        record_client_video_final_mp4=_parse_bool(
+            os.getenv("RECORD_CLIENT_VIDEO_FINAL_MP4"),
+            default=True,
         ),
         debug_snapshots=_parse_bool(os.getenv("DEBUG_SNAPSHOTS"), default=False),
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
@@ -256,6 +287,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
         diagnostics_dir=Path("diagnostics"),
+        videos_dir=Path(os.getenv("RECORD_VIDEO_DIR", "videos").strip() or "videos"),
+        client_videos_dir=Path(
+            os.getenv("RECORD_CLIENT_VIDEO_DIR", "videos/reservations").strip()
+            or "videos/reservations"
+        ),
         state_dir=Path("state"),
     )
 

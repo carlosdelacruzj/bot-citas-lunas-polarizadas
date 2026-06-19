@@ -9,9 +9,11 @@ logs/*
 screenshots/*
 diagnostics/*
 state/*
+videos/*
 data/*
 !logs/.gitkeep
 !screenshots/.gitkeep
 !diagnostics/.gitkeep
 !state/.gitkeep
+!videos/.gitkeep
 !data/.gitkeep

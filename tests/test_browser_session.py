@@ -15,6 +15,14 @@ class BrowserSessionTests(unittest.TestCase):
 
         self.assertNotIn("image", BLOCKED_RESOURCE_TYPES)
         self.assertEqual(settings.screenshot_device_scale_factor, 2)
+        self.assertFalse(settings.record_video)
+        self.assertEqual(settings.record_video_width, 1920)
+        self.assertEqual(settings.record_video_height, 1080)
+        self.assertFalse(settings.record_video_send_telegram)
+        self.assertFalse(settings.record_client_sessions)
+        self.assertTrue(settings.record_client_video_final_mp4)
+        self.assertEqual(settings.videos_dir.name, "videos")
+        self.assertEqual(settings.client_videos_dir.name, "reservations")
 
 
 if __name__ == "__main__":

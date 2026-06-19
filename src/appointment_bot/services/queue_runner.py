@@ -351,6 +351,7 @@ def _run_client(
     report = run_with_report(
         client_settings,
         client_id=client.client_id,
+        client_name=client.name,
         use_lock=False,
         apply_jitter=False,
         cleanup_files=False,

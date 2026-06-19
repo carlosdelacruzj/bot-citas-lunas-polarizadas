@@ -38,6 +38,7 @@ from appointment_bot.services.queue_runner import run_rapid_queue_with_settings
 from appointment_bot.services.run_reporting import settings_for_client
 from appointment_bot.services.runtime import single_run_lock
 from appointment_bot.utils.sanitization import sanitize_text
+from appointment_bot.utils.screenshots import remove_screenshot_paths
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,7 @@ class ContinuousWorker:
         report = run_with_report(
             cycle_settings,
             client_id=client.client_id,
+            client_name=client.name,
             use_lock=False,
             apply_jitter=False,
             cleanup_files=False,
@@ -334,6 +336,7 @@ class ContinuousWorker:
         signature = _availability_signature(report)
         state = get_worker_state(self.settings)
         if signature == state.availability_signature:
+            remove_screenshot_paths(_report_screenshot_paths(report))
             return
         result = AvailabilityResult(
             status=report.status,
@@ -342,6 +345,7 @@ class ContinuousWorker:
         )
         screenshot_path = Path(report.screenshot_path) if report.screenshot_path else None
         delivered = notify_result(result, self.settings, screenshot_path)
+        remove_screenshot_paths(_report_screenshot_paths(report))
         if delivered or not self.settings.telegram_enabled:
             update_worker_state(self.settings, availability_signature=signature)
 
@@ -628,6 +632,23 @@ def _normalize_signature_value(value):
         normalized = [_normalize_signature_value(item) for item in value]
         return sorted(normalized, key=lambda item: json.dumps(item, sort_keys=True))
     return value
+
+
+def _report_screenshot_paths(report: RunReport) -> list[Path]:
+    paths = []
+    if report.screenshot_path:
+        paths.append(Path(report.screenshot_path))
+    paths.extend(Path(item) for item in report.screenshot_paths or [])
+
+    unique_paths = []
+    seen = set()
+    for path in paths:
+        path_key = str(path)
+        if path_key in seen:
+            continue
+        seen.add(path_key)
+        unique_paths.append(path)
+    return unique_paths
 
 
 def _now() -> str:

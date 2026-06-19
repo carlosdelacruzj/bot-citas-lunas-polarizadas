@@ -42,6 +42,12 @@ def make_settings(root: Path) -> Settings:
             "APPOINTMENT_DATABASE_URL": _schema_url(database_url, schema),
             "CONTINUOUS_WORKER_ENABLED": "true",
             "AUTO_RESERVE": "true",
+            "RECORD_VIDEO": "false",
+            "RECORD_VIDEO_WIDTH": "1920",
+            "RECORD_VIDEO_HEIGHT": "1080",
+            "RECORD_VIDEO_SEND_TELEGRAM": "false",
+            "RECORD_CLIENT_SESSIONS": "false",
+            "RECORD_CLIENT_VIDEO_FINAL_MP4": "true",
         },
         clear=False,
     ):
@@ -51,6 +57,8 @@ def make_settings(root: Path) -> Settings:
         logs_dir=root / "logs",
         screenshots_dir=root / "screenshots",
         diagnostics_dir=root / "diagnostics",
+        videos_dir=root / "videos",
+        client_videos_dir=root / "videos" / "reservations",
         state_dir=root / "state",
         cleanup_retention_days=14,
     )
