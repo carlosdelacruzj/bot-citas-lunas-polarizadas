@@ -1,6 +1,7 @@
 param(
     [int]$DockerTimeoutSeconds = 180,
-    [int]$PostgresTimeoutSeconds = 180
+    [int]$PostgresTimeoutSeconds = 180,
+    [int]$WorkerRestartDelaySeconds = 30
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +24,31 @@ function Test-CommandAvailable {
     return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Invoke-LoggedCommand {
+    param(
+        [string]$Description,
+        [scriptblock]$Command
+    )
+
+    Write-BootstrapLog $Description
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & $Command *>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($output) {
+        foreach ($line in $output) {
+            Write-BootstrapLog ("  {0}" -f $line)
+        }
+    }
+    if ($exitCode -ne 0) {
+        throw "$Description failed with exit code $exitCode."
+    }
+}
+
 function Wait-Until {
     param(
         [scriptblock]$Condition,
@@ -43,60 +69,87 @@ function Wait-Until {
     throw $TimeoutMessage
 }
 
-Write-BootstrapLog "Bootstrap started."
+try {
+    Write-BootstrapLog "Bootstrap started."
 
-$dockerDesktop = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-if (Test-Path $dockerDesktop) {
-    $dockerProcesses = Get-Process -Name "Docker Desktop", "com.docker.backend" -ErrorAction SilentlyContinue
-    if (-not $dockerProcesses) {
-        Write-BootstrapLog "Starting Docker Desktop."
-        Start-Process -FilePath $dockerDesktop -WindowStyle Hidden
-    }
-}
-
-if (-not (Test-CommandAvailable "docker")) {
-    throw "docker command is not available in PATH."
-}
-
-Wait-Until `
-    -TimeoutSeconds $DockerTimeoutSeconds `
-    -WaitingMessage "Waiting for Docker engine." `
-    -TimeoutMessage "Docker engine did not become ready." `
-    -Condition {
-        try {
-            docker info *> $null
-            return $LASTEXITCODE -eq 0
-        } catch {
-            return $false
+    $dockerDesktop = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    if (Test-Path $dockerDesktop) {
+        $dockerProcesses = Get-Process -Name "Docker Desktop", "com.docker.backend" -ErrorAction SilentlyContinue
+        if (-not $dockerProcesses) {
+            Write-BootstrapLog "Starting Docker Desktop."
+            Start-Process -FilePath $dockerDesktop -WindowStyle Hidden
         }
     }
 
-Write-BootstrapLog "Docker engine is ready. Starting compose services."
-docker compose up -d *> $null
-if ($LASTEXITCODE -ne 0) {
-    throw "docker compose up -d failed."
-}
+    if (-not (Test-CommandAvailable "docker")) {
+        throw "docker command is not available in PATH."
+    }
 
-Wait-Until `
-    -TimeoutSeconds $PostgresTimeoutSeconds `
-    -WaitingMessage "Waiting for appointment-bot-postgres health." `
-    -TimeoutMessage "appointment-bot-postgres did not become healthy." `
-    -Condition {
+    Wait-Until `
+        -TimeoutSeconds $DockerTimeoutSeconds `
+        -WaitingMessage "Waiting for Docker engine." `
+        -TimeoutMessage "Docker engine did not become ready." `
+        -Condition {
+            try {
+                docker info *> $null
+                return $LASTEXITCODE -eq 0
+            } catch {
+                return $false
+            }
+        }
+
+    $composeStarted = $false
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
         try {
-            $health = docker inspect appointment-bot-postgres --format "{{.State.Health.Status}}" 2>$null
-            return $LASTEXITCODE -eq 0 -and $health.Trim() -eq "healthy"
+            Invoke-LoggedCommand `
+                -Description "Docker engine is ready. Starting compose services. Attempt $attempt." `
+                -Command { docker compose up -d }
+            $composeStarted = $true
+            break
         } catch {
-            return $false
+            Write-BootstrapLog ("Compose start failed: {0}" -f $_.Exception.Message)
+            if ($attempt -ge 3) {
+                throw
+            }
+            Start-Sleep -Seconds 10
         }
     }
 
-Write-BootstrapLog "Postgres is healthy. Starting continuous worker."
-$python = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-if (-not (Test-Path $python)) {
-    throw "Python virtual environment was not found at $python."
-}
+    if (-not $composeStarted) {
+        throw "docker compose up -d did not complete."
+    }
 
-& $python -m appointment_bot.services.continuous_host
-$exitCode = $LASTEXITCODE
-Write-BootstrapLog "Continuous worker exited with code $exitCode."
-exit $exitCode
+    Wait-Until `
+        -TimeoutSeconds $PostgresTimeoutSeconds `
+        -WaitingMessage "Waiting for appointment-bot-postgres health." `
+        -TimeoutMessage "appointment-bot-postgres did not become healthy." `
+        -Condition {
+            try {
+                $health = docker inspect appointment-bot-postgres --format "{{.State.Health.Status}}" 2>$null
+                return $LASTEXITCODE -eq 0 -and $health.Trim() -eq "healthy"
+            } catch {
+                return $false
+            }
+        }
+
+    Write-BootstrapLog "Postgres is healthy. Starting continuous worker."
+    $python = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+    if (-not (Test-Path $python)) {
+        throw "Python virtual environment was not found at $python."
+    }
+
+    while ($true) {
+        & $python -m appointment_bot.services.continuous_host
+        $exitCode = $LASTEXITCODE
+        Write-BootstrapLog "Continuous worker exited with code $exitCode."
+        if ($exitCode -eq 0) {
+            exit 0
+        }
+        $restartDelay = if ($exitCode -eq 75) { 1 } else { $WorkerRestartDelaySeconds }
+        Write-BootstrapLog "Restarting continuous worker in $restartDelay seconds."
+        Start-Sleep -Seconds $restartDelay
+    }
+} catch {
+    Write-BootstrapLog ("Bootstrap failed: {0}" -f $_.Exception.Message)
+    exit 1
+}

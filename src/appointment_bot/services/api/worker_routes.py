@@ -4,7 +4,7 @@ from dataclasses import asdict
 from typing import Any
 
 from appointment_bot.config import load_settings
-from appointment_bot.services.database import get_worker_state
+from appointment_bot.services.postgres_database import get_worker_state
 
 
 def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]:

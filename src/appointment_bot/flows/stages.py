@@ -8,6 +8,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
 from appointment_bot.domain import AvailabilityResult
+from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
 
@@ -80,11 +81,11 @@ def appointment_stage_result(stages: list[ProcessStage]) -> AvailabilityResult |
     if appointment_stage.message:
         details["mensaje"] = appointment_stage.message
 
-    if normalized_status == "programado":
+    if normalized_status in {"programado", "atendido"}:
         return AvailabilityResult(
             status="completed",
             message=(
-                "La etapa Separa Cita Peritaje ya esta en estado Programado. "
+                f"La etapa Separa Cita Peritaje ya esta en estado {appointment_stage.status}. "
                 "No hay una cita pendiente por reservar."
             ),
             details=details,
@@ -108,8 +109,8 @@ def wait_for_programmed_appointment_stage(
     timeout: int = 15_000,
 ) -> ProcessStage | None:
     expected_details = expected_details or {}
-    expected_date = _normalize_option(expected_details.get("fecha", ""))
-    expected_hour = _normalize_option(expected_details.get("hora", ""))
+    expected_date = normalize_option(expected_details.get("fecha", ""))
+    expected_hour = normalize_option(expected_details.get("hora", ""))
     deadline = time.monotonic() + timeout / 1_000
     mismatch_logged = False
 
@@ -129,7 +130,7 @@ def wait_for_programmed_appointment_stage(
             None,
         )
         if stage is not None:
-            programmed_text = _normalize_option(f"{stage.date} {stage.message}")
+            programmed_text = normalize_option(f"{stage.date} {stage.message}")
             date_matches = not expected_date or expected_date in programmed_text
             hour_matches = not expected_hour or expected_hour in programmed_text
             if not date_matches or not hour_matches:
@@ -147,7 +148,3 @@ def wait_for_programmed_appointment_stage(
 
     logger.info("Programmed appointment stage was not confirmed before timeout")
     return None
-
-
-def _normalize_option(value: str) -> str:
-    return " ".join(value.strip().lower().split())

@@ -11,16 +11,16 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from appointment_bot.services.database import add_client
 from appointment_bot.services.local_api import create_local_api_server
+from appointment_bot.services.postgres_database import create_service_order
 from tests.helpers import make_settings
 
 
 class _Controller:
     is_running = True
-    is_starting_or_running = True
     pause_called = False
     resume_called = False
+    restart_called = False
 
     def health(self):
         return True, "ok"
@@ -36,9 +36,17 @@ class _Controller:
         self.resume_called = True
         return {"phase": "starting", "paused": False}
 
+    def prepare_restart(self):
+        self.restart_called = True
+        return {"phase": "restarting", "paused": False}
+
 
 @contextmanager
-def _running_server(extra_environment: dict[str, str] | None = None):
+def _running_server(
+    extra_environment: dict[str, str] | None = None,
+    *,
+    restart_callback=None,
+):
     environment_values = {
         "APPOINTMENT_BOT_API_HOST": "127.0.0.1",
         "APPOINTMENT_BOT_API_PORT": "0",
@@ -51,7 +59,10 @@ def _running_server(extra_environment: dict[str, str] | None = None):
         environment_values,
     )
     with environment:
-        server = create_local_api_server(worker_controller=_Controller())
+        server = create_local_api_server(
+            worker_controller=_Controller(),
+            restart_callback=restart_callback,
+        )
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
@@ -63,7 +74,7 @@ def _running_server(extra_environment: dict[str, str] | None = None):
 
 
 class LocalApiTests(unittest.TestCase):
-    def test_health_is_public_but_status_requires_token(self) -> None:
+    def test_health_is_public_but_worker_status_requires_token(self) -> None:
         with _running_server() as base_url:
             with urlopen(f"{base_url}/health", timeout=3) as response:
                 self.assertEqual(response.status, 200)
@@ -72,95 +83,93 @@ class LocalApiTests(unittest.TestCase):
             self.assertTrue(health["worker_running"])
 
             with self.assertRaises(HTTPError) as context:
-                urlopen(f"{base_url}/status", timeout=3)
+                urlopen(f"{base_url}/api/v1/worker", timeout=3)
             self.assertEqual(context.exception.code, 401)
 
             request = Request(
-                f"{base_url}/status",
+                f"{base_url}/api/v1/worker",
                 headers={"Authorization": "Bearer secret"},
             )
             with urlopen(request, timeout=3) as response:
                 payload = json.loads(response.read())
             self.assertEqual(payload["phase"], "monitoring_observer")
 
-    def test_api_clients_requires_token_and_does_not_expose_password(self) -> None:
+    def test_api_service_orders_requires_token_and_does_not_expose_password(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            add_client("client-1", "Test", "12345678", "secret", 1, settings=settings)
+            create_service_order(
+                document_number="12345678",
+                password="secret",
+                applicant_name="Test",
+                priority=1,
+                settings=settings,
+            )
 
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 with self.assertRaises(HTTPError) as context:
-                    urlopen(f"{base_url}/api/v1/clients", timeout=3)
+                    urlopen(f"{base_url}/api/v1/service-orders", timeout=3)
                 self.assertEqual(context.exception.code, 401)
 
                 request = Request(
-                    f"{base_url}/api/v1/clients",
+                    f"{base_url}/api/v1/service-orders",
                     headers={"Authorization": "Bearer secret"},
                 )
                 with urlopen(request, timeout=3) as response:
                     payload = json.loads(response.read())
 
-            self.assertEqual(payload["clients"][0]["client_id"], "client-1")
-            self.assertEqual(payload["clients"][0]["username_masked"], "12***8")
-            self.assertNotIn("password", payload["clients"][0])
+            self.assertEqual(payload["service_orders"][0]["order_id"], "order-12345678")
+            self.assertEqual(payload["service_orders"][0]["document_number_masked"], "12***8")
+            self.assertNotIn("password", payload["service_orders"][0])
 
-    def test_client_create_update_and_actions(self) -> None:
+    def test_service_order_create_and_actions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 create_payload = {
-                    "client_id": "client-2",
-                    "name": "Client Two",
-                    "username": "87654321",
+                    "document_number": "87654321",
                     "password": "secret",
+                    "applicant_name": "Client Two",
                     "priority": 5,
                 }
                 response = _json_request(
-                    f"{base_url}/api/v1/clients",
+                    f"{base_url}/api/v1/service-orders",
                     method="POST",
                     token="secret",
                     payload=create_payload,
                 )
                 self.assertEqual(response["status"], "created")
-
-                update = _json_request(
-                    f"{base_url}/api/v1/clients/client-2",
-                    method="PATCH",
-                    token="secret",
-                    payload={"name": "Updated", "priority": 7},
-                )
-                self.assertEqual(update["status"], "ok")
+                order_id = response["order_id"]
 
                 for action in ("pause", "activate", "done"):
                     result = _json_request(
-                        f"{base_url}/api/v1/clients/client-2/{action}",
+                        f"{base_url}/api/v1/service-orders/{order_id}/{action}",
                         method="POST",
                         token="secret",
                     )
                     self.assertEqual(result["status"], "ok")
 
                 request = Request(
-                    f"{base_url}/api/v1/clients",
+                    f"{base_url}/api/v1/service-orders",
                     headers={"Authorization": "Bearer secret"},
                 )
                 with urlopen(request, timeout=3) as response:
-                    clients = json.loads(response.read())["clients"]
+                    orders = json.loads(response.read())["service_orders"]
 
-            self.assertEqual(clients[0]["client_id"], "client-2")
-            self.assertEqual(clients[0]["priority"], 7)
-            self.assertTrue(clients[0]["done"])
+            self.assertEqual(orders[0]["order_id"], "order-87654321")
+            self.assertEqual(orders[0]["priority"], 5)
+            self.assertEqual(orders[0]["status"], "archived")
 
-    def test_runs_endpoints_and_legacy_worker_actions(self) -> None:
+    def test_runs_endpoints_and_worker_actions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            from appointment_bot.services.database import create_run_record
             from appointment_bot.services.database_models import RunRecord
+            from appointment_bot.services.postgres_database import create_run_record
 
             create_run_record(
                 settings,
                 RunRecord(
                     run_id="run-api-1",
-                    client_id=None,
+                    order_id=None,
                     status="unavailable",
                     message="No slots",
                     exit_code=0,
@@ -177,14 +186,39 @@ class LocalApiTests(unittest.TestCase):
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 runs = _json_request(f"{base_url}/api/v1/runs?limit=1", token="secret")
                 detail = _json_request(f"{base_url}/api/v1/runs/run-api-1", token="secret")
-                pause = _json_request(f"{base_url}/pause", method="POST", token="secret")
-                resume = _json_request(f"{base_url}/resume", method="POST", token="secret")
+                pause = _json_request(
+                    f"{base_url}/api/v1/worker/pause", method="POST", token="secret"
+                )
+                resume = _json_request(
+                    f"{base_url}/api/v1/worker/resume", method="POST", token="secret"
+                )
 
             self.assertEqual(len(runs["runs"]), 1)
+            self.assertIn("order_id", runs["runs"][0])
             self.assertEqual(detail["screenshot_paths"], ["evidence.png"])
+            self.assertIn("order_id", detail)
             self.assertEqual(detail["details"], {"sede": "LIMA"})
             self.assertTrue(pause["paused"])
             self.assertFalse(resume["paused"])
+
+    def test_restart_requires_token_and_invokes_host_callback(self) -> None:
+        restarted = threading.Event()
+        with _running_server(restart_callback=restarted.set) as base_url:
+            with self.assertRaises(HTTPError) as context:
+                urlopen(
+                    Request(f"{base_url}/api/v1/worker/restart", method="POST"),
+                    timeout=3,
+                )
+            self.assertEqual(context.exception.code, 401)
+
+            response = _json_request(
+                f"{base_url}/api/v1/worker/restart",
+                method="POST",
+                token="secret",
+            )
+
+        self.assertEqual(response["status"], "restarting")
+        self.assertTrue(restarted.is_set())
 
 
 def _json_request(

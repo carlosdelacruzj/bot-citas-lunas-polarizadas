@@ -7,13 +7,13 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from typing import Any
 
+MAX_JSON_BODY_BYTES = 64 * 1024
 
-def is_authorized(headers) -> bool:
-    token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
-    if not token:
-        return True
-    header_value = headers.get("Authorization", "")
-    return hmac.compare_digest(header_value, f"Bearer {token}")
+
+class RequestBodyError(ValueError):
+    def __init__(self, status: HTTPStatus, message: str) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 def require_authorized(
@@ -47,15 +47,27 @@ def require_authorized(
 
 
 def read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
-    length = int(handler.headers.get("Content-Length", "0") or "0")
+    try:
+        length = int(handler.headers.get("Content-Length", "0") or "0")
+    except ValueError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length header.") from exc
+    if length < 0:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length header.")
+    if length > MAX_JSON_BODY_BYTES:
+        raise RequestBodyError(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "JSON body is too large.")
     if length <= 0:
         return {}
-    body = handler.rfile.read(length).decode("utf-8")
+    try:
+        body = handler.rfile.read(length).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "JSON body must use UTF-8.") from exc
     try:
         payload = json.loads(body)
-    except json.JSONDecodeError:
-        return {}
-    return payload if isinstance(payload, dict) else {}
+    except json.JSONDecodeError as exc:
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid JSON body.") from exc
+    if not isinstance(payload, dict):
+        raise RequestBodyError(HTTPStatus.BAD_REQUEST, "JSON body must be an object.")
+    return payload
 
 
 def send_json(

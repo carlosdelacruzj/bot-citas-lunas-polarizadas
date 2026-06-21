@@ -8,6 +8,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
+from appointment_bot.domain import RunReport
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,12 @@ def normalize_screenshot_paths(
         seen.add(path_key)
         unique_paths.append(path)
     return unique_paths
+
+
+def report_screenshot_paths(report: RunReport) -> list[Path]:
+    primary = Path(report.screenshot_path) if report.screenshot_path else None
+    additional = [Path(item) for item in report.screenshot_paths or []]
+    return normalize_screenshot_paths(primary, additional)
 
 
 def remove_screenshot_paths(paths: list[Path]) -> None:

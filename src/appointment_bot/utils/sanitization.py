@@ -1,5 +1,4 @@
 import re
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 SENSITIVE_PATTERNS = (
     re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"),
@@ -15,7 +14,11 @@ def sanitize_text(text: str) -> str:
     return sanitized
 
 
-def sanitize_url(url: str) -> str:
-    parsed = urlsplit(url)
-    redacted_query = urlencode([(key, "***") for key, _value in parse_qsl(parsed.query)])
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, redacted_query, ""))
+def normalize_option(value: str) -> str:
+    return " ".join(value.strip().lower().split())
+
+
+def public_filename(value: str | None) -> str | None:
+    if not value:
+        return None
+    return str(value).replace("\\", "/").rsplit("/", maxsplit=1)[-1]

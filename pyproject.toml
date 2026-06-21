@@ -10,8 +10,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "2captcha-python>=1.5.1",
+    "cryptography>=42.0.0",
     "playwright>=1.44.0",
-    "psycopg[binary]>=3.2.0",
+    "psycopg[binary,pool]>=3.2.0",
     "python-dotenv>=1.0.1",
 ]
 
@@ -21,15 +22,8 @@ dev = [
 ]
 
 [project.scripts]
-appointment-bot = "appointment_bot.services.queue_runner:main"
-appointment-bot-run-queue = "appointment_bot.services.queue_runner:main"
-appointment-bot-test-telegram = "appointment_bot.services.notifier:run_telegram_test"
-appointment-bot-local-api = "appointment_bot.services.local_api:run_local_api"
 appointment-bot-client = "appointment_bot.services.client_cli:run"
-appointment-bot-probe-availability = "appointment_bot.services.observer:main"
 appointment-bot-worker = "appointment_bot.services.continuous_host:main"
-appointment-bot-record-video = "appointment_bot.services.video_diagnostic:run_video_diagnostic"
-appointment-bot-tiktok-video = "appointment_bot.services.tiktok_video:run_tiktok_video"
 
 [tool.setuptools.packages.find]
 where = ["src"]

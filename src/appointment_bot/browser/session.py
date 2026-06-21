@@ -16,12 +16,15 @@ def open_page(
     headless: bool | None = None,
     block_heavy_assets: bool | None = None,
     init_script: str | None = None,
+    video_dir: Path | None = None,
+    video_width: int | None = None,
+    video_height: int | None = None,
     video_path_callback: Callable[[Path | None], None] | None = None,
 ) -> Iterator[Page]:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
-    if settings.record_video:
-        settings.videos_dir.mkdir(parents=True, exist_ok=True)
+    if video_dir is not None:
+        video_dir.mkdir(parents=True, exist_ok=True)
 
     effective_headless = settings.headless if headless is None else headless
     effective_block_heavy_assets = (
@@ -33,17 +36,19 @@ def open_page(
         context_options = {
             "device_scale_factor": settings.screenshot_device_scale_factor,
         }
-        if settings.record_video:
+        if video_dir is not None:
+            width = video_width or settings.client_video_width
+            height = video_height or settings.client_video_height
             context_options.update(
                 {
-                    "record_video_dir": str(settings.videos_dir),
+                    "record_video_dir": str(video_dir),
                     "record_video_size": {
-                        "width": settings.record_video_width,
-                        "height": settings.record_video_height,
+                        "width": width,
+                        "height": height,
                     },
                     "viewport": {
-                        "width": settings.record_video_width,
-                        "height": settings.record_video_height,
+                        "width": width,
+                        "height": height,
                     },
                 }
             )
@@ -65,9 +70,11 @@ def open_page(
             yield page
         finally:
             video_path = None
-            context.close()
-            if video is not None:
-                video_path = Path(video.path())
-            if video_path_callback is not None:
-                video_path_callback(video_path)
-            browser.close()
+            try:
+                context.close()
+                if video is not None:
+                    video_path = Path(video.path())
+                if video_path_callback is not None:
+                    video_path_callback(video_path)
+            finally:
+                browser.close()

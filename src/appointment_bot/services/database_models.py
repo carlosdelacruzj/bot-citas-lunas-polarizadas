@@ -5,41 +5,62 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class Client:
-    client_id: str
+class ServiceOrderRuntime:
+    order_id: str
     name: str
     username: str
     password: str
     priority: int
-    active: bool
-    done: bool
+    status: str
+    created_at: str
+    updated_at: str
+    contact_name: str | None = None
+
+    @property
+    def notification_name(self) -> str:
+        parts = []
+        if self.name and self.name != self.username:
+            parts.append(self.name)
+        if self.contact_name:
+            parts.append(f"Contacto: {self.contact_name}")
+        return " | ".join(parts) or self.order_id
+
+
+@dataclass(frozen=True)
+class ServiceOrderSummary:
+    order_id: str
+    applicant_id: str
+    applicant_name: str | None
+    document_number_masked: str
+    contact_name: str | None
+    contact_whatsapp_masked: str | None
+    priority: int
+    charge_required: bool
+    status: str
+    reservation_status: str | None
+    reservation_site: str | None
+    reservation_date: str | None
+    reservation_hour: str | None
+    payment_status: str | None
+    amount_agreed: str | None
+    amount_paid: str | None
+    minimum_reservation_hour: int | None
     created_at: str
     updated_at: str
 
 
 @dataclass(frozen=True)
-class ClientSummary:
-    client_id: str
-    name: str
-    username_masked: str
-    priority: int
-    active: bool
-    done: bool
-    created_at: str
-    updated_at: str
-    last_status: str | None
-    last_message: str | None
-    consecutive_errors: int
-    next_allowed_at: str | None
-    last_run_at: str | None
-    last_success_at: str | None
-    programmed_at: str | None
+class ServiceOrderCreateResult:
+    order_id: str
+    applicant_id: str
+    portal_account_id: str
+    contact_id: str | None
 
 
 @dataclass(frozen=True)
 class RunRecord:
     run_id: str
-    client_id: str | None
+    order_id: str | None
     status: str
     message: str
     exit_code: int
@@ -55,7 +76,7 @@ class RunRecord:
 @dataclass(frozen=True)
 class RunSummary:
     run_id: str
-    client_id: str | None
+    order_id: str | None
     status: str
     message: str
     exit_code: int
@@ -79,7 +100,7 @@ class RunDetail(RunSummary):
 class WorkerState:
     phase: str = "stopped"
     paused: bool = False
-    current_client_id: str | None = None
+    current_order_id: str | None = None
     masked_account: str | None = None
     session_started_at: str | None = None
     last_check_at: str | None = None

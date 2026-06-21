@@ -1,6 +1,7 @@
 import logging
 import threading
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 
 from appointment_bot.config import Settings
 
@@ -19,7 +20,12 @@ def setup_logging(settings: Settings) -> None:
         formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
         file_handler.setFormatter(formatter)
 
         root_logger.setLevel(settings.log_level)

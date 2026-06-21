@@ -4,46 +4,63 @@ import tempfile
 import threading
 import time
 import unittest
-from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from appointment_bot.domain import RunReport
 from appointment_bot.services.continuous_worker import ContinuousWorker
-from appointment_bot.services.database import get_worker_state, update_worker_state
-from appointment_bot.services.runtime import LockBusyError
+from appointment_bot.services.database_models import ServiceOrderRuntime, WorkerState
+from appointment_bot.services.postgres_database import update_worker_state
 from tests.helpers import make_settings
 
 
-class _RejectedLock(AbstractContextManager):
-    def __enter__(self):
-        raise LockBusyError("busy")
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
-
-
 class ContinuousWorkerTests(unittest.TestCase):
-    def test_rejected_worker_does_not_overwrite_legitimate_state(self) -> None:
+    def test_primary_monitor_uses_continuous_settings_then_sweeps_other_orders(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            update_worker_state(
-                settings,
-                phase="monitoring_observer",
-                owner_token="legitimate",
-            )
             worker = ContinuousWorker(settings)
-
-            with patch(
-                "appointment_bot.services.continuous_worker.single_run_lock",
-                return_value=_RejectedLock(),
+            worker._owner_token = "owner"
+            order = ServiceOrderRuntime(
+                order_id="order-1",
+                name="Order 1",
+                username="12345678",
+                password="secret",
+                priority=1,
+                status="ready",
+                created_at="2026-06-20T00:00:00+00:00",
+                updated_at="2026-06-20T00:00:00+00:00",
+            )
+            with (
+                patch(
+                    "appointment_bot.services.continuous_worker.get_worker_state",
+                    return_value=WorkerState(),
+                ),
+                patch(
+                    "appointment_bot.services.continuous_worker.order_backoff_seconds",
+                    return_value=0,
+                ),
+                patch(
+                    "appointment_bot.services.continuous_worker.run_service_order",
+                    return_value=RunReport(
+                        status="unavailable",
+                        message="none",
+                        exit_code=0,
+                    ),
+                ) as run_order,
+                patch("appointment_bot.services.continuous_worker.update_order_state"),
+                patch.object(worker, "_set_session_state"),
+                patch.object(worker, "_record_check"),
+                patch.object(worker, "_reset_errors"),
+                patch.object(worker, "_run_rapid_queue") as sweep,
             ):
-                with self.assertRaises(LockBusyError):
-                    worker.run_forever()
+                worker._monitor_order(order)
 
-            state = get_worker_state(settings)
-            self.assertEqual(state.phase, "monitoring_observer")
-            self.assertEqual(state.owner_token, "legitimate")
+            effective_settings = run_order.call_args.args[0]
+            self.assertEqual(effective_settings.monitor_window_seconds, 1500)
+            self.assertEqual(effective_settings.monitor_interval_min_seconds, 30)
+            self.assertEqual(effective_settings.monitor_interval_max_seconds, 55)
+            sweep.assert_called_once_with(skip_order_ids={order.order_id})
 
     def test_health_detects_stalled_worker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

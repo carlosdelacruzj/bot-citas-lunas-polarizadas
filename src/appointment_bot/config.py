@@ -57,24 +57,16 @@ class Settings:
     screenshot_on_error: bool
     screenshot_on_relevant_result: bool
     screenshot_device_scale_factor: int
-    record_video: bool
-    record_video_width: int
-    record_video_height: int
-    record_video_send_telegram: bool
+    client_video_width: int
+    client_video_height: int
     record_client_sessions: bool
     record_client_video_final_mp4: bool
-    debug_snapshots: bool
     log_level: str
     telegram_enabled: bool
     telegram_bot_token: str
     telegram_chat_id: str
     telegram_notify_unavailable: bool
     cleanup_retention_days: int
-    run_jitter_min_seconds: int
-    run_jitter_max_seconds: int
-    run_timeout_seconds: int
-    lock_stale_minutes: int
-    error_backoff_threshold: int
     error_backoff_seconds: int
     monitor_window_seconds: int
     monitor_max_attempts: int
@@ -83,8 +75,6 @@ class Settings:
     queue_max_reservations_per_run: int
     queue_delay_min_seconds: int
     queue_delay_max_seconds: int
-    heartbeat_enabled: bool
-    heartbeat_interval_hours: int
     continuous_worker_enabled: bool
     continuous_interval_min_seconds: int
     continuous_interval_max_seconds: int
@@ -97,10 +87,8 @@ class Settings:
     database_url: str
     logs_dir: Path
     screenshots_dir: Path
-    diagnostics_dir: Path
-    videos_dir: Path
     client_videos_dir: Path
-    state_dir: Path
+    credential_encryption_keys: tuple[str, ...] = ()
 
     @property
     def safe_username(self) -> str:
@@ -132,20 +120,15 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=2,
             minimum=1,
         ),
-        record_video=_parse_bool(os.getenv("RECORD_VIDEO"), default=False),
-        record_video_width=_parse_int(
-            os.getenv("RECORD_VIDEO_WIDTH"),
+        client_video_width=_parse_int(
+            os.getenv("CLIENT_VIDEO_WIDTH"),
             default=1920,
             minimum=320,
         ),
-        record_video_height=_parse_int(
-            os.getenv("RECORD_VIDEO_HEIGHT"),
+        client_video_height=_parse_int(
+            os.getenv("CLIENT_VIDEO_HEIGHT"),
             default=1080,
             minimum=240,
-        ),
-        record_video_send_telegram=_parse_bool(
-            os.getenv("RECORD_VIDEO_SEND_TELEGRAM"),
-            default=False,
         ),
         record_client_sessions=_parse_bool(
             os.getenv("RECORD_CLIENT_SESSIONS"),
@@ -155,7 +138,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("RECORD_CLIENT_VIDEO_FINAL_MP4"),
             default=True,
         ),
-        debug_snapshots=_parse_bool(os.getenv("DEBUG_SNAPSHOTS"), default=False),
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
         telegram_enabled=_parse_bool(os.getenv("TELEGRAM_ENABLED"), default=False),
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
@@ -167,31 +149,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
         cleanup_retention_days=_parse_int(
             os.getenv("CLEANUP_RETENTION_DAYS"),
             default=14,
-            minimum=1,
-        ),
-        run_jitter_min_seconds=_parse_int(
-            os.getenv("RUN_JITTER_MIN_SECONDS"),
-            default=0,
-            minimum=0,
-        ),
-        run_jitter_max_seconds=_parse_int(
-            os.getenv("RUN_JITTER_MAX_SECONDS"),
-            default=0,
-            minimum=0,
-        ),
-        run_timeout_seconds=_parse_int(
-            os.getenv("RUN_TIMEOUT_SECONDS"),
-            default=420,
-            minimum=30,
-        ),
-        lock_stale_minutes=_parse_int(
-            os.getenv("LOCK_STALE_MINUTES"),
-            default=10,
-            minimum=1,
-        ),
-        error_backoff_threshold=_parse_int(
-            os.getenv("ERROR_BACKOFF_THRESHOLD"),
-            default=3,
             minimum=1,
         ),
         error_backoff_seconds=_parse_int(
@@ -234,24 +191,18 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=15,
             minimum=0,
         ),
-        heartbeat_enabled=_parse_bool(os.getenv("HEARTBEAT_ENABLED"), default=False),
-        heartbeat_interval_hours=_parse_int(
-            os.getenv("HEARTBEAT_INTERVAL_HOURS"),
-            default=24,
-            minimum=1,
-        ),
         continuous_worker_enabled=_parse_bool(
             os.getenv("CONTINUOUS_WORKER_ENABLED"),
             default=False,
         ),
         continuous_interval_min_seconds=_parse_int(
             os.getenv("CONTINUOUS_INTERVAL_MIN_SECONDS"),
-            default=45,
+            default=30,
             minimum=1,
         ),
         continuous_interval_max_seconds=_parse_int(
             os.getenv("CONTINUOUS_INTERVAL_MAX_SECONDS"),
-            default=75,
+            default=55,
             minimum=1,
         ),
         session_rotation_seconds=_parse_int(
@@ -286,33 +237,21 @@ def load_settings(*, require_login: bool = True) -> Settings:
         database_url=os.getenv("APPOINTMENT_DATABASE_URL", "").strip(),
         logs_dir=Path("logs"),
         screenshots_dir=Path("screenshots"),
-        diagnostics_dir=Path("diagnostics"),
-        videos_dir=Path(os.getenv("RECORD_VIDEO_DIR", "videos").strip() or "videos"),
         client_videos_dir=Path(
             os.getenv("RECORD_CLIENT_VIDEO_DIR", "videos/reservations").strip()
             or "videos/reservations"
         ),
-        state_dir=Path("state"),
+        credential_encryption_keys=tuple(
+            key.strip()
+            for key in os.getenv("APPOINTMENT_CREDENTIAL_KEYS", "").split(",")
+            if key.strip()
+        ),
     )
-
-    if settings.run_jitter_max_seconds < settings.run_jitter_min_seconds:
-        raise ValueError(
-            "RUN_JITTER_MAX_SECONDS must be greater than or equal to RUN_JITTER_MIN_SECONDS"
-        )
 
     if settings.monitor_interval_max_seconds < settings.monitor_interval_min_seconds:
         raise ValueError(
             "MONITOR_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "MONITOR_INTERVAL_MIN_SECONDS"
-        )
-
-    # El timeout necesita margen para login, captcha, capturas y cierre.
-    if (
-        settings.monitor_window_seconds > 0
-        and settings.run_timeout_seconds < settings.monitor_window_seconds + 60
-    ):
-        raise ValueError(
-            "RUN_TIMEOUT_SECONDS must be at least 60 seconds greater than MONITOR_WINDOW_SECONDS"
         )
 
     if settings.queue_delay_max_seconds < settings.queue_delay_min_seconds:

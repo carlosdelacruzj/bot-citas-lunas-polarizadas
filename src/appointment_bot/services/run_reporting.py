@@ -12,7 +12,10 @@ from appointment_bot.domain import (
     RunReport,
     sanitize_details,
 )
-from appointment_bot.services.database import RunRecord, create_run_record
+from appointment_bot.services.postgres_database import (
+    RunRecord,
+    record_run_outcome,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 
@@ -24,7 +27,7 @@ def report_from_result(
     *,
     exit_code: int | None = None,
     run_id: str | None = None,
-    client_id: str | None = None,
+    order_id: str | None = None,
     started_at: str | None = None,
     finished_at: str | None = None,
     duration_seconds: float | None = None,
@@ -42,7 +45,7 @@ def report_from_result(
         message=result.message,
         exit_code=effective_exit_code,
         run_id=run_id,
-        client_id=client_id,
+        order_id=order_id,
         started_at=started_at,
         finished_at=finished_at,
         duration_seconds=duration_seconds,
@@ -55,24 +58,34 @@ def report_from_result(
     )
 
 
-def settings_for_client(settings: Settings, *, username: str, password: str) -> Settings:
+def settings_for_order(settings: Settings, *, username: str, password: str) -> Settings:
     return replace(settings, login_username=username, login_password=password)
+
+
+def reservation_confirmed(report: RunReport) -> bool:
+    if report.status == ResultStatus.REGISTERED or report.reservation_confirmed:
+        return True
+    details = report.details or {}
+    status = str(details.get("estado") or "").strip().lower()
+    return report.status == ResultStatus.COMPLETED and status in {"programado", "atendido"}
 
 
 def finalize_report(
     report: RunReport,
-    settings: Settings | None,
+    settings: Settings,
     *,
-    record_history: bool,
     started_at_dt: datetime,
 ) -> RunReport:
     finished_at_dt = datetime.now()
+    confirmed = reservation_confirmed(report)
     finalized = replace(
         report,
         finished_at=finished_at_dt.isoformat(timespec="seconds"),
         duration_seconds=round((finished_at_dt - started_at_dt).total_seconds(), 3),
+        reservation_attempted=report.reservation_attempted or confirmed,
+        reservation_confirmed=confirmed,
     )
-    if record_history and settings is not None and finalized.run_id is not None:
+    if finalized.run_id is not None:
         record_run_history(settings, finalized)
     return finalized
 
@@ -82,11 +95,12 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
     if report.screenshot_path and report.screenshot_path not in screenshot_paths:
         screenshot_paths = [report.screenshot_path, *screenshot_paths]
     try:
-        create_run_record(
+        person_name = str((report.details or {}).get("nombre") or "").strip() or None
+        record_run_outcome(
             settings,
             RunRecord(
                 run_id=report.run_id or "",
-                client_id=report.client_id,
+                order_id=report.order_id,
                 status=report.status,
                 message=sanitize_text(report.message),
                 exit_code=report.exit_code,
@@ -99,6 +113,15 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
                 screenshot_path=report.screenshot_path,
             ),
             screenshot_paths=screenshot_paths,
+            report=report,
+            person_name=person_name,
+            include_reservation=_report_should_record_reservation(report),
         )
     except Exception as exc:
+        if reservation_confirmed(report):
+            raise
         logger.warning("Could not record run history: %s", exc)
+
+
+def _report_should_record_reservation(report: RunReport) -> bool:
+    return reservation_confirmed(report)

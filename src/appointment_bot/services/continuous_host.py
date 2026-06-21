@@ -6,29 +6,32 @@ import threading
 from pathlib import Path
 
 from appointment_bot.config import load_settings
-from appointment_bot.services.cleanup import cleanup_old_files
 from appointment_bot.services.continuous_worker import ContinuousWorker
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
 
 logger = logging.getLogger(__name__)
+RESTART_EXIT_CODE = 75
 
 
 def run_host(external_stop_event: threading.Event | None = None) -> int:
     _set_working_directory()
     settings = load_settings(require_login=True)
     setup_logging(settings)
-    cleanup_old_files(settings)
     if not settings.continuous_worker_enabled:
         raise RuntimeError("CONTINUOUS_WORKER_ENABLED must be true to run the continuous worker.")
     if not settings.auto_reserve:
         raise RuntimeError(
-            "AUTO_RESERVE must be true when the continuous worker manages active clients."
+            "AUTO_RESERVE must be true when the continuous worker manages active orders."
         )
 
-    worker = ContinuousWorker(settings)
-    server = create_local_api_server(worker_controller=worker)
     stop_event = external_stop_event or threading.Event()
+    restart_event = threading.Event()
+    worker = ContinuousWorker(settings)
+    server = create_local_api_server(
+        worker_controller=worker,
+        restart_callback=restart_event.set,
+    )
     worker_failure: list[BaseException] = []
 
     def run_worker() -> None:
@@ -66,6 +69,9 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     server_thread.start()
     try:
         while not stop_event.wait(1):
+            if restart_event.is_set():
+                logger.info("Controlled worker restart requested")
+                break
             healthy, reason = worker.health()
             if not healthy:
                 logger.error("Continuous worker health check failed: %s", reason)
@@ -90,7 +96,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             raise RuntimeError("Continuous worker did not stop within operation timeouts.")
     if worker_failure:
         raise RuntimeError("Continuous worker stopped unexpectedly.") from worker_failure[0]
-    return 0
+    return RESTART_EXIT_CODE if restart_event.is_set() else 0
 
 
 def _set_working_directory() -> None:

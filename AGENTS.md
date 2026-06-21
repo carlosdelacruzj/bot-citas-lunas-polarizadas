@@ -18,7 +18,7 @@ Instrucciones para Codex, agentes de IA y contribuidores.
 - El modo de monitoreo por ventana debe ser opcional y configurable; `MONITOR_WINDOW_SECONDS=0` conserva una sola revision por ejecucion.
 - n8n debe usarse como orquestador externo. Las alertas principales de Telegram y screenshots deben salir desde el bot Python.
 - La cola multi-cliente debe usar una sesion Playwright nueva por cliente; no reutilizar login, cookies ni contexto entre clientes.
-- SQLite local guarda historial, estado y credenciales de clientes en `data/appointment_bot.sqlite`; no versionar bases reales.
+- PostgreSQL guarda historial, estado y credenciales de ordenes; no versionar backups ni dumps reales.
 
 ## Estilo
 
@@ -40,32 +40,16 @@ python -m playwright install chromium
 Ejecutar:
 
 ```bash
-appointment-bot
+appointment-bot-worker
 ```
 
-Ejecutar cola multi-cliente:
+Administrar ordenes:
 
 ```bash
-appointment-bot-run-queue
+appointment-bot-client orders
 ```
 
-Ejecutar modo simple solo para depuracion:
-
-```bash
-python -m appointment_bot.main
-```
-
-Administrar clientes:
-
-```bash
-appointment-bot-client list
-```
-
-Endpoint local para n8n:
-
-```bash
-python -m appointment_bot.services.local_api
-```
+n8n consulta la API iniciada por el worker continuo; no ejecuta corridas manuales.
 
 Revisar sintaxis:
 

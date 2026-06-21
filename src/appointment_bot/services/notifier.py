@@ -7,17 +7,14 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult
-from appointment_bot.services.logger import setup_logging
-from appointment_bot.services.runtime import RunTimeoutError
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 
 logger = logging.getLogger(__name__)
 
 TELEGRAM_API_TIMEOUT_SECONDS = 15
-TELEGRAM_DOCUMENT_MAX_BYTES = 49 * 1024 * 1024
 
 
 def notify_result(
@@ -27,7 +24,7 @@ def notify_result(
     screenshot_paths: list[Path] | None = None,
 ) -> bool:
     message = f"[{result.status.upper()}] {result.message}"
-    print(message)
+    logger.info("%s", message)
     try:
         effective_screenshot_paths = normalize_screenshot_paths(
             screenshot_path,
@@ -55,8 +52,6 @@ def notify_result(
                 )
             logger.info("Appointment workflow is no longer available: %s", result.message)
         return not settings.telegram_enabled
-    except RunTimeoutError:
-        raise
     except Exception:
         # Una alerta secundaria nunca debe cambiar el resultado real de
         # una reserva que ya fue confirmada por la pagina.
@@ -70,7 +65,7 @@ def notify_error(
     screenshot_path: Path | None = None,
 ) -> None:
     message = f"[ERROR] {error}"
-    print(message.encode("ascii", errors="replace").decode("ascii"))
+    logger.error("%s", message)
 
     if settings is not None:
         try:
@@ -82,8 +77,6 @@ def notify_error(
             ):
                 return
             send_telegram_message(settings, formatted)
-        except RunTimeoutError:
-            raise
         except Exception:
             logger.exception("Unexpected error while sending error notification")
 
@@ -105,8 +98,6 @@ def send_telegram_message(settings: Settings, message: str) -> bool:
     try:
         with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
             response_body = response.read().decode("utf-8")
-    except RunTimeoutError:
-        raise
     except (HTTPError, URLError, TimeoutError) as exc:
         logger.warning("Could not send Telegram notification: %s", exc)
         return False
@@ -156,8 +147,6 @@ def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> b
     try:
         with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
             response_body = response.read().decode("utf-8")
-    except RunTimeoutError:
-        raise
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         logger.warning("Could not send Telegram photo: %s", exc)
         return False
@@ -173,61 +162,6 @@ def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> b
         return False
 
     logger.info("Telegram photo sent: %s", image_path)
-    return True
-
-
-def send_telegram_document(settings: Settings, document_path: Path, caption: str) -> bool:
-    if not settings.telegram_enabled:
-        return False
-
-    if not document_path.exists():
-        logger.warning("Telegram document does not exist: %s", document_path)
-        return False
-
-    if document_path.stat().st_size > TELEGRAM_DOCUMENT_MAX_BYTES:
-        logger.warning("Telegram document is too large to send: %s", document_path)
-        return False
-
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendDocument"
-    boundary = f"----appointment-bot-{uuid.uuid4().hex}"
-    content_type = mimetypes.guess_type(document_path.name)[0] or "application/octet-stream"
-    body = _multipart_form_data(
-        boundary,
-        fields={
-            "chat_id": settings.telegram_chat_id,
-            "caption": caption,
-        },
-        files={
-            "document": (document_path.name, content_type, document_path.read_bytes()),
-        },
-    )
-    request = Request(
-        url,
-        data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
-        method="POST",
-    )
-
-    try:
-        with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
-            response_body = response.read().decode("utf-8")
-    except RunTimeoutError:
-        raise
-    except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        logger.warning("Could not send Telegram document: %s", exc)
-        return False
-
-    try:
-        data = json.loads(response_body)
-    except json.JSONDecodeError:
-        logger.warning("Telegram returned a non-JSON response for document")
-        return False
-
-    if not data.get("ok"):
-        logger.warning("Telegram rejected document notification: %s", data)
-        return False
-
-    logger.info("Telegram document sent: %s", document_path)
     return True
 
 
@@ -255,32 +189,6 @@ def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: 
         send_telegram_photo(settings, image_path, "Evidencia adicional del tramite.")
 
     return primary_delivered
-
-
-def run_telegram_test() -> int:
-    try:
-        settings = load_settings()
-        setup_logging(settings)
-        if not settings.telegram_enabled:
-            raise ValueError("TELEGRAM_ENABLED must be true to send a test message.")
-
-        sent = send_telegram_message(
-            settings,
-            "Prueba de Telegram correcta.\n\n"
-            "El bot ya puede enviarte avisos cuando detecte disponibilidad o errores.",
-        )
-        return 0 if sent else 1
-    except Exception as exc:
-        logger.exception("Telegram notification test failed")
-        print(f"[ERROR] {exc}".encode("ascii", errors="replace").decode("ascii"))
-        return 1
-
-
-def format_heartbeat_message() -> str:
-    return (
-        "Bot activo.\n\n"
-        "La ultima revision termino sin errores. Seguire revisando segun la programacion."
-    )
 
 
 def _format_result_message(result: AvailabilityResult) -> str:
@@ -318,6 +226,12 @@ def _format_result_message(result: AvailabilityResult) -> str:
 
     if result.status == "unavailable":
         return f"Revision completada: no hay cupos por ahora.\n\nDetalle: {result.message}{details}"
+
+    if result.status == "completed":
+        return (
+            "Tramite ya completado o sin cita pendiente por reservar.\n\n"
+            f"Detalle: {result.message}{details}"
+        )
 
     return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}{details}"
 

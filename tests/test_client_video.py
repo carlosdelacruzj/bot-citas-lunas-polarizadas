@@ -20,7 +20,7 @@ class ClientSessionVideoTests(unittest.TestCase):
         self.assertIsNone(
             ClientSessionVideoRecorder.create(
                 settings,
-                client_id="client-1",
+                order_id="client-1",
                 client_name="Client One",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
             )
@@ -29,7 +29,7 @@ class ClientSessionVideoTests(unittest.TestCase):
         self.assertIsNone(
             ClientSessionVideoRecorder.create(
                 enabled,
-                client_id=None,
+                order_id=None,
                 client_name=None,
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
             )
@@ -43,7 +43,7 @@ class ClientSessionVideoTests(unittest.TestCase):
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
                 settings,
-                client_id="client-1",
+                order_id="client-1",
                 client_name="Client One",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
             )
@@ -69,7 +69,7 @@ class ClientSessionVideoTests(unittest.TestCase):
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
                 settings,
-                client_id="client-1",
+                order_id="client-1",
                 client_name="Maria Perez",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
             )
@@ -94,7 +94,7 @@ class ClientSessionVideoTests(unittest.TestCase):
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
                 settings,
-                client_id="client-1",
+                order_id="client-1",
                 client_name="Maria Perez",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
             )

@@ -2,33 +2,30 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import replace
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from appointment_bot.config import load_settings
-from appointment_bot.domain import public_report_dict
-from appointment_bot.main import run_with_report
-from appointment_bot.services.api.client_routes import (
-    apply_client_action,
-    client_action,
-    client_id_from_path,
-    create_client,
-    list_clients_payload,
-    update_client_payload,
-)
 from appointment_bot.services.api.http import (
+    RequestBodyError,
     error_payload,
-    is_authorized,
     read_json,
     require_authorized,
     send_json,
 )
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
+from appointment_bot.services.api.service_order_routes import (
+    apply_service_order_action,
+    create_service_order_payload,
+    list_service_orders_payload,
+    mark_payment_paid_payload,
+    payment_paid_path,
+    service_order_action,
+    service_order_contact_path,
+    update_service_order_contact_payload,
+)
 from appointment_bot.services.api.worker_routes import health_payload, worker_payload
-from appointment_bot.services.queue_runner import run_queue_with_report
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +46,6 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.OK if healthy else HTTPStatus.SERVICE_UNAVAILABLE, payload)
             return
 
-        if path == "/status":
-            if not self._require_authorized():
-                return
-            self._send_json(
-                HTTPStatus.OK,
-                worker_payload(getattr(self.server, "worker_controller", None)),
-            )
-            return
-
         if path == "/api/v1/worker":
             if not self._require_authorized(strict=True):
                 return
@@ -67,10 +55,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if path == "/api/v1/clients":
+        if path == "/api/v1/service-orders":
             if not self._require_authorized(strict=True):
                 return
-            self._send_json(HTTPStatus.OK, list_clients_payload())
+            self._send_json(HTTPStatus.OK, list_service_orders_payload())
             return
 
         if path == "/api/v1/runs":
@@ -90,40 +78,85 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             HTTPStatus.NOT_FOUND,
             error_payload(
                 "not_found",
-                "Use GET /health, GET /status, POST /pause, POST /resume, "
-                "POST /run or POST /run-queue.",
+                "Use GET /health or the /api/v1 endpoints.",
             ),
         )
 
     def do_POST(self) -> None:
+        try:
+            self._handle_post()
+        except RequestBodyError as exc:
+            self._send_json(
+                exc.status,
+                error_payload("bad_request", str(exc)),
+            )
+
+    def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path == "/api/v1/clients":
+        if path == "/api/v1/service-orders":
             if not self._require_authorized(strict=True):
                 return
-            status, payload = create_client(self._read_json())
+            status, payload = create_service_order_payload(self._read_json())
             self._send_json(status, payload)
             return
 
-        if client_action(path) is not None:
+        contact_order_id = service_order_contact_path(path)
+        if contact_order_id is not None:
             if not self._require_authorized(strict=True):
                 return
-            client_action_result = apply_client_action(path)
-            if client_action_result is None:
+            status, payload = update_service_order_contact_payload(
+                contact_order_id,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
+
+        paid_order_id = payment_paid_path(path)
+        if paid_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = mark_payment_paid_payload(paid_order_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        if service_order_action(path) is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = apply_service_order_action(path) or (
+                HTTPStatus.NOT_FOUND,
+                error_payload("not_found", "Unsupported service order action."),
+            )
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/worker/restart":
+            if not self._require_authorized(strict=True):
+                return
+            controller = getattr(self.server, "worker_controller", None)
+            restart_callback = getattr(self.server, "restart_callback", None)
+            if controller is None or restart_callback is None:
                 self._send_json(
-                    HTTPStatus.NOT_FOUND,
-                    error_payload("not_found", "Unsupported client action."),
+                    HTTPStatus.CONFLICT,
+                    error_payload(
+                        "conflict",
+                        "The continuous host cannot be restarted by this process.",
+                    ),
                 )
                 return
-            status, payload = client_action_result
-            self._send_json(status, payload)
+            controller.prepare_restart()
+            self._send_json(
+                HTTPStatus.ACCEPTED,
+                {"status": "restarting", "message": "Controlled restart requested."},
+            )
+            restart_callback()
             return
 
-        if path not in {"/pause", "/resume", "/run", "/run-queue"}:
+        if path not in {"/api/v1/worker/pause", "/api/v1/worker/resume"}:
             self._send_json(
                 HTTPStatus.NOT_FOUND,
-                error_payload("not_found", "Use POST /pause, /resume, /run or /run-queue."),
+                error_payload("not_found", "Use the /api/v1/worker control endpoints."),
             )
             return
 
@@ -131,72 +164,22 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             return
 
         controller = getattr(self.server, "worker_controller", None)
-        if path in {"/pause", "/resume"}:
-            if controller is None:
-                self._send_json(
-                    HTTPStatus.CONFLICT,
-                    error_payload(
-                        "conflict",
-                        "The continuous worker is not hosted by this process.",
-                    ),
-                )
-                return
-            payload = controller.pause() if path == "/pause" else controller.resume()
-            self._send_json(HTTPStatus.OK, payload)
-            return
-
-        if controller is not None and controller.is_starting_or_running:
+        if controller is None:
             self._send_json(
                 HTTPStatus.CONFLICT,
                 error_payload(
                     "conflict",
-                    "Manual runs are disabled while the continuous worker is active.",
+                    "The continuous worker is not hosted by this process.",
                 ),
             )
             return
-
-        try:
-            if path == "/run-queue":
-                report = run_queue_with_report()
-            else:
-                report = run_with_report(
-                    replace(load_settings(), auto_reserve=False),
-                )
-        except Exception as exc:
-            logger.exception("Local API request failed")
-            self._send_json(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                error_payload(
-                    "error",
-                    "Local API request failed.",
-                    exit_code=1,
-                    details={"error_type": type(exc).__name__},
-                ),
-            )
-            return
-
-        http_status = HTTPStatus.OK if report.exit_code == 0 else HTTPStatus.INTERNAL_SERVER_ERROR
-        self._send_json(http_status, public_report_dict(report))
-
-    def do_PATCH(self) -> None:
-        parsed = urlparse(self.path)
-        path = parsed.path
-        if not path.startswith("/api/v1/clients/"):
-            self._send_json(
-                HTTPStatus.NOT_FOUND,
-                error_payload("not_found", "Use PATCH /api/v1/clients/{client_id}."),
-            )
-            return
-        if not self._require_authorized(strict=True):
-            return
-        status, payload = update_client_payload(client_id_from_path(path), self._read_json())
-        self._send_json(status, payload)
+        payload = (
+            controller.pause() if path.endswith("/pause") else controller.resume()
+        )
+        self._send_json(HTTPStatus.OK, payload)
 
     def log_message(self, format: str, *args) -> None:
         logger.info("%s - %s", self.address_string(), format % args)
-
-    def _is_authorized(self) -> bool:
-        return is_authorized(self.headers)
 
     def _require_authorized(self, *, strict: bool = False) -> bool:
         return require_authorized(self, strict=strict)
@@ -211,6 +194,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 def create_local_api_server(
     *,
     worker_controller: Any | None = None,
+    restart_callback: Any | None = None,
 ) -> ThreadingHTTPServer:
     host = os.getenv("APPOINTMENT_BOT_API_HOST", DEFAULT_HOST)
     if (
@@ -227,21 +211,5 @@ def create_local_api_server(
     port = int(os.getenv("APPOINTMENT_BOT_API_PORT", str(DEFAULT_PORT)))
     server = ThreadingHTTPServer((host, port), LocalApiHandler)
     server.worker_controller = worker_controller
+    server.restart_callback = restart_callback
     return server
-
-
-def run_local_api() -> int:
-    server = create_local_api_server()
-    host, port = server.server_address[:2]
-    print(f"Appointment bot local API listening on http://{host}:{port}")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("Stopping appointment bot local API")
-    finally:
-        server.server_close()
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(run_local_api())

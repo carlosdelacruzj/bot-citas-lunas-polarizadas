@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import shutil
 import subprocess
 import tempfile
 import unicodedata
@@ -11,10 +12,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import ResultStatus, RunReport
-from appointment_bot.services.tiktok_video import find_executable
+from appointment_bot.domain import RunReport
+from appointment_bot.services.run_reporting import reservation_confirmed
 
 logger = logging.getLogger(__name__)
+FFMPEG_TIMEOUT_SECONDS = 120
 
 CLIENT_SESSION_PRIVACY_SCRIPT = """
 () => {
@@ -120,7 +122,7 @@ CLIENT_SESSION_PRIVACY_SCRIPT = """
 @dataclass
 class ClientSessionVideoRecorder:
     settings: Settings
-    client_id: str
+    order_id: str
     client_name: str
     started_at: datetime
     temp_directory: TemporaryDirectory[str]
@@ -131,16 +133,16 @@ class ClientSessionVideoRecorder:
         cls,
         settings: Settings,
         *,
-        client_id: str | None,
+        order_id: str | None,
         client_name: str | None,
         started_at: datetime,
     ) -> ClientSessionVideoRecorder | None:
-        if not settings.record_client_sessions or client_id is None:
+        if not settings.record_client_sessions or order_id is None:
             return None
         return cls(
             settings=settings,
-            client_id=client_id,
-            client_name=client_name or client_id,
+            order_id=order_id,
+            client_name=client_name or order_id,
             started_at=started_at,
             temp_directory=tempfile.TemporaryDirectory(prefix="appointment-bot-client-video-"),
         )
@@ -161,7 +163,7 @@ class ClientSessionVideoRecorder:
             if self.source_path is None or not self.source_path.exists():
                 return None
 
-            if not _reservation_confirmed(report):
+            if not reservation_confirmed(report):
                 _remove_file(self.source_path)
                 return None
 
@@ -192,25 +194,17 @@ class ClientSessionVideoRecorder:
         path = self.settings.client_videos_dir / f"{stamp}-{client_name}{suffix}"
         if not path.exists():
             return path
-        return self.settings.client_videos_dir / f"{stamp}-{client_name}-{self.client_id}{suffix}"
-
-
-def _reservation_confirmed(report: RunReport) -> bool:
-    if report.status == ResultStatus.REGISTERED or report.reservation_confirmed:
-        return True
-    details = report.details or {}
-    status = str(details.get("estado") or "").strip().lower()
-    return report.status == ResultStatus.COMPLETED and status == "programado"
+        return self.settings.client_videos_dir / f"{stamp}-{client_name}-{self.order_id}{suffix}"
 
 
 def _export_mp4(settings: Settings, source_path: Path, target_path: Path) -> Path | None:
     try:
-        ffmpeg = find_executable("ffmpeg")
+        ffmpeg = _find_executable("ffmpeg")
     except FileNotFoundError as exc:
         logger.warning("Could not export client session video: %s", exc)
         return None
 
-    if settings.record_video_width < settings.record_video_height:
+    if settings.client_video_width < settings.client_video_height:
         video_filter = "crop=900:1600:90:0,scale=1080:1920,fps=30,format=yuv420p"
     else:
         video_filter = "fps=30,format=yuv420p"
@@ -233,8 +227,14 @@ def _export_mp4(settings: Settings, source_path: Path, target_path: Path) -> Pat
         str(target_path),
     ]
     try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
-    except (OSError, subprocess.CalledProcessError) as exc:
+        subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=FFMPEG_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         logger.warning("Could not export client session video: %s", exc)
         return None
     return target_path
@@ -252,3 +252,10 @@ def _remove_file(path: Path) -> None:
         path.unlink(missing_ok=True)
     except OSError as exc:
         logger.warning("Could not remove client session video %s: %s", path, exc)
+
+
+def _find_executable(name: str) -> Path:
+    executable = shutil.which(name)
+    if executable is None:
+        raise FileNotFoundError(f"Required executable was not found: {name}")
+    return Path(executable)

@@ -4,18 +4,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from appointment_bot.services.database import (
-    SCHEMA_VERSION,
-    add_client,
+from appointment_bot.services.database_migrations import SCHEMA_VERSION
+from appointment_bot.services.database_models import RunRecord
+from appointment_bot.services.postgres_database import (
+    claim_service_order,
+    cleanup_expired_service_order_claims,
     create_run_record,
+    create_service_order,
     get_run,
     get_worker_state,
     init_database,
-    list_client_summaries,
     list_runs,
-    using_postgres,
+    list_service_order_summaries,
 )
-from appointment_bot.services.database_models import RunRecord
 from tests.helpers import database_connection, make_settings
 
 
@@ -31,29 +32,82 @@ class DatabaseTests(unittest.TestCase):
                     "SELECT version FROM schema_version WHERE id = 1"
                 ).fetchone()["version"]
                 columns = {
-                    row["column_name"]
+                    (row["table_name"], row["column_name"])
                     for row in connection.execute(
                         """
-                        SELECT column_name
+                        SELECT table_name, column_name
                         FROM information_schema.columns
-                        WHERE table_name = 'worker_state'
+                        WHERE table_schema = current_schema()
+                        """
+                    )
+                }
+                tables = {
+                    row["table_name"]
+                    for row in connection.execute(
+                        """
+                        SELECT table_name
+                        FROM information_schema.tables
+                        WHERE table_schema = current_schema()
                         """
                     )
                 }
             self.assertEqual(version, SCHEMA_VERSION)
-            self.assertIn("owner_token", columns)
+            self.assertIn(("worker_state", "owner_token"), columns)
+            self.assertIn(("worker_state", "current_order_id"), columns)
+            self.assertNotIn(("service_orders", "active"), columns)
+            self.assertNotIn(("portal_accounts", "provider"), columns)
+            self.assertNotIn(("applicants", "document_type"), columns)
+            self.assertNotIn("reservation_rules", tables)
             self.assertIsNone(get_worker_state(settings).owner_token)
-            self.assertTrue(using_postgres(settings))
 
-    def test_public_client_summary_does_not_expose_password(self) -> None:
+    def test_expired_order_claims_are_cleaned_and_reclaimable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            add_client("client-1", "Test", "12345678", "secret", 10, settings=settings)
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                settings=settings,
+            )
+            self.assertTrue(
+                claim_service_order(
+                    result.order_id,
+                    owner_token="expired-owner",
+                    lease_seconds=60,
+                    settings=settings,
+                )
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET lease_expires_at = CURRENT_TIMESTAMP - "
+                    "INTERVAL '1 second' WHERE order_id = %s",
+                    (result.order_id,),
+                )
 
-            summaries = list_client_summaries(settings)
+            self.assertEqual(cleanup_expired_service_order_claims(settings), 1)
+            self.assertTrue(
+                claim_service_order(
+                    result.order_id,
+                    owner_token="new-owner",
+                    lease_seconds=60,
+                    settings=settings,
+                )
+            )
+
+    def test_public_service_order_summary_does_not_expose_password(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            create_service_order(
+                document_number="12345678",
+                password="secret",
+                priority=10,
+                applicant_name="Test",
+                settings=settings,
+            )
+
+            summaries = list_service_order_summaries(settings)
 
             self.assertEqual(len(summaries), 1)
-            self.assertEqual(summaries[0].username_masked, "12***8")
+            self.assertEqual(summaries[0].document_number_masked, "12***8")
             self.assertFalse(hasattr(summaries[0], "password"))
 
     def test_run_listing_and_detail_are_public_safe(self) -> None:
@@ -63,7 +117,7 @@ class DatabaseTests(unittest.TestCase):
                 settings,
                 RunRecord(
                     run_id="run-1",
-                    client_id=None,
+                    order_id=None,
                     status="unavailable",
                     message="No slots",
                     exit_code=0,
