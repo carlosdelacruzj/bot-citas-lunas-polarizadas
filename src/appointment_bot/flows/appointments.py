@@ -4,7 +4,6 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +26,7 @@ RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
 SITE_SELECTOR = "#MainContent_idUcitas_cbosede"
 DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
+SLOTS_LABEL_ID = "MainContent_idUcitas_lblcupos"
 RESERVATION_FIELD_SELECTOR = "#MainContent_idUcitas_txtimg"
 RESERVATION_BUTTON_SELECTOR = "#MainContent_idUcitas_btgSiguiente"
 CONFIRMATION_TEXTS = [
@@ -36,6 +36,24 @@ CONFIRMATION_TEXTS = [
     "registrada satisfactoriamente",
     "reservada con exito",
     "reservado con exito",
+]
+CAPTCHA_REJECTION_TEXTS = [
+    "captcha incorrecto",
+    "captcha invalido",
+    "codigo de seguridad incorrecto",
+    "codigo de verificacion incorrecto",
+]
+SLOT_LOST_TEXTS = [
+    "cupo ya no disponible",
+    "cupo no disponible",
+    "ya no hay cupos",
+    "sin cupos disponibles",
+]
+SUBMISSION_REJECTION_TEXTS = [
+    "no se pudo registrar la cita",
+    "no fue posible registrar la cita",
+    "solicitud rechazada",
+    "operacion no permitida",
 ]
 APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     (
@@ -135,10 +153,17 @@ def click_program_action(page: Page) -> Page:
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         )
 
-    first_button = button.first
-    first_button.scroll_into_view_if_needed(timeout=15_000)
+    if button_count == 1:
+        selected_button = button.first
+    else:
+        raise AppointmentWorkflowUnavailable(
+            "Hay varios tramites programables y el listado no muestra nombre ni documento "
+            "para identificar de forma segura cual corresponde a la orden."
+        )
 
-    first_button.click(timeout=15_000)
+    selected_button.scroll_into_view_if_needed(timeout=15_000)
+
+    selected_button.click(timeout=15_000)
     _wait_for_program_detail(page)
     logger.info("Current page after program action: %s", page.url)
     return page
@@ -278,32 +303,56 @@ def _trigger_reserve_appointment_postback(page: Page) -> None:
     )
 
 
-def select_available_site(page: Page, *, timeout: int = 15_000) -> Page:
-    return _select_available_site(page, timeout=timeout, allow_hidden=False)
+def select_available_site(
+    page: Page,
+    *,
+    required_site: str | None = None,
+    timeout: int = 15_000,
+) -> Page:
+    return _select_available_site(
+        page,
+        timeout=timeout,
+        allow_hidden=False,
+        required_site=required_site,
+    )
 
 
-def select_available_site_for_observer(page: Page, *, timeout: int = 15_000) -> Page:
-    return _select_available_site(page, timeout=timeout, allow_hidden=True)
+def select_available_site_for_observer(
+    page: Page,
+    *,
+    required_site: str | None = None,
+    timeout: int = 15_000,
+) -> Page:
+    return _select_available_site(
+        page,
+        timeout=timeout,
+        allow_hidden=True,
+        required_site=required_site,
+    )
 
 
-def _select_available_site(page: Page, *, timeout: int, allow_hidden: bool) -> Page:
+def _select_available_site(
+    page: Page,
+    *,
+    timeout: int,
+    allow_hidden: bool,
+    required_site: str | None,
+) -> Page:
     logger.info("Selecting available site")
     site_select = page.locator(SITE_SELECTOR)
     site_select.wait_for(state="attached" if allow_hidden else "visible", timeout=timeout)
     options = _select_options(page, SITE_SELECTOR)
     logger.debug("Site options: %s", [option["text"] for option in options])
-    selected = next((option for option in options if _is_real_site_option(option)), None)
+    selected = _select_site_option(options, required_site=required_site)
     if selected is None:
-        message = (
-            "El observador no encontro una sede seleccionable."
-            if allow_hidden
-            else "No se encontro una sede seleccionable. Es posible que la cita ya este "
-            "reservada o que ya no exista un flujo pendiente."
+        message = _missing_site_message(
+            options, allow_hidden=allow_hidden, required_site=required_site
         )
         raise AppointmentWorkflowUnavailable(message)
 
     logger.info("Selecting site: %s", selected["text"])
     refresh_token = _mark_select_for_refresh(page, SITE_SELECTOR)
+    async_refresh_token = _mark_aspnet_async_refresh(page)
     previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
     previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
     if allow_hidden:
@@ -320,6 +369,7 @@ def _select_available_site(page: Page, *, timeout: int, allow_hidden: bool) -> P
     _wait_for_appointment_options(
         page,
         refresh_token=refresh_token,
+        async_refresh_token=async_refresh_token,
         previous_date_signature=previous_date,
         previous_hour_signature=previous_hour,
         timeout=timeout,
@@ -353,12 +403,33 @@ def read_appointment_availability(
             include_person=include_person,
         )
 
+    if result.status != "available":
+        fetch_snapshot = _read_fetch_probe_appointment_snapshot(page)
+        if fetch_snapshot is not None:
+            fetch_result = _availability_result_from_snapshot(
+                page,
+                fetch_snapshot,
+                include_person=include_person,
+            )
+            if fetch_result.status in {"available", "partial"}:
+                details = dict(fetch_result.details or {})
+                details["fetch_probe"] = True
+                details["modal_must_remain_open"] = True
+                result = AvailabilityResult(
+                    status=fetch_result.status,
+                    message=(
+                        f"{fetch_result.message} "
+                        "La disponibilidad fue detectada por consulta directa al formulario."
+                    ),
+                    details=details,
+                )
+
     details = _snapshot_details(snapshot, include_person=False)
     logger.info(
         "Appointment summary: site=%s date=%s hour=%s",
-        details.get("sede", "unknown"),
-        details.get("fecha", "unknown"),
-        details.get("hora", "unknown"),
+        (result.details or details).get("sede", "unknown"),
+        (result.details or details).get("fecha", "unknown"),
+        (result.details or details).get("hora", "unknown"),
     )
     return result
 
@@ -467,12 +538,13 @@ def solve_reservation_captcha_and_click_reserve(
     cancel_event: threading.Event | None = None,
     can_submit: Callable[[], bool] | None = None,
     expected_details: dict[str, Any] | None = None,
+    expected_person_name: str | None = None,
     on_submission_intent: Callable[[], None] | None = None,
     on_submission_started: Callable[[], None] | None = None,
 ) -> Page:
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
-    validate_selected_appointment(page, expected_details)
+    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     captcha_path = _save_reservation_panel_image(page, settings)
     try:
         captcha_solution = solve_normal_captcha(captcha_path, settings)
@@ -490,7 +562,7 @@ def solve_reservation_captcha_and_click_reserve(
         )
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de enviar la reserva.")
-    validate_selected_appointment(page, expected_details)
+    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
 
     logger.info("Filling reservation captcha field")
     reservation_field = page.locator(RESERVATION_FIELD_SELECTOR).first
@@ -505,6 +577,7 @@ def solve_reservation_captcha_and_click_reserve(
     reserve_button = page.locator(RESERVATION_BUTTON_SELECTOR).first
     reserve_button.wait_for(state="visible", timeout=15_000)
     reserve_button.scroll_into_view_if_needed(timeout=15_000)
+    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     if on_submission_intent is not None:
         on_submission_intent()
     try:
@@ -530,6 +603,31 @@ def solve_reservation_captcha_and_click_reserve(
             "de iniciar la verificacion."
         ) from exc
     return page
+
+
+def wait_for_reservation_submission_outcome(page: Page, *, timeout: int = 10_000) -> str:
+    outcome_texts = {
+        "confirmed": CONFIRMATION_TEXTS,
+        "captcha_invalid": CAPTCHA_REJECTION_TEXTS,
+        "slot_lost": SLOT_LOST_TEXTS,
+        "rejected": SUBMISSION_REJECTION_TEXTS,
+    }
+    try:
+        return str(
+            page.wait_for_function(
+                """groups => {
+                    const text = (document.body ? document.body.innerText : "").toLowerCase();
+                    for (const [outcome, values] of Object.entries(groups)) {
+                        if (values.some(value => text.includes(value))) return outcome;
+                    }
+                    return false;
+                }""",
+                arg=outcome_texts,
+                timeout=timeout,
+            ).json_value()
+        )
+    except PlaywrightTimeoutError:
+        return "unknown"
 
 
 def wait_for_reservation_confirmation(page: Page) -> bool:
@@ -581,8 +679,9 @@ def dismiss_reservation_confirmation(page: Page) -> None:
 def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
     logger.info("Saving reservation panel image for captcha solving")
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
+    prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
     captcha_path = settings.screenshots_dir / (
-        f"reservation-panel-captcha-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
+        f"reservation-panel-captcha-{prefix}{uuid.uuid4().hex}.png"
     )
 
     page.locator(RESERVATION_FIELD_SELECTOR).first.wait_for(state="visible", timeout=15_000)
@@ -739,6 +838,147 @@ def _read_appointment_snapshot(page: Page) -> AppointmentSnapshot:
         slots=_read_slots_value(page),
         person_name=_read_person_name(page),
     )
+
+
+def _read_fetch_probe_appointment_snapshot(page: Page) -> AppointmentSnapshot | None:
+    try:
+        data = page.evaluate(
+            """async ({ siteSelector, dateSelector, hourSelector, slotsLabelId }) => {
+                const ids = {
+                    site: siteSelector.slice(1),
+                    date: dateSelector.slice(1),
+                    hour: hourSelector.slice(1),
+                    slots: slotsLabelId
+                };
+                const names = {
+                    site: "ctl00$MainContent$idUcitas$cbosede",
+                    date: "ctl00$MainContent$idUcitas$cboFecha"
+                };
+                const form = (
+                    document.getElementById("form1")
+                    || document.forms.form1
+                    || document.forms[0]
+                );
+                const siteEl = document.querySelector(siteSelector);
+                if (!form || !siteEl) return null;
+
+                const action = form.getAttribute("action") || location.href;
+                const url = new URL(action, location.href).toString();
+                const setFormValue = (targetForm, name, value) => {
+                    let element = targetForm.elements[name];
+                    if (!element) {
+                        element = targetForm.ownerDocument.createElement("input");
+                        element.type = "hidden";
+                        element.name = name;
+                        targetForm.appendChild(element);
+                    }
+                    element.value = value || "";
+                };
+                const getForm = doc => (
+                    doc.getElementById("form1") || doc.forms.form1 || doc.forms[0]
+                );
+                const postForm = async (doc, eventTarget, changes) => {
+                    const targetForm = getForm(doc);
+                    if (!targetForm) throw new Error("form1 not found");
+                    Object.entries(changes || {}).forEach(([name, value]) => {
+                        setFormValue(targetForm, name, value);
+                    });
+                    setFormValue(targetForm, "__EVENTTARGET", eventTarget);
+                    setFormValue(targetForm, "__EVENTARGUMENT", "");
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: new FormData(targetForm),
+                        credentials: "include"
+                    });
+                    const html = await response.text();
+                    return new DOMParser().parseFromString(html, "text/html");
+                };
+                const options = (doc, id) => {
+                    const element = doc.getElementById(id);
+                    if (!element) return [];
+                    return Array.from(element.options).map(option => ({
+                        text: (option.textContent || "").trim(),
+                        value: option.value || "",
+                        selected: option.selected
+                    }));
+                };
+                const selectedText = items => {
+                    const selected = items.find(option => option.selected);
+                    return selected ? selected.text : "";
+                };
+                const isReal = option => {
+                    const text = (option && option.text || "").trim().toLowerCase();
+                    return Boolean(option && option.value)
+                        && option.value !== "0"
+                        && option.value !== "00"
+                        && text
+                        && !text.includes("sin cupos")
+                        && !text.includes("seleccione");
+                };
+                const textById = (doc, id) => {
+                    const element = doc.getElementById(id);
+                    return element ? (element.textContent || "").trim() : "";
+                };
+
+                const siteValue = siteEl.value;
+                const siteText = siteEl.options[siteEl.selectedIndex]
+                    ? siteEl.options[siteEl.selectedIndex].text.trim()
+                    : siteValue;
+                const docDates = await postForm(document, names.site, {
+                    [names.site]: siteValue
+                });
+                const dateOptions = options(docDates, ids.date);
+                const realDates = dateOptions.filter(isReal);
+                let hourOptions = [];
+                let slots = "";
+                if (realDates.length > 0) {
+                    const firstDate = realDates[0];
+                    const docHours = await postForm(docDates, names.date, {
+                        [names.site]: siteValue,
+                        [names.date]: firstDate.value
+                    });
+                    hourOptions = options(docHours, ids.hour);
+                    slots = textById(docHours, ids.slots);
+                }
+                return {
+                    siteOptions: options(document, ids.site)
+                        .map(option => option.text)
+                        .filter(Boolean),
+                    dateOptions: dateOptions.map(option => option.text).filter(Boolean),
+                    hourOptions: hourOptions.map(option => option.text).filter(Boolean),
+                    site: siteText,
+                    date: realDates[0] ? realDates[0].text : selectedText(dateOptions),
+                    hour: selectedText(hourOptions),
+                    slots,
+                    personName: ""
+                };
+            }""",
+            {
+                "siteSelector": SITE_SELECTOR,
+                "dateSelector": DATE_SELECTOR,
+                "hourSelector": HOUR_SELECTOR,
+                "slotsLabelId": SLOTS_LABEL_ID,
+            },
+        )
+    except PlaywrightError as exc:
+        logger.debug("Fetch appointment probe failed: %s", exc)
+        return None
+
+    if not data:
+        return None
+
+    snapshot = AppointmentSnapshot(
+        site_options=list(data.get("siteOptions") or []),
+        date_options=list(data.get("dateOptions") or []),
+        hour_options=list(data.get("hourOptions") or []),
+        site=str(data.get("site") or ""),
+        date=str(data.get("date") or ""),
+        hour=str(data.get("hour") or ""),
+        slots=str(data.get("slots") or ""),
+        person_name=str(data.get("personName") or ""),
+    )
+    logger.debug("Fetch appointment probe: %s", _snapshot_details(snapshot, include_person=False))
+    return snapshot
 
 
 def _snapshot_details(
@@ -934,10 +1174,56 @@ def _is_real_site_option(option: dict[str, Any]) -> bool:
     )
 
 
+def _select_site_option(
+    options: list[dict[str, Any]],
+    *,
+    required_site: str | None,
+) -> dict[str, Any] | None:
+    real_options = [option for option in options if _is_real_site_option(option)]
+    if not required_site:
+        return real_options[0] if real_options else None
+
+    required = normalize_option(required_site)
+    return next(
+        (
+            option
+            for option in real_options
+            if normalize_option(str(option.get("text") or "")) == required
+        ),
+        None,
+    )
+
+
+def _missing_site_message(
+    options: list[dict[str, Any]],
+    *,
+    allow_hidden: bool,
+    required_site: str | None,
+) -> str:
+    available_sites = [
+        str(option.get("text") or "").strip() for option in options if _is_real_site_option(option)
+    ]
+    if required_site:
+        suffix = (
+            f" Sedes encontradas: {', '.join(available_sites)}."
+            if available_sites
+            else " No hay sedes seleccionables en el formulario."
+        )
+        return f"No se encontro la sede requerida {required_site!r}.{suffix}"
+
+    if allow_hidden:
+        return "El observador no encontro una sede seleccionable."
+    return (
+        "No se encontro una sede seleccionable. Es posible que la cita ya este "
+        "reservada o que ya no exista un flujo pendiente."
+    )
+
+
 def _wait_for_appointment_options(
     page: Page,
     *,
     refresh_token: str,
+    async_refresh_token: str | None,
     previous_date_signature: tuple[tuple[str, str], ...],
     previous_hour_signature: tuple[tuple[str, str], ...],
     timeout: int = 15_000,
@@ -959,9 +1245,15 @@ def _wait_for_appointment_options(
         marker_present = page.locator(
             f'{SITE_SELECTOR}[data-appointment-bot-refresh="{refresh_token}"]'
         ).count()
+        async_request_completed = (
+            _aspnet_async_refresh_completed(page, async_refresh_token)
+            if async_refresh_token is not None
+            else False
+        )
         refreshed = (
             refreshed
             or marker_present == 0
+            or async_request_completed
             or (current_date != previous_date_signature or current_hour != previous_hour_signature)
         )
         pair = (current_date, current_hour)
@@ -1041,6 +1333,8 @@ def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
 def validate_selected_appointment(
     page: Page,
     expected_details: dict[str, Any] | None,
+    *,
+    expected_person_name: str | None = None,
 ) -> None:
     expected_details = expected_details or {}
     expected_site = str(expected_details.get("sede") or "")
@@ -1049,6 +1343,7 @@ def validate_selected_appointment(
     actual_site = _selected_option_text(page, SITE_SELECTOR)
     actual_date = _selected_option_text(page, DATE_SELECTOR)
     actual_hour = _selected_option_text(page, HOUR_SELECTOR)
+    actual_slots = _read_slots_value(page)
     if (
         (expected_site and not _same_option(actual_site, expected_site))
         or (expected_date and not _same_option(actual_date, expected_date))
@@ -1057,6 +1352,23 @@ def validate_selected_appointment(
         raise AppointmentWorkflowUnavailable(
             "La sede, fecha u hora seleccionadas cambiaron antes de enviar la reserva."
         )
+    if not actual_site or not actual_date or not actual_hour:
+        raise AppointmentWorkflowUnavailable(
+            "La sede, fecha y hora deben seguir seleccionadas antes de enviar la reserva."
+        )
+    normalized_slots = normalize_option(actual_slots)
+    if normalized_slots in {"0", "sin cupos", "sin cupos disponibles"}:
+        raise AppointmentWorkflowUnavailable(
+            "El portal indica que el cupo seleccionado ya no esta disponible."
+        )
+    actual_person_name = _read_person_name(page)
+    if expected_person_name and actual_person_name:
+        expected_name = normalize_option(expected_person_name)
+        actual_name = normalize_option(actual_person_name)
+        if expected_name not in actual_name and actual_name not in expected_name:
+            raise AppointmentWorkflowUnavailable(
+                "La identidad mostrada por el portal no coincide con la persona de la orden."
+            )
 
 
 def _mark_select_for_refresh(page: Page, selector: str) -> str:
@@ -1066,6 +1378,41 @@ def _mark_select_for_refresh(page: Page, selector: str) -> str:
         token,
     )
     return token
+
+
+def _mark_aspnet_async_refresh(page: Page) -> str | None:
+    return page.evaluate(
+        """() => {
+            if (!window.Sys || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
+                return null;
+            }
+            const prm = Sys.WebForms.PageRequestManager.getInstance();
+            if (!prm) return null;
+            const token = `${Date.now()}-${Math.random()}`;
+            window.__appointmentBotAsyncRefreshes = window.__appointmentBotAsyncRefreshes || {};
+            window.__appointmentBotAsyncRefreshes[token] = false;
+            const handler = function () {
+                window.__appointmentBotAsyncRefreshes[token] = true;
+                try {
+                    prm.remove_endRequest(handler);
+                } catch (error) {}
+            };
+            prm.add_endRequest(handler);
+            return token;
+        }"""
+    )
+
+
+def _aspnet_async_refresh_completed(page: Page, token: str) -> bool:
+    return bool(
+        page.evaluate(
+            """token => Boolean(
+                window.__appointmentBotAsyncRefreshes
+                && window.__appointmentBotAsyncRefreshes[token]
+            )""",
+            token,
+        )
+    )
 
 
 def _panel_has_loaded_captcha(panel) -> bool:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import replace
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from appointment_bot.config import Settings
@@ -36,7 +36,10 @@ def report_from_result(
 ) -> RunReport:
     all_screenshot_paths = normalize_screenshot_paths(screenshot_path, screenshot_paths)
     effective_exit_code = (
-        1 if result.status in {ResultStatus.UNKNOWN, ResultStatus.RESERVATION_UNCONFIRMED} else 0
+        1
+        if result.status
+        in {ResultStatus.ERROR, ResultStatus.UNKNOWN, ResultStatus.RESERVATION_UNCONFIRMED}
+        else 0
     )
     if exit_code is not None:
         effective_exit_code = exit_code
@@ -49,8 +52,10 @@ def report_from_result(
         started_at=started_at,
         finished_at=finished_at,
         duration_seconds=duration_seconds,
-        reservation_attempted=result.status
-        in {ResultStatus.REGISTERED, ResultStatus.RESERVATION_UNCONFIRMED},
+        reservation_attempted=(
+            result.status in {ResultStatus.REGISTERED, ResultStatus.RESERVATION_UNCONFIRMED}
+            or bool((result.details or {}).get("submission_outcome"))
+        ),
         reservation_confirmed=result.status == ResultStatus.REGISTERED,
         details=result.details,
         screenshot_path=str(all_screenshot_paths[0]) if all_screenshot_paths else None,
@@ -65,9 +70,9 @@ def settings_for_order(settings: Settings, *, username: str, password: str) -> S
 def reservation_confirmed(report: RunReport) -> bool:
     if report.status == ResultStatus.REGISTERED or report.reservation_confirmed:
         return True
-    details = report.details or {}
-    status = str(details.get("estado") or "").strip().lower()
-    return report.status == ResultStatus.COMPLETED and status in {"programado", "atendido"}
+    if _programmed_stage_confirmed(report):
+        return True
+    return False
 
 
 def finalize_report(
@@ -76,7 +81,7 @@ def finalize_report(
     *,
     started_at_dt: datetime,
 ) -> RunReport:
-    finished_at_dt = datetime.now()
+    finished_at_dt = datetime.now(UTC)
     confirmed = reservation_confirmed(report)
     finalized = replace(
         report,
@@ -125,3 +130,12 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
 
 def _report_should_record_reservation(report: RunReport) -> bool:
     return reservation_confirmed(report)
+
+
+def _programmed_stage_confirmed(report: RunReport) -> bool:
+    if report.status != ResultStatus.COMPLETED:
+        return False
+    details = report.details or {}
+    status = str(details.get("estado") or "").strip().casefold()
+    date_text = str(details.get("fecha") or "").strip()
+    return status == "programado" and bool(date_text)

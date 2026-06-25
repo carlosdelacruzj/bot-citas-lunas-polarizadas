@@ -4,6 +4,7 @@ import argparse
 import getpass
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, is_dataclass
+from pathlib import Path
 from typing import Any
 
 from appointment_bot.services.postgres_database import (
@@ -15,6 +16,10 @@ from appointment_bot.services.postgres_database import (
     mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
+)
+from appointment_bot.services.status_reports import (
+    generate_daily_report_image,
+    generate_status_report_images,
 )
 
 SENSITIVE_FIELDS = {"password", "login_password"}
@@ -69,6 +74,32 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     subparsers.add_parser("orders", help="Lista trabajos de reserva.")
+
+    status_report_parser = subparsers.add_parser(
+        "status-report",
+        help="Genera fichas PNG con la actividad de las ultimas 24 horas.",
+    )
+    status_report_parser.add_argument(
+        "order_id",
+        nargs="?",
+        help="ID de una orden. Si se omite, genera todas las ordenes activas.",
+    )
+    status_report_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/status"),
+        help="Directorio donde se guardan las fichas PNG.",
+    )
+    daily_report_parser = subparsers.add_parser(
+        "daily-report",
+        help="Genera el reporte general del dia.",
+    )
+    daily_report_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/daily"),
+        help="Directorio donde se guarda el reporte general.",
+    )
 
     contact_parser = subparsers.add_parser("contact", help="Agrega o actualiza WhatsApp.")
     contact_parser.add_argument("order_id", help="ID del trabajo de reserva.")
@@ -171,6 +202,27 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "orders":
         _print_rows(list_service_order_summaries(), preferred_fields=PREFERRED_ORDER_FIELDS)
+        return 0
+
+    if args.command == "status-report":
+        orders = list_service_order_summaries()
+        if args.order_id:
+            orders = [order for order in orders if order.order_id == args.order_id]
+            if not orders:
+                parser.error(f"No existe la orden: {args.order_id}")
+        else:
+            orders = [order for order in orders if order.status == "ready"]
+        if not orders:
+            print("No hay ordenes activas para generar fichas.")
+            return 0
+        paths = generate_status_report_images(orders, output_dir=args.output_dir)
+        for path in paths:
+            print(f"Ficha generada: {path}")
+        return 0
+
+    if args.command == "daily-report":
+        path = generate_daily_report_image(output_dir=args.output_dir)
+        print(f"Reporte general generado: {path}")
         return 0
 
     if args.command == "contact":

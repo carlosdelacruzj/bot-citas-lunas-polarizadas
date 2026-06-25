@@ -1,8 +1,8 @@
 import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
@@ -11,6 +11,14 @@ from appointment_bot.config import Settings
 from appointment_bot.domain import RunReport
 
 logger = logging.getLogger(__name__)
+
+
+def _artifact_path(settings: Settings, label: str) -> Path:
+    safe_prefix = "-".join(
+        part for part in settings.artifact_prefix.replace("_", "-").split("-") if part
+    )
+    prefix = f"{safe_prefix}-" if safe_prefix else ""
+    return settings.screenshots_dir / f"{label}-{prefix}{uuid4().hex}.png"
 
 
 def normalize_screenshot_paths(
@@ -120,8 +128,7 @@ def mask_sensitive_page(page: Page) -> Iterator[None]:
 
 def save_screenshot(page: Page, settings: Settings, label: str) -> Path | None:
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{label}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
-    path = settings.screenshots_dir / filename
+    path = _artifact_path(settings, label)
     try:
         with mask_sensitive_page(page):
             page.screenshot(path=str(path), full_page=True)
@@ -139,8 +146,7 @@ def save_element_screenshot(
     selectors: list[str],
 ) -> Path | None:
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{label}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
-    path = settings.screenshots_dir / filename
+    path = _artifact_path(settings, label)
 
     for selector in selectors:
         locator = page.locator(selector).first
@@ -173,8 +179,7 @@ def save_revealed_element_screenshot(
     ready_check: Callable[[object], bool] | None = None,
 ) -> Path | None:
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{label}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
-    path = settings.screenshots_dir / filename
+    path = _artifact_path(settings, label)
 
     for selector in selectors:
         locator = page.locator(selector).first

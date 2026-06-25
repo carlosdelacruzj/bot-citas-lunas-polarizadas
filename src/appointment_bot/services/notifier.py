@@ -1,6 +1,7 @@
 import json
 import logging
 import mimetypes
+import re
 import uuid
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -15,6 +16,9 @@ from appointment_bot.utils.screenshots import normalize_screenshot_paths
 logger = logging.getLogger(__name__)
 
 TELEGRAM_API_TIMEOUT_SECONDS = 15
+APPOINTMENT_DATETIME_RE = re.compile(
+    r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
+)
 
 
 def notify_result(
@@ -44,6 +48,12 @@ def notify_result(
             return send_telegram_message(settings, _format_result_message(result))
 
         if result.status == "completed":
+            if _programmed_details(result) is not None:
+                return _send_programmed_sequence(
+                    result,
+                    settings,
+                    effective_screenshot_paths,
+                )
             if effective_screenshot_paths:
                 return _send_telegram_photos(
                     settings,
@@ -191,6 +201,37 @@ def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: 
     return primary_delivered
 
 
+def _send_programmed_sequence(
+    result: AvailabilityResult,
+    settings: Settings,
+    screenshot_paths: list[Path],
+) -> bool:
+    details = _programmed_details(result)
+    if details is None:
+        return False
+
+    first_message = _format_programmed_greeting(details)
+    payment_message = _format_programmed_payment_message(details)
+    delivered = send_telegram_message(settings, first_message)
+
+    if screenshot_paths:
+        photo_caption = _format_programmed_photo_caption(details)
+        delivered = send_telegram_photo(settings, screenshot_paths[0], photo_caption) or delivered
+        for image_path in screenshot_paths[1:]:
+            send_telegram_photo(settings, image_path, "Evidencia adicional de la cita programada.")
+    else:
+        delivered = (
+            send_telegram_message(
+                settings,
+                _format_programmed_photo_caption(details),
+            )
+            or delivered
+        )
+
+    delivered = send_telegram_message(settings, payment_message) or delivered
+    return delivered
+
+
 def _format_result_message(result: AvailabilityResult) -> str:
     details = _format_result_details(result)
     if result.status == "available":
@@ -228,6 +269,9 @@ def _format_result_message(result: AvailabilityResult) -> str:
         return f"Revision completada: no hay cupos por ahora.\n\nDetalle: {result.message}{details}"
 
     if result.status == "completed":
+        programmed_message = _format_programmed_message(result)
+        if programmed_message is not None:
+            return programmed_message
         return (
             "Tramite ya completado o sin cita pendiente por reservar.\n\n"
             f"Detalle: {result.message}{details}"
@@ -240,8 +284,7 @@ def _format_registered_message(result: AvailabilityResult) -> str:
     details = result.details or {}
     person_name = details.get("nombre")
     site = details.get("sede")
-    date = details.get("fecha")
-    hour = details.get("hora")
+    date, hour = _appointment_datetime_details(details)
 
     if person_name:
         heading = f"Estimado/a {person_name}, su cita ha sido reservada con exito."
@@ -260,6 +303,86 @@ def _format_registered_message(result: AvailabilityResult) -> str:
         return lines[0]
 
     return f"{lines[0]}\n\n" + "\n".join(lines[1:])
+
+
+def _format_programmed_message(result: AvailabilityResult) -> str | None:
+    details = _programmed_details(result)
+    if details is None:
+        return None
+
+    heading = "Buenas noticias: encontramos y verificamos la cita programada."
+    if details["person_name"]:
+        heading = f"Buenas noticias: encontramos y verificamos la cita de {details['person_name']}."
+
+    lines = [
+        heading,
+        "",
+        "Ya figura como Programado en el portal PNP.",
+    ]
+    if details["date"]:
+        lines.append(f"Fecha: {details['date']}")
+    if details["hour"]:
+        lines.append(f"Hora: {details['hour']}")
+    if details["site"]:
+        lines.append(f"Sede: {details['site']}")
+    lines.extend(["", "Estado: listo para coordinar el pago y cerrar la atencion."])
+    return "\n".join(lines)
+
+
+def _programmed_details(result: AvailabilityResult) -> dict[str, object] | None:
+    details = result.details or {}
+    status = str(details.get("estado") or "").strip().casefold()
+    if status != "programado":
+        return None
+
+    person_name = str(details.get("nombre") or details.get("cliente") or "").strip()
+    if " | " in person_name:
+        person_name = person_name.split(" | ", maxsplit=1)[0].strip()
+    date, hour = _appointment_datetime_details(details)
+    return {
+        "person_name": person_name,
+        "date": date,
+        "hour": hour,
+        "site": details.get("sede"),
+    }
+
+
+def _format_programmed_greeting(details: dict[str, object]) -> str:
+    person_name = str(details.get("person_name") or "").strip()
+    if person_name:
+        return f"Hola, {person_name}. Ya logramos programar tu cita."
+    return "Hola. Ya logramos programar tu cita."
+
+
+def _format_programmed_photo_caption(details: dict[str, object]) -> str:
+    lines = ["Te enviamos la constancia con la informacion de tu cita."]
+    if details.get("date"):
+        lines.append(f"Fecha: {details['date']}")
+    if details.get("hour"):
+        lines.append(f"Hora: {details['hour']}")
+    if details.get("site"):
+        lines.append(f"Sede: {details['site']}")
+    return "\n".join(lines)
+
+
+def _format_programmed_payment_message(details: dict[str, object]) -> str:
+    return (
+        "Ahora ya podemos proceder con el pago del servicio. "
+        "Por favor coordina el abono para cerrar la atencion."
+    )
+
+
+def _appointment_datetime_details(
+    details: dict[str, object],
+) -> tuple[object | None, object | None]:
+    date = details.get("fecha")
+    hour = details.get("hora")
+    if not isinstance(date, str):
+        return date, hour
+    match = APPOINTMENT_DATETIME_RE.match(date)
+    if match is None:
+        return date, hour
+    return match.group("date"), hour or match.group("hour")
 
 
 def _format_result_details(result: AvailabilityResult) -> str:

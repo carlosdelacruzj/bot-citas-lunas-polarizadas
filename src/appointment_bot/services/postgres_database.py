@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import threading
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -19,6 +20,7 @@ from appointment_bot.services.database_models import (
     RunDetail,
     RunRecord,
     RunSummary,
+    ServiceOrderCandidate,
     ServiceOrderCreateResult,
     ServiceOrderRuntime,
     ServiceOrderSummary,
@@ -28,6 +30,9 @@ from appointment_bot.services.postgres_pool import pooled_connection
 from appointment_bot.utils.sanitization import public_filename, sanitize_text
 
 DEFAULT_RESERVATION_AMOUNT = Decimal("40.00")
+APPOINTMENT_DATETIME_RE = re.compile(
+    r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
+)
 _INITIALIZED_URLS: set[str] = set()
 _INITIALIZATION_LOCK = threading.Lock()
 
@@ -346,10 +351,9 @@ def _record_reservation_for_order(
     now = _now()
     run_id = getattr(report, "run_id", None)
     is_confirmed = (
-        bool(getattr(report, "reservation_confirmed", False))
-        if confirmed is None
-        else confirmed
+        bool(getattr(report, "reservation_confirmed", False)) if confirmed is None else confirmed
     )
+    appointment_date, appointment_hour = _appointment_datetime_details(details)
     status = "confirmed" if is_confirmed else "unconfirmed"
     reservation_id = _id_from_value("reservation", f"{order_id}-{run_id or now}")
     with _operation_connection(settings, _connection_override) as connection:
@@ -383,8 +387,8 @@ def _record_reservation_for_order(
                 run_id,
                 status,
                 _detail_text(details, "sede"),
-                _detail_text(details, "fecha"),
-                _detail_text(details, "hora"),
+                appointment_date,
+                appointment_hour,
                 _detail_text(details, "cupos"),
                 getattr(report, "screenshot_path", None),
                 Jsonb(sanitize_details(details)) if details else None,
@@ -424,14 +428,14 @@ def _record_reservation_for_order(
             )
 
 
-def list_active_orders(settings: Settings | None = None) -> list[ServiceOrderRuntime]:
+def list_active_orders(settings: Settings | None = None) -> list[ServiceOrderCandidate]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         rows = connection.execute(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                   pa.username, pa.password, wc.display_name AS contact_name,
+                   pa.username, wc.display_name AS contact_name,
                    so.priority, so.status, so.created_at, so.updated_at
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -443,7 +447,31 @@ def list_active_orders(settings: Settings | None = None) -> list[ServiceOrderRun
             ORDER BY so.priority DESC, so.created_at ASC
             """
         ).fetchall()
-    return [_runtime_from_row(row, settings) for row in rows]
+    return [_candidate_from_row(row) for row in rows]
+
+
+def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderCandidate]:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
+                   pa.username, wc.display_name AS contact_name,
+                   so.priority, so.status, so.created_at, so.updated_at
+            FROM service_orders so
+            JOIN applicants a ON a.applicant_id = so.applicant_id
+            JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
+            LEFT JOIN applicant_contacts ac
+                ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
+            LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            LEFT JOIN order_state os ON os.order_id = so.order_id
+            WHERE so.status = 'ready'
+              AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
+            ORDER BY os.last_run_at ASC NULLS FIRST, so.created_at ASC
+            """
+        ).fetchall()
+    return [_candidate_from_row(row) for row in rows]
 
 
 def cleanup_expired_service_order_claims(settings: Settings | None = None) -> int:
@@ -615,12 +643,126 @@ def order_backoff_seconds(order_id: str, *, settings: Settings | None = None) ->
 
 
 def order_reservation_pending(order_id: str, *, settings: Settings | None = None) -> bool:
-    row = _order_state_row(order_id, settings=settings)
-    return row is not None and row["last_status"] in {
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT 1 FROM reservation_attempts
+            WHERE order_id = %s AND status IN ('intent', 'pending', 'unknown')
+            """,
+            (order_id,),
+        ).fetchone()
+    if row is not None:
+        return True
+    state_row = _order_state_row(order_id, settings=settings)
+    return state_row is not None and state_row["last_status"] in {
         OrderStateStatus.SUBMISSION_INTENT,
         OrderStateStatus.SUBMISSION_PENDING,
         OrderStateStatus.RESERVATION_UNCONFIRMED,
     }
+
+
+def create_reservation_attempt(
+    attempt_id: str,
+    order_id: str,
+    *,
+    details: dict[str, Any] | None,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    details = sanitize_details(details) or {}
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            INSERT INTO reservation_attempts (
+                attempt_id, order_id, idempotency_key, status, site,
+                appointment_date, appointment_hour, details_json, created_at, updated_at
+            ) VALUES (%s, %s, %s, 'intent', %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (idempotency_key) DO UPDATE SET
+                details_json = COALESCE(reservation_attempts.details_json, excluded.details_json),
+                updated_at = excluded.updated_at
+            """,
+            (
+                attempt_id,
+                order_id,
+                attempt_id,
+                _detail_text(details, "sede"),
+                _detail_text(details, "fecha"),
+                _detail_text(details, "hora"),
+                Jsonb(details) if details else None,
+                now,
+                now,
+            ),
+        )
+
+
+def mark_reservation_attempt_pending(
+    attempt_id: str,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            UPDATE reservation_attempts
+            SET status = 'pending', submitted_at = COALESCE(submitted_at, %s), updated_at = %s
+            WHERE attempt_id = %s AND status = 'intent'
+            """,
+            (now, now, attempt_id),
+        )
+
+
+def resolve_reservation_attempt(
+    attempt_id: str,
+    status: str,
+    *,
+    run_id: str | None = None,
+    evidence_path: str | None = None,
+    settings: Settings | None = None,
+) -> None:
+    if status not in {"confirmed", "rejected", "unknown"}:
+        raise ValueError(f"Invalid reservation attempt status: {status}")
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    resolved_at = now if status in {"confirmed", "rejected"} else None
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            UPDATE reservation_attempts
+            SET status = %s, run_id = COALESCE(%s, run_id),
+                evidence_path = COALESCE(%s, evidence_path),
+                resolved_at = %s, updated_at = %s
+            WHERE attempt_id = %s
+              AND status IN ('intent', 'pending', 'unknown')
+            """,
+            (status, run_id, evidence_path, resolved_at, now, attempt_id),
+        )
+
+
+def get_active_reservation_attempt(
+    order_id: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any] | None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        return connection.execute(
+            """
+            SELECT attempt_id, status, site, appointment_date, appointment_hour
+            FROM reservation_attempts
+            WHERE order_id = %s AND status IN ('intent', 'pending', 'unknown')
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            (order_id,),
+        ).fetchone()
 
 
 def mark_order_submission_pending(
@@ -707,11 +849,54 @@ def set_order_paused(order_id: str, paused: bool, *, settings: Settings | None =
                 """
                 UPDATE order_state
                 SET last_status = NULL, last_message = NULL, next_allowed_at = NULL,
-                    consecutive_errors = 0, programmed_at = NULL
+                    consecutive_errors = 0, credential_failures = 0, programmed_at = NULL
                 WHERE order_id = %s
                 """,
                 (order_id,),
             )
+
+
+def record_invalid_credential_failure(
+    order_id: str,
+    *,
+    settings: Settings | None = None,
+) -> tuple[int, bool]:
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    message = "El portal rechazo la clave: clave incorrecta o cuenta no registrada."
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            INSERT INTO order_state (
+                order_id, last_status, last_message, consecutive_errors,
+                credential_failures, last_run_at
+            ) VALUES (%s, 'error', %s, 1, 1, %s)
+            ON CONFLICT(order_id) DO UPDATE SET
+                last_status = 'error',
+                last_message = excluded.last_message,
+                consecutive_errors = order_state.consecutive_errors + 1,
+                credential_failures = order_state.credential_failures + 1,
+                next_allowed_at = NULL,
+                last_run_at = excluded.last_run_at
+            RETURNING credential_failures
+            """,
+            (order_id, message, now),
+        ).fetchone()
+        failures = int(row["credential_failures"])
+        paused = failures >= 2
+        if paused:
+            cursor = connection.execute(
+                """
+                UPDATE service_orders
+                SET status = 'paused', updated_at = %s
+                WHERE order_id = %s
+                """,
+                (now, order_id),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError(f"Service order not found: {order_id}")
+    return failures, paused
 
 
 def mark_order_done(
@@ -766,9 +951,9 @@ def update_order_state(
     now = _now()
     next_allowed_at = None
     if backoff_seconds is not None:
-        next_allowed_at = (
-            datetime.now(UTC) + timedelta(seconds=backoff_seconds)
-        ).isoformat(timespec="seconds")
+        next_allowed_at = (datetime.now(UTC) + timedelta(seconds=backoff_seconds)).isoformat(
+            timespec="seconds"
+        )
     is_error = exit_code != 0 or status in {
         ResultStatus.ERROR,
         ResultStatus.UNKNOWN,
@@ -937,6 +1122,133 @@ def list_runs(
             values,
         ).fetchall()
     return [_run_summary_from_row(row) for row in rows]
+
+
+def record_order_check(
+    order_id: str,
+    *,
+    status: str,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            INSERT INTO order_checks (order_id, status, checked_at)
+            VALUES (%s, %s, %s)
+            """,
+            (order_id, status, _now()),
+        )
+
+
+def record_observer_window_metric(
+    settings: Settings | None,
+    *,
+    metric_date: date,
+    window_label: str,
+    source: str,
+    report: Any,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    details = getattr(report, "details", None) or {}
+    status = str(getattr(report, "status", "") or "unknown")
+    duration = _metric_duration_seconds(report, details)
+    error_count = 1 if status in {"error", "unknown", "reservation_unconfirmed"} else 0
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            INSERT INTO observer_window_metrics (
+                metric_date, window_label, source, status, site, check_count,
+                error_count, total_duration_seconds, first_seen_at, last_seen_at,
+                last_order_id, last_date, last_hour
+            )
+            VALUES (%s, %s, %s, %s, %s, 1, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (metric_date, window_label, source, status, site)
+            DO UPDATE SET
+                check_count = observer_window_metrics.check_count + 1,
+                error_count = observer_window_metrics.error_count + excluded.error_count,
+                total_duration_seconds = (
+                    observer_window_metrics.total_duration_seconds
+                    + excluded.total_duration_seconds
+                ),
+                last_seen_at = excluded.last_seen_at,
+                last_order_id = excluded.last_order_id,
+                last_date = excluded.last_date,
+                last_hour = excluded.last_hour
+            """,
+            (
+                metric_date,
+                window_label,
+                source,
+                status,
+                _detail_text(details, "sede") or "",
+                error_count,
+                duration,
+                now,
+                now,
+                getattr(report, "order_id", None),
+                _detail_text(details, "fecha"),
+                _detail_text(details, "hora"),
+            ),
+        )
+
+
+def summarize_order_checks(
+    order_id: str,
+    *,
+    started_at: datetime,
+    finished_at: datetime,
+    settings: Settings | None = None,
+) -> tuple[int, datetime | None, datetime | None, str | None, datetime | None]:
+    if finished_at <= started_at:
+        return 0, None, None, None, None
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            WITH filtered_checks AS (
+                SELECT status, checked_at
+                FROM order_checks
+                WHERE order_id = %s
+                  AND checked_at >= %s
+                  AND checked_at <= %s
+            )
+            SELECT COUNT(*) AS check_count,
+                   MIN(checked_at) AS first_check_at,
+                   MAX(checked_at) AS last_check_at,
+                   (ARRAY_AGG(status ORDER BY checked_at DESC))[1] AS last_status,
+                   (SELECT MIN(all_checks.checked_at) FROM order_checks all_checks)
+                       AS tracking_started_at
+            FROM filtered_checks
+            """,
+            (order_id, started_at, finished_at),
+        ).fetchone()
+    if row is None:
+        return 0, None, None, None, None
+    return (
+        int(row["check_count"]),
+        row["first_check_at"],
+        row["tracking_started_at"],
+        row["last_status"],
+        row["last_check_at"],
+    )
+
+
+def _metric_duration_seconds(report: Any, details: dict[str, Any]) -> float:
+    raw_value = (
+        details.get("check_duration_seconds")
+        or details.get("duration_seconds")
+        or getattr(report, "duration_seconds", None)
+        or 0
+    )
+    try:
+        return max(0.0, float(raw_value))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def get_run(
@@ -1131,11 +1443,12 @@ def update_worker_state(
 def cleanup_database_history(settings: Settings | None = None) -> None:
     settings = _settings(settings)
     init_database(settings)
-    cutoff = (
-        datetime.now(UTC) - timedelta(days=settings.cleanup_retention_days)
-    ).isoformat(timespec="seconds")
+    cutoff = (datetime.now(UTC) - timedelta(days=settings.cleanup_retention_days)).isoformat(
+        timespec="seconds"
+    )
     with _connection(_database_url(settings)) as connection:
         connection.execute("DELETE FROM runs WHERE created_at < %s", (cutoff,))
+        connection.execute("DELETE FROM order_checks WHERE checked_at < %s", (cutoff,))
 
 
 def get_service_order_runtime(
@@ -1160,6 +1473,34 @@ def get_service_order_runtime(
             WHERE so.order_id = %s
             """,
             (order_id,),
+        ).fetchone()
+    return _runtime_from_row(row, settings) if row is not None else None
+
+
+def get_claimed_service_order_runtime(
+    order_id: str,
+    *,
+    owner_token: str,
+    settings: Settings | None = None,
+) -> ServiceOrderRuntime | None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
+                   pa.username, pa.password, wc.display_name AS contact_name,
+                   so.priority, so.status, so.created_at, so.updated_at
+            FROM service_orders so
+            JOIN applicants a ON a.applicant_id = so.applicant_id
+            JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
+            LEFT JOIN applicant_contacts ac
+                ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
+            LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            WHERE so.order_id = %s AND so.status = 'ready'
+              AND so.lease_owner = %s AND so.lease_expires_at > CURRENT_TIMESTAMP
+            """,
+            (order_id, owner_token),
         ).fetchone()
     return _runtime_from_row(row, settings) if row is not None else None
 
@@ -1252,6 +1593,19 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         name=str(row["name"]),
         username=str(row["username"]),
         password=_credential_cipher(settings).decrypt(str(row["password"])),
+        priority=int(row["priority"]),
+        status=str(row["status"]),
+        created_at=str(row["created_at"]),
+        updated_at=str(row["updated_at"]),
+        contact_name=row.get("contact_name"),
+    )
+
+
+def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
+    return ServiceOrderCandidate(
+        order_id=str(row["order_id"]),
+        name=str(row["name"]),
+        username=str(row["username"]),
         priority=int(row["priority"]),
         status=str(row["status"]),
         created_at=str(row["created_at"]),
@@ -1437,6 +1791,20 @@ def _detail_text(details: dict[str, Any], key: str) -> str | None:
     if value in {None, ""}:
         return None
     return str(value)
+
+
+def _appointment_datetime_details(details: dict[str, Any]) -> tuple[str | None, str | None]:
+    date_text = _detail_text(details, "fecha")
+    hour_text = _detail_text(details, "hora")
+    if not date_text:
+        return None, hour_text
+
+    match = APPOINTMENT_DATETIME_RE.match(date_text)
+    if match is None:
+        return date_text, hour_text
+
+    parsed_hour = match.group("hour")
+    return match.group("date"), hour_text or parsed_hour
 
 
 def _mask_username(username: str) -> str:

@@ -143,6 +143,8 @@ def wait_for_programmed_appointment_stage(
                         programmed_text,
                     )
                     mismatch_logged = True
+                page.wait_for_timeout(500)
+                continue
             return stage
         page.wait_for_timeout(500)
 

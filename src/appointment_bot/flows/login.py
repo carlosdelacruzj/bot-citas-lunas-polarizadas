@@ -18,6 +18,14 @@ SUBMIT_SELECTOR = (
     'button:has-text("Ingresar"), button:has-text("Login")'
 )
 POST_LOGIN_SELECTOR = 'input[type="image"][onclick*="gvProgramacion"], input#MainContent_BtnNuevo'
+INVALID_CREDENTIAL_TEXTS = (
+    "clave incorrecta o no se ha registrado",
+    "clave incorrecta",
+)
+
+
+class InvalidPortalCredentials(RuntimeError):
+    pass
 
 
 def login(page: Page, settings: Settings) -> None:
@@ -31,7 +39,27 @@ def login(page: Page, settings: Settings) -> None:
         page.locator(USERNAME_SELECTOR).first.fill(settings.login_username, timeout=timeout)
         page.locator(PASSWORD_SELECTOR).first.fill(settings.login_password, timeout=timeout)
         page.locator(SUBMIT_SELECTOR).first.click(timeout=timeout)
+        outcome = page.wait_for_function(
+            """({ selector, rejectionTexts }) => {
+                const bodyText = (document.body ? document.body.innerText : "").toLowerCase();
+                if (rejectionTexts.some(text => bodyText.includes(text))) return "rejected";
+                const postLogin = document.querySelector(selector);
+                if (postLogin && postLogin.getClientRects().length) return "completed";
+                return false;
+            }""",
+            arg={
+                "selector": POST_LOGIN_SELECTOR,
+                "rejectionTexts": list(INVALID_CREDENTIAL_TEXTS),
+            },
+            timeout=timeout,
+        ).json_value()
+        if outcome == "rejected":
+            raise InvalidPortalCredentials(
+                "El portal rechazo la clave: clave incorrecta o cuenta no registrada."
+            )
         page.locator(POST_LOGIN_SELECTOR).first.wait_for(state="visible", timeout=timeout)
+    except InvalidPortalCredentials:
+        raise
     except PlaywrightTimeoutError as exc:
         raise RuntimeError(
             "Could not complete login with the configured selectors. "

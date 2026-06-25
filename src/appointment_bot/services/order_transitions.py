@@ -2,17 +2,12 @@ from appointment_bot.config import Settings
 from appointment_bot.domain import ResultStatus, RunReport
 from appointment_bot.services.postgres_database import (
     clear_order_submission_state,
+    get_active_reservation_attempt,
     get_service_order_runtime,
-    order_submission_age_seconds,
+    resolve_reservation_attempt,
     service_order_claim_owned,
 )
-
-RECONCILABLE_STATUSES = {
-    ResultStatus.AVAILABLE,
-    ResultStatus.COMPLETED,
-    ResultStatus.PARTIAL,
-    ResultStatus.UNAVAILABLE,
-}
+from appointment_bot.utils.sanitization import normalize_option
 
 
 def order_can_submit(order_id: str, owner_token: str, settings: Settings) -> bool:
@@ -33,13 +28,44 @@ def reconcile_pending_submission(
     report: RunReport,
     settings: Settings,
 ) -> bool:
-    age_seconds = order_submission_age_seconds(order_id, settings=settings)
-    if (
-        age_seconds is None
-        or age_seconds < settings.error_backoff_seconds
-        or report.status not in RECONCILABLE_STATUSES
-    ):
+    attempt = get_active_reservation_attempt(order_id, settings=settings)
+    if attempt is None:
         return False
-
+    details = report.details or {}
+    portal_text = normalize_option(
+        " ".join(
+            str(details.get(key) or "") for key in ("fecha", "hora", "mensaje", "estado")
+        )
+    )
+    expected_date = normalize_option(str(attempt.get("appointment_date") or ""))
+    expected_hour = normalize_option(str(attempt.get("appointment_hour") or ""))
+    terminal_status = normalize_option(str(details.get("estado") or ""))
+    exact_programmed = (
+        report.status == ResultStatus.REGISTERED
+        or (
+            report.status == ResultStatus.COMPLETED
+            and terminal_status in {"programado", "atendido"}
+            and bool(expected_date)
+            and bool(expected_hour)
+            and expected_date in portal_text
+            and expected_hour in portal_text
+        )
+    )
+    if not exact_programmed:
+        resolve_reservation_attempt(
+            str(attempt["attempt_id"]),
+            "unknown",
+            run_id=report.run_id,
+            evidence_path=report.screenshot_path,
+            settings=settings,
+        )
+        return False
+    resolve_reservation_attempt(
+        str(attempt["attempt_id"]),
+        "confirmed",
+        run_id=report.run_id,
+        evidence_path=report.screenshot_path,
+        settings=settings,
+    )
     clear_order_submission_state(order_id, settings=settings)
     return True

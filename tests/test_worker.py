@@ -16,7 +16,7 @@ from tests.helpers import make_settings
 
 
 class ContinuousWorkerTests(unittest.TestCase):
-    def test_primary_monitor_uses_continuous_settings_then_sweeps_other_orders(self) -> None:
+    def test_unavailable_observer_rotates_without_sweeping_orders(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             worker = ContinuousWorker(settings)
@@ -54,13 +54,16 @@ class ContinuousWorkerTests(unittest.TestCase):
                 patch.object(worker, "_reset_errors"),
                 patch.object(worker, "_run_rapid_queue") as sweep,
             ):
-                worker._monitor_order(order)
+                queue_requested = worker._monitor_order(order)
 
             effective_settings = run_order.call_args.args[0]
-            self.assertEqual(effective_settings.monitor_window_seconds, 1500)
-            self.assertEqual(effective_settings.monitor_interval_min_seconds, 30)
-            self.assertEqual(effective_settings.monitor_interval_max_seconds, 55)
-            sweep.assert_called_once_with(skip_order_ids={order.order_id})
+            self.assertEqual(effective_settings.monitor_window_seconds, 300)
+            self.assertEqual(effective_settings.monitor_max_attempts, 5)
+            self.assertEqual(effective_settings.monitor_interval_min_seconds, 60)
+            self.assertEqual(effective_settings.monitor_interval_max_seconds, 75)
+            self.assertTrue(run_order.call_args.kwargs["observer_mode"])
+            self.assertFalse(queue_requested)
+            sweep.assert_not_called()
 
     def test_health_detects_stalled_worker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

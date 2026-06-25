@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from datetime import time as datetime_time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -45,6 +46,42 @@ def _parse_int_list(value: str | None, *, default: tuple[int, ...]) -> tuple[int
     return parsed
 
 
+def _parse_time_windows(
+    value: str | None,
+    *,
+    default: tuple[tuple[datetime_time, datetime_time], ...],
+) -> tuple[tuple[datetime_time, datetime_time], ...]:
+    if value is None or value.strip() == "":
+        return default
+
+    windows = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            start_text, end_text = (part.strip() for part in item.split("-", maxsplit=1))
+            start = datetime_time.fromisoformat(start_text)
+            end = datetime_time.fromisoformat(end_text)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid time window. Use HH:MM-HH:MM entries separated by commas: {value!r}"
+            ) from exc
+        if start >= end:
+            raise ValueError(f"Time window start must be before end: {item!r}")
+        windows.append((start, end))
+
+    return tuple(windows)
+
+
+DEFAULT_OBSERVER_HOT_WINDOWS = (
+    (datetime_time(hour=8, minute=15), datetime_time(hour=8, minute=30)),
+    (datetime_time(hour=9, minute=30), datetime_time(hour=10, minute=0)),
+    (datetime_time(hour=11, minute=40), datetime_time(hour=12, minute=40)),
+    (datetime_time(hour=15, minute=55), datetime_time(hour=16, minute=30)),
+)
+
+
 @dataclass(frozen=True)
 class Settings:
     target_url: str
@@ -79,6 +116,17 @@ class Settings:
     continuous_interval_min_seconds: int
     continuous_interval_max_seconds: int
     session_rotation_seconds: int
+    observer_session_seconds: int
+    observer_max_attempts: int
+    observer_interval_min_seconds: int
+    observer_interval_max_seconds: int
+    observer_required_site: str
+    observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
+    outside_hot_window_min_seconds: int
+    outside_hot_window_max_seconds: int
+    unavailable_streak_limit: int
+    recovery_backoff_min_seconds: int
+    recovery_backoff_max_seconds: int
     session_retry_delays_seconds: tuple[int, ...]
     login_timeout_seconds: int
     postback_timeout_seconds: int
@@ -89,6 +137,7 @@ class Settings:
     screenshots_dir: Path
     client_videos_dir: Path
     credential_encryption_keys: tuple[str, ...] = ()
+    artifact_prefix: str = ""
 
     @property
     def safe_username(self) -> str:
@@ -158,7 +207,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         monitor_window_seconds=_parse_int(
             os.getenv("MONITOR_WINDOW_SECONDS"),
-            default=300,
+            default=120,
             minimum=0,
         ),
         monitor_max_attempts=_parse_int(
@@ -168,17 +217,17 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         monitor_interval_min_seconds=_parse_int(
             os.getenv("MONITOR_INTERVAL_MIN_SECONDS"),
-            default=80,
+            default=25,
             minimum=1,
         ),
         monitor_interval_max_seconds=_parse_int(
             os.getenv("MONITOR_INTERVAL_MAX_SECONDS"),
-            default=100,
+            default=35,
             minimum=1,
         ),
         queue_max_reservations_per_run=_parse_int(
             os.getenv("QUEUE_MAX_RESERVATIONS_PER_RUN"),
-            default=0,
+            default=1,
             minimum=0,
         ),
         queue_delay_min_seconds=_parse_int(
@@ -208,6 +257,56 @@ def load_settings(*, require_login: bool = True) -> Settings:
         session_rotation_seconds=_parse_int(
             os.getenv("SESSION_ROTATION_SECONDS"),
             default=1500,
+            minimum=60,
+        ),
+        observer_session_seconds=_parse_int(
+            os.getenv("OBSERVER_SESSION_SECONDS"),
+            default=120,
+            minimum=60,
+        ),
+        observer_max_attempts=_parse_int(
+            os.getenv("OBSERVER_MAX_ATTEMPTS"),
+            default=4,
+            minimum=1,
+        ),
+        observer_interval_min_seconds=_parse_int(
+            os.getenv("OBSERVER_INTERVAL_MIN_SECONDS"),
+            default=25,
+            minimum=1,
+        ),
+        observer_interval_max_seconds=_parse_int(
+            os.getenv("OBSERVER_INTERVAL_MAX_SECONDS"),
+            default=35,
+            minimum=1,
+        ),
+        observer_required_site=os.getenv("OBSERVER_REQUIRED_SITE", "LIMA-LA VICTORIA").strip(),
+        observer_hot_windows=_parse_time_windows(
+            os.getenv("OBSERVER_HOT_WINDOWS"),
+            default=DEFAULT_OBSERVER_HOT_WINDOWS,
+        ),
+        outside_hot_window_min_seconds=_parse_int(
+            os.getenv("OUTSIDE_HOT_WINDOW_MIN_SECONDS"),
+            default=1200,
+            minimum=60,
+        ),
+        outside_hot_window_max_seconds=_parse_int(
+            os.getenv("OUTSIDE_HOT_WINDOW_MAX_SECONDS"),
+            default=2400,
+            minimum=60,
+        ),
+        unavailable_streak_limit=_parse_int(
+            os.getenv("UNAVAILABLE_STREAK_LIMIT"),
+            default=8,
+            minimum=0,
+        ),
+        recovery_backoff_min_seconds=_parse_int(
+            os.getenv("RECOVERY_BACKOFF_MIN_SECONDS"),
+            default=1800,
+            minimum=60,
+        ),
+        recovery_backoff_max_seconds=_parse_int(
+            os.getenv("RECOVERY_BACKOFF_MAX_SECONDS"),
+            default=3600,
             minimum=60,
         ),
         session_retry_delays_seconds=_parse_int_list(
@@ -263,6 +362,24 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "CONTINUOUS_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "CONTINUOUS_INTERVAL_MIN_SECONDS"
+        )
+
+    if settings.observer_interval_max_seconds < settings.observer_interval_min_seconds:
+        raise ValueError(
+            "OBSERVER_INTERVAL_MAX_SECONDS must be greater than or equal to "
+            "OBSERVER_INTERVAL_MIN_SECONDS"
+        )
+
+    if settings.outside_hot_window_max_seconds < settings.outside_hot_window_min_seconds:
+        raise ValueError(
+            "OUTSIDE_HOT_WINDOW_MAX_SECONDS must be greater than or equal to "
+            "OUTSIDE_HOT_WINDOW_MIN_SECONDS"
+        )
+
+    if settings.recovery_backoff_max_seconds < settings.recovery_backoff_min_seconds:
+        raise ValueError(
+            "RECOVERY_BACKOFF_MAX_SECONDS must be greater than or equal to "
+            "RECOVERY_BACKOFF_MIN_SECONDS"
         )
 
     missing = [

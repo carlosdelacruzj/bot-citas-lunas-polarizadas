@@ -5,6 +5,10 @@ from cryptography.fernet import Fernet, InvalidToken
 TOKEN_PREFIX = "enc:v1:"
 
 
+class CredentialDecryptionError(ValueError):
+    pass
+
+
 class CredentialCipher:
     """Cifra credenciales recuperables con la primera clave y acepta claves anteriores."""
 
@@ -26,13 +30,13 @@ class CredentialCipher:
 
     def decrypt(self, value: str) -> str:
         if not value.startswith(TOKEN_PREFIX):
-            raise ValueError("A portal credential is not encrypted.")
+            raise CredentialDecryptionError("A portal credential is not encrypted.")
         token = value.removeprefix(TOKEN_PREFIX).encode("ascii")
         for fernet in self._fernets:
             try:
                 return fernet.decrypt(token).decode("utf-8")
             except InvalidToken:
                 continue
-        raise ValueError(
+        raise CredentialDecryptionError(
             "A portal credential cannot be decrypted with APPOINTMENT_CREDENTIAL_KEYS."
         )

@@ -1,7 +1,9 @@
 param(
     [int]$DockerTimeoutSeconds = 180,
     [int]$PostgresTimeoutSeconds = 180,
-    [int]$WorkerRestartDelaySeconds = 30
+    [int]$WorkerRestartDelaySeconds = 30,
+    [int]$LeaseUnavailableDelaySeconds = 300,
+    [string]$DailyResumeTime = "07:30"
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +51,17 @@ function Invoke-LoggedCommand {
     }
 }
 
+function Test-WorkerProcessRunning {
+    $currentProcessId = $PID
+    $matches = Get-CimInstance Win32_Process -Filter "Name = 'python.exe' OR Name = 'pythonw.exe'" |
+        Where-Object {
+            $_.ProcessId -ne $currentProcessId -and
+            $_.CommandLine -and
+            $_.CommandLine.Contains("appointment_bot.services.continuous_host")
+        }
+    return $null -ne $matches
+}
+
 function Wait-Until {
     param(
         [scriptblock]$Condition,
@@ -67,6 +80,31 @@ function Wait-Until {
     }
 
     throw $TimeoutMessage
+}
+
+function Get-SecondsUntilDailyResume {
+    param([string]$ResumeTime)
+
+    try {
+        $parts = $ResumeTime.Split(":", 2)
+        if ($parts.Count -ne 2) {
+            throw "invalid"
+        }
+        $hour = [int]$parts[0]
+        $minute = [int]$parts[1]
+        if ($hour -lt 0 -or $hour -gt 23 -or $minute -lt 0 -or $minute -gt 59) {
+            throw "invalid"
+        }
+    } catch {
+        throw "DailyResumeTime must use HH:mm format. Current value: $ResumeTime"
+    }
+
+    $now = Get-Date
+    $resumeAt = Get-Date -Hour $hour -Minute $minute -Second 0
+    if ($resumeAt -le $now) {
+        $resumeAt = $resumeAt.AddDays(1)
+    }
+    return [int][Math]::Ceiling(($resumeAt - $now).TotalSeconds)
 }
 
 try {
@@ -139,14 +177,27 @@ try {
     }
 
     while ($true) {
+        if (Test-WorkerProcessRunning) {
+            Write-BootstrapLog "Another local continuous worker process is already running. Waiting $WorkerRestartDelaySeconds seconds."
+            Start-Sleep -Seconds $WorkerRestartDelaySeconds
+            continue
+        }
         & $python -m appointment_bot.services.continuous_host
         $exitCode = $LASTEXITCODE
         Write-BootstrapLog "Continuous worker exited with code $exitCode."
         if ($exitCode -eq 0) {
-            exit 0
+            $restartDelay = Get-SecondsUntilDailyResume -ResumeTime $DailyResumeTime
+            Write-BootstrapLog "Daily cutoff reached. Restarting continuous worker at $DailyResumeTime in $restartDelay seconds unless the PC restarts first."
+            Start-Sleep -Seconds $restartDelay
+            continue
         }
-        $restartDelay = if ($exitCode -eq 75) { 1 } else { $WorkerRestartDelaySeconds }
-        Write-BootstrapLog "Restarting continuous worker in $restartDelay seconds."
+        if ($exitCode -eq 76) {
+            $restartDelay = $LeaseUnavailableDelaySeconds
+            Write-BootstrapLog "Another host owns the worker lease. Retrying in $restartDelay seconds."
+        } else {
+            $restartDelay = if ($exitCode -eq 75) { 1 } else { $WorkerRestartDelaySeconds }
+            Write-BootstrapLog "Restarting continuous worker in $restartDelay seconds."
+        }
         Start-Sleep -Seconds $restartDelay
     }
 } catch {

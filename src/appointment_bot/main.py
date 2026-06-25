@@ -4,7 +4,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -28,7 +28,7 @@ from appointment_bot.flows.appointments import (
     select_available_appointment,
     select_available_site,
     solve_reservation_captcha_and_click_reserve,
-    wait_for_reservation_confirmation,
+    wait_for_reservation_submission_outcome,
 )
 from appointment_bot.flows.login import login
 from appointment_bot.flows.stages import (
@@ -82,34 +82,64 @@ def _complete_available_reservation(
     screenshot_path: Path | None,
     cancel_event: threading.Event | None = None,
     can_submit: Callable[[], bool] | None = None,
-    on_submission_intent: Callable[[], None] | None = None,
-    on_submission_started: Callable[[], None] | None = None,
+    on_submission_intent: Callable[[dict | None], None] | None = None,
+    on_submission_started: Callable[[dict | None], None] | None = None,
+    expected_person_name: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
 
     def mark_submission_started() -> None:
         nonlocal submission_started
         if on_submission_started is not None:
-            on_submission_started()
+            on_submission_started(result.details)
         submission_started = True
 
     try:
+
+        def mark_submission_intent() -> None:
+            if on_submission_intent is not None:
+                on_submission_intent(result.details)
+
         page = solve_reservation_captcha_and_click_reserve(
             page,
             settings,
             cancel_event=cancel_event,
             can_submit=can_submit,
             expected_details=result.details,
-            on_submission_intent=on_submission_intent,
+            expected_person_name=expected_person_name,
+            on_submission_intent=mark_submission_intent,
             on_submission_started=mark_submission_started,
         )
-        confirmation_text_detected = wait_for_reservation_confirmation(page)
+        submission_outcome = wait_for_reservation_submission_outcome(page)
+        confirmation_text_detected = submission_outcome == "confirmed"
         reservation_confirmation_screenshot_path = save_screenshot(
             page,
             settings,
             "reservation-confirmation",
         )
-        dismiss_reservation_confirmation(page)
+        if submission_outcome != "unknown":
+            dismiss_reservation_confirmation(page)
+        if submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
+            details = dict(result.details or {})
+            details["submission_outcome"] = submission_outcome
+            messages = {
+                "captcha_invalid": "El portal rechazo el captcha de la reserva.",
+                "slot_lost": "El cupo dejo de estar disponible antes de completar la reserva.",
+                "rejected": "El portal rechazo explicitamente la solicitud de reserva.",
+            }
+            return (
+                AvailabilityResult(
+                    status="unavailable" if submission_outcome == "slot_lost" else "error",
+                    message=messages[submission_outcome],
+                    details=details,
+                ),
+                reservation_confirmation_screenshot_path or screenshot_path,
+                [
+                    path
+                    for path in [reservation_confirmation_screenshot_path, screenshot_path]
+                    if path is not None
+                ],
+            )
         programmed_stage = wait_for_programmed_appointment_stage(page, result.details)
         updated_process_stages_screenshot_path = _save_process_stages_snapshot(
             page,
@@ -149,6 +179,7 @@ def _complete_available_reservation(
         screenshot_path = screenshot_paths[0]
 
     details = dict(result.details or {})
+    details["submission_outcome"] = "confirmed" if programmed_stage is not None else "unknown"
     details["confirmacion_texto"] = "detectada" if confirmation_text_detected else "no detectada"
     details["confirmacion_etapa"] = (
         "Programado" if programmed_stage is not None else "no confirmada"
@@ -195,10 +226,12 @@ def _monitor_appointment_availability(
     on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
     can_submit: Callable[[], bool] | None = None,
-    on_submission_intent: Callable[[], None] | None = None,
-    on_submission_started: Callable[[], None] | None = None,
+    on_submission_intent: Callable[[dict | None], None] | None = None,
+    on_submission_started: Callable[[dict | None], None] | None = None,
+    expected_person_name: str | None = None,
 ):
     deadline = time.monotonic() + settings.monitor_window_seconds
+    session_started = time.monotonic()
     attempt = 1
     screenshot_path = None
     screenshot_paths = (
@@ -215,10 +248,12 @@ def _monitor_appointment_availability(
                 screenshot_path,
                 screenshot_paths,
             )
+        check_started = time.monotonic()
         logger.info("Appointment availability check attempt %s", attempt)
         try:
             page = select_available_site(
                 page,
+                required_site=settings.observer_required_site,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
         except AppointmentOptionsNotRefreshed as exc:
@@ -229,6 +264,13 @@ def _monitor_appointment_availability(
         result = read_appointment_availability(
             page,
             timeout=settings.read_timeout_seconds * 1_000,
+        )
+        result = _with_monitor_diagnostics(
+            result,
+            settings=settings,
+            attempt=attempt,
+            session_age_seconds=time.monotonic() - session_started,
+            check_duration_seconds=time.monotonic() - check_started,
         )
 
         if result.status == "unknown":
@@ -249,8 +291,10 @@ def _monitor_appointment_availability(
         )
         screenshot_path = result_screenshot_path or process_stages_screenshot_path
 
-        can_attempt_reservation = result.status == "available" or (
-            result.status == "partial" and has_available_date_options(page)
+        fetch_probe_only = bool((result.details or {}).get("fetch_probe"))
+        can_attempt_reservation = not fetch_probe_only and (
+            result.status == "available"
+            or (result.status == "partial" and has_available_date_options(page))
         )
         if can_attempt_reservation:
             selected_result = select_available_appointment(
@@ -258,8 +302,17 @@ def _monitor_appointment_availability(
                 is_allowed_appointment=is_allowed_appointment,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
+            selected_result = _with_monitor_diagnostics(
+                selected_result,
+                settings=settings,
+                attempt=attempt,
+                session_age_seconds=time.monotonic() - session_started,
+                check_duration_seconds=time.monotonic() - check_started,
+            )
             if not settings.auto_reserve:
                 if selected_result.status == "available":
+                    if on_check is not None:
+                        on_check(selected_result, attempt, None)
                     return (
                         AvailabilityResult(
                             status="available",
@@ -295,6 +348,7 @@ def _monitor_appointment_availability(
                         can_submit,
                         on_submission_intent,
                         on_submission_started,
+                        expected_person_name,
                     )
                 except AppointmentWorkflowCancelled as exc:
                     return (
@@ -355,6 +409,40 @@ def _monitor_appointment_availability(
         attempt += 1
 
 
+def _with_monitor_diagnostics(
+    result: AvailabilityResult,
+    *,
+    settings: Settings,
+    attempt: int,
+    session_age_seconds: float,
+    check_duration_seconds: float,
+) -> AvailabilityResult:
+    details = dict(result.details or {})
+    details.update(
+        {
+            "observer_account": settings.safe_username,
+            "observer_attempt": attempt,
+            "monitoring_mode": "normal",
+            "session_age_seconds": round(session_age_seconds, 3),
+            "check_duration_seconds": round(check_duration_seconds, 3),
+        }
+    )
+    logger.info(
+        "Observer check: account=%s mode=%s attempt=%s status=%s site=%s "
+        "date_options=%s hour_options=%s duration=%.3fs session_age=%.3fs",
+        settings.safe_username,
+        "normal",
+        attempt,
+        result.status,
+        details.get("sede"),
+        details.get("date_options"),
+        details.get("hour_options"),
+        check_duration_seconds,
+        session_age_seconds,
+    )
+    return AvailabilityResult(result.status, result.message, details)
+
+
 def run_with_report(
     settings: Settings,
     *,
@@ -364,11 +452,16 @@ def run_with_report(
     on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
     can_submit: Callable[[], bool] | None = None,
-    on_submission_intent: Callable[[], None] | None = None,
-    on_submission_started: Callable[[], None] | None = None,
+    on_submission_intent: Callable[[dict | None], None] | None = None,
+    on_submission_started: Callable[[dict | None], None] | None = None,
+    expected_person_name: str | None = None,
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
-    started_at_dt = datetime.now()
+    settings = replace(
+        settings,
+        artifact_prefix="-".join(part for part in (run_id, order_id or "observer") if part),
+    )
+    started_at_dt = datetime.now(UTC)
     started_at = started_at_dt.isoformat(timespec="seconds")
     screenshot_path = None
     screenshot_paths = []
@@ -442,6 +535,7 @@ def run_with_report(
                         can_submit,
                         on_submission_intent,
                         on_submission_started,
+                        expected_person_name,
                     )
                     result = _with_client_context(
                         result,
@@ -495,6 +589,7 @@ def run_with_report(
             run_id=run_id,
             order_id=order_id,
             started_at=started_at,
+            details={"error_type": type(exc).__name__},
             screenshot_path=str(screenshot_path) if screenshot_path is not None else None,
             screenshot_paths=[str(path) for path in screenshot_paths] or None,
         )
@@ -510,7 +605,11 @@ def run_with_report(
 
 
 def _cleanup_unconfirmed_session_screenshots(report: RunReport) -> None:
-    if reservation_confirmed(report):
+    if reservation_confirmed(report) or report.status in {
+        "error",
+        "unknown",
+        "reservation_unconfirmed",
+    }:
         return
 
     remove_screenshot_paths(report_screenshot_paths(report))

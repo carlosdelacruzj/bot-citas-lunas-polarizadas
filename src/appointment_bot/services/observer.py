@@ -5,7 +5,7 @@ import random
 import threading
 import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -45,7 +45,7 @@ def run_observer_with_report(
     | None = None,
 ) -> RunReport:
     run_id = f"observer-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
-    started_at_dt = datetime.now()
+    started_at_dt = datetime.now(UTC)
     started_at = started_at_dt.isoformat(timespec="seconds")
     screenshot_paths: list[Path] = []
     error_screenshot_path = None
@@ -134,6 +134,7 @@ def _monitor_observer(
         try:
             page = select_available_site_for_observer(
                 page,
+                required_site=settings.observer_required_site,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
         except AppointmentOptionsNotRefreshed as exc:

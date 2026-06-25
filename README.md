@@ -39,7 +39,9 @@ appointment-bot-worker
 
 En Windows, `scripts/start-worker.ps1` levanta PostgreSQL, espera su health check y reinicia el
 worker ante errores o solicitudes controladas. `scripts/start-worker-hidden.vbs` permite
-iniciarlo sin ventana.
+iniciarlo sin ventana. Si otro host ya tiene el lease del worker, el proceso sale con un
+reinicio controlado y el script espera antes de intentar de nuevo. El script tambien evita
+iniciar un segundo `appointment_bot.services.continuous_host` local si ya hay uno corriendo.
 
 Administrar ordenes:
 
@@ -50,7 +52,59 @@ appointment-bot-client pause order-DNI
 appointment-bot-client activate order-DNI
 appointment-bot-client done order-DNI
 appointment-bot-client paid order-DNI --amount-paid 120
+appointment-bot-client status-report order-DNI
+appointment-bot-client status-report
+appointment-bot-client daily-report
 ```
+
+Checkpoint probado: [version que detecto cupos el 25/06/2026](docs/version-que-detecto-cupos-2026-06-25.md).
+Esa version fue la primera que detecto cupos reales en `LIMA-LA VICTORIA` para el
+`13/07/2026` y envio alerta `[AVAILABLE]` por Telegram; se conserva como referencia
+para comparar futuras corridas.
+
+`status-report` genera fichas PNG con las consultas realizadas al portal entre las 06:00 y
+las 20:00 del dia actual. Al indicar una orden crea una sola ficha; sin argumentos genera
+fichas para todas las ordenes activas en `reports/status/`. Las fichas usan el horario de
+Lima, muestran el documento enmascarado y se nombran con el cliente y la hora de generacion.
+
+Desde las 18:00 el worker no inicia nuevas consultas. Si una consulta comenzo antes del
+corte, permite que termine junto con cualquier cola de reserva derivada de ella. Al
+finalizar genera `reports/daily/Reporte general - DD-MM-AAAA.png`, incluyendo la actividad
+de esa ultima ejecucion, y cierra el worker y su API. `daily-report` permite generar o
+actualizar la muestra manualmente.
+
+El worker mantiene una sola sesion observadora y solo hace revisiones densas dentro de
+`OBSERVER_HOT_WINDOWS` (por defecto `08:15-08:30,09:30-10:00,11:40-12:40,15:55-16:30`,
+hora de Lima). Fuera de esas ventanas espera entre `OUTSIDE_HOT_WINDOW_MIN_SECONDS` y
+`OUTSIDE_HOT_WINDOW_MAX_SECONDS` (recomendado: 20 a 40 minutos), o hasta la siguiente
+ventana si esta mas cerca. Cada
+orden en el worker continuo revisa disponibilidad por `OBSERVER_SESSION_SECONDS=120`
+segundos como maximo, con `OBSERVER_MAX_ATTEMPTS=4` y pausas de `25` a `35` segundos,
+para rotar mas rapido entre clientes durante ventanas con cupos breves.
+`OBSERVER_REQUIRED_SITE=LIMA-LA VICTORIA` fija la unica sede valida; si el portal no la
+ofrece, el bot falla con un mensaje claro en vez de seleccionar otra sede. El worker
+continuo no envia Telegram por resultados rutinarios `Sin Cupos`; Telegram queda reservado
+para disponibilidad, reservas, errores, bloqueos y estados que requieren accion.
+
+Cada revision del worker continuo agrega metricas en `observer_window_metrics`, agrupadas
+por fecha, ventana, fuente, estado y sede. La tabla guarda conteos, errores, duracion
+acumulada y el ultimo resultado visto para decidir con datos que ventanas conviene mantener.
+
+En modo recuperacion se recomienda `AUTO_RESERVE=false`, `QUEUE_MAX_RESERVATIONS_PER_RUN=1`
+y Telegram activo para que una persona confirme manualmente cuando aparezca una alerta. Si
+se activa `AUTO_RESERVE=true`, la cola multi-cliente solo debe correr despues de una
+disponibilidad real y se mantiene limitada por `QUEUE_MAX_RESERVATIONS_PER_RUN`. La cuenta
+que detecta fecha y hora intenta reservar en su misma sesion; solo despues de confirmar
+`Programado` se inicia la cola por prioridad con una sesion nueva por orden.
+
+Si el worker acumula `UNAVAILABLE_STREAK_LIMIT` resultados seguidos de `Sin Cupos`, o si
+detecta senales de defensa del portal como CAPTCHA inesperado, HTTP 403/429 o sesion
+cerrada, entra en `recovery_backoff` entre `RECOVERY_BACKOFF_MIN_SECONDS` y
+`RECOVERY_BACKOFF_MAX_SECONDS`. Esto evita insistir cuando el portal podria estar marcando
+la sesion, IP o expediente.
+Un rechazo de contrasena mueve la orden al final de la rotacion. Al segundo rechazo, la
+orden se pausa y el worker continua con las demas; actualizar la clave y ejecutar
+`appointment-bot-client activate order-DNI` reinicia ese contador.
 
 ## API
 

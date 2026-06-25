@@ -48,7 +48,9 @@ class OrderTransitionTests(unittest.TestCase):
 
             self.assertFalse(order_can_submit(result.order_id, owner, settings))
 
-    def test_old_pending_submission_is_cleared_after_reconciliation(self) -> None:
+    def test_old_pending_submission_remains_blocked_without_authoritative_confirmation(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = replace(make_settings(Path(directory)), error_backoff_seconds=60)
             result = create_service_order(
@@ -72,8 +74,8 @@ class OrderTransitionTests(unittest.TestCase):
                 settings,
             )
 
-            self.assertTrue(reconciled)
-            self.assertFalse(order_reservation_pending(result.order_id, settings=settings))
+            self.assertFalse(reconciled)
+            self.assertTrue(order_reservation_pending(result.order_id, settings=settings))
 
     def test_recent_pending_submission_remains_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

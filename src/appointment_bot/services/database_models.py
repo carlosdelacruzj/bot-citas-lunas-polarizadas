@@ -5,6 +5,27 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class ServiceOrderCandidate:
+    order_id: str
+    name: str
+    username: str
+    priority: int
+    status: str
+    created_at: str
+    updated_at: str
+    contact_name: str | None = None
+
+    @property
+    def notification_name(self) -> str:
+        parts = []
+        if self.name and self.name != self.username:
+            parts.append(self.name)
+        if self.contact_name:
+            parts.append(f"Contacto: {self.contact_name}")
+        return " | ".join(parts) or self.order_id
+
+
+@dataclass(frozen=True)
 class ServiceOrderRuntime:
     order_id: str
     name: str
