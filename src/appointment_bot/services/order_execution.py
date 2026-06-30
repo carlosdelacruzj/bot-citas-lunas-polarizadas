@@ -15,6 +15,7 @@ from appointment_bot.domain import RunReport
 from appointment_bot.main import run_with_report
 from appointment_bot.services.credential_cipher import CredentialDecryptionError
 from appointment_bot.services.database_models import ServiceOrderCandidate, ServiceOrderRuntime
+from appointment_bot.services.notifier import notify_deferred_queue_summary
 from appointment_bot.services.order_runtime import (
     OrderReportOutcome,
     classify_order_report,
@@ -133,6 +134,7 @@ def run_rapid_queue_with_settings(
     initial_confirmed_reservations: int = 0,
     cancel_event: threading.Event | None = None,
     on_order_start: Callable[[ServiceOrderCandidate | ServiceOrderRuntime], None] | None = None,
+    on_check: Callable[..., None] | None = None,
     skip_order_ids: set[str] | None = None,
 ) -> RunReport:
     checked_orders = 0
@@ -140,6 +142,7 @@ def run_rapid_queue_with_settings(
     uncertain_reservations = 0
     failed_orders = 0
     results: list[dict[str, str]] = []
+    deferred_reports: list[RunReport] = []
     lease_owner = f"queue-{uuid4().hex}"
     with ExitStack() as claims:
         # La consulta ya excluye ordenes terminadas; por eso la cola
@@ -217,6 +220,7 @@ def run_rapid_queue_with_settings(
                     lease_owner=lease_owner,
                     rapid_mode=True,
                     cancel_event=cancel_event,
+                    on_check=on_check,
                 )
             finally:
                 # Execute and discard the current claim callback before moving
@@ -230,6 +234,8 @@ def run_rapid_queue_with_settings(
                     "message": report.message,
                 }
             )
+            if report.status in {"available", "partial", "registered", "reservation_unconfirmed"}:
+                deferred_reports.append(report)
             _update_state_from_report(settings, order, report)
             outcome = classify_order_report(report)
             if outcome is OrderReportOutcome.BLOCKED:
@@ -347,7 +353,7 @@ def run_rapid_queue_with_settings(
             f"Ordenes revisadas: {checked_orders}."
         )
     )
-    return RunReport(
+    report = RunReport(
         status=queue_status,
         message=message,
         exit_code=exit_code,
@@ -359,6 +365,8 @@ def run_rapid_queue_with_settings(
             "results": results,
         },
     )
+    notify_deferred_queue_summary(report, settings, deferred_reports)
+    return report
 
 
 def run_service_order(
@@ -453,7 +461,12 @@ def run_service_order(
             settings=settings,
         )
         if on_check is not None:
-            on_check(result, *args)
+            details = dict(result.details or {})
+            details.setdefault("orden", order.order_id)
+            details.setdefault("cliente", order.notification_name)
+            details.setdefault("nombre", order.name)
+            details.setdefault("cuenta", order_settings.safe_username)
+            on_check(replace(result, details=details), *args)
 
     def on_submission_intent(details) -> None:
         nonlocal attempt_created
@@ -490,6 +503,7 @@ def run_service_order(
             ),
             on_submission_intent=on_submission_intent,
             on_submission_started=on_submission_started,
+            notify_mode="deferred" if rapid_mode else "full",
         )
         lease_lost = heartbeat.lost_event.is_set()
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":

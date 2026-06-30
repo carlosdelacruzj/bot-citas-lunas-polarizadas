@@ -75,6 +75,66 @@ def _save_process_stages_snapshot(page, settings) -> Path | None:
     )
 
 
+def _confirm_programmed_stage_after_submission(
+    page,
+    settings,
+    expected_details: dict[str, str] | None,
+    *,
+    confirmation_text_detected: bool,
+) -> tuple[object | None, str]:
+    if not confirmation_text_detected:
+        stage = wait_for_programmed_appointment_stage(page, expected_details)
+        return stage, "programmed_stage" if stage is not None else "unconfirmed"
+
+    stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=3_000)
+    if stage is not None:
+        return stage, "programmed_stage"
+
+    if _reopen_process_detail_from_listing(page):
+        stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=7_000)
+        if stage is not None:
+            return stage, "programmed_stage_after_listing"
+
+    if _relogin_and_reopen_process_detail(page, settings):
+        stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=10_000)
+        if stage is not None:
+            return stage, "programmed_stage_after_relogin"
+
+    return None, "success_text_revalidation_inconclusive"
+
+
+def _reopen_process_detail_from_listing(page) -> bool:
+    try:
+        click_program_action(page)
+        return True
+    except Exception:
+        logger.exception("Could not reopen process detail from request listing")
+        return False
+
+
+def _relogin_and_reopen_process_detail(page, settings) -> bool:
+    logger.info("Reopening session to validate programmed appointment stage")
+    try:
+        _clear_browser_session(page)
+        login(page, settings)
+        click_program_action(page)
+        return True
+    except Exception:
+        logger.exception("Could not validate programmed appointment stage after relogin")
+        return False
+
+
+def _clear_browser_session(page) -> None:
+    try:
+        page.context.clear_cookies()
+    except Exception:
+        logger.exception("Could not clear browser cookies before relogin")
+    try:
+        page.goto("about:blank", wait_until="domcontentloaded", timeout=5_000)
+    except Exception:
+        logger.exception("Could not navigate away before relogin")
+
+
 def _complete_available_reservation(
     page,
     settings,
@@ -87,6 +147,7 @@ def _complete_available_reservation(
     expected_person_name: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
+    confirmation_source = "unconfirmed"
 
     def mark_submission_started() -> None:
         nonlocal submission_started
@@ -140,7 +201,12 @@ def _complete_available_reservation(
                     if path is not None
                 ],
             )
-        programmed_stage = wait_for_programmed_appointment_stage(page, result.details)
+        programmed_stage, confirmation_source = _confirm_programmed_stage_after_submission(
+            page,
+            settings,
+            result.details,
+            confirmation_text_detected=confirmation_text_detected,
+        )
         updated_process_stages_screenshot_path = _save_process_stages_snapshot(
             page,
             settings,
@@ -179,17 +245,33 @@ def _complete_available_reservation(
         screenshot_path = screenshot_paths[0]
 
     details = dict(result.details or {})
-    details["submission_outcome"] = "confirmed" if programmed_stage is not None else "unknown"
+    details["submission_outcome"] = (
+        "confirmed" if programmed_stage is not None or confirmation_text_detected else "unknown"
+    )
     details["confirmacion_texto"] = "detectada" if confirmation_text_detected else "no detectada"
     details["confirmacion_etapa"] = (
         "Programado" if programmed_stage is not None else "no confirmada"
     )
+    details["confirmation_source"] = confirmation_source
     if submission_error:
         details["confirmacion_error"] = submission_error
     if programmed_stage is not None:
         details["fecha_programada"] = programmed_stage.date
 
     if programmed_stage is None:
+        if confirmation_text_detected:
+            return (
+                AvailabilityResult(
+                    status="registered",
+                    message=(
+                        "La reserva fue registrada por mensaje de exito del portal, "
+                        "pero la revalidacion de etapa Programado quedo inconclusa."
+                    ),
+                    details=details,
+                ),
+                screenshot_path,
+                screenshot_paths,
+            )
         return (
             AvailabilityResult(
                 status="reservation_unconfirmed",
@@ -272,6 +354,22 @@ def _monitor_appointment_availability(
             session_age_seconds=time.monotonic() - session_started,
             check_duration_seconds=time.monotonic() - check_started,
         )
+
+        if result.status == "unavailable":
+            reload_started = time.monotonic()
+            reload_result = _reload_and_recheck_appointment_availability(
+                page,
+                settings,
+            )
+            if reload_result is not None:
+                result = _with_monitor_diagnostics(
+                    reload_result,
+                    settings=settings,
+                    attempt=attempt,
+                    session_age_seconds=time.monotonic() - session_started,
+                    check_duration_seconds=time.monotonic() - reload_started,
+                    monitoring_mode="reload_probe",
+                )
 
         if result.status == "unknown":
             if on_check is not None:
@@ -409,6 +507,47 @@ def _monitor_appointment_availability(
         attempt += 1
 
 
+def _reload_and_recheck_appointment_availability(
+    page,
+    settings,
+) -> AvailabilityResult | None:
+    logger.info("No slots detected; reloading page before confirming unavailable result")
+    try:
+        page.reload(
+            wait_until="domcontentloaded",
+            timeout=settings.postback_timeout_seconds * 1_000,
+        )
+        page = click_program_action(page)
+        page = open_appointment_panel(page)
+        result = read_appointment_availability(
+            page,
+            timeout=settings.read_timeout_seconds * 1_000,
+        )
+    except Exception:
+        logger.exception("Reload probe failed; keeping the previous unavailable result")
+        return None
+
+    if result.status != "unavailable":
+        details = dict(result.details or {})
+        details["reload_probe"] = True
+        return AvailabilityResult(
+            status=result.status,
+            message=(
+                f"{result.message} "
+                "La disponibilidad fue detectada despues de recargar la pagina."
+            ),
+            details=details,
+        )
+
+    details = dict(result.details or {})
+    details["reload_probe"] = True
+    return AvailabilityResult(
+        status=result.status,
+        message=result.message,
+        details=details,
+    )
+
+
 def _with_monitor_diagnostics(
     result: AvailabilityResult,
     *,
@@ -416,13 +555,14 @@ def _with_monitor_diagnostics(
     attempt: int,
     session_age_seconds: float,
     check_duration_seconds: float,
+    monitoring_mode: str = "normal",
 ) -> AvailabilityResult:
     details = dict(result.details or {})
     details.update(
         {
             "observer_account": settings.safe_username,
             "observer_attempt": attempt,
-            "monitoring_mode": "normal",
+            "monitoring_mode": monitoring_mode,
             "session_age_seconds": round(session_age_seconds, 3),
             "check_duration_seconds": round(check_duration_seconds, 3),
         }
@@ -431,7 +571,7 @@ def _with_monitor_diagnostics(
         "Observer check: account=%s mode=%s attempt=%s status=%s site=%s "
         "date_options=%s hour_options=%s duration=%.3fs session_age=%.3fs",
         settings.safe_username,
-        "normal",
+        monitoring_mode,
         attempt,
         result.status,
         details.get("sede"),
@@ -455,6 +595,7 @@ def run_with_report(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    notify_mode: str = "full",
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
     settings = replace(
@@ -519,7 +660,8 @@ def run_with_report(
                     )
                     process_stages_screenshot_path = _save_process_stages_snapshot(page, settings)
                     screenshot_path = process_stages_screenshot_path
-                    notify_result(stage_result, settings, screenshot_path)
+                    if notify_mode == "full":
+                        notify_result(stage_result, settings, screenshot_path)
                     logger.info("Finished appointment check: %s", stage_result.status)
                     final_result = stage_result
                 else:
@@ -543,12 +685,13 @@ def run_with_report(
                         client_name=client_name,
                         settings=settings,
                     )
-                    notify_result(
-                        result,
-                        settings,
-                        screenshot_path,
-                        screenshot_paths=screenshot_paths,
-                    )
+                    if notify_mode == "full":
+                        notify_result(
+                            result,
+                            settings,
+                            screenshot_path,
+                            screenshot_paths=screenshot_paths,
+                        )
                     logger.info("Finished appointment check: %s", result.status)
                     final_result = result
             except Exception:
@@ -577,7 +720,8 @@ def run_with_report(
             settings,
             started_at_dt=started_at_dt,
         )
-        _cleanup_unconfirmed_session_screenshots(finalized_report)
+        if notify_mode == "full":
+            _cleanup_unconfirmed_session_screenshots(finalized_report)
         return finalized_report
     except Exception as exc:
         logger.exception("Appointment check failed")
@@ -600,7 +744,8 @@ def run_with_report(
             settings,
             started_at_dt=started_at_dt,
         )
-        _cleanup_unconfirmed_session_screenshots(finalized_report)
+        if notify_mode == "full":
+            _cleanup_unconfirmed_session_screenshots(finalized_report)
         return finalized_report
 
 

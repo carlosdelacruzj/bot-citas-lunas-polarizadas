@@ -449,7 +449,7 @@ def select_available_appointment(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
         )
 
-    for date_option in date_options:
+    for date_option in reversed(date_options):
         previous_date = _selected_option_text(page, DATE_SELECTOR)
         previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
@@ -471,7 +471,7 @@ def select_available_appointment(
             logger.info("No selectable hours found for date %s", date_option["text"])
             continue
 
-        for hour_option in real_hour_options:
+        for hour_option in reversed(real_hour_options):
             if is_allowed_appointment is not None and not is_allowed_appointment(
                 str(date_option["text"]),
                 str(hour_option["text"]),

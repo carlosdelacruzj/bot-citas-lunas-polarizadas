@@ -21,7 +21,11 @@ from appointment_bot.services.database_models import (
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )
-from appointment_bot.services.notifier import notify_result, send_telegram_message
+from appointment_bot.services.notifier import (
+    notify_immediate_availability,
+    notify_result,
+    send_telegram_message,
+)
 from appointment_bot.services.observer import run_observer_with_report
 from appointment_bot.services.order_execution import (
     SERVICE_ORDER_LEASE_SECONDS,
@@ -81,6 +85,8 @@ class ContinuousWorker:
         self._last_cleanup_date: date | None = None
         self._shutdown_reason: str | None = None
         self._unavailable_streak = 0
+        self._hot_window_extended_until: datetime | None = None
+        self._availability_alert_signatures: set[str] = set()
 
     @property
     def is_running(self) -> bool:
@@ -401,6 +407,7 @@ class ContinuousWorker:
             initial_confirmed_reservations=initial_confirmed_reservations,
             cancel_event=self._cancel_event,
             on_order_start=self._on_rapid_order_start,
+            on_check=self._on_rapid_order_check,
             skip_order_ids=skip_order_ids,
         )
         confirmed = int((report.details or {}).get("confirmed_reservations", 0))
@@ -716,6 +723,8 @@ class ContinuousWorker:
             self._unavailable_streak += 1
         elif report.status in {"available", "registered", "completed", "partial"}:
             self._unavailable_streak = 0
+        if report.status in {"available", "registered"}:
+            self._extend_hot_window_after_availability()
 
     def _on_order_check(
         self,
@@ -732,6 +741,7 @@ class ContinuousWorker:
             last_check_at=_now(),
             next_check_at=(_future(next_check_seconds) if next_check_seconds is not None else None),
         )
+        self._notify_immediate_availability_once(result)
 
     def _on_rapid_order_start(
         self,
@@ -746,6 +756,14 @@ class ContinuousWorker:
             session_started_at=_now(),
             next_check_at=_now(),
         )
+
+    def _on_rapid_order_check(
+        self,
+        result: AvailabilityResult,
+        attempt: int,
+        next_check_seconds: int | None,
+    ) -> None:
+        self._on_order_check(result, attempt, next_check_seconds)
 
     def _on_observer_check(
         self,
@@ -765,6 +783,18 @@ class ContinuousWorker:
             if result.status == "unavailable":
                 self._update_state(availability_signature=None)
             return
+        self._notify_immediate_availability_once(result)
+        self._extend_hot_window_after_availability()
+
+    def _notify_immediate_availability_once(self, result: AvailabilityResult) -> None:
+        if result.status != "available":
+            return
+        signature = _availability_result_signature(result)
+        if signature in self._availability_alert_signatures:
+            return
+        self._availability_alert_signatures.add(signature)
+        self._extend_hot_window_after_availability()
+        notify_immediate_availability(result, self.settings)
 
     def _increase_errors(self, message: str) -> int:
         message = sanitize_text(message)
@@ -829,6 +859,16 @@ class ContinuousWorker:
         current = now.time()
         if any(start <= current < end for start, end in windows):
             return False
+        if (
+            self._hot_window_extended_until is not None
+            and now < self._hot_window_extended_until
+        ):
+            logger.info(
+                "Continuing in extended hot window until %s",
+                self._hot_window_extended_until.isoformat(timespec="seconds"),
+            )
+            return False
+        self._hot_window_extended_until = None
 
         seconds_to_window = _seconds_until_next_window(now, windows)
         wait_seconds = min(
@@ -852,6 +892,25 @@ class ContinuousWorker:
         )
         self._interruptible_wait(wait_seconds)
         return True
+
+    def _extend_hot_window_after_availability(self) -> None:
+        extension_seconds = self.settings.observer_hot_window_extension_seconds
+        if extension_seconds <= 0:
+            return
+        now = datetime.now(DAILY_CUTOFF_TIMEZONE)
+        window_end = _current_window_end(now, self.settings.observer_hot_windows)
+        if window_end is None:
+            return
+        extended_until = window_end + timedelta(seconds=extension_seconds)
+        if (
+            self._hot_window_extended_until is None
+            or extended_until > self._hot_window_extended_until
+        ):
+            self._hot_window_extended_until = extended_until
+            logger.info(
+                "Hot window extended until %s after availability detection",
+                extended_until.isoformat(timespec="seconds"),
+            )
 
     def _maybe_recovery_backoff(self, report: RunReport) -> bool:
         defense_signal = _portal_defense_signal(report.message)
@@ -923,6 +982,17 @@ def _availability_signature(report: RunReport) -> str:
     relevant = {
         key: details.get(key)
         for key in ("sede", "fecha", "hora", "date_options", "hour_options")
+        if details.get(key) is not None
+    }
+    payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _availability_result_signature(result: AvailabilityResult) -> str:
+    details = result.details or {}
+    relevant = {
+        key: details.get(key)
+        for key in ("orden", "sede", "fecha", "hora", "date_options", "hour_options")
         if details.get(key) is not None
     }
     payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
@@ -1009,6 +1079,17 @@ def _current_window_label(
     for start, end in windows:
         if start <= current < end:
             return f"{start.strftime('%H:%M')}-{end.strftime('%H:%M')}"
+    return None
+
+
+def _current_window_end(
+    now: datetime,
+    windows: tuple[tuple[datetime_time, datetime_time], ...],
+) -> datetime | None:
+    current = now.time()
+    for start, end in windows:
+        if start <= current < end:
+            return datetime.combine(now.date(), end, tzinfo=DAILY_CUTOFF_TIMEZONE)
     return None
 
 

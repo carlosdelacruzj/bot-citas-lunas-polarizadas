@@ -16,6 +16,7 @@ from appointment_bot.utils.screenshots import normalize_screenshot_paths
 logger = logging.getLogger(__name__)
 
 TELEGRAM_API_TIMEOUT_SECONDS = 15
+TELEGRAM_URGENT_TIMEOUT_SECONDS = 5
 APPOINTMENT_DATETIME_RE = re.compile(
     r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
 )
@@ -91,7 +92,12 @@ def notify_error(
             logger.exception("Unexpected error while sending error notification")
 
 
-def send_telegram_message(settings: Settings, message: str) -> bool:
+def send_telegram_message(
+    settings: Settings,
+    message: str,
+    *,
+    timeout_seconds: int = TELEGRAM_API_TIMEOUT_SECONDS,
+) -> bool:
     if not settings.telegram_enabled:
         return False
 
@@ -106,7 +112,7 @@ def send_telegram_message(settings: Settings, message: str) -> bool:
     request = Request(url, data=payload, method="POST")
 
     try:
-        with urlopen(request, timeout=TELEGRAM_API_TIMEOUT_SECONDS) as response:
+        with urlopen(request, timeout=timeout_seconds) as response:
             response_body = response.read().decode("utf-8")
     except (HTTPError, URLError, TimeoutError) as exc:
         logger.warning("Could not send Telegram notification: %s", exc)
@@ -124,6 +130,55 @@ def send_telegram_message(settings: Settings, message: str) -> bool:
 
     logger.info("Telegram notification sent")
     return True
+
+
+def notify_immediate_availability(result: AvailabilityResult, settings: Settings) -> bool:
+    if result.status != "available":
+        return False
+    return send_telegram_message(
+        settings,
+        _format_immediate_availability_message(result),
+        timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
+    )
+
+
+def notify_deferred_result(
+    result: AvailabilityResult,
+    settings: Settings,
+    screenshot_path: Path | None = None,
+    screenshot_paths: list[Path] | None = None,
+) -> bool:
+    effective_screenshot_paths = normalize_screenshot_paths(screenshot_path, screenshot_paths)
+    return _send_result_notification(result, settings, effective_screenshot_paths)
+
+
+def notify_deferred_queue_summary(
+    report,
+    settings: Settings,
+    deferred_reports: list,
+) -> bool:
+    if not deferred_reports:
+        return not settings.telegram_enabled
+
+    lines = [
+        "Barrido de evidencias de la cola rapida.",
+        "",
+        report.message,
+        "",
+        f"Resultados con evidencia: {len(deferred_reports)}",
+    ]
+    delivered = send_telegram_message(settings, "\n".join(lines))
+    for item in deferred_reports:
+        result = AvailabilityResult(
+            status=item.status,
+            message=item.message,
+            details=item.details,
+        )
+        paths = [Path(path) for path in item.screenshot_paths or []]
+        if not paths and item.screenshot_path:
+            paths = [Path(item.screenshot_path)]
+        delivered = notify_deferred_result(result, settings, screenshot_paths=paths) or delivered
+    return delivered
 
 
 def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> bool:
@@ -280,11 +335,81 @@ def _format_result_message(result: AvailabilityResult) -> str:
     return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}{details}"
 
 
+def _format_immediate_availability_message(result: AvailabilityResult) -> str:
+    details = result.details or {}
+    date, hour = _appointment_datetime_details(details)
+    date_options = _join_options(details.get("date_options"))
+    hour_options = _join_options(details.get("hour_options"))
+    slots = details.get("cupos") or details.get("slots")
+    lines = [
+        "DISPONIBILIDAD DETECTADA",
+        "",
+        f"Orden: {details.get('orden') or 'sin orden'}",
+    ]
+    if details.get("cliente") or details.get("nombre"):
+        lines.append(f"Cliente: {details.get('cliente') or details.get('nombre')}")
+    if details.get("cuenta"):
+        lines.append(f"Cuenta: {details['cuenta']}")
+    if details.get("sede"):
+        lines.append(f"Sede: {details['sede']}")
+    if date:
+        lines.append(f"Fecha seleccionada: {date}")
+    elif date_options:
+        lines.append(f"Fechas: {date_options}")
+    if hour:
+        lines.append(f"Hora seleccionada: {hour}")
+    elif hour_options:
+        lines.append(f"Horas: {hour_options}")
+    if slots:
+        lines.append(f"Cupos: {slots}")
+    lines.extend(
+        [
+            "",
+            "El bot seguira intentando reservar; revisa manualmente si puedes.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _format_registered_message(result: AvailabilityResult) -> str:
     details = result.details or {}
     person_name = details.get("nombre")
     site = details.get("sede")
     date, hour = _appointment_datetime_details(details)
+    confirmation_source = str(details.get("confirmation_source") or "")
+
+    if confirmation_source == "success_text_revalidation_inconclusive":
+        heading = "Reserva registrada por el portal; validacion final pendiente."
+        if person_name:
+            heading = (
+                f"Reserva registrada por el portal para {person_name}; "
+                "validacion final pendiente."
+            )
+        lines = [
+            heading,
+            "",
+            (
+                "El portal mostro el mensaje de registro satisfactorio, pero no se pudo "
+                "confirmar completamente la etapa Programado."
+            ),
+            (
+                "Se guardo evidencia y el bot continuara con el siguiente usuario para "
+                "no perder horarios."
+            ),
+        ]
+        if date:
+            lines.append(f"Fecha detectada: {date}")
+        if hour:
+            lines.append(f"Hora detectada: {hour}")
+        if site:
+            lines.append(f"Sede: {site}")
+        lines.extend(
+            [
+                "",
+                "Revisa la evidencia enviada para validar el estado final del tramite.",
+            ]
+        )
+        return "\n".join(lines)
 
     if person_name:
         heading = f"Estimado/a {person_name}, su cita ha sido reservada con exito."
@@ -303,6 +428,14 @@ def _format_registered_message(result: AvailabilityResult) -> str:
         return lines[0]
 
     return f"{lines[0]}\n\n" + "\n".join(lines[1:])
+
+
+def _join_options(value: object) -> str:
+    if isinstance(value, (list, tuple)):
+        return ", ".join(str(item) for item in value if str(item).strip())
+    if value is None:
+        return ""
+    return str(value)
 
 
 def _format_programmed_message(result: AvailabilityResult) -> str | None:

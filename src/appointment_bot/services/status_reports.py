@@ -22,6 +22,7 @@ REPORT_TIMEZONE = ZoneInfo("America/Lima")
 REPORT_START_HOUR = 6
 REPORT_END_HOUR = 20
 RUN_PAGE_SIZE = 200
+DEFAULT_RESERVATION_SITE = "LIMA-LA VICTORIA"
 
 
 @dataclass(frozen=True)
@@ -404,7 +405,11 @@ def _reservation_detail(
     activity: StatusReportActivity,
 ) -> str:
     if _order_has_confirmed_reservation(order, activity):
-        parts = [order.reservation_date, order.reservation_hour, order.reservation_site]
+        parts = [
+            order.reservation_date,
+            order.reservation_hour,
+            order.reservation_site or DEFAULT_RESERVATION_SITE,
+        ]
         return " - ".join(str(part) for part in parts if part) or "Programada"
     if activity.reservation_attempts:
         return f"{activity.reservation_attempts} intento(s) registrado(s)"

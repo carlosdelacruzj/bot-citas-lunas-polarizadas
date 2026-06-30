@@ -75,7 +75,7 @@ def _parse_time_windows(
 
 
 DEFAULT_OBSERVER_HOT_WINDOWS = (
-    (datetime_time(hour=8, minute=15), datetime_time(hour=8, minute=30)),
+    (datetime_time(hour=8, minute=15), datetime_time(hour=8, minute=50)),
     (datetime_time(hour=9, minute=30), datetime_time(hour=10, minute=0)),
     (datetime_time(hour=11, minute=40), datetime_time(hour=12, minute=40)),
     (datetime_time(hour=15, minute=55), datetime_time(hour=16, minute=30)),
@@ -122,6 +122,7 @@ class Settings:
     observer_interval_max_seconds: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
+    observer_hot_window_extension_seconds: int
     outside_hot_window_min_seconds: int
     outside_hot_window_max_seconds: int
     unavailable_streak_limit: int
@@ -283,6 +284,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         observer_hot_windows=_parse_time_windows(
             os.getenv("OBSERVER_HOT_WINDOWS"),
             default=DEFAULT_OBSERVER_HOT_WINDOWS,
+        ),
+        observer_hot_window_extension_seconds=_parse_int(
+            os.getenv("OBSERVER_HOT_WINDOW_EXTENSION_SECONDS"),
+            default=900,
+            minimum=0,
         ),
         outside_hot_window_min_seconds=_parse_int(
             os.getenv("OUTSIDE_HOT_WINDOW_MIN_SECONDS"),

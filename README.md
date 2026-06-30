@@ -74,7 +74,7 @@ de esa ultima ejecucion, y cierra el worker y su API. `daily-report` permite gen
 actualizar la muestra manualmente.
 
 El worker mantiene una sola sesion observadora y solo hace revisiones densas dentro de
-`OBSERVER_HOT_WINDOWS` (por defecto `08:15-08:30,09:30-10:00,11:40-12:40,15:55-16:30`,
+`OBSERVER_HOT_WINDOWS` (por defecto `08:15-08:50,09:30-10:00,11:40-12:40,15:55-16:30`,
 hora de Lima). Fuera de esas ventanas espera entre `OUTSIDE_HOT_WINDOW_MIN_SECONDS` y
 `OUTSIDE_HOT_WINDOW_MAX_SECONDS` (recomendado: 20 a 40 minutos), o hasta la siguiente
 ventana si esta mas cerca. Cada
@@ -85,6 +85,11 @@ para rotar mas rapido entre clientes durante ventanas con cupos breves.
 ofrece, el bot falla con un mensaje claro en vez de seleccionar otra sede. El worker
 continuo no envia Telegram por resultados rutinarios `Sin Cupos`; Telegram queda reservado
 para disponibilidad, reservas, errores, bloqueos y estados que requieren accion.
+Cuando se detecta disponibilidad dentro de una ventana caliente, el worker puede extender la
+rotacion hasta `OBSERVER_HOT_WINDOW_EXTENSION_SECONDS` despues del fin de esa ventana para
+intentar reservar a los demas usuarios sin abrir nuevas busquedas indefinidas.
+Durante la cola rapida se envia un aviso inmediato de disponibilidad solo texto; las fotos,
+videos y evidencias completas se mandan al terminar la cola para no bloquear segundos criticos.
 
 Cada revision del worker continuo agrega metricas en `observer_window_metrics`, agrupadas
 por fecha, ventana, fuente, estado y sede. La tabla guarda conteos, errores, duracion
