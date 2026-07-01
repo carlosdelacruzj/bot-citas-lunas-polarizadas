@@ -271,3 +271,32 @@ flujo sin guardar nombres completos ni credenciales.
   - Log relacionado: logs/run-20260630-203306.log
 - Observacion tecnica:
   - Este caso no fue exito de reserva; se conserva como hallazgo tecnico porque explico la brecha del reload_probe y la necesidad de mantener paridad con la seleccion real de sede.
+## 2026-07-01 12:03:52 - order-70569448 - captcha_invalid
+
+- Run: 20260701-120135-471698c3
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 06/07/2026 08:00
+- Origen deteccion: reload_probe
+- Resultado: CAPTCHA enviado, el portal respondio con mensaje de codigo valido de captcha y no confirmo Programado.
+- Confirmacion posterior: No confirmada; la orden sigue lista para reintento.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 63.485s
+  - Seleccion fecha/hora: 1.766s
+  - Imagen CAPTCHA: 0.235s
+  - 2captcha: 33.609s
+  - Llenar CAPTCHA -> click: 0.218s
+  - Click -> respuesta portal: 0.110s
+  - Click -> screenshot confirmacion: 10.750s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: si
+  - Refresco sede elapsed: 641ms
+- Evidencia:
+  - Screenshot principal: screenshots\reservation-confirmation-***-120135-471698c3-order-***-5cf7f2011a64470dbb8b5859499ff39e.png
+  - Screenshot adicional: screenshots\process-stages-***-120135-471698c3-order-***-e75eb9dea878470b938aa8aae0f12b1f.png
+  - Screenshot adicional: screenshots\result-available-***-120135-471698c3-order-***-5971552f6194480f9baf4ca35937541a.png
+- Observacion tecnica:
+  - El reload_probe aporto el cupo: antes del reload habia Sin Cupos y despues aparecio 06/07/2026 08:00 con 30 cupos. El tramo mas lento fue 2captcha (33.609s), pero la respuesta fue rechazada por el portal.

@@ -43,8 +43,10 @@ CONFIRMATION_TEXTS = [
 CAPTCHA_REJECTION_TEXTS = [
     "captcha incorrecto",
     "captcha invalido",
+    "captcha valido",
     "codigo de seguridad incorrecto",
     "codigo de verificacion incorrecto",
+    "ingrese el codigo valido del captcha",
 ]
 SLOT_LOST_TEXTS = [
     "cupo ya no disponible",
@@ -688,9 +690,13 @@ def wait_for_reservation_submission_outcome(page: Page, *, timeout: int = 10_000
         return str(
             page.wait_for_function(
                 """groups => {
-                    const text = (document.body ? document.body.innerText : "").toLowerCase();
+                    const normalize = value => (value || "")
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\\u0300-\\u036f]/g, "");
+                    const text = normalize(document.body ? document.body.innerText : "");
                     for (const [outcome, values] of Object.entries(groups)) {
-                        if (values.some(value => text.includes(value))) return outcome;
+                        if (values.some(value => text.includes(normalize(value)))) return outcome;
                     }
                     return false;
                 }""",
