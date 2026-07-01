@@ -400,15 +400,18 @@ def _monitor_appointment_availability(
                 page,
                 settings,
             )
-            if reload_result is not None:
-                result = _with_monitor_diagnostics(
-                    reload_result,
-                    settings=settings,
-                    attempt=attempt,
-                    session_age_seconds=time.monotonic() - session_started,
-                    check_duration_seconds=time.monotonic() - reload_started,
-                    monitoring_mode="reload_probe",
-                )
+            if reload_result is None:
+                if on_check is not None:
+                    on_check(result, attempt, None)
+                return result, screenshot_path, screenshot_paths
+            result = _with_monitor_diagnostics(
+                reload_result,
+                settings=settings,
+                attempt=attempt,
+                session_age_seconds=time.monotonic() - session_started,
+                check_duration_seconds=time.monotonic() - reload_started,
+                monitoring_mode="reload_probe",
+            )
 
         if result.status == "unknown":
             if on_check is not None:
