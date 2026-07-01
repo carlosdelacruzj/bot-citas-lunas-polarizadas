@@ -17,7 +17,11 @@ SUBMIT_SELECTOR = (
     'button[type="submit"], input[type="submit"], '
     'button:has-text("Ingresar"), button:has-text("Login")'
 )
-POST_LOGIN_SELECTOR = 'input[type="image"][onclick*="gvProgramacion"], input#MainContent_BtnNuevo'
+POST_LOGIN_SELECTOR = (
+    'input[type="image"][onclick*="gvProgramacion"], '
+    'a[id^="MainContent_gvProgramacion_btnAccion_"][href*="__doPostBack"], '
+    'input#MainContent_BtnNuevo'
+)
 INVALID_CREDENTIAL_TEXTS = (
     "clave incorrecta o no se ha registrado",
     "clave incorrecta",

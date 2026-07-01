@@ -14,12 +14,15 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.captcha import solve_normal_captcha
+from appointment_bot.services.reservation_timings import ReservationTiming
 from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
 
 PROGRAM_ACTION_SELECTOR = (
-    'input[type="image"][onclick*="__doPostBack"][onclick*="gvProgramacion"][onclick*="accion$0"]'
+    'input[type="image"][onclick*="__doPostBack"][onclick*="gvProgramacion"][onclick*="accion$0"], '
+    'a[id^="MainContent_gvProgramacion_btnAccion_"][href*="__doPostBack"], '
+    'a[href*="gvProgramacion"][href*="btnAccion"]'
 )
 RESERVE_APPOINTMENT_SELECTOR = "input#MainContent_btnCita"
 RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
@@ -139,6 +142,34 @@ class AppointmentSnapshot:
             self.slots,
             self.person_name,
         )
+
+
+@dataclass(frozen=True)
+class SiteRefreshEvidence:
+    selected_site: str
+    confirmed: bool
+    changed: bool
+    marker_cleared: bool
+    async_completed: bool
+    elapsed_ms: int
+    date_signature_before: str
+    date_signature_after: str
+    hour_signature_before: str
+    hour_signature_after: str
+
+    def details(self) -> dict[str, Any]:
+        return {
+            "site_refresh_selected_site": self.selected_site,
+            "site_refresh_confirmed": self.confirmed,
+            "site_refresh_changed": self.changed,
+            "site_refresh_marker_cleared": self.marker_cleared,
+            "site_refresh_async_completed": self.async_completed,
+            "site_refresh_elapsed_ms": self.elapsed_ms,
+            "site_refresh_date_signature_before": self.date_signature_before,
+            "site_refresh_date_signature_after": self.date_signature_after,
+            "site_refresh_hour_signature_before": self.hour_signature_before,
+            "site_refresh_hour_signature_after": self.hour_signature_after,
+        }
 
 
 def click_program_action(page: Page) -> Page:
@@ -366,13 +397,28 @@ def _select_available_site(
         )
     else:
         site_select.select_option(value=selected["value"], timeout=timeout)
-    _wait_for_appointment_options(
+    evidence = _wait_for_appointment_options(
         page,
+        selected_site=selected["text"],
         refresh_token=refresh_token,
         async_refresh_token=async_refresh_token,
         previous_date_signature=previous_date,
         previous_hour_signature=previous_hour,
         timeout=timeout,
+    )
+    _store_site_refresh_evidence(page, evidence)
+    logger.info(
+        "Site refresh evidence: site=%s confirmed=%s changed=%s async=%s "
+        "elapsed_ms=%s date_before=%s date_after=%s hour_before=%s hour_after=%s",
+        evidence.selected_site,
+        evidence.confirmed,
+        evidence.changed,
+        evidence.async_completed,
+        evidence.elapsed_ms,
+        evidence.date_signature_before,
+        evidence.date_signature_after,
+        evidence.hour_signature_before,
+        evidence.hour_signature_after,
     )
     logger.debug("Current page after site selection: %s", page.url)
     return page
@@ -425,6 +471,17 @@ def read_appointment_availability(
                 )
 
     details = _snapshot_details(snapshot, include_person=False)
+    details.update(_read_site_refresh_evidence(page))
+    if details:
+        result_details = dict(result.details or {})
+        result_details.update(
+            {
+                key: value
+                for key, value in details.items()
+                if key.startswith("site_refresh_")
+            }
+        )
+        result = AvailabilityResult(result.status, result.message, result_details)
     logger.info(
         "Appointment summary: site=%s date=%s hour=%s",
         (result.details or details).get("sede", "unknown"),
@@ -541,13 +598,22 @@ def solve_reservation_captcha_and_click_reserve(
     expected_person_name: str | None = None,
     on_submission_intent: Callable[[], None] | None = None,
     on_submission_started: Callable[[], None] | None = None,
+    timing: ReservationTiming | None = None,
 ) -> Page:
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
+    if timing is not None:
+        timing.mark("captcha_image_started")
     captcha_path = _save_reservation_panel_image(page, settings)
+    if timing is not None:
+        timing.mark("captcha_image_finished")
     try:
+        if timing is not None:
+            timing.mark("captcha_solver_started")
         captcha_solution = solve_normal_captcha(captcha_path, settings)
+        if timing is not None:
+            timing.mark("captcha_solver_finished")
     finally:
         try:
             captcha_path.unlink()
@@ -568,6 +634,8 @@ def solve_reservation_captcha_and_click_reserve(
     reservation_field = page.locator(RESERVATION_FIELD_SELECTOR).first
     reservation_field.wait_for(state="visible", timeout=15_000)
     reservation_field.fill(captcha_solution, timeout=15_000)
+    if timing is not None:
+        timing.mark("captcha_filled")
 
     logger.info("Clicking reservation button")
     if cancel_event is not None and cancel_event.is_set():
@@ -581,6 +649,8 @@ def solve_reservation_captcha_and_click_reserve(
     if on_submission_intent is not None:
         on_submission_intent()
     try:
+        if timing is not None:
+            timing.mark("reserve_click_started")
         reserve_button.click(timeout=15_000)
     except PlaywrightError as exc:
         if on_submission_started is not None:
@@ -597,6 +667,8 @@ def solve_reservation_captcha_and_click_reserve(
         except PlaywrightTimeoutError:
             logger.info("Reservation click did not trigger domcontentloaded before timeout")
         logger.info("Current page after reservation click: %s", page.url)
+        if timing is not None:
+            timing.mark("portal_response")
     except PlaywrightError as exc:
         raise ReservationSubmissionUncertain(
             "La solicitud de reserva fue enviada, pero la pagina se desconecto antes "
@@ -1048,6 +1120,27 @@ def _options_signature(options: list[dict[str, Any]]) -> tuple[tuple[str, str], 
     return tuple((option["value"], option["text"]) for option in options)
 
 
+def _format_options_signature(signature: tuple[tuple[str, str], ...]) -> str:
+    return "|".join(f"{value}:{text}" for value, text in signature)
+
+
+def _store_site_refresh_evidence(page: Page, evidence: SiteRefreshEvidence) -> None:
+    page.evaluate(
+        """evidence => {
+            window.__appointmentBotLastSiteRefresh = evidence;
+        }""",
+        evidence.details(),
+    )
+
+
+def _read_site_refresh_evidence(page: Page) -> dict[str, Any]:
+    try:
+        data = page.evaluate("() => window.__appointmentBotLastSiteRefresh || null")
+    except PlaywrightError:
+        return {}
+    return dict(data or {})
+
+
 def _selected_option_text(page: Page, selector: str) -> str:
     select = page.locator(selector)
     if select.count() == 0:
@@ -1222,12 +1315,14 @@ def _missing_site_message(
 def _wait_for_appointment_options(
     page: Page,
     *,
+    selected_site: str,
     refresh_token: str,
     async_refresh_token: str | None,
     previous_date_signature: tuple[tuple[str, str], ...],
     previous_hour_signature: tuple[tuple[str, str], ...],
     timeout: int = 15_000,
-) -> None:
+) -> SiteRefreshEvidence:
+    started = time.monotonic()
     try:
         page.wait_for_load_state("load", timeout=min(timeout, 10_000))
     except PlaywrightTimeoutError:
@@ -1239,6 +1334,10 @@ def _wait_for_appointment_options(
     last_pair = None
     stable_reads = 0
     refreshed = False
+    marker_cleared = False
+    async_completed = False
+    current_date: tuple[tuple[str, str], ...] = ()
+    current_hour: tuple[tuple[str, str], ...] = ()
     while time.monotonic() < deadline:
         current_date = _options_signature(_select_options(page, DATE_SELECTOR))
         current_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
@@ -1250,17 +1349,33 @@ def _wait_for_appointment_options(
             if async_refresh_token is not None
             else False
         )
+        marker_cleared = marker_cleared or marker_present == 0
+        async_completed = async_completed or async_request_completed
         refreshed = (
             refreshed
-            or marker_present == 0
-            or async_request_completed
+            or marker_cleared
+            or async_completed
             or (current_date != previous_date_signature or current_hour != previous_hour_signature)
         )
         pair = (current_date, current_hour)
         stable_reads = stable_reads + 1 if pair == last_pair else 1
         last_pair = pair
         if refreshed and stable_reads >= 2 and (current_date or current_hour):
-            return
+            return SiteRefreshEvidence(
+                selected_site=selected_site,
+                confirmed=True,
+                changed=(
+                    current_date != previous_date_signature
+                    or current_hour != previous_hour_signature
+                ),
+                marker_cleared=marker_cleared,
+                async_completed=async_completed,
+                elapsed_ms=round((time.monotonic() - started) * 1_000),
+                date_signature_before=_format_options_signature(previous_date_signature),
+                date_signature_after=_format_options_signature(current_date),
+                hour_signature_before=_format_options_signature(previous_hour_signature),
+                hour_signature_after=_format_options_signature(current_hour),
+            )
         page.wait_for_timeout(250)
     raise AppointmentOptionsNotRefreshed(
         "La pagina no confirmo que las opciones de cita se actualizaran despues de elegir sede."

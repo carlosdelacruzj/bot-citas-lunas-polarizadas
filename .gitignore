@@ -10,6 +10,7 @@ screenshots/*
 videos/*
 reports/status/*
 reports/daily/*
+reports/timings/*
 !logs/.gitkeep
 !screenshots/.gitkeep
 !videos/.gitkeep

@@ -12,6 +12,7 @@ from appointment_bot.domain import (
     RunReport,
     sanitize_details,
 )
+from appointment_bot.services.optimization_log import append_optimization_case
 from appointment_bot.services.postgres_database import (
     RunRecord,
     record_run_outcome,
@@ -126,6 +127,11 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
         if reservation_confirmed(report):
             raise
         logger.warning("Could not record run history: %s", exc)
+        return
+    try:
+        append_optimization_case(report)
+    except Exception as exc:
+        logger.warning("Could not append optimization log entry: %s", exc)
 
 
 def _report_should_record_reservation(report: RunReport) -> bool:

@@ -144,6 +144,10 @@ def _monitor_observer(
             include_person=False,
             timeout=settings.read_timeout_seconds * 1_000,
         )
+        if result.status == "unavailable":
+            reload_result = _reload_and_recheck_observer_availability(page, settings)
+            if reload_result is not None:
+                result = reload_result
         if result.status == "unknown":
             return result, screenshot_path
 
@@ -197,6 +201,50 @@ def _monitor_observer(
         if time.monotonic() >= deadline:
             return result, screenshot_path
         attempt += 1
+
+
+def _reload_and_recheck_observer_availability(
+    page,
+    settings: Settings,
+) -> AvailabilityResult | None:
+    logger.info("No slots detected by observer; reloading before confirming unavailable result")
+    try:
+        page.reload(
+            wait_until="domcontentloaded",
+            timeout=settings.postback_timeout_seconds * 1_000,
+        )
+        page = click_program_action(page)
+        page = open_hidden_appointment_panel_for_observer(page)
+        page = select_available_site_for_observer(
+            page,
+            required_site=settings.observer_required_site,
+            timeout=settings.postback_timeout_seconds * 1_000,
+        )
+        result = read_appointment_availability(
+            page,
+            include_person=False,
+            timeout=settings.read_timeout_seconds * 1_000,
+        )
+    except Exception:
+        logger.exception("Observer reload probe failed; keeping the previous unavailable result")
+        return None
+
+    details = dict(result.details or {})
+    details["reload_probe"] = True
+    if result.status != "unavailable":
+        return AvailabilityResult(
+            status=result.status,
+            message=(
+                f"{result.message} "
+                "La disponibilidad fue detectada por el observador despues de recargar la pagina."
+            ),
+            details=details,
+        )
+    return AvailabilityResult(
+        status=result.status,
+        message=result.message,
+        details=details,
+    )
 
 
 def _save_sanitized_observer_screenshot(

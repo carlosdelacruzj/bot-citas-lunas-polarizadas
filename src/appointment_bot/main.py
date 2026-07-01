@@ -38,6 +38,10 @@ from appointment_bot.flows.stages import (
 )
 from appointment_bot.services.client_video import ClientSessionVideoRecorder
 from appointment_bot.services.notifier import notify_error, notify_result
+from appointment_bot.services.reservation_timings import (
+    ReservationTiming,
+    add_reservation_timing_details,
+)
 from appointment_bot.services.run_reporting import (
     finalize_report,
     report_from_result,
@@ -140,6 +144,7 @@ def _complete_available_reservation(
     settings,
     result: AvailabilityResult,
     screenshot_path: Path | None,
+    timing: ReservationTiming | None = None,
     cancel_event: threading.Event | None = None,
     can_submit: Callable[[], bool] | None = None,
     on_submission_intent: Callable[[dict | None], None] | None = None,
@@ -170,6 +175,7 @@ def _complete_available_reservation(
             expected_person_name=expected_person_name,
             on_submission_intent=mark_submission_intent,
             on_submission_started=mark_submission_started,
+            timing=timing,
         )
         submission_outcome = wait_for_reservation_submission_outcome(page)
         confirmation_text_detected = submission_outcome == "confirmed"
@@ -178,10 +184,41 @@ def _complete_available_reservation(
             settings,
             "reservation-confirmation",
         )
+        if timing is not None:
+            timing.mark("confirmation_screenshot_saved")
+        if confirmation_text_detected:
+            if timing is not None:
+                timing.mark("reservation_finished")
+            screenshot_paths = [
+                path
+                for path in [reservation_confirmation_screenshot_path, screenshot_path]
+                if path is not None
+            ]
+            primary_screenshot_path = (
+                screenshot_paths[0] if screenshot_paths else screenshot_path
+            )
+            details = add_reservation_timing_details(result.details, timing)
+            details["submission_outcome"] = "confirmed"
+            details["confirmacion_texto"] = "detectada"
+            details["confirmacion_etapa"] = "no revalidada"
+            details["confirmation_source"] = "success_text"
+            return (
+                AvailabilityResult(
+                    status="registered",
+                    message=(
+                        "La reserva fue registrada por mensaje de exito del portal."
+                    ),
+                    details=details,
+                ),
+                primary_screenshot_path,
+                screenshot_paths,
+            )
         if submission_outcome != "unknown":
             dismiss_reservation_confirmation(page)
         if submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
-            details = dict(result.details or {})
+            if timing is not None:
+                timing.mark("reservation_finished")
+            details = add_reservation_timing_details(result.details, timing)
             details["submission_outcome"] = submission_outcome
             messages = {
                 "captcha_invalid": "El portal rechazo el captcha de la reserva.",
@@ -232,6 +269,8 @@ def _complete_available_reservation(
         logger.exception("Reservation was submitted but confirmation failed")
     else:
         submission_error = None
+    if timing is not None:
+        timing.mark("reservation_finished")
     screenshot_paths = [
         path
         for path in [
@@ -244,7 +283,7 @@ def _complete_available_reservation(
     if screenshot_paths:
         screenshot_path = screenshot_paths[0]
 
-    details = dict(result.details or {})
+    details = add_reservation_timing_details(result.details, timing)
     details["submission_outcome"] = (
         "confirmed" if programmed_stage is not None or confirmation_text_detected else "unknown"
     )
@@ -382,6 +421,11 @@ def _monitor_appointment_availability(
             screenshot_path = result_screenshot_path or process_stages_screenshot_path
             return result, screenshot_path, screenshot_paths
 
+        reservation_timing = (
+            ReservationTiming()
+            if result.status in {"available", "partial"}
+            else None
+        )
         result_screenshot_path = _save_relevant_result_snapshot(
             page,
             settings,
@@ -395,11 +439,14 @@ def _monitor_appointment_availability(
             or (result.status == "partial" and has_available_date_options(page))
         )
         if can_attempt_reservation:
+            timing = reservation_timing or ReservationTiming()
+            timing.mark("selection_started")
             selected_result = select_available_appointment(
                 page,
                 is_allowed_appointment=is_allowed_appointment,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
+            timing.mark("selection_finished")
             selected_result = _with_monitor_diagnostics(
                 selected_result,
                 settings=settings,
@@ -442,6 +489,7 @@ def _monitor_appointment_availability(
                         settings,
                         selected_result,
                         screenshot_path,
+                        timing,
                         cancel_event,
                         can_submit,
                         on_submission_intent,
@@ -519,6 +567,11 @@ def _reload_and_recheck_appointment_availability(
         )
         page = click_program_action(page)
         page = open_appointment_panel(page)
+        page = select_available_site(
+            page,
+            required_site=settings.observer_required_site,
+            timeout=settings.postback_timeout_seconds * 1_000,
+        )
         result = read_appointment_availability(
             page,
             timeout=settings.read_timeout_seconds * 1_000,
@@ -558,18 +611,25 @@ def _with_monitor_diagnostics(
     monitoring_mode: str = "normal",
 ) -> AvailabilityResult:
     details = dict(result.details or {})
+    detection_origin = (
+        "fetch_probe"
+        if details.get("fetch_probe")
+        else ("reload_probe" if monitoring_mode == "reload_probe" else "normal")
+    )
     details.update(
         {
             "observer_account": settings.safe_username,
             "observer_attempt": attempt,
             "monitoring_mode": monitoring_mode,
+            "detection_origin": detection_origin,
             "session_age_seconds": round(session_age_seconds, 3),
             "check_duration_seconds": round(check_duration_seconds, 3),
         }
     )
     logger.info(
         "Observer check: account=%s mode=%s attempt=%s status=%s site=%s "
-        "date_options=%s hour_options=%s duration=%.3fs session_age=%.3fs",
+        "date_options=%s hour_options=%s origin=%s refresh_confirmed=%s "
+        "refresh_changed=%s duration=%.3fs session_age=%.3fs",
         settings.safe_username,
         monitoring_mode,
         attempt,
@@ -577,6 +637,9 @@ def _with_monitor_diagnostics(
         details.get("sede"),
         details.get("date_options"),
         details.get("hour_options"),
+        detection_origin,
+        details.get("site_refresh_confirmed"),
+        details.get("site_refresh_changed"),
         check_duration_seconds,
         session_age_seconds,
     )
