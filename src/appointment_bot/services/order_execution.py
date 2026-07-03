@@ -8,6 +8,7 @@ import time
 from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import replace
+from datetime import datetime
 from uuid import uuid4
 
 from appointment_bot.config import Settings
@@ -30,7 +31,7 @@ from appointment_bot.services.postgres_database import (
     clear_order_submission_state,
     create_reservation_attempt,
     get_claimed_service_order_runtime,
-    get_minimum_reservation_hour_for_order,
+    get_reservation_constraints_for_order,
     list_active_orders,
     mark_order_done,
     mark_order_submission_intent,
@@ -117,15 +118,36 @@ def _appointment_filter_for_order(
     order_id: str,
     settings: Settings,
 ) -> Callable[[str, str], bool] | None:
-    minimum_hour = get_minimum_reservation_hour_for_order(order_id, settings=settings)
-    if minimum_hour is None:
+    minimum_hour, minimum_date = get_reservation_constraints_for_order(
+        order_id,
+        settings=settings,
+    )
+    if minimum_hour is None and minimum_date is None:
         return None
 
-    def is_allowed(_date_text: str, hour_text: str) -> bool:
-        match = re.search(r"\b([01]?\d|2[0-3])(?::\d{2})?\b", hour_text)
-        return match is not None and int(match.group(1)) >= minimum_hour
+    def is_allowed(date_text: str, hour_text: str) -> bool:
+        if minimum_date is not None:
+            parsed_date = _parse_appointment_date(date_text)
+            if parsed_date is None or parsed_date < minimum_date:
+                return False
+        if minimum_hour is not None:
+            match = re.search(r"\b([01]?\d|2[0-3])(?::\d{2})?\b", hour_text)
+            if match is None or int(match.group(1)) < minimum_hour:
+                return False
+        return True
 
     return is_allowed
+
+
+def _parse_appointment_date(date_text: str):
+    match = re.search(r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b", date_text)
+    if match is None:
+        return None
+    day, month, year = (int(item) for item in match.groups())
+    try:
+        return datetime(year, month, day).date()
+    except ValueError:
+        return None
 
 
 def run_rapid_queue_with_settings(

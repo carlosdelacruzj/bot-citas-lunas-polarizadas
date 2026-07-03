@@ -3,6 +3,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.captcha import solve_normal_captcha
 from appointment_bot.services.reservation_timings import ReservationTiming
 from appointment_bot.utils.sanitization import normalize_option
+from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
 SLOTS_LABEL_ID = "MainContent_idUcitas_lblcupos"
 RESERVATION_FIELD_SELECTOR = "#MainContent_idUcitas_txtimg"
 RESERVATION_BUTTON_SELECTOR = "#MainContent_idUcitas_btgSiguiente"
+CAPTCHA_MEDIA_SELECTOR = "img, canvas"
 CONFIRMATION_TEXTS = [
     "cita ha sido registrado",
     "cita ha sido registrada",
@@ -51,6 +54,8 @@ CAPTCHA_REJECTION_TEXTS = [
 SLOT_LOST_TEXTS = [
     "cupo ya no disponible",
     "cupo no disponible",
+    "no existe cupos",
+    "seleccione otra fecha",
     "ya no hay cupos",
     "sin cupos disponibles",
 ]
@@ -600,6 +605,8 @@ def solve_reservation_captcha_and_click_reserve(
     expected_person_name: str | None = None,
     on_submission_intent: Callable[[], None] | None = None,
     on_submission_started: Callable[[], None] | None = None,
+    captcha_audit: dict[str, Any] | None = None,
+    attempt_number: int = 1,
     timing: ReservationTiming | None = None,
 ) -> Page:
     if can_submit is not None and not can_submit():
@@ -607,23 +614,28 @@ def solve_reservation_captcha_and_click_reserve(
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     if timing is not None:
         timing.mark("captcha_image_started")
-    captcha_path = _save_reservation_panel_image(page, settings)
+    panel_captcha_path = _save_reservation_panel_image(page, settings)
+    captcha_path = save_reservation_captcha_image(
+        page,
+        settings,
+        "04-reserva-captcha-tecnico-2captcha",
+    )
     if timing is not None:
         timing.mark("captcha_image_finished")
     try:
         if timing is not None:
             timing.mark("captcha_solver_started")
         captcha_solution = solve_normal_captcha(captcha_path, settings)
+        if captcha_audit is not None:
+            captcha_audit["attempt"] = attempt_number
+            captcha_audit["captcha_image_path"] = str(captcha_path)
+            if panel_captcha_path is not None:
+                captcha_audit["captcha_panel_image_path"] = str(panel_captcha_path)
+            captcha_audit["captcha_solution_sent"] = captcha_solution
         if timing is not None:
             timing.mark("captcha_solver_finished")
     finally:
-        try:
-            captcha_path.unlink()
-            logger.info("Removed temporary captcha image: %s", captcha_path)
-        except FileNotFoundError:
-            pass
-        except OSError as exc:
-            logger.warning("Could not remove temporary captcha image %s: %s", captcha_path, exc)
+        logger.info("Preserved captcha image sent to 2captcha: %s", captcha_path)
     if cancel_event is not None and cancel_event.is_set():
         raise AppointmentWorkflowCancelled(
             "La pausa se aplico antes de enviar el captcha de reserva."
@@ -638,6 +650,14 @@ def solve_reservation_captcha_and_click_reserve(
     reservation_field.fill(captcha_solution, timeout=15_000)
     if timing is not None:
         timing.mark("captcha_filled")
+    if captcha_audit is not None:
+        pre_submit_path = save_screenshot(
+            page,
+            settings,
+            f"05-reserva-antes-de-enviar-intento-{attempt_number}",
+        )
+        if pre_submit_path is not None:
+            captcha_audit["pre_submit_screenshot_path"] = str(pre_submit_path)
 
     logger.info("Clicking reservation button")
     if cancel_event is not None and cancel_event.is_set():
@@ -677,6 +697,41 @@ def solve_reservation_captcha_and_click_reserve(
             "de iniciar la verificacion."
         ) from exc
     return page
+
+
+def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
+    logger.info("Refreshing reservation captcha after invalid captcha response")
+    try:
+        page.locator(RESERVATION_FIELD_SELECTOR).first.fill("", timeout=5_000)
+    except PlaywrightError as exc:
+        logger.info("Could not clear reservation captcha field before retry: %s", exc)
+
+    for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
+        panel = page.locator(selector).first
+        try:
+            if panel.count() == 0:
+                continue
+            previous_signature = _captcha_signature(panel)
+            changed = _click_panel_captcha_refresh(panel)
+            if not changed:
+                changed = _reload_panel_captcha_images(
+                    panel,
+                    cache_buster="_appointment_bot_captcha_retry",
+                )
+            if not changed:
+                logger.info("No captcha image resource was changed using selector %s", selector)
+                return ensure_reservation_captcha_loaded(
+                    panel,
+                    timeout=settings.read_timeout_seconds * 1_000,
+                )
+            return wait_for_reservation_captcha_changed(
+                panel,
+                previous_signature=previous_signature,
+                timeout=settings.read_timeout_seconds * 1_000,
+            )
+        except PlaywrightError as exc:
+            logger.info("Could not refresh captcha with selector %s: %s", selector, exc)
+    return False
 
 
 def wait_for_reservation_submission_outcome(page: Page, *, timeout: int = 10_000) -> str:
@@ -754,15 +809,65 @@ def dismiss_reservation_confirmation(page: Page) -> None:
     logger.info("No reservation confirmation control was dismissed")
 
 
-def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
-    logger.info("Saving reservation panel image for captcha solving")
+def save_reservation_captcha_image(
+    page: Page,
+    settings: Settings,
+    label: str,
+) -> Path:
+    logger.info("Saving isolated reservation captcha image")
+    captcha_dir = settings.screenshots_dir / "captchas"
+    captcha_dir.mkdir(parents=True, exist_ok=True)
+    prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
+    captcha_path = captcha_dir / (
+        f"{label}-{prefix}{uuid.uuid4().hex}.png"
+    )
+
+    for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
+        panel = page.locator(selector).first
+        try:
+            if panel.count() == 0:
+                continue
+
+            with _revealed_panel(panel):
+                if not ensure_reservation_captcha_loaded(
+                    panel,
+                    timeout=settings.read_timeout_seconds * 1_000,
+                ):
+                    logger.warning(
+                        "Reservation panel captcha was not loaded using selector %s",
+                        selector,
+                    )
+                    continue
+                captcha_media = _captcha_media_locator(panel)
+                if captcha_media is None:
+                    logger.warning("No captcha image was found using selector %s", selector)
+                    continue
+                captcha_media.scroll_into_view_if_needed(timeout=5_000)
+                captcha_media.screenshot(path=str(captcha_path), timeout=10_000)
+            logger.info(
+                "Saved isolated reservation captcha image: %s using selector %s",
+                captcha_path,
+                selector,
+            )
+            return captcha_path
+        except PlaywrightError as exc:
+            logger.warning(
+                "Could not save isolated reservation captcha with selector %s: %s",
+                selector,
+                exc,
+            )
+
+    raise RuntimeError("Could not save the reservation captcha image for captcha solving.")
+
+
+def _save_reservation_panel_image(page: Page, settings: Settings) -> Path | None:
+    logger.info("Saving reservation panel image for technical evidence")
     settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
     captcha_path = settings.screenshots_dir / (
-        f"reservation-panel-captcha-{prefix}{uuid.uuid4().hex}.png"
+        f"04-reserva-captcha-panel-tecnico-2captcha-{prefix}{uuid.uuid4().hex}.png"
     )
 
-    page.locator(RESERVATION_FIELD_SELECTOR).first.wait_for(state="visible", timeout=15_000)
     for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
         panel = page.locator(selector).first
         try:
@@ -788,7 +893,9 @@ def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
                 continue
             panel.screenshot(path=str(captcha_path), timeout=10_000)
             logger.info(
-                "Saved reservation panel image: %s using selector %s", captcha_path, selector
+                "Saved reservation panel image: %s using selector %s",
+                captcha_path,
+                selector,
             )
             return captcha_path
         except PlaywrightError as exc:
@@ -798,7 +905,194 @@ def _save_reservation_panel_image(page: Page, settings: Settings) -> Path:
                 exc,
             )
 
-    raise RuntimeError("Could not save the reservation panel image for captcha solving.")
+    logger.warning("Could not save the reservation panel image for technical evidence.")
+    return None
+
+
+@contextmanager
+def _revealed_panel(panel):
+    panel.evaluate(
+        """element => {
+            const changed = [];
+            for (
+                let node = element;
+                node && node !== document.body;
+                node = node.parentElement
+            ) {
+                const style = getComputedStyle(node);
+                if (
+                    style.display === "none"
+                    || style.visibility === "hidden"
+                    || style.opacity === "0"
+                ) {
+                    changed.push({
+                        node,
+                        style: node.getAttribute("style")
+                    });
+                    node.style.setProperty("display", "block", "important");
+                    node.style.setProperty("visibility", "visible", "important");
+                    node.style.setProperty("opacity", "1", "important");
+                }
+            }
+            window.__appointmentBotCaptchaReveal = changed;
+        }"""
+    )
+    try:
+        yield
+    finally:
+        try:
+            panel.page.evaluate(
+                """() => {
+                    const changed = window.__appointmentBotCaptchaReveal || [];
+                    changed.forEach(item => {
+                        if (item.style === null) item.node.removeAttribute("style");
+                        else item.node.setAttribute("style", item.style);
+                    });
+                    delete window.__appointmentBotCaptchaReveal;
+                }"""
+            )
+        except PlaywrightError:
+            logger.warning("Could not restore appointment panel styles after captcha capture")
+
+
+def _captcha_media_locator(panel):
+    index = int(
+        panel.locator(CAPTCHA_MEDIA_SELECTOR).evaluate_all(
+            """elements => {
+                const candidates = elements
+                    .map((element, index) => {
+                        const rect = element.getBoundingClientRect();
+                        const area = rect.width * rect.height;
+                        const isLoaded = element.tagName !== "IMG"
+                            || (element.complete && element.naturalWidth > 0);
+                        return { index, width: rect.width, height: rect.height, area, isLoaded };
+                    })
+                    .filter(item => item.width >= 40 && item.height >= 20 && item.isLoaded)
+                    .sort((left, right) => right.area - left.area);
+                return candidates.length ? candidates[0].index : -1;
+            }"""
+        )
+    )
+    if index < 0:
+        return None
+    return panel.locator(CAPTCHA_MEDIA_SELECTOR).nth(index)
+
+
+def _captcha_signature(panel) -> str:
+    try:
+        return str(
+            panel.locator(CAPTCHA_MEDIA_SELECTOR).evaluate_all(
+                """elements => elements
+                    .map(element => {
+                        const rect = element.getBoundingClientRect();
+                        if (rect.width < 40 || rect.height < 20) return "";
+                        if (element.tagName === "IMG") {
+                            return [
+                                element.getAttribute("src") || "",
+                                element.complete ? "complete" : "loading",
+                                element.naturalWidth,
+                                element.naturalHeight
+                            ].join("|");
+                        }
+                        return ["canvas", rect.width, rect.height].join("|");
+                    })
+                    .filter(Boolean)
+                    .join("||")"""
+            )
+        )
+    except PlaywrightError:
+        return ""
+
+
+def wait_for_reservation_captcha_changed(
+    panel,
+    *,
+    previous_signature: str,
+    timeout: int = 15_000,
+) -> bool:
+    deadline = time.monotonic() + timeout / 1_000
+    while time.monotonic() < deadline:
+        if ensure_reservation_captcha_loaded(panel, timeout=1_000):
+            current_signature = _captcha_signature(panel)
+            if current_signature and current_signature != previous_signature:
+                return True
+            if not previous_signature and current_signature:
+                return True
+        panel.page.wait_for_timeout(250)
+    return False
+
+
+def _click_panel_captcha_refresh(panel) -> bool:
+    return bool(
+        panel.evaluate(
+            """element => {
+                const media = Array.from(element.querySelectorAll("img, canvas"))
+                    .map(item => ({ item, rect: item.getBoundingClientRect() }))
+                    .filter(item => item.rect.width >= 40 && item.rect.height >= 20)
+                    .sort((left, right) => (
+                        right.rect.width * right.rect.height
+                    ) - (
+                        left.rect.width * left.rect.height
+                    ))[0];
+                if (!media) return false;
+
+                const mediaRect = media.rect;
+                const controls = Array.from(
+                    element.querySelectorAll(
+                        "button, a, input[type='button'], input[type='image'], input[type='submit']"
+                    )
+                );
+                const scored = controls
+                    .map(control => {
+                        const rect = control.getBoundingClientRect();
+                        const label = [
+                            control.id,
+                            control.name,
+                            control.value,
+                            control.title,
+                            control.alt,
+                            control.getAttribute("aria-label"),
+                            control.textContent
+                        ].join(" ").toLowerCase();
+                        const looksLikeRefresh = /refresh|reload|reset|captcha|actualizar|recargar|cambiar|nuevo/.test(label);
+                        const nearCaptcha = rect.left >= mediaRect.right - 8
+                            && Math.abs((rect.top + rect.bottom) / 2 - (mediaRect.top + mediaRect.bottom) / 2) <= 80;
+                        return {
+                            control,
+                            score: (looksLikeRefresh ? 2 : 0) + (nearCaptcha ? 1 : 0),
+                            area: rect.width * rect.height
+                        };
+                    })
+                    .filter(item => item.score > 0 && item.area > 0)
+                    .sort((left, right) => right.score - left.score || left.area - right.area);
+                if (!scored.length) return false;
+                scored[0].control.click();
+                return true;
+            }"""
+        )
+    )
+
+
+def _reload_panel_captcha_images(panel, *, cache_buster: str) -> bool:
+    return bool(
+        panel.locator("img").evaluate_all(
+            """(elements, cacheBuster) => {
+                let changed = false;
+                for (const image of elements) {
+                    const rect = image.getBoundingClientRect();
+                    if (rect.width < 40 || rect.height < 20) continue;
+                    const source = image.getAttribute("src");
+                    if (!source) continue;
+                    const url = new URL(source, window.location.href);
+                    url.searchParams.set(cacheBuster, Date.now().toString());
+                    image.src = url.toString();
+                    changed = true;
+                }
+                return changed;
+            }""",
+            cache_buster,
+        )
+    )
 
 
 def _availability_result_from_snapshot(
@@ -1556,23 +1850,7 @@ def ensure_reservation_captcha_loaded(panel, *, timeout: int = 15_000) -> bool:
         return True
 
     logger.warning("Reservation CAPTCHA did not load; retrying its image resource")
-    reloaded = panel.locator("img").evaluate_all(
-        """elements => {
-            let changed = false;
-            for (const image of elements) {
-                const rect = image.getBoundingClientRect();
-                if (rect.width < 40 || rect.height < 20) continue;
-                if (image.complete && image.naturalWidth > 0) continue;
-                const source = image.getAttribute("src");
-                if (!source) continue;
-                const url = new URL(source, window.location.href);
-                url.searchParams.set("_appointment_bot_retry", Date.now().toString());
-                image.src = url.toString();
-                changed = true;
-            }
-            return changed;
-        }"""
-    )
+    reloaded = _reload_panel_captcha_images(panel, cache_buster="_appointment_bot_retry")
     if not reloaded:
         return False
     return _wait_for_panel_captcha(panel, timeout=timeout)

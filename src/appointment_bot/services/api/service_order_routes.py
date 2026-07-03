@@ -43,6 +43,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
                 if payload.get("minimum_reservation_hour") not in {None, ""}
                 else None
             ),
+            minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
         )
     except (TypeError, ValueError) as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))

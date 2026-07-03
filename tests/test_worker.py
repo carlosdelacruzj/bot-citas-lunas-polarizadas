@@ -4,11 +4,12 @@ import tempfile
 import threading
 import time
 import unittest
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 from appointment_bot.domain import RunReport
+from appointment_bot.services import observer
 from appointment_bot.services.continuous_worker import ContinuousWorker
 from appointment_bot.services.database_models import ServiceOrderRuntime, WorkerState
 from appointment_bot.services.postgres_database import update_worker_state
@@ -57,27 +58,84 @@ class ContinuousWorkerTests(unittest.TestCase):
                 queue_requested = worker._monitor_order(order)
 
             effective_settings = run_order.call_args.args[0]
-            self.assertEqual(effective_settings.monitor_window_seconds, 300)
-            self.assertEqual(effective_settings.monitor_max_attempts, 5)
-            self.assertEqual(effective_settings.monitor_interval_min_seconds, 60)
-            self.assertEqual(effective_settings.monitor_interval_max_seconds, 75)
+            self.assertEqual(
+                effective_settings.monitor_window_seconds,
+                settings.observer_session_seconds,
+            )
+            self.assertEqual(
+                effective_settings.monitor_max_attempts,
+                settings.observer_max_attempts,
+            )
+            self.assertEqual(
+                effective_settings.monitor_interval_min_seconds,
+                settings.observer_interval_min_seconds,
+            )
+            self.assertEqual(
+                effective_settings.monitor_interval_max_seconds,
+                settings.observer_interval_max_seconds,
+            )
             self.assertTrue(run_order.call_args.kwargs["observer_mode"])
             self.assertFalse(queue_requested)
             sweep.assert_not_called()
 
+    def test_observer_collects_five_captcha_samples_with_refresh_between_samples(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            paths = [Path(directory) / f"captcha-{index}.png" for index in range(5)]
+
+            with (
+                patch(
+                    "appointment_bot.services.observer.save_reservation_captcha_image",
+                    side_effect=paths,
+                ) as save_captcha,
+                patch(
+                    "appointment_bot.services.observer.refresh_reservation_captcha",
+                    return_value=True,
+                ) as refresh_captcha,
+            ):
+                captured = observer._collect_observer_captcha_samples(
+                    object(),
+                    settings,
+                    cancel_event=None,
+                )
+
+            self.assertEqual(captured, paths)
+            self.assertEqual(save_captcha.call_count, 5)
+            self.assertEqual(refresh_captcha.call_count, 4)
+
+    def test_observer_keeps_available_result_when_captcha_capture_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+
+            with patch(
+                "appointment_bot.services.observer.save_reservation_captcha_image",
+                side_effect=RuntimeError("captcha unavailable"),
+            ):
+                captured = observer._collect_observer_captcha_samples(
+                    object(),
+                    settings,
+                    cancel_event=None,
+                )
+
+            self.assertEqual(captured, [])
+
     def test_health_detects_stalled_worker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            old = (datetime.now() - timedelta(hours=1)).isoformat(timespec="seconds")
-            update_worker_state(
-                settings,
-                phase="monitoring_observer",
-                last_check_at=old,
-            )
+            old = (datetime.now(UTC) - timedelta(hours=1)).isoformat(timespec="seconds")
             worker = ContinuousWorker(settings)
             worker._running = True
 
-            healthy, reason = worker.health()
+            with patch(
+                "appointment_bot.services.continuous_worker.get_worker_state",
+                return_value=WorkerState(
+                    phase="monitoring_observer_normal",
+                    last_check_at=old,
+                    session_started_at=old,
+                    updated_at=old,
+                ),
+            ):
+                healthy, reason = worker.health()
 
             self.assertFalse(healthy)
             self.assertIn("worker_stalled", reason)

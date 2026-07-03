@@ -61,6 +61,7 @@ def create_service_order(
     applicant_name: str | None = None,
     charge_required: bool = True,
     minimum_reservation_hour: int | None = None,
+    minimum_reservation_date: str | date | None = None,
     settings: Settings | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)
@@ -74,6 +75,7 @@ def create_service_order(
         raise ValueError("priority must be non-negative.")
     if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
         raise ValueError("minimum_reservation_hour must be between 0 and 23.")
+    parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
 
     now = _now()
     encrypted_password = _credential_cipher(settings).encrypt(password)
@@ -143,15 +145,16 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                minimum_hour, status, created_at, updated_at
+                minimum_hour, minimum_date, status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, 'ready', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
                 priority = excluded.priority,
                 charge_required = excluded.charge_required,
                 minimum_hour = COALESCE(excluded.minimum_hour, service_orders.minimum_hour),
+                minimum_date = COALESCE(excluded.minimum_date, service_orders.minimum_date),
                 status = CASE
                     WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
                         THEN service_orders.status
@@ -166,6 +169,7 @@ def create_service_order(
                 priority,
                 charge_required,
                 minimum_reservation_hour,
+                parsed_minimum_date,
                 now,
                 now,
             ),
@@ -205,7 +209,8 @@ def list_service_order_summaries(
                    r.status AS reservation_status, r.site AS reservation_site,
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
-                   so.minimum_hour AS minimum_reservation_hour
+                   so.minimum_hour AS minimum_reservation_hour,
+                   so.minimum_date AS minimum_reservation_date
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             LEFT JOIN applicant_contacts ac
@@ -335,6 +340,31 @@ def get_minimum_reservation_hour_for_order(
     if row is None or row["minimum_hour"] is None:
         return None
     return int(row["minimum_hour"])
+
+
+def get_reservation_constraints_for_order(
+    order_id: str,
+    settings: Settings | None = None,
+) -> tuple[int | None, date | None]:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT minimum_hour, minimum_date
+            FROM service_orders
+            WHERE order_id = %s
+            """,
+            (order_id,),
+        ).fetchone()
+    if row is None:
+        return None, None
+    minimum_hour = row["minimum_hour"]
+    minimum_date = row["minimum_date"]
+    return (
+        int(minimum_hour) if minimum_hour is not None else None,
+        minimum_date if isinstance(minimum_date, date) else None,
+    )
 
 
 def _record_reservation_for_order(
@@ -1637,6 +1667,15 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
             if row["minimum_reservation_hour"] is not None
             else None
         ),
+        minimum_reservation_date=(
+            row["minimum_reservation_date"].isoformat()
+            if isinstance(row["minimum_reservation_date"], date)
+            else (
+                str(row["minimum_reservation_date"])
+                if row["minimum_reservation_date"] is not None
+                else None
+            )
+        ),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
     )
@@ -1805,6 +1844,20 @@ def _appointment_datetime_details(details: dict[str, Any]) -> tuple[str | None, 
 
     parsed_hour = match.group("hour")
     return match.group("date"), hour_text or parsed_hour
+
+
+def _parse_minimum_reservation_date(value: str | date | None) -> date | None:
+    if value is None or isinstance(value, date):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError("minimum_reservation_date must use YYYY-MM-DD or DD/MM/YYYY.")
 
 
 def _mask_username(username: str) -> str:

@@ -66,6 +66,7 @@ class ServiceOrderSummary:
     amount_agreed: str | None
     amount_paid: str | None
     minimum_reservation_hour: int | None
+    minimum_reservation_date: str | None
     created_at: str
     updated_at: str
 

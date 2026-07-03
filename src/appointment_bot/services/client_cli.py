@@ -37,6 +37,7 @@ PREFERRED_ORDER_FIELDS = (
     "amount_agreed",
     "amount_paid",
     "minimum_reservation_hour",
+    "minimum_reservation_date",
 )
 
 
@@ -71,6 +72,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--minimum-reservation-hour",
         type=int,
         help="Hora minima permitida para reservar, por ejemplo 11.",
+    )
+    order_add_parser.add_argument(
+        "--minimum-reservation-date",
+        help="Fecha minima permitida para reservar, en formato YYYY-MM-DD o DD/MM/YYYY.",
     )
 
     subparsers.add_parser("orders", help="Lista trabajos de reserva.")
@@ -196,6 +201,7 @@ def run(argv: Sequence[str] | None = None) -> int:
             applicant_name=args.applicant_name,
             charge_required=not args.no_charge,
             minimum_reservation_hour=args.minimum_reservation_hour,
+            minimum_reservation_date=args.minimum_reservation_date,
         )
         print(f"Trabajo guardado: {result.order_id}")
         return 0

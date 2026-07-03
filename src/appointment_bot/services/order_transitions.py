@@ -52,6 +52,20 @@ def reconcile_pending_submission(
         )
     )
     if not exact_programmed:
+        if report.status in {
+            ResultStatus.AVAILABLE,
+            ResultStatus.PARTIAL,
+            ResultStatus.UNAVAILABLE,
+        }:
+            resolve_reservation_attempt(
+                str(attempt["attempt_id"]),
+                "rejected",
+                run_id=report.run_id,
+                evidence_path=report.screenshot_path,
+                settings=settings,
+            )
+            clear_order_submission_state(order_id, settings=settings)
+            return True
         resolve_reservation_attempt(
             str(attempt["attempt_id"]),
             "unknown",

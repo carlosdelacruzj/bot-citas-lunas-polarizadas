@@ -8,6 +8,7 @@ from unittest.mock import patch
 from appointment_bot.flows.appointments import (
     _is_real_appointment_option,
     ensure_reservation_captcha_loaded,
+    save_reservation_captcha_image,
     solve_reservation_captcha_and_click_reserve,
 )
 from appointment_bot.flows.stages import appointment_stage_result
@@ -54,7 +55,7 @@ class _CaptchaImages:
     def __init__(self):
         self.reloaded = False
 
-    def evaluate_all(self, script):
+    def evaluate_all(self, *args):
         self.reloaded = True
         return True
 
@@ -66,6 +67,63 @@ class _CaptchaPanel:
 
     def locator(self, selector):
         return self.images
+
+
+class _IsolatedCaptchaMedia:
+    def __init__(self):
+        self.screenshot_paths: list[str] = []
+
+    def scroll_into_view_if_needed(self, **kwargs):
+        return None
+
+    def screenshot(self, *, path, **kwargs):
+        self.screenshot_paths.append(path)
+        Path(path).write_bytes(b"captcha")
+
+
+class _IsolatedCaptchaMediaGroup:
+    def __init__(self, media: _IsolatedCaptchaMedia):
+        self.media = media
+
+    def evaluate_all(self, *args):
+        return 0
+
+    def nth(self, index):
+        return self.media
+
+
+class _IsolatedCaptchaPanel:
+    def __init__(self, page):
+        self.page = page
+        self.media = _IsolatedCaptchaMedia()
+        self.screenshot_called = False
+
+    @property
+    def first(self):
+        return self
+
+    def count(self):
+        return 1
+
+    def evaluate(self, script):
+        return None
+
+    def locator(self, selector):
+        return _IsolatedCaptchaMediaGroup(self.media)
+
+    def screenshot(self, **kwargs):
+        self.screenshot_called = True
+
+
+class _IsolatedCaptchaPage:
+    def __init__(self):
+        self.panel = _IsolatedCaptchaPanel(self)
+
+    def locator(self, selector):
+        return self.panel
+
+    def evaluate(self, script):
+        return None
 
 
 class AppointmentFlowTests(unittest.TestCase):
@@ -86,25 +144,36 @@ class AppointmentFlowTests(unittest.TestCase):
             )
         )
 
-    def test_temporary_captcha_is_deleted_after_solving(self) -> None:
+    def test_captcha_image_is_preserved_after_solving(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             settings = make_settings(root)
             captcha = root / "captcha.png"
+            panel = root / "panel.png"
             captcha.write_bytes(b"image")
+            panel.write_bytes(b"panel")
             events: list[str] = []
+            captcha_audit: dict[str, object] = {}
 
             with (
                 patch(
                     "appointment_bot.flows.appointments._save_reservation_panel_image",
+                    return_value=panel,
+                ),
+                patch(
+                    "appointment_bot.flows.appointments.save_reservation_captcha_image",
                     return_value=captcha,
                 ),
                 patch(
                     "appointment_bot.flows.appointments.solve_normal_captcha",
                     return_value="1234",
-                ),
+                ) as solve_captcha,
                 patch(
                     "appointment_bot.flows.appointments.validate_selected_appointment",
+                ),
+                patch(
+                    "appointment_bot.flows.appointments.save_screenshot",
+                    return_value=None,
                 ),
             ):
                 solve_reservation_captcha_and_click_reserve(
@@ -113,10 +182,32 @@ class AppointmentFlowTests(unittest.TestCase):
                     can_submit=lambda: True,
                     on_submission_intent=lambda: events.append("intent"),
                     on_submission_started=lambda: events.append("started"),
+                    captcha_audit=captcha_audit,
                 )
 
-            self.assertFalse(captcha.exists())
+            self.assertTrue(captcha.exists())
+            self.assertTrue(panel.exists())
+            solve_captcha.assert_called_once_with(captcha, settings)
+            self.assertEqual(captcha_audit["captcha_image_path"], str(captcha))
+            self.assertEqual(captcha_audit["captcha_panel_image_path"], str(panel))
             self.assertEqual(events, ["intent", "started"])
+
+    def test_reservation_captcha_capture_uses_isolated_media_not_panel(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = make_settings(root)
+            page = _IsolatedCaptchaPage()
+
+            with patch(
+                "appointment_bot.flows.appointments.ensure_reservation_captcha_loaded",
+                return_value=True,
+            ):
+                path = save_reservation_captcha_image(page, settings, "captcha-test")
+
+            self.assertTrue(path.exists())
+            self.assertEqual(path.parent, settings.screenshots_dir / "captchas")
+            self.assertEqual(page.panel.media.screenshot_paths, [str(path)])
+            self.assertFalse(page.panel.screenshot_called)
 
     def test_broken_captcha_image_is_reloaded_before_capture(self) -> None:
         panel = _CaptchaPanel()

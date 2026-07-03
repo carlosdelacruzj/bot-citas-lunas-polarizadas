@@ -300,3 +300,78 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\result-available-***-120135-471698c3-order-***-5971552f6194480f9baf4ca35937541a.png
 - Observacion tecnica:
   - El reload_probe aporto el cupo: antes del reload habia Sin Cupos y despues aparecio 06/07/2026 08:00 con 30 cupos. El tramo mas lento fue 2captcha (33.609s), pero la respuesta fue rechazada por el portal.
+## 2026-07-02 11:31:32 - order-70569448 - reservation_unconfirmed
+
+- Run: 20260702-113001-a861c8bc
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 14/07/2026 11:00
+- Origen deteccion: normal
+- Resultado: CAPTCHA resuelto, click en Reservar enviado, confirmacion inmediata no validada.
+- Confirmacion posterior: Fuente registrada: unconfirmed.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 66.687s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.234s
+  - 2captcha: 33.781s
+  - Llenar CAPTCHA -> click: 1.438s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 10.797s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-113001-a861c8bc-order-***-3aae5262374640b7ac29c7a86c50debf.png
+  - CAPTCHA enviado: C3MCY
+  - Imagen enviada a 2captcha: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113001-a861c8bc-order-***-1d6b8f3f0ed74b84a7a8e2f25838a429.png
+  - Intento CAPTCHA 1: outcome=unknown, valor=C3MCY, duracion=45.64s
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113001-a861c8bc-order-***-1d6b8f3f0ed74b84a7a8e2f25838a429.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-113001-a861c8bc-order-***-71baf8a45e5c479ebc20f5a8c88444c5.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-113001-a861c8bc-order-***-3aae5262374640b7ac29c7a86c50debf.png
+  - Diagnostico screenshots: screenshots\07-detalle-tramite-etapa-programado-confirmada-***-113001-a861c8bc-order-***-8fd28ab42d5c40e29876423f17c773b6.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-113001-a861c8bc-order-***-.html
+  - Screenshot adicional: screenshots\07-detalle-tramite-etapa-programado-confirmada-***-113001-a861c8bc-order-***-8fd28ab42d5c40e29876423f17c773b6.png
+  - Screenshot adicional: screenshots\05-reserva-antes-de-enviar-intento-1-***-113001-a861c8bc-order-***-71baf8a45e5c479ebc20f5a8c88444c5.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-113001-a861c8bc-order-***-7ae15b215de341459fde786e3df0903f.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. La confirmacion inmediata quedo debil y requiere revalidacion posterior. El tramo mas lento fue 2captcha (33.781s).
+
+## 2026-07-02 12:47:45 - order-70569448 - reservation_unconfirmed
+
+- Run: 20260702-124542-3a856c97
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 17/07/2026 09:00
+- Origen deteccion: normal
+- Resultado: CAPTCHA resuelto, click en Reservar enviado, confirmacion inmediata no validada.
+- Confirmacion posterior: Fuente registrada: unconfirmed.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 72.485s
+  - Seleccion fecha/hora: 1.797s
+  - Imagen CAPTCHA: 0.000s
+  - 2captcha: 33.922s
+  - Llenar CAPTCHA -> click: 1.937s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 1.860s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\05-reserva-antes-de-enviar-intento-1-***-124542-3a856c97-order-***-323a793dfb0e46dcb5e0b5be81f19c1c.png
+  - CAPTCHA enviado: VXT9Z
+  - Imagen enviada a 2captcha: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-124542-3a856c97-order-***-5910e71ee43b48c2b08de59e45e7c858.png
+  - Intento CAPTCHA 1: outcome=captcha_invalid, valor=VXT9Z, duracion=36.454s
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-124542-3a856c97-order-***-5910e71ee43b48c2b08de59e45e7c858.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-124542-3a856c97-order-***-323a793dfb0e46dcb5e0b5be81f19c1c.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-124542-3a856c97-order-***-a0e6dfbc68414d9bb8ab25c3fa244f17.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-124542-3a856c97-order-***-.html
+  - Screenshot adicional: screenshots\06-reserva-respuesta-portal-intento-1-***-124542-3a856c97-order-***-a0e6dfbc68414d9bb8ab25c3fa244f17.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-124542-3a856c97-order-***-1a252103b6c54cc584c440d2fac84db5.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. La confirmacion inmediata quedo debil y requiere revalidacion posterior. El tramo mas lento fue 2captcha (33.922s).

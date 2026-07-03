@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -83,6 +83,7 @@ def create_current_schema(connection: Connection) -> None:
             minimum_hour integer CHECK (
                 minimum_hour IS NULL OR (minimum_hour >= 0 AND minimum_hour <= 23)
             ),
+            minimum_date date,
             status text NOT NULL DEFAULT 'ready' CHECK (
                 status IN ('ready', 'paused', 'reserved_payment_pending', 'paid', 'archived')
             ),
@@ -306,6 +307,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("portal_accounts", "password"),
         ("service_orders", "status"),
         ("service_orders", "minimum_hour"),
+        ("service_orders", "minimum_date"),
         ("service_orders", "lease_owner"),
         ("service_orders", "lease_expires_at"),
         ("runs", "reservation_attempted"),
@@ -532,6 +534,18 @@ def migrate_database(connection: Connection) -> None:
         current_version = 17
     if current_version == 17:
         _create_observer_window_metrics_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (18,),
+        )
+        current_version = 18
+    if current_version == 18:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN minimum_date date
+            """
+        )
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

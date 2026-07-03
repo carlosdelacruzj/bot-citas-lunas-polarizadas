@@ -6,7 +6,7 @@ from playwright.sync_api import Page, sync_playwright
 
 from appointment_bot.config import Settings
 
-BLOCKED_RESOURCE_TYPES = {"font", "media"}
+BLOCKED_RESOURCE_TYPES = {"media"}
 
 
 @contextmanager

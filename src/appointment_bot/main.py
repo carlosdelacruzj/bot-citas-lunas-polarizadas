@@ -19,15 +19,18 @@ from appointment_bot.flows.appointments import (
     PROCESS_STAGES_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
+    AppointmentWorkflowUnavailable,
     ReservationSubmissionUncertain,
     click_program_action,
     dismiss_reservation_confirmation,
     has_available_date_options,
     open_appointment_panel,
     read_appointment_availability,
+    refresh_reservation_captcha,
     select_available_appointment,
     select_available_site,
     solve_reservation_captcha_and_click_reserve,
+    validate_selected_appointment,
     wait_for_reservation_submission_outcome,
 )
 from appointment_bot.flows.login import login
@@ -47,6 +50,10 @@ from appointment_bot.services.run_reporting import (
     report_from_result,
     reservation_confirmed,
 )
+from appointment_bot.utils.diagnostics import (
+    read_visible_page_text,
+    save_sanitized_page_html,
+)
 from appointment_bot.utils.screenshots import (
     remove_screenshot_paths,
     report_screenshot_paths,
@@ -62,20 +69,27 @@ def _save_relevant_result_snapshot(page, settings, status: str) -> Path | None:
     if status not in {"available", "partial"}:
         return None
 
-    return save_result_screenshot(
+    label_by_status = {
+        "available": "03-modal-reserva-citas-cupo-disponible",
+        "partial": "03-modal-reserva-citas-disponibilidad-parcial",
+    }
+    return save_screenshot(
         page,
         settings,
-        label=f"result-{status}",
-        selectors=APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+        label=label_by_status[status],
     )
 
 
-def _save_process_stages_snapshot(page, settings) -> Path | None:
-    return save_result_screenshot(
+def _save_process_stages_snapshot(
+    page,
+    settings,
+    *,
+    label: str = "02-detalle-tramite-etapas-reservar-cita",
+) -> Path | None:
+    return save_screenshot(
         page,
         settings,
-        label="process-stages",
-        selectors=PROCESS_STAGES_SCREENSHOT_SELECTORS,
+        label=label,
     )
 
 
@@ -93,16 +107,6 @@ def _confirm_programmed_stage_after_submission(
     stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=3_000)
     if stage is not None:
         return stage, "programmed_stage"
-
-    if _reopen_process_detail_from_listing(page):
-        stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=7_000)
-        if stage is not None:
-            return stage, "programmed_stage_after_listing"
-
-    if _relogin_and_reopen_process_detail(page, settings):
-        stage = wait_for_programmed_appointment_stage(page, expected_details, timeout=10_000)
-        if stage is not None:
-            return stage, "programmed_stage_after_relogin"
 
     return None, "success_text_revalidation_inconclusive"
 
@@ -153,6 +157,51 @@ def _complete_available_reservation(
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
     confirmation_source = "unconfirmed"
+    latest_captcha_audit: dict[str, object] = {}
+    captcha_attempts: list[dict[str, object]] = []
+    diagnostic_artifacts: dict[str, list[str]] = {
+        "captcha_images": [],
+        "screenshots": [],
+        "dom_snapshots": [],
+    }
+    portal_response: dict[str, object] = {}
+    additional_screenshot_paths: list[Path] = []
+    max_captcha_attempts = 2
+
+    def add_artifact(kind: str, path: Path | str | None) -> None:
+        if path is None:
+            return
+        value = str(path)
+        values = diagnostic_artifacts.setdefault(kind, [])
+        if value not in values:
+            values.append(value)
+
+    def collected_screenshots(*paths: Path | None) -> list[Path]:
+        return [
+            path
+            for path in [
+                *paths,
+                *additional_screenshot_paths,
+                screenshot_path,
+            ]
+            if path is not None
+        ]
+
+    def reservation_details() -> dict:
+        details = add_reservation_timing_details(result.details, timing)
+        details.update(latest_captcha_audit)
+        if captcha_attempts:
+            details["captcha_attempts"] = captcha_attempts
+        if portal_response:
+            details["portal_response"] = portal_response
+        artifacts = {
+            key: values
+            for key, values in diagnostic_artifacts.items()
+            if values
+        }
+        if artifacts:
+            details["diagnostic_artifacts"] = artifacts
+        return details
 
     def mark_submission_started() -> None:
         nonlocal submission_started
@@ -166,78 +215,142 @@ def _complete_available_reservation(
             if on_submission_intent is not None:
                 on_submission_intent(result.details)
 
-        page = solve_reservation_captcha_and_click_reserve(
-            page,
-            settings,
-            cancel_event=cancel_event,
-            can_submit=can_submit,
-            expected_details=result.details,
-            expected_person_name=expected_person_name,
-            on_submission_intent=mark_submission_intent,
-            on_submission_started=mark_submission_started,
-            timing=timing,
-        )
-        submission_outcome = wait_for_reservation_submission_outcome(page)
-        confirmation_text_detected = submission_outcome == "confirmed"
-        reservation_confirmation_screenshot_path = save_screenshot(
-            page,
-            settings,
-            "reservation-confirmation",
-        )
-        if timing is not None:
-            timing.mark("confirmation_screenshot_saved")
-        if confirmation_text_detected:
-            if timing is not None:
-                timing.mark("reservation_finished")
-            screenshot_paths = [
-                path
-                for path in [reservation_confirmation_screenshot_path, screenshot_path]
-                if path is not None
-            ]
-            primary_screenshot_path = (
-                screenshot_paths[0] if screenshot_paths else screenshot_path
+        for captcha_attempt in range(1, max_captcha_attempts + 1):
+            attempt_started = time.monotonic()
+            captcha_audit: dict[str, object] = {}
+            page = solve_reservation_captcha_and_click_reserve(
+                page,
+                settings,
+                cancel_event=cancel_event,
+                can_submit=can_submit,
+                expected_details=result.details,
+                expected_person_name=expected_person_name,
+                on_submission_intent=mark_submission_intent,
+                on_submission_started=mark_submission_started,
+                captcha_audit=captcha_audit,
+                attempt_number=captcha_attempt,
+                timing=timing,
             )
-            details = add_reservation_timing_details(result.details, timing)
-            details["submission_outcome"] = "confirmed"
-            details["confirmacion_texto"] = "detectada"
-            details["confirmacion_etapa"] = "no revalidada"
-            details["confirmation_source"] = "success_text"
-            return (
-                AvailabilityResult(
-                    status="registered",
-                    message=(
-                        "La reserva fue registrada por mensaje de exito del portal."
+            latest_captcha_audit.clear()
+            latest_captcha_audit.update(captcha_audit)
+            add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
+            add_artifact("captcha_images", captcha_audit.get("captcha_panel_image_path"))
+            pre_submit_path = captcha_audit.get("pre_submit_screenshot_path")
+            add_artifact("screenshots", pre_submit_path)
+            if pre_submit_path:
+                additional_screenshot_paths.append(Path(str(pre_submit_path)))
+
+            submission_outcome = wait_for_reservation_submission_outcome(page)
+            confirmation_text_detected = submission_outcome == "confirmed"
+            portal_text = read_visible_page_text(page)
+            portal_response.clear()
+            portal_response.update(
+                {
+                    "attempt": captcha_attempt,
+                    "outcome": submission_outcome,
+                    "visible_text": portal_text,
+                }
+            )
+            captcha_audit["submission_outcome"] = submission_outcome
+            captcha_audit["duration_seconds"] = round(
+                max(time.monotonic() - attempt_started, 0.0),
+                3,
+            )
+            captcha_audit["portal_text"] = portal_text
+            reservation_confirmation_screenshot_path = save_screenshot(
+                page,
+                settings,
+                f"06-reserva-respuesta-portal-intento-{captcha_attempt}",
+            )
+            if reservation_confirmation_screenshot_path is not None:
+                captcha_audit["post_submit_screenshot_path"] = str(
+                    reservation_confirmation_screenshot_path
+                )
+                add_artifact("screenshots", reservation_confirmation_screenshot_path)
+                additional_screenshot_paths.append(reservation_confirmation_screenshot_path)
+            post_submit_html_path = save_sanitized_page_html(
+                page,
+                settings,
+                f"06-reserva-respuesta-portal-html-intento-{captcha_attempt}",
+            )
+            if post_submit_html_path is not None:
+                captcha_audit["post_submit_html_path"] = str(post_submit_html_path)
+                add_artifact("dom_snapshots", post_submit_html_path)
+            captcha_attempts.append(dict(captcha_audit))
+            latest_captcha_audit.clear()
+            latest_captcha_audit.update(captcha_audit)
+            if timing is not None:
+                timing.mark("confirmation_screenshot_saved")
+
+            if submission_outcome == "captcha_invalid" and captcha_attempt < max_captcha_attempts:
+                dismiss_reservation_confirmation(page)
+                refreshed = refresh_reservation_captcha(page, settings)
+                captcha_audit["captcha_refreshed_for_retry"] = refreshed
+                try:
+                    validate_selected_appointment(
+                        page,
+                        result.details,
+                        expected_person_name=expected_person_name,
+                    )
+                except AppointmentWorkflowUnavailable as exc:
+                    if timing is not None:
+                        timing.mark("reservation_finished")
+                    captcha_audit["retry_aborted_reason"] = str(exc)
+                    captcha_attempts[-1] = dict(captcha_audit)
+                    latest_captcha_audit.clear()
+                    latest_captcha_audit.update(captcha_audit)
+                    details = reservation_details()
+                    details["submission_outcome"] = "slot_lost"
+                    details["captcha_retry_aborted_reason"] = str(exc)
+                    return (
+                        AvailabilityResult(
+                            status="unavailable",
+                            message=(
+                                "El portal rechazo el captcha y luego el cupo seleccionado "
+                                "dejo de estar disponible."
+                            ),
+                            details=details,
+                        ),
+                        reservation_confirmation_screenshot_path or screenshot_path,
+                        collected_screenshots(reservation_confirmation_screenshot_path),
+                    )
+                captcha_attempts[-1] = dict(captcha_audit)
+                latest_captcha_audit.clear()
+                latest_captcha_audit.update(captcha_audit)
+                logger.info(
+                    "Retrying reservation captcha after invalid captcha response "
+                    "(attempt %s of %s)",
+                    captcha_attempt + 1,
+                    max_captcha_attempts,
+                )
+                continue
+
+            if submission_outcome != "unknown":
+                dismiss_reservation_confirmation(page)
+            if submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
+                if timing is not None:
+                    timing.mark("reservation_finished")
+                details = reservation_details()
+                details["submission_outcome"] = submission_outcome
+                messages = {
+                    "captcha_invalid": (
+                        "El portal rechazo el captcha de la reserva despues "
+                        "de reintentarlo."
                     ),
-                    details=details,
-                ),
-                primary_screenshot_path,
-                screenshot_paths,
-            )
-        if submission_outcome != "unknown":
-            dismiss_reservation_confirmation(page)
-        if submission_outcome in {"captcha_invalid", "slot_lost", "rejected"}:
-            if timing is not None:
-                timing.mark("reservation_finished")
-            details = add_reservation_timing_details(result.details, timing)
-            details["submission_outcome"] = submission_outcome
-            messages = {
-                "captcha_invalid": "El portal rechazo el captcha de la reserva.",
-                "slot_lost": "El cupo dejo de estar disponible antes de completar la reserva.",
-                "rejected": "El portal rechazo explicitamente la solicitud de reserva.",
-            }
-            return (
-                AvailabilityResult(
-                    status="unavailable" if submission_outcome == "slot_lost" else "error",
-                    message=messages[submission_outcome],
-                    details=details,
-                ),
-                reservation_confirmation_screenshot_path or screenshot_path,
-                [
-                    path
-                    for path in [reservation_confirmation_screenshot_path, screenshot_path]
-                    if path is not None
-                ],
-            )
+                    "slot_lost": "El cupo dejo de estar disponible antes de completar la reserva.",
+                    "rejected": "El portal rechazo explicitamente la solicitud de reserva.",
+                }
+                return (
+                    AvailabilityResult(
+                        status="unavailable" if submission_outcome == "slot_lost" else "error",
+                        message=messages[submission_outcome],
+                        details=details,
+                    ),
+                    reservation_confirmation_screenshot_path or screenshot_path,
+                    collected_screenshots(reservation_confirmation_screenshot_path),
+                )
+            break
+
         programmed_stage, confirmation_source = _confirm_programmed_stage_after_submission(
             page,
             settings,
@@ -247,7 +360,9 @@ def _complete_available_reservation(
         updated_process_stages_screenshot_path = _save_process_stages_snapshot(
             page,
             settings,
+            label="07-detalle-tramite-etapa-programado-confirmada",
         )
+        add_artifact("screenshots", updated_process_stages_screenshot_path)
     except ReservationSubmissionUncertain as exc:
         submission_started = True
         confirmation_text_detected = False
@@ -271,19 +386,14 @@ def _complete_available_reservation(
         submission_error = None
     if timing is not None:
         timing.mark("reservation_finished")
-    screenshot_paths = [
-        path
-        for path in [
-            reservation_confirmation_screenshot_path,
-            updated_process_stages_screenshot_path,
-            screenshot_path,
-        ]
-        if path is not None
-    ]
+    screenshot_paths = collected_screenshots(
+        reservation_confirmation_screenshot_path,
+        updated_process_stages_screenshot_path,
+    )
     if screenshot_paths:
         screenshot_path = screenshot_paths[0]
 
-    details = add_reservation_timing_details(result.details, timing)
+    details = reservation_details()
     details["submission_outcome"] = (
         "confirmed" if programmed_stage is not None or confirmation_text_detected else "unknown"
     )
@@ -298,26 +408,19 @@ def _complete_available_reservation(
         details["fecha_programada"] = programmed_stage.date
 
     if programmed_stage is None:
-        if confirmation_text_detected:
-            return (
-                AvailabilityResult(
-                    status="registered",
-                    message=(
-                        "La reserva fue registrada por mensaje de exito del portal, "
-                        "pero la revalidacion de etapa Programado quedo inconclusa."
-                    ),
-                    details=details,
-                ),
-                screenshot_path,
-                screenshot_paths,
+        message = (
+            "El portal mostro mensaje de exito despues de hacer click en Reservar, "
+            "pero no se confirmo la etapa Programado."
+            if confirmation_text_detected
+            else (
+                "Se resolvio el captcha y se hizo click en Reservar, "
+                "pero no se confirmo la etapa Programado."
             )
+        )
         return (
             AvailabilityResult(
                 status="reservation_unconfirmed",
-                message=(
-                    "Se resolvio el captcha y se hizo click en Reservar, "
-                    "pero no se confirmo la etapa Programado."
-                ),
+                message=message,
                 details=details,
             ),
             screenshot_path,
@@ -419,7 +522,7 @@ def _monitor_appointment_availability(
             result_screenshot_path = save_result_screenshot(
                 page,
                 settings,
-                "result-unknown",
+                "03-modal-reserva-citas-resultado-desconocido",
             )
             screenshot_path = result_screenshot_path or process_stages_screenshot_path
             return result, screenshot_path, screenshot_paths
@@ -761,7 +864,7 @@ def run_with_report(
                     logger.info("Finished appointment check: %s", result.status)
                     final_result = result
             except Exception:
-                screenshot_path = save_error_screenshot(page, settings)
+                screenshot_path = save_error_screenshot(page, settings, "error-flujo-principal")
                 raise
 
         if final_result is None:

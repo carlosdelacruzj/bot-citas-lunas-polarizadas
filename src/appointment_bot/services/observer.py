@@ -20,6 +20,8 @@ from appointment_bot.flows.appointments import (
     has_available_date_options,
     open_hidden_appointment_panel_for_observer,
     read_appointment_availability,
+    refresh_reservation_captcha,
+    save_reservation_captcha_image,
     select_available_appointment,
     select_available_site_for_observer,
 )
@@ -32,6 +34,8 @@ from appointment_bot.utils.screenshots import (
 )
 
 logger = logging.getLogger(__name__)
+
+OBSERVER_CAPTCHA_SAMPLE_LIMIT = 5
 
 
 def run_observer_with_report(
@@ -88,7 +92,7 @@ def run_observer_with_report(
                     error_screenshot_path = _save_sanitized_observer_screenshot(
                         page,
                         settings,
-                        "observer-error",
+                        "observer-error-panel-citas",
                     )
                 raise
     except Exception as exc:
@@ -163,6 +167,17 @@ def _monitor_observer(
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
             if result.status == "available":
+                captcha_paths = _collect_observer_captcha_samples(page, settings, cancel_event)
+                if captcha_paths:
+                    details = dict(result.details or {})
+                    details["observer_captcha_image_paths"] = [
+                        str(path) for path in captcha_paths
+                    ]
+                    result = AvailabilityResult(
+                        status=result.status,
+                        message=result.message,
+                        details=details,
+                    )
                 screenshot_path = _save_available_observer_screenshot(page, settings)
                 if on_check is not None:
                     on_check(result, screenshot_path, attempt, None)
@@ -268,7 +283,7 @@ def _save_available_observer_screenshot(page, settings: Settings) -> Path | None
     path = save_revealed_element_screenshot(
         page,
         settings,
-        "observer-available",
+        "observer-cupo-disponible",
         APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
         ready_check=lambda panel: ensure_reservation_captcha_loaded(
             panel,
@@ -278,3 +293,36 @@ def _save_available_observer_screenshot(page, settings: Settings) -> Path | None
     if path is None:
         logger.warning("Skipping observer evidence because the panel or CAPTCHA was not ready")
     return path
+
+
+def _collect_observer_captcha_samples(
+    page,
+    settings: Settings,
+    cancel_event: threading.Event | None,
+) -> list[Path]:
+    captcha_paths: list[Path] = []
+    for sample_number in range(1, OBSERVER_CAPTCHA_SAMPLE_LIMIT + 1):
+        if cancel_event is not None and cancel_event.is_set():
+            break
+
+        try:
+            captcha_paths.append(
+                save_reservation_captcha_image(
+                    page,
+                    settings,
+                    f"observer-captcha-sample-{sample_number}",
+                )
+            )
+        except Exception as exc:
+            logger.warning("Could not save observer CAPTCHA sample %s: %s", sample_number, exc)
+            break
+
+        if sample_number >= OBSERVER_CAPTCHA_SAMPLE_LIMIT:
+            break
+        if cancel_event is not None and cancel_event.is_set():
+            break
+        if not refresh_reservation_captcha(page, settings):
+            logger.warning("Could not refresh observer CAPTCHA after sample %s", sample_number)
+            break
+
+    return captcha_paths

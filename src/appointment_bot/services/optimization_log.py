@@ -96,6 +96,29 @@ def _entry_for_report(
             f"  - Screenshot principal: {_text(report.screenshot_path)}\n",
         ]
     )
+    if details.get("captcha_solution_sent"):
+        lines.append(f"  - CAPTCHA enviado: {_text(details.get('captcha_solution_sent'))}\n")
+    if details.get("captcha_image_path"):
+        lines.append(f"  - Imagen enviada a 2captcha: {_text(details.get('captcha_image_path'))}\n")
+    captcha_attempts = details.get("captcha_attempts")
+    if isinstance(captcha_attempts, list):
+        for item in captcha_attempts:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                "  - Intento CAPTCHA "
+                f"{_text(item.get('attempt'))}: "
+                f"outcome={_text(item.get('submission_outcome'))}, "
+                f"valor={_text(item.get('captcha_solution_sent'))}, "
+                f"duracion={_text(item.get('duration_seconds'))}s\n"
+            )
+    diagnostic_artifacts = details.get("diagnostic_artifacts")
+    if isinstance(diagnostic_artifacts, dict):
+        for key, values in diagnostic_artifacts.items():
+            if not isinstance(values, list):
+                continue
+            for value in values:
+                lines.append(f"  - Diagnostico {key}: {_text(value)}\n")
     for path in _extra_screenshots(report):
         lines.append(f"  - Screenshot adicional: {_text(path)}\n")
     lines.extend(
