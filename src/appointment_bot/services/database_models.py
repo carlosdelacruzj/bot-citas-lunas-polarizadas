@@ -67,6 +67,7 @@ class ServiceOrderSummary:
     amount_paid: str | None
     minimum_reservation_hour: int | None
     minimum_reservation_date: str | None
+    allowed_weekdays: tuple[int, ...] | None
     created_at: str
     updated_at: str
 

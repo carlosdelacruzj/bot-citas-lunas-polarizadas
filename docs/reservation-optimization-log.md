@@ -375,3 +375,83 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-124542-3a856c97-order-***-1a252103b6c54cc584c440d2fac84db5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. La confirmacion inmediata quedo debil y requiere revalidacion posterior. El tramo mas lento fue 2captcha (33.922s).
+## 2026-07-03 09:56:08 - order-70569448 - unavailable
+
+- Run: 20260703-095503-4b3cb1b2
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 17/07/2026 10:00
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 19.843s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.516s
+  - 2captcha: 12.234s
+  - Llenar CAPTCHA -> click: 1.562s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.641s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-70572463 -> order-70569448 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-095503-4b3cb1b2-order-***-d8f5d3508945459385775b0b42886588.png
+  - CAPTCHA enviado: tbadd
+  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-095503-4b3cb1b2-order-***-f7090985ce024ccd8e7638afc4a2934b.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=tbadd, duracion=14.531s
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-095503-4b3cb1b2-order-***-f7090985ce024ccd8e7638afc4a2934b.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-095503-4b3cb1b2-order-***-d087e72f2b274abdb6b00c82f8bf5677.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-095503-4b3cb1b2-order-***-57df8765f50c43009a479210ed0e57b6.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-095503-4b3cb1b2-order-***-d8f5d3508945459385775b0b42886588.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-095503-4b3cb1b2-order-***-.html
+  - Screenshot adicional: screenshots\05-reserva-antes-de-enviar-intento-1-***-095503-4b3cb1b2-order-***-57df8765f50c43009a479210ed0e57b6.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-095503-4b3cb1b2-order-***-1c9c1ba3525f4cf6b78fcffd16d300c1.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.234s).
+## 2026-07-03 10:14:36 - order-70569448 - reservation_unconfirmed
+
+- Run: 20260703-101348-01965760
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 20/07/2026 10:00
+- Origen deteccion: normal
+- Resultado: Reserva lograda por mensaje de exito del portal despues de enviar CAPTCHA y hacer click en Reservar.
+- Confirmacion posterior: El HTML guardado contiene `Su Cita a sido Registrado Satisfactoriamente`; desde el cambio del 2026-07-03 ese texto se toma como reserva exitosa sin exigir revalidacion adicional de `Programado`.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 12.500s
+  - Seleccion fecha/hora: 1.735s
+  - Imagen CAPTCHA: 0.563s
+  - 2captcha: 1.703s
+  - Llenar CAPTCHA -> click: 1.875s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 1.000s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-70572463 -> order-70569448 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-101348-***-order-***-e169851dd3184fccbec7e9b8e11edcfa.png
+  - CAPTCHA enviado: G7NSQ
+  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-101348-***-order-***-a0a679b55e794d008efce9bd8bb973c7.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=G7NSQ, duracion=4.594s
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-101348-***-order-***-a0a679b55e794d008efce9bd8bb973c7.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-101348-***-order-***-9182e9e2499d4da0a061f24da8e81e82.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-101348-***-order-***-208aa48c4c084ebf9f8b7275e47d47c5.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-101348-***-order-***-e169851dd3184fccbec7e9b8e11edcfa.png
+  - Diagnostico screenshots: screenshots\07-detalle-tramite-etapa-programado-confirmada-***-101348-***-order-***-de65737c0d5b435890ad5c8d1a94097f.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-101348-***-order-***-.html
+  - Screenshot adicional: screenshots\07-detalle-tramite-etapa-programado-confirmada-***-101348-***-order-***-de65737c0d5b435890ad5c8d1a94097f.png
+  - Screenshot adicional: screenshots\05-reserva-antes-de-enviar-intento-1-***-101348-***-order-***-208aa48c4c084ebf9f8b7275e47d47c5.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-101348-***-order-***-37a3a65891074917bacaeb2988c8c90e.png
+- Observacion tecnica:
+  - Esta reserva fue hecha por el worker anterior al parche de prioridad/reglas cargado despues de las 10:16. Por eso intento `20/07/2026 10:00` para Richard aunque la orden tenia hora minima `11`.
+  - El flujo tampoco cedio el cupo a Mayra, que tenia prioridad mayor y regla de fecha minima `2026-07-11`; ese comportamiento quedo corregido despues con prioridad estricta, filtro de orden tambien en observador y diferimiento antes de 2captcha.
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.875s).

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 19
+SCHEMA_VERSION = 20
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -84,6 +84,9 @@ def create_current_schema(connection: Connection) -> None:
                 minimum_hour IS NULL OR (minimum_hour >= 0 AND minimum_hour <= 23)
             ),
             minimum_date date,
+            allowed_weekdays smallint[] CHECK (
+                allowed_weekdays IS NULL OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
+            ),
             status text NOT NULL DEFAULT 'ready' CHECK (
                 status IN ('ready', 'paused', 'reserved_payment_pending', 'paid', 'archived')
             ),
@@ -308,6 +311,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "status"),
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
+        ("service_orders", "allowed_weekdays"),
         ("service_orders", "lease_owner"),
         ("service_orders", "lease_expires_at"),
         ("runs", "reservation_attempted"),
@@ -544,6 +548,21 @@ def migrate_database(connection: Connection) -> None:
             """
             ALTER TABLE service_orders
             ADD COLUMN minimum_date date
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (19,),
+        )
+        current_version = 19
+    if current_version == 19:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN allowed_weekdays smallint[] CHECK (
+                allowed_weekdays IS NULL
+                OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
+            )
             """
         )
         connection.execute(

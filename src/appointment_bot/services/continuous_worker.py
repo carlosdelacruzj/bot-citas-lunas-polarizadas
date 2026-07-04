@@ -87,6 +87,7 @@ class ContinuousWorker:
         self._unavailable_streak = 0
         self._hot_window_extended_until: datetime | None = None
         self._availability_alert_signatures: set[str] = set()
+        self._rapid_queue_initial_confirmed = 0
 
     @property
     def is_running(self) -> bool:
@@ -212,11 +213,16 @@ class ContinuousWorker:
                             continue
                         queue_requested = False
                         try:
+                            self._rapid_queue_initial_confirmed = 0
                             queue_requested = self._monitor_order(order)
                         finally:
                             self._release_order(order.order_id)
                         if queue_requested and self.settings.auto_reserve:
-                            self._run_rapid_queue(initial_confirmed_reservations=1)
+                            self._run_rapid_queue(
+                                initial_confirmed_reservations=(
+                                    self._rapid_queue_initial_confirmed
+                                )
+                            )
                     else:
                         if list_active_orders(self.settings):
                             self._update_state(
@@ -314,6 +320,21 @@ class ContinuousWorker:
             self._reset_errors()
             return False
         outcome = classify_order_report(report)
+        if bool((report.details or {}).get("deferred_to_higher_priority")):
+            update_order_state(
+                order.order_id,
+                status=report.status,
+                message=report.message,
+                exit_code=report.exit_code,
+                settings=self.settings,
+            )
+            self._reset_errors()
+            logger.info(
+                "Observer %s deferred a detected slot; starting the priority queue",
+                order.order_id,
+            )
+            self._rapid_queue_initial_confirmed = 0
+            return True
         if outcome is OrderReportOutcome.PAUSED:
             return False
         if outcome is OrderReportOutcome.BLOCKED:
@@ -337,8 +358,27 @@ class ContinuousWorker:
         if outcome is OrderReportOutcome.REGISTERED:
             mark_order_done(order.order_id, settings=self.settings)
             self._increment_confirmed()
+            self._rapid_queue_initial_confirmed = 1
             self._reset_errors()
             return True
+        if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
+            update_order_state(
+                order.order_id,
+                status=report.status,
+                message=report.message,
+                exit_code=report.exit_code,
+                backoff_seconds=self.settings.error_backoff_seconds,
+                settings=self.settings,
+            )
+            self._reset_errors()
+            send_telegram_message(
+                self.settings,
+                f"La orden {order.order_id} envio una reserva pero no se pudo "
+                "confirmar automaticamente como Programado. Se pausa solo esa orden "
+                "temporalmente para revision; el worker continuara con las demas "
+                "ordenes elegibles.",
+            )
+            return False
         if report.status == "available":
             update_order_state(
                 order.order_id,
@@ -787,7 +827,7 @@ class ContinuousWorker:
         self._extend_hot_window_after_availability()
 
     def _notify_immediate_availability_once(self, result: AvailabilityResult) -> None:
-        if result.status != "available":
+        if result.status not in {"available", "partial"}:
             return
         signature = _availability_result_signature(result)
         if signature in self._availability_alert_signatures:

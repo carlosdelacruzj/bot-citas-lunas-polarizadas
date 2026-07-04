@@ -10,6 +10,7 @@ from contextlib import ExitStack
 from dataclasses import replace
 from datetime import datetime
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.domain import RunReport
@@ -33,6 +34,7 @@ from appointment_bot.services.postgres_database import (
     get_claimed_service_order_runtime,
     get_reservation_constraints_for_order,
     list_active_orders,
+    list_observer_orders,
     mark_order_done,
     mark_order_submission_intent,
     mark_order_submission_pending,
@@ -53,6 +55,7 @@ logger = logging.getLogger(__name__)
 
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
 SERVICE_ORDER_LEASE_RENEW_INTERVAL_SECONDS = 60
+RESERVATION_RULE_TIMEZONE = ZoneInfo("America/Lima")
 
 
 class _CombinedEvent:
@@ -118,18 +121,21 @@ def _appointment_filter_for_order(
     order_id: str,
     settings: Settings,
 ) -> Callable[[str, str], bool] | None:
-    minimum_hour, minimum_date = get_reservation_constraints_for_order(
+    minimum_hour, minimum_date, allowed_weekdays = get_reservation_constraints_for_order(
         order_id,
         settings=settings,
     )
-    if minimum_hour is None and minimum_date is None:
-        return None
+    current_reservation_date = datetime.now(RESERVATION_RULE_TIMEZONE).date()
 
     def is_allowed(date_text: str, hour_text: str) -> bool:
+        parsed_date = _parse_appointment_date(date_text)
+        if parsed_date is None or parsed_date <= current_reservation_date:
+            return False
         if minimum_date is not None:
-            parsed_date = _parse_appointment_date(date_text)
-            if parsed_date is None or parsed_date < minimum_date:
+            if parsed_date < minimum_date:
                 return False
+        if allowed_weekdays is not None and parsed_date.isoweekday() not in allowed_weekdays:
+            return False
         if minimum_hour is not None:
             match = re.search(r"\b([01]?\d|2[0-3])(?::\d{2})?\b", hour_text)
             if match is None or int(match.group(1)) < minimum_hour:
@@ -505,6 +511,23 @@ def run_service_order(
         mark_reservation_attempt_pending(attempt_id, settings=settings)
         mark_order_submission_pending(order.order_id, settings=settings)
 
+    def can_solve_reservation_captcha() -> bool:
+        if not observer_mode:
+            return True
+        higher_priority_orders = [
+            candidate
+            for candidate in list_observer_orders(settings)
+            if candidate.priority > order.priority
+        ]
+        if not higher_priority_orders:
+            return True
+        logger.info(
+            "Deferring reservation for order %s because higher priority order %s is ready",
+            order.order_id,
+            higher_priority_orders[0].order_id,
+        )
+        return False
+
     with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
         effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
         report = run_with_report(
@@ -518,10 +541,10 @@ def run_service_order(
                 not heartbeat.lost_event.is_set()
                 and order_can_submit(order.order_id, lease_owner, settings)
             ),
-            is_allowed_appointment=(
-                None
-                if observer_mode
-                else _appointment_filter_for_order(order.order_id, settings)
+            can_solve_captcha=can_solve_reservation_captcha,
+            is_allowed_appointment=_appointment_filter_for_order(
+                order.order_id,
+                settings,
             ),
             on_submission_intent=on_submission_intent,
             on_submission_started=on_submission_started,

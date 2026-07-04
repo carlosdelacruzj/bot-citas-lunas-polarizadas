@@ -7,10 +7,13 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from appointment_bot.services.evidence_summary import export_evidence_summary
 from appointment_bot.services.postgres_database import (
     add_or_update_service_order_contact,
     create_service_order,
+    get_run,
     init_database,
+    list_runs,
     list_service_order_summaries,
     mark_order_done,
     mark_payment_paid,
@@ -38,6 +41,7 @@ PREFERRED_ORDER_FIELDS = (
     "amount_paid",
     "minimum_reservation_hour",
     "minimum_reservation_date",
+    "allowed_weekdays",
 )
 
 
@@ -77,6 +81,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--minimum-reservation-date",
         help="Fecha minima permitida para reservar, en formato YYYY-MM-DD o DD/MM/YYYY.",
     )
+    order_add_parser.add_argument(
+        "--allowed-weekdays",
+        help=(
+            "Dias permitidos ISO separados por coma: 1=lunes ... 6=sabado, 7=domingo."
+        ),
+    )
 
     subparsers.add_parser("orders", help="Lista trabajos de reserva.")
 
@@ -104,6 +114,22 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("reports/daily"),
         help="Directorio donde se guarda el reporte general.",
+    )
+    evidence_summary_parser = subparsers.add_parser(
+        "evidence-summary",
+        help="Genera CSV/Markdown compactos para revisar optimizaciones.",
+    )
+    evidence_summary_parser.add_argument(
+        "--days",
+        type=int,
+        default=7,
+        help="Cantidad de dias hacia atras a incluir.",
+    )
+    evidence_summary_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/evidence"),
+        help="Directorio donde se guardan los resumenes de evidencia.",
     )
 
     contact_parser = subparsers.add_parser("contact", help="Agrega o actualiza WhatsApp.")
@@ -202,6 +228,7 @@ def run(argv: Sequence[str] | None = None) -> int:
             charge_required=not args.no_charge,
             minimum_reservation_hour=args.minimum_reservation_hour,
             minimum_reservation_date=args.minimum_reservation_date,
+            allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),
         )
         print(f"Trabajo guardado: {result.order_id}")
         return 0
@@ -229,6 +256,17 @@ def run(argv: Sequence[str] | None = None) -> int:
     if args.command == "daily-report":
         path = generate_daily_report_image(output_dir=args.output_dir)
         print(f"Reporte general generado: {path}")
+        return 0
+
+    if args.command == "evidence-summary":
+        result = export_evidence_summary(
+            _iter_run_details(),
+            output_dir=args.output_dir,
+            days=args.days,
+        )
+        print(f"Eventos exportados: {result.event_count}")
+        print(f"CSV generado: {result.csv_path}")
+        print(f"Resumen generado: {result.markdown_path}")
         return 0
 
     if args.command == "contact":
@@ -271,6 +309,26 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     parser.error(f"Comando no soportado: {args.command}")
     return 2
+
+
+def _parse_allowed_weekdays(value: str | None) -> list[int] | None:
+    if not value:
+        return None
+    return [int(item.strip()) for item in value.split(",") if item.strip()]
+
+
+def _iter_run_details():
+    offset = 0
+    page_size = 200
+    while True:
+        page = list_runs(limit=page_size, offset=offset)
+        if not page:
+            return
+        for item in page:
+            detail = get_run(item.run_id)
+            if detail is not None:
+                yield detail
+        offset += len(page)
 
 
 def main() -> None:

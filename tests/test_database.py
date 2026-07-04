@@ -55,6 +55,7 @@ class DatabaseTests(unittest.TestCase):
             self.assertIn(("worker_state", "owner_token"), columns)
             self.assertIn(("worker_state", "current_order_id"), columns)
             self.assertIn(("service_orders", "minimum_date"), columns)
+            self.assertIn(("service_orders", "allowed_weekdays"), columns)
             self.assertNotIn(("service_orders", "active"), columns)
             self.assertNotIn(("portal_accounts", "provider"), columns)
             self.assertNotIn(("applicants", "document_type"), columns)

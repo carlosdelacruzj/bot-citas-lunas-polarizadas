@@ -44,6 +44,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
                 else None
             ),
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
+            allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
         )
     except (TypeError, ValueError) as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
@@ -138,6 +139,14 @@ def _optional_text(payload: dict[str, Any], name: str) -> str | None:
     if name not in payload or payload[name] in {None, ""}:
         return None
     return str(payload[name]).strip()
+
+
+def _optional_weekdays(value: Any) -> list[int] | None:
+    if value in {None, ""}:
+        return None
+    if isinstance(value, list):
+        return [int(item) for item in value]
+    return [int(item.strip()) for item in str(value).split(",") if item.strip()]
 
 
 def _optional_bool(payload: dict[str, Any], name: str, *, default: bool) -> bool:

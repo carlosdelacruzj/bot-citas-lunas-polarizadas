@@ -34,7 +34,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
-                return_value=(None, date(2026, 7, 11)),
+                return_value=(None, date(2026, 7, 11), None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
@@ -49,7 +49,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
-                return_value=(11, date(2026, 7, 11)),
+                return_value=(11, date(2026, 7, 11), None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
@@ -58,6 +58,20 @@ class OrderExecutionTests(unittest.TestCase):
             self.assertFalse(allowed("10/07/2026", "12:00"))
             self.assertFalse(allowed("11/07/2026", "10:00"))
             self.assertTrue(allowed("11/07/2026", "11:00"))
+
+    def test_appointment_filter_blocks_non_allowed_weekdays(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            with patch(
+                "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
+                return_value=(None, None, (6,)),
+            ):
+                allowed = _appointment_filter_for_order("order-1", settings)
+
+            self.assertIsNotNone(allowed)
+            assert allowed is not None
+            self.assertTrue(allowed("11/07/2026", "10:00"))
+            self.assertFalse(allowed("12/07/2026", "10:00"))
 
     def test_rapid_sweep_continues_after_routine_results(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

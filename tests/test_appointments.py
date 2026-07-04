@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,12 @@ from appointment_bot.flows.appointments import (
 )
 from appointment_bot.flows.stages import appointment_stage_result
 from tests.helpers import make_settings
+
+_ONE_PIXEL_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    b"\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+)
 
 
 class _Locator:
@@ -78,7 +85,27 @@ class _IsolatedCaptchaMedia:
 
     def screenshot(self, *, path, **kwargs):
         self.screenshot_paths.append(path)
-        Path(path).write_bytes(b"captcha")
+        Path(path).write_bytes(_ONE_PIXEL_PNG)
+
+    def bounding_box(self):
+        return {"width": 210, "height": 90}
+
+    def evaluate(self, script):
+        data_uri = (
+            "data:image/jpeg;base64,"
+            + base64.b64encode(_ONE_PIXEL_PNG).decode("ascii")
+        )
+        if "return element.currentSrc || element.getAttribute" in script:
+            return data_uri
+        return {
+            "devicePixelRatio": 2,
+            "tagName": "IMG",
+            "cssWidth": 210,
+            "cssHeight": 90,
+            "naturalWidth": 210,
+            "naturalHeight": 90,
+            "currentSrc": data_uri,
+        }
 
 
 class _IsolatedCaptchaMediaGroup:
@@ -197,17 +224,39 @@ class AppointmentFlowTests(unittest.TestCase):
             root = Path(directory)
             settings = make_settings(root)
             page = _IsolatedCaptchaPage()
+            captcha_audit: dict[str, object] = {}
 
             with patch(
                 "appointment_bot.flows.appointments.ensure_reservation_captcha_loaded",
                 return_value=True,
             ):
-                path = save_reservation_captcha_image(page, settings, "captcha-test")
+                path = save_reservation_captcha_image(
+                    page,
+                    settings,
+                    "captcha-test",
+                    captcha_audit=captcha_audit,
+                )
 
             self.assertTrue(path.exists())
             self.assertEqual(path.parent, settings.screenshots_dir / "captchas")
             self.assertEqual(page.panel.media.screenshot_paths, [str(path)])
             self.assertFalse(page.panel.screenshot_called)
+            self.assertEqual(captcha_audit["captcha_image_width"], 1)
+            self.assertEqual(captcha_audit["captcha_image_height"], 1)
+            self.assertEqual(captcha_audit["captcha_element_css_width"], 210)
+            self.assertEqual(captcha_audit["captcha_element_css_height"], 90)
+            self.assertEqual(captcha_audit["captcha_device_scale_factor"], 2)
+            self.assertEqual(captcha_audit["captcha_natural_width"], 210)
+            self.assertEqual(captcha_audit["captcha_natural_height"], 90)
+            original_path = Path(str(captcha_audit["captcha_original_html_path"]))
+            self.assertTrue(original_path.exists())
+            self.assertEqual(original_path.read_bytes(), _ONE_PIXEL_PNG)
+            self.assertEqual(captcha_audit["captcha_original_html_source"], "data_uri")
+            self.assertEqual(captcha_audit["captcha_original_html_mime"], "image/jpeg")
+            self.assertEqual(captcha_audit["captcha_original_html_detected_format"], "png")
+            self.assertEqual(captcha_audit["captcha_original_html_bytes"], len(_ONE_PIXEL_PNG))
+            self.assertEqual(captcha_audit["captcha_original_html_width"], 1)
+            self.assertEqual(captcha_audit["captcha_original_html_height"], 1)
 
     def test_broken_captcha_image_is_reloaded_before_capture(self) -> None:
         panel = _CaptchaPanel()

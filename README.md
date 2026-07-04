@@ -95,6 +95,19 @@ Cada revision del worker continuo agrega metricas en `observer_window_metrics`, 
 por fecha, ventana, fuente, estado y sede. La tabla guarda conteos, errores, duracion
 acumulada y el ultimo resultado visto para decidir con datos que ventanas conviene mantener.
 
+## Revision De Optimizaciones
+
+Antes de cambiar ventanas calientes, frecuencia de requests, CAPTCHA, concurrencia o
+limpieza de evidencia, empezar por
+[`docs/optimization-review-guide.md`](docs/optimization-review-guide.md). La ruta rapida es:
+`docs/evidence-index.csv` para filtrar eventos, `docs/evidence-summary.md` para lectura
+digerida, y las bitacoras largas solo cuando un caso lo amerita. Para regenerar un resumen
+desde PostgreSQL:
+
+```powershell
+appointment-bot-client evidence-summary --days 7 --output-dir reports/evidence
+```
+
 En modo recuperacion se recomienda `AUTO_RESERVE=false`, `QUEUE_MAX_RESERVATIONS_PER_RUN=1`
 y Telegram activo para que una persona confirme manualmente cuando aparezca una alerta. Si
 se activa `AUTO_RESERVE=true`, la cola multi-cliente solo debe correr despues de una

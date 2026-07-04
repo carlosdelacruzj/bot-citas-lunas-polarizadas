@@ -15,11 +15,10 @@ from appointment_bot.domain import (
     RunReport,
 )
 from appointment_bot.flows.appointments import (
-    APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
-    PROCESS_STAGES_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
+    ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
     click_program_action,
     dismiss_reservation_confirmation,
@@ -151,6 +150,7 @@ def _complete_available_reservation(
     timing: ReservationTiming | None = None,
     cancel_event: threading.Event | None = None,
     can_submit: Callable[[], bool] | None = None,
+    can_solve_captcha: Callable[[], bool] | None = None,
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
@@ -218,19 +218,50 @@ def _complete_available_reservation(
         for captcha_attempt in range(1, max_captcha_attempts + 1):
             attempt_started = time.monotonic()
             captcha_audit: dict[str, object] = {}
-            page = solve_reservation_captcha_and_click_reserve(
-                page,
-                settings,
-                cancel_event=cancel_event,
-                can_submit=can_submit,
-                expected_details=result.details,
-                expected_person_name=expected_person_name,
-                on_submission_intent=mark_submission_intent,
-                on_submission_started=mark_submission_started,
-                captcha_audit=captcha_audit,
-                attempt_number=captcha_attempt,
-                timing=timing,
-            )
+            try:
+                page = solve_reservation_captcha_and_click_reserve(
+                    page,
+                    settings,
+                    cancel_event=cancel_event,
+                    can_submit=can_submit,
+                    can_solve_captcha=can_solve_captcha,
+                    expected_details=result.details,
+                    expected_person_name=expected_person_name,
+                    on_submission_intent=mark_submission_intent,
+                    on_submission_started=mark_submission_started,
+                    captcha_audit=captcha_audit,
+                    attempt_number=captcha_attempt,
+                    timing=timing,
+                )
+            except ReservationDeferredForPriority as exc:
+                if timing is not None:
+                    timing.mark("reservation_finished")
+                captcha_audit.update(exc.captcha_audit)
+                latest_captcha_audit.clear()
+                latest_captcha_audit.update(captcha_audit)
+                add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
+                add_artifact("captcha_images", captcha_audit.get("captcha_panel_image_path"))
+                captcha_attempts.append(dict(captcha_audit))
+                screenshot_candidates = collected_screenshots(
+                    Path(str(captcha_audit["captcha_panel_image_path"]))
+                    if captcha_audit.get("captcha_panel_image_path")
+                    else None,
+                    Path(str(captcha_audit["captcha_image_path"]))
+                    if captcha_audit.get("captcha_image_path")
+                    else None,
+                )
+                details = reservation_details()
+                details["deferred_to_higher_priority"] = True
+                details["submission_outcome"] = "priority_deferred"
+                return (
+                    AvailabilityResult(
+                        status="partial",
+                        message=str(exc),
+                        details=details,
+                    ),
+                    screenshot_candidates[0] if screenshot_candidates else screenshot_path,
+                    screenshot_candidates,
+                )
             latest_captcha_audit.clear()
             latest_captcha_audit.update(captcha_audit)
             add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
@@ -281,6 +312,24 @@ def _complete_available_reservation(
             latest_captcha_audit.update(captcha_audit)
             if timing is not None:
                 timing.mark("confirmation_screenshot_saved")
+
+            if confirmation_text_detected:
+                if timing is not None:
+                    timing.mark("reservation_finished")
+                details = reservation_details()
+                details["submission_outcome"] = "confirmed"
+                details["confirmacion_texto"] = "detectada"
+                details["confirmacion_etapa"] = "asumida por mensaje del portal"
+                details["confirmation_source"] = "portal_success_text"
+                return (
+                    AvailabilityResult(
+                        status="registered",
+                        message="La reserva fue confirmada por mensaje de exito del portal.",
+                        details=details,
+                    ),
+                    reservation_confirmation_screenshot_path or screenshot_path,
+                    collected_screenshots(reservation_confirmation_screenshot_path),
+                )
 
             if submission_outcome == "captcha_invalid" and captcha_attempt < max_captcha_attempts:
                 dismiss_reservation_confirmation(page)
@@ -442,6 +491,81 @@ def _complete_available_reservation(
     )
 
 
+def _capture_blocked_captcha_evidence(
+    page,
+    settings,
+    result: AvailabilityResult,
+    screenshot_path: Path | None,
+    timing: ReservationTiming | None = None,
+    cancel_event: threading.Event | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    can_solve_captcha: Callable[[], bool] | None = None,
+    expected_person_name: str | None = None,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    captcha_audit: dict[str, object] = {}
+    deferred_to_higher_priority = (
+        can_solve_captcha is not None and not can_solve_captcha()
+    )
+    try:
+        solve_reservation_captcha_and_click_reserve(
+            page,
+            settings,
+            cancel_event=cancel_event,
+            can_submit=can_submit,
+            can_solve_captcha=lambda: False,
+            expected_details=result.details,
+            expected_person_name=expected_person_name,
+            captcha_audit=captcha_audit,
+            attempt_number=1,
+            timing=timing,
+        )
+    except ReservationDeferredForPriority as exc:
+        captcha_audit.update(exc.captcha_audit)
+    if timing is not None:
+        timing.mark("reservation_finished")
+
+    panel_path = (
+        Path(str(captcha_audit["captcha_panel_image_path"]))
+        if captcha_audit.get("captcha_panel_image_path")
+        else None
+    )
+    captcha_path = (
+        Path(str(captcha_audit["captcha_image_path"]))
+        if captcha_audit.get("captcha_image_path")
+        else None
+    )
+    screenshot_paths = [
+        path for path in [panel_path, captcha_path, screenshot_path] if path is not None
+    ]
+    details = add_reservation_timing_details(result.details, timing)
+    details.update(captcha_audit)
+    details["captcha_attempts"] = [dict(captcha_audit)]
+    details["submission_outcome"] = (
+        "priority_deferred" if deferred_to_higher_priority else "blocked_by_order_rule"
+    )
+    if deferred_to_higher_priority:
+        details["deferred_to_higher_priority"] = True
+    captcha_images = [
+        str(path)
+        for path in [
+            captcha_audit.get("captcha_image_path"),
+            captcha_audit.get("captcha_panel_image_path"),
+        ]
+        if path
+    ]
+    if captcha_images:
+        details["diagnostic_artifacts"] = {"captcha_images": captcha_images}
+    return (
+        AvailabilityResult(
+            status="partial",
+            message=result.message,
+            details=details,
+        ),
+        screenshot_paths[0] if screenshot_paths else screenshot_path,
+        screenshot_paths,
+    )
+
+
 def _monitor_appointment_availability(
     page,
     settings,
@@ -450,6 +574,7 @@ def _monitor_appointment_availability(
     on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
     can_submit: Callable[[], bool] | None = None,
+    can_solve_captcha: Callable[[], bool] | None = None,
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
@@ -560,6 +685,25 @@ def _monitor_appointment_availability(
                 session_age_seconds=time.monotonic() - session_started,
                 check_duration_seconds=time.monotonic() - check_started,
             )
+            if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
+                if on_check is not None:
+                    on_check(selected_result, attempt, None)
+                captured_result, screenshot_path, screenshot_paths = (
+                    _capture_blocked_captcha_evidence(
+                        page,
+                        settings,
+                        selected_result,
+                        screenshot_path,
+                        timing,
+                        cancel_event,
+                        can_submit,
+                        can_solve_captcha,
+                        expected_person_name,
+                    )
+                )
+                if on_check is not None:
+                    on_check(captured_result, attempt, None)
+                return captured_result, screenshot_path, screenshot_paths
             if not settings.auto_reserve:
                 if selected_result.status == "available":
                     if on_check is not None:
@@ -598,6 +742,7 @@ def _monitor_appointment_availability(
                         timing,
                         cancel_event,
                         can_submit,
+                        can_solve_captcha,
                         on_submission_intent,
                         on_submission_started,
                         expected_person_name,
@@ -761,6 +906,7 @@ def run_with_report(
     on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
     can_submit: Callable[[], bool] | None = None,
+    can_solve_captcha: Callable[[], bool] | None = None,
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
@@ -844,6 +990,7 @@ def run_with_report(
                         on_check,
                         is_allowed_appointment,
                         can_submit,
+                        can_solve_captcha,
                         on_submission_intent,
                         on_submission_started,
                         expected_person_name,
@@ -925,8 +1072,28 @@ def _cleanup_unconfirmed_session_screenshots(report: RunReport) -> None:
         "reservation_unconfirmed",
     }:
         return
+    details = report.details or {}
+    artifacts = details.get("diagnostic_artifacts")
+    if details.get("captcha_attempts") or (
+        isinstance(artifacts, dict) and artifacts.get("captcha_images")
+    ):
+        return
+    if report.status == "partial" and _has_partial_availability_evidence(details):
+        return
 
     remove_screenshot_paths(report_screenshot_paths(report))
+
+
+def _has_partial_availability_evidence(details: dict) -> bool:
+    date_text = str(details.get("fecha") or details.get("appointment_date") or "").strip()
+    hour_text = str(details.get("hora") or details.get("appointment_hour") or "").strip()
+    if bool(details.get("blocked_by_order_rule")) or bool(
+        details.get("blocked_selected_for_evidence")
+    ):
+        return True
+    if date_text and date_text.casefold() != "sin cupos":
+        return True
+    return bool(hour_text and hour_text.casefold() != "sin cupos")
 
 
 def _with_client_context(

@@ -38,15 +38,27 @@ def notify_result(
 
         if result.status in {
             "available",
-            "partial",
             "unknown",
             "registered",
             "reservation_unconfirmed",
         }:
             return _send_result_notification(result, settings, effective_screenshot_paths)
 
-        if result.status == "unavailable" and settings.telegram_notify_unavailable:
-            return send_telegram_message(settings, _format_result_message(result))
+        if result.status == "partial":
+            if _should_notify_partial_result(result):
+                return _send_result_notification(result, settings, effective_screenshot_paths)
+            logger.info("Skipping Telegram notification for partial availability without hour.")
+            return not settings.telegram_enabled
+
+        if result.status == "unavailable":
+            if _has_reservation_evidence(result) and effective_screenshot_paths:
+                return _send_result_notification(
+                    result,
+                    settings,
+                    effective_screenshot_paths,
+                )
+            if settings.telegram_notify_unavailable:
+                return send_telegram_message(settings, _format_result_message(result))
 
         if result.status == "completed":
             if _programmed_details(result) is not None:
@@ -133,7 +145,7 @@ def send_telegram_message(
 
 
 def notify_immediate_availability(result: AvailabilityResult, settings: Settings) -> bool:
-    if result.status != "available":
+    if not _should_send_immediate_availability(result):
         return False
     return send_telegram_message(
         settings,
@@ -157,8 +169,36 @@ def notify_deferred_queue_summary(
     settings: Settings,
     deferred_reports: list,
 ) -> bool:
+    deferred_reports = [
+        report
+        for report in deferred_reports
+        if report.status != "partial"
+        or _should_notify_partial_result(
+            AvailabilityResult(
+                status=report.status,
+                message=report.message,
+                details=report.details,
+            )
+        )
+    ]
     if not deferred_reports:
         return not settings.telegram_enabled
+
+    if len(deferred_reports) == 1:
+        item = deferred_reports[0]
+        result = AvailabilityResult(
+            status=item.status,
+            message=item.message,
+            details=item.details,
+        )
+        paths = [Path(path) for path in item.screenshot_paths or []]
+        if not paths and item.screenshot_path:
+            paths = [Path(item.screenshot_path)]
+        return notify_deferred_result(
+            result,
+            settings,
+            screenshot_paths=_primary_evidence_paths(paths),
+        )
 
     lines = [
         "Barrido de evidencias de la cola rapida.",
@@ -177,6 +217,7 @@ def notify_deferred_queue_summary(
         paths = [Path(path) for path in item.screenshot_paths or []]
         if not paths and item.screenshot_path:
             paths = [Path(item.screenshot_path)]
+        paths = _primary_evidence_paths(paths)
         delivered = notify_deferred_result(result, settings, screenshot_paths=paths) or delivered
     return delivered
 
@@ -240,6 +281,55 @@ def _send_result_notification(
         return _send_telegram_photos(settings, screenshot_paths, message)
 
     return send_telegram_message(settings, message)
+
+
+def _has_reservation_evidence(result: AvailabilityResult) -> bool:
+    details = result.details or {}
+    artifacts = details.get("diagnostic_artifacts")
+    return bool(
+        details.get("captcha_attempts")
+        or details.get("submission_outcome") in {"slot_lost", "priority_deferred"}
+        or (isinstance(artifacts, dict) and artifacts.get("captcha_images"))
+    )
+
+
+def _should_notify_partial_result(result: AvailabilityResult) -> bool:
+    details = result.details or {}
+    artifacts = details.get("diagnostic_artifacts")
+    return bool(
+        details.get("captcha_attempts")
+        or details.get("submission_outcome")
+        in {"blocked_by_order_rule", "priority_deferred"}
+        or details.get("blocked_selected_for_evidence")
+        or (isinstance(artifacts, dict) and artifacts.get("captcha_images"))
+    )
+
+
+def _should_send_immediate_availability(result: AvailabilityResult) -> bool:
+    if result.status == "available":
+        return True
+    if result.status != "partial":
+        return False
+
+    details = result.details or {}
+    date, hour = _appointment_datetime_details(details)
+    if not date or not hour:
+        return False
+    return bool(
+        details.get("blocked_by_order_rule")
+        or details.get("blocked_selected_for_evidence")
+        or details.get("submission_outcome") in {"blocked_by_order_rule", "priority_deferred"}
+    )
+
+
+def _primary_evidence_paths(image_paths: list[Path]) -> list[Path]:
+    if not image_paths:
+        return []
+    for image_path in image_paths:
+        lower_name = image_path.name.lower()
+        if "captcha" not in lower_name:
+            return [image_path]
+    return [image_paths[0]]
 
 
 def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
@@ -365,10 +455,20 @@ def _format_immediate_availability_message(result: AvailabilityResult) -> str:
     lines.extend(
         [
             "",
-            "El bot seguira intentando reservar; revisa manualmente si puedes.",
+            _immediate_availability_next_step(details),
         ]
     )
     return "\n".join(lines)
+
+
+def _immediate_availability_next_step(details: dict) -> str:
+    if details.get("blocked_by_order_rule") or (
+        details.get("submission_outcome") == "blocked_by_order_rule"
+    ):
+        return "No cumple la regla de esta orden; el bot pasara al siguiente usuario."
+    if details.get("submission_outcome") == "priority_deferred":
+        return "Hay una orden de mayor prioridad lista; el bot priorizara esa reserva."
+    return "El bot seguira intentando reservar; revisa manualmente si puedes."
 
 
 def _format_registered_message(result: AvailabilityResult) -> str:

@@ -12,7 +12,11 @@ from appointment_bot.domain import (
     RunReport,
     sanitize_details,
 )
-from appointment_bot.services.optimization_log import append_optimization_case
+from appointment_bot.services.evidence_summary import append_evidence_case
+from appointment_bot.services.optimization_log import (
+    append_optimization_case,
+    append_partial_availability_case,
+)
 from appointment_bot.services.postgres_database import (
     RunRecord,
     record_run_outcome,
@@ -132,6 +136,14 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
         append_optimization_case(report)
     except Exception as exc:
         logger.warning("Could not append optimization log entry: %s", exc)
+    try:
+        append_partial_availability_case(report)
+    except Exception as exc:
+        logger.warning("Could not append partial availability log entry: %s", exc)
+    try:
+        append_evidence_case(report)
+    except Exception as exc:
+        logger.warning("Could not append evidence summary entry: %s", exc)
 
 
 def _report_should_record_reservation(report: RunReport) -> bool:

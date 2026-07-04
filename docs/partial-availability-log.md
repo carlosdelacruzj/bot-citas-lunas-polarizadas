@@ -1,0 +1,327 @@
+# Bitacora de disponibilidad parcial
+
+Archivo curado y automatico para senales donde aparece fecha, hora parcial o disponibilidad bloqueada por regla sin llegar necesariamente a resolver CAPTCHA. Complementa la bitacora de optimizacion de reservas y ayuda a detectar patrones previos a cupos reales.
+
+## 2026-07-03 12:50:00 - order-70572463 - partial
+
+- Run: 20260703-124910-f22cdf16
+- Orden: order-70572463
+- Cliente: no registrado
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: si
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 344ms
+  - Duracion corrida: no registrado
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-124910-f22cdf16-order-70572463-5e53dda2cd0943ff90ebe8aa6a4d5d11.png
+- Observacion tecnica:
+  - Aparecio fecha del dia actual sin hora seleccionable entre 12:49 y 12:50. La senal vino de fetch_probe y no era reservable por la nueva regla de no reservar el dia actual.
+
+## 2026-07-03 12:50:52 - order-45257623 - partial
+
+- Run: 20260703-125003-74f05677
+- Orden: order-45257623
+- Cliente: no registrado
+- Cuenta: 45***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: si
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 313ms
+  - Duracion corrida: no registrado
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-125003-74f05677-order-45257623-f17068858cb24f3d9b68b832753ac294.png
+- Observacion tecnica:
+  - El mismo patron se repitio para Percy unos segundos despues: fecha del dia actual visible por fetch_probe, pero hora seguia en Sin Cupos.
+## 2026-07-03 17:15:00 - order-70572463 - partial
+
+- Run: 20260703-171408-cc5a3747
+- Orden: order-***
+- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 328ms
+  - Duracion corrida: 52.534s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171408-cc5a3747-order-***-a129cda00f584bf2b15028e876457403.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:15:54 - order-45257623 - partial
+
+- Run: 20260703-171500-a4c438e8
+- Orden: order-***
+- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cuenta: 45***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 313ms
+  - Duracion corrida: 53.242s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171500-a4c438e8-order-***-813db4cba6434de6b98b32185c97707e.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:16:41 - order-70572463 - partial
+
+- Run: 20260703-171554-c25ac5b1
+- Orden: order-***
+- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 328ms
+  - Duracion corrida: 47.095s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171554-c25ac5b1-order-***-197eaccc196b45dfb027f9bb11d684f7.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:17:28 - order-45257623 - partial
+
+- Run: 20260703-171641-55b49fce
+- Orden: order-***
+- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cuenta: 45***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 313ms
+  - Duracion corrida: 47.221s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171641-55b49fce-order-***-3534b84f0f154cd8a0516676e00b1ec1.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:18:20 - order-70572463 - partial
+
+- Run: 20260703-171728-00d96c47
+- Orden: order-***
+- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 312ms
+  - Duracion corrida: 51.622s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171728-00d96c47-order-***-201d3ce9a4384c3c896e68109a886e5a.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:19:13 - order-45257623 - partial
+
+- Run: 20260703-171820-a64d7cd9
+- Orden: order-***
+- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cuenta: 45***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 328ms
+  - Duracion corrida: 53.496s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171820-a64d7cd9-order-***-21c2b8bd0d6e40f295338fd86cb4d73e.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-03 17:20:02 - order-70572463 - partial
+
+- Run: 20260703-171914-76935c2d
+- Orden: order-***
+- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/07/2026
+- Hora detectada: Sin Cupos
+- Opciones fecha: 03/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 438ms
+  - Duracion corrida: 48.969s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\03-modal-reserva-citas-disponibilidad-parcial-***-171914-76935c2d-order-***-bc33afa919824504bd52b84d35847f01.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-04 08:48:31 - order-70572463 - partial
+
+- Run: 20260704-084813-bd516f55
+- Orden: order-***
+- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cuenta: 70***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 08/07/2026
+- Hora detectada: 10:00
+- Opciones fecha: 08/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 18.329s
+  - Seleccion fecha/hora: 1.672s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-084813-bd516f55-order-***-f7fdf104ac51425ea1701eac85f4f38e.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-084813-bd516f55-order-***-f7fdf104ac51425ea1701eac85f4f38e.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-084813-bd516f55-order-***-282d08661fdf4c699b7c8c6c6ce70836.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

@@ -62,6 +62,7 @@ def create_service_order(
     charge_required: bool = True,
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
+    allowed_weekdays: Iterable[int] | None = None,
     settings: Settings | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)
@@ -76,6 +77,7 @@ def create_service_order(
     if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
         raise ValueError("minimum_reservation_hour must be between 0 and 23.")
     parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
+    parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
 
     now = _now()
     encrypted_password = _credential_cipher(settings).encrypt(password)
@@ -145,9 +147,9 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                minimum_hour, minimum_date, status, created_at, updated_at
+                minimum_hour, minimum_date, allowed_weekdays, status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
@@ -155,6 +157,10 @@ def create_service_order(
                 charge_required = excluded.charge_required,
                 minimum_hour = COALESCE(excluded.minimum_hour, service_orders.minimum_hour),
                 minimum_date = COALESCE(excluded.minimum_date, service_orders.minimum_date),
+                allowed_weekdays = COALESCE(
+                    excluded.allowed_weekdays,
+                    service_orders.allowed_weekdays
+                ),
                 status = CASE
                     WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
                         THEN service_orders.status
@@ -170,6 +176,7 @@ def create_service_order(
                 charge_required,
                 minimum_reservation_hour,
                 parsed_minimum_date,
+                parsed_allowed_weekdays,
                 now,
                 now,
             ),
@@ -210,7 +217,8 @@ def list_service_order_summaries(
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
                    so.minimum_hour AS minimum_reservation_hour,
-                   so.minimum_date AS minimum_reservation_date
+                   so.minimum_date AS minimum_reservation_date,
+                   so.allowed_weekdays
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             LEFT JOIN applicant_contacts ac
@@ -345,25 +353,27 @@ def get_minimum_reservation_hour_for_order(
 def get_reservation_constraints_for_order(
     order_id: str,
     settings: Settings | None = None,
-) -> tuple[int | None, date | None]:
+) -> tuple[int | None, date | None, tuple[int, ...] | None]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT minimum_hour, minimum_date
+            SELECT minimum_hour, minimum_date, allowed_weekdays
             FROM service_orders
             WHERE order_id = %s
             """,
             (order_id,),
         ).fetchone()
     if row is None:
-        return None, None
+        return None, None, None
     minimum_hour = row["minimum_hour"]
     minimum_date = row["minimum_date"]
+    allowed_weekdays = row["allowed_weekdays"]
     return (
         int(minimum_hour) if minimum_hour is not None else None,
         minimum_date if isinstance(minimum_date, date) else None,
+        tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None,
     )
 
 
@@ -498,7 +508,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             LEFT JOIN order_state os ON os.order_id = so.order_id
             WHERE so.status = 'ready'
               AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
-            ORDER BY os.last_run_at ASC NULLS FIRST, so.created_at ASC
+            ORDER BY so.priority DESC, os.last_run_at ASC NULLS FIRST, so.created_at ASC
             """
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]
@@ -1676,6 +1686,11 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
                 else None
             )
         ),
+        allowed_weekdays=(
+            tuple(int(day) for day in row["allowed_weekdays"])
+            if row["allowed_weekdays"]
+            else None
+        ),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
     )
@@ -1858,6 +1873,18 @@ def _parse_minimum_reservation_date(value: str | date | None) -> date | None:
         except ValueError:
             continue
     raise ValueError("minimum_reservation_date must use YYYY-MM-DD or DD/MM/YYYY.")
+
+
+def _parse_allowed_weekdays(value: Iterable[int] | None) -> list[int] | None:
+    if value is None:
+        return None
+    days = sorted({int(day) for day in value})
+    if not days:
+        return None
+    invalid = [day for day in days if day < 1 or day > 7]
+    if invalid:
+        raise ValueError("allowed_weekdays must use ISO days from 1 to 7.")
+    return days
 
 
 def _mask_username(username: str) -> str:
