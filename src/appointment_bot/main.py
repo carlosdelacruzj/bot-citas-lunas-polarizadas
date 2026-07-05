@@ -240,6 +240,7 @@ def _complete_available_reservation(
                 latest_captcha_audit.clear()
                 latest_captcha_audit.update(captcha_audit)
                 add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
+                add_artifact("captcha_images", captcha_audit.get("captcha_screenshot_image_path"))
                 add_artifact("captcha_images", captcha_audit.get("captcha_panel_image_path"))
                 captcha_attempts.append(dict(captcha_audit))
                 screenshot_candidates = collected_screenshots(
@@ -265,6 +266,7 @@ def _complete_available_reservation(
             latest_captcha_audit.clear()
             latest_captcha_audit.update(captcha_audit)
             add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
+            add_artifact("captcha_images", captcha_audit.get("captcha_screenshot_image_path"))
             add_artifact("captcha_images", captcha_audit.get("captcha_panel_image_path"))
             pre_submit_path = captcha_audit.get("pre_submit_screenshot_path")
             add_artifact("screenshots", pre_submit_path)
@@ -549,6 +551,7 @@ def _capture_blocked_captcha_evidence(
         str(path)
         for path in [
             captcha_audit.get("captcha_image_path"),
+            captcha_audit.get("captcha_screenshot_image_path"),
             captcha_audit.get("captcha_panel_image_path"),
         ]
         if path

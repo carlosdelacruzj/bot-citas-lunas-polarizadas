@@ -455,3 +455,87 @@ flujo sin guardar nombres completos ni credenciales.
   - Esta reserva fue hecha por el worker anterior al parche de prioridad/reglas cargado despues de las 10:16. Por eso intento `20/07/2026 10:00` para Richard aunque la orden tenia hora minima `11`.
   - El flujo tampoco cedio el cupo a Mayra, que tenia prioridad mayor y regla de fecha minima `2026-07-11`; ese comportamiento quedo corregido despues con prioridad estricta, filtro de orden tambien en observador y diferimiento antes de 2captcha.
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.875s).
+## 2026-07-04 11:34:49 - order-70572463 - registered
+
+- Run: 20260704-113359-a12ce739
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 16/07/2026 08:00
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 8.031s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.500s
+  - 2captcha: 1.453s
+  - Llenar CAPTCHA -> click: 1.375s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 0.953s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-45257623 -> order-70572463 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-113359-a12ce739-order-***-1eed3508658144158f790a30b9759dc9.png
+  - CAPTCHA enviado: L62VV
+  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375-original-html.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=L62VV, duracion=3.687s
+    - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=9978, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113359-a12ce739-order-***-5c4b273fefce48b3b0e4534841ef3b91.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-113359-a12ce739-order-***-380d728d676f430781b678b6ebe3e0a2.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-113359-a12ce739-order-***-1eed3508658144158f790a30b9759dc9.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-113359-a12ce739-order-***-.html
+  - Screenshot adicional: screenshots\05-reserva-antes-de-enviar-intento-1-***-113359-a12ce739-order-***-380d728d676f430781b678b6ebe3e0a2.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-113359-a12ce739-order-***-fc1da1b3092b47ff9c64df1190201133.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
+
+## 2026-07-04 11:35:04 - order-45257623 - registered
+
+- Run: 20260704-113449-b4008fc5
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 20/07/2026 10:00
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.890s
+  - Seleccion fecha/hora: 1.953s
+  - Imagen CAPTCHA: 0.532s
+  - 2captcha: 1.250s
+  - Llenar CAPTCHA -> click: 1.438s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 0.984s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-70572463 -> order-45257623 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-113449-b4008fc5-order-***-aefc2c16a86446ce89ea8865730df1e0.png
+  - CAPTCHA enviado: uckys
+  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a-original-html.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=uckys, duracion=3.563s
+    - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=9274, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113449-b4008fc5-order-***-4d4ce1a29d504a53aa102e920f104085.png
+  - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-113449-b4008fc5-order-***-660058bc6fc2438b88080974a15e9cc6.png
+  - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-113449-b4008fc5-order-***-aefc2c16a86446ce89ea8865730df1e0.png
+  - Diagnostico dom_snapshots: screenshots\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-113449-b4008fc5-order-***-.html
+  - Screenshot adicional: screenshots\05-reserva-antes-de-enviar-intento-1-***-113449-b4008fc5-order-***-660058bc6fc2438b88080974a15e9cc6.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-113449-b4008fc5-order-***-1a86e4c435874f3a9814af206d5d5d80.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.953s).
+

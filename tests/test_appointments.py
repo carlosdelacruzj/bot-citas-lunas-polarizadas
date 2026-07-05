@@ -216,8 +216,60 @@ class AppointmentFlowTests(unittest.TestCase):
             self.assertTrue(panel.exists())
             solve_captcha.assert_called_once_with(captcha, settings)
             self.assertEqual(captcha_audit["captcha_image_path"], str(captcha))
+            self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
+            self.assertEqual(captcha_audit["captcha_sent_source"], "screenshot")
             self.assertEqual(captcha_audit["captcha_panel_image_path"], str(panel))
             self.assertEqual(events, ["intent", "started"])
+
+    def test_original_html_captcha_is_sent_to_solver_when_available(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = make_settings(root)
+            captcha = root / "captcha-screenshot.png"
+            original = root / "captcha-original.png"
+            panel = root / "panel.png"
+            captcha.write_bytes(b"screenshot")
+            original.write_bytes(b"original")
+            panel.write_bytes(b"panel")
+            captcha_audit: dict[str, object] = {}
+
+            def save_captcha(*args, **kwargs):
+                audit = kwargs["captcha_audit"]
+                audit["captcha_original_html_path"] = str(original)
+                return captcha
+
+            with (
+                patch(
+                    "appointment_bot.flows.appointments._save_reservation_panel_image",
+                    return_value=panel,
+                ),
+                patch(
+                    "appointment_bot.flows.appointments.save_reservation_captcha_image",
+                    side_effect=save_captcha,
+                ),
+                patch(
+                    "appointment_bot.flows.appointments.solve_normal_captcha",
+                    return_value="1234",
+                ) as solve_captcha,
+                patch(
+                    "appointment_bot.flows.appointments.validate_selected_appointment",
+                ),
+                patch(
+                    "appointment_bot.flows.appointments.save_screenshot",
+                    return_value=None,
+                ),
+            ):
+                solve_reservation_captcha_and_click_reserve(
+                    _Page(),
+                    settings,
+                    can_submit=lambda: True,
+                    captcha_audit=captcha_audit,
+                )
+
+            solve_captcha.assert_called_once_with(original, settings)
+            self.assertEqual(captcha_audit["captcha_image_path"], str(original))
+            self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
+            self.assertEqual(captcha_audit["captcha_sent_source"], "original_html")
 
     def test_reservation_captcha_capture_uses_isolated_media_not_panel(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

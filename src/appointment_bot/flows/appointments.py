@@ -651,20 +651,29 @@ def solve_reservation_captcha_and_click_reserve(
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     if timing is not None:
         timing.mark("captcha_image_started")
+    effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
     panel_captcha_path = _save_reservation_panel_image(
         page,
         settings,
-        captcha_audit=captcha_audit,
+        captcha_audit=effective_captcha_audit,
     )
     captcha_path = save_reservation_captcha_image(
         page,
         settings,
         "04-reserva-captcha-tecnico-2captcha",
-        captcha_audit=captcha_audit,
+        captcha_audit=effective_captcha_audit,
+    )
+    captcha_submission_path = _captcha_submission_image_path(
+        captcha_path,
+        effective_captcha_audit,
     )
     if captcha_audit is not None:
         captcha_audit["attempt"] = attempt_number
-        captcha_audit["captcha_image_path"] = str(captcha_path)
+        captcha_audit["captcha_image_path"] = str(captcha_submission_path)
+        captcha_audit["captcha_screenshot_image_path"] = str(captcha_path)
+        captcha_audit["captcha_sent_source"] = (
+            "original_html" if captcha_submission_path != captcha_path else "screenshot"
+        )
         if panel_captcha_path is not None:
             captcha_audit["captcha_panel_image_path"] = str(panel_captcha_path)
     if timing is not None:
@@ -677,13 +686,13 @@ def solve_reservation_captcha_and_click_reserve(
     try:
         if timing is not None:
             timing.mark("captcha_solver_started")
-        captcha_solution = solve_normal_captcha(captcha_path, settings)
+        captcha_solution = solve_normal_captcha(captcha_submission_path, settings)
         if captcha_audit is not None:
             captcha_audit["captcha_solution_sent"] = captcha_solution
         if timing is not None:
             timing.mark("captcha_solver_finished")
     finally:
-        logger.info("Preserved captcha image sent to 2captcha: %s", captcha_path)
+        logger.info("Preserved captcha image sent to 2captcha: %s", captcha_submission_path)
     if cancel_event is not None and cancel_event.is_set():
         raise AppointmentWorkflowCancelled(
             "La pausa se aplico antes de enviar el captcha de reserva."
@@ -745,6 +754,22 @@ def solve_reservation_captcha_and_click_reserve(
             "de iniciar la verificacion."
         ) from exc
     return page
+
+
+def _captcha_submission_image_path(
+    screenshot_path: Path,
+    captcha_audit: dict[str, Any],
+) -> Path:
+    original_path = captcha_audit.get("captcha_original_html_path")
+    if original_path:
+        path = Path(str(original_path))
+        if path.exists():
+            return path
+        logger.warning(
+            "Original HTML captcha path was recorded but does not exist: %s",
+            path,
+        )
+    return screenshot_path
 
 
 def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
