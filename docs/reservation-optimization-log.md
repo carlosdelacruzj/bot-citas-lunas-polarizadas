@@ -539,3 +539,40 @@ flujo sin guardar nombres completos ni credenciales.
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.953s).
 
+## 2026-07-06 10:09:41 - order-76623115 - unavailable
+
+- Run: 20260706-100928-b70ff5bc
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 11/07/2026 11:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 8.719s
+  - Seleccion fecha/hora: 1.687s
+  - Imagen CAPTCHA: 0.531s
+  - 2captcha: 1.375s
+  - Llenar CAPTCHA -> click: 1.609s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.610s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\06-07-2026\04-reserva-captcha-panel-tecnico-2captcha-***-100928-b70ff5bc-order-***-1626c05bd7784824822fe4d23c6b7185.png
+  - CAPTCHA enviado: mz4pc
+  - Imagen enviada a 2captcha: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=mz4pc, duracion=3.765s
+    - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=10069, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
+  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5.png
+  - Diagnostico captcha_images: screenshots\06-07-2026\04-reserva-captcha-panel-tecnico-2captcha-***-100928-b70ff5bc-order-***-1626c05bd7784824822fe4d23c6b7185.png
+  - Diagnostico dom_snapshots: screenshots\06-07-2026\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-100928-b70ff5bc-order-***-.html
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).

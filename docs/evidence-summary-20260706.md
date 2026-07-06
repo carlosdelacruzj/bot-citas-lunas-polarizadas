@@ -3,7 +3,7 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 42
+- Eventos indexados: 43
 - Reservas registradas: 2
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 5
@@ -12,9 +12,10 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 
 ## Origen de deteccion
 - fetch_probe: 9
-- normal: 33
+- normal: 34
 
 ## Ultimos eventos utiles
+- 2026-07-06 10:09:41 | order-*** | unavailable | normal | 11/07/2026 11:00 | slot_lost
 - 2026-07-06 09:26:57 | order-*** | partial | normal | 21/07/2026 10:00 | blocked_by_order_rule
 - 2026-07-06 09:26:44 | order-*** | partial | normal | 21/07/2026 10:00 | blocked_by_order_rule
 - 2026-07-06 09:26:32 | order-*** | partial | normal | 21/07/2026 10:00 | blocked_by_order_rule
@@ -24,7 +25,6 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - 2026-07-04 13:07:35 | order-*** | partial | normal | 20/07/2026 11:00 | blocked_by_order_rule
 - 2026-07-04 13:06:45 | order-*** | partial | normal | 20/07/2026 11:00 | blocked_by_order_rule
 - 2026-07-04 13:05:53 | order-*** | partial | normal | 06/07/2026 09:00 | blocked_by_order_rule
-- 2026-07-04 11:35:04 | order-*** | registered | normal | 20/07/2026 10:00 | confirmed
 
 ## Senales de defensa
 - 2026-07-01 09:43:19 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
