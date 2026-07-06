@@ -289,12 +289,11 @@ class AppointmentFlowTests(unittest.TestCase):
                     captcha_audit=captcha_audit,
                 )
 
-            self.assertTrue(path.exists())
-            self.assertEqual(path.parent, settings.screenshots_dir / "captchas")
-            self.assertEqual(page.panel.media.screenshot_paths, [str(path)])
+            self.assertFalse(path.exists())
+            self.assertEqual(path.parent.name, "captchas")
+            self.assertEqual(path.parent.parent.name, "06-07-2026")
+            self.assertEqual(page.panel.media.screenshot_paths, [])
             self.assertFalse(page.panel.screenshot_called)
-            self.assertEqual(captcha_audit["captcha_image_width"], 1)
-            self.assertEqual(captcha_audit["captcha_image_height"], 1)
             self.assertEqual(captcha_audit["captcha_element_css_width"], 210)
             self.assertEqual(captcha_audit["captcha_element_css_height"], 90)
             self.assertEqual(captcha_audit["captcha_device_scale_factor"], 2)

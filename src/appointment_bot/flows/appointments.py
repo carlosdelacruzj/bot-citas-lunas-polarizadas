@@ -670,7 +670,8 @@ def solve_reservation_captcha_and_click_reserve(
     if captcha_audit is not None:
         captcha_audit["attempt"] = attempt_number
         captcha_audit["captcha_image_path"] = str(captcha_submission_path)
-        captcha_audit["captcha_screenshot_image_path"] = str(captcha_path)
+        if captcha_path.exists():
+            captcha_audit["captcha_screenshot_image_path"] = str(captcha_path)
         captcha_audit["captcha_sent_source"] = (
             "original_html" if captcha_submission_path != captcha_path else "screenshot"
         )
@@ -919,17 +920,25 @@ def save_reservation_captcha_image(
                     continue
                 captcha_media.scroll_into_view_if_needed(timeout=5_000)
                 _record_captcha_render_metrics(captcha_media, captcha_audit)
+                original_path = _save_original_captcha_data_uri(
+                    captcha_media,
+                    captcha_path,
+                    captcha_audit,
+                )
+                if original_path is not None:
+                    logger.info(
+                        "Using original HTML reservation captcha image without "
+                        "saving an isolated screenshot: %s",
+                        original_path,
+                    )
+                    return captcha_path
+
                 captcha_media.screenshot(path=str(captcha_path), timeout=10_000)
                 _record_png_dimensions(
                     captcha_path,
                     captcha_audit,
                     width_key="captcha_image_width",
                     height_key="captcha_image_height",
-                )
-                _save_original_captcha_data_uri(
-                    captcha_media,
-                    captcha_path,
-                    captcha_audit,
                 )
             logger.info(
                 "Saved isolated reservation captcha image: %s using selector %s",
