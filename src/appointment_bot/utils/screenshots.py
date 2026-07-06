@@ -1,8 +1,10 @@
 import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
@@ -11,6 +13,12 @@ from appointment_bot.config import Settings
 from appointment_bot.domain import RunReport
 
 logger = logging.getLogger(__name__)
+ARTIFACT_TIMEZONE = ZoneInfo("America/Lima")
+
+
+def screenshot_artifact_dir(settings: Settings, *parts: str) -> Path:
+    day = datetime.now(ARTIFACT_TIMEZONE).strftime("%d-%m-%Y")
+    return settings.screenshots_dir.joinpath(day, *parts)
 
 
 def _artifact_path(settings: Settings, label: str) -> Path:
@@ -18,7 +26,7 @@ def _artifact_path(settings: Settings, label: str) -> Path:
         part for part in settings.artifact_prefix.replace("_", "-").split("-") if part
     )
     prefix = f"{safe_prefix}-" if safe_prefix else ""
-    return settings.screenshots_dir / f"{label}-{prefix}{uuid4().hex}.png"
+    return screenshot_artifact_dir(settings) / f"{label}-{prefix}{uuid4().hex}.png"
 
 
 def normalize_screenshot_paths(
@@ -127,8 +135,8 @@ def mask_sensitive_page(page: Page) -> Iterator[None]:
 
 
 def save_screenshot(page: Page, settings: Settings, label: str) -> Path | None:
-    settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     path = _artifact_path(settings, label)
+    path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with mask_sensitive_page(page):
             page.screenshot(path=str(path), full_page=True)
@@ -145,8 +153,8 @@ def save_element_screenshot(
     label: str,
     selectors: list[str],
 ) -> Path | None:
-    settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     path = _artifact_path(settings, label)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in selectors:
         locator = page.locator(selector).first
@@ -178,8 +186,8 @@ def save_revealed_element_screenshot(
     *,
     ready_check: Callable[[object], bool] | None = None,
 ) -> Path | None:
-    settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     path = _artifact_path(settings, label)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in selectors:
         locator = page.locator(selector).first

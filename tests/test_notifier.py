@@ -78,10 +78,55 @@ class NotifierTests(unittest.TestCase):
 
             self.assertTrue(delivered)
             message = send.call_args.args[1]
-            self.assertIn("DISPONIBILIDAD DETECTADA", message)
+            self.assertIn("CUPO DETECTADO", message)
+            self.assertIn("Enviado:", message)
+            self.assertIn("Lima", message)
+            self.assertIn("Sede: LIMA-LA VICTORIA", message)
+            self.assertIn("Fechas: 08/07/2026", message)
+            self.assertIn("Horas: 10:00", message)
+            self.assertIn("Cupos: no registrado", message)
             self.assertIn("08/07/2026", message)
             self.assertIn("10:00", message)
-            self.assertIn("pasara al siguiente usuario", message)
+            self.assertNotIn("order-123", message)
+            self.assertNotIn("Mayra", message)
+            self.assertNotIn("Orden:", message)
+            self.assertNotIn("Cliente:", message)
+            self.assertNotIn("Cuenta:", message)
+            self.assertNotIn("pasara al siguiente usuario", message)
+            self.assertEqual(send.call_args.kwargs["timeout_seconds"], 5)
+
+    def test_immediate_available_alert_uses_options_and_slots_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = AvailabilityResult(
+                status="available",
+                message="Hay horarios.",
+                details={
+                    "orden": "order-123",
+                    "cliente": "Mayra",
+                    "cuenta": "usuario@example.com",
+                    "sede": "LIMA-LA VICTORIA",
+                    "date_options": ["16/07/2026", "20/07/2026"],
+                    "hour_options": ["08:00", "10:00"],
+                    "cupos": 2,
+                },
+            )
+
+            with patch(
+                "appointment_bot.services.notifier.send_telegram_message",
+                return_value=True,
+            ) as send:
+                delivered = notify_immediate_availability(result, settings)
+
+            self.assertTrue(delivered)
+            message = send.call_args.args[1]
+            self.assertIn("CUPO DETECTADO", message)
+            self.assertIn("Fechas: 16/07/2026, 20/07/2026", message)
+            self.assertIn("Horas: 08:00, 10:00", message)
+            self.assertIn("Cupos: 2", message)
+            self.assertNotIn("order-123", message)
+            self.assertNotIn("Mayra", message)
+            self.assertNotIn("usuario@example.com", message)
 
     def test_deferred_summary_sends_only_primary_non_captcha_photo(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

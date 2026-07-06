@@ -20,7 +20,7 @@ from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.captcha import solve_normal_captcha
 from appointment_bot.services.reservation_timings import ReservationTiming
 from appointment_bot.utils.sanitization import normalize_option
-from appointment_bot.utils.screenshots import save_screenshot
+from appointment_bot.utils.screenshots import save_screenshot, screenshot_artifact_dir
 
 logger = logging.getLogger(__name__)
 
@@ -890,7 +890,7 @@ def save_reservation_captcha_image(
     captcha_audit: dict[str, Any] | None = None,
 ) -> Path:
     logger.info("Saving isolated reservation captcha image")
-    captcha_dir = settings.screenshots_dir / "captchas"
+    captcha_dir = screenshot_artifact_dir(settings, "captchas")
     captcha_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
     captcha_path = captcha_dir / (
@@ -954,11 +954,11 @@ def _save_reservation_panel_image(
     captcha_audit: dict[str, Any] | None = None,
 ) -> Path | None:
     logger.info("Saving reservation panel image for technical evidence")
-    settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
-    captcha_path = settings.screenshots_dir / (
+    captcha_path = screenshot_artifact_dir(settings) / (
         f"04-reserva-captcha-panel-tecnico-2captcha-{prefix}{uuid.uuid4().hex}.png"
     )
+    captcha_path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
         panel = page.locator(selector).first

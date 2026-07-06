@@ -7,7 +7,7 @@ from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
 from appointment_bot.utils.sanitization import sanitize_text
-from appointment_bot.utils.screenshots import mask_sensitive_page
+from appointment_bot.utils.screenshots import mask_sensitive_page, screenshot_artifact_dir
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def diagnostic_artifact_path(settings: Settings, label: str, extension: str) -> 
     )
     prefix = f"{safe_prefix}-" if safe_prefix else ""
     suffix = extension if extension.startswith(".") else f".{extension}"
-    return settings.screenshots_dir / "diagnostics" / f"{safe_label}-{prefix}{suffix}"
+    return screenshot_artifact_dir(settings, "diagnostics") / f"{safe_label}-{prefix}{suffix}"
 
 
 def save_sanitized_page_html(page: Page, settings: Settings, label: str) -> Path | None:

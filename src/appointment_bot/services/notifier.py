@@ -3,10 +3,12 @@ import logging
 import mimetypes
 import re
 import uuid
+from datetime import datetime
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult
@@ -17,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 TELEGRAM_API_TIMEOUT_SECONDS = 15
 TELEGRAM_URGENT_TIMEOUT_SECONDS = 5
+TELEGRAM_TIMEZONE = ZoneInfo("America/Lima")
 APPOINTMENT_DATETIME_RE = re.compile(
     r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
 )
@@ -341,7 +344,7 @@ def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: 
         primary_delivered = send_telegram_message(settings, caption)
 
     for image_path in image_paths[1:]:
-        send_telegram_photo(settings, image_path, "Evidencia adicional del tramite.")
+        send_telegram_photo(settings, image_path, "Evidencia adicional.")
 
     return primary_delivered
 
@@ -363,7 +366,7 @@ def _send_programmed_sequence(
         photo_caption = _format_programmed_photo_caption(details)
         delivered = send_telegram_photo(settings, screenshot_paths[0], photo_caption) or delivered
         for image_path in screenshot_paths[1:]:
-            send_telegram_photo(settings, image_path, "Evidencia adicional de la cita programada.")
+            send_telegram_photo(settings, image_path, "Evidencia adicional.")
     else:
         delivered = (
             send_telegram_message(
@@ -430,45 +433,27 @@ def _format_immediate_availability_message(result: AvailabilityResult) -> str:
     date, hour = _appointment_datetime_details(details)
     date_options = _join_options(details.get("date_options"))
     hour_options = _join_options(details.get("hour_options"))
-    slots = details.get("cupos") or details.get("slots")
+    slots = _format_slots(details.get("cupos") or details.get("slots"))
+    sent_at = datetime.now(TELEGRAM_TIMEZONE).strftime("%H:%M:%S")
     lines = [
-        "DISPONIBILIDAD DETECTADA",
-        "",
-        f"Orden: {details.get('orden') or 'sin orden'}",
+        "CUPO DETECTADO",
+        f"Enviado: {sent_at} Lima",
+        f"Sede: {_format_availability_field(details.get('sede'))}",
+        f"Fechas: {_format_availability_field(date or date_options)}",
+        f"Horas: {_format_availability_field(hour or hour_options)}",
+        f"Cupos: {slots}",
     ]
-    if details.get("cliente") or details.get("nombre"):
-        lines.append(f"Cliente: {details.get('cliente') or details.get('nombre')}")
-    if details.get("cuenta"):
-        lines.append(f"Cuenta: {details['cuenta']}")
-    if details.get("sede"):
-        lines.append(f"Sede: {details['sede']}")
-    if date:
-        lines.append(f"Fecha seleccionada: {date}")
-    elif date_options:
-        lines.append(f"Fechas: {date_options}")
-    if hour:
-        lines.append(f"Hora seleccionada: {hour}")
-    elif hour_options:
-        lines.append(f"Horas: {hour_options}")
-    if slots:
-        lines.append(f"Cupos: {slots}")
-    lines.extend(
-        [
-            "",
-            _immediate_availability_next_step(details),
-        ]
-    )
     return "\n".join(lines)
 
 
-def _immediate_availability_next_step(details: dict) -> str:
-    if details.get("blocked_by_order_rule") or (
-        details.get("submission_outcome") == "blocked_by_order_rule"
-    ):
-        return "No cumple la regla de esta orden; el bot pasara al siguiente usuario."
-    if details.get("submission_outcome") == "priority_deferred":
-        return "Hay una orden de mayor prioridad lista; el bot priorizara esa reserva."
-    return "El bot seguira intentando reservar; revisa manualmente si puedes."
+def _format_availability_field(value: object) -> str:
+    text = str(value or "").strip()
+    return text or "no registrado"
+
+
+def _format_slots(value: object) -> str:
+    text = str(value or "").strip()
+    return text or "no registrado"
 
 
 def _format_registered_message(result: AvailabilityResult) -> str:

@@ -436,3 +436,225 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-06 09:21:52 - order-76623115 - partial
+
+- Run: 20260706-092125-c7504c44
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 09:00
+- Opciones fecha: 20/07/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 26.602s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092125-c7504c44-order-***-8b3b54cd4dd345088d122a3af5084609.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 09:22:24 - order-76623115 - partial
+
+- Run: 20260706-092154-3add598c
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 10:00
+- Opciones fecha: 20/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 30.165s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092154-3add598c-order-***-4df5c6db87174341b33fd229fa13b12c.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 09:25:59 - order-76623115 - partial
+
+- Run: 20260706-092529-8336d91c
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 12:00
+- Opciones fecha: 20/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 29.929s
+  - Seleccion fecha/hora: 1.719s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092529-8336d91c-order-***-55a33207cf1e433ba5364c95f7ed1da5.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 09:26:32 - order-76623115 - partial
+
+- Run: 20260706-092602-fa408640
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 10:00
+- Opciones fecha: 21/07/2026
+- Opciones hora: 09:00, 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 30.110s
+  - Seleccion fecha/hora: 1.750s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092602-fa408640-order-***-080f1c8fe2c74c918f155d5ff4201a55.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 09:26:44 - order-76623115 - partial
+
+- Run: 20260706-092634-ca3e4deb
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 10:00
+- Opciones fecha: 21/07/2026
+- Opciones hora: 09:00, 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.797s
+  - Seleccion fecha/hora: 1.781s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092634-ca3e4deb-order-***-fc38f01246604b40abfb0cd0f298e778.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 09:26:57 - order-76623115 - partial
+
+- Run: 20260706-092647-1ba25691
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 10:00
+- Opciones fecha: 21/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.511s
+  - Seleccion fecha/hora: 1.719s
+- Evidencia:
+  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
+  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157.png
+  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
+  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
+  - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092647-1ba25691-order-***-967e0364eae34f7d9ff2bec006395834.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

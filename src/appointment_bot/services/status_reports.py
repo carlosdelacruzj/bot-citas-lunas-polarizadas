@@ -44,6 +44,7 @@ def generate_status_report_images(
 
     generated_at = datetime.now(UTC)
     period_start, period_end = _report_window(generated_at)
+    output_dir = _dated_output_dir(output_dir, generated_at)
     output_dir.mkdir(parents=True, exist_ok=True)
     results = []
     active_orders = [order for order in list_service_order_summaries() if order.status == "ready"]
@@ -104,6 +105,7 @@ def generate_daily_report_image(
     )
     appointments = _appointments_found(period_start, period_end)
     brand_image = _image_data_uri(Path("screenshots/whatsapp/Perfil.jpeg"))
+    output_dir = _dated_output_dir(output_dir, effective_generated_at)
     output_dir.mkdir(parents=True, exist_ok=True)
     report_date = effective_generated_at.astimezone(REPORT_TIMEZONE).strftime("%d-%m-%Y")
     output_path = output_dir / f"Reporte general - {report_date}.png"
@@ -488,6 +490,11 @@ def _image_data_uri(path: Path) -> str | None:
     content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{content_type};base64,{encoded}"
+
+
+def _dated_output_dir(output_dir: Path, generated_at: datetime) -> Path:
+    day = generated_at.astimezone(REPORT_TIMEZONE).strftime("%d-%m-%Y")
+    return output_dir / day
 
 
 def _report_filename(order: ServiceOrderSummary, generated_at: datetime) -> str:

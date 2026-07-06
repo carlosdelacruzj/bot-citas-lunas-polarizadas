@@ -22,6 +22,7 @@ from appointment_bot.services.database_models import (
     ServiceOrderRuntime,
 )
 from appointment_bot.services.notifier import (
+    notify_deferred_queue_summary,
     notify_immediate_availability,
     notify_result,
     send_telegram_message,
@@ -88,6 +89,7 @@ class ContinuousWorker:
         self._hot_window_extended_until: datetime | None = None
         self._availability_alert_signatures: set[str] = set()
         self._rapid_queue_initial_confirmed = 0
+        self._deferred_order_reports: list[RunReport] = []
 
     @property
     def is_running(self) -> bool:
@@ -223,6 +225,7 @@ class ContinuousWorker:
                                     self._rapid_queue_initial_confirmed
                                 )
                             )
+                        self._flush_deferred_order_reports()
                     else:
                         if list_active_orders(self.settings):
                             self._update_state(
@@ -295,6 +298,7 @@ class ContinuousWorker:
             cancel_event=self._cancel_event,
             on_check=self._on_order_check,
         )
+        self._defer_order_report_if_needed(report)
         self._record_check(report)
         if self._maybe_recovery_backoff(report):
             return False
@@ -406,6 +410,24 @@ class ContinuousWorker:
             return False
         self._handle_order_error(order, report)
         return False
+
+    def _defer_order_report_if_needed(self, report: RunReport) -> None:
+        if report.status in {"available", "partial", "registered", "reservation_unconfirmed"}:
+            self._deferred_order_reports.append(report)
+            return
+        remove_screenshot_paths(report_screenshot_paths(report))
+
+    def _flush_deferred_order_reports(self) -> None:
+        if not self._deferred_order_reports:
+            return
+        reports = self._deferred_order_reports
+        self._deferred_order_reports = []
+        summary = RunReport(
+            status="completed",
+            message="Evidencias diferidas del monitoreo.",
+            exit_code=0,
+        )
+        notify_deferred_queue_summary(summary, self.settings, reports)
 
     def _claim_order(self, order_id: str) -> bool:
         if self._owner_token is None:

@@ -548,7 +548,7 @@ def run_service_order(
             ),
             on_submission_intent=on_submission_intent,
             on_submission_started=on_submission_started,
-            notify_mode="deferred" if rapid_mode else "full",
+            notify_mode="deferred" if rapid_mode or observer_mode else "full",
         )
         lease_lost = heartbeat.lost_event.is_set()
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":
