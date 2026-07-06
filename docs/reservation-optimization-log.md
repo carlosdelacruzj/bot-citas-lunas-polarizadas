@@ -402,9 +402,7 @@ flujo sin guardar nombres completos ni credenciales.
 - Evidencia:
   - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-095503-4b3cb1b2-order-***-d8f5d3508945459385775b0b42886588.png
   - CAPTCHA enviado: tbadd
-  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-095503-4b3cb1b2-order-***-f7090985ce024ccd8e7638afc4a2934b.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=tbadd, duracion=14.531s
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-095503-4b3cb1b2-order-***-f7090985ce024ccd8e7638afc4a2934b.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-095503-4b3cb1b2-order-***-d087e72f2b274abdb6b00c82f8bf5677.png
   - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-095503-4b3cb1b2-order-***-57df8765f50c43009a479210ed0e57b6.png
   - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-095503-4b3cb1b2-order-***-d8f5d3508945459385775b0b42886588.png
@@ -440,9 +438,7 @@ flujo sin guardar nombres completos ni credenciales.
 - Evidencia:
   - Screenshot principal: screenshots\06-reserva-respuesta-portal-intento-1-***-101348-***-order-***-e169851dd3184fccbec7e9b8e11edcfa.png
   - CAPTCHA enviado: G7NSQ
-  - Imagen enviada a 2captcha: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-101348-***-order-***-a0a679b55e794d008efce9bd8bb973c7.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=G7NSQ, duracion=4.594s
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-101348-***-order-***-a0a679b55e794d008efce9bd8bb973c7.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-101348-***-order-***-9182e9e2499d4da0a061f24da8e81e82.png
   - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-101348-***-order-***-208aa48c4c084ebf9f8b7275e47d47c5.png
   - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-101348-***-order-***-e169851dd3184fccbec7e9b8e11edcfa.png
@@ -487,7 +483,6 @@ flujo sin guardar nombres completos ni credenciales.
     - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
     - CAPTCHA original HTML: path=screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=9978, dimensiones=180x70
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113359-a12ce739-order-***-65ff27b382f44cf3a4f11bdba588a375.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113359-a12ce739-order-***-5c4b273fefce48b3b0e4534841ef3b91.png
   - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-113359-a12ce739-order-***-380d728d676f430781b678b6ebe3e0a2.png
   - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-113359-a12ce739-order-***-1eed3508658144158f790a30b9759dc9.png
@@ -529,7 +524,6 @@ flujo sin guardar nombres completos ni credenciales.
     - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
     - CAPTCHA original HTML: path=screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=9274, dimensiones=180x70
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-113449-b4008fc5-order-***-a649b078e02a4d7689b3f73999a9017a.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-113449-b4008fc5-order-***-4d4ce1a29d504a53aa102e920f104085.png
   - Diagnostico screenshots: screenshots\05-reserva-antes-de-enviar-intento-1-***-113449-b4008fc5-order-***-660058bc6fc2438b88080974a15e9cc6.png
   - Diagnostico screenshots: screenshots\06-reserva-respuesta-portal-intento-1-***-113449-b4008fc5-order-***-aefc2c16a86446ce89ea8865730df1e0.png
@@ -571,7 +565,6 @@ flujo sin guardar nombres completos ni credenciales.
     - Medidas CAPTCHA: png=360x142, css=180.0x70.0, panel_png=1680x698, panel_css=840.0x348.0, scale=2
     - CAPTCHA original HTML: path=screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=10069, dimensiones=180x70
   - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
-  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5.png
   - Diagnostico captcha_images: screenshots\06-07-2026\04-reserva-captcha-panel-tecnico-2captcha-***-100928-b70ff5bc-order-***-1626c05bd7784824822fe4d23c6b7185.png
   - Diagnostico dom_snapshots: screenshots\06-07-2026\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-100928-b70ff5bc-order-***-.html
 - Observacion tecnica:

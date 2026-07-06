@@ -318,9 +318,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Seleccion fecha/hora: 1.672s
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-084813-bd516f55-order-***-f7fdf104ac51425ea1701eac85f4f38e.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
-  - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-084813-bd516f55-order-***-f7fdf104ac51425ea1701eac85f4f38e.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-084813-bd516f55-order-***-282d08661fdf4c699b7c8c6c6ce70836.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
@@ -355,7 +353,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130535-c8ad544f-order-***-48801c03331f4e1897e0dca02a4343e4.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130535-c8ad544f-order-***-71fbc21260a142a79066507a119c294e-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130535-c8ad544f-order-***-71fbc21260a142a79066507a119c294e.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130535-c8ad544f-order-***-48801c03331f4e1897e0dca02a4343e4.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130535-c8ad544f-order-***-71fbc21260a142a79066507a119c294e-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130535-c8ad544f-order-***-df6d75e4b35a47138af2de7f992bdd25.png
@@ -392,7 +389,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130629-12cb507f-order-***-9d103fa5d32e42c9a5669f9cbc3dac94.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130629-12cb507f-order-***-2d27728793ff44cd98023e438282382f-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130629-12cb507f-order-***-2d27728793ff44cd98023e438282382f.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130629-12cb507f-order-***-9d103fa5d32e42c9a5669f9cbc3dac94.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130629-12cb507f-order-***-2d27728793ff44cd98023e438282382f-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130629-12cb507f-order-***-ec47ffb406e241f19c9cfea060e57f3e.png
@@ -429,7 +425,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130721-521493a2-order-***-f1c58f64400847f58edf3f440342c3c7.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130721-521493a2-order-***-c7b88f87d2d745b39793118eac3a8b2a-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130721-521493a2-order-***-c7b88f87d2d745b39793118eac3a8b2a.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130721-521493a2-order-***-f1c58f64400847f58edf3f440342c3c7.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130721-521493a2-order-***-c7b88f87d2d745b39793118eac3a8b2a-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130721-521493a2-order-***-968cfdc0f3bc44d99ceefd90fbe46227.png
@@ -466,7 +461,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092125-c7504c44-order-***-8b3b54cd4dd345088d122a3af5084609.png
@@ -503,7 +497,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092154-3add598c-order-***-4df5c6db87174341b33fd229fa13b12c.png
@@ -540,7 +533,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092529-8336d91c-order-***-55a33207cf1e433ba5364c95f7ed1da5.png
@@ -577,7 +569,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092602-fa408640-order-***-080f1c8fe2c74c918f155d5ff4201a55.png
@@ -614,7 +605,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092634-ca3e4deb-order-***-fc38f01246604b40abfb0cd0f298e778.png
@@ -651,7 +641,6 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Evidencia:
   - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
-  - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157.png
   - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092647-1ba25691-order-***-967e0364eae34f7d9ff2bec006395834.png
