@@ -1720,6 +1720,11 @@ def _read_slots_value(page: Page) -> str:
     return page.evaluate(
         """() => {
             const normalize = value => (value || "").trim().toLowerCase();
+            const directLabel = document.getElementById("MainContent_idUcitas_lblcupos");
+            if (directLabel && directLabel.textContent.trim()) {
+                return directLabel.textContent.trim();
+            }
+
             const directInput = Array.from(document.querySelectorAll("input")).find(input => {
                 const id = normalize(input.id);
                 const name = normalize(input.name);
@@ -1739,7 +1744,14 @@ def _read_slots_value(page: Page) -> str:
             const nearbyInput = Array.from(container.querySelectorAll("input")).find(
                 input => input.value.trim()
             );
-            return nearbyInput ? nearbyInput.value.trim() : "";
+            if (nearbyInput) {
+                return nearbyInput.value.trim();
+            }
+
+            const numericText = Array.from(container.querySelectorAll("span, label, div, td"))
+                .map(element => (element.textContent || "").trim())
+                .find(text => /^\\d+$/.test(text));
+            return numericText || "";
         }"""
     )
 
