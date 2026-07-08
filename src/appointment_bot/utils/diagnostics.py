@@ -1,5 +1,4 @@
 import logging
-import re
 from pathlib import Path
 
 from playwright.sync_api import Error as PlaywrightError
@@ -7,19 +6,21 @@ from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
 from appointment_bot.utils.sanitization import sanitize_text
-from appointment_bot.utils.screenshots import mask_sensitive_page, screenshot_artifact_dir
+from appointment_bot.utils.screenshots import (
+    artifact_filename,
+    mask_sensitive_page,
+    screenshot_artifact_dir,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def diagnostic_artifact_path(settings: Settings, label: str, extension: str) -> Path:
-    safe_label = "-".join(part for part in re.split(r"[^a-zA-Z0-9]+", label) if part)
-    safe_prefix = "-".join(
-        part for part in settings.artifact_prefix.replace("_", "-").split("-") if part
+    return screenshot_artifact_dir(settings, "diagnostics") / artifact_filename(
+        settings,
+        label,
+        extension,
     )
-    prefix = f"{safe_prefix}-" if safe_prefix else ""
-    suffix = extension if extension.startswith(".") else f".{extension}"
-    return screenshot_artifact_dir(settings, "diagnostics") / f"{safe_label}-{prefix}{suffix}"
 
 
 def save_sanitized_page_html(page: Page, settings: Settings, label: str) -> Path | None:

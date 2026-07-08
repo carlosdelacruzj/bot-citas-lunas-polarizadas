@@ -16,6 +16,7 @@ LIMA_TZ = ZoneInfo("America/Lima")
 OPTIMIZATION_LOG_PATH = Path("docs/reservation-optimization-log.md")
 PARTIAL_AVAILABILITY_LOG_PATH = Path("docs/partial-availability-log.md")
 REJECTED_AFTER_SUBMISSION = {"captcha_invalid", "slot_lost", "rejected"}
+OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
 
 _LAST_ORDER_FINISH: tuple[str, datetime] | None = None
 
@@ -84,6 +85,7 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
     title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
     timing = details.get(TIMING_DETAILS_KEY)
     timing = timing if isinstance(timing, dict) else {}
+    slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
     lines = [
         f"## {title_time} - {report.order_id} - {report.status.value}\n\n",
         f"- Run: {report.run_id}\n",
@@ -93,7 +95,7 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
         f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
         f"- Fecha detectada: {_text(details.get('fecha') or details.get('appointment_date'))}\n",
         f"- Hora detectada: {_text(details.get('hora') or details.get('appointment_hour'))}\n",
-        f"- Cupos observados: {_text(details.get('cupos') or details.get('slots')) or 'no registrado'}\n",
+        f"- Cupos observados: {slots_text}\n",
         f"- Opciones fecha: {_text(_list_text(details.get('date_options')))}\n",
         f"- Opciones hora: {_text(_list_text(details.get('hour_options')))}\n",
         f"- Origen deteccion: {_detection_origin(details)}\n",
@@ -114,7 +116,7 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
         f"  - Duracion corrida: {_duration_text(report.duration_seconds)}\n",
         f"  - Seleccion fecha/hora: {_duration(timing, 'selection_seconds')}\n",
         "- Evidencia:\n",
-        f"  - Screenshot principal: {_text(report.screenshot_path)}\n",
+        f"  - Screenshot principal: {_display_evidence_path(report.screenshot_path)}\n",
     ]
     diagnostic_artifacts = details.get("diagnostic_artifacts")
     if isinstance(diagnostic_artifacts, dict):
@@ -122,7 +124,9 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
             if not isinstance(values, list):
                 continue
             for value in values:
-                lines.append(f"  - Diagnostico {key}: {_text(value)}\n")
+                path = _display_evidence_path(value)
+                if path != "no registrado":
+                    lines.append(f"  - Diagnostico {key}: {path}\n")
     for path in _extra_screenshots(report):
         lines.append(f"  - Screenshot adicional: {_text(path)}\n")
     lines.extend(
@@ -191,6 +195,7 @@ def _entry_for_report(
     details = report.details or {}
     timing = details.get(TIMING_DETAILS_KEY)
     timing = timing if isinstance(timing, dict) else {}
+    slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
     title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
     heading = f"## {title_time} - {report.order_id} - {report.status.value}\n\n"
     lines = [
@@ -199,7 +204,7 @@ def _entry_for_report(
         f"- Corrida/attempt: {_text(details.get('observer_attempt') or details.get('attempt'))}\n",
         f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
         f"- Cita observada: {_appointment_text(details)}\n",
-        f"- Cupos observados: {_text(details.get('cupos') or details.get('slots')) or 'no registrado'}\n",
+        f"- Cupos observados: {slots_text}\n",
         f"- Origen deteccion: {_detection_origin(details)}\n",
         f"- Resultado: {_result_summary(report)}\n",
         f"- Confirmacion posterior: {_post_confirmation(details)}\n",
@@ -224,7 +229,7 @@ def _entry_for_report(
     lines.extend(
         [
             "- Evidencia:\n",
-            f"  - Screenshot principal: {_text(report.screenshot_path)}\n",
+            f"  - Screenshot principal: {_display_evidence_path(report.screenshot_path)}\n",
         ]
     )
     if details.get("captcha_solution_sent"):
@@ -251,21 +256,11 @@ def _entry_for_report(
                 item.get("captcha_element_css_width"),
                 item.get("captcha_element_css_height"),
             )
-            panel_size = _dimensions(
-                item.get("captcha_panel_image_width"),
-                item.get("captcha_panel_image_height"),
-            )
-            panel_css_size = _dimensions(
-                item.get("captcha_panel_css_width"),
-                item.get("captcha_panel_css_height"),
-            )
-            if captcha_size or captcha_css_size or panel_size or panel_css_size:
+            if captcha_size or captcha_css_size:
                 lines.append(
                     "    - Medidas CAPTCHA: "
                     f"png={captcha_size or 'no registrado'}, "
                     f"css={captcha_css_size or 'no registrado'}, "
-                    f"panel_png={panel_size or 'no registrado'}, "
-                    f"panel_css={panel_css_size or 'no registrado'}, "
                     f"scale={_text(item.get('captcha_device_scale_factor'))}\n"
                 )
             original_html_path = item.get("captcha_original_html_path")
@@ -294,7 +289,9 @@ def _entry_for_report(
             if not isinstance(values, list):
                 continue
             for value in values:
-                lines.append(f"  - Diagnostico {key}: {_text(value)}\n")
+                path = _display_evidence_path(value)
+                if path != "no registrado":
+                    lines.append(f"  - Diagnostico {key}: {path}\n")
     for path in _extra_screenshots(report):
         lines.append(f"  - Screenshot adicional: {_text(path)}\n")
     lines.extend(
@@ -437,7 +434,20 @@ def _detection_origin(details: dict[str, Any]) -> str:
 
 def _extra_screenshots(report: RunReport) -> list[str]:
     paths = report.screenshot_paths or []
-    return [path for path in paths if path and path != report.screenshot_path]
+    return [
+        path
+        for path in paths
+        if path
+        and path != report.screenshot_path
+        and OBSOLETE_CAPTCHA_PANEL_ARTIFACT not in path
+    ]
+
+
+def _display_evidence_path(value: object) -> str:
+    text = _text(value)
+    if OBSOLETE_CAPTCHA_PANEL_ARTIFACT in text:
+        return "no registrado"
+    return text
 
 
 def _format_lima_datetime(value: str | None) -> str | None:

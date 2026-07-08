@@ -33,6 +33,7 @@ DEFENSE_PATTERNS = (
     ("session_closed", ("session closed", "sesion cerrada", "session expired")),
     ("network", ("err_network", "network changed", "connection reset", "timeout")),
 )
+OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
 CSV_FIELDS = (
     "run_id",
     "finished_at_lima",
@@ -223,7 +224,7 @@ def _evidence_row(
         "click_to_portal_response_seconds": _number_text(
             timing.get("click_to_portal_response_seconds")
         ),
-        "screenshot_path": _text(screenshot_path),
+        "screenshot_path": _current_evidence_path(screenshot_path),
         "evidence_paths": _evidence_paths(details, screenshot_paths or []),
         "message": sanitize_text(message),
     }
@@ -358,17 +359,31 @@ def _detection_origin(details: dict[str, Any]) -> str:
 
 
 def _evidence_paths(details: dict[str, Any], screenshot_paths: list[str]) -> str:
-    paths = list(screenshot_paths)
+    paths = [_text(path) for path in screenshot_paths if _current_evidence_path(path)]
     artifacts = details.get("diagnostic_artifacts")
     if isinstance(artifacts, dict):
         for values in artifacts.values():
             if isinstance(values, list):
-                paths.extend(_text(value) for value in values if _text(value))
-    for key in ("captcha_image_path", "captcha_panel_image_path", "post_submit_html_path"):
+                paths.extend(
+                    _text(value) for value in values if _current_evidence_path(value)
+                )
+    for key in (
+        "captcha_image_path",
+        "captcha_screenshot_image_path",
+        "captcha_original_html_path",
+        "post_submit_html_path",
+    ):
         value = _text(details.get(key))
-        if value:
+        if _current_evidence_path(value):
             paths.append(value)
     return " | ".join(dict.fromkeys(path for path in paths if path))
+
+
+def _current_evidence_path(value: object) -> str:
+    text = _text(value)
+    if OBSOLETE_CAPTCHA_PANEL_ARTIFACT in text:
+        return ""
+    return text
 
 
 def _format_lima_datetime(value: str) -> str:

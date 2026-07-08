@@ -197,10 +197,10 @@ def notify_deferred_queue_summary(
         paths = [Path(path) for path in item.screenshot_paths or []]
         if not paths and item.screenshot_path:
             paths = [Path(item.screenshot_path)]
-        return notify_deferred_result(
+        return _send_deferred_result_notification(
             result,
             settings,
-            screenshot_paths=_primary_evidence_paths(paths),
+            _primary_evidence_paths(paths),
         )
 
     lines = [
@@ -221,7 +221,7 @@ def notify_deferred_queue_summary(
         if not paths and item.screenshot_path:
             paths = [Path(item.screenshot_path)]
         paths = _primary_evidence_paths(paths)
-        delivered = notify_deferred_result(result, settings, screenshot_paths=paths) or delivered
+        delivered = _send_deferred_result_notification(result, settings, paths) or delivered
     return delivered
 
 
@@ -279,11 +279,47 @@ def _send_result_notification(
     settings: Settings,
     screenshot_paths: list[Path],
 ) -> bool:
-    message = _format_result_message(result)
+    message = _format_telegram_result_message(result)
     if screenshot_paths:
         return _send_telegram_photos(settings, screenshot_paths, message)
 
     return send_telegram_message(settings, message)
+
+
+def _send_deferred_result_notification(
+    result: AvailabilityResult,
+    settings: Settings,
+    screenshot_paths: list[Path],
+) -> bool:
+    if _should_send_immediate_availability(result):
+        if screenshot_paths:
+            return _send_telegram_photos(
+                settings,
+                screenshot_paths,
+                _format_deferred_evidence_caption(result),
+            )
+        return not settings.telegram_enabled
+    return _send_result_notification(result, settings, screenshot_paths)
+
+
+def _format_telegram_result_message(result: AvailabilityResult) -> str:
+    if _should_send_immediate_availability(result):
+        return _format_immediate_availability_message(result)
+    return _format_result_message(result)
+
+
+def _format_deferred_evidence_caption(result: AvailabilityResult) -> str:
+    details = result.details or {}
+    date, hour = _appointment_datetime_details(details)
+    lines = ["Evidencia guardada del cupo detectado."]
+    site = _format_availability_field(details.get("sede"))
+    if site != "no registrado":
+        lines.append(f"Sede: {site}")
+    if date:
+        lines.append(f"Fecha: {date}")
+    if hour:
+        lines.append(f"Hora: {hour}")
+    return "\n".join(lines)
 
 
 def _has_reservation_evidence(result: AvailabilityResult) -> bool:

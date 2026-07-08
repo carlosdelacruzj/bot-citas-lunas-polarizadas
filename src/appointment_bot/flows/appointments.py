@@ -20,7 +20,11 @@ from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.captcha import solve_normal_captcha
 from appointment_bot.services.reservation_timings import ReservationTiming
 from appointment_bot.utils.sanitization import normalize_option
-from appointment_bot.utils.screenshots import save_screenshot, screenshot_artifact_dir
+from appointment_bot.utils.screenshots import (
+    artifact_filename,
+    save_screenshot,
+    screenshot_artifact_dir,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +192,11 @@ class SiteRefreshEvidence:
         }
 
 
-def click_program_action(page: Page) -> Page:
+def click_program_action(
+    page: Page,
+    *,
+    on_multiple_programs: Callable[[dict[str, Any]], None] | None = None,
+) -> Page:
     logger.info("Clicking program action button")
     button = page.locator(PROGRAM_ACTION_SELECTOR)
     button_count = button.count()
@@ -203,10 +211,43 @@ def click_program_action(page: Page) -> Page:
     if button_count == 1:
         selected_button = button.first
     else:
-        raise AppointmentWorkflowUnavailable(
-            "Hay varios tramites programables y el listado no muestra nombre ni documento "
-            "para identificar de forma segura cual corresponde a la orden."
-        )
+        program_rows = _read_program_action_rows(page)
+        pending_rows = [
+            row for row in program_rows if str(row.get("status") or "").casefold() == "pendiente"
+        ]
+        multiple_details = {
+            "program_count": button_count,
+            "pending_count": len(pending_rows),
+            "rows": program_rows,
+        }
+
+        if len(pending_rows) == 1:
+            multiple_details["decision"] = "single_pending_selected"
+            multiple_details["selected_row"] = pending_rows[0]
+            if on_multiple_programs is not None:
+                on_multiple_programs(multiple_details)
+            selected_button = button.nth(int(pending_rows[0]["action_index"]))
+            logger.info(
+                "Multiple program actions found; selecting the only pending program: %s",
+                pending_rows[0],
+            )
+        elif len(pending_rows) > 1:
+            multiple_details["decision"] = "multiple_pending_first_selected"
+            multiple_details["selected_row"] = pending_rows[0]
+            if on_multiple_programs is not None:
+                on_multiple_programs(multiple_details)
+            selected_button = button.nth(int(pending_rows[0]["action_index"]))
+            logger.info(
+                "Multiple pending program actions found; selecting the first pending program: %s",
+                pending_rows[0],
+            )
+        else:
+            multiple_details["decision"] = "no_pending_blocked"
+            if on_multiple_programs is not None:
+                on_multiple_programs(multiple_details)
+            raise AppointmentWorkflowUnavailable(
+                "Hay varios tramites programables, pero ninguno figura como PENDIENTE."
+            )
 
     selected_button.scroll_into_view_if_needed(timeout=15_000)
 
@@ -214,6 +255,53 @@ def click_program_action(page: Page) -> Page:
     _wait_for_program_detail(page)
     logger.info("Current page after program action: %s", page.url)
     return page
+
+
+def _read_program_action_rows(page: Page) -> list[dict[str, Any]]:
+    try:
+        rows = page.evaluate(
+            """selector => {
+                const normalize = text => (text || "").replace(/\\s+/g, " ").trim();
+                const headers = Array.from(document.querySelectorAll("table tr"))
+                    .map(row => Array.from(row.querySelectorAll("th"))
+                        .map(cell => normalize(cell.innerText)))
+                    .find(items => items.length) || [];
+                const actionRows = [];
+                Array.from(document.querySelectorAll("table tr")).forEach(row => {
+                    if (!row.querySelector(selector)) return;
+                    const cells = Array.from(row.querySelectorAll("td"))
+                        .map(cell => normalize(cell.innerText));
+                    const byHeader = {};
+                    headers.forEach((header, index) => {
+                        if (header) byHeader[header.toLowerCase()] = cells[index] || "";
+                    });
+                    const status = cells.find(
+                        cell => /^(PENDIENTE|ATENDIDO|CANCELADO)$/i.test(cell)
+                    ) || "";
+                    actionRows.push({
+                        action_index: actionRows.length,
+                        expediente: byHeader["expediente"] || cells[0] || "",
+                        motivo: byHeader["motivo"] || "",
+                        tipo: byHeader["tipo"] || "",
+                        placa: byHeader["placa"] || "",
+                        marca: byHeader["marca"] || "",
+                        modelo: byHeader["modelo"] || "",
+                        motor: byHeader["motor"] || "",
+                        color: byHeader["color"] || "",
+                        status: status,
+                        cells: cells
+                    });
+                });
+                return actionRows;
+            }""",
+            PROGRAM_ACTION_SELECTOR,
+        )
+    except PlaywrightError as exc:
+        logger.warning("Could not read program action rows: %s", exc)
+        return []
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
 
 
 def _wait_for_program_detail(page: Page) -> None:
@@ -652,11 +740,6 @@ def solve_reservation_captcha_and_click_reserve(
     if timing is not None:
         timing.mark("captcha_image_started")
     effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
-    panel_captcha_path = _save_reservation_panel_image(
-        page,
-        settings,
-        captcha_audit=effective_captcha_audit,
-    )
     captcha_path = save_reservation_captcha_image(
         page,
         settings,
@@ -675,8 +758,6 @@ def solve_reservation_captcha_and_click_reserve(
         captcha_audit["captcha_sent_source"] = (
             "original_html" if captcha_submission_path != captcha_path else "screenshot"
         )
-        if panel_captcha_path is not None:
-            captcha_audit["captcha_panel_image_path"] = str(panel_captcha_path)
     if timing is not None:
         timing.mark("captcha_image_finished")
     if can_solve_captcha is not None and not can_solve_captcha():
@@ -893,10 +974,7 @@ def save_reservation_captcha_image(
     logger.info("Saving isolated reservation captcha image")
     captcha_dir = screenshot_artifact_dir(settings, "captchas")
     captcha_dir.mkdir(parents=True, exist_ok=True)
-    prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
-    captcha_path = captcha_dir / (
-        f"{label}-{prefix}{uuid.uuid4().hex}.png"
-    )
+    captcha_path = captcha_dir / artifact_filename(settings, label)
 
     for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
         panel = page.locator(selector).first
@@ -954,69 +1032,6 @@ def save_reservation_captcha_image(
             )
 
     raise RuntimeError("Could not save the reservation captcha image for captcha solving.")
-
-
-def _save_reservation_panel_image(
-    page: Page,
-    settings: Settings,
-    *,
-    captcha_audit: dict[str, Any] | None = None,
-) -> Path | None:
-    logger.info("Saving reservation panel image for technical evidence")
-    prefix = f"{settings.artifact_prefix}-" if settings.artifact_prefix else ""
-    captcha_path = screenshot_artifact_dir(settings) / (
-        f"04-reserva-captcha-panel-tecnico-2captcha-{prefix}{uuid.uuid4().hex}.png"
-    )
-    captcha_path.parent.mkdir(parents=True, exist_ok=True)
-
-    for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
-        panel = page.locator(selector).first
-        try:
-            if panel.count() == 0:
-                continue
-
-            panel.scroll_into_view_if_needed(timeout=5_000)
-            bounds = panel.bounding_box()
-            if bounds is None or bounds["width"] < 120 or bounds["height"] < 80:
-                logger.warning(
-                    "Reservation panel has invalid dimensions using selector %s",
-                    selector,
-                )
-                continue
-            if captcha_audit is not None:
-                captcha_audit["captcha_panel_css_width"] = round(float(bounds["width"]), 3)
-                captcha_audit["captcha_panel_css_height"] = round(float(bounds["height"]), 3)
-            if not ensure_reservation_captcha_loaded(
-                panel,
-                timeout=settings.read_timeout_seconds * 1_000,
-            ):
-                logger.warning(
-                    "Reservation panel captcha was not loaded using selector %s",
-                    selector,
-                )
-                continue
-            panel.screenshot(path=str(captcha_path), timeout=10_000)
-            _record_png_dimensions(
-                captcha_path,
-                captcha_audit,
-                width_key="captcha_panel_image_width",
-                height_key="captcha_panel_image_height",
-            )
-            logger.info(
-                "Saved reservation panel image: %s using selector %s",
-                captcha_path,
-                selector,
-            )
-            return captcha_path
-        except PlaywrightError as exc:
-            logger.warning(
-                "Could not save reservation panel image with selector %s: %s",
-                selector,
-                exc,
-            )
-
-    logger.warning("Could not save the reservation panel image for technical evidence.")
-    return None
 
 
 def _record_captcha_render_metrics(captcha_media, captcha_audit: dict[str, Any] | None) -> None:
@@ -1110,7 +1125,7 @@ def _save_original_captcha_data_uri(
         "webp": ".webp",
     }.get(detected_format, ".bin")
     original_path = screenshot_path.with_name(
-        f"{screenshot_path.stem}-original-html{extension}"
+        f"{screenshot_path.stem}-original{extension}"
     )
     try:
         original_path.write_bytes(image_bytes)

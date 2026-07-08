@@ -3,8 +3,10 @@ from __future__ import annotations
 import base64
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from appointment_bot.flows.appointments import (
     _is_real_appointment_option,
@@ -176,17 +178,11 @@ class AppointmentFlowTests(unittest.TestCase):
             root = Path(directory)
             settings = make_settings(root)
             captcha = root / "captcha.png"
-            panel = root / "panel.png"
             captcha.write_bytes(b"image")
-            panel.write_bytes(b"panel")
             events: list[str] = []
             captcha_audit: dict[str, object] = {}
 
             with (
-                patch(
-                    "appointment_bot.flows.appointments._save_reservation_panel_image",
-                    return_value=panel,
-                ),
                 patch(
                     "appointment_bot.flows.appointments.save_reservation_captcha_image",
                     return_value=captcha,
@@ -213,12 +209,10 @@ class AppointmentFlowTests(unittest.TestCase):
                 )
 
             self.assertTrue(captcha.exists())
-            self.assertTrue(panel.exists())
             solve_captcha.assert_called_once_with(captcha, settings)
             self.assertEqual(captcha_audit["captcha_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "screenshot")
-            self.assertEqual(captcha_audit["captcha_panel_image_path"], str(panel))
             self.assertEqual(events, ["intent", "started"])
 
     def test_original_html_captcha_is_sent_to_solver_when_available(self) -> None:
@@ -227,10 +221,8 @@ class AppointmentFlowTests(unittest.TestCase):
             settings = make_settings(root)
             captcha = root / "captcha-screenshot.png"
             original = root / "captcha-original.png"
-            panel = root / "panel.png"
             captcha.write_bytes(b"screenshot")
             original.write_bytes(b"original")
-            panel.write_bytes(b"panel")
             captcha_audit: dict[str, object] = {}
 
             def save_captcha(*args, **kwargs):
@@ -239,10 +231,6 @@ class AppointmentFlowTests(unittest.TestCase):
                 return captcha
 
             with (
-                patch(
-                    "appointment_bot.flows.appointments._save_reservation_panel_image",
-                    return_value=panel,
-                ),
                 patch(
                     "appointment_bot.flows.appointments.save_reservation_captcha_image",
                     side_effect=save_captcha,
@@ -291,7 +279,10 @@ class AppointmentFlowTests(unittest.TestCase):
 
             self.assertFalse(path.exists())
             self.assertEqual(path.parent.name, "captchas")
-            self.assertEqual(path.parent.parent.name, "06-07-2026")
+            self.assertEqual(
+                path.parent.parent.name,
+                datetime.now(ZoneInfo("America/Lima")).strftime("%d-%m-%Y"),
+            )
             self.assertEqual(page.panel.media.screenshot_paths, [])
             self.assertFalse(page.panel.screenshot_called)
             self.assertEqual(captcha_audit["captcha_element_css_width"], 210)

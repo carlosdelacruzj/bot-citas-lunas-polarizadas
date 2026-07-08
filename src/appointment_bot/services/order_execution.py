@@ -164,6 +164,7 @@ def run_rapid_queue_with_settings(
     on_order_start: Callable[[ServiceOrderCandidate | ServiceOrderRuntime], None] | None = None,
     on_check: Callable[..., None] | None = None,
     skip_order_ids: set[str] | None = None,
+    stop_on_available_without_reserve: bool = True,
 ) -> RunReport:
     checked_orders = 0
     confirmed_reservations = initial_confirmed_reservations
@@ -350,7 +351,11 @@ def run_rapid_queue_with_settings(
                 logger.info("Skipping order %s because it is in backoff", order.order_id)
                 continue
 
-            if report.status == "available" and not settings.auto_reserve:
+            if (
+                report.status == "available"
+                and not settings.auto_reserve
+                and stop_on_available_without_reserve
+            ):
                 logger.info(
                     "Stopping queue after availability alert with AUTO_RESERVE=false: %s",
                     order.order_id,

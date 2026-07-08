@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 20
+SCHEMA_VERSION = 21
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -133,7 +133,8 @@ def create_current_schema(connection: Connection) -> None:
             next_allowed_at timestamptz,
             last_run_at timestamptz,
             last_success_at timestamptz,
-            programmed_at timestamptz
+            programmed_at timestamptz,
+            program_listing jsonb
         )
         """
     )
@@ -318,6 +319,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("runs", "reservation_confirmed"),
         ("order_checks", "checked_at"),
         ("order_state", "credential_failures"),
+        ("order_state", "program_listing"),
         ("reservation_attempts", "idempotency_key"),
         ("reservation_attempts", "status"),
         ("reservations", "run_id"),
@@ -563,6 +565,18 @@ def migrate_database(connection: Connection) -> None:
                 allowed_weekdays IS NULL
                 OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
             )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (20,),
+        )
+        current_version = 20
+    if current_version == 20:
+        connection.execute(
+            """
+            ALTER TABLE order_state
+            ADD COLUMN program_listing jsonb
             """
         )
         connection.execute(

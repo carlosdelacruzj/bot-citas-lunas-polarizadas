@@ -317,8 +317,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 18.329s
   - Seleccion fecha/hora: 1.672s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-084813-bd516f55-order-***-1f7a493b316345b59f7e6f5b9e7168ca.png
+  - Screenshot principal: no registrado
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-084813-bd516f55-order-***-282d08661fdf4c699b7c8c6c6ce70836.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
@@ -351,9 +350,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 18.082s
   - Seleccion fecha/hora: 1.656s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130535-c8ad544f-order-***-48801c03331f4e1897e0dca02a4343e4.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130535-c8ad544f-order-***-71fbc21260a142a79066507a119c294e-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130535-c8ad544f-order-***-48801c03331f4e1897e0dca02a4343e4.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130535-c8ad544f-order-***-71fbc21260a142a79066507a119c294e-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130535-c8ad544f-order-***-df6d75e4b35a47138af2de7f992bdd25.png
 - Observacion tecnica:
@@ -387,9 +385,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 16.071s
   - Seleccion fecha/hora: 1.641s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130629-12cb507f-order-***-9d103fa5d32e42c9a5669f9cbc3dac94.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130629-12cb507f-order-***-2d27728793ff44cd98023e438282382f-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130629-12cb507f-order-***-9d103fa5d32e42c9a5669f9cbc3dac94.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130629-12cb507f-order-***-2d27728793ff44cd98023e438282382f-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130629-12cb507f-order-***-ec47ffb406e241f19c9cfea060e57f3e.png
 - Observacion tecnica:
@@ -423,9 +420,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 13.421s
   - Seleccion fecha/hora: 1.656s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130721-521493a2-order-***-f1c58f64400847f58edf3f440342c3c7.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130721-521493a2-order-***-c7b88f87d2d745b39793118eac3a8b2a-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-130721-521493a2-order-***-f1c58f64400847f58edf3f440342c3c7.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-130721-521493a2-order-***-c7b88f87d2d745b39793118eac3a8b2a-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-130721-521493a2-order-***-968cfdc0f3bc44d99ceefd90fbe46227.png
 - Observacion tecnica:
@@ -459,9 +455,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.602s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092125-c7504c44-order-***-9cbad09d5d6241558ec69f1ad75539a2.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092125-c7504c44-order-***-4a1f7afa68c743f99a3f5e631d8e4ba2-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092125-c7504c44-order-***-8b3b54cd4dd345088d122a3af5084609.png
 - Observacion tecnica:
@@ -495,9 +490,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.165s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092154-3add598c-order-***-56a43c12b8474bd0be2ae7ba60bdfd37.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092154-3add598c-order-***-3e5bf1826a044a08818f96bf9387245c-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092154-3add598c-order-***-4df5c6db87174341b33fd229fa13b12c.png
 - Observacion tecnica:
@@ -531,9 +525,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 29.929s
   - Seleccion fecha/hora: 1.719s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092529-8336d91c-order-***-ed16a749ca77404fb5d167434f9c4296.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092529-8336d91c-order-***-9588e450289543d5808bf1f8bd282d5e-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092529-8336d91c-order-***-55a33207cf1e433ba5364c95f7ed1da5.png
 - Observacion tecnica:
@@ -567,9 +560,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.110s
   - Seleccion fecha/hora: 1.750s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092602-fa408640-order-***-5c92eb49a94f4ce4b5ceb5b52ccbffc6.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092602-fa408640-order-***-e3a6c429f1c54f59a5693bc51fe7b968-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092602-fa408640-order-***-080f1c8fe2c74c918f155d5ff4201a55.png
 - Observacion tecnica:
@@ -603,9 +595,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.797s
   - Seleccion fecha/hora: 1.781s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092634-ca3e4deb-order-***-e99fc85cc1604fb389c9c5447b68a3d2.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092634-ca3e4deb-order-***-54adb8c9741a4ecbab012ff1bbb87990-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092634-ca3e4deb-order-***-fc38f01246604b40abfb0cd0f298e778.png
 - Observacion tecnica:
@@ -639,11 +630,288 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.511s
   - Seleccion fecha/hora: 1.719s
 - Evidencia:
-  - Screenshot principal: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
+  - Screenshot principal: no registrado
   - Diagnostico captcha_images: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
-  - Diagnostico captcha_images: screenshots\04-reserva-captcha-panel-tecnico-2captcha-***-092647-1ba25691-order-***-4dbd7de3370b48d4bf8e135c34e72223.png
   - Screenshot adicional: screenshots\captchas\04-reserva-captcha-tecnico-2captcha-***-092647-1ba25691-order-***-17641868845b41c0b2b4b25b9a3f2157-original-html.png
   - Screenshot adicional: screenshots\03-modal-reserva-citas-cupo-disponible-***-092647-1ba25691-order-***-967e0364eae34f7d9ff2bec006395834.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 12:38:11 - order-76623115 - partial
+
+- Run: 20260706-123801-5e8bca9f
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 12:00
+- Cupos observados: 15
+- Opciones fecha: 20/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.740s
+  - Seleccion fecha/hora: 1.750s
+- Evidencia:
+  - Screenshot principal: no registrado
+  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
+  - Screenshot adicional: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
+  - Screenshot adicional: screenshots\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123801-5e8bca9f-order-***-3f5dd8ebbc854f719e9dc670254b41b4.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 12:38:22 - order-76623115 - partial
+
+- Run: 20260706-123813-d7a19608
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 12:00
+- Cupos observados: 15
+- Opciones fecha: 20/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 8.522s
+  - Seleccion fecha/hora: 1.813s
+- Evidencia:
+  - Screenshot principal: no registrado
+  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
+  - Screenshot adicional: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
+  - Screenshot adicional: screenshots\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123813-d7a19608-order-***-6a02d62e6b1e4dbf82f11c0cc9195c41.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-06 23:39:33 - order-08417773 - partial
+
+- Run: 20260706-233923-10c78531
+- Orden: order-***
+- Cliente: order-***
+- Cuenta: 08***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 06/07/2026
+- Hora detectada: Sin Cupos
+- Cupos observados: Sin Cupos
+- Opciones fecha: 06/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: si
+  - Refresco sede elapsed: 672ms
+  - Duracion corrida: 10.252s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\06-07-2026\parcial-233923-order-***-187ac0.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-06 23:49:42 - order-08417773 - partial
+
+- Run: 20260706-234929-de9c132f
+- Orden: order-***
+- Cliente: order-***
+- Cuenta: 08***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 06/07/2026
+- Hora detectada: Sin Cupos
+- Cupos observados: Sin Cupos
+- Opciones fecha: 06/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: si
+  - Refresco sede elapsed: 485ms
+  - Duracion corrida: 12.614s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\06-07-2026\parcial-234929-order-***-fdee7d.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+
+## 2026-07-07 08:28:48 - order-76623115 - partial
+
+- Run: 20260707-082840-9098db8d
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 21/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 7.943s
+  - Seleccion fecha/hora: 1.656s
+- Evidencia:
+  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
+  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
+  - Screenshot adicional: screenshots\07-07-2026\cupo-082840-order-***-1ec87a.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-07 12:46:28 - order-76623115 - partial
+
+- Run: 20260707-124617-bfdbde06
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 14/07/2026
+- Hora detectada: 10:00
+- Cupos observados: 24
+- Opciones fecha: 14/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 11.004s
+  - Seleccion fecha/hora: 1.891s
+- Evidencia:
+  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
+  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
+  - Screenshot adicional: screenshots\07-07-2026\cupo-124617-order-***-02c311.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-07 12:55:15 - order-76623115 - partial
+
+- Run: 20260707-125504-5265d89d
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 22/07/2026
+- Hora detectada: 09:00
+- Cupos observados: 20
+- Opciones fecha: 22/07/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.571s
+  - Seleccion fecha/hora: 1.937s
+- Evidencia:
+  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
+  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
+  - Screenshot adicional: screenshots\07-07-2026\cupo-125504-order-***-82a328.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-07 12:55:31 - order-76623115 - partial
+
+- Run: 20260707-125521-4befc776
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 22/07/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 22/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.823s
+  - Seleccion fecha/hora: 1.875s
+- Evidencia:
+  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
+  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
+  - Screenshot adicional: screenshots\07-07-2026\cupo-125521-order-***-b181c0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 

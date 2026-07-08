@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import threading
 from collections.abc import Iterable, Iterator
@@ -803,6 +804,61 @@ def get_active_reservation_attempt(
             """,
             (order_id,),
         ).fetchone()
+
+
+def record_order_program_listing(
+    order_id: str,
+    details: dict[str, Any],
+    *,
+    settings: Settings | None = None,
+) -> bool:
+    settings = _settings(settings)
+    init_database(settings)
+    listing = sanitize_details(details) or {}
+    signature = json.dumps(listing, sort_keys=True, ensure_ascii=True, default=str)
+    payload = {
+        "signature": signature,
+        "details": listing,
+        "updated_at": _now(),
+    }
+    with _connection(_database_url(settings)) as connection:
+        previous = connection.execute(
+            "SELECT program_listing FROM order_state WHERE order_id = %s",
+            (order_id,),
+        ).fetchone()
+        previous_payload = previous["program_listing"] if previous is not None else None
+        previous_signature = (
+            previous_payload.get("signature")
+            if isinstance(previous_payload, dict)
+            else None
+        )
+        changed = previous_signature != signature
+        connection.execute(
+            """
+            INSERT INTO order_state (order_id, program_listing)
+            VALUES (%s, %s)
+            ON CONFLICT(order_id) DO UPDATE SET
+                program_listing = excluded.program_listing
+            """,
+            (order_id, Jsonb(payload)),
+        )
+    return changed
+
+
+def get_order_program_listing(
+    order_id: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any] | None:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            "SELECT program_listing FROM order_state WHERE order_id = %s",
+            (order_id,),
+        ).fetchone()
+    value = row["program_listing"] if row is not None else None
+    return value if isinstance(value, dict) else None
 
 
 def mark_order_submission_pending(

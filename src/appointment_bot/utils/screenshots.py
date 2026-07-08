@@ -1,4 +1,5 @@
 import logging
+import re
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -14,6 +15,19 @@ from appointment_bot.domain import RunReport
 
 logger = logging.getLogger(__name__)
 ARTIFACT_TIMEZONE = ZoneInfo("America/Lima")
+ARTIFACT_LABEL_ALIASES = {
+    "process-stages": "etapas",
+    "result-available": "cupo",
+    "reservation-confirmation": "confirmacion",
+    "02-detalle-tramite-etapas-reservar-cita": "etapas",
+    "03-modal-reserva-citas-cupo-disponible": "cupo",
+    "03-modal-reserva-citas-disponibilidad-parcial": "parcial",
+    "03-modal-reserva-citas-resultado-desconocido": "resultado",
+    "04-reserva-captcha-tecnico-2captcha": "captcha",
+    "07-detalle-tramite-etapa-programado-confirmada": "programado",
+    "error-flujo-principal": "error",
+    "observer-cupo-disponible": "observer-cupo",
+}
 
 
 def screenshot_artifact_dir(settings: Settings, *parts: str) -> Path:
@@ -22,11 +36,51 @@ def screenshot_artifact_dir(settings: Settings, *parts: str) -> Path:
 
 
 def _artifact_path(settings: Settings, label: str) -> Path:
-    safe_prefix = "-".join(
-        part for part in settings.artifact_prefix.replace("_", "-").split("-") if part
-    )
-    prefix = f"{safe_prefix}-" if safe_prefix else ""
-    return screenshot_artifact_dir(settings) / f"{label}-{prefix}{uuid4().hex}.png"
+    return screenshot_artifact_dir(settings) / artifact_filename(settings, label)
+
+
+def artifact_filename(settings: Settings, label: str, extension: str = ".png") -> str:
+    suffix = extension if extension.startswith(".") else f".{extension}"
+    parts = [
+        _short_artifact_label(label),
+        *_short_artifact_prefix(settings.artifact_prefix),
+        uuid4().hex[:6],
+    ]
+    return f"{'-'.join(part for part in parts if part)}{suffix}"
+
+
+def _short_artifact_label(label: str) -> str:
+    if label in ARTIFACT_LABEL_ALIASES:
+        return ARTIFACT_LABEL_ALIASES[label]
+    match = re.fullmatch(r"06-reserva-respuesta-portal(?:-html)?-intento-(\d+)", label)
+    if match:
+        prefix = "portal-html" if "-html-" in label else "portal"
+        return f"{prefix}-{match.group(1)}"
+    match = re.fullmatch(r"05-reserva-antes-de-enviar-intento-(\d+)", label)
+    if match:
+        return f"preenvio-{match.group(1)}"
+    if label.startswith("observer-captcha-sample-"):
+        return label.replace("observer-captcha-sample-", "observer-captcha-")
+    return "-".join(part for part in re.split(r"[^a-zA-Z0-9]+", label.lower()) if part)[:36]
+
+
+def _short_artifact_prefix(prefix: str) -> list[str]:
+    parts = [part for part in prefix.replace("_", "-").split("-") if part]
+    result: list[str] = []
+    if parts and parts[0] == "observer":
+        result.append("observer")
+
+    for part in parts:
+        if re.fullmatch(r"\d{6}", part):
+            result.append(part)
+            break
+
+    for index, part in enumerate(parts[:-1]):
+        if part == "order" and parts[index + 1]:
+            result.append(f"order-{parts[index + 1]}")
+            break
+
+    return result
 
 
 def normalize_screenshot_paths(
@@ -176,6 +230,75 @@ def save_element_screenshot(
             )
 
     return None
+
+
+def save_centered_modal_screenshot(
+    page: Page,
+    settings: Settings,
+    label: str,
+    selectors: list[str],
+) -> Path | None:
+    path = _artifact_path(settings, label)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    for selector in selectors:
+        locator = page.locator(selector).first
+        try:
+            if locator.count() == 0:
+                continue
+
+            locator.scroll_into_view_if_needed(timeout=5_000)
+            bounds = locator.bounding_box()
+            viewport = page.viewport_size
+            if bounds is None or viewport is None:
+                continue
+
+            clip = _centered_modal_clip(bounds, viewport)
+            with mask_sensitive_page(page):
+                page.screenshot(path=str(path), clip=clip)
+            logger.info("Saved centered modal screenshot: %s using selector %s", path, selector)
+            return path
+        except PlaywrightError as exc:
+            logger.warning(
+                "Could not save centered modal screenshot %s with selector %s: %s",
+                path,
+                selector,
+                exc,
+            )
+
+    return None
+
+
+def _centered_modal_clip(
+    bounds: dict[str, float],
+    viewport: dict[str, int],
+) -> dict[str, float]:
+    aspect_ratio = 2160 / 1800
+    viewport_width = float(viewport["width"])
+    viewport_height = float(viewport["height"])
+    modal_width = max(float(bounds["width"]), 1)
+    modal_height = max(float(bounds["height"]), 1)
+
+    target_width = max(1080.0, modal_width + 96.0, (modal_height + 96.0) * aspect_ratio)
+    target_height = target_width / aspect_ratio
+    if target_width > viewport_width:
+        target_width = viewport_width
+        target_height = target_width / aspect_ratio
+    if target_height > viewport_height:
+        target_height = viewport_height
+        target_width = target_height * aspect_ratio
+
+    center_x = float(bounds["x"]) + modal_width / 2
+    center_y = float(bounds["y"]) + modal_height / 2
+    x = max(0.0, min(center_x - target_width / 2, viewport_width - target_width))
+    y = max(0.0, min(center_y - target_height / 2, viewport_height - target_height))
+
+    return {
+        "x": round(x, 3),
+        "y": round(y, 3),
+        "width": round(target_width, 3),
+        "height": round(target_height, 3),
+    }
 
 
 def save_revealed_element_screenshot(

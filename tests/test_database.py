@@ -11,11 +11,13 @@ from appointment_bot.services.postgres_database import (
     cleanup_expired_service_order_claims,
     create_run_record,
     create_service_order,
+    get_order_program_listing,
     get_run,
     get_worker_state,
     init_database,
     list_runs,
     list_service_order_summaries,
+    record_order_program_listing,
 )
 from tests.helpers import database_connection, make_settings
 
@@ -56,6 +58,7 @@ class DatabaseTests(unittest.TestCase):
             self.assertIn(("worker_state", "current_order_id"), columns)
             self.assertIn(("service_orders", "minimum_date"), columns)
             self.assertIn(("service_orders", "allowed_weekdays"), columns)
+            self.assertIn(("order_state", "program_listing"), columns)
             self.assertNotIn(("service_orders", "active"), columns)
             self.assertNotIn(("portal_accounts", "provider"), columns)
             self.assertNotIn(("applicants", "document_type"), columns)
@@ -142,6 +145,35 @@ class DatabaseTests(unittest.TestCase):
             self.assertIsNotNone(detail)
             self.assertEqual(detail.screenshot_paths, ["evidence.png"])
             self.assertEqual(detail.details, {"sede": "LIMA"})
+
+    def test_program_listing_change_detection_is_persisted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                settings=settings,
+            )
+            details = {
+                "program_count": 3,
+                "pending_count": 1,
+                "decision": "single_pending_selected",
+                "rows": [
+                    {"expediente": "1", "placa": "ABC123", "status": "PENDIENTE"},
+                    {"expediente": "2", "placa": "XYZ999", "status": "ATENDIDO"},
+                ],
+            }
+
+            self.assertTrue(
+                record_order_program_listing(result.order_id, details, settings=settings)
+            )
+            self.assertFalse(
+                record_order_program_listing(result.order_id, details, settings=settings)
+            )
+            stored = get_order_program_listing(result.order_id, settings=settings)
+
+            self.assertIsNotNone(stored)
+            self.assertEqual(stored["details"]["pending_count"], 1)
 
 
 if __name__ == "__main__":

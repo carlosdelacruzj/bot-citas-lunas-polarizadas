@@ -69,24 +69,6 @@ CLIENT_SESSION_PRIVACY_SCRIPT = """
             element.style.setProperty("-webkit-text-security", "none", "important");
         });
 
-        if (!document.getElementById("appointment-bot-video-watermark")) {
-            const banner = document.createElement("div");
-            banner.id = "appointment-bot-video-watermark";
-            banner.textContent = "DIAGNOSTICO / SIN RESERVA";
-            banner.style.cssText = [
-                "position:fixed",
-                "top:16px",
-                "right:16px",
-                "z-index:2147483647",
-                "background:rgba(146,64,14,.94)",
-                "color:white",
-                "font:700 16px Arial,sans-serif",
-                "padding:10px 14px",
-                "border-radius:8px",
-                "pointer-events:none"
-            ].join(";");
-            document.body.appendChild(banner);
-        }
         if (!document.getElementById("appointment-bot-video-header-mask")) {
             const mask = document.createElement("div");
             mask.id = "appointment-bot-video-header-mask";

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from dataclasses import replace
 from pathlib import Path
 
 from appointment_bot.config import load_settings
@@ -13,6 +14,7 @@ from appointment_bot.services.continuous_worker import (
 )
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.order_execution import run_rapid_queue_with_settings
 from appointment_bot.services.status_reports import generate_daily_report_image
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             if worker_status.get("phase") == DAILY_CUTOFF_REASON:
                 if not daily_cutoff_report_generated:
                     try:
+                        _run_final_ready_review(settings)
                         path = generate_daily_report_image()
                         logger.info("Final daily status report generated: %s", path)
                     except Exception:
@@ -112,6 +115,8 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         )
         if worker.shutdown_reason == DAILY_CUTOFF_REASON:
             try:
+                if not daily_cutoff_report_generated:
+                    _run_final_ready_review(settings)
                 path = generate_daily_report_image()
                 logger.info("Final daily status report generated: %s", path)
             except Exception:
@@ -136,6 +141,23 @@ def _set_working_directory() -> None:
     if not workdir.exists():
         raise FileNotFoundError(f"Appointment bot working directory does not exist: {workdir}")
     os.chdir(workdir)
+
+
+def _run_final_ready_review(settings) -> None:
+    review_settings = replace(
+        settings,
+        auto_reserve=False,
+        monitor_window_seconds=0,
+        monitor_max_attempts=1,
+        queue_delay_min_seconds=0,
+        queue_delay_max_seconds=0,
+        telegram_notify_unavailable=False,
+    )
+    report = run_rapid_queue_with_settings(
+        review_settings,
+        stop_on_available_without_reserve=False,
+    )
+    logger.info("Final ready-order review completed: %s", report.message)
 
 
 def main() -> None:

@@ -51,6 +51,12 @@ class NotifierTests(unittest.TestCase):
                 delivered = notify_result(result, settings)
 
             send.assert_called_once()
+            message = send.call_args.args[1]
+            self.assertIn("CUPO DETECTADO", message)
+            self.assertIn("Fechas: 04/07/2026", message)
+            self.assertIn("Horas: 10:00", message)
+            self.assertNotIn("Blocked_selected_for_evidence", message)
+            self.assertNotIn("Submission_outcome", message)
             self.assertTrue(delivered)
 
     def test_blocked_rule_partial_sends_immediate_text_alert(self) -> None:
@@ -173,6 +179,12 @@ class NotifierTests(unittest.TestCase):
             send_message.assert_not_called()
             send_photo.assert_called_once()
             self.assertEqual(send_photo.call_args.args[1], panel_path)
+            caption = send_photo.call_args.args[2]
+            self.assertIn("Evidencia guardada del cupo detectado.", caption)
+            self.assertIn("Fecha: 08/07/2026", caption)
+            self.assertIn("Hora: 10:00", caption)
+            self.assertNotIn("CUPO DETECTADO", caption)
+            self.assertNotIn("Submission_outcome", caption)
 
 
 if __name__ == "__main__":
