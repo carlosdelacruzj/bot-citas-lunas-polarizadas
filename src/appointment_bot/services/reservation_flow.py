@@ -12,10 +12,12 @@ from appointment_bot.flows.appointments import (
     AppointmentWorkflowUnavailable,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
+    validate_selected_appointment,
+)
+from appointment_bot.flows.reservation_captcha import (
     dismiss_reservation_confirmation,
     refresh_reservation_captcha,
     solve_reservation_captcha_and_click_reserve,
-    validate_selected_appointment,
     wait_for_reservation_submission_outcome,
 )
 from appointment_bot.flows.stages import wait_for_programmed_appointment_stage

@@ -15,17 +15,19 @@ from appointment_bot.domain import AvailabilityResult, RunReport
 from appointment_bot.flows.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
-    click_program_action,
-    ensure_reservation_captcha_loaded,
     has_available_date_options,
     open_hidden_appointment_panel_for_observer,
     read_appointment_availability,
-    refresh_reservation_captcha,
-    save_reservation_captcha_image,
     select_available_appointment,
     select_available_site_for_observer,
 )
 from appointment_bot.flows.login import login
+from appointment_bot.flows.programs import click_program_action
+from appointment_bot.flows.reservation_captcha import (
+    ensure_reservation_captcha_loaded,
+    refresh_reservation_captcha,
+    save_reservation_captcha_image,
+)
 from appointment_bot.services.run_reporting import finalize_report
 from appointment_bot.utils.screenshots import (
     save_result_screenshot,

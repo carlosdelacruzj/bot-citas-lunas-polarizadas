@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.flows.appointments import (
     _is_real_appointment_option,
+)
+from appointment_bot.flows.reservation_captcha import (
     ensure_reservation_captcha_loaded,
     save_reservation_captcha_image,
     solve_reservation_captcha_and_click_reserve,
@@ -184,18 +186,18 @@ class AppointmentFlowTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.flows.appointments.save_reservation_captcha_image",
+                    "appointment_bot.flows.reservation_captcha.save_reservation_captcha_image",
                     return_value=captcha,
                 ),
                 patch(
-                    "appointment_bot.flows.appointments.solve_normal_captcha",
+                    "appointment_bot.flows.reservation_captcha.solve_normal_captcha",
                     return_value="1234",
                 ) as solve_captcha,
                 patch(
-                    "appointment_bot.flows.appointments.validate_selected_appointment",
+                    "appointment_bot.flows.reservation_captcha.validate_selected_appointment",
                 ),
                 patch(
-                    "appointment_bot.flows.appointments.save_screenshot",
+                    "appointment_bot.flows.reservation_captcha.save_screenshot",
                     return_value=None,
                 ),
             ):
@@ -232,18 +234,18 @@ class AppointmentFlowTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.flows.appointments.save_reservation_captcha_image",
+                    "appointment_bot.flows.reservation_captcha.save_reservation_captcha_image",
                     side_effect=save_captcha,
                 ),
                 patch(
-                    "appointment_bot.flows.appointments.solve_normal_captcha",
+                    "appointment_bot.flows.reservation_captcha.solve_normal_captcha",
                     return_value="1234",
                 ) as solve_captcha,
                 patch(
-                    "appointment_bot.flows.appointments.validate_selected_appointment",
+                    "appointment_bot.flows.reservation_captcha.validate_selected_appointment",
                 ),
                 patch(
-                    "appointment_bot.flows.appointments.save_screenshot",
+                    "appointment_bot.flows.reservation_captcha.save_screenshot",
                     return_value=None,
                 ),
             ):
@@ -267,7 +269,7 @@ class AppointmentFlowTests(unittest.TestCase):
             captcha_audit: dict[str, object] = {}
 
             with patch(
-                "appointment_bot.flows.appointments.ensure_reservation_captcha_loaded",
+                "appointment_bot.flows.reservation_captcha.ensure_reservation_captcha_loaded",
                 return_value=True,
             ):
                 path = save_reservation_captcha_image(
@@ -303,7 +305,7 @@ class AppointmentFlowTests(unittest.TestCase):
     def test_broken_captcha_image_is_reloaded_before_capture(self) -> None:
         panel = _CaptchaPanel()
         with patch(
-            "appointment_bot.flows.appointments._wait_for_panel_captcha",
+            "appointment_bot.flows.reservation_captcha._wait_for_panel_captcha",
             side_effect=[False, True],
         ):
             loaded = ensure_reservation_captcha_loaded(panel, timeout=1)

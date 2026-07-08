@@ -15,9 +15,9 @@ from appointment_bot.domain import (
     RunReport,
 )
 from appointment_bot.flows.appointments import (
+    APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
-    click_program_action,
     has_available_date_options,
     open_appointment_panel,
     read_appointment_availability,
@@ -25,6 +25,7 @@ from appointment_bot.flows.appointments import (
     select_available_site,
 )
 from appointment_bot.flows.login import login
+from appointment_bot.flows.programs import click_program_action
 from appointment_bot.flows.stages import (
     appointment_stage_result,
     read_process_stages,
@@ -66,18 +67,7 @@ def _save_relevant_result_snapshot(page, settings, status: str) -> Path | None:
         page,
         settings,
         label=label_by_status[status],
-        selectors=[
-            (
-                "xpath=//*[@id='MainContent_idUcitas_cbosede']"
-                "/ancestor::*[.//*[@id='MainContent_idUcitas_btgSiguiente']][1]"
-            ),
-            ".modal:has(#MainContent_idUcitas_cbosede)",
-            ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
-            "[role='dialog']:has(#MainContent_idUcitas_cbosede)",
-            "#MainContent_idUcitas",
-            "fieldset:has(#MainContent_idUcitas_cbosede)",
-            "table:has(#MainContent_idUcitas_cbosede)",
-        ],
+        selectors=APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     )
     if centered_path is not None:
         return centered_path

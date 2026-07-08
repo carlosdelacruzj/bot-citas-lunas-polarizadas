@@ -4,15 +4,20 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from appointment_bot.domain import ResultStatus, RunReport
+from appointment_bot.services.detail_helpers import (
+    LIMA_TZ,
+    detail_text,
+    detection_origin,
+    format_lima_datetime,
+    parse_datetime,
+)
 from appointment_bot.services.reservation_timings import TIMING_DETAILS_KEY
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 
-LIMA_TZ = ZoneInfo("America/Lima")
 OPTIMIZATION_LOG_PATH = Path("docs/reservation-optimization-log.md")
 PARTIAL_AVAILABILITY_LOG_PATH = Path("docs/partial-availability-log.md")
 REJECTED_AFTER_SUBMISSION = {"captcha_invalid", "slot_lost", "rejected"}
@@ -98,7 +103,7 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
         f"- Cupos observados: {slots_text}\n",
         f"- Opciones fecha: {_text(_list_text(details.get('date_options')))}\n",
         f"- Opciones hora: {_text(_list_text(details.get('hour_options')))}\n",
-        f"- Origen deteccion: {_detection_origin(details)}\n",
+        f"- Origen deteccion: {detection_origin(details)}\n",
         f"- Resultado: {sanitize_text(report.message)}\n",
         "- Reglas/decision:\n",
         f"  - Bloqueado por regla: {_bool_text(details.get('blocked_by_order_rule'))}\n",
@@ -166,7 +171,7 @@ def _today_blocked_text(details: dict[str, Any]) -> str:
 
 def _partial_technical_observation(report: RunReport, details: dict[str, Any]) -> str:
     notes: list[str] = []
-    origin = _detection_origin(details)
+    origin = detection_origin(details)
     date_text = _text(details.get("fecha") or details.get("appointment_date"))
     hour_text = _text(details.get("hora") or details.get("appointment_hour"))
     if origin == "fetch_probe":
@@ -205,7 +210,7 @@ def _entry_for_report(
         f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
         f"- Cita observada: {_appointment_text(details)}\n",
         f"- Cupos observados: {slots_text}\n",
-        f"- Origen deteccion: {_detection_origin(details)}\n",
+        f"- Origen deteccion: {detection_origin(details)}\n",
         f"- Resultado: {_result_summary(report)}\n",
         f"- Confirmacion posterior: {_post_confirmation(details)}\n",
         "- Tiempos:\n",
@@ -361,7 +366,7 @@ def _post_confirmation(details: dict[str, Any]) -> str:
 
 def _technical_observation(report: RunReport, timing: dict[str, Any]) -> str:
     details = report.details or {}
-    origin = _detection_origin(details)
+    origin = detection_origin(details)
     slowest = _slowest_timing(timing)
     notes: list[str] = []
     if origin == "normal":
@@ -421,17 +426,6 @@ def _appointment_text(details: dict[str, Any]) -> str:
     return date or hour or "no registrada"
 
 
-def _detection_origin(details: dict[str, Any]) -> str:
-    origin = _text(details.get("detection_origin"))
-    if origin:
-        return origin
-    if details.get("fetch_probe"):
-        return "fetch_probe"
-    if details.get("reload_probe"):
-        return "reload_probe"
-    return "normal"
-
-
 def _extra_screenshots(report: RunReport) -> list[str]:
     paths = report.screenshot_paths or []
     return [
@@ -451,22 +445,11 @@ def _display_evidence_path(value: object) -> str:
 
 
 def _format_lima_datetime(value: str | None) -> str | None:
-    parsed = _parse_datetime(value)
-    if parsed is None:
-        return None
-    return parsed.astimezone(LIMA_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    return format_lima_datetime(value, default_timezone=LIMA_TZ)
 
 
 def _parse_datetime(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=LIMA_TZ)
-    return parsed
+    return parse_datetime(value, default_timezone=LIMA_TZ)
 
 
 def _duration(timing: dict[str, Any], key: str) -> str:
@@ -509,9 +492,7 @@ def _float(value: Any) -> float | None:
 
 
 def _text(value: Any) -> str:
-    if value is None:
-        return ""
-    return sanitize_text(str(value)).replace("\n", " ").strip()
+    return detail_text(value, collapse_newlines=True)
 
 
 def _list_text(value: Any) -> str:

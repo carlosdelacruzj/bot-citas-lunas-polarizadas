@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import threading
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
@@ -27,13 +26,11 @@ from appointment_bot.services.database_models import (
     ServiceOrderSummary,
     WorkerState,
 )
+from appointment_bot.services.detail_helpers import appointment_datetime_details
 from appointment_bot.services.postgres_pool import pooled_connection
 from appointment_bot.utils.sanitization import public_filename, sanitize_text
 
 DEFAULT_RESERVATION_AMOUNT = Decimal("40.00")
-APPOINTMENT_DATETIME_RE = re.compile(
-    r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
-)
 _INITIALIZED_URLS: set[str] = set()
 _INITIALIZATION_LOCK = threading.Lock()
 
@@ -394,7 +391,9 @@ def _record_reservation_for_order(
     is_confirmed = (
         bool(getattr(report, "reservation_confirmed", False)) if confirmed is None else confirmed
     )
-    appointment_date, appointment_hour = _appointment_datetime_details(details)
+    appointment_date_raw, appointment_hour_raw = appointment_datetime_details(details)
+    appointment_date = _optional_text_value(appointment_date_raw)
+    appointment_hour = _optional_text_value(appointment_hour_raw)
     status = "confirmed" if is_confirmed else "unconfirmed"
     reservation_id = _id_from_value("reservation", f"{order_id}-{run_id or now}")
     with _operation_connection(settings, _connection_override) as connection:
@@ -1903,18 +1902,10 @@ def _detail_text(details: dict[str, Any], key: str) -> str | None:
     return str(value)
 
 
-def _appointment_datetime_details(details: dict[str, Any]) -> tuple[str | None, str | None]:
-    date_text = _detail_text(details, "fecha")
-    hour_text = _detail_text(details, "hora")
-    if not date_text:
-        return None, hour_text
-
-    match = APPOINTMENT_DATETIME_RE.match(date_text)
-    if match is None:
-        return date_text, hour_text
-
-    parsed_hour = match.group("hour")
-    return match.group("date"), hour_text or parsed_hour
+def _optional_text_value(value: object) -> str | None:
+    if value is None or value == "":
+        return None
+    return str(value)
 
 
 def _parse_minimum_reservation_date(value: str | date | None) -> date | None:

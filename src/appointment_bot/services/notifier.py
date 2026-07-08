@@ -1,7 +1,6 @@
 import json
 import logging
 import mimetypes
-import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +11,9 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult
+from appointment_bot.services.detail_helpers import (
+    appointment_datetime_details as _appointment_datetime_details,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 
@@ -20,9 +22,6 @@ logger = logging.getLogger(__name__)
 TELEGRAM_API_TIMEOUT_SECONDS = 15
 TELEGRAM_URGENT_TIMEOUT_SECONDS = 5
 TELEGRAM_TIMEZONE = ZoneInfo("America/Lima")
-APPOINTMENT_DATETIME_RE = re.compile(
-    r"^\s*(?P<date>\d{1,2}/\d{1,2}/\d{4})(?:\s+(?P<hour>\d{1,2}:\d{2}))?\s*$"
-)
 
 
 def notify_result(
@@ -624,19 +623,6 @@ def _format_programmed_payment_message(details: dict[str, object]) -> str:
         "Ahora ya podemos proceder con el pago del servicio. "
         "Por favor coordina el abono para cerrar la atencion."
     )
-
-
-def _appointment_datetime_details(
-    details: dict[str, object],
-) -> tuple[object | None, object | None]:
-    date = details.get("fecha")
-    hour = details.get("hora")
-    if not isinstance(date, str):
-        return date, hour
-    match = APPOINTMENT_DATETIME_RE.match(date)
-    if match is None:
-        return date, hour
-    return match.group("date"), hour or match.group("hour")
 
 
 def _format_result_details(result: AvailabilityResult) -> str:

@@ -7,14 +7,19 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from appointment_bot.domain import ResultStatus, RunReport, sanitize_details
 from appointment_bot.services.database_models import RunDetail
+from appointment_bot.services.detail_helpers import (
+    LIMA_TZ,
+    detail_text,
+    detection_origin,
+    format_lima_datetime,
+    parse_datetime,
+)
 from appointment_bot.services.reservation_timings import TIMING_DETAILS_KEY
 from appointment_bot.utils.sanitization import sanitize_text
 
-LIMA_TZ = ZoneInfo("America/Lima")
 EVIDENCE_INDEX_PATH = Path("docs/evidence-index.csv")
 EVIDENCE_SUMMARY_PATH = Path("docs/evidence-summary.md")
 EVIDENCE_STATUSES = {
@@ -191,7 +196,7 @@ def _evidence_row(
 ) -> dict[str, str] | None:
     details = sanitize_details(details) or {}
     status_value = ResultStatus(status)
-    submission_outcome = _text(details.get("submission_outcome"))
+    submission_outcome = detail_text(details.get("submission_outcome"))
     defense_signal = detect_defense_signal(message, details)
     if not _is_evidence_case(
         status_value,
@@ -205,17 +210,17 @@ def _evidence_row(
     timing = details.get(TIMING_DETAILS_KEY)
     timing = timing if isinstance(timing, dict) else {}
     return {
-        "run_id": _text(run_id),
+        "run_id": detail_text(run_id),
         "finished_at_lima": _format_lima_datetime(finished_at),
-        "order_id": _text(order_id),
+        "order_id": detail_text(order_id),
         "status": status_value.value,
-        "detection_origin": _detection_origin(details),
-        "site": _text(details.get("sede") or details.get("site")),
-        "appointment_date": _text(details.get("fecha") or details.get("appointment_date")),
-        "appointment_hour": _text(details.get("hora") or details.get("appointment_hour")),
-        "slots": _text(details.get("cupos") or details.get("slots")),
+        "detection_origin": detection_origin(details),
+        "site": detail_text(details.get("sede") or details.get("site")),
+        "appointment_date": detail_text(details.get("fecha") or details.get("appointment_date")),
+        "appointment_hour": detail_text(details.get("hora") or details.get("appointment_hour")),
+        "slots": detail_text(details.get("cupos") or details.get("slots")),
         "submission_outcome": submission_outcome,
-        "confirmation_source": _text(details.get("confirmation_source")),
+        "confirmation_source": detail_text(details.get("confirmation_source")),
         "defense_signal": defense_signal,
         "duration_seconds": _number_text(duration_seconds),
         "total_from_available_seconds": _number_text(timing.get("total_from_available_seconds")),
@@ -257,9 +262,9 @@ def detect_defense_signal(message: str, details: dict[str, Any] | None = None) -
     searchable = " ".join(
         [
             message,
-            _text(details.get("error_type")),
-            _text(details.get("portal_response")),
-            _text(details.get("visible_text")),
+            detail_text(details.get("error_type")),
+            detail_text(details.get("portal_response")),
+            detail_text(details.get("visible_text")),
         ]
     ).casefold()
     for label, patterns in DEFENSE_PATTERNS:
@@ -330,7 +335,7 @@ def _summary_markdown(rows: list[dict[str, str]], *, title: str) -> str:
 
 
 def _run_in_days(run: RunDetail, *, days: int, now: datetime | None) -> bool:
-    parsed = _parse_datetime(run.finished_at)
+    parsed = parse_datetime(run.finished_at)
     if parsed is None:
         return False
     current = now or datetime.now(UTC)
@@ -344,28 +349,17 @@ def _existing_run_ids(path: Path) -> set[str]:
 
 
 def _normalized_row(row: dict[str, str]) -> dict[str, str]:
-    return {field: sanitize_text(_text(row.get(field))) for field in CSV_FIELDS}
-
-
-def _detection_origin(details: dict[str, Any]) -> str:
-    origin = _text(details.get("detection_origin"))
-    if origin:
-        return origin
-    if details.get("fetch_probe"):
-        return "fetch_probe"
-    if details.get("reload_probe"):
-        return "reload_probe"
-    return "normal"
+    return {field: sanitize_text(detail_text(row.get(field))) for field in CSV_FIELDS}
 
 
 def _evidence_paths(details: dict[str, Any], screenshot_paths: list[str]) -> str:
-    paths = [_text(path) for path in screenshot_paths if _current_evidence_path(path)]
+    paths = [detail_text(path) for path in screenshot_paths if _current_evidence_path(path)]
     artifacts = details.get("diagnostic_artifacts")
     if isinstance(artifacts, dict):
         for values in artifacts.values():
             if isinstance(values, list):
                 paths.extend(
-                    _text(value) for value in values if _current_evidence_path(value)
+                    detail_text(value) for value in values if _current_evidence_path(value)
                 )
     for key in (
         "captcha_image_path",
@@ -373,36 +367,21 @@ def _evidence_paths(details: dict[str, Any], screenshot_paths: list[str]) -> str
         "captcha_original_html_path",
         "post_submit_html_path",
     ):
-        value = _text(details.get(key))
+        value = detail_text(details.get(key))
         if _current_evidence_path(value):
             paths.append(value)
     return " | ".join(dict.fromkeys(path for path in paths if path))
 
 
 def _current_evidence_path(value: object) -> str:
-    text = _text(value)
+    text = detail_text(value)
     if OBSOLETE_CAPTCHA_PANEL_ARTIFACT in text:
         return ""
     return text
 
 
 def _format_lima_datetime(value: str) -> str:
-    parsed = _parse_datetime(value)
-    if parsed is None:
-        return ""
-    return parsed.astimezone(LIMA_TZ).strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _parse_datetime(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        parsed = datetime.fromisoformat(str(value))
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=UTC)
-    return parsed
+    return format_lima_datetime(value, default_timezone=UTC) or ""
 
 
 def _number_text(value: Any) -> str:
@@ -412,11 +391,3 @@ def _number_text(value: Any) -> str:
         return f"{float(value):.3f}"
     except (TypeError, ValueError):
         return ""
-
-
-def _text(value: Any) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, (dict, list, tuple)):
-        return sanitize_text(str(value))
-    return sanitize_text(str(value).strip())
