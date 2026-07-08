@@ -37,6 +37,36 @@ un evento lo justifique.
 - Si el portal muestra mensaje de exito, se permite avanzar como `registered`;
   la confirmacion posterior de `Programado` queda como auditoria.
 
+## Siguientes pasos de pulcritud tecnica
+
+1. Reducir `src/appointment_bot/services/continuous_worker.py`:
+   separar ventanas calientes, lease, ciclo principal, backoff/recovery y
+   ejecucion de cola/observer.
+2. Partir `src/appointment_bot/services/session_runner.py`:
+   separar preparacion de sesion/video, login y tramite, monitoreo de
+   disponibilidad, y finalizacion/reporte.
+3. Separar tests de flujo restantes:
+   mantener `test_appointments.py` para lectura/seleccion y crear una suite
+   dedicada para `programs.py`.
+
+## Pulcritud tecnica completada
+
+- `src/appointment_bot/flows/reservation_captcha.py` fue eliminado.
+- La captura de imagen vive en `reservation_captcha_capture.py`.
+- El refresh/reload vive en `reservation_captcha_refresh.py`.
+- El llenado de CAPTCHA y click en `Reservar` vive en `reservation_submit.py`.
+- La lectura/cierre de respuesta del portal vive en `reservation_portal.py`.
+- Los tests de CAPTCHA de reserva viven en `tests/test_reservation_captcha.py`.
+- `src/appointment_bot/services/postgres_database.py` fue eliminado.
+- La conexion, migracion y helpers comunes viven en `postgres_common.py`.
+- Ordenes, credenciales, pagos, leases de orden y estado de orden viven en
+  `postgres_orders.py`.
+- Reservas e intentos de reserva viven en `postgres_reservations.py`.
+- Corridas, screenshots, checks y metricas de ventanas viven en
+  `postgres_runs.py`.
+- Estado y lease del worker viven en `postgres_worker.py`.
+- Limpieza historica de PostgreSQL vive en `postgres_cleanup.py`.
+
 ## Regenerar resumen manual
 
 ```powershell

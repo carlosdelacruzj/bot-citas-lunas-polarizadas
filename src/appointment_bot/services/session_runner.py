@@ -32,7 +32,7 @@ from appointment_bot.flows.stages import (
 )
 from appointment_bot.services.client_video import ClientSessionVideoRecorder
 from appointment_bot.services.notifier import notify_error, notify_result, send_telegram_message
-from appointment_bot.services.postgres_database import record_order_program_listing
+from appointment_bot.services.postgres_orders import record_order_program_listing
 from appointment_bot.services.reservation_flow import (
     capture_blocked_captcha_evidence,
     complete_available_reservation,

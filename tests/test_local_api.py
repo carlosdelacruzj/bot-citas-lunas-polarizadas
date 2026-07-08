@@ -12,7 +12,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from appointment_bot.services.local_api import create_local_api_server
-from appointment_bot.services.postgres_database import create_service_order
+from appointment_bot.services.postgres_orders import create_service_order
 from tests.helpers import make_settings
 
 
@@ -163,7 +163,7 @@ class LocalApiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             from appointment_bot.services.database_models import RunRecord
-            from appointment_bot.services.postgres_database import create_run_record
+            from appointment_bot.services.postgres_runs import create_run_record
 
             create_run_record(
                 settings,

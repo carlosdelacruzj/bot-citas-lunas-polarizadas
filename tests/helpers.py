@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from psycopg import sql
 
 from appointment_bot.config import Settings, load_settings
-from appointment_bot.services import postgres_database
+from appointment_bot.services.postgres_common import _connection
 
 _CREATED_SCHEMAS: list[tuple[str, str]] = []
 
@@ -37,7 +37,7 @@ def _schema_url(database_url: str, schema: str) -> str:
 def make_settings(root: Path) -> Settings:
     database_url = _test_database_url()
     schema = f"test_{uuid.uuid4().hex}"
-    with postgres_database._connection(database_url) as connection:
+    with _connection(database_url) as connection:
         connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
     _CREATED_SCHEMAS.append((database_url, schema))
     with patch.dict(
@@ -66,7 +66,7 @@ def make_settings(root: Path) -> Settings:
 
 @contextmanager
 def database_connection(settings: Settings):
-    with postgres_database._connection(settings.database_url) as connection:
+    with _connection(settings.database_url) as connection:
         yield connection
 
 
@@ -74,7 +74,7 @@ def _cleanup_test_schemas() -> None:
     while _CREATED_SCHEMAS:
         database_url, schema = _CREATED_SCHEMAS.pop()
         try:
-            with postgres_database._connection(database_url) as connection:
+            with _connection(database_url) as connection:
                 connection.execute(
                     sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(sql.Identifier(schema))
                 )

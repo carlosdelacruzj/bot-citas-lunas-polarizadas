@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import unquote
 
 from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_database import get_run, list_runs
+from appointment_bot.services.postgres_runs import get_run, list_runs
 
 
 def list_runs_payload(query: dict[str, list[str]]) -> dict[str, Any]:

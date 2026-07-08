@@ -38,20 +38,22 @@ from appointment_bot.services.order_runtime import (
     classify_order_report,
     order_done_status_from_report,
 )
-from appointment_bot.services.postgres_database import (
-    acquire_worker_lease,
+from appointment_bot.services.postgres_orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
-    get_worker_state,
     list_active_orders,
     list_observer_orders,
     mark_order_done,
     order_backoff_seconds,
-    record_observer_window_metric,
     release_service_order_claim,
+    update_order_state,
+)
+from appointment_bot.services.postgres_runs import record_observer_window_metric
+from appointment_bot.services.postgres_worker import (
+    acquire_worker_lease,
+    get_worker_state,
     release_worker_lease,
     renew_worker_lease,
-    update_order_state,
     update_worker_state,
 )
 from appointment_bot.services.run_reporting import settings_for_order

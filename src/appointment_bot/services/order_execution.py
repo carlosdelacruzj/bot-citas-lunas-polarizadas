@@ -27,10 +27,9 @@ from appointment_bot.services.order_transitions import (
     order_can_submit,
     reconcile_pending_submission,
 )
-from appointment_bot.services.postgres_database import (
+from appointment_bot.services.postgres_orders import (
     claim_service_order,
     clear_order_submission_state,
-    create_reservation_attempt,
     get_claimed_service_order_runtime,
     get_reservation_constraints_for_order,
     list_active_orders,
@@ -38,17 +37,20 @@ from appointment_bot.services.postgres_database import (
     mark_order_done,
     mark_order_submission_intent,
     mark_order_submission_pending,
-    mark_reservation_attempt_pending,
     order_backoff_seconds,
     order_reservation_pending,
     record_invalid_credential_failure,
-    record_order_check,
     release_service_order_claim,
     renew_service_order_claim,
-    resolve_reservation_attempt,
     set_order_paused,
     update_order_state,
 )
+from appointment_bot.services.postgres_reservations import (
+    create_reservation_attempt,
+    mark_reservation_attempt_pending,
+    resolve_reservation_attempt,
+)
+from appointment_bot.services.postgres_runs import record_order_check
 from appointment_bot.services.run_reporting import settings_for_order
 from appointment_bot.services.session_runner import run_with_report
 

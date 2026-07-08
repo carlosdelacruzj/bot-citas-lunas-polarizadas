@@ -23,10 +23,10 @@ from appointment_bot.flows.appointments import (
 )
 from appointment_bot.flows.login import login
 from appointment_bot.flows.programs import click_program_action
-from appointment_bot.flows.reservation_captcha import (
+from appointment_bot.flows.reservation_captcha_capture import save_reservation_captcha_image
+from appointment_bot.flows.reservation_captcha_refresh import (
     ensure_reservation_captcha_loaded,
     refresh_reservation_captcha,
-    save_reservation_captcha_image,
 )
 from appointment_bot.services.run_reporting import finalize_report
 from appointment_bot.utils.screenshots import (

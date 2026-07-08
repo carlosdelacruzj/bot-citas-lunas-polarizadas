@@ -8,18 +8,17 @@ from pathlib import Path
 from typing import Any
 
 from appointment_bot.services.evidence_summary import export_evidence_summary
-from appointment_bot.services.postgres_database import (
+from appointment_bot.services.postgres_common import init_database
+from appointment_bot.services.postgres_orders import (
     add_or_update_service_order_contact,
     create_service_order,
-    get_run,
-    init_database,
-    list_runs,
     list_service_order_summaries,
     mark_order_done,
     mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
 )
+from appointment_bot.services.postgres_runs import get_run, list_runs
 from appointment_bot.services.status_reports import (
     generate_daily_report_image,
     generate_status_report_images,

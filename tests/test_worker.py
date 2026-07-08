@@ -12,7 +12,7 @@ from appointment_bot.domain import RunReport
 from appointment_bot.services import observer
 from appointment_bot.services.continuous_worker import ContinuousWorker
 from appointment_bot.services.database_models import ServiceOrderRuntime, WorkerState
-from appointment_bot.services.postgres_database import update_worker_state
+from appointment_bot.services.postgres_worker import update_worker_state
 from tests.helpers import make_settings
 
 

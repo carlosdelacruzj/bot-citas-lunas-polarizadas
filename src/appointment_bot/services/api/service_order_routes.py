@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import unquote
 
 from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_database import (
+from appointment_bot.services.postgres_orders import (
     add_or_update_service_order_contact,
     create_service_order,
     list_service_order_summaries,

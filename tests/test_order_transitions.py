@@ -11,7 +11,7 @@ from appointment_bot.services.order_transitions import (
     order_can_submit,
     reconcile_pending_submission,
 )
-from appointment_bot.services.postgres_database import (
+from appointment_bot.services.postgres_orders import (
     claim_service_order,
     create_service_order,
     mark_order_submission_pending,

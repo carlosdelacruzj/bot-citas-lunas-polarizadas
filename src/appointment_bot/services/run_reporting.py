@@ -12,15 +12,13 @@ from appointment_bot.domain import (
     RunReport,
     sanitize_details,
 )
+from appointment_bot.services.database_models import RunRecord
 from appointment_bot.services.evidence_summary import append_evidence_case
 from appointment_bot.services.optimization_log import (
     append_optimization_case,
     append_partial_availability_case,
 )
-from appointment_bot.services.postgres_database import (
-    RunRecord,
-    record_run_outcome,
-)
+from appointment_bot.services.postgres_runs import record_run_outcome
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 

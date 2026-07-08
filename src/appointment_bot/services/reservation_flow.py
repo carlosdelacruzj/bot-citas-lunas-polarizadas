@@ -14,12 +14,12 @@ from appointment_bot.flows.appointments import (
     ReservationSubmissionUncertain,
     validate_selected_appointment,
 )
-from appointment_bot.flows.reservation_captcha import (
+from appointment_bot.flows.reservation_captcha_refresh import refresh_reservation_captcha
+from appointment_bot.flows.reservation_portal import (
     dismiss_reservation_confirmation,
-    refresh_reservation_captcha,
-    solve_reservation_captcha_and_click_reserve,
     wait_for_reservation_submission_outcome,
 )
+from appointment_bot.flows.reservation_submit import solve_reservation_captcha_and_click_reserve
 from appointment_bot.flows.stages import wait_for_programmed_appointment_stage
 from appointment_bot.services.reservation_timings import (
     ReservationTiming,

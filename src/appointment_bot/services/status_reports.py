@@ -11,10 +11,10 @@ from zoneinfo import ZoneInfo
 from playwright.sync_api import sync_playwright
 
 from appointment_bot.services.database_models import ServiceOrderSummary
-from appointment_bot.services.postgres_database import (
+from appointment_bot.services.postgres_orders import list_service_order_summaries
+from appointment_bot.services.postgres_runs import (
     get_run,
     list_runs,
-    list_service_order_summaries,
     summarize_order_checks,
 )
 
