@@ -32,6 +32,55 @@ from appointment_bot.utils.screenshots import save_screenshot
 logger = logging.getLogger(__name__)
 
 
+def _add_diagnostic_artifact(
+    diagnostic_artifacts: dict[str, list[str]],
+    kind: str,
+    path: Path | str | None,
+) -> None:
+    if path is None:
+        return
+    value = str(path)
+    values = diagnostic_artifacts.setdefault(kind, [])
+    if value not in values:
+        values.append(value)
+
+
+def _collect_screenshots(
+    additional_screenshot_paths: list[Path],
+    primary_screenshot_path: Path | None,
+    *paths: Path | None,
+) -> list[Path]:
+    return [
+        path
+        for path in [
+            *paths,
+            *additional_screenshot_paths,
+            primary_screenshot_path,
+        ]
+        if path is not None
+    ]
+
+
+def _build_reservation_details(
+    result: AvailabilityResult,
+    timing: ReservationTiming | None,
+    latest_captcha_audit: dict[str, object],
+    captcha_attempts: list[dict[str, object]],
+    portal_response: dict[str, object],
+    diagnostic_artifacts: dict[str, list[str]],
+) -> dict:
+    details = add_reservation_timing_details(result.details, timing)
+    details.update(latest_captcha_audit)
+    if captcha_attempts:
+        details["captcha_attempts"] = captcha_attempts
+    if portal_response:
+        details["portal_response"] = portal_response
+    artifacts = {key: values for key, values in diagnostic_artifacts.items() if values}
+    if artifacts:
+        details["diagnostic_artifacts"] = artifacts
+    return details
+
+
 def complete_available_reservation(
     page,
     settings: Settings,
@@ -58,40 +107,18 @@ def complete_available_reservation(
     additional_screenshot_paths: list[Path] = []
     max_captcha_attempts = 2
 
-    def add_artifact(kind: str, path: Path | str | None) -> None:
-        if path is None:
-            return
-        value = str(path)
-        values = diagnostic_artifacts.setdefault(kind, [])
-        if value not in values:
-            values.append(value)
-
     def collected_screenshots(*paths: Path | None) -> list[Path]:
-        return [
-            path
-            for path in [
-                *paths,
-                *additional_screenshot_paths,
-                screenshot_path,
-            ]
-            if path is not None
-        ]
+        return _collect_screenshots(additional_screenshot_paths, screenshot_path, *paths)
 
     def reservation_details() -> dict:
-        details = add_reservation_timing_details(result.details, timing)
-        details.update(latest_captcha_audit)
-        if captcha_attempts:
-            details["captcha_attempts"] = captcha_attempts
-        if portal_response:
-            details["portal_response"] = portal_response
-        artifacts = {
-            key: values
-            for key, values in diagnostic_artifacts.items()
-            if values
-        }
-        if artifacts:
-            details["diagnostic_artifacts"] = artifacts
-        return details
+        return _build_reservation_details(
+            result,
+            timing,
+            latest_captcha_audit,
+            captcha_attempts,
+            portal_response,
+            diagnostic_artifacts,
+        )
 
     def mark_submission_started() -> None:
         nonlocal submission_started
@@ -129,8 +156,13 @@ def complete_available_reservation(
                 captcha_audit.update(exc.captcha_audit)
                 latest_captcha_audit.clear()
                 latest_captcha_audit.update(captcha_audit)
-                add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
-                add_artifact(
+                _add_diagnostic_artifact(
+                    diagnostic_artifacts,
+                    "captcha_images",
+                    captcha_audit.get("captcha_image_path"),
+                )
+                _add_diagnostic_artifact(
+                    diagnostic_artifacts,
                     "captcha_images",
                     captcha_audit.get("captcha_screenshot_image_path"),
                 )
@@ -154,13 +186,18 @@ def complete_available_reservation(
                 )
             latest_captcha_audit.clear()
             latest_captcha_audit.update(captcha_audit)
-            add_artifact("captcha_images", captcha_audit.get("captcha_image_path"))
-            add_artifact(
+            _add_diagnostic_artifact(
+                diagnostic_artifacts,
+                "captcha_images",
+                captcha_audit.get("captcha_image_path"),
+            )
+            _add_diagnostic_artifact(
+                diagnostic_artifacts,
                 "captcha_images",
                 captcha_audit.get("captcha_screenshot_image_path"),
             )
             pre_submit_path = captcha_audit.get("pre_submit_screenshot_path")
-            add_artifact("screenshots", pre_submit_path)
+            _add_diagnostic_artifact(diagnostic_artifacts, "screenshots", pre_submit_path)
             if pre_submit_path:
                 additional_screenshot_paths.append(Path(str(pre_submit_path)))
 
@@ -190,7 +227,11 @@ def complete_available_reservation(
                 captcha_audit["post_submit_screenshot_path"] = str(
                     reservation_confirmation_screenshot_path
                 )
-                add_artifact("screenshots", reservation_confirmation_screenshot_path)
+                _add_diagnostic_artifact(
+                    diagnostic_artifacts,
+                    "screenshots",
+                    reservation_confirmation_screenshot_path,
+                )
                 additional_screenshot_paths.append(reservation_confirmation_screenshot_path)
             post_submit_html_path = save_sanitized_page_html(
                 page,
@@ -199,7 +240,11 @@ def complete_available_reservation(
             )
             if post_submit_html_path is not None:
                 captcha_audit["post_submit_html_path"] = str(post_submit_html_path)
-                add_artifact("dom_snapshots", post_submit_html_path)
+                _add_diagnostic_artifact(
+                    diagnostic_artifacts,
+                    "dom_snapshots",
+                    post_submit_html_path,
+                )
             captcha_attempts.append(dict(captcha_audit))
             latest_captcha_audit.clear()
             latest_captcha_audit.update(captcha_audit)
@@ -303,7 +348,11 @@ def complete_available_reservation(
             settings,
             label="07-detalle-tramite-etapa-programado-confirmada",
         )
-        add_artifact("screenshots", updated_process_stages_screenshot_path)
+        _add_diagnostic_artifact(
+            diagnostic_artifacts,
+            "screenshots",
+            updated_process_stages_screenshot_path,
+        )
     except ReservationSubmissionUncertain as exc:
         submission_started = True
         confirmation_text_detected = False

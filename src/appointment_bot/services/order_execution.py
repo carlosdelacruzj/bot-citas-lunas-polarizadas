@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import logging
 import random
-import re
 import threading
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import replace
-from datetime import datetime
 from uuid import uuid4
-from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.domain import RunReport
@@ -22,6 +19,10 @@ from appointment_bot.services.order_runtime import (
     OrderReportOutcome,
     classify_order_report,
     order_done_status_from_report,
+)
+from appointment_bot.services.order_selection import (
+    ReservationConstraints,
+    appointment_filter_from_constraints,
 )
 from appointment_bot.services.order_transitions import (
     order_can_submit,
@@ -55,7 +56,6 @@ logger = logging.getLogger(__name__)
 
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
 SERVICE_ORDER_LEASE_RENEW_INTERVAL_SECONDS = 60
-RESERVATION_RULE_TIMEZONE = ZoneInfo("America/Lima")
 
 
 class _CombinedEvent:
@@ -125,35 +125,13 @@ def _appointment_filter_for_order(
         order_id,
         settings=settings,
     )
-    current_reservation_date = datetime.now(RESERVATION_RULE_TIMEZONE).date()
-
-    def is_allowed(date_text: str, hour_text: str) -> bool:
-        parsed_date = _parse_appointment_date(date_text)
-        if parsed_date is None or parsed_date <= current_reservation_date:
-            return False
-        if minimum_date is not None:
-            if parsed_date < minimum_date:
-                return False
-        if allowed_weekdays is not None and parsed_date.isoweekday() not in allowed_weekdays:
-            return False
-        if minimum_hour is not None:
-            match = re.search(r"\b([01]?\d|2[0-3])(?::\d{2})?\b", hour_text)
-            if match is None or int(match.group(1)) < minimum_hour:
-                return False
-        return True
-
-    return is_allowed
-
-
-def _parse_appointment_date(date_text: str):
-    match = re.search(r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b", date_text)
-    if match is None:
-        return None
-    day, month, year = (int(item) for item in match.groups())
-    try:
-        return datetime(year, month, day).date()
-    except ValueError:
-        return None
+    return appointment_filter_from_constraints(
+        ReservationConstraints(
+            minimum_hour=minimum_hour,
+            minimum_date=minimum_date,
+            allowed_weekdays=allowed_weekdays,
+        )
+    )
 
 
 def run_rapid_queue_with_settings(

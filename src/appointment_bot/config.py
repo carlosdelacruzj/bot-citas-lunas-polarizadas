@@ -46,6 +46,15 @@ def _parse_int_list(value: str | None, *, default: tuple[int, ...]) -> tuple[int
     return parsed
 
 
+def _parse_evidence_profile(value: str | None) -> str:
+    profile = (value or "custom").strip().lower()
+    if not profile:
+        return "custom"
+    if profile not in {"custom", "fast", "diagnostic"}:
+        raise ValueError("EVIDENCE_PROFILE must be custom, fast, or diagnostic.")
+    return profile
+
+
 def _parse_time_windows(
     value: str | None,
     *,
@@ -98,6 +107,7 @@ class Settings:
     client_video_height: int
     record_client_sessions: bool
     record_client_video_final_mp4: bool
+    evidence_profile: str
     log_level: str
     telegram_enabled: bool
     telegram_bot_token: str
@@ -115,6 +125,7 @@ class Settings:
     continuous_worker_enabled: bool
     continuous_interval_min_seconds: int
     continuous_interval_max_seconds: int
+    final_ready_review_enabled: bool
     session_rotation_seconds: int
     observer_session_seconds: int
     observer_max_attempts: int
@@ -152,6 +163,30 @@ class Settings:
 def load_settings(*, require_login: bool = True) -> Settings:
     load_dotenv()
 
+    evidence_profile = _parse_evidence_profile(os.getenv("EVIDENCE_PROFILE"))
+    screenshot_on_error = _parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True)
+    screenshot_on_relevant_result = _parse_bool(
+        os.getenv("SCREENSHOT_ON_RELEVANT_RESULT"),
+        default=True,
+    )
+    record_client_sessions = _parse_bool(
+        os.getenv("RECORD_CLIENT_SESSIONS"),
+        default=False,
+    )
+    record_client_video_final_mp4 = _parse_bool(
+        os.getenv("RECORD_CLIENT_VIDEO_FINAL_MP4"),
+        default=True,
+    )
+    if evidence_profile == "fast":
+        record_client_sessions = False
+        record_client_video_final_mp4 = False
+        screenshot_on_relevant_result = False
+    elif evidence_profile == "diagnostic":
+        record_client_sessions = True
+        record_client_video_final_mp4 = True
+        screenshot_on_relevant_result = True
+        screenshot_on_error = True
+
     settings = Settings(
         target_url=os.getenv("TARGET_URL", "").strip(),
         login_username=os.getenv("LOGIN_USERNAME", "").strip(),
@@ -160,11 +195,8 @@ def load_settings(*, require_login: bool = True) -> Settings:
         headless=_parse_bool(os.getenv("HEADLESS"), default=False),
         block_heavy_assets=_parse_bool(os.getenv("BLOCK_HEAVY_ASSETS"), default=True),
         auto_reserve=_parse_bool(os.getenv("AUTO_RESERVE"), default=True),
-        screenshot_on_error=_parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True),
-        screenshot_on_relevant_result=_parse_bool(
-            os.getenv("SCREENSHOT_ON_RELEVANT_RESULT"),
-            default=True,
-        ),
+        screenshot_on_error=screenshot_on_error,
+        screenshot_on_relevant_result=screenshot_on_relevant_result,
         screenshot_device_scale_factor=_parse_int(
             os.getenv("SCREENSHOT_DEVICE_SCALE_FACTOR"),
             default=2,
@@ -180,14 +212,9 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=1080,
             minimum=240,
         ),
-        record_client_sessions=_parse_bool(
-            os.getenv("RECORD_CLIENT_SESSIONS"),
-            default=False,
-        ),
-        record_client_video_final_mp4=_parse_bool(
-            os.getenv("RECORD_CLIENT_VIDEO_FINAL_MP4"),
-            default=True,
-        ),
+        record_client_sessions=record_client_sessions,
+        record_client_video_final_mp4=record_client_video_final_mp4,
+        evidence_profile=evidence_profile,
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
         telegram_enabled=_parse_bool(os.getenv("TELEGRAM_ENABLED"), default=False),
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
@@ -254,6 +281,10 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("CONTINUOUS_INTERVAL_MAX_SECONDS"),
             default=55,
             minimum=1,
+        ),
+        final_ready_review_enabled=_parse_bool(
+            os.getenv("FINAL_READY_REVIEW_ENABLED"),
+            default=True,
         ),
         session_rotation_seconds=_parse_int(
             os.getenv("SESSION_ROTATION_SECONDS"),

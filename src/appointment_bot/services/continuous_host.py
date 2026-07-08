@@ -87,7 +87,10 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             if worker_status.get("phase") == DAILY_CUTOFF_REASON:
                 if not daily_cutoff_report_generated:
                     try:
-                        _run_final_ready_review(settings)
+                        if settings.final_ready_review_enabled:
+                            _run_final_ready_review(settings)
+                        else:
+                            logger.info("Final ready-order review skipped by configuration.")
                         path = generate_daily_report_image()
                         logger.info("Final daily status report generated: %s", path)
                     except Exception:
@@ -115,8 +118,10 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         )
         if worker.shutdown_reason == DAILY_CUTOFF_REASON:
             try:
-                if not daily_cutoff_report_generated:
+                if not daily_cutoff_report_generated and settings.final_ready_review_enabled:
                     _run_final_ready_review(settings)
+                elif not settings.final_ready_review_enabled:
+                    logger.info("Final ready-order review skipped by configuration.")
                 path = generate_daily_report_image()
                 logger.info("Final daily status report generated: %s", path)
             except Exception:

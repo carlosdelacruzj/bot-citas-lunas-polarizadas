@@ -553,26 +553,11 @@ def read_appointment_availability(
             include_person=include_person,
         )
 
-    if result.status != "available":
-        fetch_snapshot = _read_fetch_probe_appointment_snapshot(page)
-        if fetch_snapshot is not None:
-            fetch_result = _availability_result_from_snapshot(
-                page,
-                fetch_snapshot,
-                include_person=include_person,
-            )
-            if fetch_result.status in {"available", "partial"}:
-                details = dict(fetch_result.details or {})
-                details["fetch_probe"] = True
-                details["modal_must_remain_open"] = True
-                result = AvailabilityResult(
-                    status=fetch_result.status,
-                    message=(
-                        f"{fetch_result.message} "
-                        "La disponibilidad fue detectada por consulta directa al formulario."
-                    ),
-                    details=details,
-                )
+    result = _apply_fetch_probe_if_needed(
+        page,
+        result,
+        include_person=include_person,
+    )
 
     details = _snapshot_details(snapshot, include_person=False)
     details.update(_read_site_refresh_evidence(page))
@@ -593,6 +578,40 @@ def read_appointment_availability(
         (result.details or details).get("hora", "unknown"),
     )
     return result
+
+
+def _apply_fetch_probe_if_needed(
+    page: Page,
+    result: AvailabilityResult,
+    *,
+    include_person: bool,
+) -> AvailabilityResult:
+    if result.status == "available":
+        return result
+
+    fetch_snapshot = _read_fetch_probe_appointment_snapshot(page)
+    if fetch_snapshot is None:
+        return result
+
+    fetch_result = _availability_result_from_snapshot(
+        page,
+        fetch_snapshot,
+        include_person=include_person,
+    )
+    if fetch_result.status not in {"available", "partial"}:
+        return result
+
+    details = dict(fetch_result.details or {})
+    details["fetch_probe"] = True
+    details["modal_must_remain_open"] = True
+    return AvailabilityResult(
+        status=fetch_result.status,
+        message=(
+            f"{fetch_result.message} "
+            "La disponibilidad fue detectada por consulta directa al formulario."
+        ),
+        details=details,
+    )
 
 
 def select_available_appointment(
