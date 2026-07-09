@@ -60,6 +60,18 @@ Documentar el runtime actual antes de refactorizar:
 La documentacion debe congelar endpoints actuales, estados, leases, codigos de
 salida, responsabilidades del worker y limites de seguridad.
 
+Estado: completado como documentacion base.
+
+Documentos creados:
+
+- `docs/architecture/current-runtime.md`
+- `docs/architecture/target-architecture.md`
+- `docs/contracts/admin-api.md`
+- `docs/contracts/worker-control.md`
+- `docs/contracts/order-lifecycle.md`
+- `docs/contracts/reservation-safety.md`
+- `docs/operations/deployment-topology.md`
+
 ## Paso 3: Angular read-only
 
 Crear el proyecto Angular dentro de `dashboard/` y conectarlo en modo lectura
