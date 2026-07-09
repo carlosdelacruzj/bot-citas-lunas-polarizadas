@@ -104,6 +104,11 @@ button {
   font-weight: 700;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .primary {
   background: #28666e;
   color: #ffffff;
@@ -114,6 +119,12 @@ button {
   border-color: #c8d0c9;
   background: #ffffff;
   color: #21312c;
+}
+
+.danger {
+  border-color: #d9aaa3;
+  background: #fff5f3;
+  color: #8a1f1f;
 }
 
 .icon-button {
@@ -185,6 +196,88 @@ td span {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   margin-bottom: 14px;
+}
+
+.admin-panel {
+  margin-bottom: 16px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-block {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  border-top: 1px solid #edf0ea;
+  padding-top: 12px;
+}
+
+.admin-block h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.admin-block label,
+.form-grid label {
+  display: grid;
+  gap: 6px;
+  color: #4d5d57;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.form-grid,
+.button-row {
+  display: grid;
+  gap: 8px;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.create-block {
+  grid-column: span 2;
+}
+
+.button-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.confirm-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+  border: 1px solid #ead082;
+  border-radius: 6px;
+  background: #fff9e7;
+  padding: 12px;
+}
+
+.confirm-box strong,
+.confirm-box span {
+  display: block;
+}
+
+.confirm-box span {
+  margin-top: 3px;
+  color: #65736e;
+}
+
+.check-row {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center;
+  min-height: 40px;
+}
+
+.check-row input {
+  min-height: auto;
 }
 
 .summary-list {
@@ -290,8 +383,13 @@ td span {
   .toolbar,
   .metrics,
   .split,
-  .summary-list.compact {
+  .summary-list.compact,
+  .admin-grid {
     grid-template-columns: 1fr;
+  }
+
+  .create-block {
+    grid-column: auto;
   }
 }
 
@@ -302,7 +400,9 @@ td span {
 
   .token-panel,
   .panel-header,
-  .summary-list {
+  .summary-list,
+  .confirm-box,
+  .form-grid {
     grid-template-columns: 1fr;
   }
 

@@ -2,8 +2,12 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  ApiActionResponse,
   AppointmentApiService,
+  ContactUpdatePayload,
+  CreateServiceOrderPayload,
   HealthPayload,
+  PaymentPaidPayload,
   RunSummary,
   ServiceOrder,
   WorkerStatus,
@@ -11,6 +15,11 @@ import {
 } from './appointment-api.service';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+type PendingAction = {
+  title: string;
+  message: string;
+  execute: () => Promise<ApiActionResponse>;
+};
 
 @Component({
   selector: 'app-root',
@@ -30,9 +39,29 @@ export class App {
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly loadState = signal<LoadState>('idle');
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly successMessage = signal<string | null>(null);
   protected readonly copiedLabel = signal<string | null>(null);
+  protected readonly selectedOrderId = signal('');
+  protected readonly contactName = signal('');
+  protected readonly contactWhatsapp = signal('');
+  protected readonly contactSource = signal('whatsapp');
+  protected readonly paymentAmountPaid = signal('');
+  protected readonly paymentAmountAgreed = signal('');
+  protected readonly newDocumentNumber = signal('');
+  protected readonly newPassword = signal('');
+  protected readonly newApplicantName = signal('');
+  protected readonly newContactName = signal('');
+  protected readonly newContactWhatsapp = signal('');
+  protected readonly newPriority = signal(0);
+  protected readonly newChargeRequired = signal(true);
+  protected readonly actionBusy = signal(false);
+  protected readonly pendingAction = signal<PendingAction | null>(null);
 
   protected readonly hasToken = computed(() => this.apiToken().trim().length > 0);
+  protected readonly selectedOrder = computed(() => {
+    const selected = this.selectedOrderId();
+    return this.orders().find((order) => order.order_id === selected) ?? this.orders()[0] ?? null;
+  });
   protected readonly currentOrder = computed(() => {
     const currentOrderId = this.worker()?.current_order_id;
     return this.orders().find((order) => order.order_id === currentOrderId) ?? null;
@@ -73,6 +102,7 @@ export class App {
     effect(() => {
       this.apiToken();
       this.errorMessage.set(null);
+      this.successMessage.set(null);
       this.worker.set(null);
       this.orders.set([]);
       this.runs.set([]);
@@ -99,10 +129,123 @@ export class App {
       this.worker.set(worker);
       this.orders.set(orders);
       this.runs.set(runs);
+      if (!this.selectedOrderId() && orders.length > 0) {
+        this.selectedOrderId.set(orders[0].order_id);
+      }
       this.loadState.set('ready');
     } catch (error) {
       this.loadState.set('error');
       this.errorMessage.set(this.readError(error));
+    }
+  }
+
+  protected requestContactUpdate(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    const payload: ContactUpdatePayload = {
+      contact_name: this.optionalText(this.contactName()),
+      contact_whatsapp: this.optionalText(this.contactWhatsapp()),
+      contact_source: this.optionalText(this.contactSource()),
+    };
+    if (!payload.contact_name && !payload.contact_whatsapp) {
+      this.errorMessage.set('Ingresa nombre o WhatsApp para actualizar contacto.');
+      return;
+    }
+    this.setPendingAction({
+      title: 'Actualizar contacto',
+      message: `Actualizar contacto de ${order.order_id}.`,
+      execute: () => this.api.updateServiceOrderContact(this.requiredToken(), order.order_id, payload),
+    });
+  }
+
+  protected requestOrderAction(
+    action: 'pause' | 'activate' | 'no-charge' | 'done',
+    title: string,
+  ): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    this.setPendingAction({
+      title,
+      message: `${title} para ${order.order_id}.`,
+      execute: () => this.api.runServiceOrderAction(this.requiredToken(), order.order_id, action),
+    });
+  }
+
+  protected requestMarkPaid(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    const payload: PaymentPaidPayload = {
+      amount_paid: this.paymentAmountPaid().trim(),
+      amount_agreed: this.optionalText(this.paymentAmountAgreed()),
+    };
+    if (!payload.amount_paid) {
+      this.errorMessage.set('Ingresa el monto pagado.');
+      return;
+    }
+    this.setPendingAction({
+      title: 'Marcar pagado',
+      message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
+      execute: () => this.api.markPaymentPaid(this.requiredToken(), order.order_id, payload),
+    });
+  }
+
+  protected requestCreateOrder(): void {
+    const payload: CreateServiceOrderPayload = {
+      document_number: this.newDocumentNumber().trim(),
+      password: this.newPassword(),
+      priority: Number(this.newPriority()) || 0,
+      contact_whatsapp: this.optionalText(this.newContactWhatsapp()),
+      contact_name: this.optionalText(this.newContactName()),
+      contact_source: 'whatsapp',
+      applicant_name: this.optionalText(this.newApplicantName()),
+      charge_required: this.newChargeRequired(),
+    };
+    if (!payload.document_number || !payload.password) {
+      this.errorMessage.set('Documento y password son obligatorios para crear orden.');
+      return;
+    }
+    this.setPendingAction({
+      title: 'Crear orden nueva',
+      message: `Crear orden para documento ${payload.document_number}.`,
+      execute: () => this.api.createServiceOrder(this.requiredToken(), payload),
+    });
+  }
+
+  protected requestRestartWorker(): void {
+    this.setPendingAction({
+      title: 'Restart worker',
+      message: 'Solicitar reinicio controlado del worker.',
+      execute: () => this.api.restartWorker(this.requiredToken()),
+    });
+  }
+
+  protected cancelPendingAction(): void {
+    this.pendingAction.set(null);
+  }
+
+  protected async confirmPendingAction(): Promise<void> {
+    const action = this.pendingAction();
+    if (!action || this.actionBusy()) {
+      return;
+    }
+    this.actionBusy.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    try {
+      const response = await action.execute();
+      this.successMessage.set(this.actionResponseMessage(response));
+      this.pendingAction.set(null);
+      await this.refreshAll();
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
     }
   }
 
@@ -190,5 +333,51 @@ export class App {
 
   private readError(error: unknown): string {
     return apiErrorMessage(error);
+  }
+
+  private setPendingAction(action: PendingAction): void {
+    if (!this.hasToken()) {
+      this.errorMessage.set('Ingresa el API token antes de ejecutar acciones.');
+      return;
+    }
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.pendingAction.set(action);
+  }
+
+  private requireSelectedOrder(): ServiceOrder | null {
+    const order = this.selectedOrder();
+    if (!order) {
+      this.errorMessage.set('Carga y selecciona una orden primero.');
+      return null;
+    }
+    return order;
+  }
+
+  private requiredToken(): string {
+    const token = this.apiToken().trim();
+    if (!token) {
+      throw new Error('API token requerido.');
+    }
+    return token;
+  }
+
+  private optionalText(value: string): string | null {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+
+  private actionResponseMessage(response: ApiActionResponse): string {
+    const parts = [response.status];
+    if (response.command) {
+      parts.push(response.command);
+    }
+    if (response.command_id) {
+      parts.push(response.command_id);
+    }
+    if (response.order_id) {
+      parts.push(response.order_id);
+    }
+    return parts.join(' | ');
   }
 }

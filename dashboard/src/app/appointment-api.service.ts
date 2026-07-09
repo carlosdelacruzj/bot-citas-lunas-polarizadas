@@ -79,6 +79,42 @@ interface RunsResponse {
   runs: RunSummary[];
 }
 
+export interface ApiActionResponse {
+  status: string;
+  message?: string;
+  command_id?: string;
+  command?: string;
+  order_id?: string;
+  applicant_id?: string;
+  portal_account_id?: string;
+  contact_id?: string | null;
+}
+
+export interface ContactUpdatePayload {
+  contact_whatsapp?: string | null;
+  contact_name?: string | null;
+  contact_source?: string | null;
+}
+
+export interface PaymentPaidPayload {
+  amount_paid: string;
+  amount_agreed?: string | null;
+}
+
+export interface CreateServiceOrderPayload {
+  document_number: string;
+  password: string;
+  priority?: number;
+  contact_whatsapp?: string | null;
+  contact_name?: string | null;
+  contact_source?: string | null;
+  applicant_name?: string | null;
+  charge_required?: boolean;
+  minimum_reservation_hour?: number | null;
+  minimum_reservation_date?: string | null;
+  allowed_weekdays?: number[] | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AppointmentApiService {
   private readonly http = inject(HttpClient);
@@ -105,12 +141,63 @@ export class AppointmentApiService {
     return response.runs;
   }
 
+  async updateServiceOrderContact(
+    token: string,
+    orderId: string,
+    payload: ContactUpdatePayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      token,
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/contact`,
+      payload,
+    );
+  }
+
+  async runServiceOrderAction(
+    token: string,
+    orderId: string,
+    action: 'pause' | 'activate' | 'no-charge' | 'done',
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      token,
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/${action}`,
+      {},
+    );
+  }
+
+  async markPaymentPaid(
+    token: string,
+    orderId: string,
+    payload: PaymentPaidPayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      token,
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/paid`,
+      payload,
+    );
+  }
+
+  async createServiceOrder(
+    token: string,
+    payload: CreateServiceOrderPayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(token, '/api/v1/service-orders', payload);
+  }
+
+  async restartWorker(token: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(token, '/api/v1/worker/restart', {});
+  }
+
   private authOptions(token: string): { headers: HttpHeaders } {
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,
       }),
     };
+  }
+
+  private async post<T>(token: string, url: string, payload: unknown): Promise<T> {
+    return firstValueFrom(this.http.post<T>(url, payload, this.authOptions(token)));
   }
 }
 

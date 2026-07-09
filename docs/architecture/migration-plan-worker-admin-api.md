@@ -249,6 +249,33 @@ Habilitar acciones desde Angular por orden de menor a mayor riesgo:
 
 Cada accion debe tener confirmacion visible y respuesta clara del backend.
 
+Estado: completado como panel administrativo local.
+
+Implementacion:
+
+- panel de acciones administrativas en `dashboard/`;
+- orden seleccionada para contacto, pausa/activacion, sin cobro, pago y
+  completar;
+- formulario de contacto para nombre, WhatsApp y fuente;
+- formulario de pago para monto pagado y monto acordado;
+- formulario minimo para crear orden nueva sin persistir password en storage;
+- boton de `restart worker` usando el contrato persistido/control directo
+  disponible segun proceso backend;
+- confirmacion visible antes de cada accion y respuesta clara despues del POST;
+- token administrativo mantenido solo en memoria del navegador.
+
+Validacion de la fase:
+
+```powershell
+cd dashboard
+npm run build
+cd ..
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ## Paso 8: sesion manual controlada
 
 Agregar una accion local para abrir una sesion Playwright nueva, visible y

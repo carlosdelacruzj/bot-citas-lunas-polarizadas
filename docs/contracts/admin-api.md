@@ -85,7 +85,11 @@ del password despues de enviarlo.
 - `done` archiva/completa una orden.
 - `no-charge` marca una orden sin cobro.
 - `payment/paid` registra cobro y monto.
-- Las acciones deben pedir confirmacion en el dashboard.
+- `worker/restart` solicita reinicio controlado del worker.
+- Las acciones piden confirmacion visible en el dashboard y muestran respuesta
+  clara del backend.
+- El formulario de creacion envia el password solo en el POST; no debe quedar
+  persistido en storage del navegador.
 
 ## Runs
 

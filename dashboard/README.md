@@ -1,17 +1,26 @@
 # Dashboard
 
-Frontend Angular local para operar el bot en modo lectura.
+Frontend Angular local para operar el bot.
 
-Esta fase implementa solo el paso 3 del plan de migracion:
+La primera version fue de solo lectura. Desde el paso 7 tambien incluye acciones
+administrativas con confirmacion visible:
 
 - `GET /health`
 - `GET /api/v1/worker`
 - `GET /api/v1/service-orders`
 - `GET /api/v1/runs`
+- `POST /api/v1/service-orders`
+- `POST /api/v1/service-orders/{order_id}/contact`
+- `POST /api/v1/service-orders/{order_id}/payment/paid`
+- `POST /api/v1/service-orders/{order_id}/pause`
+- `POST /api/v1/service-orders/{order_id}/activate`
+- `POST /api/v1/service-orders/{order_id}/done`
+- `POST /api/v1/service-orders/{order_id}/no-charge`
+- `POST /api/v1/worker/restart`
 - filtros locales de lectura
 - copiado de snapshot sanitizado
 
-No incluye CRUD, pagos, pausa, activacion, restart ni sesion manual.
+No incluye sesion manual.
 
 ## Ejecucion
 

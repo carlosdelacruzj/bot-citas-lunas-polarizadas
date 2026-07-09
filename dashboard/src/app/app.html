@@ -23,6 +23,10 @@
     <section class="notice bad" role="alert">{{ errorMessage() }}</section>
   }
 
+  @if (successMessage()) {
+    <section class="notice good" role="status">{{ successMessage() }}</section>
+  }
+
   @if (!hasToken()) {
     <section class="notice warn">
       Los endpoints administrativos requieren bearer token. El valor se mantiene solo en memoria
@@ -120,11 +124,224 @@
     </article>
   </section>
 
+  <section class="panel admin-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Acciones administrativas</h2>
+        <p>Confirmacion requerida antes de enviar cambios</p>
+      </div>
+      <button type="button" class="danger" (click)="requestRestartWorker()">Restart worker</button>
+    </div>
+
+    @if (pendingAction(); as action) {
+      <div class="confirm-box" role="alert">
+        <div>
+          <strong>{{ action.title }}</strong>
+          <span>{{ action.message }}</span>
+        </div>
+        <div class="button-row">
+          <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
+          <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="admin-grid">
+      <div class="admin-block">
+        <label>
+          Orden
+          <select
+            name="selectedOrder"
+            [ngModel]="selectedOrderId()"
+            (ngModelChange)="selectedOrderId.set($event)"
+          >
+            @for (order of orders(); track order.order_id) {
+              <option [value]="order.order_id">
+                {{ order.order_id }} | {{ order.applicant_name ?? order.document_number_masked }}
+              </option>
+            }
+          </select>
+        </label>
+        <div class="button-row">
+          <button
+            type="button"
+            class="secondary"
+            (click)="requestOrderAction('pause', 'Pausar orden')"
+          >
+            Pausar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            (click)="requestOrderAction('activate', 'Activar orden')"
+          >
+            Activar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            (click)="requestOrderAction('no-charge', 'Marcar sin cobro')"
+          >
+            Sin cobro
+          </button>
+          <button
+            type="button"
+            class="danger"
+            (click)="requestOrderAction('done', 'Archivar/completar')"
+          >
+            Completar
+          </button>
+        </div>
+      </div>
+
+      <div class="admin-block">
+        <h3>Contacto</h3>
+        <div class="form-grid">
+          <label>
+            Nombre
+            <input
+              name="contactName"
+              type="text"
+              [ngModel]="contactName()"
+              (ngModelChange)="contactName.set($event)"
+            />
+          </label>
+          <label>
+            WhatsApp
+            <input
+              name="contactWhatsapp"
+              type="text"
+              [ngModel]="contactWhatsapp()"
+              (ngModelChange)="contactWhatsapp.set($event)"
+            />
+          </label>
+          <label>
+            Fuente
+            <input
+              name="contactSource"
+              type="text"
+              [ngModel]="contactSource()"
+              (ngModelChange)="contactSource.set($event)"
+            />
+          </label>
+        </div>
+        <button type="button" class="primary" (click)="requestContactUpdate()">
+          Actualizar contacto
+        </button>
+      </div>
+
+      <div class="admin-block">
+        <h3>Pago</h3>
+        <div class="form-grid">
+          <label>
+            Pagado
+            <input
+              name="paymentAmountPaid"
+              type="number"
+              min="0"
+              step="0.01"
+              [ngModel]="paymentAmountPaid()"
+              (ngModelChange)="paymentAmountPaid.set($event)"
+            />
+          </label>
+          <label>
+            Acordado
+            <input
+              name="paymentAmountAgreed"
+              type="number"
+              min="0"
+              step="0.01"
+              [ngModel]="paymentAmountAgreed()"
+              (ngModelChange)="paymentAmountAgreed.set($event)"
+            />
+          </label>
+        </div>
+        <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
+      </div>
+
+      <div class="admin-block create-block">
+        <h3>Nueva orden</h3>
+        <div class="form-grid">
+          <label>
+            Documento
+            <input
+              name="newDocumentNumber"
+              type="text"
+              autocomplete="off"
+              [ngModel]="newDocumentNumber()"
+              (ngModelChange)="newDocumentNumber.set($event)"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              name="newPassword"
+              type="password"
+              autocomplete="new-password"
+              [ngModel]="newPassword()"
+              (ngModelChange)="newPassword.set($event)"
+            />
+          </label>
+          <label>
+            Solicitante
+            <input
+              name="newApplicantName"
+              type="text"
+              [ngModel]="newApplicantName()"
+              (ngModelChange)="newApplicantName.set($event)"
+            />
+          </label>
+          <label>
+            Contacto
+            <input
+              name="newContactName"
+              type="text"
+              [ngModel]="newContactName()"
+              (ngModelChange)="newContactName.set($event)"
+            />
+          </label>
+          <label>
+            WhatsApp
+            <input
+              name="newContactWhatsapp"
+              type="text"
+              [ngModel]="newContactWhatsapp()"
+              (ngModelChange)="newContactWhatsapp.set($event)"
+            />
+          </label>
+          <label>
+            Prioridad
+            <input
+              name="newPriority"
+              type="number"
+              min="0"
+              step="1"
+              [ngModel]="newPriority()"
+              (ngModelChange)="newPriority.set($event)"
+            />
+          </label>
+          <label class="check-row">
+            <input
+              name="newChargeRequired"
+              type="checkbox"
+              [ngModel]="newChargeRequired()"
+              (ngModelChange)="newChargeRequired.set($event)"
+            />
+            Cobro requerido
+          </label>
+        </div>
+        <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
+      </div>
+    </div>
+  </section>
+
   <section class="panel">
     <div class="panel-header">
       <div>
         <h2>Ordenes</h2>
-        <p>Lista local filtrada; no ejecuta acciones</p>
+        <p>Lista local filtrada</p>
       </div>
       <label class="filter">
         Buscar

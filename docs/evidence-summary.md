@@ -3,28 +3,28 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 59
-- Reservas registradas: 4
+- Eventos indexados: 67
+- Reservas registradas: 8
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 5
-- Disponibilidades parciales: 27
+- Disponibilidades parciales: 29
 - Senales de defensa: 4
 
 ## Origen de deteccion
 - fetch_probe: 11
-- normal: 48
+- normal: 56
 
 ## Ultimos eventos utiles
+- 2026-07-09 14:02:17 | order-*** | registered | normal | 30/07/2026 10:00 | confirmed
+- 2026-07-09 12:15:57 | order-*** | unavailable | normal | 24/07/2026 12:00 | slot_lost
+- 2026-07-09 10:59:20 | order-*** | unavailable | normal | 24/07/2026 11:00 | slot_lost
+- 2026-07-09 10:58:30 | order-*** | partial | normal | 24/07/2026 10:00 | blocked_by_order_rule
+- 2026-07-09 10:26:58 | order-*** | partial | normal | 20/07/2026 12:00 | blocked_by_order_rule
+- 2026-07-09 10:06:49 | order-*** | registered | normal | 30/07/2026 09:00 | confirmed
+- 2026-07-09 08:28:21 | order-*** | registered | normal | 24/07/2026 12:00 | confirmed
+- 2026-07-09 08:28:06 | order-*** | registered | normal | 24/07/2026 12:00 | confirmed
 - 2026-07-09 07:36:51 | order-*** | completed | normal | 20/07/2026 10:00 | sin outcome
 - 2026-07-08 14:17:15 | order-*** | completed | normal | 30/07/2026 10:00 | sin outcome
-- 2026-07-08 13:06:58 | order-*** | unavailable | normal | 30/07/2026 08:00 | slot_lost
-- 2026-07-08 12:08:07 | order-*** | unavailable | normal | 22/07/2026 08:00 | slot_lost
-- 2026-07-07 12:55:31 | order-*** | partial | normal | 22/07/2026 10:00 | blocked_by_order_rule
-- 2026-07-07 12:55:15 | order-*** | partial | normal | 22/07/2026 09:00 | blocked_by_order_rule
-- 2026-07-07 12:55:04 | order-*** | registered | normal | 22/07/2026 08:00 | confirmed
-- 2026-07-07 12:46:28 | order-*** | partial | normal | 14/07/2026 10:00 | blocked_by_order_rule
-- 2026-07-07 12:30:34 | order-*** | unavailable | normal | 20/07/2026 09:00 | slot_lost
-- 2026-07-07 08:29:05 | order-*** | registered | normal | 21/07/2026 10:00 | confirmed
 
 ## Senales de defensa
 - 2026-07-01 09:43:19 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

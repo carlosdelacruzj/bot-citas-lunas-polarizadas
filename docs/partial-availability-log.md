@@ -915,3 +915,73 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-09 10:26:58 - order-76623115 - partial
+
+- Run: 20260709-102636-2bc37ab7
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 12:00
+- Cupos observados: 20
+- Opciones fecha: 20/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 22.672s
+  - Seleccion fecha/hora: 1.719s
+- Evidencia:
+  - Screenshot principal: screenshots\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
+  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
+  - Screenshot adicional: screenshots\09-07-2026\cupo-102636-order-***-cd1996.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-09 10:58:30 - order-76623115 - partial
+
+- Run: 20260709-105801-2add2dbf
+- Orden: order-***
+- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cuenta: 76***5
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 24/07/2026
+- Hora detectada: 10:00
+- Cupos observados: 8
+- Opciones fecha: 24/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 29.184s
+  - Seleccion fecha/hora: 1.704s
+- Evidencia:
+  - Screenshot principal: screenshots\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
+  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
+  - Screenshot adicional: screenshots\09-07-2026\cupo-105801-order-***-019158.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
