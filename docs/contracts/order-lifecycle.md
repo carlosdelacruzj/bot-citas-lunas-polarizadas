@@ -11,21 +11,30 @@ dashboard deben respetar.
 - `paid`: cobro registrado.
 - `archived`: orden cerrada o excluida de cola.
 
-Solo `ready` entra en la cola activa.
+Solo `ready` puede entrar a una cola operativa. La cola normal del worker
+procesa ordenes `ready` sin restricciones de reserva. Las ordenes `ready` con
+restricciones quedan en espera y solo entran como seguimiento cuando una reserva
+confirmada previa coincide con sus reglas.
 
 ## Ordenamiento
 
-La cola activa usa:
+La cola normal usa:
 
 ```text
 priority DESC, created_at ASC
 ```
 
-Las restricciones por orden se aplican antes de enviar reserva:
+Las restricciones por orden se usan para decidir si la orden debe esperar un
+cupo compatible y para validar el cupo antes de enviar reserva:
 
 - `minimum_hour`
 - `minimum_date`
 - `allowed_weekdays`
+
+Cuando una reserva queda confirmada (`registered`), el worker busca ordenes
+restringidas `ready` que coincidan con la fecha/hora confirmada. Solo esas
+ordenes se agregan como seguimiento a la cola rapida. Si ya no encuentran cupo,
+permanecen `ready` para esperar otra coincidencia.
 
 ## Estado operativo en `order_state`
 
@@ -72,8 +81,8 @@ Estados internos adicionales:
   `payments` y estado de orden segun corresponda.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y
   estado pendiente para evitar doble envio.
-- Una orden bloqueada por regla propia puede quedar en cooldown sin pausar ni
-  archivar.
+- Una orden bloqueada por regla propia puede quedar en espera o cooldown sin
+  pausar ni archivar.
 
 ## Reglas para dashboard
 

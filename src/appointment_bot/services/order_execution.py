@@ -145,6 +145,7 @@ def run_rapid_queue_with_settings(
     on_order_start: Callable[[ServiceOrderCandidate | ServiceOrderRuntime], None] | None = None,
     on_check: Callable[..., None] | None = None,
     skip_order_ids: set[str] | None = None,
+    follow_up_order_ids: set[str] | None = None,
     stop_on_available_without_reserve: bool = True,
 ) -> RunReport:
     checked_orders = 0
@@ -157,11 +158,18 @@ def run_rapid_queue_with_settings(
     with ExitStack() as claims:
         # La consulta ya excluye ordenes terminadas; por eso la cola
         # empieza siempre en la orden pendiente de mayor prioridad.
+        skipped_orders = skip_order_ids or set()
         orders = [
             order
-            for order in list_active_orders(settings)
-            if order.order_id not in (skip_order_ids or set())
+            for order in list_active_orders(settings, include_constrained=False)
+            if order.order_id not in skipped_orders
         ]
+        queued_order_ids = {order.order_id for order in orders}
+        for order in list_active_orders(settings, order_ids=follow_up_order_ids or set()):
+            if order.order_id in skipped_orders or order.order_id in queued_order_ids:
+                continue
+            orders.append(order)
+            queued_order_ids.add(order.order_id)
         if not orders:
             return RunReport(
                 status="completed",
@@ -297,6 +305,14 @@ def run_rapid_queue_with_settings(
                         order.order_id,
                         ", ".join(candidate.order_id for candidate in promoted_orders),
                     )
+                    for promoted_order in promoted_orders:
+                        if (
+                            promoted_order.order_id in skipped_orders
+                            or promoted_order.order_id in queued_order_ids
+                        ):
+                            continue
+                        orders.append(promoted_order)
+                        queued_order_ids.add(promoted_order.order_id)
                 logger.info("Reservation confirmed for order: %s", order.order_id)
                 if has_more_orders and not _reservation_limit_reached(
                     settings, confirmed_reservations

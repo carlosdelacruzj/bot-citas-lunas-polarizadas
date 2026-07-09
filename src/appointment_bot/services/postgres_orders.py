@@ -372,12 +372,33 @@ def get_reservation_constraints_for_order(
     )
 
 
-def list_active_orders(settings: Settings | None = None) -> list[ServiceOrderCandidate]:
+def list_active_orders(
+    settings: Settings | None = None,
+    *,
+    include_constrained: bool = True,
+    order_ids: Iterable[str] | None = None,
+) -> list[ServiceOrderCandidate]:
     settings = _settings(settings)
     init_database(settings)
+    filters = ["so.status = 'ready'"]
+    params: list[object] = []
+    if not include_constrained:
+        filters.append(
+            """
+            so.minimum_hour IS NULL
+            AND so.minimum_date IS NULL
+            AND so.allowed_weekdays IS NULL
+            """
+        )
+    if order_ids is not None:
+        order_id_values = [str(order_id) for order_id in order_ids]
+        if not order_id_values:
+            return []
+        filters.append("so.order_id = ANY(%s)")
+        params.append(order_id_values)
     with _connection(_database_url(settings)) as connection:
         rows = connection.execute(
-            """
+            f"""
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, wc.display_name AS contact_name,
                    so.priority, so.status, so.created_at, so.updated_at
@@ -387,9 +408,10 @@ def list_active_orders(settings: Settings | None = None) -> list[ServiceOrderCan
             LEFT JOIN applicant_contacts ac
                 ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
-            WHERE so.status = 'ready'
+            WHERE {" AND ".join(filters)}
             ORDER BY so.priority DESC, so.created_at ASC
-            """
+            """,
+            params,
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]
 
@@ -413,6 +435,9 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
                 LEFT JOIN order_state os ON os.order_id = so.order_id
                 WHERE so.status = 'ready'
+                  AND so.minimum_hour IS NULL
+                  AND so.minimum_date IS NULL
+                  AND so.allowed_weekdays IS NULL
                   AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
             ),
             active_block AS (

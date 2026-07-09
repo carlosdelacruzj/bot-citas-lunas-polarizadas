@@ -29,6 +29,7 @@ class ObserverOrderDecision:
     queue_requested: bool = False
     rapid_queue_initial_confirmed: int = 0
     confirmed_reservations: int = 0
+    follow_up_order_ids: tuple[str, ...] = ()
     reset_errors: bool = False
     requires_error_handling: bool = False
 
@@ -81,11 +82,12 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
         mark_order_done(order.order_id, settings=settings)
-        _promote_orders_matching_report_slot(settings, order, report)
+        promoted_orders = _promote_orders_matching_report_slot(settings, order, report)
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
             confirmed_reservations=1,
+            follow_up_order_ids=tuple(candidate.order_id for candidate in promoted_orders),
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
@@ -160,17 +162,18 @@ def _promote_orders_matching_report_slot(
     settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     report: RunReport,
-) -> None:
+) -> list[ServiceOrderCandidate]:
     promoted_orders = promote_orders_matching_reserved_slot(
         report.details or {},
         excluded_order_id=order.order_id,
         settings=settings,
     )
     if not promoted_orders:
-        return
+        return []
     logger.info(
         "Promoted %s constrained order(s) after confirmed reservation %s: %s",
         len(promoted_orders),
         order.order_id,
         ", ".join(candidate.order_id for candidate in promoted_orders),
     )
+    return promoted_orders
