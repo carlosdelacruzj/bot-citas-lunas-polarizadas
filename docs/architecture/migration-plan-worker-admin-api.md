@@ -29,10 +29,36 @@ procesos:
 - No cambiar `appointment-bot-worker`, `scripts/start-worker.ps1`, `.env` ni la
   API actual durante la fase de estructura.
 
+## Estado actual documentado
+
+Los cambios realizados hasta este punto estan contemplados por la migracion
+porque son cambios de documentacion, contratos y limpieza interna compatible,
+no una separacion real de procesos ni un cambio del flujo de reservas.
+
+Ya queda documentado que:
+
+- el worker actual sigue siendo `appointment-bot-worker`;
+- la API local embebida sigue viva en `127.0.0.1:8765`;
+- `pause`, `resume` y `restart` siguen dependiendo del objeto `ContinuousWorker`
+  en memoria;
+- Angular todavia no debe hacer CRUD ni ejecutar acciones de control;
+- el futuro admin API no debe acceder a cookies, passwords, Fernet keys,
+  `owner_token` ni PostgreSQL desde el frontend;
+- cualquier separacion de worker/admin API debe pasar primero por contratos,
+  DTOs publicos y un canal persistido de comandos.
+
+Por lo tanto, estos cambios no bloquean la migracion. Al contrario, son la base
+para hacerla sin romper el flujo actual. Lo que si queda prohibido por ahora es
+mover control del worker, cambiar entrypoints, cambiar scripts de arranque,
+cambiar `.env` o reemplazar la API local antes de tener una alternativa probada.
+
 ## Paso 1: estructura sin mover nada
 
 Crear carpetas destino y documentarlas como estructura futura. No cambiar
 imports, entrypoints, API, worker, scripts, `.env` ni logica de reserva.
+
+Estado: completado como preparacion documental. La estructura objetivo quedo
+descrita, pero no se movio codigo funcional ni se cambiaron entrypoints.
 
 Validacion:
 
@@ -72,6 +98,9 @@ Documentos creados:
 - `docs/contracts/reservation-safety.md`
 - `docs/operations/deployment-topology.md`
 
+Tambien quedo registrado este estado de avance en el presente plan para que las
+siguientes fases partan de una fuente unica y no de memoria informal.
+
 ## Paso 3: Angular read-only
 
 Crear el proyecto Angular dentro de `dashboard/` y conectarlo en modo lectura
@@ -88,6 +117,26 @@ Primera pantalla permitida:
 - copiar solo datos no sensibles
 
 No habilitar CRUD, pagos, restart ni sesion manual en esta fase.
+
+Estado: completado como primera version local de solo lectura.
+
+Implementacion:
+
+- proyecto Angular creado en `dashboard/`;
+- proxy de desarrollo `dashboard/proxy.conf.json` para `/api` y `/health`;
+- pantalla unica con health, estado/phase del worker, orden actual, lista de
+  ordenes, lista de runs y filtros locales;
+- API token ingresado manualmente y mantenido solo en memoria del navegador;
+- copiado de snapshot sanitizado sin `owner_token`, leases ni detalles crudos
+  de runs;
+- sin endpoints de escritura en el cliente Angular.
+
+Validacion de la fase:
+
+```powershell
+cd dashboard
+npm run build
+```
 
 ## Paso 4: endurecer API
 

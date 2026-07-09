@@ -1,0 +1,248 @@
+<main class="shell">
+  <section class="toolbar" aria-label="Control de lectura">
+    <div>
+      <p class="eyebrow">Dashboard local</p>
+      <h1>Operaciones de reservas</h1>
+    </div>
+
+    <div class="token-panel">
+      <label for="apiToken">API token</label>
+      <input
+        id="apiToken"
+        name="apiToken"
+        type="password"
+        autocomplete="off"
+        [ngModel]="apiToken()"
+        (ngModelChange)="apiToken.set($event)"
+      />
+      <button type="button" class="primary" (click)="refreshAll()">Actualizar</button>
+    </div>
+  </section>
+
+  @if (errorMessage()) {
+    <section class="notice bad" role="alert">{{ errorMessage() }}</section>
+  }
+
+  @if (!hasToken()) {
+    <section class="notice warn">
+      Los endpoints administrativos requieren bearer token. El valor se mantiene solo en memoria
+      del navegador.
+    </section>
+  }
+
+  <section class="metrics" aria-label="Estado general">
+    <article>
+      <span>API local</span>
+      <strong [class]="statusTone(health()?.status)">{{ health()?.status ?? 'sin datos' }}</strong>
+      <small>{{ health()?.reason ?? 'health pendiente' }}</small>
+    </article>
+    <article>
+      <span>Worker</span>
+      <strong [class]="statusTone(health()?.worker_running ?? null)">
+        {{ health()?.worker_running ? 'activo' : 'sin confirmar' }}
+      </strong>
+      <small>{{ health()?.message ?? 'sin respuesta' }}</small>
+    </article>
+    <article>
+      <span>Fase</span>
+      <strong [class]="statusTone(worker()?.phase)">{{ phaseLabel(worker()?.phase) }}</strong>
+      <small>{{ worker()?.updated_at ?? 'requiere token' }}</small>
+    </article>
+    <article>
+      <span>Reservas confirmadas</span>
+      <strong>{{ worker()?.confirmed_reservations ?? 0 }}</strong>
+      <small>{{ worker()?.last_check_at ?? 'sin ultimo check' }}</small>
+    </article>
+  </section>
+
+  <section class="split">
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Orden actual</h2>
+          <p>{{ worker()?.current_order_id ?? 'sin orden activa' }}</p>
+        </div>
+        <span class="badge {{ statusTone(worker()?.paused ? 'paused' : worker()?.phase) }}">
+          {{ worker()?.paused ? 'pausado' : phaseLabel(worker()?.phase) }}
+        </span>
+      </div>
+
+      @if (currentOrder(); as order) {
+        <dl class="summary-list">
+          <div>
+            <dt>Solicitante</dt>
+            <dd>{{ order.applicant_name ?? order.applicant_id }}</dd>
+          </div>
+          <div>
+            <dt>Documento</dt>
+            <dd>{{ order.document_number_masked }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>{{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}</dd>
+          </div>
+          <div>
+            <dt>Pago</dt>
+            <dd>{{ order.payment_status ?? 'sin estado' }}</dd>
+          </div>
+        </dl>
+      } @else {
+        <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
+      }
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Lectura segura</h2>
+          <p>Snapshot sin secretos ni detalles crudos de evidencia</p>
+        </div>
+        <button type="button" class="secondary" (click)="copyDashboardSnapshot()">Copiar</button>
+      </div>
+      <dl class="summary-list compact">
+        <div>
+          <dt>Ordenes visibles</dt>
+          <dd>{{ filteredOrders().length }}</dd>
+        </div>
+        <div>
+          <dt>Runs visibles</dt>
+          <dd>{{ filteredRuns().length }}</dd>
+        </div>
+        <div>
+          <dt>Estado de carga</dt>
+          <dd>{{ loadState() }}</dd>
+        </div>
+        <div>
+          <dt>Copiado</dt>
+          <dd>{{ copiedLabel() ?? 'no' }}</dd>
+        </div>
+      </dl>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Ordenes</h2>
+        <p>Lista local filtrada; no ejecuta acciones</p>
+      </div>
+      <label class="filter">
+        Buscar
+        <input
+          name="orderFilter"
+          type="search"
+          [ngModel]="orderFilter()"
+          (ngModelChange)="orderFilter.set($event)"
+        />
+      </label>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Orden</th>
+            <th>Solicitante</th>
+            <th>Estado</th>
+            <th>Reserva</th>
+            <th>Pago</th>
+            <th>Prioridad</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of filteredOrders(); track order.order_id) {
+            <tr>
+              <td>
+                <strong>{{ order.order_id }}</strong>
+                <span>{{ order.document_number_masked }}</span>
+              </td>
+              <td>
+                {{ order.applicant_name ?? 'sin nombre' }}
+                <span>{{ order.contact_name ?? order.contact_source ?? 'sin contacto' }}</span>
+              </td>
+              <td><span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span></td>
+              <td>
+                {{ order.reservation_status ?? 'pendiente' }}
+                <span>{{ order.reservation_date ?? '' }} {{ order.reservation_hour ?? '' }}</span>
+              </td>
+              <td>
+                {{ order.payment_status ?? 'sin pago' }}
+                <span>{{ order.amount_paid ?? order.amount_agreed ?? '' }}</span>
+              </td>
+              <td>{{ order.priority }}</td>
+              <td>
+                <button type="button" class="icon-button" title="Copiar orden" (click)="copyOrder(order)">
+                  Copiar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">No hay ordenes para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Runs recientes</h2>
+        <p>Lectura resumida de los ultimos 50 registros</p>
+      </div>
+      <label class="filter">
+        Estado
+        <select
+          name="runStatus"
+          [ngModel]="runStatusFilter()"
+          (ngModelChange)="runStatusFilter.set($event)"
+        >
+          <option value="">Todos</option>
+          @for (status of runStatuses(); track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Run</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Reserva</th>
+            <th>Duracion</th>
+            <th>Inicio</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of filteredRuns(); track run.run_id) {
+            <tr>
+              <td>
+                <strong>{{ run.run_id }}</strong>
+                <span>{{ run.message }}</span>
+              </td>
+              <td>{{ run.order_id ?? 'observador' }}</td>
+              <td><span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span></td>
+              <td>
+                {{ run.reservation_confirmed ? 'confirmada' : 'no confirmada' }}
+                <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
+              </td>
+              <td>{{ run.duration_seconds }}s</td>
+              <td>{{ run.started_at }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">No hay runs para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
