@@ -21,7 +21,7 @@ class ContinuousWorkerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             worker = ContinuousWorker(settings)
-            worker._owner_token = "owner"
+            worker._worker_lease.owner_token = "owner"
             order = ServiceOrderRuntime(
                 order_id="order-1",
                 name="Order 1",
@@ -49,7 +49,7 @@ class ContinuousWorkerTests(unittest.TestCase):
                         exit_code=0,
                     ),
                 ) as run_order,
-                patch("appointment_bot.services.continuous_worker.update_order_state"),
+                patch("appointment_bot.services.worker_order_results.update_order_state"),
                 patch.object(worker, "_set_session_state"),
                 patch.object(worker, "_record_check"),
                 patch.object(worker, "_reset_errors"),

@@ -39,9 +39,8 @@ un evento lo justifique.
 
 ## Siguientes pasos de pulcritud tecnica
 
-1. Reducir `src/appointment_bot/services/continuous_worker.py`:
-   separar ventanas calientes, lease, ciclo principal, backoff/recovery y
-   ejecucion de cola/observer.
+1. Seguir reduciendo `src/appointment_bot/services/continuous_worker.py`:
+   separar el manejo de resultados del observer puro y callbacks de estado.
 2. Partir `src/appointment_bot/services/session_runner.py`:
    separar preparacion de sesion/video, login y tramite, monitoreo de
    disponibilidad, y finalizacion/reporte.
@@ -66,6 +65,20 @@ un evento lo justifique.
   `postgres_runs.py`.
 - Estado y lease del worker viven en `postgres_worker.py`.
 - Limpieza historica de PostgreSQL vive en `postgres_cleanup.py`.
+- Ventanas calientes, extension de ventana, cutoff diario y etiquetas de
+  ventana viven en `worker_windows.py`.
+- Lease del proceso continuo, token de propietario y renovacion periodica viven
+  en `worker_lease.py`.
+- Clasificacion de defensas del portal, errores de red y esperas de recovery
+  viven en `worker_recovery.py`.
+- Configuracion derivada para ejecutar observer, confirmacion y ordenes vive en
+  `worker_execution.py`.
+- Clasificacion y persistencia de resultados de ordenes monitoreadas vive en
+  `worker_order_results.py`.
+- El ciclo principal de `continuous_worker.py` quedo dividido en arranque,
+  iteracion, seleccion de trabajo disponible y cierre controlado.
+- `_monitor_order` quedo reducido a ejecutar la orden, registrar el reporte y
+  aplicar la decision devuelta por `worker_order_results.py`.
 
 ## Regenerar resumen manual
 

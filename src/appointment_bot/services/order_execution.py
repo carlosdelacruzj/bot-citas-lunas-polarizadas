@@ -39,6 +39,7 @@ from appointment_bot.services.postgres_orders import (
     mark_order_submission_pending,
     order_backoff_seconds,
     order_reservation_pending,
+    promote_orders_matching_reserved_slot,
     record_invalid_credential_failure,
     release_service_order_claim,
     renew_service_order_claim,
@@ -284,6 +285,18 @@ def run_rapid_queue_with_settings(
             if outcome is OrderReportOutcome.REGISTERED:
                 confirmed_reservations += 1
                 mark_order_done(order.order_id, settings=settings)
+                promoted_orders = promote_orders_matching_reserved_slot(
+                    report.details or {},
+                    excluded_order_id=order.order_id,
+                    settings=settings,
+                )
+                if promoted_orders:
+                    logger.info(
+                        "Promoted %s constrained order(s) after confirmed reservation %s: %s",
+                        len(promoted_orders),
+                        order.order_id,
+                        ", ".join(candidate.order_id for candidate in promoted_orders),
+                    )
                 logger.info("Reservation confirmed for order: %s", order.order_id)
                 if has_more_orders and not _reservation_limit_reached(
                     settings, confirmed_reservations

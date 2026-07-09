@@ -131,6 +131,7 @@ class Settings:
     observer_max_attempts: int
     observer_interval_min_seconds: int
     observer_interval_max_seconds: int
+    observer_active_order_limit: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
     observer_hot_window_extension_seconds: int
@@ -309,6 +310,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         observer_interval_max_seconds=_parse_int(
             os.getenv("OBSERVER_INTERVAL_MAX_SECONDS"),
             default=35,
+            minimum=1,
+        ),
+        observer_active_order_limit=_parse_int(
+            os.getenv("OBSERVER_ACTIVE_ORDER_LIMIT"),
+            default=2,
             minimum=1,
         ),
         observer_required_site=os.getenv("OBSERVER_REQUIRED_SITE", "LIMA-LA VICTORIA").strip(),
