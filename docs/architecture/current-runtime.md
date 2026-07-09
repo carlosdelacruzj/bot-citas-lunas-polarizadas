@@ -71,6 +71,22 @@ Durante una reserva, el lease de la orden se renueva por heartbeat. Si se pierde
 el lease durante una ejecucion, el resultado no debe repetirse automaticamente
 como si nada hubiera pasado.
 
+## Cola y subordenes por tramite
+
+La cola operativa procesa filas `service_orders.status = 'ready'` como trabajos
+independientes. La prioridad sigue siendo `priority DESC, created_at ASC`.
+
+Cuando una misma cuenta tiene varios tramites pendientes, la orden generica
+puede dividirse en subordenes con `parent_order_id`, `program_expediente` y
+`program_plate`. Cada suborden comparte credenciales con el titular, pero el
+worker abre una sesion Playwright nueva por suborden y selecciona explicitamente
+el expediente/placa objetivo antes de leer cupos o reservar.
+
+Si una suborden no encuentra su tramite objetivo o el tramite ya no esta
+`PENDIENTE`, el flujo falla de forma clara antes de abrir el panel de citas para
+evitar reservar el tramite equivocado. El `reload_probe` debe conservar el mismo
+expediente/placa objetivo.
+
 ## Codigos de salida del host
 
 - `0`: salida normal por corte diario.

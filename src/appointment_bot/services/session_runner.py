@@ -31,6 +31,8 @@ def run_with_report(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
     notify_mode: str = "full",
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
@@ -95,6 +97,8 @@ def run_with_report(
                     on_submission_intent=on_submission_intent,
                     on_submission_started=on_submission_started,
                     expected_person_name=expected_person_name,
+                    program_expediente=program_expediente,
+                    program_plate=program_plate,
                     notify_mode=notify_mode,
                 )
                 final_result = flow_result.final_result

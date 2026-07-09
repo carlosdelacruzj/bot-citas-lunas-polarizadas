@@ -60,13 +60,15 @@ La evidencia no debe incluir credenciales ni datos sensibles sin sanitizar.
 
 ## Sesion manual
 
-Una sesion manual futura debe:
+Una sesion manual debe:
 
 - abrir Playwright visible en una sesion nueva;
 - no reutilizar cookies del worker;
 - no devolver password al frontend;
 - no cambiar estado de reserva por si sola;
-- registrar auditoria minima.
+- registrar auditoria minima en logs;
+- estar deshabilitada por defecto;
+- aceptar solo clientes loopback.
 
 ## Acciones administrativas concurrentes
 

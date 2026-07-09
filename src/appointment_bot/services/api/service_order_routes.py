@@ -34,6 +34,9 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "payment_status",
     "amount_agreed",
     "amount_paid",
+    "parent_order_id",
+    "program_expediente",
+    "program_plate",
     "minimum_reservation_hour",
     "minimum_reservation_date",
     "allowed_weekdays",
@@ -75,6 +78,9 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             ),
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
             allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
+            parent_order_id=_optional_text(payload, "parent_order_id"),
+            program_expediente=_optional_text(payload, "program_expediente"),
+            program_plate=_optional_text(payload, "program_plate"),
         )
     except (TypeError, ValueError) as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))

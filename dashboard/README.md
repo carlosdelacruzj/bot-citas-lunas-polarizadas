@@ -17,10 +17,15 @@ administrativas con confirmacion visible:
 - `POST /api/v1/service-orders/{order_id}/done`
 - `POST /api/v1/service-orders/{order_id}/no-charge`
 - `POST /api/v1/worker/restart`
+- `POST /api/v1/manual-session/open`
 - filtros locales de lectura
 - copiado de snapshot sanitizado
 
-No incluye sesion manual.
+La sesion manual esta deshabilitada por defecto. Para permitirla en local:
+
+```powershell
+$env:MANUAL_SESSION_ENABLED='true'
+```
 
 ## Ejecucion
 
@@ -49,6 +54,7 @@ El proxy de desarrollo envia `/api` y `/health` a
 - No usar `localStorage` ni `sessionStorage` para secretos.
 - No acceder directo a PostgreSQL desde Angular.
 - No reutilizar cookies ni sesiones Playwright del worker.
+- No exponer password ni cookies en respuestas de sesion manual.
 - No versionar `node_modules`, `dist` ni caches de Angular.
 
 ## Version

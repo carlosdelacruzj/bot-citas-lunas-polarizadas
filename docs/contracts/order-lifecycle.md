@@ -31,6 +31,19 @@ cupo compatible y para validar el cupo antes de enviar reserva:
 - `minimum_date`
 - `allowed_weekdays`
 
+Una cuenta puede tener varios tramites pendientes. En ese caso la orden
+generica puede dividirse en subordenes con:
+
+- `parent_order_id`
+- `program_expediente`
+- `program_plate`
+
+Cada suborden comparte las credenciales del mismo titular, pero se procesa y se
+cierra de forma independiente. Si una suborden tiene expediente o placa objetivo,
+el worker debe seleccionar exactamente esa fila del listado de tramites; si no
+la encuentra o no esta `PENDIENTE`, debe fallar claro antes de abrir el panel de
+citas para evitar reservar el tramite equivocado.
+
 Cuando una reserva queda confirmada (`registered`), el worker busca ordenes
 restringidas `ready` que coincidan con la fecha/hora confirmada. Solo esas
 ordenes se agregan como seguimiento a la cola rapida. Si ya no encuentran cupo,

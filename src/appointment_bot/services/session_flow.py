@@ -42,6 +42,8 @@ def execute_session_flow(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
     notify_mode: str = "full",
 ) -> SessionFlowResult:
     login(page, settings)
@@ -53,6 +55,8 @@ def execute_session_flow(
             client_name,
             details,
         ),
+        program_expediente=program_expediente,
+        program_plate=program_plate,
     )
     stages = read_process_stages(page)
     stage_result = appointment_stage_result(stages)
@@ -62,6 +66,8 @@ def execute_session_flow(
             order_id=order_id,
             client_name=client_name,
             settings=settings,
+            program_expediente=program_expediente,
+            program_plate=program_plate,
         )
         screenshot_path = save_process_stages_snapshot(page, settings)
         if notify_mode == "full":
@@ -82,12 +88,16 @@ def execute_session_flow(
         on_submission_intent,
         on_submission_started,
         expected_person_name,
+        program_expediente,
+        program_plate,
     )
     result = with_client_context(
         result,
         order_id=order_id,
         client_name=client_name,
         settings=settings,
+        program_expediente=program_expediente,
+        program_plate=program_plate,
     )
     if notify_mode == "full":
         notify_result(

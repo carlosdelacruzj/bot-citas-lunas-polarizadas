@@ -24,6 +24,8 @@ def click_program_action(
     page: Page,
     *,
     on_multiple_programs: Callable[[dict[str, Any]], None] | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
 ) -> Page:
     logger.info("Clicking program action button")
     button = page.locator(PROGRAM_ACTION_SELECTOR)
@@ -36,46 +38,90 @@ def click_program_action(
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         )
 
-    if button_count == 1:
+    target = _program_target(program_expediente=program_expediente, program_plate=program_plate)
+
+    if button_count == 1 and target is None:
         selected_button = button.first
     else:
         program_rows = _read_program_action_rows(page)
-        pending_rows = [
-            row for row in program_rows if str(row.get("status") or "").casefold() == "pendiente"
-        ]
-        multiple_details = {
-            "program_count": button_count,
-            "pending_count": len(pending_rows),
-            "rows": program_rows,
-        }
-
-        if len(pending_rows) == 1:
-            multiple_details["decision"] = "single_pending_selected"
-            multiple_details["selected_row"] = pending_rows[0]
+        if target is not None:
+            selected_row = _find_target_program_row(program_rows, target)
+            multiple_details = {
+                "program_count": button_count,
+                "pending_count": len(
+                    [
+                        row
+                        for row in program_rows
+                        if str(row.get("status") or "").casefold() == "pendiente"
+                    ]
+                ),
+                "rows": program_rows,
+                "target": target,
+            }
+            if selected_row is None:
+                multiple_details["decision"] = "target_not_found"
+                if on_multiple_programs is not None:
+                    on_multiple_programs(multiple_details)
+                raise AppointmentWorkflowUnavailable(
+                    "No se encontro el tramite objetivo en la lista programable."
+                )
+            status = str(selected_row.get("status") or "").strip().casefold()
+            if status and status != "pendiente":
+                multiple_details["decision"] = "target_not_pending"
+                multiple_details["selected_row"] = selected_row
+                if on_multiple_programs is not None:
+                    on_multiple_programs(multiple_details)
+                raise AppointmentWorkflowUnavailable(
+                    "El tramite objetivo existe, pero no figura como PENDIENTE."
+                )
+            multiple_details["decision"] = "target_selected"
+            multiple_details["selected_row"] = selected_row
             if on_multiple_programs is not None:
                 on_multiple_programs(multiple_details)
-            selected_button = button.nth(int(pending_rows[0]["action_index"]))
-            logger.info(
-                "Multiple program actions found; selecting the only pending program: %s",
-                pending_rows[0],
-            )
-        elif len(pending_rows) > 1:
-            multiple_details["decision"] = "multiple_pending_first_selected"
-            multiple_details["selected_row"] = pending_rows[0]
-            if on_multiple_programs is not None:
-                on_multiple_programs(multiple_details)
-            selected_button = button.nth(int(pending_rows[0]["action_index"]))
-            logger.info(
-                "Multiple pending program actions found; selecting the first pending program: %s",
-                pending_rows[0],
-            )
+            selected_button = button.nth(int(selected_row["action_index"]))
+            logger.info("Selected target program row: %s", selected_row)
+        elif button_count == 1:
+            selected_button = button.first
         else:
-            multiple_details["decision"] = "no_pending_blocked"
-            if on_multiple_programs is not None:
-                on_multiple_programs(multiple_details)
-            raise AppointmentWorkflowUnavailable(
-                "Hay varios tramites programables, pero ninguno figura como PENDIENTE."
-            )
+            pending_rows = [
+                row
+                for row in program_rows
+                if str(row.get("status") or "").casefold() == "pendiente"
+            ]
+            multiple_details = {
+                "program_count": button_count,
+                "pending_count": len(pending_rows),
+                "rows": program_rows,
+            }
+
+            if len(pending_rows) == 1:
+                multiple_details["decision"] = "single_pending_selected"
+                multiple_details["selected_row"] = pending_rows[0]
+                if on_multiple_programs is not None:
+                    on_multiple_programs(multiple_details)
+                selected_button = button.nth(int(pending_rows[0]["action_index"]))
+                logger.info(
+                    "Multiple program actions found; selecting the only pending program: %s",
+                    pending_rows[0],
+                )
+            elif len(pending_rows) > 1:
+                multiple_details["decision"] = "multiple_pending_first_selected"
+                multiple_details["selected_row"] = pending_rows[0]
+                if on_multiple_programs is not None:
+                    on_multiple_programs(multiple_details)
+                selected_button = button.nth(int(pending_rows[0]["action_index"]))
+                logger.info(
+                    "Multiple pending program actions found; "
+                    "selecting the first pending program: %s",
+                    pending_rows[0],
+                )
+            else:
+                multiple_details["decision"] = "no_pending_blocked"
+                if on_multiple_programs is not None:
+                    on_multiple_programs(multiple_details)
+                raise AppointmentWorkflowUnavailable(
+                    "Hay varios tramites programables, pero ninguno figura como PENDIENTE."
+                )
 
     selected_button.scroll_into_view_if_needed(timeout=15_000)
 
@@ -83,6 +129,44 @@ def click_program_action(
     _wait_for_program_detail(page)
     logger.info("Current page after program action: %s", page.url)
     return page
+
+
+def _program_target(
+    *,
+    program_expediente: str | None,
+    program_plate: str | None,
+) -> dict[str, str] | None:
+    target = {
+        key: _normalize_program_value(value)
+        for key, value in {
+            "expediente": program_expediente,
+            "placa": program_plate,
+        }.items()
+        if _normalize_program_value(value)
+    }
+    return target or None
+
+
+def _find_target_program_row(
+    rows: list[dict[str, Any]],
+    target: dict[str, str],
+) -> dict[str, Any] | None:
+    for row in rows:
+        expediente_matches = (
+            "expediente" not in target
+            or _normalize_program_value(row.get("expediente")) == target["expediente"]
+        )
+        plate_matches = (
+            "placa" not in target
+            or _normalize_program_value(row.get("placa")) == target["placa"]
+        )
+        if expediente_matches and plate_matches:
+            return row
+    return None
+
+
+def _normalize_program_value(value: object) -> str:
+    return "".join(str(value or "").split()).casefold()
 
 
 def _read_program_action_rows(page: Page) -> list[dict[str, Any]]:
@@ -157,5 +241,3 @@ def _wait_for_program_detail(page: Page) -> None:
             "No se encontro el detalle del tramite despues de hacer click. "
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         ) from exc
-
-

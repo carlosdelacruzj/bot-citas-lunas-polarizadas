@@ -985,3 +985,36 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-09 15:21:15 - order-45573344 - partial
+
+- Run: 20260709-151932-753390b1
+- Orden: order-***
+- Cliente: SANTOS ALFREDO CAPUÑAY DIAZ | Contacto: Jhuleisi BQ
+- Cuenta: 45***4
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 15/07/2026
+- Hora detectada: Sin Cupos
+- Cupos observados: Sin Cupos
+- Opciones fecha: 15/07/2026, 30/07/2026
+- Opciones hora: Sin Cupos
+- Origen deteccion: fetch_probe
+- Resultado: Se detecto fecha disponible, pero aun no hay hora seleccionable. La disponibilidad fue detectada por consulta directa al formulario.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: no aplicaba
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: si
+  - Refresco sede confirmado: si
+  - Refresco sede cambio opciones: no
+  - Refresco sede elapsed: 375ms
+  - Duracion corrida: 103.059s
+  - Seleccion fecha/hora: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\09-07-2026\parcial-151932-order-***-c939a4.png
+- Observacion tecnica:
+  - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
+

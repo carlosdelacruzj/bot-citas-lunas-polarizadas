@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 23
+SCHEMA_VERSION = 24
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -88,6 +88,9 @@ def create_current_schema(connection: Connection) -> None:
             allowed_weekdays smallint[] CHECK (
                 allowed_weekdays IS NULL OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
             ),
+            parent_order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            program_expediente text,
+            program_plate text,
             status text NOT NULL DEFAULT 'ready' CHECK (
                 status IN ('ready', 'paused', 'reserved_payment_pending', 'paid', 'archived')
             ),
@@ -317,6 +320,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
         ("service_orders", "allowed_weekdays"),
+        ("service_orders", "parent_order_id"),
+        ("service_orders", "program_expediente"),
+        ("service_orders", "program_plate"),
         ("service_orders", "lease_owner"),
         ("service_orders", "lease_expires_at"),
         ("runs", "reservation_attempted"),
@@ -641,6 +647,30 @@ def migrate_database(connection: Connection) -> None:
         current_version = 22
     if current_version == 22:
         _create_worker_commands_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (23,),
+        )
+        current_version = 23
+    if current_version == 23:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN parent_order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN program_expediente text
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN program_plate text
+            """
+        )
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

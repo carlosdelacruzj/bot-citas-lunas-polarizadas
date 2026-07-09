@@ -33,6 +33,8 @@ def with_client_context(
     order_id: str | None,
     client_name: str | None,
     settings: Settings,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
 ) -> AvailabilityResult:
     if order_id is None:
         return result
@@ -40,6 +42,10 @@ def with_client_context(
     details = dict(result.details or {})
     details.setdefault("orden", order_id)
     details.setdefault("cuenta", settings.safe_username)
+    if program_expediente:
+        details.setdefault("program_expediente", program_expediente)
+    if program_plate:
+        details.setdefault("program_plate", program_plate)
     if client_name:
         details.setdefault("cliente", client_name)
     return replace(result, details=details)

@@ -508,6 +508,10 @@ def run_service_order(
             details.setdefault("cliente", order.notification_name)
             details.setdefault("nombre", order.name)
             details.setdefault("cuenta", order_settings.safe_username)
+            if order.program_expediente:
+                details.setdefault("program_expediente", order.program_expediente)
+            if order.program_plate:
+                details.setdefault("program_plate", order.program_plate)
             on_check(replace(result, details=details), *args)
 
     def on_submission_intent(details) -> None:
@@ -549,6 +553,8 @@ def run_service_order(
             order_id=order.order_id,
             client_name=order.notification_name,
             expected_person_name=order.name,
+            program_expediente=order.program_expediente,
+            program_plate=order.program_plate,
             cancel_event=effective_cancel_event,
             on_check=handle_check,
             can_submit=lambda: (

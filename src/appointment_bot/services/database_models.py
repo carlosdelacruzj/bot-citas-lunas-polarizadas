@@ -14,12 +14,22 @@ class ServiceOrderCandidate:
     created_at: str
     updated_at: str
     contact_name: str | None = None
+    parent_order_id: str | None = None
+    program_expediente: str | None = None
+    program_plate: str | None = None
 
     @property
     def notification_name(self) -> str:
         parts = []
         if self.name and self.name != self.username:
             parts.append(self.name)
+        program_parts = []
+        if self.program_expediente:
+            program_parts.append(f"Exp: {self.program_expediente}")
+        if self.program_plate:
+            program_parts.append(f"Placa: {self.program_plate}")
+        if program_parts:
+            parts.append(" | ".join(program_parts))
         if self.contact_name:
             parts.append(f"Contacto: {self.contact_name}")
         return " | ".join(parts) or self.order_id
@@ -36,12 +46,22 @@ class ServiceOrderRuntime:
     created_at: str
     updated_at: str
     contact_name: str | None = None
+    parent_order_id: str | None = None
+    program_expediente: str | None = None
+    program_plate: str | None = None
 
     @property
     def notification_name(self) -> str:
         parts = []
         if self.name and self.name != self.username:
             parts.append(self.name)
+        program_parts = []
+        if self.program_expediente:
+            program_parts.append(f"Exp: {self.program_expediente}")
+        if self.program_plate:
+            program_parts.append(f"Placa: {self.program_plate}")
+        if program_parts:
+            parts.append(" | ".join(program_parts))
         if self.contact_name:
             parts.append(f"Contacto: {self.contact_name}")
         return " | ".join(parts) or self.order_id
@@ -66,6 +86,9 @@ class ServiceOrderSummary:
     payment_status: str | None
     amount_agreed: str | None
     amount_paid: str | None
+    parent_order_id: str | None
+    program_expediente: str | None
+    program_plate: str | None
     minimum_reservation_hour: int | None
     minimum_reservation_date: str | None
     allowed_weekdays: tuple[int, ...] | None

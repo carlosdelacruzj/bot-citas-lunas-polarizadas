@@ -256,6 +256,13 @@ Implementacion:
 - panel de acciones administrativas en `dashboard/`;
 - orden seleccionada para contacto, pausa/activacion, sin cobro, pago y
   completar;
+- las ordenes con multiples tramites se modelan como subordenes de cola:
+  `parent_order_id`, `program_expediente` y `program_plate` deben permanecer en
+  el DTO publico, en la tabla de ordenes y en cualquier formulario de creacion
+  avanzada;
+- el dashboard debe tratar cada suborden como trabajo independiente para pausa,
+  pago, reporte, sesion manual y cierre, aunque comparta credenciales con la
+  orden padre;
 - formulario de contacto para nombre, WhatsApp y fuente;
 - formulario de pago para monto pagado y monto acordado;
 - formulario minimo para crear orden nueva sin persistir password en storage;
@@ -289,6 +296,34 @@ Restricciones:
 - sin devolver password
 - sin reutilizar contexto del worker
 - sin cambiar estado de reserva por si sola
+
+Estado: completado como accion local deshabilitada por defecto.
+
+Implementacion:
+
+- endpoint `POST /api/v1/manual-session/open`;
+- requiere `MANUAL_SESSION_ENABLED=true`;
+- acepta solo host y cliente loopback;
+- recibe `order_id`, resuelve credenciales en backend y no devuelve password;
+- abre Playwright visible con contexto nuevo y sin reutilizar cookies del
+  worker;
+- deja la sesion en manos del usuario sin ejecutar reserva automatica ni
+  cambiar estado de orden;
+- permite una sesion manual activa por proceso y registra auditoria minima en
+  logs;
+- boton confirmado en `dashboard/` sobre la orden seleccionada.
+
+Validacion de la fase:
+
+```powershell
+cd dashboard
+npm run build
+cd ..
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
 
 ## Paso 9: refactor interno gradual
 

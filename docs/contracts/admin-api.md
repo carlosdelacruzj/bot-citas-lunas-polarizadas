@@ -37,6 +37,7 @@ GET  /api/v1/runs/{run_id}
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart
+POST /api/v1/manual-session/open
 ```
 
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
@@ -55,6 +56,7 @@ La lista de ordenes debe exponer solo datos publicos o enmascarados:
 - `contact_source`
 - `contact_whatsapp_masked`
 - prioridad, cobro, estado, reserva y pago
+- `parent_order_id`, `program_expediente`, `program_plate`
 - reglas de reserva
 - timestamps
 
@@ -75,6 +77,9 @@ No debe exponer password, usuario real sin mascara, datos de cifrado ni leases.
 - `minimum_reservation_hour`
 - `minimum_reservation_date`
 - `allowed_weekdays`
+- `parent_order_id`
+- `program_expediente`
+- `program_plate`
 
 La respuesta no debe devolver password. El frontend no debe persistir el valor
 del password despues de enviarlo.
@@ -86,10 +91,27 @@ del password despues de enviarlo.
 - `no-charge` marca una orden sin cobro.
 - `payment/paid` registra cobro y monto.
 - `worker/restart` solicita reinicio controlado del worker.
+- `manual-session/open` abre una sesion Playwright visible y local para una
+  orden seleccionada cuando `MANUAL_SESSION_ENABLED=true`.
 - Las acciones piden confirmacion visible en el dashboard y muestran respuesta
   clara del backend.
 - El formulario de creacion envia el password solo en el POST; no debe quedar
   persistido en storage del navegador.
+
+## Sesion manual
+
+`POST /api/v1/manual-session/open` acepta:
+
+- `order_id`
+
+Restricciones:
+
+- deshabilitado por defecto con `MANUAL_SESSION_ENABLED=false`;
+- solo loopback;
+- no devuelve password, cookies ni rutas internas;
+- no reutiliza contexto Playwright del worker;
+- no cambia estado de reserva por si mismo;
+- una sesion activa por proceso.
 
 ## Runs
 

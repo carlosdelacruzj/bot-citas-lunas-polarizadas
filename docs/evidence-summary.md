@@ -3,28 +3,28 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 67
+- Eventos indexados: 72
 - Reservas registradas: 8
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 5
-- Disponibilidades parciales: 29
+- Disponibilidades parciales: 30
 - Senales de defensa: 4
 
 ## Origen de deteccion
-- fetch_probe: 11
-- normal: 56
+- fetch_probe: 12
+- normal: 60
 
 ## Ultimos eventos utiles
+- 2026-07-09 15:27:14 | order-*** | unavailable | normal | 17/07/2026 11:00 | slot_lost
+- 2026-07-09 15:26:37 | order-*** | unavailable | normal | 30/07/2026 08:00 | slot_lost
+- 2026-07-09 15:21:15 | order-*** | partial | fetch_probe | 15/07/2026 Sin Cupos | sin outcome
+- 2026-07-09 15:19:32 | order-*** | completed | normal | 30/07/2026 11:00 | sin outcome
+- 2026-07-09 15:18:03 | order-*** | unavailable | normal | 14/07/2026 12:00 | slot_lost
 - 2026-07-09 14:02:17 | order-*** | registered | normal | 30/07/2026 10:00 | confirmed
 - 2026-07-09 12:15:57 | order-*** | unavailable | normal | 24/07/2026 12:00 | slot_lost
 - 2026-07-09 10:59:20 | order-*** | unavailable | normal | 24/07/2026 11:00 | slot_lost
 - 2026-07-09 10:58:30 | order-*** | partial | normal | 24/07/2026 10:00 | blocked_by_order_rule
 - 2026-07-09 10:26:58 | order-*** | partial | normal | 20/07/2026 12:00 | blocked_by_order_rule
-- 2026-07-09 10:06:49 | order-*** | registered | normal | 30/07/2026 09:00 | confirmed
-- 2026-07-09 08:28:21 | order-*** | registered | normal | 24/07/2026 12:00 | confirmed
-- 2026-07-09 08:28:06 | order-*** | registered | normal | 24/07/2026 12:00 | confirmed
-- 2026-07-09 07:36:51 | order-*** | completed | normal | 20/07/2026 10:00 | sin outcome
-- 2026-07-08 14:17:15 | order-*** | completed | normal | 30/07/2026 10:00 | sin outcome
 
 ## Senales de defensa
 - 2026-07-01 09:43:19 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

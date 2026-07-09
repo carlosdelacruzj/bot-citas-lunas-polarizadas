@@ -84,6 +84,7 @@ export interface ApiActionResponse {
   message?: string;
   command_id?: string;
   command?: string;
+  session_id?: string;
   order_id?: string;
   applicant_id?: string;
   portal_account_id?: string;
@@ -186,6 +187,12 @@ export class AppointmentApiService {
 
   async restartWorker(token: string): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(token, '/api/v1/worker/restart', {});
+  }
+
+  async openManualSession(token: string, orderId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(token, '/api/v1/manual-session/open', {
+      order_id: orderId,
+    });
   }
 
   private authOptions(token: string): { headers: HttpHeaders } {

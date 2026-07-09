@@ -17,6 +17,7 @@ from appointment_bot.services.postgres_orders import (
     mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
+    split_service_order_programs,
 )
 from appointment_bot.services.postgres_runs import get_run, list_runs
 from appointment_bot.services.status_reports import (
@@ -39,6 +40,9 @@ PREFERRED_ORDER_FIELDS = (
     "payment_status",
     "amount_agreed",
     "amount_paid",
+    "parent_order_id",
+    "program_expediente",
+    "program_plate",
     "minimum_reservation_hour",
     "minimum_reservation_date",
     "allowed_weekdays",
@@ -90,6 +94,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Dias permitidos ISO separados por coma: 1=lunes ... 6=sabado, 7=domingo."
         ),
+    )
+    order_add_parser.add_argument("--program-expediente", help="Expediente objetivo.")
+    order_add_parser.add_argument("--program-plate", help="Placa objetivo.")
+    order_add_parser.add_argument("--parent-order-id", help="Orden padre si es suborden.")
+
+    split_parser = subparsers.add_parser(
+        "order-split-programs",
+        help="Crea subordenes por cada tramite pendiente detectado.",
+    )
+    split_parser.add_argument("order_id", help="Orden con listado de tramites guardado.")
+    split_parser.add_argument(
+        "--keep-parent-active",
+        action="store_true",
+        help="No archiva la orden generica despues de crear subordenes.",
     )
 
     subparsers.add_parser("orders", help="Lista trabajos de reserva.")
@@ -238,8 +256,20 @@ def run(argv: Sequence[str] | None = None) -> int:
             minimum_reservation_hour=args.minimum_reservation_hour,
             minimum_reservation_date=args.minimum_reservation_date,
             allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),
+            parent_order_id=args.parent_order_id,
+            program_expediente=args.program_expediente,
+            program_plate=args.program_plate,
         )
         print(f"Trabajo guardado: {result.order_id}")
+        return 0
+
+    if args.command == "order-split-programs":
+        results = split_service_order_programs(
+            args.order_id,
+            archive_parent=not args.keep_parent_active,
+        )
+        for result in results:
+            print(f"Suborden guardada: {result.order_id}")
         return 0
 
     if args.command == "orders":

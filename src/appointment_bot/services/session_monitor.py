@@ -53,6 +53,8 @@ def monitor_appointment_availability(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
 ):
     deadline = time.monotonic() + settings.monitor_window_seconds
     session_started = time.monotonic()
@@ -99,7 +101,12 @@ def monitor_appointment_availability(
 
         if result.status == "unavailable":
             reload_started = time.monotonic()
-            reload_result = reload_and_recheck_appointment_availability(page, settings)
+            reload_result = reload_and_recheck_appointment_availability(
+                page,
+                settings,
+                program_expediente=program_expediente,
+                program_plate=program_plate,
+            )
             if reload_result is None:
                 if on_check is not None:
                     on_check(result, attempt, None)
@@ -329,6 +336,9 @@ def _try_reservation_from_availability(
 def reload_and_recheck_appointment_availability(
     page,
     settings: Settings,
+    *,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
 ) -> AvailabilityResult | None:
     logger.info("No slots detected; reloading page before confirming unavailable result")
     try:
@@ -336,7 +346,11 @@ def reload_and_recheck_appointment_availability(
             wait_until="domcontentloaded",
             timeout=settings.postback_timeout_seconds * 1_000,
         )
-        page = click_program_action(page)
+        page = click_program_action(
+            page,
+            program_expediente=program_expediente,
+            program_plate=program_plate,
+        )
         page = open_appointment_panel(page)
         page = select_available_site(
             page,

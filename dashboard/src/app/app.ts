@@ -225,6 +225,18 @@ export class App {
     });
   }
 
+  protected requestManualSession(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    this.setPendingAction({
+      title: 'Abrir sesion manual',
+      message: `Abrir navegador visible para ${order.order_id}.`,
+      execute: () => this.api.openManualSession(this.requiredToken(), order.order_id),
+    });
+  }
+
   protected cancelPendingAction(): void {
     this.pendingAction.set(null);
   }
@@ -374,6 +386,9 @@ export class App {
     }
     if (response.command_id) {
       parts.push(response.command_id);
+    }
+    if (response.session_id) {
+      parts.push(response.session_id);
     }
     if (response.order_id) {
       parts.push(response.order_id);

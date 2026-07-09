@@ -54,6 +54,9 @@ def create_service_order(
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
     allowed_weekdays: Iterable[int] | None = None,
+    parent_order_id: str | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
     settings: Settings | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)
@@ -72,9 +75,20 @@ def create_service_order(
 
     now = _now()
     encrypted_password = _credential_cipher(settings).encrypt(password)
+    program_expediente = _optional_clean_text(program_expediente)
+    program_plate = _optional_clean_text(program_plate)
     applicant_id = _id_from_value("applicant", document_number)
     portal_account_id = _id_from_value("portal", document_number)
-    order_id = _id_from_value("order", document_number)
+    parent_order_id = _optional_clean_text(parent_order_id)
+    base_order_id = _id_from_value("order", document_number)
+    program_key = program_expediente or program_plate
+    order_id = (
+        _id_from_value("order", f"{document_number}:{program_key}")
+        if program_key
+        else base_order_id
+    )
+    if program_key and parent_order_id is None:
+        parent_order_id = base_order_id
     contact_id = None
     with _connection(_database_url(settings)) as connection:
         connection.execute(
@@ -122,25 +136,41 @@ def create_service_order(
                 (document_number,),
             ).fetchone()["portal_account_id"]
         )
-        existing_order = connection.execute(
-            """
-            SELECT order_id
-            FROM service_orders
-            WHERE applicant_id = %s AND portal_account_id = %s
-            ORDER BY created_at
-            LIMIT 1
-            """,
-            (applicant_id, portal_account_id),
-        ).fetchone()
-        if existing_order is not None:
-            order_id = str(existing_order["order_id"])
+        if not program_key:
+            existing_order = connection.execute(
+                """
+                SELECT order_id
+                FROM service_orders
+                WHERE applicant_id = %s
+                  AND portal_account_id = %s
+                  AND program_expediente IS NULL
+                  AND program_plate IS NULL
+                ORDER BY created_at
+                LIMIT 1
+                """,
+                (applicant_id, portal_account_id),
+            ).fetchone()
+            if existing_order is not None:
+                order_id = str(existing_order["order_id"])
+        if parent_order_id is not None:
+            parent_exists = connection.execute(
+                "SELECT 1 FROM service_orders WHERE order_id = %s",
+                (parent_order_id,),
+            ).fetchone()
+            if parent_exists is None:
+                if parent_order_id == base_order_id:
+                    parent_order_id = None
+                else:
+                    raise ValueError(f"No existe la orden padre: {parent_order_id}")
         connection.execute(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                minimum_hour, minimum_date, allowed_weekdays, status, created_at, updated_at
+                minimum_hour, minimum_date, allowed_weekdays,
+                parent_order_id, program_expediente, program_plate,
+                status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
@@ -152,6 +182,15 @@ def create_service_order(
                     excluded.allowed_weekdays,
                     service_orders.allowed_weekdays
                 ),
+                parent_order_id = COALESCE(
+                    excluded.parent_order_id,
+                    service_orders.parent_order_id
+                ),
+                program_expediente = COALESCE(
+                    excluded.program_expediente,
+                    service_orders.program_expediente
+                ),
+                program_plate = COALESCE(excluded.program_plate, service_orders.program_plate),
                 status = CASE
                     WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
                         THEN service_orders.status
@@ -168,6 +207,9 @@ def create_service_order(
                 minimum_reservation_hour,
                 parsed_minimum_date,
                 parsed_allowed_weekdays,
+                parent_order_id,
+                program_expediente,
+                program_plate,
                 now,
                 now,
             ),
@@ -209,6 +251,7 @@ def list_service_order_summaries(
                    r.status AS reservation_status, r.site AS reservation_site,
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
+                   so.parent_order_id, so.program_expediente, so.program_plate,
                    so.minimum_hour AS minimum_reservation_hour,
                    so.minimum_date AS minimum_reservation_date,
                    so.allowed_weekdays
@@ -401,7 +444,8 @@ def list_active_orders(
             f"""
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, wc.display_name AS contact_name,
-                   so.priority, so.status, so.created_at, so.updated_at
+                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -426,6 +470,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                        pa.username, wc.display_name AS contact_name,
                        so.priority, so.status, so.created_at, so.updated_at,
+                       so.parent_order_id, so.program_expediente, so.program_plate,
                        os.last_run_at
                 FROM service_orders so
                 JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -446,7 +491,8 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 ORDER BY priority DESC, created_at ASC
                 LIMIT %s
             )
-            SELECT order_id, name, username, contact_name, priority, status, created_at, updated_at
+            SELECT order_id, name, username, contact_name, priority, status, created_at,
+                   updated_at, parent_order_id, program_expediente, program_plate
             FROM active_block
             ORDER BY last_run_at ASC NULLS FIRST, created_at ASC, priority DESC
             """,
@@ -529,7 +575,8 @@ def promote_orders_matching_reserved_slot(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, wc.display_name AS contact_name,
-                   so.priority, so.status, so.created_at, so.updated_at
+                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -788,6 +835,84 @@ def get_order_program_listing(
     return value if isinstance(value, dict) else None
 
 
+def split_service_order_programs(
+    order_id: str,
+    *,
+    archive_parent: bool = True,
+    settings: Settings | None = None,
+) -> list[ServiceOrderCreateResult]:
+    settings = _settings(settings)
+    init_database(settings)
+    listing = get_order_program_listing(order_id, settings=settings)
+    if not listing:
+        raise ValueError(f"No hay listado de tramites registrado para {order_id}.")
+    details = listing.get("details") if isinstance(listing.get("details"), dict) else listing
+    rows = details.get("rows") if isinstance(details, dict) else None
+    if not isinstance(rows, list):
+        raise ValueError(f"El listado de tramites de {order_id} no contiene filas.")
+
+    runtime = get_service_order_runtime(order_id, settings=settings)
+    if runtime is None:
+        raise ValueError(f"No existe la orden: {order_id}")
+
+    with _connection(_database_url(settings)) as connection:
+        parent = connection.execute(
+            """
+            SELECT priority, charge_required, minimum_hour, minimum_date, allowed_weekdays
+            FROM service_orders
+            WHERE order_id = %s
+            """,
+            (order_id,),
+        ).fetchone()
+    if parent is None:
+        raise ValueError(f"No existe la orden: {order_id}")
+
+    created: list[ServiceOrderCreateResult] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        status = str(row.get("status") or "").strip().casefold()
+        if status and status != "pendiente":
+            continue
+        expediente = _optional_clean_text(row.get("expediente"))
+        plate = _optional_clean_text(row.get("placa"))
+        if not expediente and not plate:
+            continue
+        created.append(
+            create_service_order(
+                document_number=runtime.username,
+                password=runtime.password,
+                priority=int(parent["priority"]),
+                applicant_name=runtime.name,
+                charge_required=bool(parent["charge_required"]),
+                minimum_reservation_hour=parent["minimum_hour"],
+                minimum_reservation_date=parent["minimum_date"],
+                allowed_weekdays=(
+                    tuple(int(day) for day in parent["allowed_weekdays"])
+                    if parent["allowed_weekdays"]
+                    else None
+                ),
+                parent_order_id=order_id,
+                program_expediente=expediente,
+                program_plate=plate,
+                settings=settings,
+            )
+        )
+    if not created:
+        raise ValueError(f"No hay tramites pendientes divisibles para {order_id}.")
+    if archive_parent:
+        with _connection(_database_url(settings)) as connection:
+            connection.execute(
+                """
+                UPDATE service_orders
+                SET status = 'archived', updated_at = %s
+                WHERE order_id = %s AND status = 'ready'
+                """,
+                (_now(), order_id),
+            )
+    return created
+
+
 def mark_order_submission_pending(
     order_id: str,
     *,
@@ -1030,7 +1155,8 @@ def get_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.password, wc.display_name AS contact_name,
-                   so.priority, so.status, so.created_at, so.updated_at
+                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -1057,7 +1183,8 @@ def get_claimed_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.password, wc.display_name AS contact_name,
-                   so.priority, so.status, so.created_at, so.updated_at
+                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -1133,6 +1260,9 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
+        parent_order_id=row.get("parent_order_id"),
+        program_expediente=row.get("program_expediente"),
+        program_plate=row.get("program_plate"),
     )
 
 
@@ -1146,6 +1276,9 @@ def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
+        parent_order_id=row.get("parent_order_id"),
+        program_expediente=row.get("program_expediente"),
+        program_plate=row.get("program_plate"),
     )
 
 
@@ -1168,6 +1301,9 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         payment_status=row["payment_status"],
         amount_agreed=_decimal_text(row["amount_agreed"]),
         amount_paid=_decimal_text(row["amount_paid"]),
+        parent_order_id=row["parent_order_id"],
+        program_expediente=row["program_expediente"],
+        program_plate=row["program_plate"],
         minimum_reservation_hour=(
             int(row["minimum_reservation_hour"])
             if row["minimum_reservation_hour"] is not None
@@ -1190,6 +1326,13 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
     )
+
+
+def _optional_clean_text(value: object) -> str | None:
+    if value in {None, ""}:
+        return None
+    text = " ".join(str(value).split())
+    return text or None
 
 
 def _upsert_contact(

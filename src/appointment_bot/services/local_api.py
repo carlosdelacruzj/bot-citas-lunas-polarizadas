@@ -14,6 +14,7 @@ from appointment_bot.services.api.http import (
     require_authorized,
     send_json,
 )
+from appointment_bot.services.api.manual_session_routes import open_manual_session_payload
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
@@ -150,6 +151,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 {"status": "restarting", "message": "Controlled restart requested."},
             )
             restart_callback()
+            return
+
+        if path == "/api/v1/manual-session/open":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = open_manual_session_payload(
+                self._read_json(),
+                server_host=str(self.server.server_address[0]),
+                client_host=str(self.client_address[0]),
+            )
+            self._send_json(status, payload)
             return
 
         if path not in {"/api/v1/worker/pause", "/api/v1/worker/resume"}:

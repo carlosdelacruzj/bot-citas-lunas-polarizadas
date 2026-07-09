@@ -40,6 +40,12 @@ def notify_multiple_programs(
         lines.append("Accion: se eligio el unico PENDIENTE")
     elif decision == "multiple_pending_first_selected":
         lines.append("Accion: se eligio solo el primer PENDIENTE")
+    elif decision == "target_selected":
+        lines.append("Accion: se eligio el tramite objetivo")
+    elif decision == "target_not_found":
+        lines.append("Accion: detenido; no se encontro el tramite objetivo")
+    elif decision == "target_not_pending":
+        lines.append("Accion: detenido; el tramite objetivo no esta PENDIENTE")
     elif decision == "no_pending_blocked":
         lines.append("Accion: detenido sin PENDIENTE")
     for index, row in enumerate(rows[:5], start=1):

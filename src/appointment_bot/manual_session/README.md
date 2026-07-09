@@ -1,8 +1,26 @@
 # Manual Session
 
-Estructura futura para sesiones manuales controladas por el backend, usando una
-sesion Playwright nueva y separada de las sesiones del worker.
+Sesion Playwright visible, local y separada de las sesiones del worker.
 
-Por ahora no contiene logica funcional. No debe exponer cookies, passwords,
-tokens ni reutilizar contexto del worker. La migracion real se hara por fases
-documentadas antes de mover codigo.
+Endpoint:
+
+```text
+POST /api/v1/manual-session/open
+```
+
+Payload:
+
+```json
+{"order_id": "order-12345678"}
+```
+
+Reglas:
+
+- deshabilitada por defecto;
+- requiere `MANUAL_SESSION_ENABLED=true`;
+- solo acepta host y cliente loopback;
+- usa una sesion Playwright nueva y visible;
+- resuelve credenciales en backend y nunca devuelve password ni cookies;
+- no reutiliza contexto del worker;
+- no cambia estado de reserva por si sola;
+- permite solo una sesion manual activa por proceso.
