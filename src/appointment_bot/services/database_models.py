@@ -135,3 +135,16 @@ class WorkerState:
     availability_signature: str | None = None
     owner_token: str | None = None
     updated_at: str | None = None
+
+
+@dataclass(frozen=True)
+class WorkerCommand:
+    command_id: str
+    command: str
+    status: str
+    requested_by: str | None
+    worker_owner_token: str | None
+    requested_at: str
+    claimed_at: str | None
+    processed_at: str | None
+    error_message: str | None

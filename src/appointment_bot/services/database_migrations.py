@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 22
+SCHEMA_VERSION = 23
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -280,6 +280,7 @@ def create_current_schema(connection: Connection) -> None:
         """,
         (datetime.now(UTC),),
     )
+    _create_worker_commands_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -299,6 +300,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "reservations",
         "payments",
         "worker_state",
+        "worker_commands",
     }
     tables = {
         row["table_name"]
@@ -331,6 +333,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("worker_state", "current_order_id"),
         ("worker_state", "owner_token"),
         ("worker_state", "lease_expires_at"),
+        ("worker_commands", "command"),
+        ("worker_commands", "status"),
+        ("worker_commands", "requested_at"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -381,6 +386,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_reservation_attempts_order_created")
     if "uq_reservation_attempts_active_order" not in indexes:
         missing.append("uq_reservation_attempts_active_order")
+    if "idx_worker_commands_pending" not in indexes:
+        missing.append("idx_worker_commands_pending")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -469,6 +476,39 @@ def _create_reservation_attempts_schema(connection: Connection) -> None:
         CREATE UNIQUE INDEX IF NOT EXISTS uq_reservation_attempts_active_order
         ON reservation_attempts(order_id)
         WHERE status IN ('intent', 'pending', 'unknown')
+        """
+    )
+
+
+def _create_worker_commands_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS worker_commands (
+            command_id text PRIMARY KEY,
+            command text NOT NULL CHECK (command IN ('pause', 'resume', 'restart')),
+            status text NOT NULL DEFAULT 'pending' CHECK (
+                status IN ('pending', 'processing', 'applied', 'failed')
+            ),
+            requested_by text,
+            worker_owner_token text,
+            requested_at timestamptz NOT NULL,
+            claimed_at timestamptz,
+            processed_at timestamptz,
+            error_message text,
+            CONSTRAINT ck_worker_commands_processing CHECK (
+                status <> 'processing' OR claimed_at IS NOT NULL
+            ),
+            CONSTRAINT ck_worker_commands_done CHECK (
+                status NOT IN ('applied', 'failed') OR processed_at IS NOT NULL
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_worker_commands_pending
+        ON worker_commands(requested_at ASC, command_id ASC)
+        WHERE status = 'pending'
         """
     )
 
@@ -594,6 +634,13 @@ def migrate_database(connection: Connection) -> None:
             """
         )
         connection.execute("ALTER TABLE whatsapp_contacts ALTER COLUMN phone DROP NOT NULL")
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (22,),
+        )
+        current_version = 22
+    if current_version == 22:
+        _create_worker_commands_schema(connection)
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

@@ -19,6 +19,6 @@ Configuracion:
 - `APPOINTMENT_BOT_API_TOKEN`: bearer token administrativo existente.
 
 Este proceso reutiliza los handlers y servicios PostgreSQL actuales. No aloja
-un `ContinuousWorker` en memoria, por lo que `worker/pause`, `worker/resume` y
-`worker/restart` siguen perteneciendo a la API embebida del worker hasta que
-exista el canal persistido de comandos.
+un `ContinuousWorker` en memoria; por eso `worker/pause`, `worker/resume` y
+`worker/restart` encolan comandos en `worker_commands` para que el worker activo
+los consuma en su propio ciclo.

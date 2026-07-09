@@ -212,6 +212,29 @@ Comandos iniciales:
 
 El admin API no debe depender de tener un objeto `ContinuousWorker` en memoria.
 
+Estado: completado como canal persistido inicial.
+
+Implementacion:
+
+- schema `worker_commands` agregado como version 23;
+- comandos soportados: `pause`, `resume`, `restart`;
+- `appointment-bot-admin-api` encola comandos cuando no tiene
+  `ContinuousWorker` en memoria;
+- la API embebida del worker conserva control directo por compatibilidad;
+- el worker reclama comandos pendientes con su `owner_token`, los aplica y los
+  marca como `applied` o `failed`;
+- `restart` persistido detiene el ciclo actual para que el host salga con el
+  flujo de reinicio controlado existente.
+
+Validacion de la fase:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ## Paso 7: CRUD progresivo
 
 Habilitar acciones desde Angular por orden de menor a mayor riesgo:

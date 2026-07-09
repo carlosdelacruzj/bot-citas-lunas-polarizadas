@@ -25,7 +25,11 @@ from appointment_bot.services.api.service_order_routes import (
     service_order_contact_path,
     update_service_order_contact_payload,
 )
-from appointment_bot.services.api.worker_routes import health_payload, worker_payload
+from appointment_bot.services.api.worker_routes import (
+    enqueue_worker_command_payload,
+    health_payload,
+    worker_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -137,13 +141,8 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             controller = getattr(self.server, "worker_controller", None)
             restart_callback = getattr(self.server, "restart_callback", None)
             if controller is None or restart_callback is None:
-                self._send_json(
-                    HTTPStatus.CONFLICT,
-                    error_payload(
-                        "conflict",
-                        "The continuous host cannot be restarted by this process.",
-                    ),
-                )
+                status, payload = enqueue_worker_command_payload("restart")
+                self._send_json(status, payload)
                 return
             controller.prepare_restart()
             self._send_json(
@@ -165,13 +164,9 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
         controller = getattr(self.server, "worker_controller", None)
         if controller is None:
-            self._send_json(
-                HTTPStatus.CONFLICT,
-                error_payload(
-                    "conflict",
-                    "The continuous worker is not hosted by this process.",
-                ),
-            )
+            command = "pause" if path.endswith("/pause") else "resume"
+            status, payload = enqueue_worker_command_payload(command)
+            self._send_json(status, payload)
             return
         payload = (
             controller.pause() if path.endswith("/pause") else controller.resume()

@@ -12,8 +12,8 @@ proceso. Por eso estos endpoints llaman metodos del objeto en memoria:
 - `POST /api/v1/worker/resume`
 - `POST /api/v1/worker/restart`
 
-Separar el admin API en otro proceso rompe este modelo si no se agrega un canal
-persistido.
+La API embebida conserva este modelo por compatibilidad. El admin API separado
+usa el canal persistido `worker_commands`.
 
 ## Estado publico del worker
 
@@ -66,23 +66,26 @@ Todos estos comandos requieren `Authorization: Bearer
 <APPOINTMENT_BOT_API_TOKEN>`. Si el token no esta configurado, la API responde
 `configuration_error` para evitar controles administrativos abiertos.
 
-## Contrato futuro
+## Canal persistido
 
-Antes de separar `pause`, `resume` y `restart`, crear un canal persistido:
+El canal persistido permite que `appointment-bot-admin-api` solicite acciones
+sin tener un objeto `ContinuousWorker` en memoria:
 
 ```text
 worker_commands
 ```
 
-Campos minimos propuestos:
+Campos principales:
 
 - `command_id`
 - `command`
 - `status`
 - `requested_at`
-- `started_at`
-- `finished_at`
-- `message`
+- `claimed_at`
+- `processed_at`
+- `requested_by`
+- `worker_owner_token`
+- `error_message`
 
 Comandos iniciales:
 
@@ -90,14 +93,16 @@ Comandos iniciales:
 - `resume`
 - `restart`
 
-El admin API escribira comandos. El worker los consumira y marcara resultado.
-El admin API no debe depender de tener `ContinuousWorker` en memoria.
+El admin API separado escribe comandos con estado `pending`. El worker activo
+los reclama con su `owner_token`, los ejecuta en su propio ciclo y los marca
+como `applied` o `failed`.
 
 ## Compatibilidad
 
-Hasta completar el canal persistido:
+Mientras la migracion conserva compatibilidad:
 
 - mantener API embebida para control directo;
+- mantener el canal persistido para el admin API separado;
 - mantener `appointment-bot-worker`;
 - mantener `scripts/start-worker.ps1`;
 - no cambiar codigos de salida 0, 75 y 76.

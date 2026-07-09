@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from http import HTTPStatus
 from typing import Any
 
 from appointment_bot.config import load_settings
+from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.postgres_worker import get_worker_state
+from appointment_bot.services.postgres_worker_commands import enqueue_worker_command
 
 PUBLIC_WORKER_FIELDS = {
     "phase",
@@ -55,3 +58,16 @@ def worker_payload(worker_controller: Any | None) -> dict[str, Any]:
 
 def public_worker_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return {field: payload.get(field) for field in PUBLIC_WORKER_FIELDS if field in payload}
+
+
+def enqueue_worker_command_payload(command: str) -> tuple[HTTPStatus, dict[str, Any]]:
+    try:
+        queued = enqueue_worker_command(command, requested_by="admin_api")
+    except ValueError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    return HTTPStatus.ACCEPTED, {
+        "status": "queued",
+        "command_id": queued.command_id,
+        "command": queued.command,
+        "message": "Worker command queued for the continuous worker.",
+    }

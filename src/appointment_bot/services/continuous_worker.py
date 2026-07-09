@@ -32,6 +32,10 @@ from appointment_bot.services.postgres_worker import (
     get_worker_state,
     update_worker_state,
 )
+from appointment_bot.services.postgres_worker_commands import (
+    claim_next_worker_command,
+    complete_worker_command,
+)
 from appointment_bot.services.worker_deferred_reports import DeferredOrderReports
 from appointment_bot.services.worker_error_policy import WorkerErrorPolicy
 from appointment_bot.services.worker_execution import (
@@ -206,6 +210,8 @@ class ContinuousWorker:
 
     def _run_worker_cycle_once(self) -> bool:
         self._renew_worker_lease_if_due(force=True)
+        if self._process_pending_worker_command():
+            return True
         self._cleanup_once_per_day()
         if self._wait_while_paused():
             return True
@@ -483,6 +489,8 @@ class ContinuousWorker:
                     self._shutdown_reason = DAILY_CUTOFF_REASON
                 logger.info("Daily cutoff reached while the worker was paused")
                 return True
+            if self._process_pending_worker_command():
+                return True
             with self._guard:
                 paused = self._paused
             if not paused:
@@ -504,10 +512,54 @@ class ContinuousWorker:
             if self._daily_cutoff_reached():
                 return
             self._renew_worker_lease_if_due()
+            if self._process_pending_worker_command():
+                return
             with self._guard:
                 if self._paused:
                     return
             self._stop_event.wait(min(1, max(0, (deadline - datetime.now()).total_seconds())))
+
+    def _process_pending_worker_command(self) -> bool:
+        owner_token = self._worker_lease.owner_token
+        if owner_token is None:
+            return False
+        command = claim_next_worker_command(owner_token=owner_token, settings=self.settings)
+        if command is None:
+            return False
+        try:
+            should_stop = self._apply_worker_command(command.command)
+        except Exception as exc:
+            complete_worker_command(
+                command.command_id,
+                status="failed",
+                error_message=str(exc),
+                settings=self.settings,
+            )
+            raise
+        complete_worker_command(command.command_id, status="applied", settings=self.settings)
+        logger.info("Applied persisted worker command: %s", command.command)
+        return should_stop
+
+    def _apply_worker_command(self, command: str) -> bool:
+        if command == "pause":
+            self.pause()
+            return False
+        if command == "resume":
+            self.resume()
+            return False
+        if command == "restart":
+            with self._guard:
+                self._shutdown_reason = "restart_requested"
+                self._paused = True
+                self._cancel_event.set()
+                self._stop_event.set()
+                self._update_state(
+                    phase="restarting",
+                    paused=False,
+                    next_check_at=None,
+                )
+            return True
+        raise ValueError(f"Unsupported worker command: {command}")
 
     def _set_session_state(
         self,

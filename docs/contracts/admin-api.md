@@ -40,9 +40,8 @@ POST /api/v1/worker/restart
 ```
 
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
-`worker/restart` todavia no ejecutan acciones de control porque el canal
-persistido de comandos pertenece al paso 6. Hasta entonces, esas acciones se
-mantienen en la API embebida del worker.
+`worker/restart` encolan comandos persistidos en `worker_commands`. La API
+embebida del worker mantiene control directo por compatibilidad.
 
 ## Datos de orden
 

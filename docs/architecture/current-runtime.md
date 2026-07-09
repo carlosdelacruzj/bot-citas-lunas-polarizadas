@@ -90,8 +90,16 @@ El admin API separado usa:
 
 En este proceso, `GET /api/v1/worker` lee estado persistido del worker, pero
 `POST /api/v1/worker/pause`, `POST /api/v1/worker/resume` y
-`POST /api/v1/worker/restart` no controlan el worker porque todavia no existe el
-canal persistido de comandos.
+`POST /api/v1/worker/restart` encolan comandos persistidos en
+`worker_commands`. La API embebida por el worker conserva control directo por
+compatibilidad.
+
+## Comandos persistidos
+
+`worker_commands` registra comandos administrativos solicitados por procesos
+sin `ContinuousWorker` en memoria. El worker activo reclama el siguiente comando
+`pending` con su `owner_token`, lo aplica en su propio ciclo y lo marca como
+`applied` o `failed`.
 
 ## Corte diario
 
