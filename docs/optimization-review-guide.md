@@ -39,12 +39,14 @@ un evento lo justifique.
 
 ## Siguientes pasos de pulcritud tecnica
 
-1. Seguir reduciendo `src/appointment_bot/services/continuous_worker.py`:
-   separar el manejo de resultados del observer puro y callbacks de estado.
-2. Partir `src/appointment_bot/services/session_runner.py`:
-   separar preparacion de sesion/video, login y tramite, monitoreo de
-   disponibilidad, y finalizacion/reporte.
-3. Separar tests de flujo restantes:
+1. Separar lectura, seleccion y `fetch_probe` en
+   `src/appointment_bot/flows/appointments.py`.
+2. Reducir `src/appointment_bot/services/postgres_orders.py` por subdominio:
+   pagos/contactos, estado de orden, credenciales y promocion de ordenes.
+3. Reducir `src/appointment_bot/services/order_execution.py`:
+   separar recorrido de cola rapida, ejecucion de una orden y decisiones de
+   resultado compartidas con el worker.
+4. Separar tests de flujo restantes:
    mantener `test_appointments.py` para lectura/seleccion y crear una suite
    dedicada para `programs.py`.
 
@@ -75,10 +77,28 @@ un evento lo justifique.
   `worker_execution.py`.
 - Clasificacion y persistencia de resultados de ordenes monitoreadas vive en
   `worker_order_results.py`.
+- Resultado del observer puro, confirmacion secundaria y deduplicacion de firma
+  viven en `worker_observer_results.py`.
+- Callbacks de estado, alertas inmediatas y racha de `unavailable` viven en
+  `worker_state_callbacks.py`.
+- Retencion/borrado de evidencias diferidas vive en `worker_deferred_reports.py`.
+- Backoff y politica de errores de orden, observer, cola rapida y fallos
+  inesperados vive en `worker_error_policy.py`.
 - El ciclo principal de `continuous_worker.py` quedo dividido en arranque,
   iteracion, seleccion de trabajo disponible y cierre controlado.
 - `_monitor_order` quedo reducido a ejecutar la orden, registrar el reporte y
   aplicar la decision devuelta por `worker_order_results.py`.
+- `continuous_worker.py` conserva la orquestacion del proceso continuo, leases,
+  seleccion de trabajo, pausas, ventanas calientes, salud y metricas de ventana.
+- `session_runner.py` quedo como orquestador de corrida, navegador, video,
+  reporte final y errores.
+- Login, seleccion de tramite y bifurcacion entre etapa ya terminada o panel de
+  cita viven en `session_flow.py`.
+- Monitoreo de disponibilidad, reload probe, diagnosticos por intento y envio de
+  reserva viven en `session_monitor.py`.
+- Limpieza de evidencias no confirmadas y contexto de cliente viven en
+  `session_results.py`.
+- Notificacion/persistencia de multiples tramites vive en `session_programs.py`.
 
 ## Regenerar resumen manual
 

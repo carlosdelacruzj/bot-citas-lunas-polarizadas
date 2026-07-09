@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import logging
+
+from appointment_bot.config import Settings
+from appointment_bot.services.notifier import send_telegram_message
+from appointment_bot.services.postgres_orders import record_order_program_listing
+
+logger = logging.getLogger(__name__)
+
+
+def notify_multiple_programs(
+    settings: Settings,
+    order_id: str | None,
+    client_name: str | None,
+    details: dict,
+) -> None:
+    should_notify = True
+    if order_id is not None:
+        try:
+            should_notify = record_order_program_listing(order_id, details, settings=settings)
+        except Exception:
+            logger.exception("Could not persist multiple program listing for %s", order_id)
+
+    if not should_notify:
+        logger.info("Multiple program listing unchanged for %s; skipping alert", order_id)
+        return
+
+    rows = details.get("rows") if isinstance(details.get("rows"), list) else []
+    lines = [
+        "MULTIPLES TRAMITES DETECTADOS",
+        f"Orden: {order_id or 'observer'}",
+    ]
+    if client_name:
+        lines.append(f"Cliente: {client_name}")
+    lines.append(f"Tramites: {details.get('program_count')}")
+    lines.append(f"Pendientes: {details.get('pending_count')}")
+    decision = str(details.get("decision") or "").strip()
+    if decision == "single_pending_selected":
+        lines.append("Accion: se eligio el unico PENDIENTE")
+    elif decision == "multiple_pending_first_selected":
+        lines.append("Accion: se eligio solo el primer PENDIENTE")
+    elif decision == "no_pending_blocked":
+        lines.append("Accion: detenido sin PENDIENTE")
+    for index, row in enumerate(rows[:5], start=1):
+        if not isinstance(row, dict):
+            continue
+        vehicle = " ".join(
+            str(row.get(key) or "").strip()
+            for key in ("placa", "marca", "modelo", "color")
+            if str(row.get(key) or "").strip()
+        )
+        status = str(row.get("status") or "sin estado").strip()
+        expediente = str(row.get("expediente") or "").strip()
+        lines.append(
+            f"{index}. {status}"
+            + (f" exp {expediente}" if expediente else "")
+            + (f" - {vehicle}" if vehicle else "")
+        )
+    try:
+        send_telegram_message(settings, "\n".join(lines))
+    except Exception:
+        logger.exception("Could not notify multiple program actions")
