@@ -68,6 +68,7 @@ def handle_observer_order_report(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
+            backoff_seconds=settings.order_rule_cooldown_seconds,
             settings=settings,
         )
         return ObserverOrderDecision(reset_errors=True)

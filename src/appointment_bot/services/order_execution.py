@@ -617,12 +617,18 @@ def _update_state_from_report(
 ) -> None:
     if report.status in {"skipped", "unknown", "reservation_unconfirmed"}:
         return
+    backoff_seconds = (
+        settings.order_rule_cooldown_seconds
+        if classify_order_report(report) is OrderReportOutcome.BLOCKED
+        else None
+    )
 
     update_order_state(
         order.order_id,
         status=report.status,
         message=report.message,
         exit_code=report.exit_code,
+        backoff_seconds=backoff_seconds,
         settings=settings,
     )
 

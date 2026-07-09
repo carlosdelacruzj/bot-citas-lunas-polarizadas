@@ -108,7 +108,11 @@ def _record_reservation_for_order(
             connection.execute(
                 """
                 UPDATE service_orders
-                SET status = %s, updated_at = %s
+                SET status = CASE
+                        WHEN status = 'paid' THEN 'paid'
+                        ELSE %s
+                    END,
+                    updated_at = %s
                 WHERE order_id = %s
                 """,
                 ("archived" if no_charge else "reserved_payment_pending", now, order_id),

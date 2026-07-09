@@ -36,6 +36,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             priority=int(payload.get("priority", 0) or 0),
             contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
             contact_name=_optional_text(payload, "contact_name"),
+            contact_source=_optional_text(payload, "contact_source"),
             applicant_name=_optional_text(payload, "applicant_name"),
             charge_required=_optional_bool(payload, "charge_required", default=True),
             minimum_reservation_hour=(
@@ -55,13 +56,20 @@ def update_service_order_contact_payload(
     order_id: str,
     payload: dict[str, Any],
 ) -> tuple[HTTPStatus, dict[str, Any]]:
-    if payload.get("contact_whatsapp") in {None, ""}:
-        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing contact_whatsapp.")
+    if payload.get("contact_whatsapp") in {None, ""} and payload.get("contact_name") in {
+        None,
+        "",
+    }:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Missing contact_whatsapp or contact_name.",
+        )
     try:
         add_or_update_service_order_contact(
             order_id,
-            contact_whatsapp=str(payload["contact_whatsapp"]),
+            contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
             contact_name=_optional_text(payload, "contact_name"),
+            contact_source=_optional_text(payload, "contact_source"),
         )
     except ValueError as exc:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))

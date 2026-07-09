@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 21
+SCHEMA_VERSION = 22
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -45,8 +45,9 @@ def create_current_schema(connection: Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS whatsapp_contacts (
             contact_id text PRIMARY KEY,
-            phone text NOT NULL UNIQUE,
+            phone text UNIQUE,
             display_name text,
+            contact_source text NOT NULL DEFAULT 'whatsapp',
             created_at timestamptz NOT NULL,
             updated_at timestamptz NOT NULL
         )
@@ -307,6 +308,7 @@ def _validate_current_schema(connection: Connection) -> None:
     }
     required_columns = {
         ("schema_version", "version"),
+        ("whatsapp_contacts", "contact_source"),
         ("portal_accounts", "applicant_id"),
         ("portal_accounts", "password"),
         ("service_orders", "status"),
@@ -579,6 +581,19 @@ def migrate_database(connection: Connection) -> None:
             ADD COLUMN program_listing jsonb
             """
         )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (21,),
+        )
+        current_version = 21
+    if current_version == 21:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_contacts
+            ADD COLUMN contact_source text NOT NULL DEFAULT 'whatsapp'
+            """
+        )
+        connection.execute("ALTER TABLE whatsapp_contacts ALTER COLUMN phone DROP NOT NULL")
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

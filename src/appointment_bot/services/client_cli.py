@@ -30,6 +30,7 @@ PREFERRED_ORDER_FIELDS = (
     "applicant_name",
     "document_number_masked",
     "contact_name",
+    "contact_source",
     "contact_whatsapp_masked",
     "priority",
     "charge_required",
@@ -65,6 +66,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     order_add_parser.add_argument("--whatsapp", help="WhatsApp de contacto.")
     order_add_parser.add_argument("--contact-name", help="Nombre de quien contacta.")
+    order_add_parser.add_argument(
+        "--contact-source",
+        help="Origen del contacto, por ejemplo whatsapp o tiktok.",
+    )
     order_add_parser.add_argument("--applicant-name", help="Nombre del titular si se conoce.")
     order_add_parser.add_argument(
         "--no-charge",
@@ -131,10 +136,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Directorio donde se guardan los resumenes de evidencia.",
     )
 
-    contact_parser = subparsers.add_parser("contact", help="Agrega o actualiza WhatsApp.")
+    contact_parser = subparsers.add_parser("contact", help="Agrega o actualiza contacto.")
     contact_parser.add_argument("order_id", help="ID del trabajo de reserva.")
-    contact_parser.add_argument("--whatsapp", required=True, help="WhatsApp de contacto.")
+    contact_parser.add_argument("--whatsapp", help="WhatsApp de contacto.")
     contact_parser.add_argument("--contact-name", help="Nombre de quien contacta.")
+    contact_parser.add_argument(
+        "--contact-source",
+        help="Origen del contacto, por ejemplo whatsapp o tiktok.",
+    )
 
     paid_parser = subparsers.add_parser("paid", help="Marca un trabajo como cobrado.")
     paid_parser.add_argument("order_id", help="ID del trabajo de reserva.")
@@ -223,6 +232,7 @@ def run(argv: Sequence[str] | None = None) -> int:
             priority=args.priority,
             contact_whatsapp=args.whatsapp,
             contact_name=args.contact_name,
+            contact_source=args.contact_source,
             applicant_name=args.applicant_name,
             charge_required=not args.no_charge,
             minimum_reservation_hour=args.minimum_reservation_hour,
@@ -269,10 +279,13 @@ def run(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "contact":
+        if not args.whatsapp and not args.contact_name:
+            parser.error("Debes indicar --whatsapp o --contact-name.")
         add_or_update_service_order_contact(
             args.order_id,
             contact_whatsapp=args.whatsapp,
             contact_name=args.contact_name,
+            contact_source=args.contact_source,
         )
         print(f"Contacto actualizado: {args.order_id}")
         return 0

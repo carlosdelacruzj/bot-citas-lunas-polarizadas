@@ -48,6 +48,7 @@ def create_service_order(
     priority: int = 0,
     contact_whatsapp: str | None = None,
     contact_name: str | None = None,
+    contact_source: str | None = None,
     applicant_name: str | None = None,
     charge_required: bool = True,
     minimum_reservation_hour: int | None = None,
@@ -175,12 +176,13 @@ def create_service_order(
             "INSERT INTO order_state (order_id) VALUES (%s) ON CONFLICT DO NOTHING",
             (order_id,),
         )
-        if contact_whatsapp:
-            contact_id = _upsert_whatsapp_contact(
+        if contact_whatsapp or contact_name:
+            contact_id = _upsert_contact(
                 connection,
                 applicant_id=applicant_id,
                 phone=contact_whatsapp,
                 display_name=contact_name,
+                source=contact_source,
                 now=now,
             )
     return ServiceOrderCreateResult(
@@ -201,6 +203,7 @@ def list_service_order_summaries(
             """
             SELECT so.order_id, so.applicant_id, a.full_name, a.document_number,
                    wc.display_name AS contact_name, wc.phone AS contact_phone,
+                   wc.contact_source,
                    so.priority, so.charge_required, so.status,
                    so.created_at, so.updated_at,
                    r.status AS reservation_status, r.site AS reservation_site,
@@ -237,8 +240,9 @@ def list_service_order_summaries(
 def add_or_update_service_order_contact(
     order_id: str,
     *,
-    contact_whatsapp: str,
+    contact_whatsapp: str | None = None,
     contact_name: str | None = None,
+    contact_source: str | None = None,
     settings: Settings | None = None,
 ) -> None:
     settings = _settings(settings)
@@ -248,11 +252,12 @@ def add_or_update_service_order_contact(
         row = _service_order_identity(connection, order_id)
         if row is None:
             raise ValueError(f"Service order not found: {order_id}")
-        _upsert_whatsapp_contact(
+        _upsert_contact(
             connection,
             applicant_id=str(row["applicant_id"]),
             phone=contact_whatsapp,
             display_name=contact_name,
+            source=contact_source,
             now=now,
         )
 
@@ -1127,6 +1132,7 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         document_number_masked=_mask_username(str(row["document_number"])),
         contact_name=row["contact_name"],
         contact_whatsapp_masked=_mask_phone(row["contact_phone"]),
+        contact_source=row["contact_source"],
         priority=int(row["priority"]),
         charge_required=bool(row["charge_required"]),
         status=str(row["status"]),
@@ -1161,36 +1167,57 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
     )
 
 
-def _upsert_whatsapp_contact(
+def _upsert_contact(
     connection: Connection,
     *,
     applicant_id: str,
-    phone: str,
+    phone: str | None,
     display_name: str | None,
+    source: str | None,
     now: str,
 ) -> str:
-    normalized_phone = _normalize_phone(phone)
-    if not normalized_phone:
-        raise ValueError("contact_whatsapp is required.")
-    contact_id = _id_from_value("whatsapp", normalized_phone)
+    normalized_phone = _normalize_phone(phone) if phone else None
+    normalized_display_name = " ".join(str(display_name or "").split())
+    normalized_source = " ".join(str(source or "").split()).lower()
+    if not normalized_source:
+        normalized_source = "whatsapp" if normalized_phone else "contact"
+    if not normalized_phone and not normalized_display_name:
+        raise ValueError("contact_whatsapp or contact_name is required.")
+    contact_key = normalized_phone or f"{normalized_source}:{normalized_display_name}"
+    contact_id = _id_from_value("contact", contact_key)
+    if normalized_phone:
+        existing_contact = connection.execute(
+            "SELECT contact_id FROM whatsapp_contacts WHERE phone = %s",
+            (normalized_phone,),
+        ).fetchone()
+        if existing_contact is not None:
+            contact_id = str(existing_contact["contact_id"])
     connection.execute(
         """
-        INSERT INTO whatsapp_contacts (contact_id, phone, display_name, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT(phone) DO UPDATE SET
+        INSERT INTO whatsapp_contacts (
+            contact_id, phone, display_name, contact_source, created_at, updated_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT(contact_id) DO UPDATE SET
+            phone = COALESCE(excluded.phone, whatsapp_contacts.phone),
             display_name = COALESCE(
                 NULLIF(excluded.display_name, ''),
                 whatsapp_contacts.display_name
             ),
+            contact_source = COALESCE(
+                NULLIF(excluded.contact_source, ''),
+                whatsapp_contacts.contact_source
+            ),
             updated_at = excluded.updated_at
         """,
-        (contact_id, normalized_phone, display_name, now, now),
-    )
-    contact_id = str(
-        connection.execute(
-            "SELECT contact_id FROM whatsapp_contacts WHERE phone = %s",
-            (normalized_phone,),
-        ).fetchone()["contact_id"]
+        (
+            contact_id,
+            normalized_phone,
+            normalized_display_name or None,
+            normalized_source,
+            now,
+            now,
+        ),
     )
     connection.execute(
         """

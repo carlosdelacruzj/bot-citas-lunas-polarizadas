@@ -115,6 +115,7 @@ class Settings:
     telegram_notify_unavailable: bool
     cleanup_retention_days: int
     error_backoff_seconds: int
+    order_rule_cooldown_seconds: int
     monitor_window_seconds: int
     monitor_max_attempts: int
     monitor_interval_min_seconds: int
@@ -233,6 +234,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("ERROR_BACKOFF_SECONDS"),
             default=1800,
             minimum=60,
+        ),
+        order_rule_cooldown_seconds=_parse_int(
+            os.getenv("ORDER_RULE_COOLDOWN_SECONDS"),
+            default=900,
+            minimum=0,
         ),
         monitor_window_seconds=_parse_int(
             os.getenv("MONITOR_WINDOW_SECONDS"),

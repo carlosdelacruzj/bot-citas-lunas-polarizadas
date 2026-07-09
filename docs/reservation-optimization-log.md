@@ -834,3 +834,31 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot principal: screenshots\08-07-2026\etapas-141703-order-***-2eb51c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
+## 2026-07-09 07:36:51 - order-73101429 - completed
+
+- Run: 20260709-073637-097972b5
+- Corrida/attempt:
+- Sede:
+- Cita observada: 20/07/2026 10:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - 2captcha: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo:
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\09-07-2026\etapas-073637-order-***-ebbeda.png
+- Observacion tecnica:
+  - El flujo normal detecto la etapa Programado; reload_probe no fue necesario.

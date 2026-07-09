@@ -55,6 +55,7 @@ class ServiceOrderSummary:
     document_number_masked: str
     contact_name: str | None
     contact_whatsapp_masked: str | None
+    contact_source: str | None
     priority: int
     charge_required: bool
     status: str
