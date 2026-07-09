@@ -16,9 +16,38 @@ from appointment_bot.services.postgres_orders import (
     set_order_paused,
 )
 
+PUBLIC_SERVICE_ORDER_FIELDS = (
+    "order_id",
+    "applicant_id",
+    "applicant_name",
+    "document_number_masked",
+    "contact_name",
+    "contact_whatsapp_masked",
+    "contact_source",
+    "priority",
+    "charge_required",
+    "status",
+    "reservation_status",
+    "reservation_site",
+    "reservation_date",
+    "reservation_hour",
+    "payment_status",
+    "amount_agreed",
+    "amount_paid",
+    "minimum_reservation_hour",
+    "minimum_reservation_date",
+    "allowed_weekdays",
+    "created_at",
+    "updated_at",
+)
+
 
 def list_service_orders_payload() -> dict[str, Any]:
-    return {"service_orders": [asdict(order) for order in list_service_order_summaries()]}
+    return {
+        "service_orders": [
+            _public_service_order(order) for order in list_service_order_summaries()
+        ]
+    }
 
 
 def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
@@ -169,3 +198,8 @@ def _optional_bool(payload: dict[str, Any], name: str, *, default: bool) -> bool
     if normalized in {"0", "false", "no", "n", "off"}:
         return False
     raise ValueError(f"Invalid boolean value for {name}: {value!r}")
+
+
+def _public_service_order(order: Any) -> dict[str, Any]:
+    payload = asdict(order)
+    return {field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_FIELDS}

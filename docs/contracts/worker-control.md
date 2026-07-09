@@ -39,6 +39,9 @@ Campos internos que no deben salir al frontend:
 - `lease_expires_at`
 - cualquier dato no enmascarado de credenciales.
 
+Estado implementado: `GET /api/v1/worker` usa una lista permitida de campos
+publicos y filtra los campos internos aunque el worker los tenga en memoria.
+
 ## Fases operativas importantes
 
 - `starting`: arranque.
@@ -58,6 +61,10 @@ El dashboard debe distinguir API viva de worker realmente procesando.
 - `pause`: pausa el loop sin matar el proceso.
 - `resume`: reanuda el loop.
 - `restart`: prepara reinicio controlado y devuelve codigo 75 al bootstrap.
+
+Todos estos comandos requieren `Authorization: Bearer
+<APPOINTMENT_BOT_API_TOKEN>`. Si el token no esta configurado, la API responde
+`configuration_error` para evitar controles administrativos abiertos.
 
 ## Contrato futuro
 

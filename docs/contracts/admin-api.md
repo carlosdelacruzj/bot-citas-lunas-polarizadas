@@ -77,12 +77,22 @@ del password despues de enviarlo.
 ## Runs
 
 `GET /api/v1/runs` es para listado resumido. `GET /api/v1/runs/{run_id}` puede
-incluir detalles; el dashboard no debe mostrar/copiar JSON crudo por defecto.
+devolver evidencia asociada, pero no incluye `details` crudos por defecto.
+
+Para diagnostico manual, el cliente puede pedir:
+
+```text
+GET /api/v1/runs/{run_id}?include_details=1
+```
+
+El dashboard no debe mostrar/copiar JSON crudo por defecto.
 
 ## Cambios requeridos antes de Angular con botones
 
-- Filtrar `owner_token` de `GET /api/v1/worker`.
-- Hacer autorizacion estricta en `worker/pause` y `worker/resume`.
-- Crear DTOs publicos estables para worker, ordenes y runs.
+- Filtrar `owner_token` de `GET /api/v1/worker`. Estado: completado.
+- Hacer autorizacion estricta en `worker/pause` y `worker/resume`. Estado:
+  completado.
+- Crear DTOs publicos estables para worker, ordenes y runs. Estado:
+  completado como allowlist de campos publicos.
 - Definir errores consistentes: `bad_request`, `not_found`, `conflict`,
   `unauthorized`, `configuration_error`.

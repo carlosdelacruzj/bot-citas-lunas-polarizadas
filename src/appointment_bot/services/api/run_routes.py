@@ -8,6 +8,24 @@ from urllib.parse import unquote
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.postgres_runs import get_run, list_runs
 
+PUBLIC_RUN_FIELDS = (
+    "run_id",
+    "order_id",
+    "status",
+    "message",
+    "exit_code",
+    "started_at",
+    "finished_at",
+    "duration_seconds",
+    "reservation_attempted",
+    "reservation_confirmed",
+    "screenshot_path",
+    "screenshot_count",
+    "created_at",
+)
+
+PUBLIC_RUN_DETAIL_FIELDS = PUBLIC_RUN_FIELDS + ("screenshot_paths",)
+
 
 def list_runs_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     limit = query_int(query, "limit", default=50, minimum=1, maximum=200)
@@ -15,27 +33,40 @@ def list_runs_payload(query: dict[str, list[str]]) -> dict[str, Any]:
     order_id = query_text(query, "order_id")
     status = query_text(query, "status")
     return {
-        "runs": [_public_run(run) for run in list_runs(
-            limit=limit,
-            offset=offset,
-            order_id=order_id,
-            status=status,
-        )],
+        "runs": [
+            _public_run(run)
+            for run in list_runs(
+                limit=limit,
+                offset=offset,
+                order_id=order_id,
+                status=status,
+            )
+        ],
         "limit": limit,
         "offset": offset,
     }
 
 
-def get_run_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]]:
+def get_run_payload(path: str, query: dict[str, list[str]]) -> tuple[HTTPStatus, dict[str, Any]]:
     run_id = unquote(path.removeprefix("/api/v1/runs/")).strip()
     run = get_run(run_id) if run_id else None
     if run is None:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", "Run not found.")
-    return HTTPStatus.OK, _public_run(run)
+    include_details = query_bool(query, "include_details", default=False)
+    return HTTPStatus.OK, _public_run_detail(run, include_details=include_details)
 
 
 def _public_run(run: Any) -> dict[str, Any]:
-    return asdict(run)
+    payload = asdict(run)
+    return {field: payload.get(field) for field in PUBLIC_RUN_FIELDS}
+
+
+def _public_run_detail(run: Any, *, include_details: bool) -> dict[str, Any]:
+    payload = asdict(run)
+    public_payload = {field: payload.get(field) for field in PUBLIC_RUN_DETAIL_FIELDS}
+    if include_details:
+        public_payload["details"] = payload.get("details")
+    return public_payload
 
 
 def query_int(
@@ -57,3 +88,10 @@ def query_int(
 def query_text(query: dict[str, list[str]], name: str) -> str | None:
     value = query.get(name, [""])[0].strip()
     return value or None
+
+
+def query_bool(query: dict[str, list[str]], name: str, *, default: bool) -> bool:
+    value = query.get(name, [""])[0].strip().lower()
+    if not value:
+        return default
+    return value in {"1", "true", "yes", "y", "on"}

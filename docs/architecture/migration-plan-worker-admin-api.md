@@ -148,6 +148,27 @@ Antes de habilitar botones administrativos:
 - Evitar mostrar/copiar `details` crudos por defecto.
 - Mantener tokens fuera del bundle Angular y fuera de `localStorage`.
 
+Estado: completado como endurecimiento previo a acciones administrativas.
+
+Implementacion:
+
+- `GET /api/v1/worker` devuelve solo campos publicos por allowlist;
+- `owner_token`, `lease_expires_at` y datos internos quedan fuera del DTO del
+  worker;
+- `worker/pause`, `worker/resume` y `worker/restart` requieren token estricto;
+- ordenes y runs usan DTOs publicos por allowlist;
+- `GET /api/v1/runs/{run_id}` no devuelve `details` crudos por defecto;
+- detalles crudos solo salen con `?include_details=1` para diagnostico manual;
+- el dashboard mantiene el API token solo en memoria del navegador.
+
+Validacion de la fase:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+```
+
 ## Paso 5: admin API separado
 
 Crear un proceso Python de admin API que reutilice los servicios actuales de DB.

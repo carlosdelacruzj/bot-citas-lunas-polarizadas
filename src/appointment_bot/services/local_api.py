@@ -70,7 +70,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/v1/runs/"):
             if not self._require_authorized(strict=True):
                 return
-            status, payload = get_run_payload(path)
+            status, payload = get_run_payload(path, query)
             self._send_json(status, payload)
             return
 
@@ -160,7 +160,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if not self._require_authorized():
+        if not self._require_authorized(strict=True):
             return
 
         controller = getattr(self.server, "worker_controller", None)

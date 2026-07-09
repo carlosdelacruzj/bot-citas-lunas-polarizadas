@@ -26,7 +26,11 @@ class _Controller:
         return True, "ok"
 
     def status(self):
-        return {"phase": "monitoring_observer"}
+        return {
+            "phase": "monitoring_observer",
+            "owner_token": "internal-owner",
+            "lease_expires_at": "2026-07-09T18:00:00",
+        }
 
     def pause(self):
         self.pause_called = True
@@ -93,6 +97,8 @@ class LocalApiTests(unittest.TestCase):
             with urlopen(request, timeout=3) as response:
                 payload = json.loads(response.read())
             self.assertEqual(payload["phase"], "monitoring_observer")
+            self.assertNotIn("owner_token", payload)
+            self.assertNotIn("lease_expires_at", payload)
 
     def test_api_service_orders_requires_token_and_does_not_expose_password(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -186,6 +192,10 @@ class LocalApiTests(unittest.TestCase):
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 runs = _json_request(f"{base_url}/api/v1/runs?limit=1", token="secret")
                 detail = _json_request(f"{base_url}/api/v1/runs/run-api-1", token="secret")
+                detail_with_details = _json_request(
+                    f"{base_url}/api/v1/runs/run-api-1?include_details=1",
+                    token="secret",
+                )
                 pause = _json_request(
                     f"{base_url}/api/v1/worker/pause", method="POST", token="secret"
                 )
@@ -197,7 +207,8 @@ class LocalApiTests(unittest.TestCase):
             self.assertIn("order_id", runs["runs"][0])
             self.assertEqual(detail["screenshot_paths"], ["evidence.png"])
             self.assertIn("order_id", detail)
-            self.assertEqual(detail["details"], {"sede": "LIMA"})
+            self.assertNotIn("details", detail)
+            self.assertEqual(detail_with_details["details"], {"sede": "LIMA"})
             self.assertTrue(pause["paused"])
             self.assertFalse(resume["paused"])
 
