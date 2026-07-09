@@ -8,6 +8,7 @@ migracion.
 
 - `appointment-bot-worker` apunta a `appointment_bot.services.continuous_host:main`.
 - `appointment-bot-client` apunta a `appointment_bot.services.client_cli:run`.
+- `appointment-bot-admin-api` apunta a `appointment_bot.admin_api.server:main`.
 - `scripts/start-worker.ps1` levanta Docker/PostgreSQL y ejecuta el host continuo.
 - `scripts/start-worker-hidden.vbs` inicia el bootstrap de Windows sin ventana.
 
@@ -22,6 +23,11 @@ proceso:
 La API local puede controlar el worker porque tiene una referencia en memoria al
 objeto `ContinuousWorker`. Esta relacion es el acoplamiento principal que debe
 romperse con cuidado cuando exista un admin API separado.
+
+Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
+de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL
+actuales, escucha por defecto en `127.0.0.1:8766` y no aloja un
+`ContinuousWorker` en memoria.
 
 ## API local actual
 
@@ -73,6 +79,19 @@ como si nada hubiera pasado.
 
 `scripts/start-worker.ps1` depende de esos codigos para decidir cuanto esperar
 antes de relanzar.
+
+## Admin API separado
+
+El admin API separado usa:
+
+- `APPOINTMENT_BOT_ADMIN_API_HOST`, por defecto `127.0.0.1`;
+- `APPOINTMENT_BOT_ADMIN_API_PORT`, por defecto `8766`;
+- `APPOINTMENT_BOT_API_TOKEN` como bearer token administrativo.
+
+En este proceso, `GET /api/v1/worker` lee estado persistido del worker, pero
+`POST /api/v1/worker/pause`, `POST /api/v1/worker/resume` y
+`POST /api/v1/worker/restart` no controlan el worker porque todavia no existe el
+canal persistido de comandos.
 
 ## Corte diario
 

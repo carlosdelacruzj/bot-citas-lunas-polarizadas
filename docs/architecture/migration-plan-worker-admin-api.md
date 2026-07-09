@@ -177,6 +177,28 @@ el admin API separado tenga paridad suficiente.
 
 No mover `pause`, `resume` ni `restart` fuera del proceso actual todavia.
 
+Estado: completado como primer proceso separado compatible.
+
+Implementacion:
+
+- nuevo entrypoint `appointment-bot-admin-api`;
+- escucha por defecto en `127.0.0.1:8766` mediante
+  `APPOINTMENT_BOT_ADMIN_API_HOST` y `APPOINTMENT_BOT_ADMIN_API_PORT`;
+- reutiliza los handlers publicos y servicios PostgreSQL existentes para
+  health, worker status, ordenes y runs;
+- usa el mismo `APPOINTMENT_BOT_API_TOKEN` administrativo;
+- no aloja `ContinuousWorker` ni mueve `pause`, `resume` o `restart` fuera del
+  proceso actual.
+
+Validacion de la fase:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ## Paso 6: comandos persistidos del worker
 
 Crear un canal persistido, por ejemplo `worker_commands`, para que el admin API

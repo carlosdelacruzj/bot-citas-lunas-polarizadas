@@ -1,8 +1,17 @@
 # Contrato admin API
 
 Este documento describe el contrato administrativo actual y las reglas para el
-dashboard. Mientras no exista `appointment-bot-admin-api`, el contrato vive en
-la API local embebida por el worker.
+dashboard. El contrato vive tanto en la API local embebida por el worker como en
+el proceso separado `appointment-bot-admin-api` mientras se completa la
+migracion.
+
+## Procesos
+
+- API embebida del worker: `127.0.0.1:8765` por defecto.
+- Admin API separado: `127.0.0.1:8766` por defecto.
+
+El admin API separado reutiliza servicios PostgreSQL actuales y no tiene una
+referencia en memoria a `ContinuousWorker`.
 
 ## Autenticacion
 
@@ -29,6 +38,11 @@ POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart
 ```
+
+En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
+`worker/restart` todavia no ejecutan acciones de control porque el canal
+persistido de comandos pertenece al paso 6. Hasta entonces, esas acciones se
+mantienen en la API embebida del worker.
 
 ## Datos de orden
 

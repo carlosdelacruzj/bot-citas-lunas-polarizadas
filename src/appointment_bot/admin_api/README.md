@@ -1,8 +1,24 @@
 # Admin API
 
-Estructura futura para el backend administrativo: CRUD de ordenes, pagos,
-contactos, historial, estado del worker y comandos administrativos.
+Backend administrativo separado para CRUD de ordenes, pagos, contactos,
+historial y estado publico del worker.
 
-Por ahora no contiene logica funcional y no reemplaza a `services/local_api.py`
-ni a `services/api/`. La migracion real se hara por fases documentadas antes de
-mover codigo.
+Ejecutar localmente:
+
+```powershell
+appointment-bot-admin-api
+```
+
+Por defecto escucha en `127.0.0.1:8766` para coexistir con la API embebida del
+worker en `127.0.0.1:8765`.
+
+Configuracion:
+
+- `APPOINTMENT_BOT_ADMIN_API_HOST`: host de escucha, por defecto `127.0.0.1`.
+- `APPOINTMENT_BOT_ADMIN_API_PORT`: puerto de escucha, por defecto `8766`.
+- `APPOINTMENT_BOT_API_TOKEN`: bearer token administrativo existente.
+
+Este proceso reutiliza los handlers y servicios PostgreSQL actuales. No aloja
+un `ContinuousWorker` en memoria, por lo que `worker/pause`, `worker/resume` y
+`worker/restart` siguen perteneciendo a la API embebida del worker hasta que
+exista el canal persistido de comandos.

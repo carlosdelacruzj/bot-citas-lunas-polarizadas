@@ -22,6 +22,7 @@ dev = [
 ]
 
 [project.scripts]
+appointment-bot-admin-api = "appointment_bot.admin_api.server:main"
 appointment-bot-client = "appointment_bot.services.client_cli:run"
 appointment-bot-worker = "appointment_bot.services.continuous_host:main"
 
