@@ -1,18 +1,38 @@
 import logging
 import time
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.flows.appointment_reader import read_appointment_availability
+from appointment_bot.flows.appointment_selection import (
+    has_available_date_options,
+    select_available_appointment,
+    validate_selected_appointment,
+)
 from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    "APPOINTMENT_PANEL_SCREENSHOT_SELECTORS",
+    "AppointmentOptionsNotRefreshed",
+    "AppointmentWorkflowCancelled",
+    "AppointmentWorkflowUnavailable",
+    "ReservationDeferredForPriority",
+    "ReservationSubmissionUncertain",
+    "has_available_date_options",
+    "open_appointment_panel",
+    "open_hidden_appointment_panel_for_observer",
+    "read_appointment_availability",
+    "select_available_appointment",
+    "select_available_site",
+    "select_available_site_for_observer",
+    "validate_selected_appointment",
+]
 
 RESERVE_APPOINTMENT_SELECTOR = "input#MainContent_btnCita"
 RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
@@ -337,498 +357,6 @@ def _select_available_site(
     return page
 
 
-def read_appointment_availability(
-    page: Page,
-    *,
-    include_person: bool = True,
-    timeout: int = 30_000,
-) -> AvailabilityResult:
-    logger.debug("Checking appointment availability")
-    page.wait_for_load_state("domcontentloaded", timeout=timeout)
-
-    snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
-    result = _availability_result_from_snapshot(
-        page,
-        snapshot,
-        include_person=include_person,
-    )
-    if result.status == "partial":
-        logger.info("Partial availability detected; rechecking before notifying")
-        page.wait_for_timeout(1_500)
-        snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
-        result = _availability_result_from_snapshot(
-            page,
-            snapshot,
-            include_person=include_person,
-        )
-
-    result = _apply_fetch_probe_if_needed(
-        page,
-        result,
-        include_person=include_person,
-    )
-
-    details = _snapshot_details(snapshot, include_person=False)
-    details.update(_read_site_refresh_evidence(page))
-    if details:
-        result_details = dict(result.details or {})
-        result_details.update(
-            {
-                key: value
-                for key, value in details.items()
-                if key.startswith("site_refresh_")
-            }
-        )
-        result = AvailabilityResult(result.status, result.message, result_details)
-    logger.info(
-        "Appointment summary: site=%s date=%s hour=%s",
-        (result.details or details).get("sede", "unknown"),
-        (result.details or details).get("fecha", "unknown"),
-        (result.details or details).get("hora", "unknown"),
-    )
-    return result
-
-
-def _apply_fetch_probe_if_needed(
-    page: Page,
-    result: AvailabilityResult,
-    *,
-    include_person: bool,
-) -> AvailabilityResult:
-    if result.status == "available":
-        return result
-
-    fetch_snapshot = _read_fetch_probe_appointment_snapshot(page)
-    if fetch_snapshot is None:
-        return result
-
-    fetch_result = _availability_result_from_snapshot(
-        page,
-        fetch_snapshot,
-        include_person=include_person,
-    )
-    if fetch_result.status not in {"available", "partial"}:
-        return result
-
-    details = dict(fetch_result.details or {})
-    details["fetch_probe"] = True
-    details["modal_must_remain_open"] = True
-    return AvailabilityResult(
-        status=fetch_result.status,
-        message=(
-            f"{fetch_result.message} "
-            "La disponibilidad fue detectada por consulta directa al formulario."
-        ),
-        details=details,
-    )
-
-
-def select_available_appointment(
-    page: Page,
-    *,
-    allow_hidden: bool = False,
-    include_person: bool = True,
-    is_allowed_appointment: Callable[[str, str], bool] | None = None,
-    timeout: int = 15_000,
-) -> AvailabilityResult:
-    logger.info("Selecting available appointment date and hour")
-    date_options = _real_options(_select_options(page, DATE_SELECTOR))
-    if not date_options:
-        raise AppointmentWorkflowUnavailable(
-            "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
-        )
-
-    blocked_evidence_result: AvailabilityResult | None = None
-    for date_option in reversed(date_options):
-        previous_date = _selected_option_text(page, DATE_SELECTOR)
-        previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
-        date_select = page.locator(DATE_SELECTOR)
-        logger.info("Selecting appointment date: %s", date_option["text"])
-        _select_appointment_option(
-            date_select,
-            date_option["value"],
-            allow_hidden=allow_hidden,
-        )
-        hour_options = _wait_for_options_after_selection(
-            page,
-            HOUR_SELECTOR,
-            previous_signature=previous_hour_signature,
-            require_change=not _same_option(previous_date, date_option["text"]),
-            timeout=timeout,
-        )
-        real_hour_options = _real_options(hour_options)
-        if not real_hour_options:
-            logger.info("No selectable hours found for date %s", date_option["text"])
-            continue
-
-        for hour_option in reversed(real_hour_options):
-            if is_allowed_appointment is not None and not is_allowed_appointment(
-                str(date_option["text"]),
-                str(hour_option["text"]),
-            ):
-                logger.info(
-                    "Skipping appointment by order rule: %s %s",
-                    date_option["text"],
-                    hour_option["text"],
-                )
-                if blocked_evidence_result is None:
-                    hour_select = page.locator(HOUR_SELECTOR)
-                    _select_appointment_option(
-                        hour_select,
-                        hour_option["value"],
-                        allow_hidden=allow_hidden,
-                    )
-                    page.wait_for_timeout(500)
-                    snapshot = _read_stable_appointment_snapshot(
-                        page,
-                        log_person=include_person,
-                    )
-                    details = _snapshot_details(snapshot, include_person=include_person)
-                    details["blocked_by_order_rule"] = True
-                    details["blocked_selected_for_evidence"] = True
-                    blocked_evidence_result = AvailabilityResult(
-                        status="partial",
-                        message=(
-                            "Se encontro un horario disponible, pero no cumple "
-                            "la regla de reserva de la orden."
-                        ),
-                        details=details,
-                    )
-                continue
-
-            hour_select = page.locator(HOUR_SELECTOR)
-            logger.info("Selecting appointment hour: %s", hour_option["text"])
-            _select_appointment_option(
-                hour_select,
-                hour_option["value"],
-                allow_hidden=allow_hidden,
-            )
-            page.wait_for_timeout(500)
-
-            snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
-            if _same_option(snapshot.date, date_option["text"]) and _same_option(
-                snapshot.hour, hour_option["text"]
-            ):
-                return AvailabilityResult(
-                    status="available",
-                    message="Se seleccionaron una fecha y una hora disponibles.",
-                    details=_snapshot_details(snapshot, include_person=include_person),
-                )
-
-            logger.warning(
-                "Appointment selection was not preserved for date %s and hour %s",
-                date_option["text"],
-                hour_option["text"],
-            )
-
-    if blocked_evidence_result is not None:
-        return blocked_evidence_result
-
-    snapshot = _read_stable_appointment_snapshot(page, log_person=include_person)
-    details = _snapshot_details(snapshot, include_person=include_person)
-    if is_allowed_appointment is not None:
-        details["blocked_by_order_rule"] = True
-    return AvailabilityResult(
-        status="partial",
-        message=(
-            "Se encontraron fechas y horas disponibles, pero ninguna cumple "
-            "la regla de reserva de la orden."
-            if is_allowed_appointment is not None
-            else (
-                "Se encontraron fechas disponibles, pero ninguna tiene una hora "
-                "seleccionable y estable por ahora."
-            )
-        ),
-        details=details,
-    )
-
-
-def has_available_date_options(page: Page) -> bool:
-    return bool(_real_options(_select_options(page, DATE_SELECTOR)))
-
-
-def _availability_result_from_snapshot(
-    page: Page,
-    snapshot: AppointmentSnapshot,
-    *,
-    include_person: bool = True,
-) -> AvailabilityResult:
-    date_options = snapshot.date_options
-    hour_options = snapshot.hour_options
-
-    has_date_options = _has_real_options(date_options)
-    has_hour_options = _has_real_options(hour_options)
-    details = _snapshot_details(snapshot, include_person=include_person)
-
-    if has_date_options and has_hour_options:
-        return AvailabilityResult(
-            status="available",
-            message="Se detectaron opciones seleccionables de fecha y hora.",
-            details=details,
-        )
-
-    if has_date_options and not has_hour_options:
-        return AvailabilityResult(
-            status="partial",
-            message="Se detecto fecha disponible, pero aun no hay hora seleccionable.",
-            details=details,
-        )
-
-    if has_hour_options and not has_date_options:
-        return AvailabilityResult(
-            status="partial",
-            message="Se detecto hora disponible, pero no se detecto fecha seleccionable.",
-            details=details,
-        )
-
-    if _only_no_slots(date_options) and _only_no_slots(hour_options):
-        return AvailabilityResult(
-            status="unavailable",
-            message="La pagina muestra 'Sin Cupos' en fecha y hora.",
-            details=details,
-        )
-
-    content = page.locator("body").inner_text(timeout=15_000).lower()
-
-    if any(text in content for text in AVAILABLE_TEXTS):
-        return AvailabilityResult(
-            status="partial",
-            message=(
-                "Se detecto texto compatible con cupo disponible, "
-                "pero no hay fecha y hora seleccionables."
-            ),
-            details=details,
-        )
-
-    if any(text in content for text in UNAVAILABLE_TEXTS):
-        return AvailabilityResult(
-            status="unavailable",
-            message="Se detecto texto compatible con falta de cupos.",
-            details=details,
-        )
-
-    return AvailabilityResult(
-        status="unknown",
-        message=(
-            "No se pudo determinar la disponibilidad con los textos actuales. "
-            "Ajusta AVAILABLE_TEXTS o UNAVAILABLE_TEXTS en flows/appointments.py."
-        ),
-        details=details,
-    )
-
-
-def _read_stable_appointment_snapshot(
-    page: Page,
-    *,
-    log_person: bool = True,
-) -> AppointmentSnapshot:
-    previous_snapshot: AppointmentSnapshot | None = None
-    current_snapshot: AppointmentSnapshot | None = None
-    for attempt in range(1, 5):
-        current_snapshot = _read_appointment_snapshot(page)
-        logger.debug(
-            "Appointment snapshot %s: %s",
-            attempt,
-            _snapshot_details(current_snapshot, include_person=False),
-        )
-        logger.debug("Date options: %s", current_snapshot.date_options)
-        logger.debug("Hour options: %s", current_snapshot.hour_options)
-
-        if (
-            previous_snapshot is not None
-            and current_snapshot.signature() == previous_snapshot.signature()
-        ):
-            return current_snapshot
-
-        previous_snapshot = current_snapshot
-        page.wait_for_timeout(750)
-
-    if current_snapshot is None:
-        raise RuntimeError("Could not read appointment availability controls.")
-    return current_snapshot
-
-
-def _read_appointment_snapshot(page: Page) -> AppointmentSnapshot:
-    site_options = _select_options_text(page, SITE_SELECTOR)
-    date_options = _select_options_text(page, DATE_SELECTOR)
-    hour_options = _select_options_text(page, HOUR_SELECTOR)
-    return AppointmentSnapshot(
-        site_options=site_options,
-        date_options=date_options,
-        hour_options=hour_options,
-        site=_selected_option_text(page, SITE_SELECTOR),
-        date=_selected_option_text(page, DATE_SELECTOR),
-        hour=_selected_option_text(page, HOUR_SELECTOR),
-        slots=_read_slots_value(page),
-        person_name=_read_person_name(page),
-    )
-
-
-def _read_fetch_probe_appointment_snapshot(page: Page) -> AppointmentSnapshot | None:
-    try:
-        data = page.evaluate(
-            """async ({ siteSelector, dateSelector, hourSelector, slotsLabelId }) => {
-                const ids = {
-                    site: siteSelector.slice(1),
-                    date: dateSelector.slice(1),
-                    hour: hourSelector.slice(1),
-                    slots: slotsLabelId
-                };
-                const names = {
-                    site: "ctl00$MainContent$idUcitas$cbosede",
-                    date: "ctl00$MainContent$idUcitas$cboFecha"
-                };
-                const form = (
-                    document.getElementById("form1")
-                    || document.forms.form1
-                    || document.forms[0]
-                );
-                const siteEl = document.querySelector(siteSelector);
-                if (!form || !siteEl) return null;
-
-                const action = form.getAttribute("action") || location.href;
-                const url = new URL(action, location.href).toString();
-                const setFormValue = (targetForm, name, value) => {
-                    let element = targetForm.elements[name];
-                    if (!element) {
-                        element = targetForm.ownerDocument.createElement("input");
-                        element.type = "hidden";
-                        element.name = name;
-                        targetForm.appendChild(element);
-                    }
-                    element.value = value || "";
-                };
-                const getForm = doc => (
-                    doc.getElementById("form1") || doc.forms.form1 || doc.forms[0]
-                );
-                const postForm = async (doc, eventTarget, changes) => {
-                    const targetForm = getForm(doc);
-                    if (!targetForm) throw new Error("form1 not found");
-                    Object.entries(changes || {}).forEach(([name, value]) => {
-                        setFormValue(targetForm, name, value);
-                    });
-                    setFormValue(targetForm, "__EVENTTARGET", eventTarget);
-                    setFormValue(targetForm, "__EVENTARGUMENT", "");
-                    const response = await fetch(url, {
-                        method: "POST",
-                        body: new FormData(targetForm),
-                        credentials: "include"
-                    });
-                    const html = await response.text();
-                    return new DOMParser().parseFromString(html, "text/html");
-                };
-                const options = (doc, id) => {
-                    const element = doc.getElementById(id);
-                    if (!element) return [];
-                    return Array.from(element.options).map(option => ({
-                        text: (option.textContent || "").trim(),
-                        value: option.value || "",
-                        selected: option.selected
-                    }));
-                };
-                const selectedText = items => {
-                    const selected = items.find(option => option.selected);
-                    return selected ? selected.text : "";
-                };
-                const isReal = option => {
-                    const text = (option && option.text || "").trim().toLowerCase();
-                    return Boolean(option && option.value)
-                        && option.value !== "0"
-                        && option.value !== "00"
-                        && text
-                        && !text.includes("sin cupos")
-                        && !text.includes("seleccione");
-                };
-                const textById = (doc, id) => {
-                    const element = doc.getElementById(id);
-                    return element ? (element.textContent || "").trim() : "";
-                };
-
-                const siteValue = siteEl.value;
-                const siteText = siteEl.options[siteEl.selectedIndex]
-                    ? siteEl.options[siteEl.selectedIndex].text.trim()
-                    : siteValue;
-                const docDates = await postForm(document, names.site, {
-                    [names.site]: siteValue
-                });
-                const dateOptions = options(docDates, ids.date);
-                const realDates = dateOptions.filter(isReal);
-                let hourOptions = [];
-                let slots = "";
-                if (realDates.length > 0) {
-                    const firstDate = realDates[0];
-                    const docHours = await postForm(docDates, names.date, {
-                        [names.site]: siteValue,
-                        [names.date]: firstDate.value
-                    });
-                    hourOptions = options(docHours, ids.hour);
-                    slots = textById(docHours, ids.slots);
-                }
-                return {
-                    siteOptions: options(document, ids.site)
-                        .map(option => option.text)
-                        .filter(Boolean),
-                    dateOptions: dateOptions.map(option => option.text).filter(Boolean),
-                    hourOptions: hourOptions.map(option => option.text).filter(Boolean),
-                    site: siteText,
-                    date: realDates[0] ? realDates[0].text : selectedText(dateOptions),
-                    hour: selectedText(hourOptions),
-                    slots,
-                    personName: ""
-                };
-            }""",
-            {
-                "siteSelector": SITE_SELECTOR,
-                "dateSelector": DATE_SELECTOR,
-                "hourSelector": HOUR_SELECTOR,
-                "slotsLabelId": SLOTS_LABEL_ID,
-            },
-        )
-    except PlaywrightError as exc:
-        logger.debug("Fetch appointment probe failed: %s", exc)
-        return None
-
-    if not data:
-        return None
-
-    snapshot = AppointmentSnapshot(
-        site_options=list(data.get("siteOptions") or []),
-        date_options=list(data.get("dateOptions") or []),
-        hour_options=list(data.get("hourOptions") or []),
-        site=str(data.get("site") or ""),
-        date=str(data.get("date") or ""),
-        hour=str(data.get("hour") or ""),
-        slots=str(data.get("slots") or ""),
-        person_name=str(data.get("personName") or ""),
-    )
-    logger.debug("Fetch appointment probe: %s", _snapshot_details(snapshot, include_person=False))
-    return snapshot
-
-
-def _snapshot_details(
-    snapshot: AppointmentSnapshot,
-    *,
-    include_person: bool = True,
-) -> dict[str, Any]:
-    details = {
-        "sede": _real_or_selected(snapshot.site, snapshot.site_options),
-        "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
-        "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
-        "cupos": snapshot.slots,
-        "date_options": snapshot.date_options,
-        "hour_options": snapshot.hour_options,
-    }
-    if include_person:
-        details["nombre"] = snapshot.person_name
-    return {key: value for key, value in details.items() if value}
-
-
-def _real_or_selected(selected: str, options: list[str]) -> str:
-    if selected and _has_real_options([selected]):
-        return selected
-    return next((option for option in options if _has_real_options([option])), selected)
-
-
 def _select_options_text(page: Page, selector: str) -> list[str]:
     return [option["text"] for option in _select_options(page, selector) if option["text"]]
 
@@ -883,14 +411,6 @@ def _store_site_refresh_evidence(page: Page, evidence: SiteRefreshEvidence) -> N
         }""",
         evidence.details(),
     )
-
-
-def _read_site_refresh_evidence(page: Page) -> dict[str, Any]:
-    try:
-        data = page.evaluate("() => window.__appointmentBotLastSiteRefresh || null")
-    except PlaywrightError:
-        return {}
-    return dict(data or {})
 
 
 def _selected_option_text(page: Page, selector: str) -> str:
@@ -1179,10 +699,6 @@ def _wait_for_options_after_selection(
     return current_options if changed or not require_change else []
 
 
-def _only_no_slots(options: list[str]) -> bool:
-    return bool(options) and all(option.lower() == "sin cupos" for option in options)
-
-
 def _has_real_options(options: list[str]) -> bool:
     return any(_is_real_appointment_option(option) for option in options)
 
@@ -1207,47 +723,6 @@ def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
         and normalized != "sin cupos"
         and not normalized.startswith("seleccione")
     )
-
-
-def validate_selected_appointment(
-    page: Page,
-    expected_details: dict[str, Any] | None,
-    *,
-    expected_person_name: str | None = None,
-) -> None:
-    expected_details = expected_details or {}
-    expected_site = str(expected_details.get("sede") or "")
-    expected_date = str(expected_details.get("fecha") or "")
-    expected_hour = str(expected_details.get("hora") or "")
-    actual_site = _selected_option_text(page, SITE_SELECTOR)
-    actual_date = _selected_option_text(page, DATE_SELECTOR)
-    actual_hour = _selected_option_text(page, HOUR_SELECTOR)
-    actual_slots = _read_slots_value(page)
-    if (
-        (expected_site and not _same_option(actual_site, expected_site))
-        or (expected_date and not _same_option(actual_date, expected_date))
-        or (expected_hour and not _same_option(actual_hour, expected_hour))
-    ):
-        raise AppointmentWorkflowUnavailable(
-            "La sede, fecha u hora seleccionadas cambiaron antes de enviar la reserva."
-        )
-    if not actual_site or not actual_date or not actual_hour:
-        raise AppointmentWorkflowUnavailable(
-            "La sede, fecha y hora deben seguir seleccionadas antes de enviar la reserva."
-        )
-    normalized_slots = normalize_option(actual_slots)
-    if normalized_slots in {"0", "sin cupos", "sin cupos disponibles"}:
-        raise AppointmentWorkflowUnavailable(
-            "El portal indica que el cupo seleccionado ya no esta disponible."
-        )
-    actual_person_name = _read_person_name(page)
-    if expected_person_name and actual_person_name:
-        expected_name = normalize_option(expected_person_name)
-        actual_name = normalize_option(actual_person_name)
-        if expected_name not in actual_name and actual_name not in expected_name:
-            raise AppointmentWorkflowUnavailable(
-                "La identidad mostrada por el portal no coincide con la persona de la orden."
-            )
 
 
 def _mark_select_for_refresh(page: Page, selector: str) -> str:

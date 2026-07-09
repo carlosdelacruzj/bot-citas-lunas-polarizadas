@@ -39,14 +39,12 @@ un evento lo justifique.
 
 ## Siguientes pasos de pulcritud tecnica
 
-1. Separar lectura, seleccion y `fetch_probe` en
-   `src/appointment_bot/flows/appointments.py`.
-2. Reducir `src/appointment_bot/services/postgres_orders.py` por subdominio:
+1. Reducir `src/appointment_bot/services/postgres_orders.py` por subdominio:
    pagos/contactos, estado de orden, credenciales y promocion de ordenes.
-3. Reducir `src/appointment_bot/services/order_execution.py`:
+2. Reducir `src/appointment_bot/services/order_execution.py`:
    separar recorrido de cola rapida, ejecucion de una orden y decisiones de
    resultado compartidas con el worker.
-4. Separar tests de flujo restantes:
+3. Separar tests de flujo restantes:
    mantener `test_appointments.py` para lectura/seleccion y crear una suite
    dedicada para `programs.py`.
 
@@ -99,6 +97,13 @@ un evento lo justifique.
 - Limpieza de evidencias no confirmadas y contexto de cliente viven en
   `session_results.py`.
 - Notificacion/persistencia de multiples tramites vive en `session_programs.py`.
+- `src/appointment_bot/flows/appointments.py` conserva apertura de panel, sede,
+  constantes y helpers compartidos de formulario.
+- Lectura de disponibilidad, snapshots estables y clasificacion de disponibilidad
+  viven en `appointment_reader.py`.
+- Seleccion de fecha/hora y validacion pre-envio viven en
+  `appointment_selection.py`.
+- La consulta directa `fetch_probe` vive en `appointment_fetch_probe.py`.
 
 ## Regenerar resumen manual
 
