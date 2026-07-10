@@ -66,27 +66,29 @@ un evento lo justifique.
 - Estado y lease del worker viven en `postgres_worker.py`.
 - Limpieza historica de PostgreSQL vive en `postgres_cleanup.py`.
 - Ventanas calientes, extension de ventana, cutoff diario y etiquetas de
-  ventana viven en `worker_windows.py`.
+  ventana viven en `worker/windows_runtime.py`.
 - Lease del proceso continuo, token de propietario y renovacion periodica viven
-  en `worker_lease.py`.
+  en `worker/lease.py`.
 - Clasificacion de defensas del portal, errores de red y esperas de recovery
-  viven en `worker_recovery.py`.
+  viven en `worker/recovery.py`.
 - Configuracion derivada para ejecutar observer, confirmacion y ordenes vive en
-  `worker_execution.py`.
+  `worker/execution.py`.
 - Clasificacion y persistencia de resultados de ordenes monitoreadas vive en
-  `worker_order_results.py`.
+  `worker/order_results.py`.
 - Resultado del observer puro, confirmacion secundaria y deduplicacion de firma
-  viven en `worker_observer_results.py`.
+  viven en `worker/observer_results.py`.
 - Callbacks de estado, alertas inmediatas y racha de `unavailable` viven en
-  `worker_state_callbacks.py`.
-- Retencion/borrado de evidencias diferidas vive en `worker_deferred_reports.py`.
+  `worker/state_callbacks.py`.
+- Retencion/borrado de evidencias diferidas vive en `worker/deferred_reports.py`.
 - Backoff y politica de errores de orden, observer, cola rapida y fallos
-  inesperados vive en `worker_error_policy.py`.
-- El ciclo principal de `continuous_worker.py` quedo dividido en arranque,
+  inesperados vive en `worker/error_policy.py`.
+- Cola rapida, leases de orden y ejecucion transicional de ordenes viven en
+  `worker/queue_runtime.py`.
+- El ciclo principal de `worker/continuous_worker.py` quedo dividido en arranque,
   iteracion, seleccion de trabajo disponible y cierre controlado.
 - `_monitor_order` quedo reducido a ejecutar la orden, registrar el reporte y
   aplicar la decision devuelta por `worker_order_results.py`.
-- `continuous_worker.py` conserva la orquestacion del proceso continuo, leases,
+- `worker/continuous_worker.py` conserva la orquestacion del proceso continuo, leases,
   seleccion de trabajo, pausas, ventanas calientes, salud y metricas de ventana.
 - `session_runner.py` quedo como orquestador de corrida, navegador, video,
   reporte final y errores.

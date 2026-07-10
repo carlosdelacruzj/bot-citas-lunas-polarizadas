@@ -528,7 +528,9 @@ git diff --check
 
 ### Paso 9.4: mover worker continuo
 
-Mover el loop y sus piezas internas a `worker/` por tandas:
+Estado: completado como corte transicional con wrappers de compatibilidad.
+
+Se movio el loop y sus piezas internas a `worker/` por tandas:
 
 - ventanas, cutoff diario y hot windows;
 - lease del worker;
@@ -536,8 +538,29 @@ Mover el loop y sus piezas internas a `worker/` por tandas:
 - seleccion de cola y control de rapid queue;
 - politicas de error, recovery y reportes diferidos.
 
-El entrypoint `appointment-bot-worker` y `scripts/start-worker.ps1` deben seguir
-funcionando igual despues de cada tanda.
+Resultado:
+
+- `appointment-bot-worker` apunta a `appointment_bot.worker.host:main`;
+- `worker/continuous_worker.py` contiene el loop continuo;
+- `worker/queue_runtime.py` contiene cola rapida y ejecucion transicional de
+  ordenes;
+- `worker/windows_runtime.py`, `worker/lease.py`, `worker/recovery.py`,
+  `worker/error_policy.py`, `worker/deferred_reports.py`, `worker/execution.py`,
+  `worker/state_callbacks.py`, `worker/order_results.py` y
+  `worker/observer_results.py` contienen las piezas internas del worker;
+- `services/continuous_*`, `services/order_execution.py` y
+  `services/worker_*.py` quedaron como wrappers explicitos;
+- `scripts/start-worker.ps1` no cambia y sigue ejecutando el comando instalado;
+- el motor Playwright detallado queda para Paso 9.5 bajo `reservation_engine/`.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
 
 ### Paso 9.5: mover motor Playwright
 

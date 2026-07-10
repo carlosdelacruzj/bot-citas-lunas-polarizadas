@@ -6,7 +6,7 @@ migracion.
 
 ## Entrypoints
 
-- `appointment-bot-worker` apunta a `appointment_bot.services.continuous_host:main`.
+- `appointment-bot-worker` apunta a `appointment_bot.worker.host:main`.
 - `appointment-bot-client` apunta a `appointment_bot.services.client_cli:run`.
 - `appointment-bot-admin-api` apunta a `appointment_bot.admin_api.server:main`.
 - `scripts/start-worker.ps1` levanta Docker/PostgreSQL y ejecuta el host continuo.
@@ -14,15 +14,17 @@ migracion.
 
 ## Proceso actual
 
-El host continuo (`services/continuous_host.py`) hace dos cosas en el mismo
+El host continuo (`worker/host.py`) hace dos cosas en el mismo
 proceso:
 
 1. crea `ContinuousWorker`;
 2. crea la API local con `create_local_api_server(worker_controller=worker)`.
 
 La API local puede controlar el worker porque tiene una referencia en memoria al
-objeto `ContinuousWorker`. Esta relacion es el acoplamiento principal que debe
-romperse con cuidado cuando exista un admin API separado.
+objeto `ContinuousWorker`. El loop, ventanas, lease del worker, comandos
+persistidos, recovery y cola rapida viven ahora bajo `appointment_bot.worker`.
+Las rutas antiguas `services/continuous_*`, `services/order_execution.py` y
+`services/worker_*.py` son wrappers de compatibilidad durante la transicion.
 
 Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
 de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL
@@ -131,5 +133,5 @@ Hasta que exista un reemplazo probado:
 - no cambiar los codigos de salida;
 - no cambiar el bootstrap de Windows;
 - no quitar la API local embebida;
-- no mover `pause`, `resume` ni `restart` fuera del proceso actual sin un canal
-  persistido de comandos.
+- no quitar wrappers antiguos hasta que CLI, API, tests, scripts y n8n usen las
+  rutas nuevas o esten validados contra ellas.

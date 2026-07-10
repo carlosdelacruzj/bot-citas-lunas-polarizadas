@@ -1,6 +1,6 @@
 """Compatibility exports for worker timing windows."""
 
-from appointment_bot.services.worker_windows import (
+from appointment_bot.worker.windows_runtime import (
     DAILY_CUTOFF_REASON,
     DAILY_CUTOFF_TIME,
     WORKER_TIMEZONE,
