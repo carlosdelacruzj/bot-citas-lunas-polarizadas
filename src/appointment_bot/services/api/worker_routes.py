@@ -5,12 +5,12 @@ from http import HTTPStatus
 from typing import Any
 
 from appointment_bot.config import load_settings
-from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_worker import get_worker_state
-from appointment_bot.services.postgres_worker_commands import (
+from appointment_bot.db.worker_commands import (
     enqueue_worker_command,
     list_worker_commands,
 )
+from appointment_bot.db.worker_state import get_worker_state
+from appointment_bot.services.api.http import error_payload
 
 PUBLIC_WORKER_FIELDS = {
     "phase",

@@ -4,7 +4,7 @@ import time
 from uuid import uuid4
 
 from appointment_bot.config import Settings
-from appointment_bot.services.postgres_worker import (
+from appointment_bot.db.worker_state import (
     acquire_worker_lease,
     release_worker_lease,
     renew_worker_lease,

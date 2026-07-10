@@ -5,8 +5,8 @@ from http import HTTPStatus
 from typing import Any
 from urllib.parse import unquote
 
+from appointment_bot.db.runs import get_run, list_runs
 from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_runs import get_run, list_runs
 
 PUBLIC_RUN_FIELDS = (
     "run_id",

@@ -7,9 +7,8 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
-from appointment_bot.services.evidence_summary import export_evidence_summary
-from appointment_bot.services.postgres_common import init_database
-from appointment_bot.services.postgres_orders import (
+from appointment_bot.db.common import init_database
+from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     create_service_order,
     list_service_order_summaries,
@@ -19,7 +18,8 @@ from appointment_bot.services.postgres_orders import (
     set_order_paused,
     split_service_order_programs,
 )
-from appointment_bot.services.postgres_runs import get_run, list_runs
+from appointment_bot.db.runs import get_run, list_runs
+from appointment_bot.services.evidence_summary import export_evidence_summary
 from appointment_bot.services.status_reports import (
     generate_daily_report_image,
     generate_status_report_images,

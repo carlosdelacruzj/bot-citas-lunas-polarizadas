@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from appointment_bot.config import Settings
+from appointment_bot.db.worker_state import get_worker_state
 from appointment_bot.domain import AvailabilityResult, RunReport
 from appointment_bot.services.notifier import notify_result
-from appointment_bot.services.postgres_worker import get_worker_state
 from appointment_bot.utils.screenshots import (
     remove_screenshot_paths,
     report_screenshot_paths,

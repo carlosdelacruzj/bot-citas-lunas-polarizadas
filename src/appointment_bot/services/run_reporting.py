@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from appointment_bot.config import Settings
+from appointment_bot.db.runs import record_run_outcome
 from appointment_bot.domain import (
     AvailabilityResult,
     ResultStatus,
@@ -18,7 +19,6 @@ from appointment_bot.services.optimization_log import (
     append_optimization_case,
     append_partial_availability_case,
 )
-from appointment_bot.services.postgres_runs import record_run_outcome
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 

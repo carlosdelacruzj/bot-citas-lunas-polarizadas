@@ -1,14 +1,14 @@
 from appointment_bot.config import Settings
-from appointment_bot.domain import ResultStatus, RunReport
-from appointment_bot.services.postgres_orders import (
+from appointment_bot.db.orders import (
     clear_order_submission_state,
     get_service_order_runtime,
     service_order_claim_owned,
 )
-from appointment_bot.services.postgres_reservations import (
+from appointment_bot.db.reservations import (
     get_active_reservation_attempt,
     resolve_reservation_attempt,
 )
+from appointment_bot.domain import ResultStatus, RunReport
 from appointment_bot.utils.sanitization import normalize_option
 
 

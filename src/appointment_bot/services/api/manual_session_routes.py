@@ -5,9 +5,9 @@ from http import HTTPStatus
 from typing import Any
 
 from appointment_bot.config import load_settings
+from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.manual_session.session import open_manual_session_for_order
 from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_orders import get_service_order_runtime
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 

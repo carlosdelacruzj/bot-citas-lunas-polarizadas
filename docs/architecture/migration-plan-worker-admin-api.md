@@ -490,6 +490,42 @@ Cada subfase debe mantener compatibilidad con los imports viejos hasta que todos
 los consumidores usen el modulo nuevo. Los cambios de schema deben quedar en una
 fase separada y avanzar versiones de forma secuencial.
 
+Estado: completado como traslado de implementacion PostgreSQL a `db/` con
+wrappers de compatibilidad.
+
+Implementacion:
+
+- `db/common.py`, `db/pool.py` y `db/migrations.py` contienen conexion, pool y
+  migraciones;
+- `db/orders.py` contiene el repositorio actual de ordenes, contactos, pagos,
+  reglas, leases de orden y estado/backoff de orden;
+- `db/reservations.py` contiene reservas e intentos de reserva;
+- `db/runs.py` contiene runs, checks y metricas de ventanas;
+- `db/worker_state.py` contiene estado y lease del worker;
+- `db/worker_commands.py` contiene el puente persistido de comandos;
+- `db/cleanup.py` contiene limpieza de historial;
+- los modulos antiguos `services/database_migrations.py` y
+  `services/postgres_*.py` quedaron como wrappers explicitos;
+- el codigo de aplicacion ahora importa `appointment_bot.db.*` directamente;
+- los tests y consumidores externos pueden seguir usando imports viejos durante
+  la transicion;
+- no hubo cambios de schema, Playwright, reserva, notificaciones, entrypoints,
+  scripts ni `.env`.
+
+Nota tecnica: `db/orders.py` todavia concentra varias responsabilidades
+historicas. Queda como repositorio de ordenes para preservar riesgo bajo. Si se
+necesita seguir reduciendo ese archivo, hacerlo como subfase posterior de 9.3,
+separando pagos, leases y estado de orden con pruebas antes de cada corte.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ### Paso 9.4: mover worker continuo
 
 Mover el loop y sus piezas internas a `worker/` por tandas:

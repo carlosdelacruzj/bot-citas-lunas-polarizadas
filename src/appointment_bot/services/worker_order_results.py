@@ -4,6 +4,11 @@ import logging
 from dataclasses import dataclass
 
 from appointment_bot.config import Settings
+from appointment_bot.db.orders import (
+    mark_order_done,
+    promote_orders_matching_reserved_slot,
+    update_order_state,
+)
 from appointment_bot.domain import RunReport
 from appointment_bot.services.database_models import (
     ServiceOrderCandidate,
@@ -14,11 +19,6 @@ from appointment_bot.services.order_runtime import (
     OrderReportOutcome,
     classify_order_report,
     order_done_status_from_report,
-)
-from appointment_bot.services.postgres_orders import (
-    mark_order_done,
-    promote_orders_matching_reserved_slot,
-    update_order_state,
 )
 
 logger = logging.getLogger(__name__)

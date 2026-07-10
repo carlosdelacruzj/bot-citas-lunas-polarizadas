@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 
 from appointment_bot.config import Settings
+from appointment_bot.db.orders import record_order_program_listing
 from appointment_bot.services.notifier import send_telegram_message
-from appointment_bot.services.postgres_orders import record_order_program_listing
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from appointment_bot.config import Settings
-from appointment_bot.services.postgres_cleanup import cleanup_database_history
+from appointment_bot.db.cleanup import cleanup_database_history
 
 logger = logging.getLogger(__name__)
 

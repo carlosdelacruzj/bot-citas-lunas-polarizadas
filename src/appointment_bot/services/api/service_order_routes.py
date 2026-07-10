@@ -5,8 +5,7 @@ from http import HTTPStatus
 from typing import Any
 from urllib.parse import unquote
 
-from appointment_bot.services.api.http import error_payload
-from appointment_bot.services.postgres_orders import (
+from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     create_service_order,
     list_service_order_summaries,
@@ -16,6 +15,7 @@ from appointment_bot.services.postgres_orders import (
     set_order_paused,
     split_service_order_programs,
 )
+from appointment_bot.services.api.http import error_payload
 
 PUBLIC_SERVICE_ORDER_FIELDS = (
     "order_id",
