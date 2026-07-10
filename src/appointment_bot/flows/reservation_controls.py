@@ -1,5 +1,7 @@
 from __future__ import annotations
 
-RESERVATION_FIELD_SELECTOR = "#MainContent_idUcitas_txtimg"
-RESERVATION_BUTTON_SELECTOR = "#MainContent_idUcitas_btgSiguiente"
-CAPTCHA_MEDIA_SELECTOR = "img, canvas"
+import sys
+
+from appointment_bot.reservation_engine import reservation_controls as _impl
+
+sys.modules[__name__] = _impl

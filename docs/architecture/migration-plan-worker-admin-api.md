@@ -564,7 +564,9 @@ git diff --check
 
 ### Paso 9.5: mover motor Playwright
 
-Mover a `reservation_engine/` el flujo que interactua con el portal:
+Estado: completado como corte transicional con wrappers de compatibilidad.
+
+Se movio a `reservation_engine/` el flujo que interactua con el portal:
 
 - login;
 - seleccion de tramite;
@@ -574,8 +576,36 @@ Mover a `reservation_engine/` el flujo que interactua con el portal:
 - submit de reserva;
 - confirmacion post-submit.
 
-Esta fase exige validar con pruebas y, cuando sea posible, con una corrida real
-controlada del flujo funcional. No mezclar con cambios de dashboard.
+Resultado:
+
+- `reservation_engine/runner.py` orquesta la sesion Playwright, video y reporte;
+- `reservation_engine/session_flow.py` contiene login, seleccion de tramite y
+  apertura del panel de citas;
+- `reservation_engine/monitor.py` contiene lectura de disponibilidad,
+  reload probe y decision de reserva;
+- `reservation_engine/appointment_*.py`, `appointments.py`, `login.py`,
+  `programs.py` y `stages.py` contienen navegacion, lectura y seleccion del
+  portal;
+- `reservation_engine/reservation_captcha_*`,
+  `reservation_engine/reservation_submit.py`,
+  `reservation_engine/reservation_portal.py` y
+  `reservation_engine/reservation_flow.py` contienen CAPTCHA, submit y
+  confirmacion post-submit;
+- `reservation_engine/observer.py` contiene el observer Playwright;
+- `flows/*`, `services/session_*`, `services/reservation_flow.py`,
+  `services/reservation_timings.py` y `services/observer.py` quedaron como
+  wrappers explicitos;
+- no hubo cambios de schema, dashboard, `.env`, notificaciones ni contratos de
+  entrypoint.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
 
 ### Paso 9.6: mover reportes y evidencia
 

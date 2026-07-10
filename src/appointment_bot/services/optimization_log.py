@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from appointment_bot.domain import ResultStatus, RunReport
+from appointment_bot.reservation_engine.timings import TIMING_DETAILS_KEY
 from appointment_bot.services.detail_helpers import (
     LIMA_TZ,
     detail_text,
@@ -13,7 +14,6 @@ from appointment_bot.services.detail_helpers import (
     format_lima_datetime,
     parse_datetime,
 )
-from appointment_bot.services.reservation_timings import TIMING_DETAILS_KEY
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)

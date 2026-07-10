@@ -90,22 +90,29 @@ un evento lo justifique.
   aplicar la decision devuelta por `worker_order_results.py`.
 - `worker/continuous_worker.py` conserva la orquestacion del proceso continuo, leases,
   seleccion de trabajo, pausas, ventanas calientes, salud y metricas de ventana.
-- `session_runner.py` quedo como orquestador de corrida, navegador, video,
-  reporte final y errores.
+- `reservation_engine/runner.py` quedo como orquestador de corrida, navegador,
+  video, reporte final y errores.
 - Login, seleccion de tramite y bifurcacion entre etapa ya terminada o panel de
-  cita viven en `session_flow.py`.
+  cita viven en `reservation_engine/session_flow.py`.
 - Monitoreo de disponibilidad, reload probe, diagnosticos por intento y envio de
-  reserva viven en `session_monitor.py`.
+  reserva viven en `reservation_engine/monitor.py`.
 - Limpieza de evidencias no confirmadas y contexto de cliente viven en
-  `session_results.py`.
+  `reservation_engine/results.py`.
 - Notificacion/persistencia de multiples tramites vive en `session_programs.py`.
-- `src/appointment_bot/flows/appointments.py` conserva apertura de panel, sede,
+  `reservation_engine/program_notifications.py`.
+- `reservation_engine/appointments.py` conserva apertura de panel, sede,
   constantes y helpers compartidos de formulario.
 - Lectura de disponibilidad, snapshots estables y clasificacion de disponibilidad
-  viven en `appointment_reader.py`.
+  viven en `reservation_engine/appointment_reader.py`.
 - Seleccion de fecha/hora y validacion pre-envio viven en
-  `appointment_selection.py`.
-- La consulta directa `fetch_probe` vive en `appointment_fetch_probe.py`.
+  `reservation_engine/appointment_selection.py`.
+- La consulta directa `fetch_probe` vive en
+  `reservation_engine/appointment_fetch_probe.py`.
+- CAPTCHA, refresh, submit y lectura de respuesta del portal viven en
+  `reservation_engine/reservation_captcha_*`,
+  `reservation_engine/reservation_submit.py`,
+  `reservation_engine/reservation_portal.py` y
+  `reservation_engine/reservation_flow.py`.
 
 ## Regenerar resumen manual
 

@@ -24,13 +24,13 @@ from appointment_bot.db.worker_state import (
     update_worker_state,
 )
 from appointment_bot.domain import RunReport
+from appointment_bot.reservation_engine.observer import run_observer_with_report
 from appointment_bot.services.cleanup import cleanup_old_files
 from appointment_bot.services.database_models import (
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )
 from appointment_bot.services.notifier import send_telegram_message
-from appointment_bot.services.observer import run_observer_with_report
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.worker.deferred_reports import DeferredOrderReports
 from appointment_bot.worker.error_policy import WorkerErrorPolicy

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from appointment_bot.domain import ResultStatus, RunReport, sanitize_details
+from appointment_bot.reservation_engine.timings import TIMING_DETAILS_KEY
 from appointment_bot.services.database_models import RunDetail
 from appointment_bot.services.detail_helpers import (
     LIMA_TZ,
@@ -17,7 +18,6 @@ from appointment_bot.services.detail_helpers import (
     format_lima_datetime,
     parse_datetime,
 )
-from appointment_bot.services.reservation_timings import TIMING_DETAILS_KEY
 from appointment_bot.utils.sanitization import sanitize_text
 
 EVIDENCE_INDEX_PATH = Path("docs/evidence-index.csv")

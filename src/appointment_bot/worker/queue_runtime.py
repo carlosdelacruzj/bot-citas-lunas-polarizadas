@@ -36,6 +36,7 @@ from appointment_bot.db.reservations import (
 )
 from appointment_bot.db.runs import record_order_check
 from appointment_bot.domain import RunReport
+from appointment_bot.reservation_engine.runner import run_with_report
 from appointment_bot.services.credential_cipher import CredentialDecryptionError
 from appointment_bot.services.database_models import ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.services.notifier import notify_deferred_queue_summary
@@ -53,7 +54,6 @@ from appointment_bot.services.order_transitions import (
     reconcile_pending_submission,
 )
 from appointment_bot.services.run_reporting import settings_for_order
-from appointment_bot.services.session_runner import run_with_report
 
 logger = logging.getLogger(__name__)
 

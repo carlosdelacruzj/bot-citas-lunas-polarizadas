@@ -26,6 +26,13 @@ persistidos, recovery y cola rapida viven ahora bajo `appointment_bot.worker`.
 Las rutas antiguas `services/continuous_*`, `services/order_execution.py` y
 `services/worker_*.py` son wrappers de compatibilidad durante la transicion.
 
+El motor Playwright del portal vive ahora bajo `appointment_bot.reservation_engine`:
+login, seleccion de tramite, lectura de citas, fetch/reload probes, CAPTCHA,
+submit de reserva y confirmacion post-submit. Las rutas antiguas
+`flows/*`, `services/session_*`, `services/reservation_flow.py`,
+`services/reservation_timings.py` y `services/observer.py` son wrappers de
+compatibilidad durante la transicion.
+
 Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
 de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL
 actuales, escucha por defecto en `127.0.0.1:8766` y no aloja un
@@ -133,5 +140,6 @@ Hasta que exista un reemplazo probado:
 - no cambiar los codigos de salida;
 - no cambiar el bootstrap de Windows;
 - no quitar la API local embebida;
-- no quitar wrappers antiguos hasta que CLI, API, tests, scripts y n8n usen las
-  rutas nuevas o esten validados contra ellas.
+- no quitar wrappers antiguos hasta que CLI, API, tests, scripts, n8n y
+  consumidores de flujo Playwright usen las rutas nuevas o esten validados
+  contra ellas.
