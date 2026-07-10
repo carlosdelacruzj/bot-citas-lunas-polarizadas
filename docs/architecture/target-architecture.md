@@ -60,6 +60,36 @@ credenciales del portal.
 - Las transiciones criticas de reserva siguen protegidas por leases,
   `reservation_attempts` y confirmacion.
 
+## Subordenes como unidad operativa
+
+La unidad operativa del worker es una fila de `service_orders`, no una cuenta
+del portal. Si una cuenta tiene varios tramites pendientes, el sistema debe
+representarlos como subordenes con:
+
+- `parent_order_id`
+- `program_expediente`
+- `program_plate`
+
+Cada suborden comparte credenciales con la cuenta, pero tiene estado de cola,
+reserva, pago, evidencia y cierre propios. El dashboard y el admin API no deben
+colapsar subordenes como si fueran un solo trabajo.
+
+## Angular en la arquitectura objetivo
+
+Angular puede avanzar antes de terminar el refactor interno de Python. Sus
+limites son:
+
+- consumir el admin API por HTTP;
+- mantener el token administrativo solo en memoria;
+- no guardar passwords despues del POST de creacion;
+- no recibir passwords, cookies, Fernet keys ni `owner_token`;
+- no duplicar reglas de reserva; debe enviar datos y dejar que el backend los
+  valide;
+- no abrir CORS ni exponer el panel fuera de loopback durante esta migracion.
+
+El target preferido del proxy de desarrollo en la arquitectura objetivo es
+`http://127.0.0.1:8766`, donde corre `appointment-bot-admin-api`.
+
 ## Estrategia de migracion
 
 La separacion sera incremental:
@@ -68,5 +98,6 @@ La separacion sera incremental:
 2. crear wrappers publicos sobre servicios actuales;
 3. crear admin API separado para lectura y CRUD simple;
 4. crear canal persistido de comandos para `pause`, `resume`, `restart`;
-5. mover modulos internos por tandas pequenas con wrappers de compatibilidad;
-6. retirar compatibilidad solo cuando tests y runtime lo prueben.
+5. completar Angular contra el admin API separado;
+6. mover modulos internos por tandas pequenas con wrappers de compatibilidad;
+7. retirar compatibilidad solo cuando tests y runtime lo prueben.

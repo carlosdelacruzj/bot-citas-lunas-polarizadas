@@ -24,11 +24,14 @@ from appointment_bot.services.api.service_order_routes import (
     payment_paid_path,
     service_order_action,
     service_order_contact_path,
+    service_order_split_programs_path,
+    split_service_order_programs_payload,
     update_service_order_contact_payload,
 )
 from appointment_bot.services.api.worker_routes import (
     enqueue_worker_command_payload,
     health_payload,
+    list_worker_commands_payload,
     worker_payload,
 )
 
@@ -58,6 +61,12 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 worker_payload(getattr(self.server, "worker_controller", None)),
             )
+            return
+
+        if path == "/api/v1/worker/commands":
+            if not self._require_authorized(strict=True):
+                return
+            self._send_json(HTTPStatus.OK, list_worker_commands_payload(query))
             return
 
         if path == "/api/v1/service-orders":
@@ -123,6 +132,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = mark_payment_paid_payload(paid_order_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        split_order_id = service_order_split_programs_path(path)
+        if split_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = split_service_order_programs_payload(
+                split_order_id,
+                self._read_json(),
+            )
             self._send_json(status, payload)
             return
 

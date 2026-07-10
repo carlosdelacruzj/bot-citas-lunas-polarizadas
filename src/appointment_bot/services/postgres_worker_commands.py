@@ -97,6 +97,31 @@ def complete_worker_command(
         )
 
 
+def list_worker_commands(
+    *,
+    limit: int = 20,
+    settings: Settings | None = None,
+) -> list[WorkerCommand]:
+    if limit < 1:
+        limit = 1
+    if limit > 100:
+        limit = 100
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT command_id, command, status, requested_by, worker_owner_token,
+                   requested_at, claimed_at, processed_at, error_message
+            FROM worker_commands
+            ORDER BY requested_at DESC, command_id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        ).fetchall()
+    return [_worker_command(row) for row in rows]
+
+
 def _worker_command(row: Any) -> WorkerCommand:
     return WorkerCommand(
         command_id=str(row["command_id"]),

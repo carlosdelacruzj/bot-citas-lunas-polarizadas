@@ -39,9 +39,13 @@ Ya queda documentado que:
 
 - el worker actual sigue siendo `appointment-bot-worker`;
 - la API local embebida sigue viva en `127.0.0.1:8765`;
-- `pause`, `resume` y `restart` siguen dependiendo del objeto `ContinuousWorker`
-  en memoria;
-- Angular todavia no debe hacer CRUD ni ejecutar acciones de control;
+- la API embebida conserva control directo de `pause`, `resume` y `restart`
+  cuando tiene un `ContinuousWorker` en memoria;
+- el admin API separado encola `pause`, `resume` y `restart` mediante
+  `worker_commands`;
+- Angular ya puede ejecutar acciones administrativas locales con confirmacion
+  visible, pero todavia debe completar subordenes, restricciones, comandos
+  persistidos y operacion contra el admin API separado;
 - el futuro admin API no debe acceder a cookies, passwords, Fernet keys,
   `owner_token` ni PostgreSQL desde el frontend;
 - cualquier separacion de worker/admin API debe pasar primero por contratos,
@@ -327,15 +331,179 @@ git diff --check
 
 ## Paso 9: refactor interno gradual
 
-Mover codigo solo despues de tener contratos y validaciones:
+Mover codigo solo despues de tener contratos, dashboard/admin API estable y
+validaciones. Este paso no debe hacerse como un refactor unico. Debe dividirse
+en fases pequenas para mantener rollback claro y evitar romper el flujo actual
+de reservas.
 
-1. crear wrappers publicos en `core/` y `db/`
-2. mover modelos puros
-3. dividir `postgres_orders.py` por subdominio
-4. mover worker modules a `worker/`
-5. mover flujo Playwright a `reservation_engine/`
-6. actualizar imports por tandas pequenas
-7. validar despues de cada tanda
+Estado: pendiente.
+
+### Paso 9.0: cierre previo de superficie Angular/admin
+
+Antes de mover modulos internos, cerrar las brechas que afectan al panel:
+
+- apuntar el proxy local de Angular al admin API separado
+  `http://127.0.0.1:8766` cuando se quiera operar contra la topologia objetivo;
+- mantener una opcion documentada para volver temporalmente a la API embebida
+  `http://127.0.0.1:8765`;
+- exponer en Angular los campos de suborden
+  `parent_order_id`, `program_expediente` y `program_plate`;
+- exponer en Angular las reglas de reserva
+  `minimum_reservation_hour`, `minimum_reservation_date` y `allowed_weekdays`;
+- agregar una vista simple del resultado de comandos persistidos
+  `worker_commands`, al menos para confirmar `pending`, `applied` y `failed`;
+- agregar endpoint y accion controlada para dividir una orden en subordenes por
+  tramites pendientes, equivalente al CLI `order-split-programs`;
+- validar worker y admin API corriendo como procesos separados.
+
+Esta fase puede avanzar en paralelo con mejoras visuales del dashboard, pero no
+debe mezclar cambios de Playwright ni de reserva.
+
+Estado: completado como cierre de superficie Angular/admin previo al refactor
+interno.
+
+Implementacion:
+
+- `dashboard/proxy.conf.json` apunta por defecto al admin API separado en
+  `http://127.0.0.1:8766`;
+- la opcion de volver temporalmente a `http://127.0.0.1:8765` queda
+  documentada como compatibilidad con la API embebida;
+- Angular muestra `parent_order_id`, `program_expediente` y `program_plate`;
+- Angular permite crear ordenes con suborden y reglas de reserva:
+  `minimum_reservation_hour`, `minimum_reservation_date` y `allowed_weekdays`;
+- `GET /api/v1/worker/commands` devuelve comandos recientes sin
+  `worker_owner_token`;
+- Angular muestra comandos recientes del worker con estado `pending`,
+  `processing`, `applied` o `failed`;
+- `POST /api/v1/service-orders/{order_id}/split-programs` reutiliza
+  `split_service_order_programs`;
+- Angular agrega una accion confirmada para dividir tramites pendientes y una
+  opcion para mantener la orden padre activa.
+
+Validacion minima:
+
+```powershell
+cd dashboard
+npm run build
+cd ..
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
+### Paso 9.1: wrappers publicos sin mover implementacion
+
+Crear modulos de compatibilidad que reexporten funciones actuales sin cambiar
+imports existentes:
+
+- `core/`: tipos, estados y helpers puros que no abren browser ni DB;
+- `db/`: fachada de conexion, migracion y repositorios;
+- `worker/`: fachada del loop continuo y comandos;
+- `reservation_engine/`: fachada de login, lectura, CAPTCHA y reserva;
+- `reports/`: fachada de fichas, reportes y evidencia.
+
+La implementacion real puede seguir en `services/` durante esta fase. El
+objetivo es definir nombres publicos y preparar los imports nuevos sin mover
+riesgo operativo.
+
+### Paso 9.2: mover modelos y reglas puras
+
+Mover primero lo que no toca IO:
+
+- dataclasses y DTOs puros;
+- estados de orden, worker y resultado;
+- sanitizacion y helpers de fechas/detalles que no leen DB;
+- reglas de elegibilidad de cola y restricciones de reserva cuando no dependen
+  de conexion.
+
+No mover Playwright, PostgreSQL ni notificaciones en esta fase.
+
+### Paso 9.3: separar capa DB por subdominio
+
+Dividir gradualmente `services/postgres_orders.py` y modulos cercanos en
+repositorios mas pequenos dentro de `db/`:
+
+- ordenes y contactos;
+- pagos;
+- reservas;
+- estado/backoff de orden;
+- leases;
+- runs/evidencia;
+- worker state y `worker_commands`.
+
+Cada subfase debe mantener compatibilidad con los imports viejos hasta que todos
+los consumidores usen el modulo nuevo. Los cambios de schema deben quedar en una
+fase separada y avanzar versiones de forma secuencial.
+
+### Paso 9.4: mover worker continuo
+
+Mover el loop y sus piezas internas a `worker/` por tandas:
+
+- ventanas, cutoff diario y hot windows;
+- lease del worker;
+- aplicacion de comandos persistidos;
+- seleccion de cola y control de rapid queue;
+- politicas de error, recovery y reportes diferidos.
+
+El entrypoint `appointment-bot-worker` y `scripts/start-worker.ps1` deben seguir
+funcionando igual despues de cada tanda.
+
+### Paso 9.5: mover motor Playwright
+
+Mover a `reservation_engine/` el flujo que interactua con el portal:
+
+- login;
+- seleccion de tramite;
+- lectura de fechas/horas;
+- fetch/reload probes;
+- CAPTCHA;
+- submit de reserva;
+- confirmacion post-submit.
+
+Esta fase exige validar con pruebas y, cuando sea posible, con una corrida real
+controlada del flujo funcional. No mezclar con cambios de dashboard.
+
+### Paso 9.6: mover reportes y evidencia
+
+Mover a `reports/` la generacion de fichas, resumenes, evidencia compacta y
+salidas operativas. Mantener rutas de salida y formatos actuales para no romper
+revision historica ni herramientas externas.
+
+### Paso 9.7: retirar compatibilidad vieja
+
+Solo cuando los imports nuevos ya esten usados por worker, admin API, CLI y
+tests:
+
+- eliminar wrappers viejos no usados;
+- actualizar documentacion de runtime;
+- revisar `.env.example` si aparecieron variables nuevas;
+- dejar evidencia de validacion completa.
+
+No retirar compatibilidad si todavia hay scripts, n8n o CLI dependiendo de la
+ruta anterior.
+
+## Trabajo Angular pendiente en paralelo
+
+Angular no necesita esperar al Paso 9 completo. Puede avanzar en paralelo
+mientras respete estos limites:
+
+- consumir solamente el admin API o la API embebida por proxy local;
+- no hablar directo con PostgreSQL;
+- no guardar tokens ni passwords en storage;
+- tratar cada suborden como una orden operativa independiente;
+- pedir confirmacion visible antes de acciones de escritura;
+- mostrar errores del backend sin ocultarlos.
+
+Prioridad recomendada:
+
+1. cambiar proxy/documentacion para operar contra `appointment-bot-admin-api`;
+2. completar tipos y UI de subordenes;
+3. completar tipos y UI de restricciones de reserva;
+4. agregar accion de dividir tramites pendientes;
+5. agregar lectura de comandos persistidos;
+6. agregar vistas de detalle para runs sin copiar `details` crudos por defecto;
+7. mejorar ergonomia visual sin cambiar contratos.
 
 ## Criterios de avance
 

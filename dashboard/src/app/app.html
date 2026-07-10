@@ -196,7 +196,19 @@
           <button type="button" class="secondary" (click)="requestManualSession()">
             Sesion manual
           </button>
+          <button type="button" class="secondary" (click)="requestSplitPrograms()">
+            Dividir tramites
+          </button>
         </div>
+        <label class="check-row">
+          <input
+            name="splitKeepParentActive"
+            type="checkbox"
+            [ngModel]="splitKeepParentActive()"
+            (ngModelChange)="splitKeepParentActive.set($event)"
+          />
+          Mantener padre activo
+        </label>
       </div>
 
       <div class="admin-block">
@@ -334,6 +346,64 @@
             />
             Cobro requerido
           </label>
+          <label>
+            Padre
+            <input
+              name="newParentOrderId"
+              type="text"
+              [ngModel]="newParentOrderId()"
+              (ngModelChange)="newParentOrderId.set($event)"
+            />
+          </label>
+          <label>
+            Expediente
+            <input
+              name="newProgramExpediente"
+              type="text"
+              [ngModel]="newProgramExpediente()"
+              (ngModelChange)="newProgramExpediente.set($event)"
+            />
+          </label>
+          <label>
+            Placa
+            <input
+              name="newProgramPlate"
+              type="text"
+              [ngModel]="newProgramPlate()"
+              (ngModelChange)="newProgramPlate.set($event)"
+            />
+          </label>
+          <label>
+            Hora minima
+            <input
+              name="newMinimumReservationHour"
+              type="number"
+              min="0"
+              max="23"
+              step="1"
+              [ngModel]="newMinimumReservationHour()"
+              (ngModelChange)="newMinimumReservationHour.set($event)"
+            />
+          </label>
+          <label>
+            Fecha minima
+            <input
+              name="newMinimumReservationDate"
+              type="date"
+              [ngModel]="newMinimumReservationDate()"
+              (ngModelChange)="newMinimumReservationDate.set($event)"
+            />
+          </label>
+          <label>
+            Dias ISO
+            <input
+              name="newAllowedWeekdays"
+              type="text"
+              inputmode="numeric"
+              [ngModel]="newAllowedWeekdays()"
+              (ngModelChange)="newAllowedWeekdays.set($event)"
+            />
+          </label>
         </div>
         <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
       </div>
@@ -366,6 +436,8 @@
             <th>Estado</th>
             <th>Reserva</th>
             <th>Pago</th>
+            <th>Tramite</th>
+            <th>Reglas</th>
             <th>Prioridad</th>
             <th></th>
           </tr>
@@ -390,6 +462,17 @@
                 {{ order.payment_status ?? 'sin pago' }}
                 <span>{{ order.amount_paid ?? order.amount_agreed ?? '' }}</span>
               </td>
+              <td>
+                {{ order.program_expediente ?? order.program_plate ?? 'generica' }}
+                <span>{{ order.parent_order_id ?? 'sin padre' }}</span>
+              </td>
+              <td>
+                {{ order.minimum_reservation_date ?? 'sin fecha' }}
+                <span>
+                  {{ order.minimum_reservation_hour ?? 'sin hora' }} |
+                  {{ order.allowed_weekdays?.join(',') ?? 'sin dias' }}
+                </span>
+              </td>
               <td>{{ order.priority }}</td>
               <td>
                 <button type="button" class="icon-button" title="Copiar orden" (click)="copyOrder(order)">
@@ -399,7 +482,51 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="empty">No hay ordenes para mostrar.</td>
+              <td colspan="9" class="empty">No hay ordenes para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Comandos worker</h2>
+        <p>Ultimas solicitudes persistidas</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Comando</th>
+            <th>Estado</th>
+            <th>Solicitado</th>
+            <th>Procesado</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (command of workerCommands(); track command.command_id) {
+            <tr>
+              <td>
+                <strong>{{ command.command }}</strong>
+                <span>{{ command.command_id }}</span>
+              </td>
+              <td><span class="badge {{ statusTone(command.status) }}">{{ command.status }}</span></td>
+              <td>{{ command.requested_at }}</td>
+              <td>
+                {{ command.processed_at ?? 'pendiente' }}
+                <span>{{ command.claimed_at ?? 'sin reclamar' }}</span>
+              </td>
+              <td>{{ command.error_message ?? '' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">No hay comandos recientes.</td>
             </tr>
           }
         </tbody>

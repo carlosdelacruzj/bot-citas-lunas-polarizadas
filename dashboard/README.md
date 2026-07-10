@@ -44,7 +44,40 @@ npm start
 ```
 
 El proxy de desarrollo envia `/api` y `/health` a
-`http://127.0.0.1:8765`.
+`http://127.0.0.1:8766`, donde corre `appointment-bot-admin-api`.
+
+## Ejecucion contra admin API separado
+
+Para validar la arquitectura objetivo, levantar tres procesos:
+
+Terminal 1:
+
+```powershell
+scripts/start-worker.ps1
+```
+
+Terminal 2:
+
+```powershell
+appointment-bot-admin-api
+```
+
+Terminal 3:
+
+```powershell
+cd dashboard
+npm start
+```
+
+El target `8765` sigue siendo valido para operar temporalmente contra la API
+embebida del worker mientras se conserva compatibilidad.
+
+## Pendiente para completar Angular
+
+- Agregar vista de detalle de runs sin mostrar ni copiar `details` crudos por
+  defecto.
+- Mantener todos los formularios de escritura con confirmacion visible y
+  respuesta clara del backend.
 
 ## Seguridad
 
@@ -56,6 +89,8 @@ El proxy de desarrollo envia `/api` y `/health` a
 - No reutilizar cookies ni sesiones Playwright del worker.
 - No exponer password ni cookies en respuestas de sesion manual.
 - No versionar `node_modules`, `dist` ni caches de Angular.
+- No inventar restricciones de reserva. Si una orden no tiene restricciones,
+  enviar `null` u omitir esos campos.
 
 ## Version
 

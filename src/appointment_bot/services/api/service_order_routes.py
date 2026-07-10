@@ -14,6 +14,7 @@ from appointment_bot.services.postgres_orders import (
     mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
+    split_service_order_programs,
 )
 
 PUBLIC_SERVICE_ORDER_FIELDS = (
@@ -149,6 +150,28 @@ def mark_payment_paid_payload(
     return HTTPStatus.OK, {"status": "ok"}
 
 
+def split_service_order_programs_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    archive_parent = not _optional_bool(payload, "keep_parent_active", default=False)
+    try:
+        created = split_service_order_programs(order_id, archive_parent=archive_parent)
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "No existe la orden" in message else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.CREATED, {
+        "status": "created",
+        "parent_order_id": order_id,
+        "parent_archived": archive_parent,
+        "service_orders": [asdict(item) for item in created],
+    }
+
+
 def service_order_contact_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/contact"
@@ -178,6 +201,14 @@ def payment_paid_path(path: str) -> str | None:
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
 
 
+def service_order_split_programs_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/split-programs"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
 def _optional_text(payload: dict[str, Any], name: str) -> str | None:
     if name not in payload or payload[name] in {None, ""}:
         return None
@@ -185,7 +216,7 @@ def _optional_text(payload: dict[str, Any], name: str) -> str | None:
 
 
 def _optional_weekdays(value: Any) -> list[int] | None:
-    if value in {None, ""}:
+    if value is None or value == "":
         return None
     if isinstance(value, list):
         return [int(item) for item in value]

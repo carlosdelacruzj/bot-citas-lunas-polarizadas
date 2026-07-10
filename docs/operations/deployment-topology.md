@@ -46,22 +46,47 @@ En Windows, el camino recomendado sigue siendo:
 scripts/start-worker.ps1
 ```
 
-## Dashboard Angular futuro
+## Dashboard Angular
 
-Primera version local:
+Ejecucion local contra el admin API separado:
 
 ```powershell
 # Terminal 1
 scripts/start-worker.ps1
 
 # Terminal 2
+appointment-bot-admin-api
+
+# Terminal 3
 cd dashboard
 npm install
 ng serve --proxy-config proxy.conf.json
 ```
 
-El proxy de desarrollo debe apuntar `/api` y `/health` a
-`http://127.0.0.1:8765`. No abrir CORS al inicio.
+El proxy de desarrollo apunta `/api` y `/health` a
+`http://127.0.0.1:8766`, que es el admin API separado. No abrir CORS al inicio.
+
+## Compatibilidad con API embebida
+
+El worker conserva su API embebida en `http://127.0.0.1:8765`. Si se necesita
+rollback temporal del dashboard, cambiar `dashboard/proxy.conf.json` a `8765`.
+Para validar la arquitectura objetivo, usar `8766`.
+
+No levantar el admin API fuera de loopback sin `APPOINTMENT_BOT_API_TOKEN`.
+No cambiar `.env` para pruebas temporales; usar variables de entorno de la
+terminal cuando se necesite modificar host, puerto o sesion manual.
+
+Validacion minima de esta topologia:
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:8766/health
+cd dashboard
+npm run build
+cd ..
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+```
 
 ## Seguridad operativa
 
@@ -71,6 +96,8 @@ El proxy de desarrollo debe apuntar `/api` y `/health` a
 - No versionar `.env`, logs, screenshots, videos, dumps ni `node_modules`.
 - Usar `GET /health` para liveness.
 - Usar `GET /api/v1/worker` para fase real del worker.
+- Usar `worker_commands` para controlar el worker desde procesos que no tienen
+  `ContinuousWorker` en memoria.
 
 ## Rollback
 

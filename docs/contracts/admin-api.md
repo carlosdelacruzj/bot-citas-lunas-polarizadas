@@ -44,6 +44,34 @@ En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
 
+## Endpoints agregados para completar migracion
+
+Estos endpoints completan la superficie administrativa previa al refactor
+interno:
+
+```text
+GET  /api/v1/worker/commands
+POST /api/v1/service-orders/{order_id}/split-programs
+```
+
+`GET /api/v1/worker/commands` debe devolver una lista resumida y segura de
+comandos recientes:
+
+- `command_id`
+- `command`
+- `status`
+- `requested_at`
+- `claimed_at`
+- `processed_at`
+- `error_message`
+
+No devuelve `worker_owner_token`.
+
+`POST /api/v1/service-orders/{order_id}/split-programs` reutiliza la misma
+logica que el CLI `order-split-programs`. La respuesta indica las subordenes
+creadas y si la orden padre quedo archivada. Angular pide confirmacion visible
+porque cambia la cola operativa.
+
 ## Datos de orden
 
 La lista de ordenes debe exponer solo datos publicos o enmascarados:
@@ -84,6 +112,25 @@ No debe exponer password, usuario real sin mascara, datos de cifrado ni leases.
 La respuesta no debe devolver password. El frontend no debe persistir el valor
 del password despues de enviarlo.
 
+## Subordenes y restricciones en Angular
+
+El dashboard debe mostrar y permitir crear/editar con cuidado los datos que ya
+forman parte del contrato:
+
+- `parent_order_id`: identifica la orden generica de la misma cuenta.
+- `program_expediente`: expediente objetivo de una suborden.
+- `program_plate`: placa objetivo de una suborden.
+- `minimum_reservation_hour`: hora minima aceptable.
+- `minimum_reservation_date`: fecha minima aceptable.
+- `allowed_weekdays`: dias ISO permitidos, `1=lunes` a `7=domingo`.
+
+Cada suborden debe tratarse como trabajo independiente para pausa, activacion,
+pago, reporte, sesion manual y cierre. Aunque comparta credenciales con la orden
+padre, no debe mezclarse su estado de reserva ni su estado de pago.
+
+Cuando el usuario cree una orden sin restricciones, Angular debe omitir estos
+campos o enviarlos como `null`. No debe inventar restricciones por defecto.
+
 ## Acciones administrativas
 
 - `pause` y `activate` cambian elegibilidad operativa.
@@ -97,6 +144,19 @@ del password despues de enviarlo.
   clara del backend.
 - El formulario de creacion envia el password solo en el POST; no debe quedar
   persistido en storage del navegador.
+
+## Compatibilidad de proxy
+
+Durante la migracion hay dos targets validos para Angular:
+
+- `http://127.0.0.1:8765`: API embebida del worker, compatible con el flujo
+  actual.
+- `http://127.0.0.1:8766`: admin API separado, target preferido para validar la
+  arquitectura objetivo.
+
+El dashboard no debe depender de memoria compartida con `ContinuousWorker`. Si
+opera contra `8766`, los controles del worker deben pasar por
+`worker_commands`.
 
 ## Sesion manual
 

@@ -10,6 +10,7 @@ import {
   PaymentPaidPayload,
   RunSummary,
   ServiceOrder,
+  WorkerCommand,
   WorkerStatus,
   apiErrorMessage,
 } from './appointment-api.service';
@@ -37,6 +38,7 @@ export class App {
   protected readonly worker = signal<WorkerStatus | null>(null);
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
+  protected readonly workerCommands = signal<WorkerCommand[]>([]);
   protected readonly loadState = signal<LoadState>('idle');
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
@@ -54,6 +56,13 @@ export class App {
   protected readonly newContactWhatsapp = signal('');
   protected readonly newPriority = signal(0);
   protected readonly newChargeRequired = signal(true);
+  protected readonly newParentOrderId = signal('');
+  protected readonly newProgramExpediente = signal('');
+  protected readonly newProgramPlate = signal('');
+  protected readonly newMinimumReservationHour = signal('');
+  protected readonly newMinimumReservationDate = signal('');
+  protected readonly newAllowedWeekdays = signal('');
+  protected readonly splitKeepParentActive = signal(false);
   protected readonly actionBusy = signal(false);
   protected readonly pendingAction = signal<PendingAction | null>(null);
 
@@ -106,6 +115,7 @@ export class App {
       this.worker.set(null);
       this.orders.set([]);
       this.runs.set([]);
+      this.workerCommands.set([]);
       this.loadState.set('idle');
     });
   }
@@ -121,14 +131,16 @@ export class App {
 
     try {
       const token = this.apiToken().trim();
-      const [worker, orders, runs] = await Promise.all([
+      const [worker, orders, runs, workerCommands] = await Promise.all([
         this.api.getWorker(token),
         this.api.getServiceOrders(token),
         this.api.getRuns(token),
+        this.api.getWorkerCommands(token),
       ]);
       this.worker.set(worker);
       this.orders.set(orders);
       this.runs.set(runs);
+      this.workerCommands.set(workerCommands);
       if (!this.selectedOrderId() && orders.length > 0) {
         this.selectedOrderId.set(orders[0].order_id);
       }
@@ -205,6 +217,12 @@ export class App {
       contact_source: 'whatsapp',
       applicant_name: this.optionalText(this.newApplicantName()),
       charge_required: this.newChargeRequired(),
+      minimum_reservation_hour: this.optionalNumber(this.newMinimumReservationHour()),
+      minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
+      allowed_weekdays: this.optionalWeekdays(this.newAllowedWeekdays()),
+      parent_order_id: this.optionalText(this.newParentOrderId()),
+      program_expediente: this.optionalText(this.newProgramExpediente()),
+      program_plate: this.optionalText(this.newProgramPlate()),
     };
     if (!payload.document_number || !payload.password) {
       this.errorMessage.set('Documento y password son obligatorios para crear orden.');
@@ -234,6 +252,23 @@ export class App {
       title: 'Abrir sesion manual',
       message: `Abrir navegador visible para ${order.order_id}.`,
       execute: () => this.api.openManualSession(this.requiredToken(), order.order_id),
+    });
+  }
+
+  protected requestSplitPrograms(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    this.setPendingAction({
+      title: 'Dividir tramites',
+      message: `Crear subordenes pendientes desde ${order.order_id}.`,
+      execute: () =>
+        this.api.splitServiceOrderPrograms(
+          this.requiredToken(),
+          order.order_id,
+          this.splitKeepParentActive(),
+        ),
     });
   }
 
@@ -277,6 +312,7 @@ export class App {
       current_order: this.currentOrder(),
       service_orders: this.filteredOrders().map((order) => this.sanitizeOrder(order)),
       runs: this.filteredRuns().map((run) => this.sanitizeRun(run)),
+      worker_commands: this.workerCommands().map((command) => this.sanitizeWorkerCommand(command)),
     };
     await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2));
     this.markCopied('snapshot');
@@ -334,6 +370,10 @@ export class App {
     return publicRun;
   }
 
+  private sanitizeWorkerCommand(command: WorkerCommand): WorkerCommand {
+    return { ...command };
+  }
+
   private markCopied(label: string): void {
     this.copiedLabel.set(label);
     window.setTimeout(() => {
@@ -377,6 +417,25 @@ export class App {
   private optionalText(value: string): string | null {
     const trimmed = value.trim();
     return trimmed || null;
+  }
+
+  private optionalNumber(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    return Number(trimmed);
+  }
+
+  private optionalWeekdays(value: string): number[] | null {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    return trimmed
+      .split(',')
+      .map((item) => Number(item.trim()))
+      .filter((item) => Number.isInteger(item));
   }
 
   private actionResponseMessage(response: ApiActionResponse): string {

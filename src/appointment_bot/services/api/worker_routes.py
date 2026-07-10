@@ -7,7 +7,10 @@ from typing import Any
 from appointment_bot.config import load_settings
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.postgres_worker import get_worker_state
-from appointment_bot.services.postgres_worker_commands import enqueue_worker_command
+from appointment_bot.services.postgres_worker_commands import (
+    enqueue_worker_command,
+    list_worker_commands,
+)
 
 PUBLIC_WORKER_FIELDS = {
     "phase",
@@ -71,3 +74,29 @@ def enqueue_worker_command_payload(command: str) -> tuple[HTTPStatus, dict[str, 
         "command": queued.command,
         "message": "Worker command queued for the continuous worker.",
     }
+
+
+def list_worker_commands_payload(query: dict[str, list[str]]) -> dict[str, Any]:
+    limit = _query_int(query, "limit", default=20)
+    return {
+        "commands": [
+            {
+                "command_id": command.command_id,
+                "command": command.command,
+                "status": command.status,
+                "requested_by": command.requested_by,
+                "requested_at": command.requested_at,
+                "claimed_at": command.claimed_at,
+                "processed_at": command.processed_at,
+                "error_message": command.error_message,
+            }
+            for command in list_worker_commands(limit=limit)
+        ]
+    }
+
+
+def _query_int(query: dict[str, list[str]], name: str, *, default: int) -> int:
+    try:
+        return int(query.get(name, [str(default)])[0])
+    except (TypeError, ValueError):
+        return default

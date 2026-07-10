@@ -46,6 +46,9 @@ export interface ServiceOrder {
   payment_status: string | null;
   amount_agreed: string | null;
   amount_paid: string | null;
+  parent_order_id: string | null;
+  program_expediente: string | null;
+  program_plate: string | null;
   minimum_reservation_hour: number | null;
   minimum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
@@ -79,6 +82,10 @@ interface RunsResponse {
   runs: RunSummary[];
 }
 
+interface WorkerCommandsResponse {
+  commands: WorkerCommand[];
+}
+
 export interface ApiActionResponse {
   status: string;
   message?: string;
@@ -89,6 +96,9 @@ export interface ApiActionResponse {
   applicant_id?: string;
   portal_account_id?: string;
   contact_id?: string | null;
+  parent_order_id?: string;
+  parent_archived?: boolean;
+  service_orders?: ApiActionResponse[];
 }
 
 export interface ContactUpdatePayload {
@@ -114,6 +124,20 @@ export interface CreateServiceOrderPayload {
   minimum_reservation_hour?: number | null;
   minimum_reservation_date?: string | null;
   allowed_weekdays?: number[] | null;
+  parent_order_id?: string | null;
+  program_expediente?: string | null;
+  program_plate?: string | null;
+}
+
+export interface WorkerCommand {
+  command_id: string;
+  command: string;
+  status: string;
+  requested_by: string | null;
+  requested_at: string;
+  claimed_at: string | null;
+  processed_at: string | null;
+  error_message: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -140,6 +164,13 @@ export class AppointmentApiService {
       this.http.get<RunsResponse>('/api/v1/runs?limit=50', this.authOptions(token)),
     );
     return response.runs;
+  }
+
+  async getWorkerCommands(token: string): Promise<WorkerCommand[]> {
+    const response = await firstValueFrom(
+      this.http.get<WorkerCommandsResponse>('/api/v1/worker/commands?limit=20', this.authOptions(token)),
+    );
+    return response.commands;
   }
 
   async updateServiceOrderContact(
@@ -193,6 +224,20 @@ export class AppointmentApiService {
     return this.post<ApiActionResponse>(token, '/api/v1/manual-session/open', {
       order_id: orderId,
     });
+  }
+
+  async splitServiceOrderPrograms(
+    token: string,
+    orderId: string,
+    keepParentActive: boolean,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      token,
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/split-programs`,
+      {
+        keep_parent_active: keepParentActive,
+      },
+    );
   }
 
   private authOptions(token: string): { headers: HttpHeaders } {
