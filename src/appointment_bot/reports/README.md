@@ -3,7 +3,13 @@
 Estructura futura para reportes, evidencia resumida, fichas operativas y
 salidas administrativas reutilizables.
 
-Por ahora no contiene logica funcional y no reemplaza a `services/status_reports.py`,
-`services/evidence_summary.py`, `services/optimization_log.py` ni
-`services/notifier.py`. La migracion real se hara por fases documentadas antes
-de mover codigo.
+Desde el paso 9.1 contiene fachadas publicas de compatibilidad:
+
+- `reports.evidence`
+- `reports.optimization`
+- `reports.status`
+
+Estas rutas reexportan implementacion existente desde `services/status_reports.py`,
+`services/evidence_summary.py` y `services/optimization_log.py`. No reemplazan
+todavia a los imports actuales ni cambian formatos de reportes o rutas de
+salida.

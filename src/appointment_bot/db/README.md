@@ -3,6 +3,15 @@
 Estructura futura para conexion, migraciones y repositorios PostgreSQL
 compartidos por el worker y el admin API.
 
-Por ahora no contiene logica funcional y no reemplaza a `services/postgres_*`
-ni a `services/database_migrations.py`. La migracion real se hara por fases
-documentadas antes de mover codigo.
+Desde el paso 9.1 contiene fachadas publicas de compatibilidad:
+
+- `db.connection`
+- `db.migrations`
+- `db.orders`
+- `db.reservations`
+- `db.runs`
+- `db.worker_state`
+
+Estas rutas reexportan implementacion existente desde `services/postgres_*` y
+`services/database_migrations.py`. No reemplazan todavia a los imports actuales
+ni cambian schema, conexion o migraciones.

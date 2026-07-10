@@ -407,6 +407,34 @@ La implementacion real puede seguir en `services/` durante esta fase. El
 objetivo es definir nombres publicos y preparar los imports nuevos sin mover
 riesgo operativo.
 
+Estado: completado como fachadas publicas de compatibilidad.
+
+Implementacion:
+
+- `core/__init__.py`, `core/models.py`, `core/rules.py` y `core/statuses.py`
+  reexportan modelos, estados y reglas puras actuales;
+- `db/connection.py`, `db/migrations.py`, `db/orders.py`,
+  `db/reservations.py`, `db/runs.py` y `db/worker_state.py` reexportan los
+  repositorios PostgreSQL actuales;
+- `worker/control.py`, `worker/queue.py` y `worker/windows.py` reexportan el
+  host continuo, cola y ventanas;
+- `reservation_engine/flow.py`, `reservation_engine/portal.py` y
+  `reservation_engine/submit.py` reexportan las piezas actuales del motor de
+  reserva;
+- `reports/evidence.py`, `reports/optimization.py` y `reports/status.py`
+  reexportan reportes, evidencia y bitacoras;
+- no se cambiaron imports existentes, entrypoints, scripts, `.env` ni logica de
+  reserva.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ### Paso 9.2: mover modelos y reglas puras
 
 Mover primero lo que no toca IO:
@@ -418,6 +446,32 @@ Mover primero lo que no toca IO:
   de conexion.
 
 No mover Playwright, PostgreSQL ni notificaciones en esta fase.
+
+Estado: completado como primer movimiento real hacia `core/`.
+
+Implementacion:
+
+- `core/statuses.py` contiene `ResultStatus`, `OrderStateStatus`,
+  `SENSITIVE_DETAIL_KEYS` y `sanitize_details`;
+- `core/models.py` contiene `AvailabilityResult`, `RunReport`,
+  `ServiceOrderCandidate`, `ServiceOrderRuntime`, `ServiceOrderSummary`,
+  `ServiceOrderCreateResult`, `RunRecord`, `RunSummary`, `RunDetail`,
+  `WorkerState` y `WorkerCommand`;
+- `core/rules.py` contiene `ReservationConstraints`, parseo de fecha/hora y
+  reglas puras de compatibilidad de citas;
+- `domain.py`, `services/database_models.py` y `services/order_selection.py`
+  quedaron como wrappers de compatibilidad para no romper imports existentes;
+- no se movio codigo de PostgreSQL, Playwright, notificaciones, entrypoints,
+  scripts ni `.env`.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
 
 ### Paso 9.3: separar capa DB por subdominio
 
