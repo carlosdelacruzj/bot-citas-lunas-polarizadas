@@ -23,22 +23,20 @@ proceso:
 La API local puede controlar el worker porque tiene una referencia en memoria al
 objeto `ContinuousWorker`. El loop, ventanas, lease del worker, comandos
 persistidos, recovery y cola rapida viven ahora bajo `appointment_bot.worker`.
-Las rutas antiguas `services/continuous_*`, `services/order_execution.py` y
-`services/worker_*.py` son wrappers de compatibilidad durante la transicion.
 
 El motor Playwright del portal vive ahora bajo `appointment_bot.reservation_engine`:
 login, seleccion de tramite, lectura de citas, fetch/reload probes, CAPTCHA,
-submit de reserva y confirmacion post-submit. Las rutas antiguas
-`flows/*`, `services/session_*`, `services/reservation_flow.py`,
-`services/reservation_timings.py` y `services/observer.py` son wrappers de
-compatibilidad durante la transicion.
+submit de reserva y confirmacion post-submit.
 
 Los reportes y evidencia operativa viven ahora bajo `appointment_bot.reports`:
 historial final de corridas, resumen compacto de evidencia, bitacoras de
-optimizacion/disponibilidad parcial, fichas de estado y reporte diario. Las
-rutas antiguas `services/run_reporting.py`, `services/status_reports.py`,
-`services/evidence_summary.py` y `services/optimization_log.py` son wrappers de
-compatibilidad durante la transicion.
+optimizacion/disponibilidad parcial, fichas de estado y reporte diario.
+
+Los wrappers historicos de `services/postgres_*`, `services/continuous_*`,
+`services/order_execution.py`, `services/worker_*`, `flows/*`,
+`services/session_*`, `services/reservation_*`, `services/observer.py` y
+`services/*_reports` fueron retirados en el paso 9.7. Los consumidores internos
+usan rutas nuevas directas.
 
 Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
 de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL

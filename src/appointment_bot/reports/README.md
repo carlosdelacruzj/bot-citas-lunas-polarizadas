@@ -17,9 +17,10 @@ Estas rutas generan o actualizan:
 - bitacoras de optimizacion y disponibilidad parcial;
 - fichas de estado y reporte diario.
 
-Las rutas antiguas `services/run_reporting.py`, `services/status_reports.py`,
-`services/evidence_summary.py` y `services/optimization_log.py` son wrappers
-explicitos durante la transicion.
+Desde el paso 9.7 se retiraron las rutas antiguas `services/run_reporting.py`,
+`services/status_reports.py`, `services/evidence_summary.py` y
+`services/optimization_log.py`. Los consumidores internos deben importar
+directamente desde `appointment_bot.reports.*`.
 
 No cambiar aqui los formatos ni rutas de salida historicas:
 

@@ -16,9 +16,9 @@ Desde el paso 9.3 contiene la implementacion PostgreSQL principal:
 - `db.worker_commands`
 - `db.worker_state`
 
-Los modulos historicos `services/database_migrations.py` y
-`services/postgres_*.py` permanecen como wrappers de compatibilidad. No se deben
-agregar nuevas dependencias desde `db/` hacia esos wrappers.
+Desde el paso 9.7 se retiraron los wrappers historicos
+`services/database_migrations.py` y `services/postgres_*.py`. Los consumidores
+internos deben importar directamente desde `appointment_bot.db.*`.
 
 `db/orders.py` todavia concentra ordenes, contactos, pagos, leases y estado de
 orden para reducir riesgo operativo. Si se divide mas, hacerlo por subfases

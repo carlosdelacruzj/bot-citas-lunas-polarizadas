@@ -29,10 +29,9 @@ Desde el paso 9.5 contiene la implementacion del motor Playwright del portal:
 - `reservation_engine.results`
 - `reservation_engine.program_notifications`
 
-Las rutas antiguas `flows/*`, `services/session_*`,
-`services/reservation_flow.py`, `services/reservation_timings.py` y
-`services/observer.py` son wrappers explicitos para conservar compatibilidad
-durante la transicion.
+Desde el paso 9.7 se retiraron las rutas antiguas `flows/*`,
+`services/session_*`, `services/reservation_flow.py`,
+`services/reservation_timings.py` y `services/observer.py`. Los consumidores
+internos deben importar directamente desde `appointment_bot.reservation_engine.*`.
 
-No cambiar aqui contratos de PostgreSQL, API, notificaciones o reportes. La
-siguiente fase mueve reportes y evidencia a `reports/`.
+No cambiar aqui contratos de PostgreSQL, API, notificaciones o reportes.

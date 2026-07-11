@@ -6,7 +6,7 @@ from appointment_bot.domain import (
     AvailabilityResult,
     ResultStatus,
 )
-from appointment_bot.services.run_reporting import report_from_result
+from appointment_bot.reports.run_reporting import report_from_result
 
 
 class DomainTests(unittest.TestCase):

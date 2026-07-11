@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from appointment_bot.domain import RunReport
 from appointment_bot.services.database_models import ServiceOrderRuntime
-from appointment_bot.services.order_execution import (
+from appointment_bot.worker.queue_runtime import (
     _appointment_filter_for_order,
     run_rapid_queue_with_settings,
 )
@@ -33,7 +33,7 @@ class OrderExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
-                "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
+                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
                 return_value=(None, date(2026, 7, 11), None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
@@ -48,7 +48,7 @@ class OrderExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
-                "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
+                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
                 return_value=(11, date(2026, 7, 11), None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
@@ -63,7 +63,7 @@ class OrderExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
-                "appointment_bot.services.order_execution.get_reservation_constraints_for_order",
+                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
                 return_value=(None, None, (6,)),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
@@ -84,23 +84,23 @@ class OrderExecutionTests(unittest.TestCase):
             ]
             with (
                 patch(
-                    "appointment_bot.services.order_execution.list_active_orders",
+                    "appointment_bot.worker.queue_runtime.list_active_orders",
                     return_value=orders,
                 ),
                 patch(
-                    "appointment_bot.services.order_execution.claim_service_order",
+                    "appointment_bot.worker.queue_runtime.claim_service_order",
                     return_value=True,
                 ),
                 patch(
-                    "appointment_bot.services.order_execution.release_service_order_claim",
+                    "appointment_bot.worker.queue_runtime.release_service_order_claim",
                     return_value=True,
                 ),
                 patch(
-                    "appointment_bot.services.order_execution.run_service_order",
+                    "appointment_bot.worker.queue_runtime.run_service_order",
                     side_effect=reports,
                 ) as run_order,
-                patch("appointment_bot.services.order_execution._update_state_from_report"),
-                patch("appointment_bot.services.order_execution._delay_between_orders"),
+                patch("appointment_bot.worker.queue_runtime._update_state_from_report"),
+                patch("appointment_bot.worker.queue_runtime._delay_between_orders"),
             ):
                 report = run_rapid_queue_with_settings(settings)
 
@@ -115,27 +115,27 @@ class OrderExecutionTests(unittest.TestCase):
                 orders = [_order(1), _order(2)]
                 with (
                     patch(
-                        "appointment_bot.services.order_execution.list_active_orders",
+                        "appointment_bot.worker.queue_runtime.list_active_orders",
                         return_value=orders,
                     ),
                     patch(
-                        "appointment_bot.services.order_execution.claim_service_order",
+                        "appointment_bot.worker.queue_runtime.claim_service_order",
                         return_value=True,
                     ),
                     patch(
-                        "appointment_bot.services.order_execution.release_service_order_claim",
+                        "appointment_bot.worker.queue_runtime.release_service_order_claim",
                         return_value=True,
                     ),
                     patch(
-                        "appointment_bot.services.order_execution.run_service_order",
+                        "appointment_bot.worker.queue_runtime.run_service_order",
                         return_value=RunReport(
                             status=unsafe_status,
                             message="unsafe",
                             exit_code=1,
                         ),
                     ) as run_order,
-                    patch("appointment_bot.services.order_execution._update_state_from_report"),
-                    patch("appointment_bot.services.order_execution.update_order_state"),
+                    patch("appointment_bot.worker.queue_runtime._update_state_from_report"),
+                    patch("appointment_bot.worker.queue_runtime.update_order_state"),
                 ):
                     report = run_rapid_queue_with_settings(settings)
 

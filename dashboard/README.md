@@ -76,8 +76,9 @@ embebida del worker mientras se conserva compatibilidad.
 
 - Agregar vista de detalle de runs sin mostrar ni copiar `details` crudos por
   defecto.
-- Mantener todos los formularios de escritura con confirmacion visible y
-  respuesta clara del backend.
+- Mejorar ergonomia visual sin cambiar contratos.
+- Validar manualmente contra `appointment-bot-admin-api` vivo y token real en
+  una sesion operativa local.
 
 ## Seguridad
 

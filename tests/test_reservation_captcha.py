@@ -8,11 +8,13 @@ from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from appointment_bot.flows.reservation_captcha_capture import save_reservation_captcha_image
-from appointment_bot.flows.reservation_captcha_refresh import (
+from appointment_bot.reservation_engine.reservation_captcha_capture import (
+    save_reservation_captcha_image,
+)
+from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     ensure_reservation_captcha_loaded,
 )
-from appointment_bot.flows.reservation_submit import (
+from appointment_bot.reservation_engine.reservation_submit import (
     solve_reservation_captcha_and_click_reserve,
 )
 from tests.helpers import make_settings
@@ -167,18 +169,18 @@ class ReservationCaptchaTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.flows.reservation_submit.save_reservation_captcha_image",
+                    "appointment_bot.reservation_engine.reservation_submit.save_reservation_captcha_image",
                     return_value=captcha,
                 ),
                 patch(
-                    "appointment_bot.flows.reservation_submit.solve_normal_captcha",
+                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
                     return_value="1234",
                 ) as solve_captcha,
                 patch(
-                    "appointment_bot.flows.reservation_submit.validate_selected_appointment",
+                    "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
                 patch(
-                    "appointment_bot.flows.reservation_submit.save_screenshot",
+                    "appointment_bot.reservation_engine.reservation_submit.save_screenshot",
                     return_value=None,
                 ),
             ):
@@ -215,18 +217,18 @@ class ReservationCaptchaTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.flows.reservation_submit.save_reservation_captcha_image",
+                    "appointment_bot.reservation_engine.reservation_submit.save_reservation_captcha_image",
                     side_effect=save_captcha,
                 ),
                 patch(
-                    "appointment_bot.flows.reservation_submit.solve_normal_captcha",
+                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
                     return_value="1234",
                 ) as solve_captcha,
                 patch(
-                    "appointment_bot.flows.reservation_submit.validate_selected_appointment",
+                    "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
                 patch(
-                    "appointment_bot.flows.reservation_submit.save_screenshot",
+                    "appointment_bot.reservation_engine.reservation_submit.save_screenshot",
                     return_value=None,
                 ),
             ):
@@ -250,7 +252,7 @@ class ReservationCaptchaTests(unittest.TestCase):
             captcha_audit: dict[str, object] = {}
 
             with patch(
-                "appointment_bot.flows.reservation_captcha_capture.ensure_reservation_captcha_loaded",
+                "appointment_bot.reservation_engine.reservation_captcha_capture.ensure_reservation_captcha_loaded",
                 return_value=True,
             ):
                 path = save_reservation_captcha_image(
@@ -286,7 +288,7 @@ class ReservationCaptchaTests(unittest.TestCase):
     def test_broken_captcha_image_is_reloaded_before_capture(self) -> None:
         panel = _CaptchaPanel()
         with patch(
-            "appointment_bot.flows.reservation_captcha_refresh._wait_for_panel_captcha",
+            "appointment_bot.reservation_engine.reservation_captcha_refresh._wait_for_panel_captcha",
             side_effect=[False, True],
         ):
             loaded = ensure_reservation_captcha_loaded(panel, timeout=1)

@@ -475,7 +475,7 @@ git diff --check
 
 ### Paso 9.3: separar capa DB por subdominio
 
-Dividir gradualmente `services/postgres_orders.py` y modulos cercanos en
+Dividir gradualmente `db/orders.py` y modulos cercanos en
 repositorios mas pequenos dentro de `db/`:
 
 - ordenes y contactos;
@@ -505,7 +505,7 @@ Implementacion:
 - `db/worker_commands.py` contiene el puente persistido de comandos;
 - `db/cleanup.py` contiene limpieza de historial;
 - los modulos antiguos `services/database_migrations.py` y
-  `services/postgres_*.py` quedaron como wrappers explicitos;
+  `services/postgres_*.py` quedaron como wrappers transicionales hasta 9.7;
 - el codigo de aplicacion ahora importa `appointment_bot.db.*` directamente;
 - los tests y consumidores externos pueden seguir usando imports viejos durante
   la transicion;
@@ -549,7 +549,7 @@ Resultado:
   `worker/state_callbacks.py`, `worker/order_results.py` y
   `worker/observer_results.py` contienen las piezas internas del worker;
 - `services/continuous_*`, `services/order_execution.py` y
-  `services/worker_*.py` quedaron como wrappers explicitos;
+  `services/worker_*.py` quedaron como wrappers transicionales hasta 9.7;
 - `scripts/start-worker.ps1` no cambia y sigue ejecutando el comando instalado;
 - el motor Playwright detallado queda para Paso 9.5 bajo `reservation_engine/`.
 
@@ -594,7 +594,7 @@ Resultado:
 - `reservation_engine/observer.py` contiene el observer Playwright;
 - `flows/*`, `services/session_*`, `services/reservation_flow.py`,
   `services/reservation_timings.py` y `services/observer.py` quedaron como
-  wrappers explicitos;
+  wrappers transicionales hasta 9.7;
 - no hubo cambios de schema, dashboard, `.env`, notificaciones ni contratos de
   entrypoint.
 
@@ -624,7 +624,7 @@ Resultado:
 - `reports/status.py` contiene fichas de estado y reporte diario;
 - `services/run_reporting.py`, `services/status_reports.py`,
   `services/evidence_summary.py` y `services/optimization_log.py` quedaron como
-  wrappers explicitos;
+  wrappers transicionales hasta 9.7;
 - no hubo cambios de schema, dashboard, `.env`, formatos historicos ni rutas de
   salida.
 
@@ -659,6 +659,32 @@ tests:
 No retirar compatibilidad si todavia hay scripts, n8n o CLI dependiendo de la
 ruta anterior.
 
+Estado: completado.
+
+Resultado:
+
+- tests y scripts internos usan rutas nuevas directas;
+- `scripts/start-worker.ps1` detecta y ejecuta `appointment_bot.worker.host`;
+- se retiraron wrappers viejos de `flows/*`, `services/postgres_*`,
+  `services/database_migrations.py`, `services/continuous_*`,
+  `services/order_execution.py`, `services/worker_*`, `services/session_*`,
+  `services/reservation_flow.py`, `services/reservation_timings.py`,
+  `services/observer.py`, `services/run_reporting.py`,
+  `services/status_reports.py`, `services/evidence_summary.py` y
+  `services/optimization_log.py`;
+- no se agregaron variables de entorno nuevas, por lo que `.env.example` no
+  requirio cambios;
+- no se tocaron `.env`, schema, dashboard ni formatos de salida.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
+
 ## Trabajo Angular pendiente en paralelo
 
 Angular no necesita esperar al Paso 9 completo. Puede avanzar en paralelo
@@ -671,15 +697,25 @@ mientras respete estos limites:
 - pedir confirmacion visible antes de acciones de escritura;
 - mostrar errores del backend sin ocultarlos.
 
-Prioridad recomendada:
+Estado actual de Angular:
 
-1. cambiar proxy/documentacion para operar contra `appointment-bot-admin-api`;
-2. completar tipos y UI de subordenes;
-3. completar tipos y UI de restricciones de reserva;
-4. agregar accion de dividir tramites pendientes;
-5. agregar lectura de comandos persistidos;
-6. agregar vistas de detalle para runs sin copiar `details` crudos por defecto;
-7. mejorar ergonomia visual sin cambiar contratos.
+- proxy/documentacion contra `appointment-bot-admin-api` en `127.0.0.1:8766`:
+  completado;
+- tipos y UI de subordenes: completado;
+- tipos y UI de restricciones de reserva: completado;
+- accion confirmada de dividir tramites pendientes: completado;
+- lectura de comandos persistidos: completado;
+- acciones administrativas locales con confirmacion visible: completado;
+- snapshot copiable sanitizado: completado;
+- build Angular: validado con `npm run build`.
+
+Pendiente recomendado:
+
+1. agregar vista de detalle de runs sin mostrar ni copiar `details` crudos por
+   defecto;
+2. mejorar ergonomia visual sin cambiar contratos;
+3. validar manualmente dashboard contra `appointment-bot-admin-api` vivo y token
+   real en una sesion operativa local.
 
 ## Criterios de avance
 

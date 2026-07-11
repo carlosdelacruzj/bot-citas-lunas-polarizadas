@@ -4,10 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from appointment_bot.services.database_migrations import SCHEMA_VERSION
-from appointment_bot.services.database_models import RunRecord
-from appointment_bot.services.postgres_common import init_database
-from appointment_bot.services.postgres_orders import (
+from appointment_bot.db.common import init_database
+from appointment_bot.db.migrations import SCHEMA_VERSION
+from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
     create_service_order,
@@ -15,8 +14,9 @@ from appointment_bot.services.postgres_orders import (
     list_service_order_summaries,
     record_order_program_listing,
 )
-from appointment_bot.services.postgres_runs import create_run_record, get_run, list_runs
-from appointment_bot.services.postgres_worker import get_worker_state
+from appointment_bot.db.runs import create_run_record, get_run, list_runs
+from appointment_bot.db.worker_state import get_worker_state
+from appointment_bot.services.database_models import RunRecord
 from tests.helpers import database_connection, make_settings
 
 

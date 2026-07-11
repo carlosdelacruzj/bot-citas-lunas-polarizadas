@@ -8,11 +8,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from appointment_bot.db.worker_state import update_worker_state
 from appointment_bot.domain import RunReport
-from appointment_bot.services import observer
-from appointment_bot.services.continuous_worker import ContinuousWorker
+from appointment_bot.reservation_engine import observer
 from appointment_bot.services.database_models import ServiceOrderRuntime, WorkerState
-from appointment_bot.services.postgres_worker import update_worker_state
+from appointment_bot.worker.continuous_worker import ContinuousWorker
 from tests.helpers import make_settings
 
 
@@ -34,22 +34,22 @@ class ContinuousWorkerTests(unittest.TestCase):
             )
             with (
                 patch(
-                    "appointment_bot.services.continuous_worker.get_worker_state",
+                    "appointment_bot.worker.continuous_worker.get_worker_state",
                     return_value=WorkerState(),
                 ),
                 patch(
-                    "appointment_bot.services.continuous_worker.order_backoff_seconds",
+                    "appointment_bot.worker.continuous_worker.order_backoff_seconds",
                     return_value=0,
                 ),
                 patch(
-                    "appointment_bot.services.continuous_worker.run_service_order",
+                    "appointment_bot.worker.continuous_worker.run_service_order",
                     return_value=RunReport(
                         status="unavailable",
                         message="none",
                         exit_code=0,
                     ),
                 ) as run_order,
-                patch("appointment_bot.services.worker_order_results.update_order_state"),
+                patch("appointment_bot.worker.order_results.update_order_state"),
                 patch.object(worker, "_set_session_state"),
                 patch.object(worker, "_record_check"),
                 patch.object(worker, "_reset_errors"),
@@ -85,11 +85,11 @@ class ContinuousWorkerTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.services.observer.save_reservation_captcha_image",
+                    "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
                     side_effect=paths,
                 ) as save_captcha,
                 patch(
-                    "appointment_bot.services.observer.refresh_reservation_captcha",
+                    "appointment_bot.reservation_engine.observer.refresh_reservation_captcha",
                     return_value=True,
                 ) as refresh_captcha,
             ):
@@ -108,7 +108,7 @@ class ContinuousWorkerTests(unittest.TestCase):
             settings = make_settings(Path(directory))
 
             with patch(
-                "appointment_bot.services.observer.save_reservation_captcha_image",
+                "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
                 side_effect=RuntimeError("captcha unavailable"),
             ):
                 captured = observer._collect_observer_captcha_samples(
@@ -127,7 +127,7 @@ class ContinuousWorkerTests(unittest.TestCase):
             worker._running = True
 
             with patch(
-                "appointment_bot.services.continuous_worker.get_worker_state",
+                "appointment_bot.worker.continuous_worker.get_worker_state",
                 return_value=WorkerState(
                     phase="monitoring_observer_normal",
                     last_check_at=old,
@@ -188,7 +188,7 @@ class ContinuousWorkerTests(unittest.TestCase):
             worker.stop()
 
             with patch(
-                "appointment_bot.services.continuous_worker.update_worker_state",
+                "appointment_bot.worker.continuous_worker.update_worker_state",
                 wraps=update_worker_state,
             ) as update:
                 worker.run_forever()

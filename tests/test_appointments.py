@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from appointment_bot.flows.appointments import (
+from appointment_bot.reservation_engine.appointments import (
     _is_real_appointment_option,
 )
-from appointment_bot.flows.stages import appointment_stage_result
+from appointment_bot.reservation_engine.stages import appointment_stage_result
 
 
 class AppointmentFlowTests(unittest.TestCase):

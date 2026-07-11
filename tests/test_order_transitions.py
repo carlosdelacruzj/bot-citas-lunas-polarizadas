@@ -6,17 +6,17 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from appointment_bot.domain import RunReport
-from appointment_bot.services.order_transitions import (
-    order_can_submit,
-    reconcile_pending_submission,
-)
-from appointment_bot.services.postgres_orders import (
+from appointment_bot.db.orders import (
     claim_service_order,
     create_service_order,
     mark_order_submission_pending,
     order_reservation_pending,
     set_order_paused,
+)
+from appointment_bot.domain import RunReport
+from appointment_bot.services.order_transitions import (
+    order_can_submit,
+    reconcile_pending_submission,
 )
 from tests.helpers import database_connection, make_settings
 

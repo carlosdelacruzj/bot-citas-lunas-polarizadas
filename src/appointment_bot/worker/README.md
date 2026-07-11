@@ -21,10 +21,9 @@ Desde el paso 9.4 contiene la implementacion del proceso continuo:
 - `worker.order_results`
 - `worker.observer_results`
 
-Las rutas antiguas `services/continuous_*`, `services/order_execution.py` y
-`services/worker_*.py` son wrappers explicitos para conservar compatibilidad
-durante la transicion. `appointment-bot-worker` apunta a `worker.host:main`.
+Desde el paso 9.7 se retiraron las rutas antiguas `services/continuous_*`,
+`services/order_execution.py` y `services/worker_*.py`. `appointment-bot-worker`
+apunta a `worker.host:main` y `scripts/start-worker.ps1` ejecuta
+`appointment_bot.worker.host`.
 
-`worker.queue_runtime` todavia invoca el motor de sesion existente. El traslado
-fino de login, lectura de cupos, CAPTCHA, submit y confirmacion queda para
-`reservation_engine/` en el Paso 9.5.
+`worker.queue_runtime` invoca el motor de sesion en `reservation_engine/`.

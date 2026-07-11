@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from psycopg import sql
 
 from appointment_bot.config import Settings, load_settings
-from appointment_bot.services.postgres_common import _connection
+from appointment_bot.db.common import _connection
 
 _CREATED_SCHEMAS: list[tuple[str, str]] = []
 

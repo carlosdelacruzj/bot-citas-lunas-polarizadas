@@ -57,7 +57,7 @@ function Test-WorkerProcessRunning {
         Where-Object {
             $_.ProcessId -ne $currentProcessId -and
             $_.CommandLine -and
-            $_.CommandLine.Contains("appointment_bot.services.continuous_host")
+            $_.CommandLine.Contains("appointment_bot.worker.host")
         }
     return $null -ne $matches
 }
@@ -182,7 +182,7 @@ try {
             Start-Sleep -Seconds $WorkerRestartDelaySeconds
             continue
         }
-        & $python -m appointment_bot.services.continuous_host
+        & $python -m appointment_bot.worker.host
         $exitCode = $LASTEXITCODE
         Write-BootstrapLog "Continuous worker exited with code $exitCode."
         if ($exitCode -eq 0) {

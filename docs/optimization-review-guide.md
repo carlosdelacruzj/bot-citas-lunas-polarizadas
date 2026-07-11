@@ -39,9 +39,9 @@ un evento lo justifique.
 
 ## Siguientes pasos de pulcritud tecnica
 
-1. Reducir `src/appointment_bot/services/postgres_orders.py` por subdominio:
+1. Reducir `src/appointment_bot/db/orders.py` por subdominio:
    pagos/contactos, estado de orden, credenciales y promocion de ordenes.
-2. Reducir `src/appointment_bot/services/order_execution.py`:
+2. Reducir `src/appointment_bot/worker/queue_runtime.py`:
    separar recorrido de cola rapida, ejecucion de una orden y decisiones de
    resultado compartidas con el worker.
 3. Separar tests de flujo restantes:
@@ -57,14 +57,17 @@ un evento lo justifique.
 - La lectura/cierre de respuesta del portal vive en `reservation_portal.py`.
 - Los tests de CAPTCHA de reserva viven en `tests/test_reservation_captcha.py`.
 - `src/appointment_bot/services/postgres_database.py` fue eliminado.
-- La conexion, migracion y helpers comunes viven en `postgres_common.py`.
+- La conexion, migracion y helpers comunes viven en `db/common.py`,
+  `db/connection.py`, `db/pool.py` y `db/migrations.py`.
 - Ordenes, credenciales, pagos, leases de orden y estado de orden viven en
-  `postgres_orders.py`.
-- Reservas e intentos de reserva viven en `postgres_reservations.py`.
+  `db/orders.py`.
+- Reservas e intentos de reserva viven en `db/reservations.py`.
 - Corridas, screenshots, checks y metricas de ventanas viven en
-  `postgres_runs.py`.
-- Estado y lease del worker viven en `postgres_worker.py`.
-- Limpieza historica de PostgreSQL vive en `postgres_cleanup.py`.
+  `db/runs.py`.
+- Reservas e intentos de reserva viven en `db/reservations.py`.
+- Estado y lease del worker viven en `db/worker_state.py`.
+- Comandos persistidos del worker viven en `db/worker_commands.py`.
+- Limpieza historica de PostgreSQL vive en `db/cleanup.py`.
 - Ventanas calientes, extension de ventana, cutoff diario y etiquetas de
   ventana viven en `worker/windows_runtime.py`.
 - Lease del proceso continuo, token de propietario y renovacion periodica viven
@@ -98,7 +101,7 @@ un evento lo justifique.
   reserva viven en `reservation_engine/monitor.py`.
 - Limpieza de evidencias no confirmadas y contexto de cliente viven en
   `reservation_engine/results.py`.
-- Notificacion/persistencia de multiples tramites vive en `session_programs.py`.
+- Notificacion/persistencia de multiples tramites vive en
   `reservation_engine/program_notifications.py`.
 - `reservation_engine/appointments.py` conserva apertura de panel, sede,
   constantes y helpers compartidos de formulario.
