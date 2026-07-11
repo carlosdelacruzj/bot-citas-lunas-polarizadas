@@ -145,6 +145,5 @@ Hasta que exista un reemplazo probado:
 - no cambiar los codigos de salida;
 - no cambiar el bootstrap de Windows;
 - no quitar la API local embebida;
-- no quitar wrappers antiguos hasta que CLI, API, tests, scripts, n8n y
-  consumidores de flujo Playwright usen las rutas nuevas o esten validados
-  contra ellas.
+- no retirar nuevas superficies de compatibilidad sin validar CLI, API, tests,
+  scripts, n8n y consumidores de flujo Playwright contra la ruta reemplazante.

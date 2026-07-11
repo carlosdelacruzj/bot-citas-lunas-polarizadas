@@ -17,8 +17,11 @@ referencia en memoria a `ContinuousWorker`.
 
 - `/health` puede ser publico.
 - Todo endpoint bajo `/api/v1/` debe tratarse como administrativo.
-- El cliente debe enviar `Authorization: Bearer <APPOINTMENT_BOT_API_TOKEN>`.
-- El token no debe guardarse en Angular ni en `localStorage`.
+- Las llamadas administrativas deben enviar
+  `Authorization: Bearer <APPOINTMENT_BOT_API_TOKEN>`.
+- En desarrollo local, `dashboard/proxy.conf.cjs` agrega ese header desde
+  `.env` o desde la variable de entorno. El token no debe existir en Angular,
+  campos visibles, bundle, `localStorage` ni `sessionStorage`.
 
 ## Endpoints actuales
 

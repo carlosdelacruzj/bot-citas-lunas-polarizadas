@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -148,91 +148,76 @@ export class AppointmentApiService {
     return firstValueFrom(this.http.get<HealthPayload>('/health'));
   }
 
-  async getWorker(token: string): Promise<WorkerStatus> {
-    return firstValueFrom(this.http.get<WorkerStatus>('/api/v1/worker', this.authOptions(token)));
+  async getWorker(): Promise<WorkerStatus> {
+    return firstValueFrom(this.http.get<WorkerStatus>('/api/v1/worker'));
   }
 
-  async getServiceOrders(token: string): Promise<ServiceOrder[]> {
-    const response = await firstValueFrom(
-      this.http.get<ServiceOrdersResponse>('/api/v1/service-orders', this.authOptions(token)),
-    );
+  async getServiceOrders(): Promise<ServiceOrder[]> {
+    const response = await firstValueFrom(this.http.get<ServiceOrdersResponse>('/api/v1/service-orders'));
     return response.service_orders;
   }
 
-  async getRuns(token: string): Promise<RunSummary[]> {
-    const response = await firstValueFrom(
-      this.http.get<RunsResponse>('/api/v1/runs?limit=50', this.authOptions(token)),
-    );
+  async getRuns(): Promise<RunSummary[]> {
+    const response = await firstValueFrom(this.http.get<RunsResponse>('/api/v1/runs?limit=50'));
     return response.runs;
   }
 
-  async getWorkerCommands(token: string): Promise<WorkerCommand[]> {
+  async getWorkerCommands(): Promise<WorkerCommand[]> {
     const response = await firstValueFrom(
-      this.http.get<WorkerCommandsResponse>('/api/v1/worker/commands?limit=20', this.authOptions(token)),
+      this.http.get<WorkerCommandsResponse>('/api/v1/worker/commands?limit=20'),
     );
     return response.commands;
   }
 
   async updateServiceOrderContact(
-    token: string,
     orderId: string,
     payload: ContactUpdatePayload,
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
-      token,
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/contact`,
       payload,
     );
   }
 
   async runServiceOrderAction(
-    token: string,
     orderId: string,
     action: 'pause' | 'activate' | 'no-charge' | 'done',
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
-      token,
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/${action}`,
       {},
     );
   }
 
   async markPaymentPaid(
-    token: string,
     orderId: string,
     payload: PaymentPaidPayload,
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
-      token,
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/paid`,
       payload,
     );
   }
 
-  async createServiceOrder(
-    token: string,
-    payload: CreateServiceOrderPayload,
-  ): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>(token, '/api/v1/service-orders', payload);
+  async createServiceOrder(payload: CreateServiceOrderPayload): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/service-orders', payload);
   }
 
-  async restartWorker(token: string): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>(token, '/api/v1/worker/restart', {});
+  async restartWorker(): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/worker/restart', {});
   }
 
-  async openManualSession(token: string, orderId: string): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>(token, '/api/v1/manual-session/open', {
+  async openManualSession(orderId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/manual-session/open', {
       order_id: orderId,
     });
   }
 
   async splitServiceOrderPrograms(
-    token: string,
     orderId: string,
     keepParentActive: boolean,
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
-      token,
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/split-programs`,
       {
         keep_parent_active: keepParentActive,
@@ -240,16 +225,8 @@ export class AppointmentApiService {
     );
   }
 
-  private authOptions(token: string): { headers: HttpHeaders } {
-    return {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-      }),
-    };
-  }
-
-  private async post<T>(token: string, url: string, payload: unknown): Promise<T> {
-    return firstValueFrom(this.http.post<T>(url, payload, this.authOptions(token)));
+  private async post<T>(url: string, payload: unknown): Promise<T> {
+    return firstValueFrom(this.http.post<T>(url, payload));
   }
 }
 

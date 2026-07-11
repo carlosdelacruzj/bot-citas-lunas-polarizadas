@@ -1,23 +1,53 @@
 <main class="shell">
-  <section class="toolbar" aria-label="Control de lectura">
-    <div>
+  <section class="topbar" aria-label="Control principal">
+    <div class="brand-block">
       <p class="eyebrow">Dashboard local</p>
       <h1>Operaciones de reservas</h1>
+      <p class="subhead">
+        {{ health()?.message ?? 'Cargando datos administrativos desde el admin API local.' }}
+      </p>
     </div>
 
-    <div class="token-panel">
-      <label for="apiToken">API token</label>
-      <input
-        id="apiToken"
-        name="apiToken"
-        type="password"
-        autocomplete="off"
-        [ngModel]="apiToken()"
-        (ngModelChange)="apiToken.set($event)"
-      />
-      <button type="button" class="primary" (click)="refreshAll()">Actualizar</button>
+    <div class="refresh-panel">
+      <span>Actualizacion</span>
+      <strong>{{ autoRefreshPaused() ? 'pausada' : 'automatica' }}</strong>
+      <small>{{ lastUpdatedAt() ? 'Ultima: ' + lastUpdatedAt() : health()?.status ?? 'sin datos' }}</small>
+      <button type="button" class="primary" (click)="refreshNow()">Actualizar</button>
     </div>
   </section>
+
+  <nav class="view-tabs" aria-label="Vistas del dashboard">
+    <button
+      type="button"
+      [class.active]="activeView() === 'summary'"
+      (click)="activeView.set('summary')"
+    >
+      Resumen
+    </button>
+    <button
+      type="button"
+      [class.active]="activeView() === 'orders'"
+      (click)="activeView.set('orders')"
+    >
+      Ordenes
+      <span>{{ filteredOrders().length }}</span>
+    </button>
+    <button
+      type="button"
+      [class.active]="activeView() === 'actions'"
+      (click)="activeView.set('actions')"
+    >
+      Acciones
+    </button>
+    <button
+      type="button"
+      [class.active]="activeView() === 'runs'"
+      (click)="activeView.set('runs')"
+    >
+      Runs
+      <span>{{ filteredRuns().length }}</span>
+    </button>
+  </nav>
 
   @if (errorMessage()) {
     <section class="notice bad" role="alert">{{ errorMessage() }}</section>
@@ -27,569 +57,677 @@
     <section class="notice good" role="status">{{ successMessage() }}</section>
   }
 
-  @if (!hasToken()) {
-    <section class="notice warn">
-      Los endpoints administrativos requieren bearer token. El valor se mantiene solo en memoria
-      del navegador.
+  @if (formDirty()) {
+    <section class="notice warn" role="status">
+      Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y recargar.
     </section>
   }
 
-  <section class="metrics" aria-label="Estado general">
-    <article>
-      <span>API local</span>
-      <strong [class]="statusTone(health()?.status)">{{ health()?.status ?? 'sin datos' }}</strong>
-      <small>{{ health()?.reason ?? 'health pendiente' }}</small>
-    </article>
-    <article>
-      <span>Worker</span>
-      <strong [class]="statusTone(health()?.worker_running ?? null)">
-        {{ health()?.worker_running ? 'activo' : 'sin confirmar' }}
-      </strong>
-      <small>{{ health()?.message ?? 'sin respuesta' }}</small>
-    </article>
-    <article>
-      <span>Fase</span>
-      <strong [class]="statusTone(worker()?.phase)">{{ phaseLabel(worker()?.phase) }}</strong>
-      <small>{{ worker()?.updated_at ?? 'requiere token' }}</small>
-    </article>
-    <article>
-      <span>Reservas confirmadas</span>
-      <strong>{{ worker()?.confirmed_reservations ?? 0 }}</strong>
-      <small>{{ worker()?.last_check_at ?? 'sin ultimo check' }}</small>
-    </article>
-  </section>
+  @if (activeView() === 'summary') {
+    <section class="metrics" aria-label="Estado general">
+      <article>
+        <span>API local</span>
+        <strong [class]="statusTone(health()?.status)">{{ health()?.status ?? 'sin datos' }}</strong>
+        <small>{{ health()?.reason ?? 'health pendiente' }}</small>
+      </article>
+      <article>
+        <span>Worker</span>
+        <strong [class]="statusTone(worker()?.worker_running ?? health()?.worker_running ?? null)">
+          {{ worker()?.worker_running || health()?.worker_running ? 'activo' : 'sin confirmar' }}
+        </strong>
+        <small>{{ phaseLabel(worker()?.phase ?? health()?.reason) }}</small>
+      </article>
+      <article>
+        <span>Ordenes ready</span>
+        <strong>{{ readyOrders() }}</strong>
+        <small>{{ filteredOrders().length }} visibles</small>
+      </article>
+      <article>
+        <span>Pagos pendientes</span>
+        <strong [class]="pendingPaymentOrders() > 0 ? 'warn' : 'good'">
+          {{ pendingPaymentOrders() }}
+        </strong>
+        <small>{{ confirmedOrders() }} reservas confirmadas</small>
+      </article>
+    </section>
 
-  <section class="split">
-    <article class="panel">
-      <div class="panel-header">
-        <div>
-          <h2>Orden actual</h2>
-          <p>{{ worker()?.current_order_id ?? 'sin orden activa' }}</p>
+    <section class="split">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Orden actual</h2>
+            <p>{{ worker()?.current_order_id ?? 'sin orden activa' }}</p>
+          </div>
+          <span class="badge {{ statusTone(worker()?.paused ? 'paused' : worker()?.phase) }}">
+            {{ worker()?.paused ? 'pausado' : phaseLabel(worker()?.phase) }}
+          </span>
         </div>
-        <span class="badge {{ statusTone(worker()?.paused ? 'paused' : worker()?.phase) }}">
-          {{ worker()?.paused ? 'pausado' : phaseLabel(worker()?.phase) }}
-        </span>
-      </div>
 
-      @if (currentOrder(); as order) {
-        <dl class="summary-list">
+        @if (currentOrder(); as order) {
+          <dl class="summary-list">
+            <div>
+              <dt>Solicitante</dt>
+              <dd>{{ order.applicant_name ?? order.applicant_id }}</dd>
+            </div>
+            <div>
+              <dt>Documento</dt>
+              <dd>{{ order.document_number_masked }}</dd>
+            </div>
+            <div>
+              <dt>Reserva</dt>
+              <dd>{{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}</dd>
+            </div>
+            <div>
+              <dt>Pago</dt>
+              <dd>{{ order.payment_status ?? 'sin estado' }}</dd>
+            </div>
+          </dl>
+        } @else {
+          <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
           <div>
-            <dt>Solicitante</dt>
-            <dd>{{ order.applicant_name ?? order.applicant_id }}</dd>
+            <h2>Lectura segura</h2>
+            <p>Snapshot sin secretos ni detalles crudos de evidencia</p>
+          </div>
+          <button type="button" class="secondary" (click)="copyDashboardSnapshot()">Copiar</button>
+        </div>
+        <dl class="summary-list compact">
+          <div>
+            <dt>Runs visibles</dt>
+            <dd>{{ filteredRuns().length }}</dd>
           </div>
           <div>
-            <dt>Documento</dt>
-            <dd>{{ order.document_number_masked }}</dd>
+            <dt>Runs con error</dt>
+            <dd>{{ failedRuns() }}</dd>
           </div>
           <div>
-            <dt>Reserva</dt>
-            <dd>{{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}</dd>
+            <dt>Estado carga</dt>
+            <dd>{{ loadState() }}</dd>
           </div>
           <div>
-            <dt>Pago</dt>
-            <dd>{{ order.payment_status ?? 'sin estado' }}</dd>
+            <dt>Copiado</dt>
+            <dd>{{ copiedLabel() ?? 'no' }}</dd>
           </div>
         </dl>
-      } @else {
-        <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
-      }
-    </article>
+      </article>
+    </section>
+  }
 
-    <article class="panel">
+  @if (activeView() === 'actions') {
+    <section class="panel admin-panel">
       <div class="panel-header">
         <div>
-          <h2>Lectura segura</h2>
-          <p>Snapshot sin secretos ni detalles crudos de evidencia</p>
-        </div>
-        <button type="button" class="secondary" (click)="copyDashboardSnapshot()">Copiar</button>
-      </div>
-      <dl class="summary-list compact">
-        <div>
-          <dt>Ordenes visibles</dt>
-          <dd>{{ filteredOrders().length }}</dd>
-        </div>
-        <div>
-          <dt>Runs visibles</dt>
-          <dd>{{ filteredRuns().length }}</dd>
-        </div>
-        <div>
-          <dt>Estado de carga</dt>
-          <dd>{{ loadState() }}</dd>
-        </div>
-        <div>
-          <dt>Copiado</dt>
-          <dd>{{ copiedLabel() ?? 'no' }}</dd>
-        </div>
-      </dl>
-    </article>
-  </section>
-
-  <section class="panel admin-panel">
-    <div class="panel-header">
-      <div>
         <h2>Acciones administrativas</h2>
-        <p>Confirmacion requerida antes de enviar cambios</p>
+        <p>{{ orderLabel(selectedOrder()) }}</p>
       </div>
       <button type="button" class="danger" (click)="requestRestartWorker()">Restart worker</button>
     </div>
 
-    @if (pendingAction(); as action) {
-      <div class="confirm-box" role="alert">
-        <div>
-          <strong>{{ action.title }}</strong>
-          <span>{{ action.message }}</span>
+      @if (selectedOrder(); as order) {
+        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+          <div>
+            <span>Solicitante</span>
+            <strong>{{ order.applicant_name ?? order.applicant_id }}</strong>
+            <small>{{ order.document_number_masked }} | {{ order.order_id }}</small>
+          </div>
+          <div>
+            <span>Contacto</span>
+            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+            <small>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
+          </div>
+          <div>
+            <span>Reserva</span>
+            <strong>{{ order.reservation_status ?? 'pendiente' }}</strong>
+            <small>{{ order.reservation_date ?? 'sin fecha' }} {{ order.reservation_hour ?? '' }}</small>
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>{{ order.payment_status ?? 'sin pago' }}</strong>
+            <small>{{ order.amount_paid ?? '0.00' }} / {{ order.amount_agreed ?? 'sin acordado' }}</small>
+          </div>
+          <div>
+            <span>Tramite</span>
+            <strong>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</strong>
+            <small>{{ order.parent_order_id ?? 'sin padre' }}</small>
+          </div>
+          <div>
+            <span>Ultimo run</span>
+            @if (lastSelectedOrderRun(); as run) {
+              <strong>{{ run.status }}</strong>
+              <small>{{ run.started_at }}</small>
+            } @else {
+              <strong>sin run</strong>
+              <small>sin fecha</small>
+            }
+          </div>
+        </section>
+      }
+
+      @if (pendingAction(); as action) {
+        <div class="confirm-box" role="alert">
+          <div>
+            <strong>{{ action.title }}</strong>
+            <span>{{ action.message }}</span>
+          </div>
+          <div class="button-row confirm-actions">
+            <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
+            <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
+              Confirmar
+            </button>
+          </div>
         </div>
-        <div class="button-row">
-          <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
-          <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
-            Confirmar
+      }
+
+      <div class="admin-grid">
+        <div class="admin-block action-card">
+          <h3>Orden seleccionada</h3>
+          <label>
+            Orden
+            <select
+              name="selectedOrder"
+              [ngModel]="selectedOrderId()"
+              (ngModelChange)="selectOrder($event)"
+            >
+              @for (order of orders(); track order.order_id) {
+                <option [value]="order.order_id">
+                  {{ order.order_id }} | {{ order.applicant_name ?? order.document_number_masked }}
+                </option>
+              }
+            </select>
+          </label>
+          <div class="button-row">
+            <button type="button" class="secondary" (click)="requestOrderAction('pause', 'Pausar orden')">
+              Pausar
+            </button>
+            <button type="button" class="secondary" (click)="requestOrderAction('activate', 'Activar orden')">
+              Activar
+            </button>
+            <button type="button" class="secondary" (click)="requestOrderAction('no-charge', 'Marcar sin cobro')">
+              Sin cobro
+            </button>
+            <button type="button" class="danger" (click)="requestOrderAction('done', 'Archivar/completar')">
+              Completar
+            </button>
+            <button type="button" class="secondary" (click)="requestManualSession()">
+              Sesion manual
+            </button>
+            <button type="button" class="secondary" (click)="requestSplitPrograms()">
+              Dividir tramites
+            </button>
+          </div>
+          <label class="check-row">
+            <input
+              name="splitKeepParentActive"
+              type="checkbox"
+              [ngModel]="splitKeepParentActive()"
+              (ngModelChange)="splitKeepParentActive.set($event)"
+            />
+            Mantener padre activo
+          </label>
+        </div>
+
+        <div class="admin-block action-card">
+          <h3>Contacto</h3>
+          <div class="form-grid">
+            <label>
+              Nombre
+              <input
+                name="contactName"
+                type="text"
+                [ngModel]="contactName()"
+                (ngModelChange)="editField(contactName, $event)"
+              />
+            </label>
+            <label>
+              WhatsApp
+              <input
+                name="contactWhatsapp"
+                type="text"
+                [placeholder]="selectedOrderWhatsappPlaceholder()"
+                [ngModel]="contactWhatsapp()"
+                (ngModelChange)="editField(contactWhatsapp, $event)"
+              />
+            </label>
+            <label>
+              Fuente
+              <input
+                name="contactSource"
+                type="text"
+                [ngModel]="contactSource()"
+                (ngModelChange)="editField(contactSource, $event)"
+              />
+            </label>
+          </div>
+          <button type="button" class="primary" (click)="requestContactUpdate()">
+            Actualizar contacto
+          </button>
+        </div>
+
+        <div class="admin-block action-card">
+          <h3>Pago</h3>
+          <div class="form-grid">
+            <label>
+              Pagado
+              <input
+                name="paymentAmountPaid"
+                type="number"
+                min="0"
+                step="0.01"
+                [ngModel]="paymentAmountPaid()"
+                (ngModelChange)="editField(paymentAmountPaid, $event)"
+              />
+            </label>
+            <label>
+              Acordado
+              <input
+                name="paymentAmountAgreed"
+                type="number"
+                min="0"
+                step="0.01"
+                [ngModel]="paymentAmountAgreed()"
+                (ngModelChange)="editField(paymentAmountAgreed, $event)"
+              />
+            </label>
+          </div>
+          <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
+        </div>
+
+        <div class="admin-block action-card create-block">
+          <h3>Nueva orden</h3>
+          <div class="form-grid wide">
+            <label>
+              Documento
+              <input
+                name="newDocumentNumber"
+                type="text"
+                autocomplete="off"
+                [ngModel]="newDocumentNumber()"
+                (ngModelChange)="editField(newDocumentNumber, $event)"
+              />
+            </label>
+            <label>
+              Password
+              <input
+                name="newPassword"
+                type="password"
+                autocomplete="new-password"
+                [ngModel]="newPassword()"
+                (ngModelChange)="editField(newPassword, $event)"
+              />
+            </label>
+            <label>
+              Solicitante
+              <input
+                name="newApplicantName"
+                type="text"
+                [ngModel]="newApplicantName()"
+                (ngModelChange)="editField(newApplicantName, $event)"
+              />
+            </label>
+            <label>
+              Contacto
+              <input
+                name="newContactName"
+                type="text"
+                [ngModel]="newContactName()"
+                (ngModelChange)="editField(newContactName, $event)"
+              />
+            </label>
+            <label>
+              WhatsApp
+              <input
+                name="newContactWhatsapp"
+                type="text"
+                [ngModel]="newContactWhatsapp()"
+                (ngModelChange)="editField(newContactWhatsapp, $event)"
+              />
+            </label>
+            <label>
+              Prioridad
+              <input
+                name="newPriority"
+                type="number"
+                min="0"
+                step="1"
+                [ngModel]="newPriority()"
+                (ngModelChange)="editField(newPriority, $event)"
+              />
+            </label>
+            <label class="check-row">
+              <input
+                name="newChargeRequired"
+                type="checkbox"
+                [ngModel]="newChargeRequired()"
+                (ngModelChange)="editField(newChargeRequired, $event)"
+              />
+              Cobro requerido
+            </label>
+            <label>
+              Padre
+              <input
+                name="newParentOrderId"
+                type="text"
+                [ngModel]="newParentOrderId()"
+                (ngModelChange)="editField(newParentOrderId, $event)"
+              />
+            </label>
+            <label>
+              Expediente
+              <input
+                name="newProgramExpediente"
+                type="text"
+                [ngModel]="newProgramExpediente()"
+                (ngModelChange)="editField(newProgramExpediente, $event)"
+              />
+            </label>
+            <label>
+              Placa
+              <input
+                name="newProgramPlate"
+                type="text"
+                [ngModel]="newProgramPlate()"
+                (ngModelChange)="editField(newProgramPlate, $event)"
+              />
+            </label>
+            <label>
+              Hora minima
+              <input
+                name="newMinimumReservationHour"
+                type="number"
+                min="0"
+                max="23"
+                step="1"
+                [ngModel]="newMinimumReservationHour()"
+                (ngModelChange)="editField(newMinimumReservationHour, $event)"
+              />
+            </label>
+            <label>
+              Fecha minima
+              <input
+                name="newMinimumReservationDate"
+                type="date"
+                [ngModel]="newMinimumReservationDate()"
+                (ngModelChange)="editField(newMinimumReservationDate, $event)"
+              />
+            </label>
+            <label>
+              Dias ISO
+              <input
+                name="newAllowedWeekdays"
+                type="text"
+                inputmode="numeric"
+                [ngModel]="newAllowedWeekdays()"
+                (ngModelChange)="editField(newAllowedWeekdays, $event)"
+              />
+            </label>
+          </div>
+          <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (activeView() === 'orders') {
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Ordenes</h2>
+          <p>{{ filteredOrders().length }} visibles de {{ orders().length }} cargadas</p>
+        </div>
+      </div>
+
+      <div class="order-controls" aria-label="Filtros de ordenes">
+        <div class="quick-filters">
+          @for (filter of orderQuickFilters(); track filter.key) {
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="orderQuickFilter() === filter.key"
+              (click)="setOrderQuickFilter(filter.key)"
+            >
+              {{ filter.label }}
+              <span>{{ filter.count }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="order-tool-row">
+          <label class="filter">
+            Buscar
+            <input
+              name="orderFilter"
+              type="search"
+              [ngModel]="orderFilter()"
+              (ngModelChange)="orderFilter.set($event)"
+            />
+          </label>
+          <label class="filter">
+            Ordenar
+            <select
+              name="orderSort"
+              [ngModel]="orderSortKey()"
+              (ngModelChange)="chooseOrderSort($event)"
+            >
+              <option value="priority">Prioridad</option>
+              <option value="updated_at">Actualizacion</option>
+              <option value="created_at">Creacion</option>
+              <option value="status">Estado</option>
+              <option value="reservation">Reserva</option>
+              <option value="payment">Pago</option>
+              <option value="applicant">Solicitante</option>
+            </select>
+          </label>
+          <button type="button" class="secondary sort-direction" (click)="toggleOrderSortDirection()">
+            {{ orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
           </button>
         </div>
       </div>
-    }
 
-    <div class="admin-grid">
-      <div class="admin-block">
-        <label>
-          Orden
+      <div class="table-wrap">
+        <table class="responsive-table">
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('applicant')">
+                  Solicitante {{ sortIndicator('applicant') }}
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('status')">
+                  Estado {{ sortIndicator('status') }}
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('reservation')">
+                  Reserva {{ sortIndicator('reservation') }}
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('payment')">
+                  Pago {{ sortIndicator('payment') }}
+                </button>
+              </th>
+              <th>Tramite</th>
+              <th>Reglas</th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('priority')">
+                  Prioridad {{ sortIndicator('priority') }}
+                </button>
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of filteredOrders(); track order.order_id) {
+              <tr
+                class="selectable-row"
+                [class.selected-row]="selectedOrderId() === order.order_id"
+                (click)="selectOrder(order.order_id)"
+              >
+                <td data-label="Orden">
+                  <strong>{{ order.order_id }}</strong>
+                  <span>{{ order.document_number_masked }}</span>
+                </td>
+                <td data-label="Solicitante">
+                  {{ order.applicant_name ?? 'sin nombre' }}
+                  <span>{{ order.contact_name ?? order.contact_source ?? 'sin contacto' }}</span>
+                </td>
+                <td data-label="Estado">
+                  <span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span>
+                </td>
+                <td data-label="Reserva">
+                  {{ order.reservation_status ?? 'pendiente' }}
+                  <span>{{ order.reservation_date ?? '' }} {{ order.reservation_hour ?? '' }}</span>
+                </td>
+                <td data-label="Pago">
+                  {{ order.payment_status ?? 'sin pago' }}
+                  <span>{{ order.amount_paid ?? order.amount_agreed ?? '' }}</span>
+                </td>
+                <td data-label="Tramite">
+                  {{ order.program_expediente ?? order.program_plate ?? 'generica' }}
+                  <span>{{ order.parent_order_id ?? 'sin padre' }}</span>
+                </td>
+                <td data-label="Reglas">
+                  {{ order.minimum_reservation_date ?? 'sin fecha' }}
+                  <span>
+                    {{ order.minimum_reservation_hour ?? 'sin hora' }} |
+                    {{ order.allowed_weekdays?.join(',') ?? 'sin dias' }}
+                  </span>
+                </td>
+                <td data-label="Prioridad">{{ order.priority }}</td>
+                <td data-label="Copiar">
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title="Copiar orden"
+                    (click)="$event.stopPropagation(); copyOrder(order)"
+                  >
+                    Copiar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="empty">No hay ordenes para mostrar.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (activeView() === 'runs') {
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Comandos worker</h2>
+          <p>Ultimas solicitudes persistidas</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="responsive-table">
+          <thead>
+            <tr>
+              <th>Comando</th>
+              <th>Estado</th>
+              <th>Solicitado</th>
+              <th>Procesado</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (command of workerCommands(); track command.command_id) {
+              <tr>
+                <td data-label="Comando">
+                  <strong>{{ command.command }}</strong>
+                  <span>{{ command.command_id }}</span>
+                </td>
+                <td data-label="Estado">
+                  <span class="badge {{ statusTone(command.status) }}">{{ command.status }}</span>
+                </td>
+                <td data-label="Solicitado">{{ command.requested_at }}</td>
+                <td data-label="Procesado">
+                  {{ command.processed_at ?? 'pendiente' }}
+                  <span>{{ command.claimed_at ?? 'sin reclamar' }}</span>
+                </td>
+                <td data-label="Error">{{ command.error_message ?? '' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">No hay comandos recientes.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Runs recientes</h2>
+          <p>Lectura resumida de los ultimos 50 registros</p>
+        </div>
+        <label class="filter">
+          Estado
           <select
-            name="selectedOrder"
-            [ngModel]="selectedOrderId()"
-            (ngModelChange)="selectedOrderId.set($event)"
+            name="runStatus"
+            [ngModel]="runStatusFilter()"
+            (ngModelChange)="runStatusFilter.set($event)"
           >
-            @for (order of orders(); track order.order_id) {
-              <option [value]="order.order_id">
-                {{ order.order_id }} | {{ order.applicant_name ?? order.document_number_masked }}
-              </option>
+            <option value="">Todos</option>
+            @for (status of runStatuses(); track status) {
+              <option [value]="status">{{ status }}</option>
             }
           </select>
         </label>
-        <div class="button-row">
-          <button
-            type="button"
-            class="secondary"
-            (click)="requestOrderAction('pause', 'Pausar orden')"
-          >
-            Pausar
-          </button>
-          <button
-            type="button"
-            class="secondary"
-            (click)="requestOrderAction('activate', 'Activar orden')"
-          >
-            Activar
-          </button>
-          <button
-            type="button"
-            class="secondary"
-            (click)="requestOrderAction('no-charge', 'Marcar sin cobro')"
-          >
-            Sin cobro
-          </button>
-          <button
-            type="button"
-            class="danger"
-            (click)="requestOrderAction('done', 'Archivar/completar')"
-          >
-            Completar
-          </button>
-          <button type="button" class="secondary" (click)="requestManualSession()">
-            Sesion manual
-          </button>
-          <button type="button" class="secondary" (click)="requestSplitPrograms()">
-            Dividir tramites
-          </button>
-        </div>
-        <label class="check-row">
-          <input
-            name="splitKeepParentActive"
-            type="checkbox"
-            [ngModel]="splitKeepParentActive()"
-            (ngModelChange)="splitKeepParentActive.set($event)"
-          />
-          Mantener padre activo
-        </label>
       </div>
 
-      <div class="admin-block">
-        <h3>Contacto</h3>
-        <div class="form-grid">
-          <label>
-            Nombre
-            <input
-              name="contactName"
-              type="text"
-              [ngModel]="contactName()"
-              (ngModelChange)="contactName.set($event)"
-            />
-          </label>
-          <label>
-            WhatsApp
-            <input
-              name="contactWhatsapp"
-              type="text"
-              [ngModel]="contactWhatsapp()"
-              (ngModelChange)="contactWhatsapp.set($event)"
-            />
-          </label>
-          <label>
-            Fuente
-            <input
-              name="contactSource"
-              type="text"
-              [ngModel]="contactSource()"
-              (ngModelChange)="contactSource.set($event)"
-            />
-          </label>
-        </div>
-        <button type="button" class="primary" (click)="requestContactUpdate()">
-          Actualizar contacto
-        </button>
-      </div>
-
-      <div class="admin-block">
-        <h3>Pago</h3>
-        <div class="form-grid">
-          <label>
-            Pagado
-            <input
-              name="paymentAmountPaid"
-              type="number"
-              min="0"
-              step="0.01"
-              [ngModel]="paymentAmountPaid()"
-              (ngModelChange)="paymentAmountPaid.set($event)"
-            />
-          </label>
-          <label>
-            Acordado
-            <input
-              name="paymentAmountAgreed"
-              type="number"
-              min="0"
-              step="0.01"
-              [ngModel]="paymentAmountAgreed()"
-              (ngModelChange)="paymentAmountAgreed.set($event)"
-            />
-          </label>
-        </div>
-        <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
-      </div>
-
-      <div class="admin-block create-block">
-        <h3>Nueva orden</h3>
-        <div class="form-grid">
-          <label>
-            Documento
-            <input
-              name="newDocumentNumber"
-              type="text"
-              autocomplete="off"
-              [ngModel]="newDocumentNumber()"
-              (ngModelChange)="newDocumentNumber.set($event)"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              name="newPassword"
-              type="password"
-              autocomplete="new-password"
-              [ngModel]="newPassword()"
-              (ngModelChange)="newPassword.set($event)"
-            />
-          </label>
-          <label>
-            Solicitante
-            <input
-              name="newApplicantName"
-              type="text"
-              [ngModel]="newApplicantName()"
-              (ngModelChange)="newApplicantName.set($event)"
-            />
-          </label>
-          <label>
-            Contacto
-            <input
-              name="newContactName"
-              type="text"
-              [ngModel]="newContactName()"
-              (ngModelChange)="newContactName.set($event)"
-            />
-          </label>
-          <label>
-            WhatsApp
-            <input
-              name="newContactWhatsapp"
-              type="text"
-              [ngModel]="newContactWhatsapp()"
-              (ngModelChange)="newContactWhatsapp.set($event)"
-            />
-          </label>
-          <label>
-            Prioridad
-            <input
-              name="newPriority"
-              type="number"
-              min="0"
-              step="1"
-              [ngModel]="newPriority()"
-              (ngModelChange)="newPriority.set($event)"
-            />
-          </label>
-          <label class="check-row">
-            <input
-              name="newChargeRequired"
-              type="checkbox"
-              [ngModel]="newChargeRequired()"
-              (ngModelChange)="newChargeRequired.set($event)"
-            />
-            Cobro requerido
-          </label>
-          <label>
-            Padre
-            <input
-              name="newParentOrderId"
-              type="text"
-              [ngModel]="newParentOrderId()"
-              (ngModelChange)="newParentOrderId.set($event)"
-            />
-          </label>
-          <label>
-            Expediente
-            <input
-              name="newProgramExpediente"
-              type="text"
-              [ngModel]="newProgramExpediente()"
-              (ngModelChange)="newProgramExpediente.set($event)"
-            />
-          </label>
-          <label>
-            Placa
-            <input
-              name="newProgramPlate"
-              type="text"
-              [ngModel]="newProgramPlate()"
-              (ngModelChange)="newProgramPlate.set($event)"
-            />
-          </label>
-          <label>
-            Hora minima
-            <input
-              name="newMinimumReservationHour"
-              type="number"
-              min="0"
-              max="23"
-              step="1"
-              [ngModel]="newMinimumReservationHour()"
-              (ngModelChange)="newMinimumReservationHour.set($event)"
-            />
-          </label>
-          <label>
-            Fecha minima
-            <input
-              name="newMinimumReservationDate"
-              type="date"
-              [ngModel]="newMinimumReservationDate()"
-              (ngModelChange)="newMinimumReservationDate.set($event)"
-            />
-          </label>
-          <label>
-            Dias ISO
-            <input
-              name="newAllowedWeekdays"
-              type="text"
-              inputmode="numeric"
-              [ngModel]="newAllowedWeekdays()"
-              (ngModelChange)="newAllowedWeekdays.set($event)"
-            />
-          </label>
-        </div>
-        <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-header">
-      <div>
-        <h2>Ordenes</h2>
-        <p>Lista local filtrada</p>
-      </div>
-      <label class="filter">
-        Buscar
-        <input
-          name="orderFilter"
-          type="search"
-          [ngModel]="orderFilter()"
-          (ngModelChange)="orderFilter.set($event)"
-        />
-      </label>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Orden</th>
-            <th>Solicitante</th>
-            <th>Estado</th>
-            <th>Reserva</th>
-            <th>Pago</th>
-            <th>Tramite</th>
-            <th>Reglas</th>
-            <th>Prioridad</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (order of filteredOrders(); track order.order_id) {
+      <div class="table-wrap">
+        <table class="responsive-table">
+          <thead>
             <tr>
-              <td>
-                <strong>{{ order.order_id }}</strong>
-                <span>{{ order.document_number_masked }}</span>
-              </td>
-              <td>
-                {{ order.applicant_name ?? 'sin nombre' }}
-                <span>{{ order.contact_name ?? order.contact_source ?? 'sin contacto' }}</span>
-              </td>
-              <td><span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span></td>
-              <td>
-                {{ order.reservation_status ?? 'pendiente' }}
-                <span>{{ order.reservation_date ?? '' }} {{ order.reservation_hour ?? '' }}</span>
-              </td>
-              <td>
-                {{ order.payment_status ?? 'sin pago' }}
-                <span>{{ order.amount_paid ?? order.amount_agreed ?? '' }}</span>
-              </td>
-              <td>
-                {{ order.program_expediente ?? order.program_plate ?? 'generica' }}
-                <span>{{ order.parent_order_id ?? 'sin padre' }}</span>
-              </td>
-              <td>
-                {{ order.minimum_reservation_date ?? 'sin fecha' }}
-                <span>
-                  {{ order.minimum_reservation_hour ?? 'sin hora' }} |
-                  {{ order.allowed_weekdays?.join(',') ?? 'sin dias' }}
-                </span>
-              </td>
-              <td>{{ order.priority }}</td>
-              <td>
-                <button type="button" class="icon-button" title="Copiar orden" (click)="copyOrder(order)">
-                  Copiar
-                </button>
-              </td>
+              <th>Run</th>
+              <th>Orden</th>
+              <th>Estado</th>
+              <th>Reserva</th>
+              <th>Duracion</th>
+              <th>Inicio</th>
             </tr>
-          } @empty {
-            <tr>
-              <td colspan="9" class="empty">No hay ordenes para mostrar.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-header">
-      <div>
-        <h2>Comandos worker</h2>
-        <p>Ultimas solicitudes persistidas</p>
+          </thead>
+          <tbody>
+            @for (run of filteredRuns(); track run.run_id) {
+              <tr>
+                <td data-label="Run">
+                  <strong>{{ run.run_id }}</strong>
+                  <span>{{ run.message }}</span>
+                </td>
+                <td data-label="Orden">{{ run.order_id ?? 'observador' }}</td>
+                <td data-label="Estado">
+                  <span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span>
+                </td>
+                <td data-label="Reserva">
+                  {{ run.reservation_confirmed ? 'confirmada' : 'no confirmada' }}
+                  <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
+                </td>
+                <td data-label="Duracion">{{ run.duration_seconds }}s</td>
+                <td data-label="Inicio">{{ run.started_at }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty">No hay runs para mostrar.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Comando</th>
-            <th>Estado</th>
-            <th>Solicitado</th>
-            <th>Procesado</th>
-            <th>Error</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (command of workerCommands(); track command.command_id) {
-            <tr>
-              <td>
-                <strong>{{ command.command }}</strong>
-                <span>{{ command.command_id }}</span>
-              </td>
-              <td><span class="badge {{ statusTone(command.status) }}">{{ command.status }}</span></td>
-              <td>{{ command.requested_at }}</td>
-              <td>
-                {{ command.processed_at ?? 'pendiente' }}
-                <span>{{ command.claimed_at ?? 'sin reclamar' }}</span>
-              </td>
-              <td>{{ command.error_message ?? '' }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="5" class="empty">No hay comandos recientes.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-header">
-      <div>
-        <h2>Runs recientes</h2>
-        <p>Lectura resumida de los ultimos 50 registros</p>
-      </div>
-      <label class="filter">
-        Estado
-        <select
-          name="runStatus"
-          [ngModel]="runStatusFilter()"
-          (ngModelChange)="runStatusFilter.set($event)"
-        >
-          <option value="">Todos</option>
-          @for (status of runStatuses(); track status) {
-            <option [value]="status">{{ status }}</option>
-          }
-        </select>
-      </label>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Run</th>
-            <th>Orden</th>
-            <th>Estado</th>
-            <th>Reserva</th>
-            <th>Duracion</th>
-            <th>Inicio</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (run of filteredRuns(); track run.run_id) {
-            <tr>
-              <td>
-                <strong>{{ run.run_id }}</strong>
-                <span>{{ run.message }}</span>
-              </td>
-              <td>{{ run.order_id ?? 'observador' }}</td>
-              <td><span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span></td>
-              <td>
-                {{ run.reservation_confirmed ? 'confirmada' : 'no confirmada' }}
-                <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
-              </td>
-              <td>{{ run.duration_seconds }}s</td>
-              <td>{{ run.started_at }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="6" class="empty">No hay runs para mostrar.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
+    </section>
+  }
 </main>

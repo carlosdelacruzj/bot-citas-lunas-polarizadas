@@ -5,6 +5,10 @@ afectar el flujo actual de reservas. La regla principal es avanzar por fases
 pequenas, validar despues de cada fase y mantener funcionando el worker actual
 hasta que exista una alternativa equivalente.
 
+Documento principal para terminar y operar: `docs/operations/readiness-checklist.md`.
+Este plan de migracion queda como historial tecnico de las fases ya ejecutadas y
+como referencia si se abre una fase nueva.
+
 ## Arquitectura objetivo
 
 El proyecto seguira como monorepo. Se separaran responsabilidades por modulos y
@@ -273,7 +277,8 @@ Implementacion:
 - boton de `restart worker` usando el contrato persistido/control directo
   disponible segun proceso backend;
 - confirmacion visible antes de cada accion y respuesta clara despues del POST;
-- token administrativo mantenido solo en memoria del navegador.
+- token administrativo inyectado por el proxy local del servidor de desarrollo,
+  sin campo visible ni storage del navegador.
 
 Validacion de la fase:
 
@@ -336,7 +341,9 @@ validaciones. Este paso no debe hacerse como un refactor unico. Debe dividirse
 en fases pequenas para mantener rollback claro y evitar romper el flujo actual
 de reservas.
 
-Estado: pendiente.
+Estado: completado hasta el retiro de compatibilidad vieja. Desde este punto no
+queda un refactor estructural grande abierto en esta fase; los pendientes
+recomendados pasan a ser operativos, de dashboard o de validacion manual.
 
 ### Paso 9.0: cierre previo de superficie Angular/admin
 
@@ -716,6 +723,8 @@ Pendiente recomendado:
 2. mejorar ergonomia visual sin cambiar contratos;
 3. validar manualmente dashboard contra `appointment-bot-admin-api` vivo y token
    real en una sesion operativa local.
+
+Checklist operativo: `docs/operations/readiness-checklist.md`.
 
 ## Criterios de avance
 

@@ -83,8 +83,10 @@ embebida del worker mientras se conserva compatibilidad.
 ## Seguridad
 
 - No guardar tokens, passwords ni secretos en el frontend.
-- El API token se escribe manualmente y se mantiene solo en memoria del
-  navegador.
+- El API token no se escribe en la UI. El proxy local
+  `dashboard/proxy.conf.cjs` lo lee desde `.env` o desde la variable de entorno
+  `APPOINTMENT_BOT_API_TOKEN` y agrega el header `Authorization` solo del lado
+  del servidor de desarrollo.
 - No usar `localStorage` ni `sessionStorage` para secretos.
 - No acceder directo a PostgreSQL desde Angular.
 - No reutilizar cookies ni sesiones Playwright del worker.

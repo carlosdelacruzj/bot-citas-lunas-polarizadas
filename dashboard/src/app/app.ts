@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -16,11 +16,30 @@ import {
 } from './appointment-api.service';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+type ViewKey = 'summary' | 'orders' | 'actions' | 'runs';
+type OrderQuickFilter =
+  | 'all'
+  | 'ready'
+  | 'payment_pending'
+  | 'confirmed'
+  | 'archived'
+  | 'restricted';
+type OrderSortKey =
+  | 'priority'
+  | 'created_at'
+  | 'updated_at'
+  | 'status'
+  | 'reservation'
+  | 'payment'
+  | 'applicant';
+type SortDirection = 'asc' | 'desc';
 type PendingAction = {
   title: string;
   message: string;
   execute: () => Promise<ApiActionResponse>;
 };
+
+const AUTO_REFRESH_INTERVAL_MS = 15_000;
 
 @Component({
   selector: 'app-root',
@@ -28,11 +47,20 @@ type PendingAction = {
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {
+export class App implements OnDestroy {
   private readonly api = inject(AppointmentApiService);
+  private readonly autoRefreshTimer = window.setInterval(() => {
+    void this.refreshFromTimer();
+  }, AUTO_REFRESH_INTERVAL_MS);
 
-  protected readonly apiToken = signal('');
+  protected readonly activeView = signal<ViewKey>('summary');
+  protected readonly autoRefreshEnabled = signal(true);
+  protected readonly formDirty = signal(false);
+  protected readonly lastUpdatedAt = signal<string | null>(null);
   protected readonly orderFilter = signal('');
+  protected readonly orderQuickFilter = signal<OrderQuickFilter>('all');
+  protected readonly orderSortKey = signal<OrderSortKey>('priority');
+  protected readonly orderSortDirection = signal<SortDirection>('desc');
   protected readonly runStatusFilter = signal('');
   protected readonly health = signal<HealthPayload | null>(null);
   protected readonly worker = signal<WorkerStatus | null>(null);
@@ -66,7 +94,6 @@ export class App {
   protected readonly actionBusy = signal(false);
   protected readonly pendingAction = signal<PendingAction | null>(null);
 
-  protected readonly hasToken = computed(() => this.apiToken().trim().length > 0);
   protected readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
     return this.orders().find((order) => order.order_id === selected) ?? this.orders()[0] ?? null;
@@ -77,23 +104,46 @@ export class App {
   });
   protected readonly filteredOrders = computed(() => {
     const filter = this.orderFilter().trim().toLowerCase();
-    if (!filter) {
-      return this.orders();
-    }
-    return this.orders().filter((order) =>
-      [
-        order.order_id,
-        order.applicant_name,
-        order.document_number_masked,
-        order.contact_name,
-        order.status,
-        order.reservation_status,
-        order.payment_status,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(filter)),
-    );
+    const quickFilter = this.orderQuickFilter();
+    const filtered = this.orders().filter((order) => {
+      const matchesText =
+        !filter ||
+        [
+          order.order_id,
+          order.applicant_name,
+          order.document_number_masked,
+          order.contact_name,
+          order.contact_source,
+          order.contact_whatsapp_masked,
+          order.status,
+          order.reservation_status,
+          order.payment_status,
+          order.program_expediente,
+          order.program_plate,
+          order.parent_order_id,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(filter));
+      return matchesText && this.matchesOrderQuickFilter(order, quickFilter);
+    });
+    return this.sortOrders(filtered);
   });
+  protected readonly orderQuickFilters = computed(() => [
+    { key: 'all' as const, label: 'Todas', count: this.orders().length },
+    { key: 'ready' as const, label: 'Ready', count: this.countOrders('ready') },
+    {
+      key: 'payment_pending' as const,
+      label: 'Pagos pendientes',
+      count: this.countOrders('payment_pending'),
+    },
+    { key: 'confirmed' as const, label: 'Confirmadas', count: this.countOrders('confirmed') },
+    { key: 'archived' as const, label: 'Archivadas', count: this.countOrders('archived') },
+    {
+      key: 'restricted' as const,
+      label: 'Con restricciones',
+      count: this.countOrders('restricted'),
+    },
+  ]);
   protected readonly filteredRuns = computed(() => {
     const status = this.runStatusFilter().trim();
     if (!status) {
@@ -104,51 +154,128 @@ export class App {
   protected readonly runStatuses = computed(() =>
     Array.from(new Set(this.runs().map((run) => run.status).filter(Boolean))).sort(),
   );
+  protected readonly readyOrders = computed(
+    () => this.orders().filter((order) => order.status === 'ready').length,
+  );
+  protected readonly pendingPaymentOrders = computed(
+    () => this.orders().filter((order) => order.payment_status === 'pending').length,
+  );
+  protected readonly confirmedOrders = computed(
+    () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
+  );
+  protected readonly failedRuns = computed(
+    () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
+  );
+  protected readonly selectedOrderRuns = computed(() => {
+    const orderId = this.selectedOrder()?.order_id;
+    if (!orderId) {
+      return [];
+    }
+    return this.runs().filter((run) => run.order_id === orderId);
+  });
+  protected readonly lastSelectedOrderRun = computed<RunSummary | null>(
+    () => this.selectedOrderRuns().at(0) ?? null,
+  );
+  protected readonly selectedOrderWhatsappPlaceholder = computed(
+    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
+  );
+  protected readonly autoRefreshPaused = computed(
+    () => !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
+  );
 
   constructor() {
-    void this.refreshHealth();
+    void this.refreshAll();
+  }
 
-    effect(() => {
-      this.apiToken();
-      this.errorMessage.set(null);
-      this.successMessage.set(null);
-      this.worker.set(null);
-      this.orders.set([]);
-      this.runs.set([]);
-      this.workerCommands.set([]);
-      this.loadState.set('idle');
-    });
+  ngOnDestroy(): void {
+    window.clearInterval(this.autoRefreshTimer);
   }
 
   protected async refreshAll(): Promise<void> {
     await this.refreshHealth();
-    if (!this.hasToken()) {
-      return;
-    }
-
     this.loadState.set('loading');
     this.errorMessage.set(null);
 
     try {
-      const token = this.apiToken().trim();
       const [worker, orders, runs, workerCommands] = await Promise.all([
-        this.api.getWorker(token),
-        this.api.getServiceOrders(token),
-        this.api.getRuns(token),
-        this.api.getWorkerCommands(token),
+        this.api.getWorker(),
+        this.api.getServiceOrders(),
+        this.api.getRuns(),
+        this.api.getWorkerCommands(),
       ]);
       this.worker.set(worker);
       this.orders.set(orders);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
-      if (!this.selectedOrderId() && orders.length > 0) {
-        this.selectedOrderId.set(orders[0].order_id);
-      }
+      this.keepValidSelection(orders);
+      this.hydrateSelectedOrderForms();
+      this.lastUpdatedAt.set(this.formatClock(new Date()));
       this.loadState.set('ready');
     } catch (error) {
       this.loadState.set('error');
       this.errorMessage.set(this.readError(error));
     }
+  }
+
+  protected async refreshNow(): Promise<void> {
+    this.formDirty.set(false);
+    await this.refreshAll();
+  }
+
+  protected selectOrder(orderId: string): void {
+    this.selectedOrderId.set(orderId);
+    this.formDirty.set(false);
+    this.hydrateSelectedOrderForms();
+  }
+
+  protected editField<T>(field: WritableSignal<T>, value: T): void {
+    field.set(value);
+    this.formDirty.set(true);
+  }
+
+  protected setOrderQuickFilter(filter: OrderQuickFilter): void {
+    this.orderQuickFilter.set(filter);
+  }
+
+  protected setOrderSort(key: OrderSortKey): void {
+    if (this.orderSortKey() === key) {
+      this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+    this.orderSortKey.set(key);
+    this.orderSortDirection.set(key === 'applicant' || key === 'status' ? 'asc' : 'desc');
+  }
+
+  protected chooseOrderSort(key: OrderSortKey): void {
+    if (this.orderSortKey() === key) {
+      return;
+    }
+    this.orderSortKey.set(key);
+    this.orderSortDirection.set(key === 'applicant' || key === 'status' ? 'asc' : 'desc');
+  }
+
+  protected toggleOrderSortDirection(): void {
+    this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
+  }
+
+  protected orderSortLabel(key: OrderSortKey): string {
+    const labels: Record<OrderSortKey, string> = {
+      priority: 'Prioridad',
+      created_at: 'Creacion',
+      updated_at: 'Actualizacion',
+      status: 'Estado',
+      reservation: 'Reserva',
+      payment: 'Pago',
+      applicant: 'Solicitante',
+    };
+    return labels[key];
+  }
+
+  protected sortIndicator(key: OrderSortKey): string {
+    if (this.orderSortKey() !== key) {
+      return '';
+    }
+    return this.orderSortDirection() === 'asc' ? '↑' : '↓';
   }
 
   protected requestContactUpdate(): void {
@@ -168,7 +295,7 @@ export class App {
     this.setPendingAction({
       title: 'Actualizar contacto',
       message: `Actualizar contacto de ${order.order_id}.`,
-      execute: () => this.api.updateServiceOrderContact(this.requiredToken(), order.order_id, payload),
+      execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
     });
   }
 
@@ -183,7 +310,7 @@ export class App {
     this.setPendingAction({
       title,
       message: `${title} para ${order.order_id}.`,
-      execute: () => this.api.runServiceOrderAction(this.requiredToken(), order.order_id, action),
+      execute: () => this.api.runServiceOrderAction(order.order_id, action),
     });
   }
 
@@ -203,7 +330,7 @@ export class App {
     this.setPendingAction({
       title: 'Marcar pagado',
       message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
-      execute: () => this.api.markPaymentPaid(this.requiredToken(), order.order_id, payload),
+      execute: () => this.api.markPaymentPaid(order.order_id, payload),
     });
   }
 
@@ -231,7 +358,7 @@ export class App {
     this.setPendingAction({
       title: 'Crear orden nueva',
       message: `Crear orden para documento ${payload.document_number}.`,
-      execute: () => this.api.createServiceOrder(this.requiredToken(), payload),
+      execute: () => this.api.createServiceOrder(payload),
     });
   }
 
@@ -239,7 +366,7 @@ export class App {
     this.setPendingAction({
       title: 'Restart worker',
       message: 'Solicitar reinicio controlado del worker.',
-      execute: () => this.api.restartWorker(this.requiredToken()),
+      execute: () => this.api.restartWorker(),
     });
   }
 
@@ -251,7 +378,7 @@ export class App {
     this.setPendingAction({
       title: 'Abrir sesion manual',
       message: `Abrir navegador visible para ${order.order_id}.`,
-      execute: () => this.api.openManualSession(this.requiredToken(), order.order_id),
+      execute: () => this.api.openManualSession(order.order_id),
     });
   }
 
@@ -265,7 +392,6 @@ export class App {
       message: `Crear subordenes pendientes desde ${order.order_id}.`,
       execute: () =>
         this.api.splitServiceOrderPrograms(
-          this.requiredToken(),
           order.order_id,
           this.splitKeepParentActive(),
         ),
@@ -288,6 +414,7 @@ export class App {
       const response = await action.execute();
       this.successMessage.set(this.actionResponseMessage(response));
       this.pendingAction.set(null);
+      this.formDirty.set(false);
       await this.refreshAll();
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -328,6 +455,20 @@ export class App {
       return 'sin fase';
     }
     return phase.replaceAll('_', ' ');
+  }
+
+  protected orderLabel(order: ServiceOrder | null): string {
+    if (!order) {
+      return 'Sin orden seleccionada';
+    }
+    return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
+  }
+
+  protected formatNullable(value: string | number | boolean | null | undefined): string {
+    if (value === null || value === undefined || value === '') {
+      return 'sin dato';
+    }
+    return String(value);
   }
 
   protected statusTone(value: string | boolean | null | undefined): string {
@@ -388,10 +529,6 @@ export class App {
   }
 
   private setPendingAction(action: PendingAction): void {
-    if (!this.hasToken()) {
-      this.errorMessage.set('Ingresa el API token antes de ejecutar acciones.');
-      return;
-    }
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.pendingAction.set(action);
@@ -406,12 +543,108 @@ export class App {
     return order;
   }
 
-  private requiredToken(): string {
-    const token = this.apiToken().trim();
-    if (!token) {
-      throw new Error('API token requerido.');
+  private async refreshFromTimer(): Promise<void> {
+    if (this.autoRefreshPaused()) {
+      return;
     }
-    return token;
+    await this.refreshAll();
+  }
+
+  private keepValidSelection(orders: ServiceOrder[]): void {
+    const selected = this.selectedOrderId();
+    if (selected && orders.some((order) => order.order_id === selected)) {
+      return;
+    }
+    this.selectedOrderId.set(orders[0]?.order_id ?? '');
+  }
+
+  private countOrders(filter: OrderQuickFilter): number {
+    return this.orders().filter((order) => this.matchesOrderQuickFilter(order, filter)).length;
+  }
+
+  private matchesOrderQuickFilter(order: ServiceOrder, filter: OrderQuickFilter): boolean {
+    if (filter === 'all') {
+      return true;
+    }
+    if (filter === 'ready') {
+      return order.status === 'ready';
+    }
+    if (filter === 'payment_pending') {
+      return order.payment_status === 'pending';
+    }
+    if (filter === 'confirmed') {
+      return order.reservation_status === 'confirmed';
+    }
+    if (filter === 'archived') {
+      return order.status === 'archived';
+    }
+    return Boolean(
+      order.minimum_reservation_date ||
+        order.minimum_reservation_hour !== null ||
+        (order.allowed_weekdays && order.allowed_weekdays.length > 0),
+    );
+  }
+
+  private sortOrders(orders: ServiceOrder[]): ServiceOrder[] {
+    const direction = this.orderSortDirection() === 'asc' ? 1 : -1;
+    const key = this.orderSortKey();
+    return [...orders].sort((left, right) => {
+      const leftValue = this.orderSortValue(left, key);
+      const rightValue = this.orderSortValue(right, key);
+      const compared =
+        typeof leftValue === 'number' && typeof rightValue === 'number'
+          ? leftValue - rightValue
+          : String(leftValue).localeCompare(String(rightValue), 'es', { numeric: true });
+      if (compared !== 0) {
+        return compared * direction;
+      }
+      return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
+    });
+  }
+
+  private orderSortValue(order: ServiceOrder, key: OrderSortKey): string | number {
+    if (key === 'priority') {
+      return order.priority;
+    }
+    if (key === 'created_at') {
+      return Date.parse(order.created_at) || 0;
+    }
+    if (key === 'updated_at') {
+      return Date.parse(order.updated_at) || 0;
+    }
+    if (key === 'status') {
+      return order.status;
+    }
+    if (key === 'reservation') {
+      return `${order.reservation_date ?? ''} ${order.reservation_hour ?? ''}`;
+    }
+    if (key === 'payment') {
+      return order.payment_status ?? '';
+    }
+    return order.applicant_name ?? order.document_number_masked ?? '';
+  }
+
+  private hydrateSelectedOrderForms(): void {
+    if (this.formDirty()) {
+      return;
+    }
+    const order = this.selectedOrder();
+    if (!order) {
+      return;
+    }
+    this.contactName.set(order.contact_name ?? '');
+    this.contactWhatsapp.set('');
+    this.contactSource.set(order.contact_source ?? 'whatsapp');
+    this.paymentAmountPaid.set(order.amount_paid ?? '');
+    this.paymentAmountAgreed.set(order.amount_agreed ?? '');
+  }
+
+  private formatClock(date: Date): string {
+    return date.toLocaleTimeString('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   }
 
   private optionalText(value: string): string | null {

@@ -88,6 +88,9 @@ python -m ruff check src tests
 python -m pytest
 ```
 
+Para una lista completa de preparacion, validacion manual, pendientes y
+rollback, usar `docs/operations/readiness-checklist.md`.
+
 ## Seguridad operativa
 
 - Mantener API en loopback para la primera version.
