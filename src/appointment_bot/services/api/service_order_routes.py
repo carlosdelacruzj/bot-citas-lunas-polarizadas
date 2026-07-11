@@ -9,6 +9,7 @@ from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     close_service_order,
     create_service_order,
+    has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
     mark_payment_paid,
@@ -127,6 +128,11 @@ def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] |
         if action_name == "pause":
             set_order_paused(order_id, True)
         elif action_name == "activate":
+            if has_active_child_service_orders(order_id):
+                return HTTPStatus.CONFLICT, error_payload(
+                    "conflict",
+                    "Cannot activate a parent order while it has active child orders.",
+                )
             set_order_paused(order_id, False)
         elif action_name == "done":
             mark_order_done(order_id, status="completed")

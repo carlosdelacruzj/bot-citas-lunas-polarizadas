@@ -56,6 +56,39 @@
     </section>
   }
 
+  @if (manualSessions().length) {
+    <section class="panel manual-sessions-panel" aria-label="Sesiones manuales abiertas">
+      <div class="panel-header">
+        <div>
+          <h2>Sesiones manuales</h2>
+          <p>{{ manualSessions().length }} abiertas</p>
+        </div>
+        <button type="button" class="secondary" (click)="refreshNow()">Actualizar</button>
+      </div>
+
+      <div class="manual-session-list">
+        @for (session of manualSessions(); track session.session_id) {
+          <article class="manual-session-row">
+            <div>
+              <strong>{{ manualSessionOrderLabel(session) }}</strong>
+              <span>{{ session.session_id }}</span>
+            </div>
+            <span class="badge {{ statusTone(session.status) }}">{{ session.status }}</span>
+            <small>{{ session.started_at }}</small>
+            <button
+              type="button"
+              class="danger"
+              [disabled]="actionBusy() || session.close_requested"
+              (click)="closeManualSession(session)"
+            >
+              Cerrar
+            </button>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
   @if (activeView() === 'summary') {
     <section class="metrics" aria-label="Estado general">
       <article>
@@ -195,6 +228,7 @@
               [ngModel]="orderSortKey()"
               (ngModelChange)="chooseOrderSort($event)"
             >
+              <option value="queue">Orden real</option>
               <option value="priority">Prioridad</option>
               <option value="updated_at">Actualizacion</option>
               <option value="created_at">Creacion</option>
@@ -213,6 +247,18 @@
 
       <div class="table-wrap">
         <table class="responsive-table">
+          <colgroup>
+            <col class="order-col" />
+            <col class="applicant-col" />
+            <col class="status-col" />
+            <col class="reservation-col" />
+            <col class="payment-col" />
+            <col class="closure-col" />
+            <col class="program-col" />
+            <col class="rules-col" />
+            <col class="priority-col" />
+            <col class="actions-col" />
+          </colgroup>
           <thead>
             <tr>
               <th>Orden</th>
@@ -297,6 +343,15 @@
                   <div class="row-actions">
                     <button
                       type="button"
+                      class="primary row-main-action"
+                      title="Abrir sesion manual"
+                      [disabled]="actionBusy() || order.status !== 'ready'"
+                      (click)="$event.stopPropagation(); openManualSessionNow(order)"
+                    >
+                      Sesion
+                    </button>
+                    <button
+                      type="button"
                       class="icon-button"
                       title="Editar orden"
                       (click)="$event.stopPropagation(); openEditOrder(order)"
@@ -309,7 +364,7 @@
                       title="Acciones de orden"
                       (click)="$event.stopPropagation(); openOrderActions(order)"
                     >
-                      Acciones
+                      Mas
                     </button>
                     <button
                       type="button"
@@ -602,7 +657,13 @@
           <button type="button" class="secondary" (click)="requestOrderAction('pause', 'Pausar orden')">
             Pausar
           </button>
-          <button type="button" class="secondary" (click)="requestOrderAction('activate', 'Activar orden')">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="hasActiveChildOrders(order)"
+            title="No se puede activar una orden padre con subordenes activas"
+            (click)="requestOrderAction('activate', 'Activar orden')"
+          >
             Activar
           </button>
           <button type="button" class="secondary" (click)="requestOrderAction('no-charge', 'Marcar sin cobro')">

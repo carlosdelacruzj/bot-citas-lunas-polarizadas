@@ -508,6 +508,12 @@ def run_service_order(
             details.setdefault("cliente", order.notification_name)
             details.setdefault("nombre", order.name)
             details.setdefault("cuenta", order_settings.safe_username)
+            if order.contact_name:
+                details.setdefault("contact_name", order.contact_name)
+            if order.contact_whatsapp:
+                details.setdefault("contact_whatsapp", order.contact_whatsapp)
+            if order.contact_source:
+                details.setdefault("contact_source", order.contact_source)
             if order.program_expediente:
                 details.setdefault("program_expediente", order.program_expediente)
             if order.program_plate:

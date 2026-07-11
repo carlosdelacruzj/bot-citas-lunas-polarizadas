@@ -310,16 +310,24 @@ Estado: completado como accion local deshabilitada por defecto.
 
 Implementacion:
 
+- endpoint `GET /api/v1/manual-sessions`;
 - endpoint `POST /api/v1/manual-session/open`;
+- endpoint `POST /api/v1/manual-session/close`;
 - requiere `MANUAL_SESSION_ENABLED=true`;
 - acepta solo host y cliente loopback;
 - recibe `order_id`, resuelve credenciales en backend y no devuelve password;
 - abre Playwright visible con contexto nuevo y sin reutilizar cookies del
   worker;
+- hace login, selecciona el tramite, abre el modal de cita y selecciona la sede
+  requerida configurada, por defecto `LIMA-LA VICTORIA`;
 - deja la sesion en manos del usuario sin ejecutar reserva automatica ni
   cambiar estado de orden;
-- permite una sesion manual activa por proceso y registra auditoria minima en
-  logs;
+- no selecciona fecha/hora, no resuelve CAPTCHA y no pulsa el boton final de
+  reserva;
+- permite multiples sesiones manuales activas por proceso, cada una en un
+  navegador/contexto Playwright separado, y registra auditoria minima en logs;
+- limpia cada sesion cuando se cierra su ventana, termina su hilo o el
+  dashboard pide cerrar por `session_id`;
 - boton confirmado en `dashboard/` sobre la orden seleccionada.
 
 Validacion de la fase:

@@ -85,6 +85,23 @@ $env:MANUAL_SESSION_ENABLED='true'
 appointment-bot-admin-api
 ```
 
+Si se requiere operar sesiones manuales desde el dashboard durante una jornada,
+usar `MANUAL_SESSION_ENABLED=true` en el entorno local del admin API. El
+dashboard puede abrir multiples sesiones visibles, cada una con navegador
+separado. Cerrar la ventana del navegador o refrescar/cerrar el dashboard debe
+solicitar el cierre de las sesiones abiertas por esa pagina.
+
+La cola rapida debe mantenerse con una espera corta cuando los cupos duran pocos
+segundos. Los valores operativos recomendados para ese caso son:
+
+```powershell
+QUEUE_DELAY_MIN_SECONDS=1
+QUEUE_DELAY_MAX_SECONDS=1
+```
+
+Estos valores no cambian la cadencia del observer normal; solo afectan la pausa
+entre ordenes de la cola rapida.
+
 ## Verificacion rapida
 
 1. Confirmar liveness del admin API:
@@ -116,6 +133,12 @@ Interpretacion:
 
 4. Confirmar que las acciones administrativas muestran confirmacion antes del
    POST y respuesta clara despues del backend.
+
+5. Confirmar que, despues de una reserva exitosa, Telegram envia primero el
+   mensaje limpio para copiar al cliente y luego un mensaje operativo con
+   nombre, orden, origen y WhatsApp/contacto. Ese segundo mensaje debe tratarse
+   como notificacion diferida y no como requisito para considerar tomada la
+   reserva.
 
 ## Validacion antes de cerrar cambios
 

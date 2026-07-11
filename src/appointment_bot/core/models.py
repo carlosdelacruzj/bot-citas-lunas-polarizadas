@@ -47,6 +47,8 @@ class ServiceOrderCandidate:
     created_at: str
     updated_at: str
     contact_name: str | None = None
+    contact_whatsapp: str | None = None
+    contact_source: str | None = None
     parent_order_id: str | None = None
     program_expediente: str | None = None
     program_plate: str | None = None
@@ -79,6 +81,8 @@ class ServiceOrderRuntime:
     created_at: str
     updated_at: str
     contact_name: str | None = None
+    contact_whatsapp: str | None = None
+    contact_source: str | None = None
     parent_order_id: str | None = None
     program_expediente: str | None = None
     program_plate: str | None = None

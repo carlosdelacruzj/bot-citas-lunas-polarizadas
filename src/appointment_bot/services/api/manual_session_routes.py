@@ -6,10 +6,18 @@ from typing import Any
 
 from appointment_bot.config import load_settings
 from appointment_bot.db.orders import get_service_order_runtime
-from appointment_bot.manual_session.session import open_manual_session_for_order
+from appointment_bot.manual_session.session import (
+    close_manual_session,
+    list_manual_sessions,
+    open_manual_session_for_order,
+)
 from appointment_bot.services.api.http import error_payload
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def list_manual_sessions_payload() -> tuple[HTTPStatus, dict[str, Any]]:
+    return HTTPStatus.OK, {"manual_sessions": list_manual_sessions()}
 
 
 def open_manual_session_payload(
@@ -36,13 +44,23 @@ def open_manual_session_payload(
     order = get_service_order_runtime(order_id, settings=settings)
     if order is None:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
-    try:
-        session_id = open_manual_session_for_order(settings, order)
-    except RuntimeError as exc:
-        return HTTPStatus.CONFLICT, error_payload("conflict", str(exc))
+    session_id = open_manual_session_for_order(settings, order)
     return HTTPStatus.ACCEPTED, {
         "status": "opening",
         "session_id": session_id,
         "order_id": order.order_id,
         "message": "Manual browser session is opening locally.",
+    }
+
+
+def close_manual_session_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    session_id = str(payload.get("session_id") or "").strip()
+    if not session_id:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing session_id.")
+    if not close_manual_session(session_id):
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Manual session not found.")
+    return HTTPStatus.ACCEPTED, {
+        "status": "closing",
+        "session_id": session_id,
+        "message": "Manual browser session close requested.",
     }

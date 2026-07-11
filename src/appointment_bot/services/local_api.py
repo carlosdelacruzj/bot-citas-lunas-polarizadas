@@ -14,7 +14,11 @@ from appointment_bot.services.api.http import (
     require_authorized,
     send_json,
 )
-from appointment_bot.services.api.manual_session_routes import open_manual_session_payload
+from appointment_bot.services.api.manual_session_routes import (
+    close_manual_session_payload,
+    list_manual_sessions_payload,
+    open_manual_session_payload,
+)
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
@@ -69,6 +73,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             self._send_json(HTTPStatus.OK, list_worker_commands_payload(query))
+            return
+
+        if path == "/api/v1/manual-sessions":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = list_manual_sessions_payload()
+            self._send_json(status, payload)
             return
 
         if path == "/api/v1/service-orders":
@@ -191,6 +202,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 server_host=str(self.server.server_address[0]),
                 client_host=str(self.client_address[0]),
             )
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/manual-session/close":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = close_manual_session_payload(self._read_json())
             self._send_json(status, payload)
             return
 

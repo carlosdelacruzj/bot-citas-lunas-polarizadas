@@ -546,6 +546,7 @@ def list_active_orders(
             f"""
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, wc.display_name AS contact_name,
+                   wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -571,6 +572,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             WITH eligible_orders AS (
                 SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                        pa.username, wc.display_name AS contact_name,
+                       wc.phone AS contact_phone, wc.contact_source,
                        so.priority, so.status, so.created_at, so.updated_at,
                        so.parent_order_id, so.program_expediente, so.program_plate,
                        os.last_run_at
@@ -593,8 +595,9 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 ORDER BY priority DESC, created_at ASC
                 LIMIT %s
             )
-            SELECT order_id, name, username, contact_name, priority, status, created_at,
-                   updated_at, parent_order_id, program_expediente, program_plate
+            SELECT order_id, name, username, contact_name, contact_phone, contact_source,
+                   priority, status, created_at, updated_at, parent_order_id,
+                   program_expediente, program_plate
             FROM active_block
             ORDER BY last_run_at ASC NULLS FIRST, created_at ASC, priority DESC
             """,
@@ -677,6 +680,7 @@ def promote_orders_matching_reserved_slot(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, wc.display_name AS contact_name,
+                   wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -1106,6 +1110,27 @@ def set_order_paused(order_id: str, paused: bool, *, settings: Settings | None =
             )
 
 
+def has_active_child_service_orders(
+    order_id: str,
+    *,
+    settings: Settings | None = None,
+) -> bool:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM service_orders
+            WHERE parent_order_id = %s
+              AND status IN ('ready', 'paused', 'reserved_payment_pending')
+            LIMIT 1
+            """,
+            (order_id,),
+        ).fetchone()
+    return row is not None
+
+
 def record_invalid_credential_failure(
     order_id: str,
     *,
@@ -1272,6 +1297,7 @@ def get_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.password, wc.display_name AS contact_name,
+                   wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -1300,6 +1326,7 @@ def get_claimed_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.password, wc.display_name AS contact_name,
+                   wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -1377,6 +1404,8 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
+        contact_whatsapp=row.get("contact_phone"),
+        contact_source=row.get("contact_source"),
         parent_order_id=row.get("parent_order_id"),
         program_expediente=row.get("program_expediente"),
         program_plate=row.get("program_plate"),
@@ -1393,6 +1422,8 @@ def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
+        contact_whatsapp=row.get("contact_phone"),
+        contact_source=row.get("contact_source"),
         parent_order_id=row.get("parent_order_id"),
         program_expediente=row.get("program_expediente"),
         program_plate=row.get("program_plate"),

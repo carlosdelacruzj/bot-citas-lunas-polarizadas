@@ -324,6 +324,36 @@ td span {
   margin-top: 14px;
 }
 
+.manual-sessions-panel {
+  margin-bottom: 14px;
+}
+
+.manual-session-list {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-session-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(190px, auto) auto;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid #edf1f5;
+  padding-top: 10px;
+}
+
+.manual-session-row strong,
+.manual-session-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.manual-session-row span,
+.manual-session-row small {
+  color: #65737d;
+  font-size: 0.78rem;
+}
+
 .selected-detail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -381,8 +411,19 @@ td span {
 
 .row-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(72px, 1.25fr) repeat(3, minmax(48px, 0.75fr));
   gap: 6px;
+}
+
+.row-actions button {
+  min-height: 32px;
+  padding: 7px 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.row-main-action {
+  min-width: 72px;
 }
 
 .check-row {
@@ -432,12 +473,61 @@ table {
   table-layout: fixed;
 }
 
+.order-col {
+  width: 13%;
+}
+
+.applicant-col {
+  width: 17%;
+}
+
+.status-col {
+  width: 8%;
+}
+
+.reservation-col {
+  width: 10%;
+}
+
+.payment-col {
+  width: 8%;
+}
+
+.closure-col {
+  width: 10%;
+}
+
+.program-col {
+  width: 10%;
+}
+
+.rules-col {
+  width: 10%;
+}
+
+.priority-col {
+  width: 62px;
+}
+
+.actions-col {
+  width: 236px;
+}
+
 th,
 td {
   border-top: 1px solid #edf1f5;
-  padding: 11px 10px;
+  padding: 10px 8px;
   text-align: left;
   vertical-align: top;
+}
+
+th:nth-child(9),
+td:nth-child(9) {
+  text-align: center;
+}
+
+td:nth-child(10) {
+  padding-left: 12px;
 }
 
 th {
@@ -636,6 +726,7 @@ td span {
 
   .quick-filters,
   .order-tool-row,
+  .manual-session-row,
   .modal-grid,
   .modal-actions-grid {
     grid-template-columns: 1fr;

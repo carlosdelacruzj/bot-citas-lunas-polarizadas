@@ -91,6 +91,20 @@ interface WorkerCommandsResponse {
   commands: WorkerCommand[];
 }
 
+interface ManualSessionsResponse {
+  manual_sessions: ManualSession[];
+}
+
+export interface ManualSession {
+  session_id: string;
+  order_id: string;
+  username: string;
+  status: string;
+  started_at: string;
+  updated_at: string;
+  close_requested: boolean;
+}
+
 export interface ApiActionResponse {
   status: string;
   message?: string;
@@ -179,6 +193,13 @@ export class AppointmentApiService {
     return response.commands;
   }
 
+  async getManualSessions(): Promise<ManualSession[]> {
+    const response = await firstValueFrom(
+      this.http.get<ManualSessionsResponse>('/api/v1/manual-sessions'),
+    );
+    return response.manual_sessions;
+  }
+
   async updateServiceOrderContact(
     orderId: string,
     payload: ContactUpdatePayload,
@@ -230,6 +251,12 @@ export class AppointmentApiService {
   async openManualSession(orderId: string): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>('/api/v1/manual-session/open', {
       order_id: orderId,
+    });
+  }
+
+  async closeManualSession(sessionId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/manual-session/close', {
+      session_id: sessionId,
     });
   }
 

@@ -298,7 +298,20 @@ def _send_deferred_result_notification(
                 _format_deferred_evidence_caption(result),
             )
         return not settings.telegram_enabled
-    return _send_result_notification(result, settings, screenshot_paths)
+    delivered = _send_result_notification(result, settings, screenshot_paths)
+    if result.status == "registered":
+        delivered = _send_registered_contact_notification(result, settings) or delivered
+    return delivered
+
+
+def _send_registered_contact_notification(
+    result: AvailabilityResult,
+    settings: Settings,
+) -> bool:
+    message = _format_registered_contact_message(result)
+    if message is None:
+        return False
+    return send_telegram_message(settings, message)
 
 
 def _format_telegram_result_message(result: AvailabilityResult) -> str:
@@ -382,6 +395,32 @@ def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: 
         send_telegram_photo(settings, image_path, "Evidencia adicional.")
 
     return primary_delivered
+
+
+def _format_registered_contact_message(result: AvailabilityResult) -> str | None:
+    if result.status != "registered":
+        return None
+    details = result.details or {}
+    date, hour = _appointment_datetime_details(details)
+    lines = [
+        "CONTACTO DE LA RESERVA",
+        "",
+        f"Cliente: {_format_contact_field(details.get('nombre') or details.get('cliente'))}",
+        f"Orden: {_format_contact_field(details.get('orden'))}",
+        f"Contacto: {_format_contact_field(details.get('contact_name'))}",
+        f"Origen: {_format_contact_field(details.get('contact_source'))}",
+        f"WhatsApp: {_format_contact_field(details.get('contact_whatsapp'))}",
+        "",
+        "Reserva:",
+        f"{_format_contact_field(date)} {_format_contact_field(hour)}".strip(),
+        _format_contact_field(details.get("sede")),
+    ]
+    return "\n".join(lines)
+
+
+def _format_contact_field(value: object) -> str:
+    text = str(value or "").strip()
+    return text or "sin registrar"
 
 
 def _send_programmed_sequence(

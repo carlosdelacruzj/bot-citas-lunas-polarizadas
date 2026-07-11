@@ -1,4 +1,4 @@
-import { Component, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -8,6 +8,7 @@ import {
   ContactUpdatePayload,
   CreateServiceOrderPayload,
   HealthPayload,
+  ManualSession,
   PaymentPaidPayload,
   RunSummary,
   ServiceOrder,
@@ -28,6 +29,7 @@ type OrderQuickFilter =
   | 'closed_no_charge'
   | 'restricted';
 type OrderSortKey =
+  | 'queue'
   | 'priority'
   | 'created_at'
   | 'updated_at'
@@ -49,7 +51,7 @@ type PendingAction = {
   message: string;
   execute: () => Promise<ApiActionResponse>;
   containsSecret?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (response: ApiActionResponse) => void;
   onSettled?: () => void;
 };
 
@@ -66,6 +68,7 @@ export class App implements OnDestroy {
   private readonly autoRefreshTimer = window.setInterval(() => {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
+  private readonly activeManualSessionIds = new Set<string>();
 
   protected readonly activeView = signal<ViewKey>('orders');
   protected readonly activeModal = signal<ModalKind>(null);
@@ -74,7 +77,7 @@ export class App implements OnDestroy {
   protected readonly lastUpdatedAt = signal<string | null>(null);
   protected readonly orderFilter = signal('');
   protected readonly orderQuickFilter = signal<OrderQuickFilter>('all');
-  protected readonly orderSortKey = signal<OrderSortKey>('priority');
+  protected readonly orderSortKey = signal<OrderSortKey>('queue');
   protected readonly orderSortDirection = signal<SortDirection>('desc');
   protected readonly runStatusFilter = signal('');
   protected readonly health = signal<HealthPayload | null>(null);
@@ -82,6 +85,7 @@ export class App implements OnDestroy {
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly workerCommands = signal<WorkerCommand[]>([]);
+  protected readonly manualSessions = signal<ManualSession[]>([]);
   protected readonly loadState = signal<LoadState>('idle');
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
@@ -213,6 +217,12 @@ export class App implements OnDestroy {
 
   ngOnDestroy(): void {
     window.clearInterval(this.autoRefreshTimer);
+    this.closeTrackedManualSessionsWithBeacon();
+  }
+
+  @HostListener('window:beforeunload')
+  protected handleBeforeUnload(): void {
+    this.closeTrackedManualSessionsWithBeacon();
   }
 
   protected async refreshAll(): Promise<void> {
@@ -221,16 +231,18 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
 
     try {
-      const [worker, orders, runs, workerCommands] = await Promise.all([
-        this.api.getWorker(),
-        this.api.getServiceOrders(),
-        this.api.getRuns(),
-        this.api.getWorkerCommands(),
-      ]);
-      this.worker.set(worker);
-      this.orders.set(orders);
-      this.runs.set(runs);
-      this.workerCommands.set(workerCommands);
+        const [worker, orders, runs, workerCommands, manualSessions] = await Promise.all([
+          this.api.getWorker(),
+          this.api.getServiceOrders(),
+          this.api.getRuns(),
+          this.api.getWorkerCommands(),
+          this.api.getManualSessions(),
+        ]);
+        this.worker.set(worker);
+        this.orders.set(orders);
+        this.runs.set(runs);
+        this.workerCommands.set(workerCommands);
+        this.manualSessions.set(manualSessions);
       this.keepValidSelection(orders);
       this.hydrateSelectedOrderForms();
       this.lastUpdatedAt.set(this.formatClock(new Date()));
@@ -295,7 +307,7 @@ export class App implements OnDestroy {
       return;
     }
     this.orderSortKey.set(key);
-    this.orderSortDirection.set(key === 'applicant' || key === 'status' ? 'asc' : 'desc');
+    this.orderSortDirection.set(this.defaultOrderSortDirection(key));
   }
 
   protected chooseOrderSort(key: OrderSortKey): void {
@@ -303,7 +315,7 @@ export class App implements OnDestroy {
       return;
     }
     this.orderSortKey.set(key);
-    this.orderSortDirection.set(key === 'applicant' || key === 'status' ? 'asc' : 'desc');
+    this.orderSortDirection.set(this.defaultOrderSortDirection(key));
   }
 
   protected toggleOrderSortDirection(): void {
@@ -313,6 +325,7 @@ export class App implements OnDestroy {
   protected orderSortLabel(key: OrderSortKey): string {
     const labels: Record<OrderSortKey, string> = {
       priority: 'Prioridad',
+      queue: 'Orden real',
       created_at: 'Creacion',
       updated_at: 'Actualizacion',
       status: 'Estado',
@@ -359,6 +372,10 @@ export class App implements OnDestroy {
   ): void {
     const order = this.requireSelectedOrder();
     if (!order) {
+      return;
+    }
+    if (action === 'activate' && this.hasActiveChildOrders(order)) {
+      this.errorMessage.set('No se puede activar una orden padre con subordenes activas.');
       return;
     }
     this.setPendingAction({
@@ -474,8 +491,53 @@ export class App implements OnDestroy {
       title: 'Abrir sesion manual',
       message: `Abrir navegador visible para ${order.order_id}.`,
       execute: () => this.api.openManualSession(order.order_id),
-      onSuccess: () => this.activeModal.set(null),
+      onSuccess: (response) => {
+        if (response.session_id) {
+          this.activeManualSessionIds.add(response.session_id);
+        }
+        this.activeModal.set(null);
+      },
     });
+  }
+
+  protected async openManualSessionNow(order: ServiceOrder): Promise<void> {
+    if (this.actionBusy()) {
+      return;
+    }
+    this.actionBusy.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    try {
+      const response = await this.api.openManualSession(order.order_id);
+      if (response.session_id) {
+        this.activeManualSessionIds.add(response.session_id);
+      }
+      this.successMessage.set(this.actionResponseMessage(response));
+      await this.refreshAll();
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  protected async closeManualSession(session: ManualSession): Promise<void> {
+    if (this.actionBusy()) {
+      return;
+    }
+    this.actionBusy.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    try {
+      const response = await this.api.closeManualSession(session.session_id);
+      this.activeManualSessionIds.delete(session.session_id);
+      this.successMessage.set(this.actionResponseMessage(response));
+      await this.refreshAll();
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
+    }
   }
 
   protected requestSplitPrograms(): void {
@@ -512,7 +574,7 @@ export class App implements OnDestroy {
       this.successMessage.set(this.actionResponseMessage(response));
       this.pendingAction.set(null);
       this.formDirty.set(false);
-      action.onSuccess?.();
+      action.onSuccess?.(response);
       await this.refreshAll();
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -615,8 +677,30 @@ export class App implements OnDestroy {
     return 'abierto';
   }
 
+  protected manualSessionOrderLabel(session: ManualSession): string {
+    const order = this.orders().find((item) => item.order_id === session.order_id);
+    if (!order) {
+      return session.order_id;
+    }
+    return `${session.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
+  }
+
+  protected hasActiveChildOrders(order: ServiceOrder): boolean {
+    return this.orders().some(
+      (item) =>
+        item.parent_order_id === order.order_id &&
+        ['ready', 'paused', 'reserved_payment_pending'].includes(item.status),
+    );
+  }
+
   protected statusTone(value: string | boolean | null | undefined): string {
-    if (value === true || value === 'ok' || value === 'confirmed' || value === 'paid') {
+    if (
+      value === true ||
+      value === 'ok' ||
+      value === 'confirmed' ||
+      value === 'paid' ||
+      value === 'ready'
+    ) {
       return 'good';
     }
     if (value === false || value === 'degraded' || value === 'error' || value === 'rejected') {
@@ -626,6 +710,8 @@ export class App implements OnDestroy {
       value === 'outside_hot_window' ||
       value === 'paused' ||
       value === 'pending' ||
+      value === 'opening' ||
+      value === 'closing' ||
       value === 'family_no_charge'
     ) {
       return 'warn';
@@ -741,6 +827,9 @@ export class App implements OnDestroy {
     const direction = this.orderSortDirection() === 'asc' ? 1 : -1;
     const key = this.orderSortKey();
     return [...orders].sort((left, right) => {
+      if (key === 'queue') {
+        return this.compareQueueOrder(left, right) * direction;
+      }
       const leftValue = this.orderSortValue(left, key);
       const rightValue = this.orderSortValue(right, key);
       const compared =
@@ -755,6 +844,9 @@ export class App implements OnDestroy {
   }
 
   private orderSortValue(order: ServiceOrder, key: OrderSortKey): string | number {
+    if (key === 'queue') {
+      return order.priority;
+    }
     if (key === 'priority') {
       return order.priority;
     }
@@ -777,6 +869,22 @@ export class App implements OnDestroy {
       return order.closure_reason ?? '';
     }
     return order.applicant_name ?? order.document_number ?? order.document_number_masked ?? '';
+  }
+
+  private compareQueueOrder(left: ServiceOrder, right: ServiceOrder): number {
+    const priorityCompare = right.priority - left.priority;
+    if (priorityCompare !== 0) {
+      return priorityCompare;
+    }
+    const createdCompare = (Date.parse(left.created_at) || 0) - (Date.parse(right.created_at) || 0);
+    if (createdCompare !== 0) {
+      return createdCompare;
+    }
+    return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
+  }
+
+  private defaultOrderSortDirection(key: OrderSortKey): SortDirection {
+    return key === 'applicant' || key === 'status' || key === 'queue' ? 'asc' : 'desc';
   }
 
   private hydrateSelectedOrderForms(): void {
@@ -859,5 +967,22 @@ export class App implements OnDestroy {
       parts.push(response.order_id);
     }
     return parts.join(' | ');
+  }
+
+  private closeTrackedManualSessionsWithBeacon(): void {
+    if (!this.activeManualSessionIds.size) {
+      return;
+    }
+    for (const sessionId of this.activeManualSessionIds) {
+      const body = JSON.stringify({ session_id: sessionId });
+      const sent = navigator.sendBeacon?.(
+        '/api/v1/manual-session/close',
+        new Blob([body], { type: 'application/json' }),
+      );
+      if (!sent) {
+        void this.api.closeManualSession(sessionId).catch(() => undefined);
+      }
+    }
+    this.activeManualSessionIds.clear();
   }
 }

@@ -11,6 +11,7 @@ from appointment_bot.db.common import init_database
 from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     create_service_order,
+    has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
     mark_payment_paid,
@@ -335,6 +336,8 @@ def run(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "activate":
+        if has_active_child_service_orders(args.order_id):
+            parser.error("No se puede activar una orden padre con subordenes activas.")
         set_order_paused(args.order_id, False)
         print(f"Trabajo activado: {args.order_id}")
         return 0

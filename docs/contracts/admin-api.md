@@ -40,7 +40,9 @@ GET  /api/v1/runs/{run_id}
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart
+GET  /api/v1/manual-sessions
 POST /api/v1/manual-session/open
+POST /api/v1/manual-session/close
 ```
 
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
@@ -168,9 +170,17 @@ opera contra `8766`, los controles del worker deben pasar por
 
 ## Sesion manual
 
+`GET /api/v1/manual-sessions` devuelve las sesiones manuales activas en el
+proceso admin API actual, con `session_id`, `order_id`, cuenta enmascarada,
+estado y timestamps de apertura/actualizacion.
+
 `POST /api/v1/manual-session/open` acepta:
 
 - `order_id`
+
+`POST /api/v1/manual-session/close` acepta:
+
+- `session_id`
 
 Restricciones:
 
@@ -178,8 +188,14 @@ Restricciones:
 - solo loopback;
 - no devuelve password, cookies ni rutas internas;
 - no reutiliza contexto Playwright del worker;
+- prepara la ventana hasta login, tramite seleccionado, modal de cita abierto y
+  sede requerida seleccionada, por defecto `LIMA-LA VICTORIA`;
 - no cambia estado de reserva por si mismo;
-- una sesion activa por proceso.
+- no selecciona fecha/hora, no resuelve CAPTCHA y no envia reserva;
+- permite multiples sesiones manuales activas por proceso, cada una con
+  navegador/contexto Playwright separado;
+- cada sesion se limpia cuando se cierra su ventana, termina su hilo o el
+  dashboard pide cerrar por `session_id`.
 
 ## Runs
 
