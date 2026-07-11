@@ -8,11 +8,11 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult, RunReport
+from appointment_bot.reports.run_reporting import finalize_report, report_from_result
 from appointment_bot.reservation_engine.results import cleanup_unconfirmed_session_screenshots
 from appointment_bot.reservation_engine.session_flow import execute_session_flow
 from appointment_bot.services.client_video import ClientSessionVideoRecorder
 from appointment_bot.services.notifier import notify_error
-from appointment_bot.services.run_reporting import finalize_report, report_from_result
 from appointment_bot.utils.screenshots import save_error_screenshot
 
 logger = logging.getLogger(__name__)

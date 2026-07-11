@@ -7,9 +7,9 @@ from dataclasses import replace
 from pathlib import Path
 
 from appointment_bot.config import load_settings
+from appointment_bot.reports.status import generate_daily_report_image
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
-from appointment_bot.services.status_reports import generate_daily_report_image
 from appointment_bot.worker.continuous_worker import (
     DAILY_CUTOFF_REASON,
     LEASE_UNAVAILABLE_REASON,

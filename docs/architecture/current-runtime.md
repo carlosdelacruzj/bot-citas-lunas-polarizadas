@@ -33,6 +33,13 @@ submit de reserva y confirmacion post-submit. Las rutas antiguas
 `services/reservation_timings.py` y `services/observer.py` son wrappers de
 compatibilidad durante la transicion.
 
+Los reportes y evidencia operativa viven ahora bajo `appointment_bot.reports`:
+historial final de corridas, resumen compacto de evidencia, bitacoras de
+optimizacion/disponibilidad parcial, fichas de estado y reporte diario. Las
+rutas antiguas `services/run_reporting.py`, `services/status_reports.py`,
+`services/evidence_summary.py` y `services/optimization_log.py` son wrappers de
+compatibilidad durante la transicion.
+
 Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
 de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL
 actuales, escucha por defecto en `127.0.0.1:8766` y no aloja un

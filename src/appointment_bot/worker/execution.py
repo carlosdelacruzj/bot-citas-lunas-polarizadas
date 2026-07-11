@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from appointment_bot.config import Settings
+from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.services.database_models import ServiceOrderCandidate, ServiceOrderRuntime
-from appointment_bot.services.run_reporting import settings_for_order
 
 
 def continuous_order_settings(

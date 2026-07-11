@@ -12,6 +12,7 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult, RunReport
+from appointment_bot.reports.run_reporting import finalize_report
 from appointment_bot.reservation_engine.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
@@ -30,7 +31,6 @@ from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     ensure_reservation_captcha_loaded,
     refresh_reservation_captcha,
 )
-from appointment_bot.services.run_reporting import finalize_report
 from appointment_bot.utils.screenshots import (
     save_result_screenshot,
     save_revealed_element_screenshot,

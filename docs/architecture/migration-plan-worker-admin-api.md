@@ -609,9 +609,42 @@ git diff --check
 
 ### Paso 9.6: mover reportes y evidencia
 
-Mover a `reports/` la generacion de fichas, resumenes, evidencia compacta y
-salidas operativas. Mantener rutas de salida y formatos actuales para no romper
-revision historica ni herramientas externas.
+Estado: completado como corte transicional con wrappers de compatibilidad.
+
+Se movio a `reports/` la generacion de fichas, resumenes, evidencia compacta y
+salidas operativas.
+
+Resultado:
+
+- `reports/run_reporting.py` contiene finalizacion de corridas, conversion de
+  resultados y registro historico;
+- `reports/evidence.py` contiene indice/resumen compacto de evidencia;
+- `reports/optimization.py` contiene bitacoras de optimizacion y disponibilidad
+  parcial;
+- `reports/status.py` contiene fichas de estado y reporte diario;
+- `services/run_reporting.py`, `services/status_reports.py`,
+  `services/evidence_summary.py` y `services/optimization_log.py` quedaron como
+  wrappers explicitos;
+- no hubo cambios de schema, dashboard, `.env`, formatos historicos ni rutas de
+  salida.
+
+Rutas de salida preservadas:
+
+- `docs/evidence-index.csv`;
+- `docs/evidence-summary.md`;
+- `docs/reservation-optimization-log.md`;
+- `docs/partial-availability-log.md`;
+- `reports/status/`;
+- `reports/daily/`.
+
+Validacion minima:
+
+```powershell
+python -m compileall src
+python -m ruff check src tests
+python -m pytest
+git diff --check
+```
 
 ### Paso 9.7: retirar compatibilidad vieja
 

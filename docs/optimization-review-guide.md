@@ -113,6 +113,12 @@ un evento lo justifique.
   `reservation_engine/reservation_submit.py`,
   `reservation_engine/reservation_portal.py` y
   `reservation_engine/reservation_flow.py`.
+- Finalizacion de corridas, persistencia historica y conversion a `RunReport`
+  viven en `reports/run_reporting.py`.
+- Resumen compacto de evidencia vive en `reports/evidence.py`.
+- Bitacoras de optimizacion y disponibilidad parcial viven en
+  `reports/optimization.py`.
+- Fichas de estado y reporte diario viven en `reports/status.py`.
 
 ## Regenerar resumen manual
 

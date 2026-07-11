@@ -9,9 +9,9 @@ from uuid import uuid4
 
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
+from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.services.database_models import ServiceOrderRuntime
-from appointment_bot.services.run_reporting import settings_for_order
 
 logger = logging.getLogger(__name__)
 

@@ -19,8 +19,8 @@ from appointment_bot.db.orders import (
     split_service_order_programs,
 )
 from appointment_bot.db.runs import get_run, list_runs
-from appointment_bot.services.evidence_summary import export_evidence_summary
-from appointment_bot.services.status_reports import (
+from appointment_bot.reports.evidence import export_evidence_summary
+from appointment_bot.reports.status import (
     generate_daily_report_image,
     generate_status_report_images,
 )
