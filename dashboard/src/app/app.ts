@@ -37,6 +37,9 @@ type PendingAction = {
   title: string;
   message: string;
   execute: () => Promise<ApiActionResponse>;
+  containsSecret?: boolean;
+  onSuccess?: () => void;
+  onSettled?: () => void;
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
@@ -275,7 +278,7 @@ export class App implements OnDestroy {
     if (this.orderSortKey() !== key) {
       return '';
     }
-    return this.orderSortDirection() === 'asc' ? '↑' : '↓';
+    return this.orderSortDirection() === 'asc' ? 'ASC' : 'DESC';
   }
 
   protected requestContactUpdate(): void {
@@ -359,6 +362,9 @@ export class App implements OnDestroy {
       title: 'Crear orden nueva',
       message: `Crear orden para documento ${payload.document_number}.`,
       execute: () => this.api.createServiceOrder(payload),
+      containsSecret: true,
+      onSuccess: () => this.clearCreateOrderForm(),
+      onSettled: () => this.newPassword.set(''),
     });
   }
 
@@ -415,10 +421,15 @@ export class App implements OnDestroy {
       this.successMessage.set(this.actionResponseMessage(response));
       this.pendingAction.set(null);
       this.formDirty.set(false);
+      action.onSuccess?.();
       await this.refreshAll();
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
+      action.onSettled?.();
+      if (action.containsSecret) {
+        this.pendingAction.set(null);
+      }
       this.actionBusy.set(false);
     }
   }
@@ -637,6 +648,22 @@ export class App implements OnDestroy {
     this.contactSource.set(order.contact_source ?? 'whatsapp');
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');
+  }
+
+  private clearCreateOrderForm(): void {
+    this.newDocumentNumber.set('');
+    this.newPassword.set('');
+    this.newApplicantName.set('');
+    this.newContactName.set('');
+    this.newContactWhatsapp.set('');
+    this.newPriority.set(0);
+    this.newChargeRequired.set(true);
+    this.newParentOrderId.set('');
+    this.newProgramExpediente.set('');
+    this.newProgramPlate.set('');
+    this.newMinimumReservationHour.set('');
+    this.newMinimumReservationDate.set('');
+    this.newAllowedWeekdays.set('');
   }
 
   private formatClock(date: Date): string {

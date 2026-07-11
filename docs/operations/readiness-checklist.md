@@ -50,7 +50,7 @@ npm install
 cd ..
 ```
 
-3. Confirmar que `dashboard/proxy.conf.json` apunta a
+3. Confirmar que `dashboard/proxy.conf.cjs` apunta a
    `http://127.0.0.1:8766` para validar la topologia objetivo. Para rollback
    temporal, puede apuntar a `http://127.0.0.1:8765`.
 
@@ -177,7 +177,7 @@ Si el admin API o dashboard fallan:
 1. detener `appointment-bot-admin-api`;
 2. detener `npm start`;
 3. dejar `scripts/start-worker.ps1` como unico camino operativo;
-4. si se necesita dashboard temporal, apuntar `dashboard/proxy.conf.json` a
+4. si se necesita dashboard temporal, apuntar `dashboard/proxy.conf.cjs` a
    `http://127.0.0.1:8765`;
 5. validar `appointment-bot-client orders` y `GET /health` del worker embebido.
 
