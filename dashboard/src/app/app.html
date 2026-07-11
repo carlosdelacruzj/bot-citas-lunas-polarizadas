@@ -34,13 +34,6 @@
     </button>
     <button
       type="button"
-      [class.active]="activeView() === 'actions'"
-      (click)="activeView.set('actions')"
-    >
-      Acciones
-    </button>
-    <button
-      type="button"
       [class.active]="activeView() === 'runs'"
       (click)="activeView.set('runs')"
     >
@@ -111,7 +104,7 @@
             </div>
             <div>
               <dt>Documento</dt>
-              <dd>{{ order.document_number_masked }}</dd>
+              <dd>{{ order.document_number }}</dd>
             </div>
             <div>
               <dt>Reserva</dt>
@@ -119,12 +112,15 @@
             </div>
             <div>
               <dt>Pago</dt>
-              <dd>{{ order.payment_status ?? 'sin estado' }}</dd>
+              <dd>{{ paymentLabel(order) }}</dd>
             </div>
           </dl>
         } @else {
           <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
         }
+        <div class="panel-actions">
+          <button type="button" class="danger" (click)="openWorkerRestart()">Restart worker</button>
+        </div>
       </article>
 
       <article class="panel">
@@ -157,320 +153,6 @@
     </section>
   }
 
-  @if (activeView() === 'actions') {
-    <section class="panel admin-panel">
-      <div class="panel-header">
-        <div>
-        <h2>Acciones administrativas</h2>
-        <p>{{ orderLabel(selectedOrder()) }}</p>
-      </div>
-      <button type="button" class="danger" (click)="requestRestartWorker()">Restart worker</button>
-    </div>
-
-      @if (selectedOrder(); as order) {
-        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
-          <div>
-            <span>Solicitante</span>
-            <strong>{{ order.applicant_name ?? order.applicant_id }}</strong>
-            <small>{{ order.document_number_masked }} | {{ order.order_id }}</small>
-          </div>
-          <div>
-            <span>Contacto</span>
-            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
-            <small>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
-          </div>
-          <div>
-            <span>Reserva</span>
-            <strong>{{ order.reservation_status ?? 'pendiente' }}</strong>
-            <small>{{ order.reservation_date ?? 'sin fecha' }} {{ order.reservation_hour ?? '' }}</small>
-          </div>
-          <div>
-            <span>Pago</span>
-            <strong>{{ order.payment_status ?? 'sin pago' }}</strong>
-            <small>{{ order.amount_paid ?? '0.00' }} / {{ order.amount_agreed ?? 'sin acordado' }}</small>
-          </div>
-          <div>
-            <span>Tramite</span>
-            <strong>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</strong>
-            <small>{{ order.parent_order_id ?? 'sin padre' }}</small>
-          </div>
-          <div>
-            <span>Ultimo run</span>
-            @if (lastSelectedOrderRun(); as run) {
-              <strong>{{ run.status }}</strong>
-              <small>{{ run.started_at }}</small>
-            } @else {
-              <strong>sin run</strong>
-              <small>sin fecha</small>
-            }
-          </div>
-        </section>
-      }
-
-      @if (pendingAction(); as action) {
-        <div class="confirm-box" role="alert">
-          <div>
-            <strong>{{ action.title }}</strong>
-            <span>{{ action.message }}</span>
-          </div>
-          <div class="button-row confirm-actions">
-            <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
-            <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
-              Confirmar
-            </button>
-          </div>
-        </div>
-      }
-
-      <div class="admin-grid">
-        <div class="admin-block action-card">
-          <h3>Orden seleccionada</h3>
-          <label>
-            Orden
-            <select
-              name="selectedOrder"
-              [ngModel]="selectedOrderId()"
-              (ngModelChange)="selectOrder($event)"
-            >
-              @for (order of orders(); track order.order_id) {
-                <option [value]="order.order_id">
-                  {{ order.order_id }} | {{ order.applicant_name ?? order.document_number_masked }}
-                </option>
-              }
-            </select>
-          </label>
-          <div class="button-row">
-            <button type="button" class="secondary" (click)="requestOrderAction('pause', 'Pausar orden')">
-              Pausar
-            </button>
-            <button type="button" class="secondary" (click)="requestOrderAction('activate', 'Activar orden')">
-              Activar
-            </button>
-            <button type="button" class="secondary" (click)="requestOrderAction('no-charge', 'Marcar sin cobro')">
-              Sin cobro
-            </button>
-            <button type="button" class="danger" (click)="requestOrderAction('done', 'Archivar/completar')">
-              Completar
-            </button>
-            <button type="button" class="secondary" (click)="requestManualSession()">
-              Sesion manual
-            </button>
-            <button type="button" class="secondary" (click)="requestSplitPrograms()">
-              Dividir tramites
-            </button>
-          </div>
-          <label class="check-row">
-            <input
-              name="splitKeepParentActive"
-              type="checkbox"
-              [ngModel]="splitKeepParentActive()"
-              (ngModelChange)="splitKeepParentActive.set($event)"
-            />
-            Mantener padre activo
-          </label>
-        </div>
-
-        <div class="admin-block action-card">
-          <h3>Contacto</h3>
-          <div class="form-grid">
-            <label>
-              Nombre
-              <input
-                name="contactName"
-                type="text"
-                [ngModel]="contactName()"
-                (ngModelChange)="editField(contactName, $event)"
-              />
-            </label>
-            <label>
-              WhatsApp
-              <input
-                name="contactWhatsapp"
-                type="text"
-                [placeholder]="selectedOrderWhatsappPlaceholder()"
-                [ngModel]="contactWhatsapp()"
-                (ngModelChange)="editField(contactWhatsapp, $event)"
-              />
-            </label>
-            <label>
-              Fuente
-              <input
-                name="contactSource"
-                type="text"
-                [ngModel]="contactSource()"
-                (ngModelChange)="editField(contactSource, $event)"
-              />
-            </label>
-          </div>
-          <button type="button" class="primary" (click)="requestContactUpdate()">
-            Actualizar contacto
-          </button>
-        </div>
-
-        <div class="admin-block action-card">
-          <h3>Pago</h3>
-          <div class="form-grid">
-            <label>
-              Pagado
-              <input
-                name="paymentAmountPaid"
-                type="number"
-                min="0"
-                step="0.01"
-                [ngModel]="paymentAmountPaid()"
-                (ngModelChange)="editField(paymentAmountPaid, $event)"
-              />
-            </label>
-            <label>
-              Acordado
-              <input
-                name="paymentAmountAgreed"
-                type="number"
-                min="0"
-                step="0.01"
-                [ngModel]="paymentAmountAgreed()"
-                (ngModelChange)="editField(paymentAmountAgreed, $event)"
-              />
-            </label>
-          </div>
-          <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
-        </div>
-
-        <div class="admin-block action-card create-block">
-          <h3>Nueva orden</h3>
-          <div class="form-grid wide">
-            <label>
-              Documento
-              <input
-                name="newDocumentNumber"
-                type="text"
-                autocomplete="off"
-                [ngModel]="newDocumentNumber()"
-                (ngModelChange)="editField(newDocumentNumber, $event)"
-              />
-            </label>
-            <label>
-              Password
-              <input
-                name="newPassword"
-                type="password"
-                autocomplete="new-password"
-                [ngModel]="newPassword()"
-                (ngModelChange)="editField(newPassword, $event)"
-              />
-            </label>
-            <label>
-              Solicitante
-              <input
-                name="newApplicantName"
-                type="text"
-                [ngModel]="newApplicantName()"
-                (ngModelChange)="editField(newApplicantName, $event)"
-              />
-            </label>
-            <label>
-              Contacto
-              <input
-                name="newContactName"
-                type="text"
-                [ngModel]="newContactName()"
-                (ngModelChange)="editField(newContactName, $event)"
-              />
-            </label>
-            <label>
-              WhatsApp
-              <input
-                name="newContactWhatsapp"
-                type="text"
-                [ngModel]="newContactWhatsapp()"
-                (ngModelChange)="editField(newContactWhatsapp, $event)"
-              />
-            </label>
-            <label>
-              Prioridad
-              <input
-                name="newPriority"
-                type="number"
-                min="0"
-                step="1"
-                [ngModel]="newPriority()"
-                (ngModelChange)="editField(newPriority, $event)"
-              />
-            </label>
-            <label class="check-row">
-              <input
-                name="newChargeRequired"
-                type="checkbox"
-                [ngModel]="newChargeRequired()"
-                (ngModelChange)="editField(newChargeRequired, $event)"
-              />
-              Cobro requerido
-            </label>
-            <label>
-              Padre
-              <input
-                name="newParentOrderId"
-                type="text"
-                [ngModel]="newParentOrderId()"
-                (ngModelChange)="editField(newParentOrderId, $event)"
-              />
-            </label>
-            <label>
-              Expediente
-              <input
-                name="newProgramExpediente"
-                type="text"
-                [ngModel]="newProgramExpediente()"
-                (ngModelChange)="editField(newProgramExpediente, $event)"
-              />
-            </label>
-            <label>
-              Placa
-              <input
-                name="newProgramPlate"
-                type="text"
-                [ngModel]="newProgramPlate()"
-                (ngModelChange)="editField(newProgramPlate, $event)"
-              />
-            </label>
-            <label>
-              Hora minima
-              <input
-                name="newMinimumReservationHour"
-                type="number"
-                min="0"
-                max="23"
-                step="1"
-                [ngModel]="newMinimumReservationHour()"
-                (ngModelChange)="editField(newMinimumReservationHour, $event)"
-              />
-            </label>
-            <label>
-              Fecha minima
-              <input
-                name="newMinimumReservationDate"
-                type="date"
-                [ngModel]="newMinimumReservationDate()"
-                (ngModelChange)="editField(newMinimumReservationDate, $event)"
-              />
-            </label>
-            <label>
-              Dias ISO
-              <input
-                name="newAllowedWeekdays"
-                type="text"
-                inputmode="numeric"
-                [ngModel]="newAllowedWeekdays()"
-                (ngModelChange)="editField(newAllowedWeekdays, $event)"
-              />
-            </label>
-          </div>
-          <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
-        </div>
-      </div>
-    </section>
-  }
-
   @if (activeView() === 'orders') {
     <section class="panel">
       <div class="panel-header">
@@ -478,6 +160,7 @@
           <h2>Ordenes</h2>
           <p>{{ filteredOrders().length }} visibles de {{ orders().length }} cargadas</p>
         </div>
+        <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
       </div>
 
       <div class="order-controls" aria-label="Filtros de ordenes">
@@ -518,6 +201,7 @@
               <option value="status">Estado</option>
               <option value="reservation">Reserva</option>
               <option value="payment">Pago</option>
+              <option value="closure">Cierre</option>
               <option value="applicant">Solicitante</option>
             </select>
           </label>
@@ -552,6 +236,11 @@
                   Pago {{ sortIndicator('payment') }}
                 </button>
               </th>
+              <th>
+                <button type="button" class="sort-header" (click)="setOrderSort('closure')">
+                  Cierre {{ sortIndicator('closure') }}
+                </button>
+              </th>
               <th>Tramite</th>
               <th>Reglas</th>
               <th>
@@ -559,7 +248,7 @@
                   Prioridad {{ sortIndicator('priority') }}
                 </button>
               </th>
-              <th></th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -571,7 +260,7 @@
               >
                 <td data-label="Orden">
                   <strong>{{ order.order_id }}</strong>
-                  <span>{{ order.document_number_masked }}</span>
+                  <span>{{ order.document_number }}</span>
                 </td>
                 <td data-label="Solicitante">
                   {{ order.applicant_name ?? 'sin nombre' }}
@@ -585,8 +274,12 @@
                   <span>{{ order.reservation_date ?? '' }} {{ order.reservation_hour ?? '' }}</span>
                 </td>
                 <td data-label="Pago">
-                  {{ order.payment_status ?? 'sin pago' }}
-                  <span>{{ order.amount_paid ?? order.amount_agreed ?? '' }}</span>
+                  {{ paymentLabel(order) }}
+                  <span>{{ paymentAmountLabel(order) }}</span>
+                </td>
+                <td data-label="Cierre">
+                  <span class="badge {{ statusTone(order.closure_reason) }}">{{ closureDisplay(order) }}</span>
+                  <span>{{ order.closure_note ?? order.closed_at ?? '' }}</span>
                 </td>
                 <td data-label="Tramite">
                   {{ order.program_expediente ?? order.program_plate ?? 'generica' }}
@@ -600,20 +293,38 @@
                   </span>
                 </td>
                 <td data-label="Prioridad">{{ order.priority }}</td>
-                <td data-label="Copiar">
-                  <button
-                    type="button"
-                    class="icon-button"
-                    title="Copiar orden"
-                    (click)="$event.stopPropagation(); copyOrder(order)"
-                  >
-                    Copiar
-                  </button>
+                <td data-label="Acciones">
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="icon-button"
+                      title="Editar orden"
+                      (click)="$event.stopPropagation(); openEditOrder(order)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-button"
+                      title="Acciones de orden"
+                      (click)="$event.stopPropagation(); openOrderActions(order)"
+                    >
+                      Acciones
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-button"
+                      title="Copiar orden"
+                      (click)="$event.stopPropagation(); copyOrder(order)"
+                    >
+                      Copiar
+                    </button>
+                  </div>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="9" class="empty">No hay ordenes para mostrar.</td>
+                <td colspan="10" class="empty">No hay ordenes para mostrar.</td>
               </tr>
             }
           </tbody>
@@ -727,6 +438,403 @@
             }
           </tbody>
         </table>
+      </div>
+    </section>
+  }
+
+  @if (pendingAction(); as action) {
+    <section class="modal-backdrop confirm-backdrop" role="dialog" aria-modal="true">
+      <div class="modal confirm-modal">
+        <div class="modal-header">
+          <div>
+            <h2>{{ action.title }}</h2>
+            <p>{{ action.message }}</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
+          <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (activeModal() === 'edit-order') {
+    @if (modalOrder(); as order) {
+      <section class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <h2>Editar orden</h2>
+            <p>{{ orderLabel(order) }}</p>
+          </div>
+          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+        </div>
+
+        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+          <div>
+            <span>Estado</span>
+            <strong>{{ order.status }}</strong>
+            <small>{{ order.reservation_status ?? 'sin reserva' }}</small>
+          </div>
+          <div>
+            <span>Contacto actual</span>
+            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+            <small>{{ order.contact_whatsapp ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>{{ paymentLabel(order) }}</strong>
+            <small>{{ order.charge_required ? (order.amount_paid ?? '0.00') + ' / ' + (order.amount_agreed ?? 'sin acordado') : 'no requiere pago' }}</small>
+          </div>
+        </section>
+
+        <div class="modal-grid">
+          <section class="admin-block action-card">
+            <h3>Contacto</h3>
+            <div class="form-grid">
+              <label>
+                Nombre
+                <input
+                  name="modalContactName"
+                  type="text"
+                  [ngModel]="contactName()"
+                  (ngModelChange)="editField(contactName, $event)"
+                />
+              </label>
+              <label>
+                WhatsApp
+                <input
+                  name="modalContactWhatsapp"
+                  type="text"
+                  [placeholder]="selectedOrderWhatsappPlaceholder()"
+                  [ngModel]="contactWhatsapp()"
+                  (ngModelChange)="editField(contactWhatsapp, $event)"
+                />
+              </label>
+              <label>
+                Fuente
+                <input
+                  name="modalContactSource"
+                  type="text"
+                  [ngModel]="contactSource()"
+                  (ngModelChange)="editField(contactSource, $event)"
+                />
+              </label>
+            </div>
+            <button type="button" class="primary" (click)="requestContactUpdate()">
+              Guardar contacto
+            </button>
+          </section>
+
+          <section class="admin-block action-card">
+            <h3>Pago</h3>
+            <div class="form-grid">
+              <label>
+                Pagado
+                <input
+                  name="modalPaymentAmountPaid"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  [ngModel]="paymentAmountPaid()"
+                  (ngModelChange)="editField(paymentAmountPaid, $event)"
+                />
+              </label>
+              <label>
+                Acordado
+                <input
+                  name="modalPaymentAmountAgreed"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  [ngModel]="paymentAmountAgreed()"
+                  (ngModelChange)="editField(paymentAmountAgreed, $event)"
+                />
+              </label>
+            </div>
+            <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
+          </section>
+        </div>
+      </div>
+      </section>
+    }
+  }
+
+  @if (activeModal() === 'order-actions') {
+    @if (modalOrder(); as order) {
+      <section class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2>Acciones de orden</h2>
+            <p>{{ orderLabel(order) }}</p>
+          </div>
+          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+        </div>
+
+        <dl class="summary-list">
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ order.status }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
+          </div>
+          <div>
+            <dt>Cierre</dt>
+            <dd>{{ closureDisplay(order) }}</dd>
+          </div>
+          <div>
+            <dt>Tramite</dt>
+            <dd>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</dd>
+          </div>
+          <div>
+            <dt>Padre</dt>
+            <dd>{{ order.parent_order_id ?? 'sin padre' }}</dd>
+          </div>
+        </dl>
+
+        <div class="modal-actions-grid">
+          <button type="button" class="secondary" (click)="requestOrderAction('pause', 'Pausar orden')">
+            Pausar
+          </button>
+          <button type="button" class="secondary" (click)="requestOrderAction('activate', 'Activar orden')">
+            Activar
+          </button>
+          <button type="button" class="secondary" (click)="requestOrderAction('no-charge', 'Marcar sin cobro')">
+            Sin cobro
+          </button>
+          <button type="button" class="secondary" (click)="requestManualSession()">
+            Sesion manual
+          </button>
+          <button type="button" class="secondary" (click)="requestSplitPrograms()">
+            Dividir tramites
+          </button>
+        </div>
+
+        <label class="check-row">
+          <input
+            name="modalSplitKeepParentActive"
+            type="checkbox"
+            [ngModel]="splitKeepParentActive()"
+            (ngModelChange)="splitKeepParentActive.set($event)"
+          />
+          Mantener padre activo
+        </label>
+
+        <section class="admin-block action-card">
+          <h3>Cerrar orden</h3>
+          <div class="form-grid">
+            <label>
+              Resultado
+              <select
+                name="modalClosureReason"
+                [ngModel]="closureReason()"
+                (ngModelChange)="editField(closureReason, $event)"
+              >
+                <option value="client_withdrew">Cliente retirado</option>
+                <option value="external_slot">Cupo por tercero</option>
+                <option value="family_no_charge">Familiar sin cobro</option>
+                <option value="duplicate">Duplicado</option>
+                <option value="not_serviceable">No gestionable</option>
+                <option value="completed_by_us">Realizado por nosotros</option>
+              </select>
+            </label>
+            <label>
+              Nota
+              <input
+                name="modalClosureNote"
+                type="text"
+                placeholder="Ej. duplicado de order-xxxxx"
+                [ngModel]="closureNote()"
+                (ngModelChange)="editField(closureNote, $event)"
+              />
+            </label>
+          </div>
+          <button type="button" class="danger" (click)="requestCloseOrder()">
+            Cerrar con resultado
+          </button>
+        </section>
+      </div>
+      </section>
+    }
+  }
+
+  @if (activeModal() === 'create-order') {
+    <section class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <h2>Nueva orden</h2>
+            <p>Alta operativa de cliente</p>
+          </div>
+          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+        </div>
+
+        <div class="form-grid wide">
+          <label>
+            Documento
+            <input
+              name="newDocumentNumber"
+              type="text"
+              autocomplete="off"
+              [ngModel]="newDocumentNumber()"
+              (ngModelChange)="editField(newDocumentNumber, $event)"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              name="newPassword"
+              type="password"
+              autocomplete="new-password"
+              [ngModel]="newPassword()"
+              (ngModelChange)="editField(newPassword, $event)"
+            />
+          </label>
+          <label>
+            Solicitante
+            <input
+              name="newApplicantName"
+              type="text"
+              [ngModel]="newApplicantName()"
+              (ngModelChange)="editField(newApplicantName, $event)"
+            />
+          </label>
+          <label>
+            Contacto
+            <input
+              name="newContactName"
+              type="text"
+              [ngModel]="newContactName()"
+              (ngModelChange)="editField(newContactName, $event)"
+            />
+          </label>
+          <label>
+            WhatsApp
+            <input
+              name="newContactWhatsapp"
+              type="text"
+              [ngModel]="newContactWhatsapp()"
+              (ngModelChange)="editField(newContactWhatsapp, $event)"
+            />
+          </label>
+          <label>
+            Prioridad
+            <input
+              name="newPriority"
+              type="number"
+              min="0"
+              step="1"
+              [ngModel]="newPriority()"
+              (ngModelChange)="editField(newPriority, $event)"
+            />
+          </label>
+          <label class="check-row">
+            <input
+              name="newChargeRequired"
+              type="checkbox"
+              [ngModel]="newChargeRequired()"
+              (ngModelChange)="editField(newChargeRequired, $event)"
+            />
+            Cobro requerido
+          </label>
+          <label>
+            Padre
+            <input
+              name="newParentOrderId"
+              type="text"
+              [ngModel]="newParentOrderId()"
+              (ngModelChange)="editField(newParentOrderId, $event)"
+            />
+          </label>
+          <label>
+            Expediente
+            <input
+              name="newProgramExpediente"
+              type="text"
+              [ngModel]="newProgramExpediente()"
+              (ngModelChange)="editField(newProgramExpediente, $event)"
+            />
+          </label>
+          <label>
+            Placa
+            <input
+              name="newProgramPlate"
+              type="text"
+              [ngModel]="newProgramPlate()"
+              (ngModelChange)="editField(newProgramPlate, $event)"
+            />
+          </label>
+          <label>
+            Hora minima
+            <input
+              name="newMinimumReservationHour"
+              type="number"
+              min="0"
+              max="23"
+              step="1"
+              [ngModel]="newMinimumReservationHour()"
+              (ngModelChange)="editField(newMinimumReservationHour, $event)"
+            />
+          </label>
+          <label>
+            Fecha minima
+            <input
+              name="newMinimumReservationDate"
+              type="date"
+              [ngModel]="newMinimumReservationDate()"
+              (ngModelChange)="editField(newMinimumReservationDate, $event)"
+            />
+          </label>
+          <label>
+            Dias ISO
+            <input
+              name="newAllowedWeekdays"
+              type="text"
+              inputmode="numeric"
+              [ngModel]="newAllowedWeekdays()"
+              (ngModelChange)="editField(newAllowedWeekdays, $event)"
+            />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
+          <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (activeModal() === 'worker-restart') {
+    <section class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2>Restart worker</h2>
+            <p>{{ phaseLabel(worker()?.phase ?? health()?.reason) }}</p>
+          </div>
+          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+        </div>
+        <dl class="summary-list">
+          <div>
+            <dt>Worker</dt>
+            <dd>{{ worker()?.worker_running || health()?.worker_running ? 'activo' : 'sin confirmar' }}</dd>
+          </div>
+          <div>
+            <dt>Orden actual</dt>
+            <dd>{{ worker()?.current_order_id ?? 'sin orden activa' }}</dd>
+          </div>
+        </dl>
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
+          <button type="button" class="danger" (click)="requestRestartWorker()">Restart worker</button>
+        </div>
       </div>
     </section>
   }

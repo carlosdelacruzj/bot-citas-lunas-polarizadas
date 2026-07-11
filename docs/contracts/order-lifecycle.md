@@ -90,6 +90,19 @@ Estados internos adicionales:
 
 - Una orden `paid`, `reserved_payment_pending` o `archived` no debe volver a la
   cola activa.
+- `service_orders.status` es operativo. La razon administrativa del cierre se
+  guarda por separado en `closure_reason`, `closure_note` y `closed_at`.
+- Razones de cierre soportadas:
+  - `completed_by_us`: reservado por nosotros con cobro.
+  - `family_no_charge`: reservado por nosotros sin cobro familiar.
+  - `client_withdrew`: cliente retirado.
+  - `external_slot`: cupo conseguido por un tercero.
+  - `duplicate`: orden duplicada; la nota debe indicar la orden valida cuando
+    aplique.
+  - `not_serviceable`: caso no gestionable.
+- Las razones sin cobro (`family_no_charge`, `client_withdrew`,
+  `external_slot`, `duplicate`, `not_serviceable`) deben dejar
+  `charge_required=false` y limpiar pagos pendientes.
 - Una reserva confirmada debe persistirse junto con `runs`, `reservations`,
   `payments` y estado de orden segun corresponda.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y

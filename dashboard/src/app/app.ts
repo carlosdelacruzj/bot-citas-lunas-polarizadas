@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   ApiActionResponse,
   AppointmentApiService,
+  CloseServiceOrderPayload,
   ContactUpdatePayload,
   CreateServiceOrderPayload,
   HealthPayload,
@@ -16,13 +17,15 @@ import {
 } from './appointment-api.service';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey = 'summary' | 'orders' | 'actions' | 'runs';
+type ViewKey = 'summary' | 'orders' | 'runs';
+type ModalKind = 'edit-order' | 'order-actions' | 'create-order' | 'worker-restart' | null;
 type OrderQuickFilter =
   | 'all'
   | 'ready'
   | 'payment_pending'
   | 'confirmed'
   | 'archived'
+  | 'closed_no_charge'
   | 'restricted';
 type OrderSortKey =
   | 'priority'
@@ -31,7 +34,15 @@ type OrderSortKey =
   | 'status'
   | 'reservation'
   | 'payment'
+  | 'closure'
   | 'applicant';
+type ClosureReason =
+  | 'completed_by_us'
+  | 'family_no_charge'
+  | 'client_withdrew'
+  | 'external_slot'
+  | 'duplicate'
+  | 'not_serviceable';
 type SortDirection = 'asc' | 'desc';
 type PendingAction = {
   title: string;
@@ -56,7 +67,8 @@ export class App implements OnDestroy {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
 
-  protected readonly activeView = signal<ViewKey>('summary');
+  protected readonly activeView = signal<ViewKey>('orders');
+  protected readonly activeModal = signal<ModalKind>(null);
   protected readonly autoRefreshEnabled = signal(true);
   protected readonly formDirty = signal(false);
   protected readonly lastUpdatedAt = signal<string | null>(null);
@@ -94,6 +106,8 @@ export class App implements OnDestroy {
   protected readonly newMinimumReservationDate = signal('');
   protected readonly newAllowedWeekdays = signal('');
   protected readonly splitKeepParentActive = signal(false);
+  protected readonly closureReason = signal<ClosureReason>('client_withdrew');
+  protected readonly closureNote = signal('');
   protected readonly actionBusy = signal(false);
   protected readonly pendingAction = signal<PendingAction | null>(null);
 
@@ -105,6 +119,7 @@ export class App implements OnDestroy {
     const currentOrderId = this.worker()?.current_order_id;
     return this.orders().find((order) => order.order_id === currentOrderId) ?? null;
   });
+  protected readonly modalOrder = computed(() => this.selectedOrder());
   protected readonly filteredOrders = computed(() => {
     const filter = this.orderFilter().trim().toLowerCase();
     const quickFilter = this.orderQuickFilter();
@@ -114,13 +129,17 @@ export class App implements OnDestroy {
         [
           order.order_id,
           order.applicant_name,
+          order.document_number,
           order.document_number_masked,
           order.contact_name,
           order.contact_source,
+          order.contact_whatsapp,
           order.contact_whatsapp_masked,
           order.status,
           order.reservation_status,
           order.payment_status,
+          order.closure_reason,
+          order.closure_note,
           order.program_expediente,
           order.program_plate,
           order.parent_order_id,
@@ -141,6 +160,11 @@ export class App implements OnDestroy {
     },
     { key: 'confirmed' as const, label: 'Confirmadas', count: this.countOrders('confirmed') },
     { key: 'archived' as const, label: 'Archivadas', count: this.countOrders('archived') },
+    {
+      key: 'closed_no_charge' as const,
+      label: 'Cerradas sin cobro',
+      count: this.countOrders('closed_no_charge'),
+    },
     {
       key: 'restricted' as const,
       label: 'Con restricciones',
@@ -176,11 +200,8 @@ export class App implements OnDestroy {
     }
     return this.runs().filter((run) => run.order_id === orderId);
   });
-  protected readonly lastSelectedOrderRun = computed<RunSummary | null>(
-    () => this.selectedOrderRuns().at(0) ?? null,
-  );
   protected readonly selectedOrderWhatsappPlaceholder = computed(
-    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
+    () => this.selectedOrder()?.contact_whatsapp ?? 'sin WhatsApp registrado',
   );
   protected readonly autoRefreshPaused = computed(
     () => !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
@@ -231,6 +252,34 @@ export class App implements OnDestroy {
     this.hydrateSelectedOrderForms();
   }
 
+  protected openEditOrder(order: ServiceOrder): void {
+    this.selectOrder(order.order_id);
+    this.activeModal.set('edit-order');
+  }
+
+  protected openOrderActions(order: ServiceOrder): void {
+    this.selectOrder(order.order_id);
+    this.activeModal.set('order-actions');
+  }
+
+  protected openCreateOrder(): void {
+    this.activeModal.set('create-order');
+  }
+
+  protected openWorkerRestart(): void {
+    this.activeModal.set('worker-restart');
+  }
+
+  protected closeModal(): void {
+    if (this.actionBusy()) {
+      return;
+    }
+    this.activeModal.set(null);
+    this.pendingAction.set(null);
+    this.formDirty.set(false);
+    this.hydrateSelectedOrderForms();
+  }
+
   protected editField<T>(field: WritableSignal<T>, value: T): void {
     field.set(value);
     this.formDirty.set(true);
@@ -269,6 +318,7 @@ export class App implements OnDestroy {
       status: 'Estado',
       reservation: 'Reserva',
       payment: 'Pago',
+      closure: 'Cierre',
       applicant: 'Solicitante',
     };
     return labels[key];
@@ -299,6 +349,7 @@ export class App implements OnDestroy {
       title: 'Actualizar contacto',
       message: `Actualizar contacto de ${order.order_id}.`,
       execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -314,6 +365,24 @@ export class App implements OnDestroy {
       title,
       message: `${title} para ${order.order_id}.`,
       execute: () => this.api.runServiceOrderAction(order.order_id, action),
+      onSuccess: () => this.activeModal.set(null),
+    });
+  }
+
+  protected requestCloseOrder(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    const payload: CloseServiceOrderPayload = {
+      closure_reason: this.closureReason(),
+      closure_note: this.optionalText(this.closureNote()),
+    };
+    this.setPendingAction({
+      title: this.closureReasonLabel(payload.closure_reason),
+      message: `${this.closureReasonLabel(payload.closure_reason)} para ${order.order_id}.`,
+      execute: () => this.api.closeServiceOrder(order.order_id, payload),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -334,6 +403,7 @@ export class App implements OnDestroy {
       title: 'Marcar pagado',
       message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
       execute: () => this.api.markPaymentPaid(order.order_id, payload),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -363,7 +433,10 @@ export class App implements OnDestroy {
       message: `Crear orden para documento ${payload.document_number}.`,
       execute: () => this.api.createServiceOrder(payload),
       containsSecret: true,
-      onSuccess: () => this.clearCreateOrderForm(),
+      onSuccess: () => {
+        this.clearCreateOrderForm();
+        this.activeModal.set(null);
+      },
       onSettled: () => this.newPassword.set(''),
     });
   }
@@ -373,6 +446,7 @@ export class App implements OnDestroy {
       title: 'Restart worker',
       message: 'Solicitar reinicio controlado del worker.',
       execute: () => this.api.restartWorker(),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -385,6 +459,7 @@ export class App implements OnDestroy {
       title: 'Abrir sesion manual',
       message: `Abrir navegador visible para ${order.order_id}.`,
       execute: () => this.api.openManualSession(order.order_id),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -401,6 +476,7 @@ export class App implements OnDestroy {
           order.order_id,
           this.splitKeepParentActive(),
         ),
+      onSuccess: () => this.activeModal.set(null),
     });
   }
 
@@ -472,7 +548,7 @@ export class App implements OnDestroy {
     if (!order) {
       return 'Sin orden seleccionada';
     }
-    return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
+    return `${order.order_id} | ${order.applicant_name ?? order.document_number}`;
   }
 
   protected formatNullable(value: string | number | boolean | null | undefined): string {
@@ -482,6 +558,48 @@ export class App implements OnDestroy {
     return String(value);
   }
 
+  protected paymentLabel(order: ServiceOrder): string {
+    if (!order.charge_required) {
+      return 'sin cobro';
+    }
+    return order.payment_status ?? 'sin pago';
+  }
+
+  protected paymentAmountLabel(order: ServiceOrder): string {
+    if (!order.charge_required) {
+      return '';
+    }
+    return order.amount_paid ?? order.amount_agreed ?? '';
+  }
+
+  protected closureReasonLabel(reason: string | null | undefined): string {
+    const labels: Record<ClosureReason, string> = {
+      completed_by_us: 'Realizado por nosotros',
+      family_no_charge: 'Familiar sin cobro',
+      client_withdrew: 'Cliente retirado',
+      external_slot: 'Cupo por tercero',
+      duplicate: 'Duplicado',
+      not_serviceable: 'No gestionable',
+    };
+    if (!reason) {
+      return 'sin cierre';
+    }
+    return labels[reason as ClosureReason] ?? reason.replaceAll('_', ' ');
+  }
+
+  protected closureDisplay(order: ServiceOrder): string {
+    if (order.closure_reason) {
+      return this.closureReasonLabel(order.closure_reason);
+    }
+    if (order.status === 'archived') {
+      return 'Archivado sin razon';
+    }
+    if (order.status === 'paid') {
+      return 'Realizado por nosotros';
+    }
+    return 'abierto';
+  }
+
   protected statusTone(value: string | boolean | null | undefined): string {
     if (value === true || value === 'ok' || value === 'confirmed' || value === 'paid') {
       return 'good';
@@ -489,7 +607,12 @@ export class App implements OnDestroy {
     if (value === false || value === 'degraded' || value === 'error' || value === 'rejected') {
       return 'bad';
     }
-    if (value === 'outside_hot_window' || value === 'paused' || value === 'pending') {
+    if (
+      value === 'outside_hot_window' ||
+      value === 'paused' ||
+      value === 'pending' ||
+      value === 'family_no_charge'
+    ) {
       return 'warn';
     }
     return 'neutral';
@@ -589,6 +712,9 @@ export class App implements OnDestroy {
     if (filter === 'archived') {
       return order.status === 'archived';
     }
+    if (filter === 'closed_no_charge') {
+      return order.status === 'archived' && !order.charge_required;
+    }
     return Boolean(
       order.minimum_reservation_date ||
         order.minimum_reservation_hour !== null ||
@@ -632,7 +758,10 @@ export class App implements OnDestroy {
     if (key === 'payment') {
       return order.payment_status ?? '';
     }
-    return order.applicant_name ?? order.document_number_masked ?? '';
+    if (key === 'closure') {
+      return order.closure_reason ?? '';
+    }
+    return order.applicant_name ?? order.document_number ?? order.document_number_masked ?? '';
   }
 
   private hydrateSelectedOrderForms(): void {
@@ -644,10 +773,12 @@ export class App implements OnDestroy {
       return;
     }
     this.contactName.set(order.contact_name ?? '');
-    this.contactWhatsapp.set('');
+    this.contactWhatsapp.set(order.contact_whatsapp ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');
+    this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
+    this.closureNote.set(order.closure_note ?? '');
   }
 
   private clearCreateOrderForm(): void {

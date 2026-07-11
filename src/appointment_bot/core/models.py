@@ -105,8 +105,10 @@ class ServiceOrderSummary:
     order_id: str
     applicant_id: str
     applicant_name: str | None
+    document_number: str
     document_number_masked: str
     contact_name: str | None
+    contact_whatsapp: str | None
     contact_whatsapp_masked: str | None
     contact_source: str | None
     priority: int
@@ -122,6 +124,9 @@ class ServiceOrderSummary:
     parent_order_id: str | None
     program_expediente: str | None
     program_plate: str | None
+    closure_reason: str | None
+    closure_note: str | None
+    closed_at: str | None
     minimum_reservation_hour: int | None
     minimum_reservation_date: str | None
     allowed_weekdays: tuple[int, ...] | None

@@ -9,9 +9,12 @@ from appointment_bot.db.migrations import SCHEMA_VERSION
 from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
+    close_service_order,
     create_service_order,
     get_order_program_listing,
     list_service_order_summaries,
+    mark_payment_paid,
+    mark_service_order_no_charge,
     record_order_program_listing,
 )
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
@@ -56,6 +59,9 @@ class DatabaseTests(unittest.TestCase):
             self.assertIn(("worker_state", "current_order_id"), columns)
             self.assertIn(("service_orders", "minimum_date"), columns)
             self.assertIn(("service_orders", "allowed_weekdays"), columns)
+            self.assertIn(("service_orders", "closure_reason"), columns)
+            self.assertIn(("service_orders", "closure_note"), columns)
+            self.assertIn(("service_orders", "closed_at"), columns)
             self.assertIn(("order_state", "program_listing"), columns)
             self.assertNotIn(("service_orders", "active"), columns)
             self.assertNotIn(("portal_accounts", "provider"), columns)
@@ -110,8 +116,81 @@ class DatabaseTests(unittest.TestCase):
             summaries = list_service_order_summaries(settings)
 
             self.assertEqual(len(summaries), 1)
+            self.assertEqual(summaries[0].document_number, "12345678")
             self.assertEqual(summaries[0].document_number_masked, "12***8")
             self.assertFalse(hasattr(summaries[0], "password"))
+
+    def test_no_charge_clears_pending_payment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                applicant_name="Test",
+                settings=settings,
+            )
+            mark_payment_paid(
+                result.order_id,
+                amount_paid=0,
+                amount_agreed=40,
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    """
+                    UPDATE payments
+                    SET status = 'pending', amount_paid = NULL, paid_at = NULL
+                    WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                )
+
+            mark_service_order_no_charge(result.order_id, settings=settings)
+
+            summary = list_service_order_summaries(settings)[0]
+            self.assertFalse(summary.charge_required)
+            self.assertIsNone(summary.payment_status)
+            self.assertIsNone(summary.amount_agreed)
+
+    def test_close_order_with_no_charge_reason_clears_pending_payment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                applicant_name="Test",
+                settings=settings,
+            )
+            mark_payment_paid(
+                result.order_id,
+                amount_paid=0,
+                amount_agreed=40,
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    """
+                    UPDATE payments
+                    SET status = 'pending', amount_paid = NULL, paid_at = NULL
+                    WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                )
+
+            close_service_order(
+                result.order_id,
+                closure_reason="external_slot",
+                closure_note="Lo consiguio por tercero",
+                settings=settings,
+            )
+
+            summary = list_service_order_summaries(settings)[0]
+            self.assertEqual(summary.status, "archived")
+            self.assertFalse(summary.charge_required)
+            self.assertEqual(summary.closure_reason, "external_slot")
+            self.assertEqual(summary.closure_note, "Lo consiguio por tercero")
+            self.assertIsNotNone(summary.closed_at)
+            self.assertIsNone(summary.payment_status)
 
     def test_run_listing_and_detail_are_public_safe(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 24
+SCHEMA_VERSION = 25
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -91,6 +91,18 @@ def create_current_schema(connection: Connection) -> None:
             parent_order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
             program_expediente text,
             program_plate text,
+            closure_reason text CHECK (
+                closure_reason IS NULL OR closure_reason IN (
+                    'completed_by_us',
+                    'family_no_charge',
+                    'client_withdrew',
+                    'external_slot',
+                    'duplicate',
+                    'not_serviceable'
+                )
+            ),
+            closure_note text,
+            closed_at timestamptz,
             status text NOT NULL DEFAULT 'ready' CHECK (
                 status IN ('ready', 'paused', 'reserved_payment_pending', 'paid', 'archived')
             ),
@@ -323,6 +335,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "parent_order_id"),
         ("service_orders", "program_expediente"),
         ("service_orders", "program_plate"),
+        ("service_orders", "closure_reason"),
+        ("service_orders", "closure_note"),
+        ("service_orders", "closed_at"),
         ("service_orders", "lease_owner"),
         ("service_orders", "lease_expires_at"),
         ("runs", "reservation_attempted"),
@@ -669,6 +684,39 @@ def migrate_database(connection: Connection) -> None:
             """
             ALTER TABLE service_orders
             ADD COLUMN program_plate text
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (24,),
+        )
+        current_version = 24
+    if current_version == 24:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN closure_reason text CHECK (
+                closure_reason IS NULL OR closure_reason IN (
+                    'completed_by_us',
+                    'family_no_charge',
+                    'client_withdrew',
+                    'external_slot',
+                    'duplicate',
+                    'not_serviceable'
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN closure_note text
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN closed_at timestamptz
             """
         )
         connection.execute(

@@ -18,11 +18,13 @@ from appointment_bot.services.api.manual_session_routes import open_manual_sessi
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
+    close_service_order_payload,
     create_service_order_payload,
     list_service_orders_payload,
     mark_payment_paid_payload,
     payment_paid_path,
     service_order_action,
+    service_order_close_path,
     service_order_contact_path,
     service_order_split_programs_path,
     split_service_order_programs_payload,
@@ -132,6 +134,14 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = mark_payment_paid_payload(paid_order_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        close_order_id = service_order_close_path(path)
+        if close_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = close_service_order_payload(close_order_id, self._read_json())
             self._send_json(status, payload)
             return
 

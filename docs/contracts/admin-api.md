@@ -123,6 +123,10 @@ forman parte del contrato:
 - `parent_order_id`: identifica la orden generica de la misma cuenta.
 - `program_expediente`: expediente objetivo de una suborden.
 - `program_plate`: placa objetivo de una suborden.
+- `closure_reason`: razon administrativa del cierre.
+- `closure_note`: nota corta de cierre, por ejemplo la orden valida de un
+  duplicado.
+- `closed_at`: timestamp en que la orden dejo de estar activa.
 - `minimum_reservation_hour`: hora minima aceptable.
 - `minimum_reservation_date`: fecha minima aceptable.
 - `allowed_weekdays`: dias ISO permitidos, `1=lunes` a `7=domingo`.
@@ -139,6 +143,7 @@ campos o enviarlos como `null`. No debe inventar restricciones por defecto.
 - `pause` y `activate` cambian elegibilidad operativa.
 - `done` archiva/completa una orden.
 - `no-charge` marca una orden sin cobro.
+- `close` archiva/cierra una orden con `closure_reason` y `closure_note`.
 - `payment/paid` registra cobro y monto.
 - `worker/restart` solicita reinicio controlado del worker.
 - `manual-session/open` abre una sesion Playwright visible y local para una

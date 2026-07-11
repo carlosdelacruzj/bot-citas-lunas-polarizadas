@@ -32,10 +32,27 @@ from appointment_bot.db.common import (
     _parse_allowed_weekdays,
     _parse_minimum_reservation_date,
     _settings,
+    _timestamp_text,
     init_database,
 )
 from appointment_bot.services.detail_helpers import appointment_datetime_details
 from appointment_bot.utils.sanitization import sanitize_text
+
+ORDER_CLOSURE_REASONS = {
+    "completed_by_us",
+    "family_no_charge",
+    "client_withdrew",
+    "external_slot",
+    "duplicate",
+    "not_serviceable",
+}
+NO_CHARGE_CLOSURE_REASONS = {
+    "family_no_charge",
+    "client_withdrew",
+    "external_slot",
+    "duplicate",
+    "not_serviceable",
+}
 
 
 def create_service_order(
@@ -249,6 +266,7 @@ def list_service_order_summaries(
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
                    so.parent_order_id, so.program_expediente, so.program_plate,
+                   so.closure_reason, so.closure_note, so.closed_at,
                    so.minimum_hour AS minimum_reservation_hour,
                    so.minimum_date AS minimum_reservation_date,
                    so.allowed_weekdays
@@ -292,12 +310,28 @@ def add_or_update_service_order_contact(
         row = _service_order_identity(connection, order_id)
         if row is None:
             raise ValueError(f"Service order not found: {order_id}")
+        current_contact = connection.execute(
+            """
+            SELECT wc.phone, wc.display_name, wc.contact_source
+            FROM applicant_contacts ac
+            JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            WHERE ac.applicant_id = %s AND ac.is_primary = true
+            LIMIT 1
+            """,
+            (str(row["applicant_id"]),),
+        ).fetchone()
         _upsert_contact(
             connection,
             applicant_id=str(row["applicant_id"]),
-            phone=contact_whatsapp,
-            display_name=contact_name,
-            source=contact_source,
+            phone=contact_whatsapp
+            if contact_whatsapp is not None
+            else (current_contact["phone"] if current_contact is not None else None),
+            display_name=contact_name
+            if contact_name is not None
+            else (current_contact["display_name"] if current_contact is not None else None),
+            source=contact_source
+            if contact_source is not None
+            else (current_contact["contact_source"] if current_contact is not None else None),
             now=now,
         )
 
@@ -340,10 +374,14 @@ def mark_payment_paid(
         connection.execute(
             """
             UPDATE service_orders
-            SET status = 'paid', updated_at = %s
+            SET status = 'paid',
+                charge_required = true,
+                closure_reason = 'completed_by_us',
+                closed_at = COALESCE(closed_at, %s),
+                updated_at = %s
             WHERE order_id = %s
             """,
-            (now, order_id),
+            (now, now, order_id),
         )
 
 
@@ -366,6 +404,73 @@ def mark_service_order_no_charge(
         )
         if cursor.rowcount != 1:
             raise ValueError(f"Service order not found: {order_id}")
+        connection.execute(
+            """
+            DELETE FROM payments
+            WHERE order_id = %s AND status = 'pending'
+            """,
+            (order_id,),
+        )
+
+
+def close_service_order(
+    order_id: str,
+    *,
+    closure_reason: str,
+    closure_note: str | None = None,
+    settings: Settings | None = None,
+) -> None:
+    closure_reason = closure_reason.strip().casefold().replace("-", "_")
+    if closure_reason not in ORDER_CLOSURE_REASONS:
+        raise ValueError(f"Unsupported closure reason: {closure_reason}")
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    note = _optional_clean_text(closure_note)
+    charge_required = closure_reason not in NO_CHARGE_CLOSURE_REASONS
+    order_status = "paid" if closure_reason == "completed_by_us" else "archived"
+    with _connection(_database_url(settings)) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE service_orders
+            SET status = %s,
+                charge_required = %s,
+                closure_reason = %s,
+                closure_note = %s,
+                closed_at = %s,
+                updated_at = %s,
+                lease_owner = NULL,
+                lease_expires_at = NULL
+            WHERE order_id = %s
+            """,
+            (order_status, charge_required, closure_reason, note, now, now, order_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError(f"Service order not found: {order_id}")
+        if not charge_required:
+            connection.execute(
+                """
+                DELETE FROM payments
+                WHERE order_id = %s AND status = 'pending'
+                """,
+                (order_id,),
+            )
+        connection.execute(
+            """
+            INSERT INTO order_state (
+                order_id, programmed_at, last_status, last_message, last_run_at
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT(order_id) DO UPDATE SET
+                programmed_at = excluded.programmed_at,
+                last_status = excluded.last_status,
+                last_message = excluded.last_message,
+                last_run_at = excluded.last_run_at,
+                next_allowed_at = NULL,
+                consecutive_errors = 0
+            """,
+            (order_id, now, "completed", closure_reason, now),
+        )
 
 
 def get_minimum_reservation_hour_for_order(
@@ -1067,6 +1172,21 @@ def mark_order_done(
         )
         if cursor.rowcount != 1:
             raise ValueError(f"Service order not found: {order_id}")
+        if order_status == "archived":
+            connection.execute(
+                """
+                DELETE FROM payments
+                WHERE order_id = %s
+                  AND status = 'pending'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM service_orders
+                      WHERE service_orders.order_id = payments.order_id
+                        AND service_orders.charge_required = false
+                  )
+                """,
+                (order_id,),
+            )
         connection.execute(
             """
             INSERT INTO order_state (order_id, programmed_at, last_status, last_run_at)
@@ -1284,8 +1404,10 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         order_id=str(row["order_id"]),
         applicant_id=str(row["applicant_id"]),
         applicant_name=row["full_name"],
+        document_number=str(row["document_number"]),
         document_number_masked=_mask_username(str(row["document_number"])),
         contact_name=row["contact_name"],
+        contact_whatsapp=row["contact_phone"],
         contact_whatsapp_masked=_mask_phone(row["contact_phone"]),
         contact_source=row["contact_source"],
         priority=int(row["priority"]),
@@ -1301,6 +1423,9 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         parent_order_id=row["parent_order_id"],
         program_expediente=row["program_expediente"],
         program_plate=row["program_plate"],
+        closure_reason=row["closure_reason"],
+        closure_note=row["closure_note"],
+        closed_at=_timestamp_text(row["closed_at"]),
         minimum_reservation_hour=(
             int(row["minimum_reservation_hour"])
             if row["minimum_reservation_hour"] is not None
@@ -1383,6 +1508,14 @@ def _upsert_contact(
             now,
             now,
         ),
+    )
+    connection.execute(
+        """
+        UPDATE applicant_contacts
+        SET is_primary = false, updated_at = %s
+        WHERE applicant_id = %s AND contact_id <> %s AND is_primary = true
+        """,
+        (now, applicant_id, contact_id),
     )
     connection.execute(
         """

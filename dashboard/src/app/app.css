@@ -221,7 +221,7 @@ button:disabled {
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0 -2px 14px;
   padding: 8px 2px;
@@ -293,7 +293,6 @@ td span {
 
 .split,
 .panel-header,
-.admin-grid,
 .form-grid,
 .button-row,
 .summary-list {
@@ -319,9 +318,10 @@ td span {
   margin-bottom: 14px;
 }
 
-.admin-grid {
-  grid-template-columns: minmax(280px, 0.85fr) minmax(280px, 1fr) minmax(240px, 0.8fr);
-  align-items: start;
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
 }
 
 .selected-detail {
@@ -379,30 +379,10 @@ td span {
   gap: 8px;
 }
 
-.confirm-box {
+.row-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 14px;
-  border: 1px solid #f2c94c;
-  border-radius: 8px;
-  background: #fff8df;
-  padding: 12px;
-}
-
-.confirm-box strong,
-.confirm-box span {
-  display: block;
-}
-
-.confirm-box span {
-  margin-top: 3px;
-  color: #65737d;
-}
-
-.confirm-actions {
-  min-width: 230px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .check-row {
@@ -541,11 +521,72 @@ td span {
   padding: 20px 10px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.42);
+  padding: 18px;
+}
+
+.confirm-backdrop {
+  z-index: 30;
+}
+
+.modal {
+  width: min(720px, 100%);
+  max-height: min(86vh, 860px);
+  overflow: auto;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.24);
+}
+
+.wide-modal {
+  width: min(1080px, 100%);
+}
+
+.confirm-modal {
+  width: min(520px, 100%);
+}
+
+.modal-header,
+.modal-actions,
+.modal-actions-grid,
+.modal-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.modal-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: end;
+  margin-top: 14px;
+}
+
+.modal-actions-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0;
+}
+
+.modal-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 1080px) {
   .topbar,
   .metrics,
   .split,
-  .admin-grid,
   .selected-detail,
   .quick-filters,
   .order-tool-row,
@@ -568,13 +609,11 @@ td span {
   .metrics,
   .split,
   .panel-header,
-  .admin-grid,
   .selected-detail,
   .form-grid,
   .form-grid.wide,
   .summary-list,
-  .summary-list.compact,
-  .confirm-box {
+  .summary-list.compact {
     grid-template-columns: 1fr;
   }
 
@@ -596,12 +635,20 @@ td span {
   }
 
   .quick-filters,
-  .order-tool-row {
+  .order-tool-row,
+  .modal-grid,
+  .modal-actions-grid {
     grid-template-columns: 1fr;
   }
 
-  .confirm-actions {
-    min-width: 0;
+  .modal-backdrop {
+    align-items: start;
+    padding: 10px;
+  }
+
+  .modal {
+    max-height: calc(100vh - 20px);
+    padding: 13px;
   }
 
   .table-wrap {
@@ -654,7 +701,9 @@ td span {
 
 @media (max-width: 460px) {
   .view-tabs,
-  .button-row {
+  .button-row,
+  .row-actions,
+  .modal-actions {
     grid-template-columns: 1fr;
   }
 

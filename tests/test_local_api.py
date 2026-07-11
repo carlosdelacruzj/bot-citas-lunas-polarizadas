@@ -124,6 +124,7 @@ class LocalApiTests(unittest.TestCase):
                     payload = json.loads(response.read())
 
             self.assertEqual(payload["service_orders"][0]["order_id"], "order-12345678")
+            self.assertEqual(payload["service_orders"][0]["document_number"], "12345678")
             self.assertEqual(payload["service_orders"][0]["document_number_masked"], "12***8")
             self.assertNotIn("password", payload["service_orders"][0])
 
@@ -164,6 +165,39 @@ class LocalApiTests(unittest.TestCase):
             self.assertEqual(orders[0]["order_id"], "order-87654321")
             self.assertEqual(orders[0]["priority"], 5)
             self.assertEqual(orders[0]["status"], "archived")
+
+    def test_service_order_close_action_publishes_closure_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="87654321",
+                password="secret",
+                applicant_name="Client Two",
+                priority=5,
+                settings=settings,
+            )
+            with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
+                close_response = _json_request(
+                    f"{base_url}/api/v1/service-orders/{result.order_id}/close",
+                    method="POST",
+                    token="secret",
+                    payload={
+                        "closure_reason": "client_withdrew",
+                        "closure_note": "Cliente cancelo",
+                    },
+                )
+                self.assertEqual(close_response["status"], "ok")
+                orders = _json_request(
+                    f"{base_url}/api/v1/service-orders",
+                    token="secret",
+                )["service_orders"]
+
+            self.assertEqual(orders[0]["status"], "archived")
+            self.assertFalse(orders[0]["charge_required"])
+            self.assertEqual(orders[0]["closure_reason"], "client_withdrew")
+            self.assertEqual(orders[0]["closure_note"], "Cliente cancelo")
+            self.assertIsNotNone(orders[0]["closed_at"])
+            self.assertNotIn("password", orders[0])
 
     def test_runs_endpoints_and_worker_actions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

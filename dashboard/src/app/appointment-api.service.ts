@@ -32,8 +32,10 @@ export interface ServiceOrder {
   order_id: string;
   applicant_id: string;
   applicant_name: string | null;
+  document_number: string;
   document_number_masked: string;
   contact_name: string | null;
+  contact_whatsapp: string | null;
   contact_whatsapp_masked: string | null;
   contact_source: string | null;
   priority: number;
@@ -49,6 +51,9 @@ export interface ServiceOrder {
   parent_order_id: string | null;
   program_expediente: string | null;
   program_plate: string | null;
+  closure_reason: string | null;
+  closure_note: string | null;
+  closed_at: string | null;
   minimum_reservation_hour: number | null;
   minimum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
@@ -110,6 +115,11 @@ export interface ContactUpdatePayload {
 export interface PaymentPaidPayload {
   amount_paid: string;
   amount_agreed?: string | null;
+}
+
+export interface CloseServiceOrderPayload {
+  closure_reason: string;
+  closure_note?: string | null;
 }
 
 export interface CreateServiceOrderPayload {
@@ -186,6 +196,16 @@ export class AppointmentApiService {
     return this.post<ApiActionResponse>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/${action}`,
       {},
+    );
+  }
+
+  async closeServiceOrder(
+    orderId: string,
+    payload: CloseServiceOrderPayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/close`,
+      payload,
     );
   }
 

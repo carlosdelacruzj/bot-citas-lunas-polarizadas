@@ -7,6 +7,7 @@ from urllib.parse import unquote
 
 from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
+    close_service_order,
     create_service_order,
     list_service_order_summaries,
     mark_order_done,
@@ -21,8 +22,10 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "order_id",
     "applicant_id",
     "applicant_name",
+    "document_number",
     "document_number_masked",
     "contact_name",
+    "contact_whatsapp",
     "contact_whatsapp_masked",
     "contact_source",
     "priority",
@@ -38,6 +41,9 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "parent_order_id",
     "program_expediente",
     "program_plate",
+    "closure_reason",
+    "closure_note",
+    "closed_at",
     "minimum_reservation_hour",
     "minimum_reservation_date",
     "allowed_weekdays",
@@ -133,6 +139,29 @@ def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] |
     return HTTPStatus.OK, {"status": "ok"}
 
 
+def close_service_order_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    closure_reason = _optional_text(payload, "closure_reason")
+    if not closure_reason:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing closure_reason.")
+    try:
+        close_service_order(
+            order_id,
+            closure_reason=closure_reason,
+            closure_note=_optional_text(payload, "closure_note"),
+        )
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {"status": "ok"}
+
+
 def mark_payment_paid_payload(
     order_id: str,
     payload: dict[str, Any],
@@ -196,6 +225,14 @@ def service_order_action(path: str) -> tuple[str, str] | None:
 def payment_paid_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/payment/paid"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_close_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/close"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
