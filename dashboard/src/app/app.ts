@@ -386,6 +386,21 @@ export class App implements OnDestroy {
     });
   }
 
+  protected setClosureReason(value: string): void {
+    const allowed: ClosureReason[] = [
+      'completed_by_us',
+      'family_no_charge',
+      'client_withdrew',
+      'external_slot',
+      'duplicate',
+      'not_serviceable',
+    ];
+    const reason = allowed.includes(value as ClosureReason)
+      ? (value as ClosureReason)
+      : 'client_withdrew';
+    this.editField(this.closureReason, reason);
+  }
+
   protected requestMarkPaid(): void {
     const order = this.requireSelectedOrder();
     if (!order) {

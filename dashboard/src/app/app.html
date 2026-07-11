@@ -634,7 +634,7 @@
               <select
                 name="modalClosureReason"
                 [ngModel]="closureReason()"
-                (ngModelChange)="editField(closureReason, $event)"
+                (ngModelChange)="setClosureReason($event)"
               >
                 <option value="client_withdrew">Cliente retirado</option>
                 <option value="external_slot">Cupo por tercero</option>
