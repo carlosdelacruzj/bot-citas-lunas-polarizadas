@@ -12,6 +12,7 @@ import {
   PaymentPaidPayload,
   RunSummary,
   ServiceOrder,
+  ServiceOrderDetail,
   WorkerCommand,
   WorkerStatus,
   apiErrorMessage,
@@ -91,6 +92,8 @@ export class App implements OnDestroy {
   protected readonly successMessage = signal<string | null>(null);
   protected readonly copiedLabel = signal<string | null>(null);
   protected readonly selectedOrderId = signal('');
+  protected readonly selectedOrderDetail = signal<ServiceOrderDetail | null>(null);
+  protected readonly orderDetailLoading = signal(false);
   protected readonly contactName = signal('');
   protected readonly contactWhatsapp = signal('');
   protected readonly contactSource = signal('whatsapp');
@@ -127,11 +130,9 @@ export class App implements OnDestroy {
         [
           order.order_id,
           order.applicant_name,
-          order.document_number,
           order.document_number_masked,
           order.contact_name,
           order.contact_source,
-          order.contact_whatsapp,
           order.contact_whatsapp_masked,
           order.status,
           order.reservation_status,
@@ -199,7 +200,7 @@ export class App implements OnDestroy {
     return this.runs().filter((run) => run.order_id === orderId);
   });
   protected readonly selectedOrderWhatsappPlaceholder = computed(
-    () => this.selectedOrder()?.contact_whatsapp ?? 'sin WhatsApp registrado',
+    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
   );
   protected readonly autoRefreshPaused = computed(
     () => !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
@@ -254,13 +255,28 @@ export class App implements OnDestroy {
 
   protected selectOrder(orderId: string): void {
     this.selectedOrderId.set(orderId);
+    this.selectedOrderDetail.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
   }
 
-  protected openEditOrder(order: ServiceOrder): void {
+  protected async openEditOrder(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id);
     this.activeModal.set('edit-order');
+    this.orderDetailLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const detail = await this.api.getServiceOrder(order.order_id);
+      if (this.selectedOrderId() !== detail.order_id) {
+        return;
+      }
+      this.selectedOrderDetail.set(detail);
+      this.hydrateSelectedOrderForms(detail);
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.orderDetailLoading.set(false);
+    }
   }
 
   protected openOrderActions(order: ServiceOrder): void {
@@ -281,6 +297,7 @@ export class App implements OnDestroy {
       return;
     }
     this.activeModal.set(null);
+    this.selectedOrderDetail.set(null);
     this.pendingAction.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
@@ -339,6 +356,10 @@ export class App implements OnDestroy {
   }
 
   protected requestContactUpdate(): void {
+    if (this.orderDetailLoading()) {
+      this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
+      return;
+    }
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -356,7 +377,10 @@ export class App implements OnDestroy {
       title: 'Actualizar contacto',
       message: `Actualizar contacto de ${order.order_id}.`,
       execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
-      onSuccess: () => this.activeModal.set(null),
+      onSuccess: () => {
+        this.activeModal.set(null);
+        this.selectedOrderDetail.set(null);
+      },
     });
   }
 
@@ -618,7 +642,7 @@ export class App implements OnDestroy {
     if (!order) {
       return 'Sin orden seleccionada';
     }
-    return `${order.order_id} | ${order.applicant_name ?? order.document_number}`;
+    return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
   }
 
   protected formatNullable(value: string | number | boolean | null | undefined): string {
@@ -861,7 +885,7 @@ export class App implements OnDestroy {
     if (key === 'closure') {
       return order.closure_reason ?? '';
     }
-    return order.applicant_name ?? order.document_number ?? order.document_number_masked ?? '';
+    return order.applicant_name ?? order.document_number_masked ?? '';
   }
 
   private compareQueueOrder(left: ServiceOrder, right: ServiceOrder): number {
@@ -880,7 +904,7 @@ export class App implements OnDestroy {
     return key === 'applicant' || key === 'status' || key === 'queue' ? 'asc' : 'desc';
   }
 
-  private hydrateSelectedOrderForms(): void {
+  private hydrateSelectedOrderForms(detail: ServiceOrderDetail | null = null): void {
     if (this.formDirty()) {
       return;
     }
@@ -889,7 +913,7 @@ export class App implements OnDestroy {
       return;
     }
     this.contactName.set(order.contact_name ?? '');
-    this.contactWhatsapp.set(order.contact_whatsapp ?? '');
+    this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');

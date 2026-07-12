@@ -123,10 +123,22 @@ class LocalApiTests(unittest.TestCase):
                 with urlopen(request, timeout=3) as response:
                     payload = json.loads(response.read())
 
+                detail_request = Request(
+                    f"{base_url}/api/v1/service-orders/order-12345678",
+                    headers={"Authorization": "Bearer secret"},
+                )
+                with urlopen(detail_request, timeout=3) as response:
+                    detail = json.loads(response.read())
+
             self.assertEqual(payload["service_orders"][0]["order_id"], "order-12345678")
-            self.assertEqual(payload["service_orders"][0]["document_number"], "12345678")
             self.assertEqual(payload["service_orders"][0]["document_number_masked"], "12***8")
+            self.assertNotIn("document_number", payload["service_orders"][0])
+            self.assertNotIn("contact_whatsapp", payload["service_orders"][0])
             self.assertNotIn("password", payload["service_orders"][0])
+
+            self.assertEqual(detail["document_number"], "12345678")
+            self.assertIn("contact_whatsapp", detail)
+            self.assertNotIn("password", detail)
 
     def test_service_order_create_and_actions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -6,6 +6,11 @@ se conservan como referencias; no deben usarse como listas paralelas de tareas.
 
 Ultima revision integral: `2026-07-12`.
 
+Baseline estable de reservas: tag `best-performing-2026-07-12`, commit
+`a43c6a1`. Es el corte con mejor evidencia acumulada hasta esta fecha. El P0 de
+seguridad administrativa posterior no modifica el motor Playwright, la cola de
+reservas ni sus reglas.
+
 ## Estado ejecutivo
 
 | Area | Estado | Conclusion |
@@ -93,6 +98,8 @@ El detalle historico de las fases se conserva en
 - Motivos y notas de cierre.
 - Sesiones manuales visibles y concurrentes, deshabilitadas por defecto.
 - Snapshot operativo sanitizado y copiable.
+- Listado, filtros y snapshots con documento/WhatsApp enmascarados; detalle
+  completo solicitado solo al abrir la edicion protegida de una orden.
 
 ### Operacion
 
@@ -121,6 +128,17 @@ El corte de trabajo preparado el 12 de julio incluye:
 - propagacion consistente de identidad/contacto al resultado diferido;
 - evidencia operativa actualizada;
 - tests de reglas corregidos para no depender de fechas fijas vencidas.
+- P0 backend de seguridad: listado enmascarado y endpoint de detalle
+  administrativo protegido por orden.
+
+Validacion P0 por proxy local:
+
+- health HTTP correcto;
+- listado sin `document_number` ni `contact_whatsapp` completos;
+- listado con `document_number_masked` y `contact_whatsapp_masked`;
+- detalle protegido con los dos campos completos para edicion deliberada;
+- orden inexistente respondio HTTP `404`;
+- 53 tests, Ruff, compileall, build Angular y `git diff --check` correctos.
 
 ## Evidencia de rendimiento actual
 

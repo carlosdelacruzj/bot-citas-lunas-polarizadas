@@ -28,6 +28,7 @@ referencia en memoria a `ContinuousWorker`.
 ```text
 GET  /api/v1/worker
 GET  /api/v1/service-orders
+GET  /api/v1/service-orders/{order_id}
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/contact
 POST /api/v1/service-orders/{order_id}/payment/paid
@@ -52,13 +53,7 @@ En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
 
-## Endpoints agregados para completar migracion
-
-Estos endpoints completan la superficie administrativa previa al refactor
-interno:
-
-```text
-```
+## Detalles de endpoints administrativos
 
 `GET /api/v1/worker/commands` debe devolver una lista resumida y segura de
 comandos recientes:
@@ -94,7 +89,17 @@ La lista de ordenes debe exponer solo datos publicos o enmascarados:
 - reglas de reserva
 - timestamps
 
-No debe exponer password, usuario real sin mascara, datos de cifrado ni leases.
+No debe exponer password, documento/WhatsApp completos, datos de cifrado ni
+leases.
+
+`GET /api/v1/service-orders/{order_id}` es el detalle administrativo explicito.
+Requiere bearer token estricto y usa una allowlist separada. Puede agregar
+`document_number` y `contact_whatsapp` completos para editar la orden elegida,
+pero nunca password, datos de cifrado, cookies ni leases. El dashboard solo
+consulta este endpoint al abrir la edicion y descarta el detalle al cerrarla.
+
+Snapshots, filtros, tablas y copiado general deben trabajar exclusivamente con
+el DTO enmascarado del listado.
 
 ## Crear orden
 

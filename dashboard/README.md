@@ -8,6 +8,7 @@ administrativas con confirmacion visible:
 - `GET /health`
 - `GET /api/v1/worker`
 - `GET /api/v1/service-orders`
+- `GET /api/v1/service-orders/{order_id}` solo al abrir edicion protegida
 - `GET /api/v1/runs`
 - `POST /api/v1/service-orders`
 - `POST /api/v1/service-orders/{order_id}/contact`
@@ -92,6 +93,9 @@ esta en [`docs/project-status.md`](../docs/project-status.md).
   `dashboard/proxy.conf.cjs` lo lee desde `.env` o desde la variable de entorno
   `APPOINTMENT_BOT_API_TOKEN` y agrega el header `Authorization` solo del lado
   del servidor de desarrollo.
+- El listado, filtros y snapshots usan documento y WhatsApp enmascarados. Los
+  valores completos se solicitan solo para la orden abierta en edicion y se
+  descartan al cerrar el modal.
 - No usar `localStorage` ni `sessionStorage` para secretos.
 - No acceder directo a PostgreSQL desde Angular.
 - No reutilizar cookies ni sesiones Playwright del worker.

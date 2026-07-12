@@ -2,25 +2,26 @@
 
 ## P0 - Reducir exposicion de datos en API administrativa
 
-Estado: pendiente. Ejecutar primero.
+Estado: completado el 12 de julio de 2026.
 
 Problema: el listado general de ordenes necesita datos para operar, pero hoy el
 contrato y la implementacion no separan con suficiente claridad campos
 enmascarados de documento/WhatsApp y datos completos usados al editar.
 
-Pasos:
+Implementado:
 
-1. Dejar `GET /api/v1/service-orders` con documento y WhatsApp enmascarados.
-2. Crear o formalizar `GET /api/v1/service-orders/{order_id}` para detalle
+1. `GET /api/v1/service-orders` devuelve documento y WhatsApp enmascarados.
+2. `GET /api/v1/service-orders/{order_id}` entrega el detalle
    administrativo explicito, protegido y con allowlist propia.
-3. Hacer que el dashboard solicite el detalle solo al abrir edicion.
-4. Evitar que snapshots, filtros, mensajes de error o logs copien datos
+3. El dashboard solicita el detalle solo al abrir edicion y lo descarta al
+   cerrar.
+4. Snapshots, filtros, tablas y copiado general no incluyen datos
    completos por defecto.
-5. Actualizar `docs/contracts/admin-api.md` y pruebas existentes.
-6. Validar listado, detalle, edicion y proxy con token real local.
+5. Contrato y pruebas existentes actualizados.
+6. Listado, detalle, autenticacion, build y suite validados.
 
-Criterio de cierre: el listado y snapshot solo contienen valores enmascarados;
-la edicion sigue funcionando mediante una solicitud protegida y deliberada.
+Criterio de cierre cumplido: el listado y snapshot solo contienen valores
+enmascarados; la edicion usa una solicitud protegida y deliberada.
 
 ## P1 - Validacion compartida de altas
 

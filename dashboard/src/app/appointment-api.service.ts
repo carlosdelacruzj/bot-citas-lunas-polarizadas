@@ -32,10 +32,8 @@ export interface ServiceOrder {
   order_id: string;
   applicant_id: string;
   applicant_name: string | null;
-  document_number: string;
   document_number_masked: string;
   contact_name: string | null;
-  contact_whatsapp: string | null;
   contact_whatsapp_masked: string | null;
   contact_source: string | null;
   priority: number;
@@ -59,6 +57,11 @@ export interface ServiceOrder {
   allowed_weekdays: number[] | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ServiceOrderDetail extends ServiceOrder {
+  document_number: string;
+  contact_whatsapp: string | null;
 }
 
 export interface RunSummary {
@@ -179,6 +182,14 @@ export class AppointmentApiService {
   async getServiceOrders(): Promise<ServiceOrder[]> {
     const response = await firstValueFrom(this.http.get<ServiceOrdersResponse>('/api/v1/service-orders'));
     return response.service_orders;
+  }
+
+  async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {
+    return firstValueFrom(
+      this.http.get<ServiceOrderDetail>(
+        `/api/v1/service-orders/${encodeURIComponent(orderId)}`,
+      ),
+    );
   }
 
   async getRuns(): Promise<RunSummary[]> {

@@ -137,7 +137,7 @@
             </div>
             <div>
               <dt>Documento</dt>
-              <dd>{{ order.document_number }}</dd>
+              <dd>{{ order.document_number_masked }}</dd>
             </div>
             <div>
               <dt>Reserva</dt>
@@ -306,7 +306,7 @@
               >
                 <td data-label="Orden">
                   <strong>{{ order.order_id }}</strong>
-                  <span>{{ order.document_number }}</span>
+                  <span>{{ order.document_number_masked }}</span>
                 </td>
                 <td data-label="Solicitante">
                   {{ order.applicant_name ?? 'sin nombre' }}
@@ -537,7 +537,7 @@
           <div>
             <span>Contacto actual</span>
             <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
-            <small>{{ order.contact_whatsapp ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
+            <small>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
           </div>
           <div>
             <span>Pago</span>
@@ -549,12 +549,16 @@
         <div class="modal-grid">
           <section class="admin-block action-card">
             <h3>Contacto</h3>
+            @if (orderDetailLoading()) {
+              <p class="muted">Cargando detalle protegido...</p>
+            }
             <div class="form-grid">
               <label>
                 Nombre
                 <input
                   name="modalContactName"
                   type="text"
+                  [disabled]="orderDetailLoading()"
                   [ngModel]="contactName()"
                   (ngModelChange)="editField(contactName, $event)"
                 />
@@ -564,6 +568,7 @@
                 <input
                   name="modalContactWhatsapp"
                   type="text"
+                  [disabled]="orderDetailLoading()"
                   [placeholder]="selectedOrderWhatsappPlaceholder()"
                   [ngModel]="contactWhatsapp()"
                   (ngModelChange)="editField(contactWhatsapp, $event)"
@@ -574,12 +579,18 @@
                 <input
                   name="modalContactSource"
                   type="text"
+                  [disabled]="orderDetailLoading()"
                   [ngModel]="contactSource()"
                   (ngModelChange)="editField(contactSource, $event)"
                 />
               </label>
             </div>
-            <button type="button" class="primary" (click)="requestContactUpdate()">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="orderDetailLoading()"
+              (click)="requestContactUpdate()"
+            >
               Guardar contacto
             </button>
           </section>

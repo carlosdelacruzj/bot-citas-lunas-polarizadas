@@ -7,13 +7,18 @@ Esta es la unica lista maestra de trabajo futuro. El estado global esta en
 
 ### Fase 1 - Backend y seguridad administrativa
 
-Ejecutar completo [`01-backend.md`](01-backend.md), bloque P0.
+Estado: completada el 12 de julio de 2026.
+
+Se completo el bloque P0 de [`01-backend.md`](01-backend.md): listado
+enmascarado y detalle administrativo protegido por orden.
 
 Motivo: antes de ampliar el dashboard hay que asegurar que los listados no
 entreguen documento o WhatsApp completos innecesariamente y definir un endpoint
 de detalle administrativo explicito.
 
 ### Fase 2 - Frontend operativo
+
+Estado: siguiente fase.
 
 Ejecutar completo [`02-frontend.md`](02-frontend.md).
 

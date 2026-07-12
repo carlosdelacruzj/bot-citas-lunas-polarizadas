@@ -24,6 +24,7 @@ from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
     close_service_order_payload,
     create_service_order_payload,
+    get_service_order_payload,
     list_service_orders_payload,
     mark_payment_paid_payload,
     payment_paid_path,
@@ -87,6 +88,15 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             self._send_json(HTTPStatus.OK, list_service_orders_payload())
             return
+
+        if path.startswith("/api/v1/service-orders/"):
+            if not self._require_authorized(strict=True):
+                return
+            result = get_service_order_payload(path)
+            if result is not None:
+                status, payload = result
+                self._send_json(status, payload)
+                return
 
         if path == "/api/v1/runs":
             if not self._require_authorized(strict=True):

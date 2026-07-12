@@ -23,10 +23,8 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "order_id",
     "applicant_id",
     "applicant_name",
-    "document_number",
     "document_number_masked",
     "contact_name",
-    "contact_whatsapp",
     "contact_whatsapp_masked",
     "contact_source",
     "priority",
@@ -52,12 +50,33 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "updated_at",
 )
 
+PUBLIC_SERVICE_ORDER_DETAIL_FIELDS = PUBLIC_SERVICE_ORDER_FIELDS + (
+    "document_number",
+    "contact_whatsapp",
+)
+
 
 def list_service_orders_payload() -> dict[str, Any]:
     return {
         "service_orders": [
             _public_service_order(order) for order in list_service_order_summaries()
         ]
+    }
+
+
+def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
+    order_id = service_order_detail_path(path)
+    if order_id is None:
+        return None
+    order = next(
+        (item for item in list_service_order_summaries() if item.order_id == order_id),
+        None,
+    )
+    if order is None:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    payload = asdict(order)
+    return HTTPStatus.OK, {
+        field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
     }
 
 
@@ -217,6 +236,16 @@ def service_order_contact_path(path: str) -> str | None:
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_detail_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    if not path.startswith(prefix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).strip("/"))
+    if not order_id or "/" in order_id:
+        return None
+    return order_id
 
 
 def service_order_action(path: str) -> tuple[str, str] | None:

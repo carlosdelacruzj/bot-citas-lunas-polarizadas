@@ -53,6 +53,7 @@ Endpoints existentes:
 GET  /health
 GET  /api/v1/worker
 GET  /api/v1/service-orders
+GET  /api/v1/service-orders/{order_id}
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/contact
 POST /api/v1/service-orders/{order_id}/payment/paid

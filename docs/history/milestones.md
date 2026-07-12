@@ -45,3 +45,16 @@ Despues de estos hitos se agregaron confirmacion estricta, intentos persistidos,
 leases con heartbeat, reglas por orden, cola priorizada, migracion modular,
 admin API, dashboard y evidencia compacta. El estado consolidado y las metricas
 vigentes estan en `../project-status.md`.
+
+## 12 de julio de 2026 - Mejor baseline operativo
+
+- Commit: `a43c6a1`.
+- Tag: `best-performing-2026-07-12`.
+- Motivo: es el corte con mejor combinacion observada de reservas `registered`,
+  ruta normal cercana a 6.5-7.3 segundos con CAPTCHA rapido, cambio de usuario
+  de 0-2 segundos, reglas por orden, migracion 9.7 y validacion operativa de
+  worker, admin API y dashboard.
+- Limite: `slot_lost` y outliers de 2captcha siguen existiendo; la marca no
+  significa que la optimizacion haya terminado.
+- Uso: si un cambio posterior afecta reservas, comparar primero contra este tag
+  y revisar evidencia antes de hacer rollback.
