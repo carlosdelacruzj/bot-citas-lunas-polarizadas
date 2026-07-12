@@ -70,9 +70,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Prioridad numerica del trabajo.",
     )
     order_add_parser.add_argument("--whatsapp", help="WhatsApp de contacto.")
-    order_add_parser.add_argument("--contact-name", help="Nombre de quien contacta.")
+    order_add_parser.add_argument(
+        "--contact-name",
+        required=True,
+        help="Nombre de quien contacta.",
+    )
     order_add_parser.add_argument(
         "--contact-source",
+        required=True,
+        choices=("tiktok", "facebook", "whatsapp"),
         help="Origen del contacto, por ejemplo whatsapp o tiktok.",
     )
     order_add_parser.add_argument("--applicant-name", help="Nombre del titular si se conoce.")

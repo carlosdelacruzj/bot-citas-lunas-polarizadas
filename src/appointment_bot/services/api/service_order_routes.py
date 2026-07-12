@@ -62,8 +62,12 @@ def list_service_orders_payload() -> dict[str, Any]:
 
 
 def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
-    required = ("document_number", "password")
-    missing = [field for field in required if payload.get(field) in {None, ""}]
+    required = ("document_number", "password", "contact_name", "contact_source")
+    missing = [
+        field
+        for field in required
+        if payload.get(field) is None or not str(payload[field]).strip()
+    ]
     if missing:
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",

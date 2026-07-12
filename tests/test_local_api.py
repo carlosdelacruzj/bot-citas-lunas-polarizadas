@@ -135,6 +135,8 @@ class LocalApiTests(unittest.TestCase):
                 create_payload = {
                     "document_number": "87654321",
                     "password": "secret",
+                    "contact_name": "Contacto de prueba",
+                    "contact_source": "whatsapp",
                     "applicant_name": "Client Two",
                     "priority": 5,
                 }

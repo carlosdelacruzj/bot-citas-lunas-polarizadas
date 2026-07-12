@@ -1,6 +1,6 @@
-# Arquitectura objetivo
+# Arquitectura alcanzada
 
-La arquitectura objetivo mantiene un solo repositorio, pero separa
+La arquitectura alcanzada mantiene un solo repositorio, pero separa
 responsabilidades por modulos y procesos. El objetivo es que el worker se
 enfoque en reservar y que el dashboard/admin API se enfoque en administracion.
 
@@ -90,9 +90,9 @@ limites son:
 El target preferido del proxy de desarrollo en la arquitectura objetivo es
 `http://127.0.0.1:8766`, donde corre `appointment-bot-admin-api`.
 
-## Estrategia de migracion
+## Estrategia de migracion ejecutada
 
-La separacion sera incremental:
+La separacion se ejecuto incrementalmente:
 
 1. documentar contratos;
 2. crear wrappers publicos sobre servicios actuales;
@@ -101,3 +101,6 @@ La separacion sera incremental:
 5. completar Angular contra el admin API separado;
 6. mover modulos internos por tandas pequenas con wrappers de compatibilidad;
 7. retirar compatibilidad solo cuando tests y runtime lo prueben.
+
+Los siete puntos quedaron completados en el paso 9.7. Los siguientes trabajos
+estan ordenados en `../roadmap/README.md`.

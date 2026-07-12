@@ -46,7 +46,7 @@ iniciar un segundo `appointment_bot.services.continuous_host` local si ya hay un
 Administrar ordenes:
 
 ```powershell
-appointment-bot-client order-add --document DNI --priority 10
+appointment-bot-client order-add --document DNI --priority 10 --contact-name NOMBRE --contact-source whatsapp
 appointment-bot-client orders
 appointment-bot-client pause order-DNI
 appointment-bot-client activate order-DNI
@@ -57,7 +57,7 @@ appointment-bot-client status-report
 appointment-bot-client daily-report
 ```
 
-Checkpoint probado: [version que detecto cupos el 25/06/2026](docs/version-que-detecto-cupos-2026-06-25.md).
+Checkpoint probado: [hitos operativos](docs/history/milestones.md).
 Esa version fue la primera que detecto cupos reales en `LIMA-LA VICTORIA` para el
 `13/07/2026` y envio alerta `[AVAILABLE]` por Telegram; se conserva como referencia
 para comparar futuras corridas.
@@ -99,7 +99,8 @@ acumulada y el ultimo resultado visto para decidir con datos que ventanas convie
 
 Antes de cambiar ventanas calientes, frecuencia de requests, CAPTCHA, concurrencia o
 limpieza de evidencia, empezar por
-[`docs/optimization-review-guide.md`](docs/optimization-review-guide.md). La ruta rapida es:
+[`docs/project-status.md`](docs/project-status.md) y respetar el orden de
+[`docs/roadmap/README.md`](docs/roadmap/README.md). La ruta rapida de evidencia es:
 `docs/evidence-index.csv` para filtrar eventos, `docs/evidence-summary.md` para lectura
 digerida, y las bitacoras largas solo cuando un caso lo amerita. Para regenerar un resumen
 desde PostgreSQL:
@@ -163,3 +164,12 @@ python -m pytest -q
 ```
 
 No se versionan `.env`, logs, screenshots, videos, datos ni dumps PostgreSQL.
+
+## Documentacion
+
+- Estado unico de trabajo cumplido: [`docs/project-status.md`](docs/project-status.md).
+- Orden obligatorio de mejoras: [`docs/roadmap/README.md`](docs/roadmap/README.md).
+- Arquitectura y migracion historica: [`docs/architecture/`](docs/architecture/).
+- Contratos estables: [`docs/contracts/`](docs/contracts/).
+- Arranque y rollback: [`docs/operations/deployment-topology.md`](docs/operations/deployment-topology.md).
+- Hitos historicos: [`docs/history/milestones.md`](docs/history/milestones.md).

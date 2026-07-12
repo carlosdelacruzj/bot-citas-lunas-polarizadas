@@ -35,8 +35,11 @@ POST /api/v1/service-orders/{order_id}/pause
 POST /api/v1/service-orders/{order_id}/activate
 POST /api/v1/service-orders/{order_id}/done
 POST /api/v1/service-orders/{order_id}/no-charge
+POST /api/v1/service-orders/{order_id}/close
+POST /api/v1/service-orders/{order_id}/split-programs
 GET  /api/v1/runs
 GET  /api/v1/runs/{run_id}
+GET  /api/v1/worker/commands
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart
@@ -55,8 +58,6 @@ Estos endpoints completan la superficie administrativa previa al refactor
 interno:
 
 ```text
-GET  /api/v1/worker/commands
-POST /api/v1/service-orders/{order_id}/split-programs
 ```
 
 `GET /api/v1/worker/commands` debe devolver una lista resumida y segura de
@@ -99,12 +100,17 @@ No debe exponer password, usuario real sin mascara, datos de cifrado ni leases.
 
 `POST /api/v1/service-orders` acepta:
 
-- `document_number`
-- `password`
+- `document_number`: obligatorio; usuario o documento del cliente.
+- `password`: obligatorio.
+- `contact_name`: obligatorio; persona que contacto al negocio.
+- `contact_source`: obligatorio; `tiktok`, `facebook` o `whatsapp`.
+- `contact_whatsapp`: opcional.
+
+El alta normal del dashboard solo presenta esos datos y las restricciones de
+fecha opcionales. Los siguientes campos siguen disponibles en el contrato para
+flujos administrativos avanzados, pero no se solicitan al crear un cliente:
+
 - `priority`
-- `contact_whatsapp`
-- `contact_name`
-- `contact_source`
 - `applicant_name`
 - `charge_required`
 - `minimum_reservation_hour`
@@ -116,6 +122,9 @@ No debe exponer password, usuario real sin mascara, datos de cifrado ni leases.
 
 La respuesta no debe devolver password. El frontend no debe persistir el valor
 del password despues de enviarlo.
+
+Si no se envian `minimum_reservation_date` ni `allowed_weekdays`, la orden se
+crea sin restriccion de fecha. El dashboard no debe inventar restricciones.
 
 ## Subordenes y restricciones en Angular
 

@@ -60,16 +60,16 @@ appointment-bot-admin-api
 # Terminal 3
 cd dashboard
 npm install
-ng serve --proxy-config proxy.conf.json
+npm start
 ```
 
-El proxy de desarrollo apunta `/api` y `/health` a
+El proxy de desarrollo `dashboard/proxy.conf.cjs` apunta `/api` y `/health` a
 `http://127.0.0.1:8766`, que es el admin API separado. No abrir CORS al inicio.
 
 ## Compatibilidad con API embebida
 
 El worker conserva su API embebida en `http://127.0.0.1:8765`. Si se necesita
-rollback temporal del dashboard, cambiar `dashboard/proxy.conf.json` a `8765`.
+rollback temporal del dashboard, cambiar `dashboard/proxy.conf.cjs` a `8765`.
 Para validar la arquitectura objetivo, usar `8766`.
 
 No levantar el admin API fuera de loopback sin `APPOINTMENT_BOT_API_TOKEN`.
@@ -88,8 +88,8 @@ python -m ruff check src tests
 python -m pytest
 ```
 
-Para una lista completa de preparacion, validacion manual, pendientes y
-rollback, usar `docs/operations/readiness-checklist.md`.
+Para el estado validado y el orden de trabajo usar `docs/project-status.md` y
+`docs/roadmap/README.md`. Este archivo conserva solamente arranque y rollback.
 
 ## Seguridad operativa
 

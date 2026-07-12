@@ -16,8 +16,13 @@ administrativas con confirmacion visible:
 - `POST /api/v1/service-orders/{order_id}/activate`
 - `POST /api/v1/service-orders/{order_id}/done`
 - `POST /api/v1/service-orders/{order_id}/no-charge`
+- `POST /api/v1/service-orders/{order_id}/close`
+- `POST /api/v1/service-orders/{order_id}/split-programs`
 - `POST /api/v1/worker/restart`
+- `GET /api/v1/worker/commands`
+- `GET /api/v1/manual-sessions`
 - `POST /api/v1/manual-session/open`
+- `POST /api/v1/manual-session/close`
 - filtros locales de lectura
 - copiado de snapshot sanitizado
 
@@ -72,13 +77,13 @@ npm start
 El target `8765` sigue siendo valido para operar temporalmente contra la API
 embebida del worker mientras se conserva compatibilidad.
 
-## Pendiente para completar Angular
+## Estado y mejoras pendientes
 
-- Agregar vista de detalle de runs sin mostrar ni copiar `details` crudos por
-  defecto.
-- Mejorar ergonomia visual sin cambiar contratos.
-- Validar manualmente contra `appointment-bot-admin-api` vivo y token real en
-  una sesion operativa local.
+La superficie administrativa base y la validacion contra el admin API separado
+estan completadas. El detalle de runs, ergonomia, accesibilidad y entrega local
+se ejecutan en el orden definido por
+[`docs/roadmap/02-frontend.md`](../docs/roadmap/02-frontend.md). El estado global
+esta en [`docs/project-status.md`](../docs/project-status.md).
 
 ## Seguridad
 

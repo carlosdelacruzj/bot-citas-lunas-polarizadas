@@ -98,17 +98,11 @@ export class App implements OnDestroy {
   protected readonly paymentAmountAgreed = signal('');
   protected readonly newDocumentNumber = signal('');
   protected readonly newPassword = signal('');
-  protected readonly newApplicantName = signal('');
   protected readonly newContactName = signal('');
   protected readonly newContactWhatsapp = signal('');
-  protected readonly newPriority = signal(0);
-  protected readonly newChargeRequired = signal(true);
-  protected readonly newParentOrderId = signal('');
-  protected readonly newProgramExpediente = signal('');
-  protected readonly newProgramPlate = signal('');
-  protected readonly newMinimumReservationHour = signal('');
+  protected readonly newContactSource = signal('');
   protected readonly newMinimumReservationDate = signal('');
-  protected readonly newAllowedWeekdays = signal('');
+  protected readonly newAllowedWeekdays = signal<number[]>([]);
   protected readonly splitKeepParentActive = signal(false);
   protected readonly closureReason = signal<ClosureReason>('client_withdrew');
   protected readonly closureNote = signal('');
@@ -424,8 +418,8 @@ export class App implements OnDestroy {
       return;
     }
     const payload: PaymentPaidPayload = {
-      amount_paid: this.paymentAmountPaid().trim(),
-      amount_agreed: this.optionalText(this.paymentAmountAgreed()),
+      amount_paid: String(this.paymentAmountPaid() ?? '').trim(),
+      amount_agreed: this.optionalText(String(this.paymentAmountAgreed() ?? '')),
     };
     if (!payload.amount_paid) {
       this.errorMessage.set('Ingresa el monto pagado.');
@@ -443,21 +437,20 @@ export class App implements OnDestroy {
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
       password: this.newPassword(),
-      priority: Number(this.newPriority()) || 0,
       contact_whatsapp: this.optionalText(this.newContactWhatsapp()),
-      contact_name: this.optionalText(this.newContactName()),
-      contact_source: 'whatsapp',
-      applicant_name: this.optionalText(this.newApplicantName()),
-      charge_required: this.newChargeRequired(),
-      minimum_reservation_hour: this.optionalNumber(this.newMinimumReservationHour()),
+      contact_name: this.newContactName().trim(),
+      contact_source: this.newContactSource(),
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
-      allowed_weekdays: this.optionalWeekdays(this.newAllowedWeekdays()),
-      parent_order_id: this.optionalText(this.newParentOrderId()),
-      program_expediente: this.optionalText(this.newProgramExpediente()),
-      program_plate: this.optionalText(this.newProgramPlate()),
+      allowed_weekdays:
+        this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
     };
-    if (!payload.document_number || !payload.password) {
-      this.errorMessage.set('Documento y password son obligatorios para crear orden.');
+    if (
+      !payload.document_number ||
+      !payload.password ||
+      !payload.contact_name ||
+      !payload.contact_source
+    ) {
+      this.errorMessage.set('Usuario, contrasena, contacto y fuente son obligatorios.');
       return;
     }
     this.setPendingAction({
@@ -907,17 +900,11 @@ export class App implements OnDestroy {
   private clearCreateOrderForm(): void {
     this.newDocumentNumber.set('');
     this.newPassword.set('');
-    this.newApplicantName.set('');
     this.newContactName.set('');
     this.newContactWhatsapp.set('');
-    this.newPriority.set(0);
-    this.newChargeRequired.set(true);
-    this.newParentOrderId.set('');
-    this.newProgramExpediente.set('');
-    this.newProgramPlate.set('');
-    this.newMinimumReservationHour.set('');
+    this.newContactSource.set('');
     this.newMinimumReservationDate.set('');
-    this.newAllowedWeekdays.set('');
+    this.newAllowedWeekdays.set([]);
   }
 
   private formatClock(date: Date): string {
@@ -931,25 +918,6 @@ export class App implements OnDestroy {
   private optionalText(value: string): string | null {
     const trimmed = value.trim();
     return trimmed || null;
-  }
-
-  private optionalNumber(value: string): number | null {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return null;
-    }
-    return Number(trimmed);
-  }
-
-  private optionalWeekdays(value: string): number[] | null {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return null;
-    }
-    return trimmed
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((item) => Number.isInteger(item));
   }
 
   private actionResponseMessage(response: ApiActionResponse): string {

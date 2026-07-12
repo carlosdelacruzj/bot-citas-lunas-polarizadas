@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from appointment_bot.config import Settings
 from appointment_bot.db.orders import (
+    FOCUSED_PRIORITY_THRESHOLD,
     claim_service_order,
     clear_order_submission_state,
     get_claimed_service_order_runtime,
@@ -495,6 +496,24 @@ def run_service_order(
     attempt_id = f"attempt-{uuid4().hex}"
     attempt_created = False
 
+    def with_order_details(result):
+        details = dict(result.details or {})
+        details.setdefault("orden", order.order_id)
+        details.setdefault("cliente", order.notification_name)
+        details.setdefault("nombre", order.name)
+        details.setdefault("cuenta", order_settings.safe_username)
+        if order.contact_name:
+            details.setdefault("contact_name", order.contact_name)
+        if order.contact_whatsapp:
+            details.setdefault("contact_whatsapp", order.contact_whatsapp)
+        if order.contact_source:
+            details.setdefault("contact_source", order.contact_source)
+        if order.program_expediente:
+            details.setdefault("program_expediente", order.program_expediente)
+        if order.program_plate:
+            details.setdefault("program_plate", order.program_plate)
+        return replace(result, details=details)
+
     def handle_check(result, *args) -> None:
         heartbeat.ensure_owned()
         record_order_check(
@@ -503,22 +522,7 @@ def run_service_order(
             settings=settings,
         )
         if on_check is not None:
-            details = dict(result.details or {})
-            details.setdefault("orden", order.order_id)
-            details.setdefault("cliente", order.notification_name)
-            details.setdefault("nombre", order.name)
-            details.setdefault("cuenta", order_settings.safe_username)
-            if order.contact_name:
-                details.setdefault("contact_name", order.contact_name)
-            if order.contact_whatsapp:
-                details.setdefault("contact_whatsapp", order.contact_whatsapp)
-            if order.contact_source:
-                details.setdefault("contact_source", order.contact_source)
-            if order.program_expediente:
-                details.setdefault("program_expediente", order.program_expediente)
-            if order.program_plate:
-                details.setdefault("program_plate", order.program_plate)
-            on_check(replace(result, details=details), *args)
+            on_check(with_order_details(result), *args)
 
     def on_submission_intent(details) -> None:
         nonlocal attempt_created
@@ -544,6 +548,17 @@ def run_service_order(
             if candidate.priority > order.priority
         ]
         if not higher_priority_orders:
+            return True
+        if any(
+            candidate.priority >= FOCUSED_PRIORITY_THRESHOLD
+            for candidate in higher_priority_orders
+        ):
+            logger.info(
+                "Observer %s will reserve its detected slot without switching to "
+                "focused order %s",
+                order.order_id,
+                higher_priority_orders[0].order_id,
+            )
             return True
         logger.info(
             "Deferring reservation for order %s because higher priority order %s is ready",
@@ -577,6 +592,7 @@ def run_service_order(
             notify_mode="deferred" if rapid_mode or observer_mode else "full",
         )
         lease_lost = heartbeat.lost_event.is_set()
+    report = with_order_details(report)
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":
         failures, paused = record_invalid_credential_failure(
             order.order_id,

@@ -7,6 +7,7 @@ despliegue, verificacion del worker y procedimientos de rollback.
 
 Documentos principales:
 
-- `readiness-checklist.md`: documento principal con el paso a paso para
-  terminar, validar, operar y hacer rollback.
 - `deployment-topology.md`: como correr worker, admin API y dashboard.
+
+El estado, validaciones cumplidas y definicion de terminado viven en
+`../project-status.md`. Las tareas futuras viven solamente en `../roadmap/`.

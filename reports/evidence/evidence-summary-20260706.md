@@ -32,4 +32,4 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.
 - Abrir las rutas de evidencia solo cuando este resumen apunte a un evento.
-- Comparar cambios contra `docs/optimization-review-guide.md`.
+- Comparar cambios contra `docs/roadmap/04-optimization.md`.

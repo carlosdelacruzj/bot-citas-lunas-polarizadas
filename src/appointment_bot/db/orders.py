@@ -54,6 +54,8 @@ NO_CHARGE_CLOSURE_REASONS = {
     "not_serviceable",
 }
 
+FOCUSED_PRIORITY_THRESHOLD = 100
+
 
 def create_service_order(
     *,
@@ -575,7 +577,12 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        wc.phone AS contact_phone, wc.contact_source,
                        so.priority, so.status, so.created_at, so.updated_at,
                        so.parent_order_id, so.program_expediente, so.program_plate,
-                       os.last_run_at
+                       os.last_run_at,
+                       (
+                           so.minimum_hour IS NOT NULL
+                           OR so.minimum_date IS NOT NULL
+                           OR so.allowed_weekdays IS NOT NULL
+                       ) AS is_constrained
                 FROM service_orders so
                 JOIN applicants a ON a.applicant_id = so.applicant_id
                 JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -584,15 +591,19 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
                 LEFT JOIN order_state os ON os.order_id = so.order_id
                 WHERE so.status = 'ready'
-                  AND so.minimum_hour IS NULL
-                  AND so.minimum_date IS NULL
-                  AND so.allowed_weekdays IS NULL
                   AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
             ),
             active_block AS (
                 SELECT *
                 FROM eligible_orders
-                ORDER BY priority DESC, created_at ASC
+                ORDER BY
+                    (priority >= %s) DESC,
+                    CASE
+                        WHEN priority >= %s THEN false
+                        ELSE is_constrained
+                    END ASC,
+                    priority DESC,
+                    created_at ASC
                 LIMIT %s
             )
             SELECT order_id, name, username, contact_name, contact_phone, contact_source,
@@ -601,7 +612,11 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             FROM active_block
             ORDER BY last_run_at ASC NULLS FIRST, created_at ASC, priority DESC
             """,
-            (settings.observer_active_order_limit,),
+            (
+                FOCUSED_PRIORITY_THRESHOLD,
+                FOCUSED_PRIORITY_THRESHOLD,
+                settings.observer_active_order_limit,
+            ),
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]
 
@@ -646,7 +661,10 @@ def promote_orders_matching_reserved_slot(
             WHERE status = 'ready'
             """
         ).fetchone()
-        promoted_priority = int(max_priority_row["max_priority"]) + 1
+        promoted_priority = min(
+            int(max_priority_row["max_priority"]) + 1,
+            FOCUSED_PRIORITY_THRESHOLD - 1,
+        )
         for row in rows:
             allowed_weekdays = row["allowed_weekdays"]
             constraints = ReservationConstraints(

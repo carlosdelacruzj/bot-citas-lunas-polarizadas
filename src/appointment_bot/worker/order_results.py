@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from appointment_bot.config import Settings
 from appointment_bot.db.orders import (
+    list_observer_orders,
     mark_order_done,
     promote_orders_matching_reserved_slot,
     update_order_state,
@@ -56,9 +57,15 @@ def handle_observer_order_report(
             "Observer %s deferred a detected slot; starting the priority queue",
             order.order_id,
         )
+        higher_priority_order_ids = tuple(
+            candidate.order_id
+            for candidate in list_observer_orders(settings)
+            if candidate.priority > order.priority
+        )
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=0,
+            follow_up_order_ids=higher_priority_order_ids,
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.PAUSED:

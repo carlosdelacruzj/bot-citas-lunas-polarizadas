@@ -1,0 +1,47 @@
+# Hitos operativos
+
+Este archivo consolida los checkpoints historicos que antes estaban separados
+por fecha. No es un roadmap; el estado actual vive en `../project-status.md`.
+
+## 25 de junio de 2026 - Primera deteccion real de cupos
+
+- Sede: `LIMA-LA VICTORIA`.
+- Fecha observada: `13/07/2026`.
+- Ventana: aproximadamente `09:43:54-09:44:32` Lima.
+- Se detectaron horas 10:00, 11:00 y 12:00 para varias ordenes.
+- El bot valido opciones seleccionables y envio Telegram `[AVAILABLE]`.
+- Confirmo login, panel de citas, sesiones independientes, metricas por ventana
+  y valor de usar intervalos cortos para cupos que duran menos de un minuto.
+- No probo aun una reserva; solo deteccion real.
+
+## 30 de junio de 2026 - Primera reserva automatica efectiva
+
+- Orden: `order-42334486`.
+- Cita: `15/07/2026 11:00`, `LIMA-LA VICTORIA`.
+- El bot detecto, selecciono, resolvio CAPTCHA y pulso `Reservar`.
+- La corrida inmediata termino `reservation_unconfirmed` porque no vio
+  `Programado` dentro del timeout.
+- Una pasada posterior encontro la etapa `Programado`; la reserva habia sido
+  efectiva.
+- El hito probo el envio real y expuso la necesidad de reconciliacion y
+  confirmacion posterior robusta.
+- Commit base registrado: `8526612`; el evento ocurrio con cambios locales
+  adicionales, por lo que no corresponde atribuirlo solo a ese commit.
+
+## 3 de julio de 2026 - Evidencia consolidada de deteccion y CAPTCHA
+
+- Checkpoint base: `1f66865`.
+- Consolido detecciones normales y por `reload_probe`, screenshots antes y
+  despues, CAPTCHA exacto enviado y resultados `reservation_unconfirmed`.
+- Confirmo que CAPTCHA invalido debe reintentarse solo ante rechazo explicito.
+- Reafirmo que `reservation_unconfirmed` no equivale a reserva confirmada.
+- En ese periodo CAPTCHA llegaba a 33-34 segundos y dominaba el tiempo.
+- La evidencia detallada se conserva en
+  `../reservation-optimization-log.md`.
+
+## Evolucion posterior
+
+Despues de estos hitos se agregaron confirmacion estricta, intentos persistidos,
+leases con heartbeat, reglas por orden, cola priorizada, migracion modular,
+admin API, dashboard y evidencia compacta. El estado consolidado y las metricas
+vigentes estan en `../project-status.md`.

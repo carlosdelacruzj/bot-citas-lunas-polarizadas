@@ -610,7 +610,9 @@
                 />
               </label>
             </div>
-            <button type="button" class="primary" (click)="requestMarkPaid()">Marcar pagado</button>
+            <button type="button" class="primary" (click)="requestMarkPaid()">
+              Continuar para confirmar pago
+            </button>
           </section>
         </div>
       </div>
@@ -738,7 +740,7 @@
 
         <div class="form-grid wide">
           <label>
-            Documento
+            Usuario o documento <span aria-hidden="true">*</span>
             <input
               name="newDocumentNumber"
               type="text"
@@ -748,7 +750,7 @@
             />
           </label>
           <label>
-            Password
+            Contraseña <span aria-hidden="true">*</span>
             <input
               name="newPassword"
               type="password"
@@ -758,16 +760,7 @@
             />
           </label>
           <label>
-            Solicitante
-            <input
-              name="newApplicantName"
-              type="text"
-              [ngModel]="newApplicantName()"
-              (ngModelChange)="editField(newApplicantName, $event)"
-            />
-          </label>
-          <label>
-            Contacto
+            Persona de contacto <span aria-hidden="true">*</span>
             <input
               name="newContactName"
               type="text"
@@ -776,7 +769,7 @@
             />
           </label>
           <label>
-            WhatsApp
+            Número de WhatsApp (opcional)
             <input
               name="newContactWhatsapp"
               type="text"
@@ -785,66 +778,26 @@
             />
           </label>
           <label>
-            Prioridad
-            <input
-              name="newPriority"
-              type="number"
-              min="0"
-              step="1"
-              [ngModel]="newPriority()"
-              (ngModelChange)="editField(newPriority, $event)"
-            />
+            Fuente <span aria-hidden="true">*</span>
+            <select
+              name="newContactSource"
+              [ngModel]="newContactSource()"
+              (ngModelChange)="editField(newContactSource, $event)"
+            >
+              <option value="">Selecciona una fuente</option>
+              <option value="tiktok">TikTok</option>
+              <option value="facebook">Facebook</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
           </label>
-          <label class="check-row">
-            <input
-              name="newChargeRequired"
-              type="checkbox"
-              [ngModel]="newChargeRequired()"
-              (ngModelChange)="editField(newChargeRequired, $event)"
-            />
-            Cobro requerido
-          </label>
+        </div>
+
+        <fieldset class="restriction-fields">
+          <legend>Restricción de fechas (opcional)</legend>
+          <p>Déjalo vacío para buscar cualquier fecha disponible.</p>
+          <div class="form-grid wide">
           <label>
-            Padre
-            <input
-              name="newParentOrderId"
-              type="text"
-              [ngModel]="newParentOrderId()"
-              (ngModelChange)="editField(newParentOrderId, $event)"
-            />
-          </label>
-          <label>
-            Expediente
-            <input
-              name="newProgramExpediente"
-              type="text"
-              [ngModel]="newProgramExpediente()"
-              (ngModelChange)="editField(newProgramExpediente, $event)"
-            />
-          </label>
-          <label>
-            Placa
-            <input
-              name="newProgramPlate"
-              type="text"
-              [ngModel]="newProgramPlate()"
-              (ngModelChange)="editField(newProgramPlate, $event)"
-            />
-          </label>
-          <label>
-            Hora minima
-            <input
-              name="newMinimumReservationHour"
-              type="number"
-              min="0"
-              max="23"
-              step="1"
-              [ngModel]="newMinimumReservationHour()"
-              (ngModelChange)="editField(newMinimumReservationHour, $event)"
-            />
-          </label>
-          <label>
-            Fecha minima
+            Buscar desde
             <input
               name="newMinimumReservationDate"
               type="date"
@@ -853,16 +806,25 @@
             />
           </label>
           <label>
-            Dias ISO
-            <input
+            Días permitidos
+            <select
               name="newAllowedWeekdays"
-              type="text"
-              inputmode="numeric"
+              multiple
               [ngModel]="newAllowedWeekdays()"
               (ngModelChange)="editField(newAllowedWeekdays, $event)"
-            />
+            >
+              <option [ngValue]="1">Lunes</option>
+              <option [ngValue]="2">Martes</option>
+              <option [ngValue]="3">Miércoles</option>
+              <option [ngValue]="4">Jueves</option>
+              <option [ngValue]="5">Viernes</option>
+              <option [ngValue]="6">Sábado</option>
+              <option [ngValue]="7">Domingo</option>
+            </select>
+            <small>Puedes seleccionar varios días.</small>
           </label>
-        </div>
+          </div>
+        </fieldset>
 
         <div class="modal-actions">
           <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>

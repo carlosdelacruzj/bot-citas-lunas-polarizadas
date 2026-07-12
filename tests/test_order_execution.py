@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import date
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from appointment_bot.domain import RunReport
 from appointment_bot.services.database_models import ServiceOrderRuntime
@@ -30,48 +31,61 @@ def _order(index: int) -> ServiceOrderRuntime:
 
 class OrderExecutionTests(unittest.TestCase):
     def test_appointment_filter_blocks_dates_before_minimum_date(self) -> None:
+        today = datetime.now(ZoneInfo("America/Lima")).date()
+        minimum_date = today + timedelta(days=2)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, date(2026, 7, 11), None),
+                return_value=(None, minimum_date, None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
-            self.assertFalse(allowed("10/07/2026", "12:00"))
-            self.assertTrue(allowed("11/07/2026", "09:00"))
-            self.assertTrue(allowed("12/07/2026", "09:00"))
+            self.assertFalse(
+                allowed((minimum_date - timedelta(days=1)).strftime("%d/%m/%Y"), "12:00")
+            )
+            self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "09:00"))
+            self.assertTrue(
+                allowed((minimum_date + timedelta(days=1)).strftime("%d/%m/%Y"), "09:00")
+            )
 
     def test_appointment_filter_combines_minimum_date_and_hour(self) -> None:
+        today = datetime.now(ZoneInfo("America/Lima")).date()
+        minimum_date = today + timedelta(days=2)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(11, date(2026, 7, 11), None),
+                return_value=(11, minimum_date, None),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
-            self.assertFalse(allowed("10/07/2026", "12:00"))
-            self.assertFalse(allowed("11/07/2026", "10:00"))
-            self.assertTrue(allowed("11/07/2026", "11:00"))
+            self.assertFalse(
+                allowed((minimum_date - timedelta(days=1)).strftime("%d/%m/%Y"), "12:00")
+            )
+            self.assertFalse(allowed(minimum_date.strftime("%d/%m/%Y"), "10:00"))
+            self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "11:00"))
 
     def test_appointment_filter_blocks_non_allowed_weekdays(self) -> None:
+        today = datetime.now(ZoneInfo("America/Lima")).date()
+        allowed_date = today + timedelta(days=1)
+        blocked_date = allowed_date + timedelta(days=1)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, None, (6,)),
+                return_value=(None, None, (allowed_date.isoweekday(),)),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
-            self.assertTrue(allowed("11/07/2026", "10:00"))
-            self.assertFalse(allowed("12/07/2026", "10:00"))
+            self.assertTrue(allowed(allowed_date.strftime("%d/%m/%Y"), "10:00"))
+            self.assertFalse(allowed(blocked_date.strftime("%d/%m/%Y"), "10:00"))
 
     def test_rapid_sweep_continues_after_routine_results(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

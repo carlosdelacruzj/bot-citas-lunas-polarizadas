@@ -139,10 +139,10 @@ export interface CloseServiceOrderPayload {
 export interface CreateServiceOrderPayload {
   document_number: string;
   password: string;
+  contact_name: string;
+  contact_source: string;
   priority?: number;
   contact_whatsapp?: string | null;
-  contact_name?: string | null;
-  contact_source?: string | null;
   applicant_name?: string | null;
   charge_required?: boolean;
   minimum_reservation_hour?: number | null;

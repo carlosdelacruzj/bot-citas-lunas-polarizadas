@@ -1,8 +1,8 @@
 # Runtime actual
 
-Este documento congela el comportamiento actual antes de separar worker, admin
-API y dashboard. Debe usarse como referencia de compatibilidad durante la
-migracion.
+Este documento describe el comportamiento vigente despues de completar la
+migracion interna hasta el paso 9.7. Debe usarse como referencia de
+compatibilidad, no como lista de trabajo futuro.
 
 ## Entrypoints
 
@@ -60,8 +60,14 @@ POST /api/v1/service-orders/{order_id}/pause
 POST /api/v1/service-orders/{order_id}/activate
 POST /api/v1/service-orders/{order_id}/done
 POST /api/v1/service-orders/{order_id}/no-charge
+POST /api/v1/service-orders/{order_id}/close
+POST /api/v1/service-orders/{order_id}/split-programs
 GET  /api/v1/runs
 GET  /api/v1/runs/{run_id}
+GET  /api/v1/worker/commands
+GET  /api/v1/manual-sessions
+POST /api/v1/manual-session/open
+POST /api/v1/manual-session/close
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart

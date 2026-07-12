@@ -5,7 +5,8 @@ afectar el flujo actual de reservas. La regla principal es avanzar por fases
 pequenas, validar despues de cada fase y mantener funcionando el worker actual
 hasta que exista una alternativa equivalente.
 
-Documento principal para terminar y operar: `docs/operations/readiness-checklist.md`.
+Documento historico de fases completadas. Estado vigente:
+`docs/project-status.md`. Mejoras futuras: `docs/roadmap/README.md`.
 Este plan de migracion queda como historial tecnico de las fases ya ejecutadas y
 como referencia si se abre una fase nueva.
 
@@ -131,7 +132,7 @@ Estado: completado como primera version local de solo lectura.
 Implementacion:
 
 - proyecto Angular creado en `dashboard/`;
-- proxy de desarrollo `dashboard/proxy.conf.json` para `/api` y `/health`;
+- proxy de desarrollo `dashboard/proxy.conf.cjs` para `/api` y `/health`;
 - pantalla unica con health, estado/phase del worker, orden actual, lista de
   ordenes, lista de runs y filtros locales;
 - API token ingresado manualmente y mantenido solo en memoria del navegador;
@@ -379,7 +380,7 @@ interno.
 
 Implementacion:
 
-- `dashboard/proxy.conf.json` apunta por defecto al admin API separado en
+- `dashboard/proxy.conf.cjs` apunta por defecto al admin API separado en
   `http://127.0.0.1:8766`;
 - la opcion de volver temporalmente a `http://127.0.0.1:8765` queda
   documentada como compatibilidad con la API embebida;
@@ -700,10 +701,9 @@ python -m pytest
 git diff --check
 ```
 
-## Trabajo Angular pendiente en paralelo
+## Cierre historico del trabajo Angular
 
-Angular no necesita esperar al Paso 9 completo. Puede avanzar en paralelo
-mientras respete estos limites:
+Angular avanzo en paralelo al Paso 9 respetando estos limites:
 
 - consumir solamente el admin API o la API embebida por proxy local;
 - no hablar directo con PostgreSQL;
@@ -724,15 +724,11 @@ Estado actual de Angular:
 - snapshot copiable sanitizado: completado;
 - build Angular: validado con `npm run build`.
 
-Pendiente recomendado:
+La validacion manual contra el admin API vivo se completo el 12 de julio de
+2026. El detalle de runs y la ergonomia dejaron de pertenecer al plan de
+migracion y se trasladaron a `docs/roadmap/02-frontend.md`.
 
-1. agregar vista de detalle de runs sin mostrar ni copiar `details` crudos por
-   defecto;
-2. mejorar ergonomia visual sin cambiar contratos;
-3. validar manualmente dashboard contra `appointment-bot-admin-api` vivo y token
-   real en una sesion operativa local.
-
-Checklist operativo: `docs/operations/readiness-checklist.md`.
+Estado y validacion operativa: `docs/project-status.md`.
 
 ## Criterios de avance
 

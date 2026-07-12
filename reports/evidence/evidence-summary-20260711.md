@@ -1,18 +1,18 @@
-# Resumen digerido de evidencia
+# Resumen de evidencia - ultimos 10 dias
 
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 95
+- Eventos indexados: 78
 - Reservas registradas: 17
-- Reservas no confirmadas: 5
-- Disponibilidades completas: 5
+- Reservas no confirmadas: 3
+- Disponibilidades completas: 0
 - Disponibilidades parciales: 35
-- Senales de defensa: 4
+- Senales de defensa: 0
 
 ## Origen de deteccion
 - fetch_probe: 12
-- normal: 83
+- normal: 66
 
 ## Ultimos eventos utiles
 - 2026-07-11 12:14:02 | order-*** | partial | normal | 31/07/2026 09:00 | blocked_by_order_rule
@@ -27,18 +27,7 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - 2026-07-11 08:35:26 | order-*** | registered | normal | 25/07/2026 09:00 | confirmed
 
 ## Senales de defensa
-- 2026-07-01 09:43:19 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
-Call log:
-  - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
-- 2026-06-30 08:27:37 | order-*** | network | Page.goto: Timeout 60000ms exceeded.
-Call log:
-  - navigating to "https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx", waiting until "domcontentloaded"
-- 2026-06-29 12:30:08 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
-Call log:
-  - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
-- 2026-06-22 12:19:00 | order-*** | network | Page.goto: net::ERR_NETWORK_CHANGED at https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx
-Call log:
-  - navigating to "https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx", waiting until "domcontentloaded"
+- No se registraron senales de defensa en estos eventos.
 
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.

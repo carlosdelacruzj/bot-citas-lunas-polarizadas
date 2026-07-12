@@ -13,8 +13,31 @@ dashboard deben respetar.
 
 Solo `ready` puede entrar a una cola operativa. La cola normal del worker
 procesa ordenes `ready` sin restricciones de reserva. Las ordenes `ready` con
-restricciones quedan en espera y solo entran como seguimiento cuando una reserva
-confirmada previa coincide con sus reglas.
+restricciones no entran a la cola rapida normal y solo entran como seguimiento
+cuando una reserva confirmada previa coincide con sus reglas.
+
+El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` ordenes y
+prioriza siempre las que no tienen restricciones. Si hay menos observadores
+libres que ese limite, completa la rotacion con ordenes restringidas. Una orden
+restringida puede detectar disponibilidad, pero antes de resolver CAPTCHA o
+enviar la reserva debe cumplir estrictamente `minimum_hour`, `minimum_date` y
+`allowed_weekdays`. Si el cupo no cumple, se registra como bloqueado por regla y
+no se intenta reservar.
+
+Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
+normal. Una prioridad `100` o superior activa prioridad de enfoque: esas ordenes
+ocupan primero los espacios disponibles del bloque de observadores, incluso si
+tienen restricciones. Con dos ordenes enfocadas y limite `2`, solo se revisan
+esas dos. Cuando una deja de estar `ready`, la enfocada restante conserva el
+primer espacio y el segundo vuelve a completarse con otra orden elegible.
+Las promociones automaticas por coincidencia de cupo nunca deben alcanzar `100`;
+ese umbral queda reservado para enfoque asignado de forma intencional.
+
+La prioridad de enfoque controla que ordenes ocupan el bloque de observadores,
+pero no transfiere cupos entre sesiones. Si el segundo observador detecta un
+cupo compatible con su propia regla, debe intentar reservarlo inmediatamente
+con su propia cuenta. No debe cambiar a la orden enfocada, porque esa demora
+puede hacer que ambos usuarios pierdan el cupo.
 
 ## Ordenamiento
 
