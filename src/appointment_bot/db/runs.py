@@ -154,6 +154,35 @@ def list_runs(
     return [_run_summary_from_row(row) for row in rows]
 
 
+def list_run_details_between(
+    *,
+    started_at: datetime,
+    finished_at: datetime,
+    settings: Settings | None = None,
+) -> list[RunDetail]:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT r.run_id, r.order_id, r.status, r.message, r.exit_code, r.started_at,
+                   r.finished_at, r.duration_seconds, r.reservation_attempted,
+                   r.reservation_confirmed, r.details_json, r.screenshot_path, r.created_at,
+                   COUNT(rs.id) AS screenshot_count,
+                   ARRAY_REMOVE(ARRAY_AGG(rs.path ORDER BY rs.id), NULL) AS screenshot_paths
+            FROM runs r
+            LEFT JOIN run_screenshots rs ON rs.run_id = r.run_id
+            WHERE r.finished_at >= %s AND r.finished_at < %s
+            GROUP BY r.run_id
+            ORDER BY r.started_at ASC
+            """,
+            (started_at, finished_at),
+        ).fetchall()
+    return [
+        _run_detail_from_row(row, [str(path) for path in row["screenshot_paths"]]) for row in rows
+    ]
+
+
 def record_order_check(
     order_id: str,
     *,
@@ -314,6 +343,8 @@ def get_run(
             (run_id,),
         ).fetchall()
     return _run_detail_from_row(row, [str(item["path"]) for item in screenshot_rows])
+
+
 def _run_summary_from_row(row: dict[str, Any]) -> RunSummary:
     return RunSummary(
         run_id=str(row["run_id"]),

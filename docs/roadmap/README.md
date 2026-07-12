@@ -27,7 +27,7 @@ la edicion explicita de datos sensibles y la ergonomia sin rehacer componentes.
 
 ### Fase 3 - Operacion y observabilidad
 
-Estado: siguiente fase.
+Estado: completada el 12 de julio de 2026; P0 y P1 cerrados.
 
 Ejecutar completo [`03-operations.md`](03-operations.md).
 
@@ -35,6 +35,8 @@ Motivo: los KPI semanales y alertas deben medir el comportamiento de la
 superficie ya estabilizada antes de cambiar tiempos o concurrencia.
 
 ### Fase 4 - Optimizacion de reservas
+
+Estado: siguiente fase.
 
 Ejecutar [`04-optimization.md`](04-optimization.md) por experimentos pequenos.
 

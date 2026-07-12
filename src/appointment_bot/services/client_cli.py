@@ -4,9 +4,11 @@ import argparse
 import getpass
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, is_dataclass
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
+from appointment_bot.config import load_settings
 from appointment_bot.core.contacts import CONTACT_SOURCES, ContactValidationError
 from appointment_bot.db.common import init_database
 from appointment_bot.db.orders import (
@@ -20,12 +22,14 @@ from appointment_bot.db.orders import (
     set_order_paused,
     split_service_order_programs,
 )
-from appointment_bot.db.runs import get_run, list_runs
+from appointment_bot.db.runs import get_run, list_run_details_between, list_runs
 from appointment_bot.reports.evidence import export_evidence_summary
 from appointment_bot.reports.status import (
     generate_daily_report_image,
     generate_status_report_images,
 )
+from appointment_bot.reports.weekly import LIMA_TZ, export_weekly_report
+from appointment_bot.services.notifier import send_telegram_message
 
 SENSITIVE_FIELDS = {"password", "login_password"}
 PREFERRED_ORDER_FIELDS = (
@@ -99,9 +103,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     order_add_parser.add_argument(
         "--allowed-weekdays",
-        help=(
-            "Dias permitidos ISO separados por coma: 1=lunes ... 6=sabado, 7=domingo."
-        ),
+        help=("Dias permitidos ISO separados por coma: 1=lunes ... 6=sabado, 7=domingo."),
     )
     order_add_parser.add_argument("--program-expediente", help="Expediente objetivo.")
     order_add_parser.add_argument("--program-plate", help="Placa objetivo.")
@@ -154,6 +156,23 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=7,
         help="Cantidad de dias hacia atras a incluir.",
+    )
+    weekly_parser = subparsers.add_parser(
+        "weekly-report",
+        help="Genera un reporte operacional comparable por rango exacto.",
+    )
+    weekly_parser.add_argument("--start", required=True, help="Fecha inicial YYYY-MM-DD.")
+    weekly_parser.add_argument("--end", required=True, help="Fecha final inclusiva YYYY-MM-DD.")
+    weekly_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/operations"),
+        help="Directorio para la salida fechada.",
+    )
+    weekly_parser.add_argument(
+        "--notify",
+        action="store_true",
+        help="Envia por Telegram las alertas detectadas.",
     )
     evidence_summary_parser.add_argument(
         "--output-dir",
@@ -318,6 +337,36 @@ def run(argv: Sequence[str] | None = None) -> int:
         print(f"Eventos exportados: {result.event_count}")
         print(f"CSV generado: {result.csv_path}")
         print(f"Resumen generado: {result.markdown_path}")
+        return 0
+
+    if args.command == "weekly-report":
+        try:
+            start = date.fromisoformat(args.start)
+            end = date.fromisoformat(args.end)
+        except ValueError:
+            parser.error("--start y --end deben usar YYYY-MM-DD.")
+        days = (end - start).days + 1
+        query_start = datetime.combine(start - timedelta(days=days), time.min, LIMA_TZ)
+        query_end = datetime.combine(end + timedelta(days=1), time.min, LIMA_TZ)
+        result = export_weekly_report(
+            list_run_details_between(
+                started_at=query_start.astimezone(UTC),
+                finished_at=query_end.astimezone(UTC),
+            ),
+            start=start,
+            end=end,
+            output_dir=args.output_dir,
+        )
+        print(f"Runs medidos: {result.run_count}")
+        print(f"Reporte generado: {result.markdown_path}")
+        print(f"Metricas generadas: {result.metrics_path}")
+        print(f"Resumen vigente: {result.latest_path}")
+        if args.notify and result.alerts:
+            settings = load_settings(require_login=False)
+            send_telegram_message(
+                settings,
+                "ALERTA OPERACIONAL\n" + "\n".join(f"- {alert}" for alert in result.alerts),
+            )
         return 0
 
     if args.command == "contact":

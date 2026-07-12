@@ -2,7 +2,7 @@ import re
 
 SENSITIVE_PATTERNS = (
     re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"),
-    re.compile(r"\b\d{8,12}\b"),
+    re.compile(r"\b\d{8,16}\b"),
     re.compile(r"(?i)\b(?:bearer|token|password|secret)\s*[:=]\s*\S+"),
 )
 

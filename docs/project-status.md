@@ -122,6 +122,16 @@ El detalle historico de las fases se conserva en
   estado `ready` de la orden.
 - Validacion posterior: `compileall`, Ruff, 53 tests, build Angular y
   `git diff --check` correctos.
+- Reporte semanal real `2026-07-06` a `2026-07-12`: 4,339 runs y 56 intentos;
+  p50/p90 de deteccion a fin `6.977s/11.283s`, CAPTCHA `1.359s/3.047s`,
+  seleccion `1.719s/1.891s` y cambio de usuario `2.000s/73.800s`.
+- Alertas del rango: 3 CAPTCHA mayores a 10 segundos y aumento de `slot_lost`
+  de `7.7%` a `28.6%` sobre intentos compatibles.
+- Backup/restore PostgreSQL verificado en base temporal: 40 ordenes, 6,099
+  runs, 28 reservas, 39 intentos de reserva y 25 pagos; dump y base temporal
+  eliminados al finalizar.
+- Evidencia vigente regenerada para 14 dias: 84 eventos sanitizados; resumen e
+  indice son la primera lectura y las salidas fechadas viven en `reports/`.
 
 ## Cambios actuales revisados
 

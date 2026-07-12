@@ -98,6 +98,8 @@ def export_evidence_summary(
     markdown_path = output_dir / f"evidence-summary-{stamp}.md"
     write_evidence_rows(csv_path, rows)
     write_evidence_summary(markdown_path, rows, title=f"Resumen de evidencia - ultimos {days} dias")
+    write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
+    write_evidence_summary(EVIDENCE_SUMMARY_PATH, rows)
     return EvidenceSummaryResult(csv_path, markdown_path, len(rows))
 
 

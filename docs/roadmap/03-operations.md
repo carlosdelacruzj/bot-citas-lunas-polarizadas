@@ -2,32 +2,43 @@
 
 ## P0 - Reporte semanal comparable
 
-Estado: pendiente.
+Estado: completado el 12 de julio de 2026.
 
-1. Generar por rango exacto: `registered`, `Programado/completed`,
-   `reservation_unconfirmed`, `slot_lost`, bloqueos por regla y defensas.
-2. No sumar `completed` como `registered` sin explicarlo.
-3. Calcular p50 y p90 de deteccion a fin, CAPTCHA, seleccion y cambio de usuario.
-4. Etiquetar siempre fecha inicial, fecha final, zona horaria y cantidad de
-   intentos medidos.
-5. Separar acumulado historico del reporte semanal.
+Implementado:
 
-Criterio de cierre: dos semanas consecutivas pueden compararse sin releer logs
-largos ni confundir ventanas distintas.
+1. `appointment-bot-client weekly-report --start YYYY-MM-DD --end YYYY-MM-DD`
+   genera Markdown y CSV por rango exacto y compara el periodo anterior de la
+   misma duracion.
+2. `registered`, `Programado/completed`, no confirmadas, `slot_lost`, reglas y
+   defensas se muestran por separado.
+3. Deteccion a fin, CAPTCHA, seleccion y cambio de usuario incluyen n, p50 y
+   p90; CAPTCHA tambien cuenta respuestas mayores a 3, 5, 10 y 20 segundos.
+4. El reporte etiqueta fechas inclusivas, zona `America/Lima`, runs e intentos.
+5. El acumulado historico queda explicitamente fuera de la tabla semanal.
+
+Criterio de cierre cumplido: el reporte `2026-07-06` a `2026-07-12` se genero
+contra `2026-06-29` a `2026-07-05` sin releer logs largos.
 
 ## P1 - Alertas y runbook
 
-1. Alertar outliers de CAPTCHA y aumento sostenido de `slot_lost`.
-2. Mantener `outside_hot_window` como espera saludable, no caida.
-3. Documentar recuperacion de admin API, dashboard y worker por separado.
-4. Agregar verificacion de backup/restore PostgreSQL sin versionar dumps.
-5. Registrar toda validacion operativa importante en `project-status.md`.
+Estado: completado el 12 de julio de 2026.
+
+1. El reporte alerta CAPTCHA mayor a 10 segundos y aumento sostenido de
+   `slot_lost`; `--notify` envia las alertas por Telegram.
+2. `docs/operations/runbook.md` define `outside_hot_window` como espera sana.
+3. El runbook separa recuperacion de worker y admin-dashboard.
+4. `scripts/verify-postgres-backup.ps1` restaura en una base temporal, compara
+   tablas esenciales y elimina dump/base al finalizar.
+5. Resultados y conteos verificados quedaron registrados en
+   `docs/project-status.md`.
 
 ## P1 - Higiene de evidencia
 
-1. Mantener resumen e indice como primera lectura.
-2. Evitar duplicados entre `docs/` y `reports/evidence/`; `reports/` debe ser la
-   salida fechada y `docs/` el resumen vigente.
-3. Conservar screenshots/HTML solo cuando la politica de evidencia los requiera.
-4. Revisar que documentos, contactos y cuentas esten enmascarados en artefactos
-   destinados a compartir.
+Estado: completado el 12 de julio de 2026.
+
+1. Resumen e indice vigentes se regeneran junto con cada exportacion.
+2. `docs/` mantiene la lectura vigente y `reports/evidence/` la salida fechada;
+   se retiraron salidas fechadas duplicadas anteriores.
+3. `docs/operations/evidence-policy.md` define retencion de screenshots y HTML.
+4. La sanitizacion cubre identificadores numericos de 8 a 16 digitos y los
+   artefactos vigentes fueron regenerados sin documento/contacto/cuenta crudos.
