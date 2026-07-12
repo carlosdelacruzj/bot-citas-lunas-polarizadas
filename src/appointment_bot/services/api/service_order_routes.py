@@ -5,6 +5,7 @@ from http import HTTPStatus
 from typing import Any
 from urllib.parse import unquote
 
+from appointment_bot.core.contacts import ContactValidationError
 from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     close_service_order,
@@ -91,6 +92,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
             f"Missing fields: {', '.join(missing)}",
+            field_errors={field: "Este campo es obligatorio." for field in missing},
         )
     try:
         result = create_service_order(
@@ -113,6 +115,12 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             program_expediente=_optional_text(payload, "program_expediente"),
             program_plate=_optional_text(payload, "program_plate"),
         )
+    except ContactValidationError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            str(exc),
+            field_errors={exc.field: str(exc)},
+        )
     except (TypeError, ValueError) as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
     return HTTPStatus.CREATED, {"status": "created", **asdict(result)}
@@ -129,6 +137,10 @@ def update_service_order_contact_payload(
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
             "Missing contact_whatsapp or contact_name.",
+            field_errors={
+                "contact_name": "Ingresa nombre o WhatsApp.",
+                "contact_whatsapp": "Ingresa nombre o WhatsApp.",
+            },
         )
     try:
         add_or_update_service_order_contact(
@@ -136,6 +148,12 @@ def update_service_order_contact_payload(
             contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
             contact_name=_optional_text(payload, "contact_name"),
             contact_source=_optional_text(payload, "contact_source"),
+        )
+    except ContactValidationError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            str(exc),
+            field_errors={exc.field: str(exc)},
         )
     except ValueError as exc:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))

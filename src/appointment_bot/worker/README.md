@@ -11,6 +11,9 @@ Desde el paso 9.4 contiene la implementacion del proceso continuo:
 - `worker.host`
 - `worker.continuous_worker`
 - `worker.queue_runtime`
+- `worker.queue_traversal`
+- `worker.queue_policy`
+- `worker.order_execution`
 - `worker.windows_runtime`
 - `worker.lease`
 - `worker.recovery`
@@ -26,4 +29,7 @@ Desde el paso 9.7 se retiraron las rutas antiguas `services/continuous_*`,
 apunta a `worker.host:main` y `scripts/start-worker.ps1` ejecuta
 `appointment_bot.worker.host`.
 
-`worker.queue_runtime` invoca el motor de sesion en `reservation_engine/`.
+Desde el P2 de backend, `worker.queue_runtime` es una fachada de compatibilidad.
+`queue_traversal` recorre la cola, `order_execution` ejecuta una orden y
+`queue_policy` concentra limites, diferimiento de estado y pausas entre ordenes.
+La ejecucion individual invoca el motor de sesion en `reservation_engine/`.

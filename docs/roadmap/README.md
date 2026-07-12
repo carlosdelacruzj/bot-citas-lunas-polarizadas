@@ -9,8 +9,8 @@ Esta es la unica lista maestra de trabajo futuro. El estado global esta en
 
 Estado: completada el 12 de julio de 2026.
 
-Se completo el bloque P0 de [`01-backend.md`](01-backend.md): listado
-enmascarado y detalle administrativo protegido por orden.
+Se completaron los bloques P0, P1 y P2 de [`01-backend.md`](01-backend.md):
+contrato administrativo seguro, validacion compartida y division modular.
 
 Motivo: antes de ampliar el dashboard hay que asegurar que los listados no
 entreguen documento o WhatsApp completos innecesariamente y definir un endpoint
@@ -18,7 +18,7 @@ de detalle administrativo explicito.
 
 ### Fase 2 - Frontend operativo
 
-Estado: siguiente fase.
+Estado: en curso; P0 completado el 12 de julio de 2026.
 
 Ejecutar completo [`02-frontend.md`](02-frontend.md).
 
@@ -39,13 +39,6 @@ Ejecutar [`04-optimization.md`](04-optimization.md) por experimentos pequenos.
 Motivo: primero se necesita una linea base p50/p90 y resultados exactos; despues
 se optimizan seleccion, CAPTCHA y orden de clientes sin confundir percepcion con
 conversion real.
-
-### Fase 5 - Pulcritud interna
-
-Ejecutar el bloque P2 de [`01-backend.md`](01-backend.md).
-
-Motivo: dividir archivos grandes mejora mantenimiento, pero hoy tiene menor
-impacto que seguridad, operacion y conversion.
 
 ## Regla de ejecucion
 

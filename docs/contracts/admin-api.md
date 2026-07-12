@@ -111,6 +111,26 @@ el DTO enmascarado del listado.
 - `contact_source`: obligatorio; `tiktok`, `facebook` o `whatsapp`.
 - `contact_whatsapp`: opcional.
 
+Las fuentes permitidas viven en `core/contacts.py`: `tiktok`, `facebook` y
+`whatsapp`. API, DB y CLI usan esa misma lista. La fuente se normaliza a
+minusculas, el nombre colapsa espacios repetidos y WhatsApp conserva solo un
+`+` inicial y digitos. No se agrega codigo de pais ni se inventan datos.
+
+Los errores de entrada pueden incluir:
+
+```json
+{
+  "status": "bad_request",
+  "message": "...",
+  "field_errors": {
+    "contact_source": "..."
+  }
+}
+```
+
+El dashboard traduce esos nombres tecnicos a las etiquetas visibles del
+formulario.
+
 El alta normal del dashboard solo presenta esos datos y las restricciones de
 fecha opcionales. Los siguientes campos siguen disponibles en el contrato para
 flujos administrativos avanzados, pero no se solicitan al crear un cliente:

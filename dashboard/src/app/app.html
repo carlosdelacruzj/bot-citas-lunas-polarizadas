@@ -439,7 +439,7 @@
       <div class="panel-header">
         <div>
           <h2>Runs recientes</h2>
-          <p>Lectura resumida de los ultimos 50 registros</p>
+          <p>Selecciona una corrida para ver su detalle sanitizado</p>
         </div>
         <label class="filter">
           Estado
@@ -456,6 +456,60 @@
         </label>
       </div>
 
+      @if (selectedRunId()) {
+        <article class="run-detail" aria-live="polite">
+          <div class="run-detail-header">
+            <div>
+              <p class="eyebrow">Detalle de corrida</p>
+              <h3>{{ selectedRunId() }}</h3>
+            </div>
+            <button type="button" class="secondary" (click)="closeRunDetail()">
+              Volver a la lista
+            </button>
+          </div>
+
+          @if (runDetailState() === 'loading') {
+            <p class="run-detail-state">Cargando detalle sanitizado...</p>
+          } @else if (runDetailState() === 'error') {
+            <div class="notice bad" role="alert">
+              {{ runDetailError() ?? 'No se pudo cargar la corrida.' }}
+              <button type="button" class="secondary" (click)="selectRun(selectedRunId())">
+                Reintentar
+              </button>
+            </div>
+          } @else if (selectedRun(); as run) {
+            <dl class="run-detail-grid">
+              <div><dt>Estado</dt><dd><span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span></dd></div>
+              <div><dt>Orden</dt><dd>{{ run.order_id ?? 'observador' }}</dd></div>
+              <div><dt>Resultado</dt><dd>{{ runResultLabel(run) }}</dd></div>
+              <div><dt>Codigo de salida</dt><dd>{{ run.exit_code }}</dd></div>
+              <div><dt>Inicio</dt><dd>{{ run.started_at }}</dd></div>
+              <div><dt>Fin</dt><dd>{{ run.finished_at }}</dd></div>
+              <div><dt>Duracion</dt><dd>{{ run.duration_seconds }}s</dd></div>
+              <div><dt>Evidencias</dt><dd>{{ run.screenshot_count ?? runEvidencePaths(run).length }}</dd></div>
+            </dl>
+            <div class="run-message">
+              <strong>Mensaje</strong>
+              <p>{{ run.message || 'Sin mensaje registrado.' }}</p>
+            </div>
+            @if (runEvidencePaths(run).length) {
+              <div class="run-evidence">
+                <strong>Rutas permitidas de evidencia</strong>
+                <ul>
+                  @for (path of runEvidencePaths(run); track path) {
+                    <li>{{ path }}</li>
+                  }
+                </ul>
+              </div>
+            } @else {
+              <p class="empty compact-empty">Esta corrida no tiene rutas de evidencia publicas.</p>
+            }
+          } @else {
+            <p class="empty compact-empty">No hay detalle disponible.</p>
+          }
+        </article>
+      }
+
       <div class="table-wrap">
         <table class="responsive-table">
           <thead>
@@ -470,9 +524,19 @@
           </thead>
           <tbody>
             @for (run of filteredRuns(); track run.run_id) {
-              <tr>
+              <tr
+                class="selectable-row"
+                [class.selected-row]="selectedRunId() === run.run_id"
+                (click)="selectRun(run.run_id)"
+              >
                 <td data-label="Run">
-                  <strong>{{ run.run_id }}</strong>
+                  <button
+                    type="button"
+                    class="run-link"
+                    (click)="$event.stopPropagation(); selectRun(run.run_id)"
+                  >
+                    {{ run.run_id }}
+                  </button>
                   <span>{{ run.message }}</span>
                 </td>
                 <td data-label="Orden">{{ run.order_id ?? 'observador' }}</td>

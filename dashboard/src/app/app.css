@@ -599,6 +599,81 @@ td span {
   background: #eff6ff;
 }
 
+.run-link {
+  width: auto;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: #123f91;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.run-link:hover,
+.run-link:focus-visible {
+  text-decoration: underline;
+}
+
+.run-detail {
+  margin-bottom: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 16px;
+}
+
+.run-detail-header {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.run-detail-header h3,
+.run-detail-header p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.run-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.run-detail-grid div,
+.run-message,
+.run-evidence {
+  border: 1px solid #dbe7f3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 11px;
+}
+
+.run-message,
+.run-evidence {
+  margin-top: 10px;
+}
+
+.run-message p,
+.run-evidence ul {
+  margin: 6px 0 0;
+}
+
+.run-evidence li {
+  overflow-wrap: anywhere;
+}
+
+.run-detail-state,
+.compact-empty {
+  margin: 0;
+}
+
 .badge {
   display: inline-flex;
   max-width: 100%;
@@ -755,6 +830,18 @@ td span {
   .modal-grid,
   .modal-actions-grid {
     grid-template-columns: 1fr;
+  }
+
+  .run-detail-header {
+    display: grid;
+  }
+
+  .run-detail-header button {
+    width: 100%;
+  }
+
+  .run-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .modal-backdrop {

@@ -10,6 +10,7 @@ import {
   HealthPayload,
   ManualSession,
   PaymentPaidPayload,
+  RunDetail,
   RunSummary,
   ServiceOrder,
   ServiceOrderDetail,
@@ -85,6 +86,10 @@ export class App implements OnDestroy {
   protected readonly worker = signal<WorkerStatus | null>(null);
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
+  protected readonly selectedRunId = signal('');
+  protected readonly selectedRunDetail = signal<RunDetail | null>(null);
+  protected readonly runDetailState = signal<LoadState>('idle');
+  protected readonly runDetailError = signal<string | null>(null);
   protected readonly workerCommands = signal<WorkerCommand[]>([]);
   protected readonly manualSessions = signal<ManualSession[]>([]);
   protected readonly loadState = signal<LoadState>('idle');
@@ -199,6 +204,7 @@ export class App implements OnDestroy {
     }
     return this.runs().filter((run) => run.order_id === orderId);
   });
+  protected readonly selectedRun = computed(() => this.selectedRunDetail());
   protected readonly selectedOrderWhatsappPlaceholder = computed(
     () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
   );
@@ -258,6 +264,51 @@ export class App implements OnDestroy {
     this.selectedOrderDetail.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+  }
+
+  protected async selectRun(runId: string): Promise<void> {
+    this.selectedRunId.set(runId);
+    this.selectedRunDetail.set(null);
+    this.runDetailError.set(null);
+    this.runDetailState.set('loading');
+    try {
+      const run = await this.api.getRun(runId);
+      if (this.selectedRunId() !== run.run_id) {
+        return;
+      }
+      this.selectedRunDetail.set(run);
+      this.runDetailState.set('ready');
+    } catch (error) {
+      if (this.selectedRunId() !== runId) {
+        return;
+      }
+      this.runDetailState.set('error');
+      this.runDetailError.set(this.readError(error));
+    }
+  }
+
+  protected closeRunDetail(): void {
+    this.selectedRunId.set('');
+    this.selectedRunDetail.set(null);
+    this.runDetailError.set(null);
+    this.runDetailState.set('idle');
+  }
+
+  protected runResultLabel(run: RunSummary): string {
+    if (run.reservation_confirmed) {
+      return 'Reserva confirmada';
+    }
+    if (run.reservation_attempted) {
+      return 'Intento sin confirmacion';
+    }
+    return 'Sin intento de reserva';
+  }
+
+  protected runEvidencePaths(run: RunDetail): string[] {
+    if (run.screenshot_paths?.length) {
+      return run.screenshot_paths;
+    }
+    return run.screenshot_path ? [run.screenshot_path] : [];
   }
 
   protected async openEditOrder(order: ServiceOrder): Promise<void> {

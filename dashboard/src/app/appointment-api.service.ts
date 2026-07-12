@@ -82,6 +82,8 @@ export interface RunSummary {
   created_at?: string;
 }
 
+export type RunDetail = RunSummary;
+
 interface ServiceOrdersResponse {
   service_orders: ServiceOrder[];
 }
@@ -197,6 +199,12 @@ export class AppointmentApiService {
     return response.runs;
   }
 
+  async getRun(runId: string): Promise<RunDetail> {
+    return firstValueFrom(
+      this.http.get<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`),
+    );
+  }
+
   async getWorkerCommands(): Promise<WorkerCommand[]> {
     const response = await firstValueFrom(
       this.http.get<WorkerCommandsResponse>('/api/v1/worker/commands?limit=20'),
@@ -295,6 +303,20 @@ export function apiErrorMessage(error: unknown): string {
     }
     const message =
       typeof error.error?.message === 'string' ? error.error.message : 'Respuesta no esperada.';
+    const fieldErrors = error.error?.field_errors;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const labels: Record<string, string> = {
+        document_number: 'Usuario o documento',
+        password: 'Contraseña',
+        contact_name: 'Persona de contacto',
+        contact_source: 'Fuente',
+        contact_whatsapp: 'WhatsApp',
+      };
+      const details = Object.entries(fieldErrors)
+        .map(([field, value]) => `${labels[field] ?? field}: ${String(value)}`)
+        .join(' ');
+      return `${error.status} ${details || message}`;
+    }
     return `${error.status} ${message}`;
   }
   if (error instanceof Error) {

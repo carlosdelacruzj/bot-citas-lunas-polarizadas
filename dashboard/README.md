@@ -10,6 +10,7 @@ administrativas con confirmacion visible:
 - `GET /api/v1/service-orders`
 - `GET /api/v1/service-orders/{order_id}` solo al abrir edicion protegida
 - `GET /api/v1/runs`
+- `GET /api/v1/runs/{run_id}` sin detalles crudos
 - `POST /api/v1/service-orders`
 - `POST /api/v1/service-orders/{order_id}/contact`
 - `POST /api/v1/service-orders/{order_id}/payment/paid`
@@ -80,9 +81,9 @@ embebida del worker mientras se conserva compatibilidad.
 
 ## Estado y mejoras pendientes
 
-La superficie administrativa base y la validacion contra el admin API separado
-estan completadas. El detalle de runs, ergonomia, accesibilidad y entrega local
-se ejecutan en el orden definido por
+La superficie administrativa base, el detalle sanitizado de runs y la
+validacion contra el admin API separado estan completados. La ergonomia,
+accesibilidad y entrega local se ejecutan en el orden definido por
 [`docs/roadmap/02-frontend.md`](../docs/roadmap/02-frontend.md). El estado global
 esta en [`docs/project-status.md`](../docs/project-status.md).
 
@@ -103,6 +104,8 @@ esta en [`docs/project-status.md`](../docs/project-status.md).
 - No versionar `node_modules`, `dist` ni caches de Angular.
 - No inventar restricciones de reserva. Si una orden no tiene restricciones,
   enviar `null` u omitir esos campos.
+- Las fuentes validas son TikTok, Facebook y WhatsApp. Los errores del backend
+  identifican el campo y se muestran con la etiqueta correspondiente.
 
 ## Version
 

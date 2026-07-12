@@ -147,10 +147,14 @@ class LocalApiTests(unittest.TestCase):
                 create_payload = {
                     "document_number": "87654321",
                     "password": "secret",
-                    "contact_name": "Contacto de prueba",
-                    "contact_source": "whatsapp",
+                    "contact_name": "  Contacto   de prueba  ",
+                    "contact_source": "WhatsApp",
+                    "contact_whatsapp": "+51 999-111-222",
                     "applicant_name": "Client Two",
                     "priority": 5,
+                    "minimum_reservation_hour": 11,
+                    "minimum_reservation_date": "2026-08-01",
+                    "allowed_weekdays": [1, 6],
                 }
                 response = _json_request(
                     f"{base_url}/api/v1/service-orders",
@@ -160,6 +164,19 @@ class LocalApiTests(unittest.TestCase):
                 )
                 self.assertEqual(response["status"], "created")
                 order_id = response["order_id"]
+
+                invalid_payload = {**create_payload, "document_number": "11112222"}
+                invalid_payload["contact_source"] = "instagram"
+                with self.assertRaises(HTTPError) as context:
+                    _json_request(
+                        f"{base_url}/api/v1/service-orders",
+                        method="POST",
+                        token="secret",
+                        payload=invalid_payload,
+                    )
+                invalid_error = json.loads(context.exception.read())
+                self.assertEqual(context.exception.code, 400)
+                self.assertIn("contact_source", invalid_error["field_errors"])
 
                 for action in ("pause", "activate", "done"):
                     result = _json_request(
@@ -175,10 +192,20 @@ class LocalApiTests(unittest.TestCase):
                 )
                 with urlopen(request, timeout=3) as response:
                     orders = json.loads(response.read())["service_orders"]
+                detail = _json_request(
+                    f"{base_url}/api/v1/service-orders/{order_id}",
+                    token="secret",
+                )
 
             self.assertEqual(orders[0]["order_id"], "order-87654321")
             self.assertEqual(orders[0]["priority"], 5)
             self.assertEqual(orders[0]["status"], "archived")
+            self.assertEqual(detail["contact_name"], "Contacto de prueba")
+            self.assertEqual(detail["contact_source"], "whatsapp")
+            self.assertEqual(detail["contact_whatsapp"], "+51999111222")
+            self.assertEqual(detail["minimum_reservation_hour"], 11)
+            self.assertEqual(detail["minimum_reservation_date"], "2026-08-01")
+            self.assertEqual(detail["allowed_weekdays"], [1, 6])
 
     def test_service_order_close_action_publishes_closure_reason(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

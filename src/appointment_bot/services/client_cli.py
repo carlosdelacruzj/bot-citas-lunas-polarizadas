@@ -7,6 +7,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from appointment_bot.core.contacts import CONTACT_SOURCES, ContactValidationError
 from appointment_bot.db.common import init_database
 from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
@@ -78,7 +79,7 @@ def _build_parser() -> argparse.ArgumentParser:
     order_add_parser.add_argument(
         "--contact-source",
         required=True,
-        choices=("tiktok", "facebook", "whatsapp"),
+        choices=CONTACT_SOURCES,
         help="Origen del contacto, por ejemplo whatsapp o tiktok.",
     )
     order_add_parser.add_argument("--applicant-name", help="Nombre del titular si se conoce.")
@@ -167,6 +168,7 @@ def _build_parser() -> argparse.ArgumentParser:
     contact_parser.add_argument("--contact-name", help="Nombre de quien contacta.")
     contact_parser.add_argument(
         "--contact-source",
+        choices=CONTACT_SOURCES,
         help="Origen del contacto, por ejemplo whatsapp o tiktok.",
     )
 
@@ -251,22 +253,25 @@ def run(argv: Sequence[str] | None = None) -> int:
         password = args.password or getpass.getpass("Clave del titular: ")
         if not password:
             parser.error("La clave del titular no puede estar vacia.")
-        result = create_service_order(
-            document_number=args.document,
-            password=password,
-            priority=args.priority,
-            contact_whatsapp=args.whatsapp,
-            contact_name=args.contact_name,
-            contact_source=args.contact_source,
-            applicant_name=args.applicant_name,
-            charge_required=not args.no_charge,
-            minimum_reservation_hour=args.minimum_reservation_hour,
-            minimum_reservation_date=args.minimum_reservation_date,
-            allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),
-            parent_order_id=args.parent_order_id,
-            program_expediente=args.program_expediente,
-            program_plate=args.program_plate,
-        )
+        try:
+            result = create_service_order(
+                document_number=args.document,
+                password=password,
+                priority=args.priority,
+                contact_whatsapp=args.whatsapp,
+                contact_name=args.contact_name,
+                contact_source=args.contact_source,
+                applicant_name=args.applicant_name,
+                charge_required=not args.no_charge,
+                minimum_reservation_hour=args.minimum_reservation_hour,
+                minimum_reservation_date=args.minimum_reservation_date,
+                allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),
+                parent_order_id=args.parent_order_id,
+                program_expediente=args.program_expediente,
+                program_plate=args.program_plate,
+            )
+        except ContactValidationError as exc:
+            parser.error(str(exc))
         print(f"Trabajo guardado: {result.order_id}")
         return 0
 
@@ -318,12 +323,15 @@ def run(argv: Sequence[str] | None = None) -> int:
     if args.command == "contact":
         if not args.whatsapp and not args.contact_name:
             parser.error("Debes indicar --whatsapp o --contact-name.")
-        add_or_update_service_order_contact(
-            args.order_id,
-            contact_whatsapp=args.whatsapp,
-            contact_name=args.contact_name,
-            contact_source=args.contact_source,
-        )
+        try:
+            add_or_update_service_order_contact(
+                args.order_id,
+                contact_whatsapp=args.whatsapp,
+                contact_name=args.contact_name,
+                contact_source=args.contact_source,
+            )
+        except ContactValidationError as exc:
+            parser.error(str(exc))
         print(f"Contacto actualizado: {args.order_id}")
         return 0
 

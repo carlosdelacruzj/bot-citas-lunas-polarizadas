@@ -2,18 +2,22 @@
 
 ## P0 - Detalle sanitizado de runs
 
-Estado: pendiente. Ejecutar despues del P0 backend.
+Estado: completado el 12 de julio de 2026.
 
-1. Seleccionar una corrida desde la tabla.
-2. Consultar `GET /api/v1/runs/{run_id}` sin `include_details=1`.
-3. Mostrar estado, orden, tiempos, intento/confirmacion y rutas de evidencia
-   permitidas.
-4. No mostrar ni copiar `details` crudos por defecto.
-5. Agregar estado de carga, vacio, error y retorno a la lista.
-6. Validar desktop y movil.
+Implementado:
 
-Criterio de cierre: un operador entiende una corrida sin abrir PostgreSQL ni
-exponer payloads internos.
+1. La tabla permite seleccionar una corrida y conserva una fila activa visible.
+2. El dashboard consulta `GET /api/v1/runs/{run_id}` sin
+   `include_details=1`.
+3. El detalle muestra estado, orden, resultado, tiempos, codigo de salida,
+   mensaje y rutas publicas de evidencia.
+4. `details` crudos no forman parte del contrato solicitado ni de la vista.
+5. La vista incluye carga, error con reintento, ausencia de evidencia y retorno
+   a la lista.
+6. Build de produccion y flujo responsive validados.
+
+Criterio de cierre cumplido: un operador entiende una corrida sin abrir
+PostgreSQL ni exponer payloads internos.
 
 ## P1 - Flujo de orden centrado en tarea
 

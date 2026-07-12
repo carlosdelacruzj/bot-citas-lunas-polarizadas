@@ -9,6 +9,10 @@ Desde el paso 9.3 contiene la implementacion PostgreSQL principal:
 - `db.common`
 - `db.connection`
 - `db.migrations`
+- `db.order_contacts`
+- `db.order_credentials`
+- `db.order_queue`
+- `db.order_state`
 - `db.orders`
 - `db.pool`
 - `db.reservations`
@@ -20,6 +24,6 @@ Desde el paso 9.7 se retiraron los wrappers historicos
 `services/database_migrations.py` y `services/postgres_*.py`. Los consumidores
 internos deben importar directamente desde `appointment_bot.db.*`.
 
-`db/orders.py` todavia concentra ordenes, contactos, pagos, leases y estado de
-orden para reducir riesgo operativo. Si se divide mas, hacerlo por subfases
-pequenas con validacion completa.
+Desde el P2 de backend, `db.orders` es una fachada de compatibilidad. La
+implementacion se divide por responsabilidad entre `order_credentials`,
+`order_contacts`, `order_state` y `order_queue`.

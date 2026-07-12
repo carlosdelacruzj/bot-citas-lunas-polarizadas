@@ -20,7 +20,7 @@ reservas ni sus reglas.
 | Reglas y prioridades | Operativas | Fecha, hora, dias, subordenes y prioridad de enfoque estan implementadas. |
 | Migracion interna | Completada | Pasos 1 a 9.7 cerrados; wrappers historicos retirados. |
 | Admin API separado | Operativo | Funciona en loopback y controla al worker mediante `worker_commands`. |
-| Dashboard Angular | Operativo, mejorable | CRUD y operacion base listos; faltan detalle de runs y pulido final. |
+| Dashboard Angular | Operativo, mejorable | CRUD y detalle sanitizado de runs listos; falta flujo de tarea, accesibilidad y entrega local. |
 | Evidencia y reportes | Operativos | Indice, resumen, logs, screenshots y reportes se generan y conservan. |
 | Optimizacion | En mejora continua | Ruta rapida probada; siguen abiertos `slot_lost` y outliers de CAPTCHA. |
 
@@ -100,6 +100,8 @@ El detalle historico de las fases se conserva en
 - Snapshot operativo sanitizado y copiable.
 - Listado, filtros y snapshots con documento/WhatsApp enmascarados; detalle
   completo solicitado solo al abrir la edicion protegida de una orden.
+- Detalle sanitizado de runs solicitado por `run_id`, con estado, tiempos,
+  resultado y rutas publicas de evidencia, sin `details` crudos.
 
 ### Operacion
 
@@ -130,6 +132,8 @@ El corte de trabajo preparado el 12 de julio incluye:
 - tests de reglas corregidos para no depender de fechas fijas vencidas.
 - P0 backend de seguridad: listado enmascarado y endpoint de detalle
   administrativo protegido por orden.
+- P1 backend: fuentes de contacto centralizadas, normalizacion compartida,
+  errores por campo y alta avanzada conservada sin recargar el formulario.
 
 Validacion P0 por proxy local:
 

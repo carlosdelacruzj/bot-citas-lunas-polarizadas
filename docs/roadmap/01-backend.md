@@ -25,30 +25,42 @@ enmascarados; la edicion usa una solicitud protegida y deliberada.
 
 ## P1 - Validacion compartida de altas
 
-Estado: parcial.
+Estado: completado el 12 de julio de 2026.
 
-Ya esta hecho: contacto y fuente son obligatorios en dashboard, API y CLI; la
-fuente se limita en CLI a TikTok, Facebook o WhatsApp.
+Implementado:
 
-Pasos restantes:
+1. `CONTACT_SOURCES` centraliza TikTok, Facebook y WhatsApp para API, DB y CLI.
+2. Nombre, fuente y WhatsApp se normalizan en `core/contacts.py`: espacios
+   repetidos se colapsan, la fuente pasa a minusculas y el telefono conserva
+   solo su `+` inicial y digitos, sin agregar codigo de pais.
+3. Fuentes o telefonos invalidos producen `field_errors`; Angular los presenta
+   con etiquetas de formulario comprensibles.
+4. Dashboard, API y CLI exigen contacto y fuente en el alta normal.
+5. Los campos avanzados siguen disponibles por API: prioridad, cobro, hora y
+   fecha minima, dias, padre, expediente y placa. El formulario normal no se
+   recargo con ellos.
+6. La actualizacion de contacto reutiliza las mismas reglas y conserva la
+   fuente existente cuando no se cambia.
 
-1. Centralizar la lista de fuentes permitidas para API y CLI.
-2. Normalizar espacios, mayusculas y telefonos sin inventar datos.
-3. Devolver errores de campo consistentes al dashboard.
-4. Confirmar que altas avanzadas siguen disponibles por contrato sin recargar
-   el formulario normal.
+Criterio de cierre cumplido: API, CLI y persistencia usan una sola regla de
+contacto; los errores identifican el campo y el alta avanzada sigue cubierta
+por la validacion existente.
 
 ## P2 - Dividir modulos grandes
 
-Estado: pendiente no bloqueante. Ejecutar despues de optimizacion P1.
+Estado: completado el 12 de julio de 2026.
 
-1. Dividir `db/orders.py` en credenciales, contactos/pagos, estado/leases y
-   seleccion/promocion de cola.
-2. Dividir `worker/queue_runtime.py` en recorrido de cola, ejecucion individual
-   y politica de transferencia/diferimiento.
-3. Mantener migraciones historicas y contratos publicos estables.
-4. Mover consumidores por cortes pequenos y retirar compatibilidad solo al
-   final.
+Implementado:
 
-Criterio de cierre: ningun cambio funcional, suite completa verde y runtime
-del worker verificado.
+1. `db/order_credentials.py` concentra alta, credenciales, runtime y tramites.
+2. `db/order_contacts.py` concentra resumen, contactos, pagos y cierre.
+3. `db/order_state.py` concentra estado, leases y control de submission.
+4. `db/order_queue.py` concentra restricciones, seleccion y promocion de cola.
+5. `worker/order_execution.py`, `worker/queue_traversal.py` y
+   `worker/queue_policy.py` separan ejecucion individual, recorrido y politica.
+6. `db/orders.py` y `worker/queue_runtime.py` quedan como fachadas publicas
+   pequenas, conservando imports y puntos de parcheo existentes.
+7. No se alteraron migraciones, tablas, endpoints ni firmas publicas.
+
+Criterio de cierre cumplido: sin cambio funcional; sintaxis, lint, suite
+completa y carga del runtime del worker validados.
