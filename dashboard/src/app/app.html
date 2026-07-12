@@ -11,7 +11,9 @@
     <div class="refresh-panel">
       <span>Actualizacion</span>
       <strong>{{ autoRefreshPaused() ? 'pausada' : 'automatica' }}</strong>
-      <small>{{ lastUpdatedAt() ? 'Ultima: ' + lastUpdatedAt() : health()?.status ?? 'sin datos' }}</small>
+      <small>{{
+        lastUpdatedAt() ? 'Ultima: ' + lastUpdatedAt() : (health()?.status ?? 'sin datos')
+      }}</small>
       <button type="button" class="primary" (click)="refreshNow()">Actualizar</button>
     </div>
   </section>
@@ -32,27 +34,26 @@
       Ordenes
       <span>{{ filteredOrders().length }}</span>
     </button>
-    <button
-      type="button"
-      [class.active]="activeView() === 'runs'"
-      (click)="activeView.set('runs')"
-    >
+    <button type="button" [class.active]="activeView() === 'runs'" (click)="activeView.set('runs')">
       Runs
       <span>{{ filteredRuns().length }}</span>
     </button>
   </nav>
 
   @if (errorMessage()) {
-    <section class="notice bad" role="alert">{{ errorMessage() }}</section>
+    <section id="dashboard-error" class="notice bad" role="alert" aria-live="assertive">
+      {{ errorMessage() }}
+    </section>
   }
 
   @if (successMessage()) {
-    <section class="notice good" role="status">{{ successMessage() }}</section>
+    <section class="notice good" role="status" aria-live="polite">{{ successMessage() }}</section>
   }
 
   @if (formDirty()) {
     <section class="notice warn" role="status">
-      Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y recargar.
+      Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y
+      recargar.
     </section>
   }
 
@@ -93,7 +94,9 @@
     <section class="metrics" aria-label="Estado general">
       <article>
         <span>API local</span>
-        <strong [class]="statusTone(health()?.status)">{{ health()?.status ?? 'sin datos' }}</strong>
+        <strong [class]="statusTone(health()?.status)">{{
+          health()?.status ?? 'sin datos'
+        }}</strong>
         <small>{{ health()?.reason ?? 'health pendiente' }}</small>
       </article>
       <article>
@@ -141,7 +144,9 @@
             </div>
             <div>
               <dt>Reserva</dt>
-              <dd>{{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}</dd>
+              <dd>
+                {{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}
+              </dd>
             </div>
             <div>
               <dt>Pago</dt>
@@ -196,6 +201,151 @@
         <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
       </div>
 
+      @if (selectedOrder(); as order) {
+        <section class="order-workspace" aria-labelledby="selected-order-title">
+          <div class="order-workspace-header">
+            <div>
+              <p class="eyebrow">Orden seleccionada</p>
+              <h3 id="selected-order-title">{{ order.applicant_name ?? order.order_id }}</h3>
+              <p>{{ order.order_id }} · {{ order.document_number_masked }}</p>
+            </div>
+            <div class="next-action-card">
+              <span>Siguiente accion valida</span>
+              <strong>{{ orderNextAction().label }}</strong>
+              <small>{{ orderNextAction().description }}</small>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="orderNextAction().disabled || actionBusy()"
+                (click)="runNextOrderAction()"
+              >
+                {{ orderNextAction().label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="order-task-grid">
+            <article>
+              <h4>Cliente</h4>
+              <dl>
+                <div>
+                  <dt>Contacto</dt>
+                  <dd>{{ order.contact_name ?? 'sin contacto' }}</dd>
+                </div>
+                <div>
+                  <dt>WhatsApp</dt>
+                  <dd>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }}</dd>
+                </div>
+                <div>
+                  <dt>Fuente</dt>
+                  <dd>{{ order.contact_source ?? 'sin fuente' }}</dd>
+                </div>
+              </dl>
+              <button type="button" class="secondary" (click)="openEditOrder(order)">
+                Editar cliente
+              </button>
+            </article>
+            <article>
+              <h4>Reglas y prioridad</h4>
+              <dl>
+                <div>
+                  <dt>Prioridad {{ order.priority }}</dt>
+                  <dd>{{ priorityExplanation(order) }}</dd>
+                </div>
+                <div>
+                  <dt>Desde</dt>
+                  <dd>{{ order.minimum_reservation_date ?? 'cualquier fecha' }}</dd>
+                </div>
+                <div>
+                  <dt>Hora y dias</dt>
+                  <dd>
+                    {{ order.minimum_reservation_hour ?? 'cualquier hora' }} ·
+                    {{ order.allowed_weekdays?.join(', ') ?? 'todos' }}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+            <article>
+              <h4>Reserva</h4>
+              <dl>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
+                </div>
+                <div>
+                  <dt>Fecha</dt>
+                  <dd>
+                    {{ order.reservation_date ?? 'sin fecha' }} {{ order.reservation_hour ?? '' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Sede</dt>
+                  <dd>{{ order.reservation_site ?? 'sin sede' }}</dd>
+                </div>
+              </dl>
+            </article>
+            <article>
+              <h4>Pago y cierre</h4>
+              <dl>
+                <div>
+                  <dt>Pago</dt>
+                  <dd>{{ paymentLabel(order) }} {{ paymentAmountLabel(order) }}</dd>
+                </div>
+                <div>
+                  <dt>Cierre</dt>
+                  <dd>{{ closureDisplay(order) }}</dd>
+                </div>
+                <div>
+                  <dt>Nota</dt>
+                  <dd>{{ order.closure_note ?? 'sin nota' }}</dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="isClosedOrder(order)"
+                (click)="openOrderActions(order)"
+              >
+                Gestionar orden
+              </button>
+            </article>
+            <article class="program-hierarchy">
+              <h4>Jerarquia de tramite</h4>
+              <dl>
+                <div>
+                  <dt>Orden padre</dt>
+                  <dd>{{ order.parent_order_id ?? 'esta orden es raiz' }}</dd>
+                </div>
+                <div>
+                  <dt>Expediente</dt>
+                  <dd>{{ order.program_expediente ?? 'sin expediente' }}</dd>
+                </div>
+                <div>
+                  <dt>Placa</dt>
+                  <dd>{{ order.program_plate ?? 'sin placa' }}</dd>
+                </div>
+                <div>
+                  <dt>Subordenes</dt>
+                  <dd>{{ selectedOrderChildren().length }}</dd>
+                </div>
+              </dl>
+              @if (selectedOrderChildren().length) {
+                <ul>
+                  @for (child of selectedOrderChildren(); track child.order_id) {
+                    <li>
+                      <button type="button" class="run-link" (click)="selectOrder(child.order_id)">
+                        {{ child.order_id }}
+                      </button>
+                      · {{ child.status }}
+                    </li>
+                  }
+                </ul>
+              }
+            </article>
+          </div>
+        </section>
+      }
+
       <div class="order-controls" aria-label="Filtros de ordenes">
         <div class="quick-filters">
           @for (filter of orderQuickFilters(); track filter.key) {
@@ -239,7 +389,11 @@
               <option value="applicant">Solicitante</option>
             </select>
           </label>
-          <button type="button" class="secondary sort-direction" (click)="toggleOrderSortDirection()">
+          <button
+            type="button"
+            class="secondary sort-direction"
+            (click)="toggleOrderSortDirection()"
+          >
             {{ orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
           </button>
         </div>
@@ -301,8 +455,12 @@
             @for (order of filteredOrders(); track order.order_id) {
               <tr
                 class="selectable-row"
+                tabindex="0"
+                [attr.data-order-row]="order.order_id"
                 [class.selected-row]="selectedOrderId() === order.order_id"
                 (click)="selectOrder(order.order_id)"
+                (keydown.enter)="selectOrder(order.order_id)"
+                (keydown.space)="$event.preventDefault(); selectOrder(order.order_id)"
               >
                 <td data-label="Orden">
                   <strong>{{ order.order_id }}</strong>
@@ -324,7 +482,9 @@
                   <span>{{ paymentAmountLabel(order) }}</span>
                 </td>
                 <td data-label="Cierre">
-                  <span class="badge {{ statusTone(order.closure_reason) }}">{{ closureDisplay(order) }}</span>
+                  <span class="badge {{ statusTone(order.closure_reason) }}">{{
+                    closureDisplay(order)
+                  }}</span>
                   <span>{{ order.closure_note ?? order.closed_at ?? '' }}</span>
                 </td>
                 <td data-label="Tramite">
@@ -479,14 +639,40 @@
             </div>
           } @else if (selectedRun(); as run) {
             <dl class="run-detail-grid">
-              <div><dt>Estado</dt><dd><span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span></dd></div>
-              <div><dt>Orden</dt><dd>{{ run.order_id ?? 'observador' }}</dd></div>
-              <div><dt>Resultado</dt><dd>{{ runResultLabel(run) }}</dd></div>
-              <div><dt>Codigo de salida</dt><dd>{{ run.exit_code }}</dd></div>
-              <div><dt>Inicio</dt><dd>{{ run.started_at }}</dd></div>
-              <div><dt>Fin</dt><dd>{{ run.finished_at }}</dd></div>
-              <div><dt>Duracion</dt><dd>{{ run.duration_seconds }}s</dd></div>
-              <div><dt>Evidencias</dt><dd>{{ run.screenshot_count ?? runEvidencePaths(run).length }}</dd></div>
+              <div>
+                <dt>Estado</dt>
+                <dd>
+                  <span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Orden</dt>
+                <dd>{{ run.order_id ?? 'observador' }}</dd>
+              </div>
+              <div>
+                <dt>Resultado</dt>
+                <dd>{{ runResultLabel(run) }}</dd>
+              </div>
+              <div>
+                <dt>Codigo de salida</dt>
+                <dd>{{ run.exit_code }}</dd>
+              </div>
+              <div>
+                <dt>Inicio</dt>
+                <dd>{{ run.started_at }}</dd>
+              </div>
+              <div>
+                <dt>Fin</dt>
+                <dd>{{ run.finished_at }}</dd>
+              </div>
+              <div>
+                <dt>Duracion</dt>
+                <dd>{{ run.duration_seconds }}s</dd>
+              </div>
+              <div>
+                <dt>Evidencias</dt>
+                <dd>{{ run.screenshot_count ?? runEvidencePaths(run).length }}</dd>
+              </div>
             </dl>
             <div class="run-message">
               <strong>Mensaje</strong>
@@ -562,17 +748,34 @@
   }
 
   @if (pendingAction(); as action) {
-    <section class="modal-backdrop confirm-backdrop" role="dialog" aria-modal="true">
+    <section
+      class="modal-backdrop confirm-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-action-title"
+    >
       <div class="modal confirm-modal">
         <div class="modal-header">
           <div>
-            <h2>{{ action.title }}</h2>
+            <h2 id="confirm-action-title">{{ action.title }}</h2>
             <p>{{ action.message }}</p>
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="secondary" (click)="cancelPendingAction()">Cancelar</button>
-          <button type="button" class="primary" [disabled]="actionBusy()" (click)="confirmPendingAction()">
+          <button
+            type="button"
+            class="secondary"
+            data-modal-initial-focus
+            (click)="cancelPendingAction()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="actionBusy()"
+            (click)="confirmPendingAction()"
+          >
             Confirmar
           </button>
         </div>
@@ -582,235 +785,305 @@
 
   @if (activeModal() === 'edit-order') {
     @if (modalOrder(); as order) {
-      <section class="modal-backdrop" role="dialog" aria-modal="true">
-      <div class="modal wide-modal">
-        <div class="modal-header">
-          <div>
-            <h2>Editar orden</h2>
-            <p>{{ orderLabel(order) }}</p>
-          </div>
-          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
-        </div>
-
-        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
-          <div>
-            <span>Estado</span>
-            <strong>{{ order.status }}</strong>
-            <small>{{ order.reservation_status ?? 'sin reserva' }}</small>
-          </div>
-          <div>
-            <span>Contacto actual</span>
-            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
-            <small>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} | {{ order.contact_source ?? 'sin fuente' }}</small>
-          </div>
-          <div>
-            <span>Pago</span>
-            <strong>{{ paymentLabel(order) }}</strong>
-            <small>{{ order.charge_required ? (order.amount_paid ?? '0.00') + ' / ' + (order.amount_agreed ?? 'sin acordado') : 'no requiere pago' }}</small>
-          </div>
-        </section>
-
-        <div class="modal-grid">
-          <section class="admin-block action-card">
-            <h3>Contacto</h3>
-            @if (orderDetailLoading()) {
-              <p class="muted">Cargando detalle protegido...</p>
-            }
-            <div class="form-grid">
-              <label>
-                Nombre
-                <input
-                  name="modalContactName"
-                  type="text"
-                  [disabled]="orderDetailLoading()"
-                  [ngModel]="contactName()"
-                  (ngModelChange)="editField(contactName, $event)"
-                />
-              </label>
-              <label>
-                WhatsApp
-                <input
-                  name="modalContactWhatsapp"
-                  type="text"
-                  [disabled]="orderDetailLoading()"
-                  [placeholder]="selectedOrderWhatsappPlaceholder()"
-                  [ngModel]="contactWhatsapp()"
-                  (ngModelChange)="editField(contactWhatsapp, $event)"
-                />
-              </label>
-              <label>
-                Fuente
-                <input
-                  name="modalContactSource"
-                  type="text"
-                  [disabled]="orderDetailLoading()"
-                  [ngModel]="contactSource()"
-                  (ngModelChange)="editField(contactSource, $event)"
-                />
-              </label>
+      <section
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-order-title"
+      >
+        <div class="modal wide-modal">
+          <div class="modal-header">
+            <div>
+              <h2 id="edit-order-title">Editar orden</h2>
+              <p>{{ orderLabel(order) }}</p>
             </div>
             <button
               type="button"
-              class="primary"
-              [disabled]="orderDetailLoading()"
-              (click)="requestContactUpdate()"
+              class="icon-button"
+              data-modal-initial-focus
+              (click)="closeModal()"
             >
-              Guardar contacto
+              Cerrar
             </button>
+          </div>
+
+          <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+            <div>
+              <span>Estado</span>
+              <strong>{{ order.status }}</strong>
+              <small>{{ order.reservation_status ?? 'sin reserva' }}</small>
+            </div>
+            <div>
+              <span>Contacto actual</span>
+              <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+              <small
+                >{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} |
+                {{ order.contact_source ?? 'sin fuente' }}</small
+              >
+            </div>
+            <div>
+              <span>Pago</span>
+              <strong>{{ paymentLabel(order) }}</strong>
+              <small>{{
+                order.charge_required
+                  ? (order.amount_paid ?? '0.00') + ' / ' + (order.amount_agreed ?? 'sin acordado')
+                  : 'no requiere pago'
+              }}</small>
+            </div>
           </section>
 
-          <section class="admin-block action-card">
-            <h3>Pago</h3>
-            <div class="form-grid">
-              <label>
-                Pagado
-                <input
-                  name="modalPaymentAmountPaid"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  [ngModel]="paymentAmountPaid()"
-                  (ngModelChange)="editField(paymentAmountPaid, $event)"
-                />
-              </label>
-              <label>
-                Acordado
-                <input
-                  name="modalPaymentAmountAgreed"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  [ngModel]="paymentAmountAgreed()"
-                  (ngModelChange)="editField(paymentAmountAgreed, $event)"
-                />
-              </label>
-            </div>
-            <button type="button" class="primary" (click)="requestMarkPaid()">
-              Continuar para confirmar pago
-            </button>
-          </section>
+          <div class="modal-grid">
+            <section class="admin-block action-card">
+              <h3>Contacto</h3>
+              @if (orderDetailLoading()) {
+                <p class="muted">Cargando detalle protegido...</p>
+              }
+              <div class="form-grid">
+                <label>
+                  Nombre
+                  <input
+                    name="modalContactName"
+                    type="text"
+                    [disabled]="orderDetailLoading()"
+                    [ngModel]="contactName()"
+                    (ngModelChange)="editField(contactName, $event)"
+                  />
+                </label>
+                <label>
+                  WhatsApp
+                  <input
+                    name="modalContactWhatsapp"
+                    type="text"
+                    [disabled]="orderDetailLoading()"
+                    [placeholder]="selectedOrderWhatsappPlaceholder()"
+                    [ngModel]="contactWhatsapp()"
+                    (ngModelChange)="editField(contactWhatsapp, $event)"
+                  />
+                </label>
+                <label>
+                  Fuente
+                  <input
+                    name="modalContactSource"
+                    type="text"
+                    [disabled]="orderDetailLoading()"
+                    [ngModel]="contactSource()"
+                    (ngModelChange)="editField(contactSource, $event)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="orderDetailLoading()"
+                (click)="requestContactUpdate()"
+              >
+                Guardar contacto
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Pago</h3>
+              <div class="form-grid">
+                <label>
+                  Pagado
+                  <input
+                    name="modalPaymentAmountPaid"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [ngModel]="paymentAmountPaid()"
+                    (ngModelChange)="editField(paymentAmountPaid, $event)"
+                  />
+                </label>
+                <label>
+                  Acordado
+                  <input
+                    name="modalPaymentAmountAgreed"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [ngModel]="paymentAmountAgreed()"
+                    (ngModelChange)="editField(paymentAmountAgreed, $event)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="
+                  !order.charge_required || order.payment_status === 'paid' || isClosedOrder(order)
+                "
+                (click)="requestMarkPaid()"
+              >
+                Continuar para confirmar pago
+              </button>
+            </section>
+          </div>
         </div>
-      </div>
       </section>
     }
   }
 
   @if (activeModal() === 'order-actions') {
     @if (modalOrder(); as order) {
-      <section class="modal-backdrop" role="dialog" aria-modal="true">
-      <div class="modal">
-        <div class="modal-header">
-          <div>
-            <h2>Acciones de orden</h2>
-            <p>{{ orderLabel(order) }}</p>
+      <section
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-actions-title"
+      >
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <h2 id="order-actions-title">Acciones de orden</h2>
+              <p>{{ orderLabel(order) }}</p>
+            </div>
+            <button
+              type="button"
+              class="icon-button"
+              data-modal-initial-focus
+              (click)="closeModal()"
+            >
+              Cerrar
+            </button>
           </div>
-          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+
+          <dl class="summary-list">
+            <div>
+              <dt>Estado</dt>
+              <dd>{{ order.status }}</dd>
+            </div>
+            <div>
+              <dt>Reserva</dt>
+              <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
+            </div>
+            <div>
+              <dt>Cierre</dt>
+              <dd>{{ closureDisplay(order) }}</dd>
+            </div>
+            <div>
+              <dt>Tramite</dt>
+              <dd>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</dd>
+            </div>
+            <div>
+              <dt>Padre</dt>
+              <dd>{{ order.parent_order_id ?? 'sin padre' }}</dd>
+            </div>
+          </dl>
+
+          <div class="modal-actions-grid">
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="order.status !== 'ready'"
+              (click)="requestOrderAction('pause', 'Pausar orden')"
+            >
+              Pausar
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="order.status !== 'paused' || hasActiveChildOrders(order)"
+              title="No se puede activar una orden padre con subordenes activas"
+              (click)="requestOrderAction('activate', 'Activar orden')"
+            >
+              Activar
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="!order.charge_required || isClosedOrder(order)"
+              (click)="requestOrderAction('no-charge', 'Marcar sin cobro')"
+            >
+              Sin cobro
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="order.status !== 'ready'"
+              (click)="requestManualSession()"
+            >
+              Sesion manual
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="order.status !== 'ready'"
+              (click)="requestSplitPrograms()"
+            >
+              Dividir tramites
+            </button>
+          </div>
+
+          <label class="check-row">
+            <input
+              name="modalSplitKeepParentActive"
+              type="checkbox"
+              [ngModel]="splitKeepParentActive()"
+              (ngModelChange)="splitKeepParentActive.set($event)"
+            />
+            Mantener padre activo
+          </label>
+
+          <section class="admin-block action-card">
+            <h3>Cerrar orden</h3>
+            <div class="form-grid">
+              <label>
+                Resultado
+                <select
+                  name="modalClosureReason"
+                  [ngModel]="closureReason()"
+                  (ngModelChange)="setClosureReason($event)"
+                >
+                  <option value="client_withdrew">Cliente retirado</option>
+                  <option value="external_slot">Cupo por tercero</option>
+                  <option value="family_no_charge">Familiar sin cobro</option>
+                  <option value="duplicate">Duplicado</option>
+                  <option value="not_serviceable">No gestionable</option>
+                  <option value="completed_by_us">Realizado por nosotros</option>
+                </select>
+              </label>
+              <label>
+                Nota
+                <input
+                  name="modalClosureNote"
+                  type="text"
+                  placeholder="Ej. duplicado de order-xxxxx"
+                  [ngModel]="closureNote()"
+                  (ngModelChange)="editField(closureNote, $event)"
+                />
+              </label>
+            </div>
+            <button
+              type="button"
+              class="danger"
+              [disabled]="isClosedOrder(order)"
+              (click)="requestCloseOrder()"
+            >
+              Cerrar con resultado
+            </button>
+          </section>
         </div>
-
-        <dl class="summary-list">
-          <div>
-            <dt>Estado</dt>
-            <dd>{{ order.status }}</dd>
-          </div>
-          <div>
-            <dt>Reserva</dt>
-            <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
-          </div>
-          <div>
-            <dt>Cierre</dt>
-            <dd>{{ closureDisplay(order) }}</dd>
-          </div>
-          <div>
-            <dt>Tramite</dt>
-            <dd>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</dd>
-          </div>
-          <div>
-            <dt>Padre</dt>
-            <dd>{{ order.parent_order_id ?? 'sin padre' }}</dd>
-          </div>
-        </dl>
-
-        <div class="modal-actions-grid">
-          <button type="button" class="secondary" (click)="requestOrderAction('pause', 'Pausar orden')">
-            Pausar
-          </button>
-          <button
-            type="button"
-            class="secondary"
-            [disabled]="hasActiveChildOrders(order)"
-            title="No se puede activar una orden padre con subordenes activas"
-            (click)="requestOrderAction('activate', 'Activar orden')"
-          >
-            Activar
-          </button>
-          <button type="button" class="secondary" (click)="requestOrderAction('no-charge', 'Marcar sin cobro')">
-            Sin cobro
-          </button>
-          <button type="button" class="secondary" (click)="requestManualSession()">
-            Sesion manual
-          </button>
-          <button type="button" class="secondary" (click)="requestSplitPrograms()">
-            Dividir tramites
-          </button>
-        </div>
-
-        <label class="check-row">
-          <input
-            name="modalSplitKeepParentActive"
-            type="checkbox"
-            [ngModel]="splitKeepParentActive()"
-            (ngModelChange)="splitKeepParentActive.set($event)"
-          />
-          Mantener padre activo
-        </label>
-
-        <section class="admin-block action-card">
-          <h3>Cerrar orden</h3>
-          <div class="form-grid">
-            <label>
-              Resultado
-              <select
-                name="modalClosureReason"
-                [ngModel]="closureReason()"
-                (ngModelChange)="setClosureReason($event)"
-              >
-                <option value="client_withdrew">Cliente retirado</option>
-                <option value="external_slot">Cupo por tercero</option>
-                <option value="family_no_charge">Familiar sin cobro</option>
-                <option value="duplicate">Duplicado</option>
-                <option value="not_serviceable">No gestionable</option>
-                <option value="completed_by_us">Realizado por nosotros</option>
-              </select>
-            </label>
-            <label>
-              Nota
-              <input
-                name="modalClosureNote"
-                type="text"
-                placeholder="Ej. duplicado de order-xxxxx"
-                [ngModel]="closureNote()"
-                (ngModelChange)="editField(closureNote, $event)"
-              />
-            </label>
-          </div>
-          <button type="button" class="danger" (click)="requestCloseOrder()">
-            Cerrar con resultado
-          </button>
-        </section>
-      </div>
       </section>
     }
   }
 
   @if (activeModal() === 'create-order') {
-    <section class="modal-backdrop" role="dialog" aria-modal="true">
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-order-title"
+    >
       <div class="modal wide-modal">
         <div class="modal-header">
           <div>
-            <h2>Nueva orden</h2>
+            <h2 id="create-order-title">Nueva orden</h2>
             <p>Alta operativa de cliente</p>
           </div>
-          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+          <button type="button" class="icon-button" data-modal-initial-focus (click)="closeModal()">
+            Cerrar
+          </button>
         </div>
 
         <div class="form-grid wide">
@@ -820,6 +1093,9 @@
               name="newDocumentNumber"
               type="text"
               autocomplete="off"
+              required
+              [attr.aria-invalid]="!newDocumentNumber().trim() && formDirty()"
+              aria-describedby="create-required-help dashboard-error"
               [ngModel]="newDocumentNumber()"
               (ngModelChange)="editField(newDocumentNumber, $event)"
             />
@@ -830,6 +1106,9 @@
               name="newPassword"
               type="password"
               autocomplete="new-password"
+              required
+              [attr.aria-invalid]="!newPassword() && formDirty()"
+              aria-describedby="create-required-help dashboard-error"
               [ngModel]="newPassword()"
               (ngModelChange)="editField(newPassword, $event)"
             />
@@ -839,6 +1118,9 @@
             <input
               name="newContactName"
               type="text"
+              required
+              [attr.aria-invalid]="!newContactName().trim() && formDirty()"
+              aria-describedby="create-required-help dashboard-error"
               [ngModel]="newContactName()"
               (ngModelChange)="editField(newContactName, $event)"
             />
@@ -856,6 +1138,9 @@
             Fuente <span aria-hidden="true">*</span>
             <select
               name="newContactSource"
+              required
+              [attr.aria-invalid]="!newContactSource() && formDirty()"
+              aria-describedby="create-required-help dashboard-error"
               [ngModel]="newContactSource()"
               (ngModelChange)="editField(newContactSource, $event)"
             >
@@ -866,38 +1151,39 @@
             </select>
           </label>
         </div>
+        <p id="create-required-help" class="muted">Los campos marcados con * son obligatorios.</p>
 
         <fieldset class="restriction-fields">
           <legend>Restricción de fechas (opcional)</legend>
           <p>Déjalo vacío para buscar cualquier fecha disponible.</p>
           <div class="form-grid wide">
-          <label>
-            Buscar desde
-            <input
-              name="newMinimumReservationDate"
-              type="date"
-              [ngModel]="newMinimumReservationDate()"
-              (ngModelChange)="editField(newMinimumReservationDate, $event)"
-            />
-          </label>
-          <label>
-            Días permitidos
-            <select
-              name="newAllowedWeekdays"
-              multiple
-              [ngModel]="newAllowedWeekdays()"
-              (ngModelChange)="editField(newAllowedWeekdays, $event)"
-            >
-              <option [ngValue]="1">Lunes</option>
-              <option [ngValue]="2">Martes</option>
-              <option [ngValue]="3">Miércoles</option>
-              <option [ngValue]="4">Jueves</option>
-              <option [ngValue]="5">Viernes</option>
-              <option [ngValue]="6">Sábado</option>
-              <option [ngValue]="7">Domingo</option>
-            </select>
-            <small>Puedes seleccionar varios días.</small>
-          </label>
+            <label>
+              Buscar desde
+              <input
+                name="newMinimumReservationDate"
+                type="date"
+                [ngModel]="newMinimumReservationDate()"
+                (ngModelChange)="editField(newMinimumReservationDate, $event)"
+              />
+            </label>
+            <label>
+              Días permitidos
+              <select
+                name="newAllowedWeekdays"
+                multiple
+                [ngModel]="newAllowedWeekdays()"
+                (ngModelChange)="editField(newAllowedWeekdays, $event)"
+              >
+                <option [ngValue]="1">Lunes</option>
+                <option [ngValue]="2">Martes</option>
+                <option [ngValue]="3">Miércoles</option>
+                <option [ngValue]="4">Jueves</option>
+                <option [ngValue]="5">Viernes</option>
+                <option [ngValue]="6">Sábado</option>
+                <option [ngValue]="7">Domingo</option>
+              </select>
+              <small>Puedes seleccionar varios días.</small>
+            </label>
           </div>
         </fieldset>
 
@@ -910,19 +1196,30 @@
   }
 
   @if (activeModal() === 'worker-restart') {
-    <section class="modal-backdrop" role="dialog" aria-modal="true">
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="worker-restart-title"
+    >
       <div class="modal">
         <div class="modal-header">
           <div>
-            <h2>Restart worker</h2>
+            <h2 id="worker-restart-title">Restart worker</h2>
             <p>{{ phaseLabel(worker()?.phase ?? health()?.reason) }}</p>
           </div>
-          <button type="button" class="icon-button" (click)="closeModal()">Cerrar</button>
+          <button type="button" class="icon-button" data-modal-initial-focus (click)="closeModal()">
+            Cerrar
+          </button>
         </div>
         <dl class="summary-list">
           <div>
             <dt>Worker</dt>
-            <dd>{{ worker()?.worker_running || health()?.worker_running ? 'activo' : 'sin confirmar' }}</dd>
+            <dd>
+              {{
+                worker()?.worker_running || health()?.worker_running ? 'activo' : 'sin confirmar'
+              }}
+            </dd>
           </div>
           <div>
             <dt>Orden actual</dt>
@@ -931,7 +1228,9 @@
         </dl>
         <div class="modal-actions">
           <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
-          <button type="button" class="danger" (click)="requestRestartWorker()">Restart worker</button>
+          <button type="button" class="danger" (click)="requestRestartWorker()">
+            Restart worker
+          </button>
         </div>
       </div>
     </section>

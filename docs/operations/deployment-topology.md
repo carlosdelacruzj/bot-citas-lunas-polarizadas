@@ -23,8 +23,7 @@ controlar el worker porque comparte memoria con `ContinuousWorker`.
 ```text
 PostgreSQL
   |-- appointment-bot-worker
-  |-- appointment-bot-admin-api
-  |-- dashboard Angular local
+  |-- appointment-bot-admin-api + dashboard Angular local
   |-- n8n supervisor externo
 ```
 
@@ -48,23 +47,25 @@ scripts/start-worker.ps1
 
 ## Dashboard Angular
 
-Ejecucion local contra el admin API separado:
+Ejecucion local recomendada en dos procesos:
 
 ```powershell
 # Terminal 1
 scripts/start-worker.ps1
 
 # Terminal 2
-appointment-bot-admin-api
-
-# Terminal 3
-cd dashboard
-npm install
-npm start
+scripts/start-admin-dashboard.ps1
 ```
 
-El proxy de desarrollo `dashboard/proxy.conf.cjs` apunta `/api` y `/health` a
-`http://127.0.0.1:8766`, que es el admin API separado. No abrir CORS al inicio.
+Abrir `http://127.0.0.1:8766/`. El admin API sirve el build Angular y entrega
+una sesion local `HttpOnly`/`SameSite=Strict` para autorizar `/api/v1` sin
+guardar el token en el navegador. Este modo solo acepta loopback y no abre CORS.
+
+## Rollback y desarrollo
+
+Para volver al modo de tres terminales, ejecutar `appointment-bot-admin-api` y
+`npm start` dentro de `dashboard/`. El proxy `dashboard/proxy.conf.cjs` conserva
+la inyeccion del token fuera de Angular y apunta a `127.0.0.1:8766`.
 
 ## Compatibilidad con API embebida
 

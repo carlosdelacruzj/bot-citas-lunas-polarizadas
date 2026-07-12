@@ -21,24 +21,56 @@ PostgreSQL ni exponer payloads internos.
 
 ## P1 - Flujo de orden centrado en tarea
 
-Estado: parcial; la base responsive, filtros, seleccion y edicion ya existen.
+Estado: completado el 12 de julio de 2026.
 
-1. Separar visualmente datos del cliente, reglas, reserva, pago y cierre.
-2. Mostrar la siguiente accion valida segun estado, evitando botones imposibles.
-3. Explicar prioridades `0-99` y enfoque `>=100` sin pedir conocimiento de DB.
-4. Mostrar suborden padre, expediente y placa como jerarquia clara.
-5. Conservar confirmacion visible antes de todo POST.
+Implementado:
+
+1. La orden seleccionada separa cliente, reglas, reserva, pago/cierre y
+   jerarquia de tramite en bloques operativos.
+2. Una tarjeta calcula la siguiente accion valida segun estado; las acciones
+   incompatibles quedan deshabilitadas.
+3. La prioridad explica cola normal `0-99` y enfoque `>=100` en lenguaje de
+   operador.
+4. Padre, expediente, placa y subordenes navegables forman una jerarquia clara.
+5. Toda accion POST conserva el paso de confirmacion visible existente.
+
+Criterio de cierre cumplido: seleccionar una orden presenta contexto, siguiente
+paso y acciones compatibles sin exigir conocimiento de PostgreSQL.
 
 ## P1 - Accesibilidad y movil
 
-1. Revisar orden de foco y cierre de modales con teclado.
-2. Asociar errores con campos y anunciar respuestas administrativas.
-3. Verificar controles tactiles, tablas estrechas y ausencia de overflow.
-4. Confirmar contraste y estados disabled/busy.
+Estado: completado el 12 de julio de 2026.
+
+Implementado:
+
+1. Los modales reciben foco inicial, cierran con Escape y restauran el foco al
+   control de origen.
+2. Dialogos y avisos usan etiquetas, `aria-live`, `aria-invalid` y asociaciones
+   con la ayuda de campos obligatorios.
+3. Los controles tactiles principales miden al menos 44 px en movil; tablas y
+   bloques operativos colapsan a una columna sin ancho minimo forzado.
+4. Foco visible, contraste semantico y estados `disabled`/`busy` permanecen
+   distinguibles.
+
+Criterio de cierre cumplido: build Angular limpio, dashboard y API accesibles
+por HTTP y reglas responsive verificadas. La inspeccion visual integrada no
+estuvo disponible en esta sesion.
 
 ## P2 - Entrega local estable
 
-1. Documentar un solo comando de arranque del dashboard y admin API.
-2. Evaluar servir el build Angular desde el admin API local para reducir tres
-   terminales a dos, sin exponerlo a Internet.
-3. Mantener rollback al proxy actual hasta validar la alternativa.
+Estado: completado el 12 de julio de 2026.
+
+Implementado:
+
+1. `scripts/start-admin-dashboard.ps1` construye Angular e inicia admin API y
+   dashboard con un solo comando.
+2. El admin API sirve el build en `http://127.0.0.1:8766/`, limitado a loopback,
+   con CSP y sesion local `HttpOnly`/`SameSite=Strict`; el token no entra en
+   Angular.
+3. La operacion normal queda en dos procesos: worker y admin-dashboard.
+4. `npm start` con `dashboard/proxy.conf.cjs` sigue disponible como rollback y
+   desarrollo, sin cambiar `.env`.
+
+Criterio de cierre cumplido: portada y API respondieron HTTP 200 mediante la
+sesion del dashboard; la API rechazo una llamada sin token ni sesion y el build
+Angular se mantuvo verde.

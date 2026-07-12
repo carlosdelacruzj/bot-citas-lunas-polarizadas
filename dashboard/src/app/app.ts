@@ -1,4 +1,12 @@
-import { Component, HostListener, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnDestroy,
+  WritableSignal,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -56,6 +64,12 @@ type PendingAction = {
   onSuccess?: (response: ApiActionResponse) => void;
   onSettled?: () => void;
 };
+type OrderNextAction = {
+  key: 'manual-session' | 'activate' | 'payment' | 'review' | 'none';
+  label: string;
+  description: string;
+  disabled: boolean;
+};
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
 
@@ -71,6 +85,7 @@ export class App implements OnDestroy {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
   private readonly activeManualSessionIds = new Set<string>();
+  private lastFocusedElement: HTMLElement | null = null;
 
   protected readonly activeView = signal<ViewKey>('orders');
   protected readonly activeModal = signal<ModalKind>(null);
@@ -183,7 +198,13 @@ export class App implements OnDestroy {
     return this.runs().filter((run) => run.status === status);
   });
   protected readonly runStatuses = computed(() =>
-    Array.from(new Set(this.runs().map((run) => run.status).filter(Boolean))).sort(),
+    Array.from(
+      new Set(
+        this.runs()
+          .map((run) => run.status)
+          .filter(Boolean),
+      ),
+    ).sort(),
   );
   protected readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
@@ -204,12 +225,69 @@ export class App implements OnDestroy {
     }
     return this.runs().filter((run) => run.order_id === orderId);
   });
+  protected readonly selectedOrderChildren = computed(() => {
+    const orderId = this.selectedOrder()?.order_id;
+    return orderId ? this.orders().filter((order) => order.parent_order_id === orderId) : [];
+  });
+  protected readonly orderNextAction = computed<OrderNextAction>(() => {
+    const order = this.selectedOrder();
+    if (!order) {
+      return {
+        key: 'none',
+        label: 'Selecciona una orden',
+        description: 'Elige una fila para ver el siguiente paso operativo.',
+        disabled: true,
+      };
+    }
+    if (this.isClosedOrder(order)) {
+      return {
+        key: 'none',
+        label: 'Sin acciones pendientes',
+        description: `La orden esta cerrada como ${this.closureDisplay(order)}.`,
+        disabled: true,
+      };
+    }
+    if (order.payment_status === 'pending') {
+      return {
+        key: 'payment',
+        label: 'Registrar pago',
+        description: 'La reserva esta lista y el cobro sigue pendiente.',
+        disabled: false,
+      };
+    }
+    if (order.status === 'paused') {
+      const blocked = this.hasActiveChildOrders(order);
+      return {
+        key: 'activate',
+        label: blocked ? 'Padre bloqueado por subordenes' : 'Activar orden',
+        description: blocked
+          ? 'Gestiona primero las subordenes activas.'
+          : 'La orden esta pausada y puede volver a la cola.',
+        disabled: blocked,
+      };
+    }
+    if (order.status === 'ready') {
+      return {
+        key: 'manual-session',
+        label: 'Abrir sesion manual',
+        description: 'La orden esta lista para una revision manual independiente.',
+        disabled: this.actionBusy(),
+      };
+    }
+    return {
+      key: 'review',
+      label: 'Revisar acciones',
+      description: `Revisa las opciones compatibles con el estado ${order.status}.`,
+      disabled: false,
+    };
+  });
   protected readonly selectedRun = computed(() => this.selectedRunDetail());
   protected readonly selectedOrderWhatsappPlaceholder = computed(
     () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
   );
   protected readonly autoRefreshPaused = computed(
-    () => !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
+    () =>
+      !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
   );
 
   constructor() {
@@ -226,24 +304,38 @@ export class App implements OnDestroy {
     this.closeTrackedManualSessionsWithBeacon();
   }
 
+  @HostListener('document:keydown.escape')
+  protected handleEscape(): void {
+    if (this.actionBusy()) {
+      return;
+    }
+    if (this.pendingAction()) {
+      this.cancelPendingAction();
+      return;
+    }
+    if (this.activeModal()) {
+      this.closeModal();
+    }
+  }
+
   protected async refreshAll(): Promise<void> {
     await this.refreshHealth();
     this.loadState.set('loading');
     this.errorMessage.set(null);
 
     try {
-        const [worker, orders, runs, workerCommands, manualSessions] = await Promise.all([
-          this.api.getWorker(),
-          this.api.getServiceOrders(),
-          this.api.getRuns(),
-          this.api.getWorkerCommands(),
-          this.api.getManualSessions(),
-        ]);
-        this.worker.set(worker);
-        this.orders.set(orders);
-        this.runs.set(runs);
-        this.workerCommands.set(workerCommands);
-        this.manualSessions.set(manualSessions);
+      const [worker, orders, runs, workerCommands, manualSessions] = await Promise.all([
+        this.api.getWorker(),
+        this.api.getServiceOrders(),
+        this.api.getRuns(),
+        this.api.getWorkerCommands(),
+        this.api.getManualSessions(),
+      ]);
+      this.worker.set(worker);
+      this.orders.set(orders);
+      this.runs.set(runs);
+      this.workerCommands.set(workerCommands);
+      this.manualSessions.set(manualSessions);
       this.keepValidSelection(orders);
       this.hydrateSelectedOrderForms();
       this.lastUpdatedAt.set(this.formatClock(new Date()));
@@ -313,7 +405,7 @@ export class App implements OnDestroy {
 
   protected async openEditOrder(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id);
-    this.activeModal.set('edit-order');
+    this.openModal('edit-order');
     this.orderDetailLoading.set(true);
     this.errorMessage.set(null);
     try {
@@ -332,15 +424,15 @@ export class App implements OnDestroy {
 
   protected openOrderActions(order: ServiceOrder): void {
     this.selectOrder(order.order_id);
-    this.activeModal.set('order-actions');
+    this.openModal('order-actions');
   }
 
   protected openCreateOrder(): void {
-    this.activeModal.set('create-order');
+    this.openModal('create-order');
   }
 
   protected openWorkerRestart(): void {
-    this.activeModal.set('worker-restart');
+    this.openModal('worker-restart');
   }
 
   protected closeModal(): void {
@@ -352,6 +444,34 @@ export class App implements OnDestroy {
     this.pendingAction.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+    this.restoreFocus();
+  }
+
+  protected runNextOrderAction(): void {
+    const order = this.selectedOrder();
+    const action = this.orderNextAction();
+    if (!order || action.disabled) {
+      return;
+    }
+    if (action.key === 'manual-session') {
+      void this.openManualSessionNow(order);
+    } else if (action.key === 'activate') {
+      this.requestOrderAction('activate', 'Activar orden');
+    } else if (action.key === 'payment') {
+      void this.openEditOrder(order);
+    } else if (action.key === 'review') {
+      this.openOrderActions(order);
+    }
+  }
+
+  protected priorityExplanation(order: ServiceOrder): string {
+    return order.priority >= 100
+      ? 'Enfoque prioritario: se atiende antes que la cola normal.'
+      : 'Cola normal: mayor numero primero; empate por orden de creacion.';
+  }
+
+  protected isClosedOrder(order: ServiceOrder): boolean {
+    return ['archived', 'paid'].includes(order.status) || !!order.closed_at;
   }
 
   protected editField<T>(field: WritableSignal<T>, value: T): void {
@@ -516,8 +636,7 @@ export class App implements OnDestroy {
       contact_name: this.newContactName().trim(),
       contact_source: this.newContactSource(),
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
-      allowed_weekdays:
-        this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
+      allowed_weekdays: this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
     };
     if (
       !payload.document_number ||
@@ -617,16 +736,14 @@ export class App implements OnDestroy {
       title: 'Dividir tramites',
       message: `Crear subordenes pendientes desde ${order.order_id}.`,
       execute: () =>
-        this.api.splitServiceOrderPrograms(
-          order.order_id,
-          this.splitKeepParentActive(),
-        ),
+        this.api.splitServiceOrderPrograms(order.order_id, this.splitKeepParentActive()),
       onSuccess: () => this.activeModal.set(null),
     });
   }
 
   protected cancelPendingAction(): void {
     this.pendingAction.set(null);
+    this.restoreFocus();
   }
 
   protected async confirmPendingAction(): Promise<void> {
@@ -643,6 +760,7 @@ export class App implements OnDestroy {
       this.pendingAction.set(null);
       this.formDirty.set(false);
       action.onSuccess?.(response);
+      this.restoreFocus();
       await this.refreshAll();
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -834,7 +952,40 @@ export class App implements OnDestroy {
   private setPendingAction(action: PendingAction): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
+    this.captureFocus();
     this.pendingAction.set(action);
+    this.focusModal();
+  }
+
+  private openModal(modal: Exclude<ModalKind, null>): void {
+    this.captureFocus();
+    this.activeModal.set(modal);
+    this.focusModal();
+  }
+
+  private captureFocus(): void {
+    const activeElement = document.activeElement;
+    this.lastFocusedElement = activeElement instanceof HTMLElement ? activeElement : null;
+  }
+
+  private focusModal(): void {
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
+    });
+  }
+
+  private restoreFocus(): void {
+    const target = this.lastFocusedElement;
+    this.lastFocusedElement = null;
+    window.setTimeout(() => {
+      if (target?.isConnected) {
+        target.focus();
+        return;
+      }
+      document
+        .querySelector<HTMLElement>(`[data-order-row="${CSS.escape(this.selectedOrderId())}"]`)
+        ?.focus();
+    });
   }
 
   private requireSelectedOrder(): ServiceOrder | null {
@@ -886,8 +1037,8 @@ export class App implements OnDestroy {
     }
     return Boolean(
       order.minimum_reservation_date ||
-        order.minimum_reservation_hour !== null ||
-        (order.allowed_weekdays && order.allowed_weekdays.length > 0),
+      order.minimum_reservation_hour !== null ||
+      (order.allowed_weekdays && order.allowed_weekdays.length > 0),
     );
   }
 

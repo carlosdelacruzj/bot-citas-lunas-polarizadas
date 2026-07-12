@@ -18,7 +18,7 @@ de detalle administrativo explicito.
 
 ### Fase 2 - Frontend operativo
 
-Estado: en curso; P0 completado el 12 de julio de 2026.
+Estado: completada el 12 de julio de 2026; P0, P1 y P2 cerrados.
 
 Ejecutar completo [`02-frontend.md`](02-frontend.md).
 
@@ -26,6 +26,8 @@ Motivo: con el contrato seguro y estable se puede terminar el detalle de runs,
 la edicion explicita de datos sensibles y la ergonomia sin rehacer componentes.
 
 ### Fase 3 - Operacion y observabilidad
+
+Estado: siguiente fase.
 
 Ejecutar completo [`03-operations.md`](03-operations.md).
 

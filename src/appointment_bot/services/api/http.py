@@ -4,6 +4,7 @@ import hmac
 import json
 import os
 from http import HTTPStatus
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler
 from typing import Any
 
@@ -21,6 +22,8 @@ def require_authorized(
     *,
     strict: bool = False,
 ) -> bool:
+    if _trusted_dashboard_session(handler):
+        return True
     token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
     if not token:
         if strict:
@@ -44,6 +47,22 @@ def require_authorized(
         error_payload("unauthorized", "Invalid local API token."),
     )
     return False
+
+
+def _trusted_dashboard_session(handler: BaseHTTPRequestHandler) -> bool:
+    expected = getattr(handler.server, "dashboard_session_token", "")
+    if not expected or handler.client_address[0] not in {"127.0.0.1", "::1"}:
+        return False
+    cookie_header = handler.headers.get("Cookie", "")
+    if not cookie_header:
+        return False
+    cookie = SimpleCookie()
+    try:
+        cookie.load(cookie_header)
+    except CookieError:
+        return False
+    session = cookie.get("appointment_bot_dashboard")
+    return session is not None and hmac.compare_digest(session.value, expected)
 
 
 def read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:

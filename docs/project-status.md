@@ -20,7 +20,7 @@ reservas ni sus reglas.
 | Reglas y prioridades | Operativas | Fecha, hora, dias, subordenes y prioridad de enfoque estan implementadas. |
 | Migracion interna | Completada | Pasos 1 a 9.7 cerrados; wrappers historicos retirados. |
 | Admin API separado | Operativo | Funciona en loopback y controla al worker mediante `worker_commands`. |
-| Dashboard Angular | Operativo, mejorable | CRUD y detalle sanitizado de runs listos; falta flujo de tarea, accesibilidad y entrega local. |
+| Dashboard Angular | Operativo | CRUD, runs, flujo por tarea, accesibilidad y entrega local en dos procesos listos. |
 | Evidencia y reportes | Operativos | Indice, resumen, logs, screenshots y reportes se generan y conservan. |
 | Optimizacion | En mejora continua | Ruta rapida probada; siguen abiertos `slot_lost` y outliers de CAPTCHA. |
 
@@ -102,6 +102,12 @@ El detalle historico de las fases se conserva en
   completo solicitado solo al abrir la edicion protegida de una orden.
 - Detalle sanitizado de runs solicitado por `run_id`, con estado, tiempos,
   resultado y rutas publicas de evidencia, sin `details` crudos.
+- Flujo de orden centrado en siguiente accion, secciones operativas y jerarquia
+  de tramites; modales con foco restaurable, cierre por Escape y controles
+  tactiles responsive.
+- Build Angular servido por el admin API en loopback con sesion local segura;
+  `scripts/start-admin-dashboard.ps1` reduce la operacion a worker mas
+  admin-dashboard y conserva el proxy como rollback.
 
 ### Operacion
 

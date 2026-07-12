@@ -27,6 +27,8 @@ administrativas con confirmacion visible:
 - `POST /api/v1/manual-session/close`
 - filtros locales de lectura
 - copiado de snapshot sanitizado
+- orden seleccionada centrada en siguiente accion valida
+- modales navegables por teclado y controles tactiles responsive
 
 La sesion manual esta deshabilitada por defecto. Para permitirla en local:
 
@@ -36,26 +38,27 @@ $env:MANUAL_SESSION_ENABLED='true'
 
 ## Ejecucion
 
-Terminal 1:
+Ruta recomendada, en dos terminales:
+
+Terminal 1, worker:
 
 ```powershell
 scripts/start-worker.ps1
 ```
 
-Terminal 2:
+Terminal 2, admin API y dashboard:
 
 ```powershell
-cd dashboard
-npm install
-npm start
+scripts/start-admin-dashboard.ps1
 ```
 
-El proxy de desarrollo envia `/api` y `/health` a
-`http://127.0.0.1:8766`, donde corre `appointment-bot-admin-api`.
+Abrir `http://127.0.0.1:8766/`. El script construye Angular y el admin API sirve
+el build y la API en el mismo origen. La sesion administrativa se entrega en
+una cookie local `HttpOnly` y no expone el token a Angular.
 
-## Ejecucion contra admin API separado
+## Rollback y desarrollo con proxy
 
-Para validar la arquitectura objetivo, levantar tres procesos:
+El camino anterior sigue disponible sin modificar `.env`:
 
 Terminal 1:
 
@@ -81,9 +84,9 @@ embebida del worker mientras se conserva compatibilidad.
 
 ## Estado y mejoras pendientes
 
-La superficie administrativa base, el detalle sanitizado de runs y la
-validacion contra el admin API separado estan completados. La ergonomia,
-accesibilidad y entrega local se ejecutan en el orden definido por
+La superficie administrativa base, el detalle sanitizado de runs, el flujo de
+tarea y la accesibilidad estan completados. La entrega local se ejecuta en el
+orden definido por
 [`docs/roadmap/02-frontend.md`](../docs/roadmap/02-frontend.md). El estado global
 esta en [`docs/project-status.md`](../docs/project-status.md).
 
