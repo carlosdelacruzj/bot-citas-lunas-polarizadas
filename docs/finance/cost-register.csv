@@ -1,0 +1,2 @@
+record_date,period_start,period_end,category,vendor,description,cash_flow_type,amount,currency,exchange_rate_pen,amount_pen,quantity,unit,channel,campaign,order_id,data_quality,evidence,notes
+2026-07-12,2026-07-01,2026-07-12,captcha_consumption,2Captcha,Consumo reportado para 50 CAPTCHA,expense,0.05,USD,,,50,captcha,,,,estimated,user_reported,Conciliar contra saldo inicial recargas saldo final y tipo de CAPTCHA

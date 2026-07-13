@@ -28,6 +28,14 @@
     </button>
     <button
       type="button"
+      [class.active]="activeView() === 'finance'"
+      (click)="activeView.set('finance')"
+    >
+      Finanzas
+      <span>{{ financeEntries().length }}</span>
+    </button>
+    <button
+      type="button"
       [class.active]="activeView() === 'orders'"
       (click)="activeView.set('orders')"
     >
@@ -75,7 +83,7 @@
               <span>{{ session.session_id }}</span>
             </div>
             <span class="badge {{ statusTone(session.status) }}">{{ session.status }}</span>
-            <small>{{ session.started_at }}</small>
+            <small>{{ formatDateTime(session.started_at, 'sin hora') }}</small>
             <button
               type="button"
               class="danger"
@@ -91,6 +99,184 @@
   }
 
   @if (activeView() === 'summary') {
+    <section class="panel monthly-dashboard" aria-labelledby="monthly-dashboard-title">
+      <div class="panel-header monthly-header">
+        <div>
+          <p class="eyebrow">Resumen mensual</p>
+          <h2 id="monthly-dashboard-title">Resultados del negocio</h2>
+          <p>Ingresos cobrados separados de pendientes y actividad operativa.</p>
+        </div>
+        <label class="filter month-filter">
+          Mes
+          <input
+            name="summaryMonth"
+            type="month"
+            [ngModel]="selectedMonth()"
+            [disabled]="monthlyLoading()"
+            (ngModelChange)="changeMonth($event)"
+          />
+        </label>
+      </div>
+
+      @if (monthlyLoading()) {
+        <p class="monthly-loading">Actualizando resumen mensual...</p>
+      } @else if (monthlySummary(); as summary) {
+        <div class="monthly-kpis">
+          <article class="monthly-kpi primary-kpi">
+            <span>Ingresos cobrados</span>
+            <strong>{{ formatMoney(summary.metrics.revenue_collected) }}</strong>
+            <small class="{{ revenueComparisonTone(summary) }}">
+              {{ revenueComparison(summary) }}
+            </small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Reservas confirmadas</span>
+            <strong>{{ summary.metrics.reservations_confirmed }}</strong>
+            <small>{{ summary.metrics.orders_created }} órdenes creadas</small>
+          </article>
+          <article class="monthly-kpi warn-kpi">
+            <span>Pendiente por cobrar</span>
+            <strong>{{ formatMoney(summary.metrics.pending_amount) }}</strong>
+            <small>{{ summary.metrics.pending_payments }} reservas pendientes</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Órdenes activas</span>
+            <strong>{{ summary.metrics.active_orders }}</strong>
+            <small>Esperando atención o reserva</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Ticket promedio</span>
+            <strong>{{ formatMoney(summary.metrics.average_ticket) }}</strong>
+            <small>{{ summary.metrics.payments_received }} pagos recibidos</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Conversión</span>
+            <strong>{{ formatPercent(summary.metrics.conversion_rate) }}</strong>
+            <small>Órdenes creadas que alcanzaron reserva</small>
+          </article>
+        </div>
+
+        <div class="monthly-grid">
+          <article class="monthly-card revenue-chart">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Ingresos por día</h3>
+                <p>Solo pagos realmente cobrados.</p>
+              </div>
+            </div>
+            @if (summary.daily_revenue.length) {
+              <div class="bar-list">
+                @for (day of summary.daily_revenue; track day.date) {
+                  <div class="bar-row">
+                    <span>{{ formatDate(day.date) }}</span>
+                    <div class="bar-track" aria-hidden="true">
+                      <span [style.width.%]="dailyRevenueWidth(summary, day.amount)"></span>
+                    </div>
+                    <strong>{{ formatMoney(day.amount) }}</strong>
+                    <small>{{ day.payments }} pagos</small>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="empty compact-empty">No se registraron cobros en este mes.</p>
+            }
+          </article>
+
+          <article class="monthly-card source-chart">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Resultados por fuente</h3>
+                <p>Contactos, reservas e ingresos del periodo.</p>
+              </div>
+            </div>
+            @if (summary.sources.length) {
+              <div class="source-list">
+                @for (source of summary.sources; track source.source) {
+                  <div class="source-row">
+                    <div>
+                      <strong>{{ source.source }}</strong>
+                      <small>
+                        {{ source.orders_created }} altas ·
+                        {{ source.reservations_confirmed }} reservas
+                      </small>
+                    </div>
+                    <div class="bar-track" aria-hidden="true">
+                      <span
+                        [style.width.%]="sourceRevenueWidth(summary, source.revenue_collected)"
+                      ></span>
+                    </div>
+                    <strong>{{ formatMoney(source.revenue_collected) }}</strong>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="empty compact-empty">No hay actividad por fuente para este mes.</p>
+            }
+          </article>
+        </div>
+
+        <div class="attention-grid">
+          <article class="monthly-card attention-card">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Reservas pendientes de cobro</h3>
+                <p>{{ summary.attention.pending_payments.length }} visibles</p>
+              </div>
+            </div>
+            @if (summary.attention.pending_payments.length) {
+              <div class="attention-list">
+                @for (item of summary.attention.pending_payments; track item.order_id) {
+                  <button type="button" (click)="openOrderFromSummary(item.order_id)">
+                    <span>
+                      <strong>{{ item.name }}</strong>
+                      <small>
+                        {{ formatDate(item.reservation_date, 'sin fecha') }}
+                        {{ formatTime(item.reservation_hour) }} · {{ item.source }}
+                      </small>
+                    </span>
+                    <strong>{{ formatMoney(item.amount_agreed) }}</strong>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="empty compact-empty">No hay reservas pendientes de cobro.</p>
+            }
+          </article>
+
+          <article class="monthly-card attention-card">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Órdenes que requieren revisión</h3>
+                <p>
+                  {{ summary.attention.aged_active_orders.length }} antiguas ·
+                  {{ summary.attention.missing_contact_count }} sin WhatsApp
+                </p>
+              </div>
+            </div>
+            @if (summary.attention.aged_active_orders.length) {
+              <div class="attention-list">
+                @for (item of summary.attention.aged_active_orders; track item.order_id) {
+                  <button type="button" (click)="openOrderFromSummary(item.order_id)">
+                    <span>
+                      <strong>{{ item.name }}</strong>
+                      <small>Desde {{ formatDate(item.created_date) }}</small>
+                    </span>
+                    <span class="badge {{ statusTone(item.status) }}">{{ item.status }}</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="empty compact-empty">No hay órdenes activas con más de siete días.</p>
+            }
+          </article>
+        </div>
+      }
+    </section>
+
+    <div class="summary-section-title">
+      <p class="eyebrow">Operación actual</p>
+      <h2>Estado en vivo</h2>
+    </div>
     <section class="metrics" aria-label="Estado general">
       <article>
         <span>API local</span>
@@ -145,7 +331,8 @@
             <div>
               <dt>Reserva</dt>
               <dd>
-                {{ order.reservation_date ?? 'pendiente' }} {{ order.reservation_hour ?? '' }}
+                {{ formatDate(order.reservation_date, 'pendiente') }}
+                {{ formatTime(order.reservation_hour) }}
               </dd>
             </div>
             <div>
@@ -191,6 +378,189 @@
     </section>
   }
 
+  @if (activeView() === 'finance') {
+    <section class="panel finance-dashboard" aria-labelledby="finance-dashboard-title">
+      <div class="panel-header monthly-header">
+        <div>
+          <p class="eyebrow">Control financiero</p>
+          <h2 id="finance-dashboard-title">Costos, caja y margen</h2>
+          <p>Las recargas prepagadas afectan caja; el consumo afecta el costo del periodo.</p>
+        </div>
+        <div class="finance-header-actions">
+          <label class="filter month-filter">
+            Mes
+            <input
+              name="financeMonth"
+              type="month"
+              [ngModel]="selectedMonth()"
+              [disabled]="financeLoading()"
+              (ngModelChange)="changeMonth($event)"
+            />
+          </label>
+          <button type="button" class="primary" (click)="openNewFinanceEntry()">
+            Nuevo movimiento
+          </button>
+        </div>
+      </div>
+
+      @if (financeLoading()) {
+        <p class="monthly-loading">Actualizando finanzas...</p>
+      } @else if (financeSummary(); as finance) {
+        <div class="monthly-kpis finance-kpis">
+          <article class="monthly-kpi primary-kpi">
+            <span>Ingresos cobrados</span>
+            <strong>{{ formatMoney(finance.revenue_collected) }}</strong>
+            <small>Pagos recibidos en el mes</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Costos reconocidos</span>
+            <strong>{{ formatMoney(finance.recognized_costs) }}</strong>
+            <small>Gastos + consumos − reembolsos</small>
+          </article>
+          <article class="monthly-kpi" [class.warn-kpi]="!finance.is_complete">
+            <span>Margen operativo parcial</span>
+            <strong>{{ formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
+            <small>
+              {{
+                finance.is_complete
+                  ? 'Antes de costos todavía no registrados'
+                  : finance.unconverted_entries + ' movimientos sin convertir a PEN'
+              }}
+            </small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Salida neta de caja</span>
+            <strong>{{ formatMoney(finance.net_cash_outflow) }}</strong>
+            <small>Incluye recargas, no duplica consumo</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Recargas prepagadas</span>
+            <strong>{{ formatMoney(finance.prepaid_topups) }}</strong>
+            <small>Saldo comprado durante el mes</small>
+          </article>
+          <article class="monthly-kpi">
+            <span>Consumo prepagado</span>
+            <strong>{{ formatMoney(finance.prepaid_consumption) }}</strong>
+            <small>{{ finance.active_entries }} movimientos activos</small>
+          </article>
+        </div>
+
+        <div class="finance-grid">
+          <article class="monthly-card">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Costos por categoría</h3>
+                <p>Solo costos reconocidos en el resultado del mes.</p>
+              </div>
+            </div>
+            @if (finance.by_category.length) {
+              <div class="summary-list finance-category-list">
+                @for (category of finance.by_category; track category.category_code) {
+                  <div>
+                    <dt>{{ category.category_name }}</dt>
+                    <dd>{{ formatMoney(category.recognized_cost) }}</dd>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="empty compact-empty">Todavía no hay costos reconocidos este mes.</p>
+            }
+          </article>
+
+          <article class="monthly-card finance-rule-card">
+            <div class="monthly-card-header">
+              <div>
+                <h3>Regla de 2Captcha</h3>
+                <p>Evita duplicar el costo.</p>
+              </div>
+            </div>
+            <dl class="summary-list">
+              <div>
+                <dt>Recarga</dt>
+                <dd>Salida de caja y aumento de saldo</dd>
+              </div>
+              <div>
+                <dt>Consumo</dt>
+                <dd>Costo reconocido del periodo</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+
+        <article class="monthly-card finance-ledger">
+          <div class="monthly-card-header">
+            <div>
+              <h3>Libro de movimientos</h3>
+              <p>Los anulados quedan visibles, pero no participan en los cálculos.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="responsive-table finance-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Categoría / detalle</th>
+                  <th>Importe</th>
+                  <th>Valor PEN</th>
+                  <th>Calidad</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entry of financeEntries(); track entry.entry_id) {
+                  <tr [class.voided-row]="entry.status === 'voided'">
+                    <td data-label="Fecha">{{ formatDate(entry.occurred_on) }}</td>
+                    <td data-label="Tipo">
+                      <strong>{{ financeKindLabel(entry.entry_kind) }}</strong>
+                      <span>{{ entry.status === 'voided' ? 'anulado' : 'activo' }}</span>
+                    </td>
+                    <td data-label="Detalle">
+                      <strong>{{ entry.category_name ?? entry.category_code }}</strong>
+                      <span>{{ entry.description }}</span>
+                      <span>{{ entry.vendor ?? entry.channel ?? 'sin proveedor/canal' }}</span>
+                    </td>
+                    <td data-label="Importe">{{ formatOriginalMoney(entry) }}</td>
+                    <td data-label="Valor PEN">
+                      {{ entry.amount_pen === null ? 'sin conversión' : formatMoney(entry.amount_pen) }}
+                    </td>
+                    <td data-label="Calidad">
+                      <span class="badge {{ statusTone(entry.data_quality) }}">
+                        {{ entry.data_quality }}
+                      </span>
+                    </td>
+                    <td data-label="Acciones" class="finance-actions">
+                      @if (entry.status === 'active') {
+                        <button
+                          type="button"
+                          class="secondary"
+                          (click)="openEditFinanceEntry(entry)"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="danger"
+                          (click)="requestVoidFinanceEntry(entry)"
+                        >
+                          Anular
+                        </button>
+                      } @else {
+                        <small>{{ entry.void_reason }}</small>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7" class="empty">No hay movimientos para este mes.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </article>
+      }
+    </section>
+  }
+
   @if (activeView() === 'orders') {
     <section class="panel">
       <div class="panel-header">
@@ -201,27 +571,71 @@
         <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
       </div>
 
-      @if (selectedOrder(); as order) {
-        <section class="order-workspace" aria-labelledby="selected-order-title">
+      @if (orderPanelOpen()) {
+        @if (selectedOrder(); as order) {
+        <button
+          type="button"
+          class="order-drawer-backdrop"
+          aria-label="Cerrar detalle de orden"
+          (click)="closeOrderPanel()"
+        ></button>
+        <aside
+          class="order-workspace"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="selected-order-title"
+          tabindex="-1"
+          data-order-panel
+        >
           <div class="order-workspace-header">
             <div>
               <p class="eyebrow">Orden seleccionada</p>
               <h3 id="selected-order-title">{{ order.applicant_name ?? order.order_id }}</h3>
               <p>{{ order.order_id }} · {{ order.document_number_masked }}</p>
             </div>
-            <div class="next-action-card">
-              <span>Siguiente accion valida</span>
-              <strong>{{ orderNextAction().label }}</strong>
-              <small>{{ orderNextAction().description }}</small>
+            <button type="button" class="icon-button" (click)="closeOrderPanel()">
+              Cerrar
+            </button>
+          </div>
+          <div class="next-action-card">
+            <span>Siguiente accion valida</span>
+            <strong>{{ orderNextAction().label }}</strong>
+            <small>{{ orderNextAction().description }}</small>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="orderNextAction().disabled || actionBusy()"
+              (click)="runNextOrderAction()"
+            >
+              {{ orderNextAction().label }}
+            </button>
+          </div>
+
+          <div class="drawer-quick-actions" aria-label="Acciones rápidas de la orden">
+            <button type="button" class="secondary" (click)="openEditOrder(order)">
+              Editar datos y pago
+            </button>
+            @if (order.status === 'ready') {
+              <button
+                type="button"
+                class="secondary"
+                (click)="requestOrderAction('pause', 'Pausar orden')"
+              >
+                Pausar
+              </button>
+            } @else if (order.status === 'paused') {
               <button
                 type="button"
                 class="primary"
-                [disabled]="orderNextAction().disabled || actionBusy()"
-                (click)="runNextOrderAction()"
+                [disabled]="hasActiveChildOrders(order)"
+                (click)="requestOrderAction('activate', 'Activar orden')"
               >
-                {{ orderNextAction().label }}
+                Activar
               </button>
-            </div>
+            }
+            <button type="button" class="secondary" (click)="openOrderActions(order)">
+              Más acciones
+            </button>
           </div>
 
           <div class="order-task-grid">
@@ -234,16 +648,19 @@
                 </div>
                 <div>
                   <dt>WhatsApp</dt>
-                  <dd>{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }}</dd>
+                  <dd>
+                    @if (orderDetailLoading()) {
+                      Cargando contacto...
+                    } @else {
+                      {{ selectedOrderWhatsapp() }}
+                    }
+                  </dd>
                 </div>
                 <div>
                   <dt>Fuente</dt>
                   <dd>{{ order.contact_source ?? 'sin fuente' }}</dd>
                 </div>
               </dl>
-              <button type="button" class="secondary" (click)="openEditOrder(order)">
-                Editar cliente
-              </button>
             </article>
             <article>
               <h4>Reglas y prioridad</h4>
@@ -254,16 +671,34 @@
                 </div>
                 <div>
                   <dt>Desde</dt>
-                  <dd>{{ order.minimum_reservation_date ?? 'cualquier fecha' }}</dd>
+                  <dd>{{ formatDate(order.minimum_reservation_date, 'cualquier fecha') }}</dd>
                 </div>
                 <div>
                   <dt>Hora y dias</dt>
                   <dd>
-                    {{ order.minimum_reservation_hour ?? 'cualquier hora' }} ·
+                    {{ formatTime(order.minimum_reservation_hour, 'cualquier hora') }} ·
                     {{ order.allowed_weekdays?.join(', ') ?? 'todos' }}
                   </dd>
                 </div>
               </dl>
+              <div class="priority-presets">
+                <button
+                  type="button"
+                  class="secondary"
+                  [disabled]="order.priority === 0 || isClosedOrder(order)"
+                  (click)="setQuickPriority(0)"
+                >
+                  Cola normal
+                </button>
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="order.priority === 100 || isClosedOrder(order)"
+                  (click)="setQuickPriority(100)"
+                >
+                  Enfoque 100
+                </button>
+              </div>
             </article>
             <article>
               <h4>Reserva</h4>
@@ -275,7 +710,8 @@
                 <div>
                   <dt>Fecha</dt>
                   <dd>
-                    {{ order.reservation_date ?? 'sin fecha' }} {{ order.reservation_hour ?? '' }}
+                    {{ formatDate(order.reservation_date, 'sin fecha') }}
+                    {{ formatTime(order.reservation_hour) }}
                   </dd>
                 </div>
                 <div>
@@ -300,14 +736,6 @@
                   <dd>{{ order.closure_note ?? 'sin nota' }}</dd>
                 </div>
               </dl>
-              <button
-                type="button"
-                class="secondary"
-                [disabled]="isClosedOrder(order)"
-                (click)="openOrderActions(order)"
-              >
-                Gestionar orden
-              </button>
             </article>
             <article class="program-hierarchy">
               <h4>Jerarquia de tramite</h4>
@@ -343,7 +771,8 @@
               }
             </article>
           </div>
-        </section>
+        </aside>
+        }
       }
 
       <div class="order-controls" aria-label="Filtros de ordenes">
@@ -399,26 +828,13 @@
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table class="responsive-table">
-          <colgroup>
-            <col class="order-col" />
-            <col class="applicant-col" />
-            <col class="status-col" />
-            <col class="reservation-col" />
-            <col class="payment-col" />
-            <col class="closure-col" />
-            <col class="program-col" />
-            <col class="rules-col" />
-            <col class="priority-col" />
-            <col class="actions-col" />
-          </colgroup>
+      <div class="table-wrap order-table-wrap">
+        <table class="responsive-table order-table">
           <thead>
             <tr>
-              <th>Orden</th>
               <th>
                 <button type="button" class="sort-header" (click)="setOrderSort('applicant')">
-                  Solicitante {{ sortIndicator('applicant') }}
+                  Cliente {{ sortIndicator('applicant') }}
                 </button>
               </th>
               <th>
@@ -436,19 +852,7 @@
                   Pago {{ sortIndicator('payment') }}
                 </button>
               </th>
-              <th>
-                <button type="button" class="sort-header" (click)="setOrderSort('closure')">
-                  Cierre {{ sortIndicator('closure') }}
-                </button>
-              </th>
-              <th>Tramite</th>
-              <th>Reglas</th>
-              <th>
-                <button type="button" class="sort-header" (click)="setOrderSort('priority')">
-                  Prioridad {{ sortIndicator('priority') }}
-                </button>
-              </th>
-              <th>Acciones</th>
+              <th>Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -462,84 +866,41 @@
                 (keydown.enter)="selectOrder(order.order_id)"
                 (keydown.space)="$event.preventDefault(); selectOrder(order.order_id)"
               >
-                <td data-label="Orden">
-                  <strong>{{ order.order_id }}</strong>
-                  <span>{{ order.document_number_masked }}</span>
-                </td>
-                <td data-label="Solicitante">
-                  {{ order.applicant_name ?? 'sin nombre' }}
-                  <span>{{ order.contact_name ?? order.contact_source ?? 'sin contacto' }}</span>
+                <td data-label="Cliente">
+                  <strong>{{ order.applicant_name ?? order.contact_name ?? 'sin nombre' }}</strong>
+                  <span>
+                    {{ order.document_number_masked }} · {{ order.contact_source ?? 'sin fuente' }}
+                  </span>
                 </td>
                 <td data-label="Estado">
                   <span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span>
                 </td>
                 <td data-label="Reserva">
                   {{ order.reservation_status ?? 'pendiente' }}
-                  <span>{{ order.reservation_date ?? '' }} {{ order.reservation_hour ?? '' }}</span>
+                  <span>
+                    {{ formatDate(order.reservation_date) }} {{ formatTime(order.reservation_hour) }}
+                  </span>
                 </td>
                 <td data-label="Pago">
                   {{ paymentLabel(order) }}
                   <span>{{ paymentAmountLabel(order) }}</span>
                 </td>
-                <td data-label="Cierre">
-                  <span class="badge {{ statusTone(order.closure_reason) }}">{{
-                    closureDisplay(order)
-                  }}</span>
-                  <span>{{ order.closure_note ?? order.closed_at ?? '' }}</span>
-                </td>
-                <td data-label="Tramite">
-                  {{ order.program_expediente ?? order.program_plate ?? 'generica' }}
-                  <span>{{ order.parent_order_id ?? 'sin padre' }}</span>
-                </td>
-                <td data-label="Reglas">
-                  {{ order.minimum_reservation_date ?? 'sin fecha' }}
-                  <span>
-                    {{ order.minimum_reservation_hour ?? 'sin hora' }} |
-                    {{ order.allowed_weekdays?.join(',') ?? 'sin dias' }}
-                  </span>
-                </td>
-                <td data-label="Prioridad">{{ order.priority }}</td>
                 <td data-label="Acciones">
                   <div class="row-actions">
                     <button
                       type="button"
                       class="primary row-main-action"
-                      title="Abrir sesion manual"
-                      [disabled]="actionBusy() || order.status !== 'ready'"
-                      (click)="$event.stopPropagation(); openManualSessionNow(order)"
+                      [disabled]="actionBusy()"
+                      (click)="$event.stopPropagation(); runRowPrimaryAction(order)"
                     >
-                      Sesion
-                    </button>
-                    <button
-                      type="button"
-                      class="icon-button"
-                      title="Editar orden"
-                      (click)="$event.stopPropagation(); openEditOrder(order)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="icon-button"
-                      title="Acciones de orden"
-                      (click)="$event.stopPropagation(); openOrderActions(order)"
-                    >
-                      Mas
-                    </button>
-                    <button
-                      type="button"
-                      class="icon-button"
-                      title="Copiar orden"
-                      (click)="$event.stopPropagation(); copyOrder(order)"
-                    >
-                      Copiar
+                      {{ rowPrimaryActionLabel(order) }}
                     </button>
                   </div>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="10" class="empty">No hay ordenes para mostrar.</td>
+                <td colspan="5" class="empty">No hay órdenes para mostrar.</td>
               </tr>
             }
           </tbody>
@@ -578,10 +939,10 @@
                 <td data-label="Estado">
                   <span class="badge {{ statusTone(command.status) }}">{{ command.status }}</span>
                 </td>
-                <td data-label="Solicitado">{{ command.requested_at }}</td>
+                <td data-label="Solicitado">{{ formatDateTime(command.requested_at) }}</td>
                 <td data-label="Procesado">
-                  {{ command.processed_at ?? 'pendiente' }}
-                  <span>{{ command.claimed_at ?? 'sin reclamar' }}</span>
+                  {{ formatDateTime(command.processed_at, 'pendiente') }}
+                  <span>{{ formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
                 </td>
                 <td data-label="Error">{{ command.error_message ?? '' }}</td>
               </tr>
@@ -659,11 +1020,11 @@
               </div>
               <div>
                 <dt>Inicio</dt>
-                <dd>{{ run.started_at }}</dd>
+                <dd>{{ formatDateTime(run.started_at) }}</dd>
               </div>
               <div>
                 <dt>Fin</dt>
-                <dd>{{ run.finished_at }}</dd>
+                <dd>{{ formatDateTime(run.finished_at) }}</dd>
               </div>
               <div>
                 <dt>Duracion</dt>
@@ -734,7 +1095,7 @@
                   <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
                 </td>
                 <td data-label="Duracion">{{ run.duration_seconds }}s</td>
-                <td data-label="Inicio">{{ run.started_at }}</td>
+                <td data-label="Inicio">{{ formatDateTime(run.started_at) }}</td>
               </tr>
             } @empty {
               <tr>
@@ -743,42 +1104,6 @@
             }
           </tbody>
         </table>
-      </div>
-    </section>
-  }
-
-  @if (pendingAction(); as action) {
-    <section
-      class="modal-backdrop confirm-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-action-title"
-    >
-      <div class="modal confirm-modal">
-        <div class="modal-header">
-          <div>
-            <h2 id="confirm-action-title">{{ action.title }}</h2>
-            <p>{{ action.message }}</p>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button
-            type="button"
-            class="secondary"
-            data-modal-initial-focus
-            (click)="cancelPendingAction()"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="primary"
-            [disabled]="actionBusy()"
-            (click)="confirmPendingAction()"
-          >
-            Confirmar
-          </button>
-        </div>
       </div>
     </section>
   }
@@ -916,6 +1241,34 @@
                 (click)="requestMarkPaid()"
               >
                 Continuar para confirmar pago
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Prioridad de búsqueda</h3>
+              <label>
+                Prioridad
+                <input
+                  name="modalOrderPriority"
+                  type="number"
+                  min="0"
+                  step="1"
+                  [disabled]="isClosedOrder(order)"
+                  [ngModel]="orderPriority()"
+                  (ngModelChange)="editField(orderPriority, $event)"
+                />
+              </label>
+              <p class="muted">
+                0–99 mantiene la cola normal. 100 o más activa enfoque. Para ocupar dos
+                observadores con dos registros, asigna 100 a cada orden por separado.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="isClosedOrder(order) || orderPriority() === order.priority"
+                (click)="requestPriorityUpdate()"
+              >
+                Continuar para guardar prioridad
               </button>
             </section>
           </div>
@@ -1190,6 +1543,232 @@
         <div class="modal-actions">
           <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
           <button type="button" class="primary" (click)="requestCreateOrder()">Crear orden</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (activeModal() === 'finance-entry') {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="finance-entry-title"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Finanzas</p>
+            <h2 id="finance-entry-title">
+              {{ editingFinanceEntryId() ? 'Editar movimiento' : 'Nuevo movimiento' }}
+            </h2>
+            <p>Registra el importe original y su conversión real a soles cuando corresponda.</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <div class="form-grid wide finance-form">
+          <label>
+            Fecha <span aria-hidden="true">*</span>
+            <input
+              name="financeOccurredOn"
+              type="date"
+              required
+              [ngModel]="financeOccurredOn()"
+              (ngModelChange)="editField(financeOccurredOn, $event)"
+            />
+          </label>
+          <label>
+            Tipo <span aria-hidden="true">*</span>
+            <select
+              name="financeEntryKind"
+              required
+              [ngModel]="financeEntryKind()"
+              (ngModelChange)="editField(financeEntryKind, $event)"
+            >
+              <option value="expense">Gasto directo</option>
+              <option value="prepaid_topup">Recarga prepagada</option>
+              <option value="prepaid_consumption">Consumo prepagado</option>
+              <option value="refund">Reembolso</option>
+            </select>
+          </label>
+          <label>
+            Categoría <span aria-hidden="true">*</span>
+            <select
+              name="financeCategoryCode"
+              required
+              [ngModel]="financeCategoryCode()"
+              (ngModelChange)="editField(financeCategoryCode, $event)"
+            >
+              @for (category of financeCategories(); track category.category_code) {
+                <option [value]="category.category_code">{{ category.display_name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Calidad del dato
+            <select
+              name="financeDataQuality"
+              [ngModel]="financeDataQuality()"
+              (ngModelChange)="editField(financeDataQuality, $event)"
+            >
+              <option value="actual">Real / comprobado</option>
+              <option value="estimated">Estimado</option>
+              <option value="pending">Pendiente de completar</option>
+            </select>
+          </label>
+          <label class="finance-description-field">
+            Descripción <span aria-hidden="true">*</span>
+            <input
+              name="financeDescription"
+              type="text"
+              required
+              [ngModel]="financeDescription()"
+              (ngModelChange)="editField(financeDescription, $event)"
+            />
+          </label>
+          <label>
+            Proveedor
+            <input
+              name="financeVendor"
+              type="text"
+              placeholder="2Captcha, TikTok..."
+              [ngModel]="financeVendor()"
+              (ngModelChange)="editField(financeVendor, $event)"
+            />
+          </label>
+          <label>
+            Importe original <span aria-hidden="true">*</span>
+            <input
+              name="financeAmountOriginal"
+              type="number"
+              min="0.0001"
+              step="0.0001"
+              required
+              [ngModel]="financeAmountOriginal()"
+              (ngModelChange)="editField(financeAmountOriginal, $event)"
+            />
+          </label>
+          <label>
+            Moneda <span aria-hidden="true">*</span>
+            <select
+              name="financeCurrency"
+              [ngModel]="financeCurrency()"
+              (ngModelChange)="editField(financeCurrency, $event)"
+            >
+              <option value="PEN">PEN — soles</option>
+              <option value="USD">USD — dólares</option>
+            </select>
+          </label>
+          <label>
+            Tipo de cambio a PEN
+            <input
+              name="financeExchangeRatePen"
+              type="number"
+              min="0.000001"
+              step="0.000001"
+              [disabled]="financeCurrency() === 'PEN'"
+              [ngModel]="financeExchangeRatePen()"
+              (ngModelChange)="editField(financeExchangeRatePen, $event)"
+            />
+            <small>Si falta en una moneda extranjera, el margen quedará incompleto.</small>
+          </label>
+          <label>
+            Cantidad
+            <input
+              name="financeQuantity"
+              type="number"
+              min="0.001"
+              step="0.001"
+              placeholder="50"
+              [ngModel]="financeQuantity()"
+              (ngModelChange)="editField(financeQuantity, $event)"
+            />
+          </label>
+          <label>
+            Unidad
+            <input
+              name="financeUnit"
+              type="text"
+              placeholder="captcha, hora, día..."
+              [ngModel]="financeUnit()"
+              (ngModelChange)="editField(financeUnit, $event)"
+            />
+          </label>
+          <label>
+            Canal
+            <input
+              name="financeChannel"
+              type="text"
+              placeholder="tiktok, whatsapp..."
+              [ngModel]="financeChannel()"
+              (ngModelChange)="editField(financeChannel, $event)"
+            />
+          </label>
+          <label>
+            Campaña
+            <input
+              name="financeCampaign"
+              type="text"
+              [ngModel]="financeCampaign()"
+              (ngModelChange)="editField(financeCampaign, $event)"
+            />
+          </label>
+          <label>
+            Orden relacionada
+            <select
+              name="financeOrderId"
+              [ngModel]="financeOrderId()"
+              (ngModelChange)="editField(financeOrderId, $event)"
+            >
+              <option value="">Sin orden específica</option>
+              @for (order of orders(); track order.order_id) {
+                <option [value]="order.order_id">
+                  {{ order.applicant_name ?? order.document_number_masked }}
+                </option>
+              }
+            </select>
+          </label>
+          <label>
+            Referencia de evidencia
+            <input
+              name="financeEvidenceReference"
+              type="text"
+              placeholder="Recibo, panel o comprobante; nunca un secreto"
+              [ngModel]="financeEvidenceReference()"
+              (ngModelChange)="editField(financeEvidenceReference, $event)"
+            />
+          </label>
+          <label class="finance-notes-field">
+            Notas
+            <textarea
+              name="financeNotes"
+              rows="3"
+              [ngModel]="financeNotes()"
+              (ngModelChange)="editField(financeNotes, $event)"
+            ></textarea>
+          </label>
+        </div>
+
+        @if (financeEntryKind() === 'prepaid_topup') {
+          <p class="notice warn finance-form-notice">
+            Esta recarga afectará caja, pero no el costo reconocido. Registra después el consumo
+            real como “Consumo prepagado”.
+          </p>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
+          <button type="button" class="primary" (click)="requestSaveFinanceEntry()">
+            {{ editingFinanceEntryId() ? 'Guardar cambios' : 'Registrar movimiento' }}
+          </button>
         </div>
       </div>
     </section>

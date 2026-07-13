@@ -43,4 +43,4 @@ Call log:
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.
 - Abrir las rutas de evidencia solo cuando este resumen apunte a un evento.
-- Comparar cambios contra `docs/roadmap/04-optimization.md`.
+- Comparar cambios contra `docs/optimization.md`.

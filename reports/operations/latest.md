@@ -2,8 +2,8 @@
 
 - Rango actual: `2026-07-06` a `2026-07-12` (America/Lima, inclusivo).
 - Rango comparable anterior: `2026-06-29` a `2026-07-05`.
-- Runs medidos: 4339 actuales; 1704 anteriores.
-- Intentos medidos: 56 actuales; 13 anteriores.
+- Runs medidos: 4416 actuales; 1704 anteriores.
+- Intentos medidos: 37 actuales; 9 anteriores.
 
 `registered` significa reserva confirmada por esta ejecucion. `Programado/completed` se informa aparte y nunca se suma a `registered`.
 
@@ -26,7 +26,7 @@
 | Deteccion a fin | 50 | 6.977s | 11.283s |
 | CAPTCHA | 31 | 1.359s | 3.047s |
 | Seleccion | 50 | 1.719s | 1.891s |
-| Cambio de usuario | 19 | 2.000s | 73.800s |
+| Cambio de usuario | 14 | 2.000s | 60.400s |
 
 ## Variabilidad CAPTCHA
 
@@ -38,7 +38,7 @@
 ## Alertas
 
 - CAPTCHA: 3 respuestas superaron 10 segundos.
-- slot_lost: aumento sostenido de 7.7% a 28.6% sobre intentos compatibles.
+- slot_lost: aumento sostenido de 11.1% a 43.2% sobre intentos compatibles.
 
 ## Acumulado historico
 

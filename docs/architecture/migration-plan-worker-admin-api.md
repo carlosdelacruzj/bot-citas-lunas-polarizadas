@@ -648,8 +648,8 @@ Rutas de salida preservadas:
 
 - `docs/evidence-index.csv`;
 - `docs/evidence-summary.md`;
-- `docs/reservation-optimization-log.md`;
-- `docs/partial-availability-log.md`;
+- `reports/evidence/history/reservation-optimization-log.md`;
+- `reports/evidence/history/partial-availability-log.md`;
 - `reports/status/`;
 - `reports/daily/`.
 
@@ -726,7 +726,7 @@ Estado actual de Angular:
 
 La validacion manual contra el admin API vivo se completo el 12 de julio de
 2026. El detalle de runs y la ergonomia dejaron de pertenecer al plan de
-migracion y se trasladaron a `docs/roadmap/02-frontend.md`.
+migracion y se consolidaron en `docs/history/roadmap-completed-2026-07-12.md`.
 
 Estado y validacion operativa: `docs/project-status.md`.
 

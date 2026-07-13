@@ -15,7 +15,8 @@
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -111,7 +112,7 @@ td span {
 }
 
 .quick-filters {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .order-tool-row {
@@ -165,7 +166,8 @@ td span {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 40px;
   border: 1px solid #cbd5df;
@@ -202,6 +204,11 @@ button:disabled {
   outline-offset: 2px;
 }
 
+textarea:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .primary {
   background: #2563eb;
   color: #ffffff;
@@ -232,7 +239,7 @@ button:disabled {
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin: 0 -2px 14px;
   padding: 8px 2px;
@@ -336,18 +343,35 @@ td span {
 }
 
 .order-workspace {
-  margin-bottom: 18px;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  width: min(440px, calc(100vw - 48px));
+  overflow-y: auto;
+  border-left: 1px solid #bfdbfe;
   background: #f8fbff;
-  padding: 16px;
+  padding: 18px;
+  box-shadow: -18px 0 48px rgba(15, 23, 42, 0.2);
+}
+
+.order-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: rgba(15, 23, 42, 0.34);
 }
 
 .order-workspace-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.65fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: start;
+  margin-bottom: 14px;
 }
 
 .order-workspace-header :is(h3, p),
@@ -373,9 +397,21 @@ td span {
   margin-top: 4px;
 }
 
+.drawer-quick-actions,
+.priority-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.drawer-quick-actions button:last-child:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
 .order-task-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 14px;
 }
@@ -407,12 +443,8 @@ td span {
   overflow-wrap: anywhere;
 }
 
-.program-hierarchy {
-  grid-column: 1 / -1;
-}
-
 .program-hierarchy dl {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .manual-sessions-panel {
@@ -526,9 +558,7 @@ td span {
 }
 
 .row-actions {
-  display: grid;
-  grid-template-columns: minmax(72px, 1.25fr) repeat(3, minmax(48px, 0.75fr));
-  gap: 6px;
+  display: block;
 }
 
 .row-actions button {
@@ -536,10 +566,6 @@ td span {
   padding: 7px 8px;
   font-size: 0.78rem;
   white-space: nowrap;
-}
-
-.row-main-action {
-  min-width: 72px;
 }
 
 .check-row {
@@ -583,50 +609,18 @@ dd {
   overflow-x: auto;
 }
 
+.order-table-wrap {
+  width: 100%;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.order-col {
-  width: 13%;
-}
-
-.applicant-col {
-  width: 17%;
-}
-
-.status-col {
-  width: 8%;
-}
-
-.reservation-col {
-  width: 10%;
-}
-
-.payment-col {
-  width: 8%;
-}
-
-.closure-col {
-  width: 10%;
-}
-
-.program-col {
-  width: 10%;
-}
-
-.rules-col {
-  width: 10%;
-}
-
-.priority-col {
-  width: 62px;
-}
-
-.actions-col {
-  width: 236px;
+.order-table {
+  table-layout: auto;
 }
 
 th,
@@ -637,13 +631,28 @@ td {
   vertical-align: top;
 }
 
-th:nth-child(9),
-td:nth-child(9) {
+.order-table :is(th, td):first-child {
+  width: 34%;
+}
+
+.order-table :is(th, td):not(:first-child) {
   text-align: center;
 }
 
-td:nth-child(10) {
-  padding-left: 12px;
+.order-table :is(th, td):last-child {
+  width: 170px;
+}
+
+.order-table .sort-header {
+  margin-inline: auto;
+}
+
+.order-table :is(th, td):first-child .sort-header {
+  margin-inline: 0;
+}
+
+.order-table .row-main-action {
+  width: 100%;
 }
 
 th {
@@ -812,10 +821,6 @@ td span {
   padding: 18px;
 }
 
-.confirm-backdrop {
-  z-index: 30;
-}
-
 .modal {
   width: min(720px, 100%);
   max-height: min(86vh, 860px);
@@ -829,10 +834,6 @@ td span {
 
 .wide-modal {
   width: min(1080px, 100%);
-}
-
-.confirm-modal {
-  width: min(520px, 100%);
 }
 
 .modal-header,
@@ -923,7 +924,9 @@ td span {
   .order-tool-row,
   .manual-session-row,
   .modal-grid,
-  .modal-actions-grid {
+  .modal-actions-grid,
+  .drawer-quick-actions,
+  .priority-presets {
     grid-template-columns: 1fr;
   }
 
@@ -934,7 +937,8 @@ td span {
   }
 
   .order-workspace {
-    padding: 12px;
+    width: 100%;
+    padding: 14px;
   }
 
   .run-detail-header {
@@ -993,6 +997,11 @@ td span {
     gap: 10px;
     border: 0;
     padding: 8px 0;
+  }
+
+  .order-table :is(th, td) {
+    width: auto;
+    text-align: left;
   }
 
   .row-actions button,

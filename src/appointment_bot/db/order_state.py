@@ -36,6 +36,30 @@ def cleanup_expired_service_order_claims(settings: Settings | None = None) -> in
         return cursor.rowcount
 
 
+def update_service_order_priority(
+    order_id: str,
+    priority: int,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    if priority < 0:
+        raise ValueError("priority must be zero or greater.")
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE service_orders
+            SET priority = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_id = %s
+            """,
+            (priority, order_id),
+        )
+        if not cursor.rowcount:
+            raise ValueError(f"Service order not found: {order_id}")
+
+
 def claim_service_order(
     order_id: str,
     *,

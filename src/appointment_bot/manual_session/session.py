@@ -46,6 +46,7 @@ class ManualSessionHandle:
 
 _ACTIVE_SESSION_LOCK = threading.Lock()
 _ACTIVE_SESSIONS: dict[str, ManualSessionHandle] = {}
+MANUAL_SESSION_CLOSE_GRACE_SECONDS = 8
 
 
 def open_manual_session_for_order(
@@ -97,6 +98,13 @@ def close_manual_session(session_id: str) -> bool:
     if handle is None:
         return False
     handle.close_requested.set()
+    cleanup_timer = threading.Timer(
+        MANUAL_SESSION_CLOSE_GRACE_SECONDS,
+        _expire_closing_session,
+        args=(session_id, handle),
+    )
+    cleanup_timer.daemon = True
+    cleanup_timer.start()
     logger.info(
         "Manual session close requested: session_id=%s order_id=%s",
         handle.session_id,
@@ -233,4 +241,18 @@ def _clear_active_session(session_id: str) -> None:
         "Manual session unregistered: session_id=%s active_sessions=%s",
         session_id,
         active_count,
+    )
+
+
+def _expire_closing_session(session_id: str, expected_handle: ManualSessionHandle) -> None:
+    with _ACTIVE_SESSION_LOCK:
+        current = _ACTIVE_SESSIONS.get(session_id)
+        if current is not expected_handle or not current.close_requested.is_set():
+            return
+        _ACTIVE_SESSIONS.pop(session_id, None)
+    logger.warning(
+        "Manual session removed after close timeout: session_id=%s order_id=%s grace_seconds=%s",
+        session_id,
+        expected_handle.order_id,
+        MANUAL_SESSION_CLOSE_GRACE_SECONDS,
     )

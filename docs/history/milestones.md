@@ -37,7 +37,7 @@ por fecha. No es un roadmap; el estado actual vive en `../project-status.md`.
 - Reafirmo que `reservation_unconfirmed` no equivale a reserva confirmada.
 - En ese periodo CAPTCHA llegaba a 33-34 segundos y dominaba el tiempo.
 - La evidencia detallada se conserva en
-  `../reservation-optimization-log.md`.
+  `../../reports/evidence/history/reservation-optimization-log.md`.
 
 ## Evolucion posterior
 

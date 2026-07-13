@@ -26,7 +26,7 @@ No cambiar aqui los formatos ni rutas de salida historicas:
 
 - `docs/evidence-index.csv`
 - `docs/evidence-summary.md`
-- `docs/reservation-optimization-log.md`
-- `docs/partial-availability-log.md`
+- `reports/evidence/history/reservation-optimization-log.md`
+- `reports/evidence/history/partial-availability-log.md`
 - `reports/status/`
 - `reports/daily/`

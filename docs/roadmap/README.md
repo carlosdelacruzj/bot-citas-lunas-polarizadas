@@ -1,52 +1,52 @@
-# Orden de mejoras pendientes
+# Trabajo pendiente
 
-Esta es la unica lista maestra de trabajo futuro. El estado global esta en
-[`../project-status.md`](../project-status.md).
+Esta es la única lista de tareas futuras. Las fases cerradas están resumidas en
+[`../history/roadmap-completed-2026-07-12.md`](../history/roadmap-completed-2026-07-12.md).
 
-## Orden obligatorio
+## Prioridad 1 - Acumular evidencia observacional
 
-### Fase 1 - Backend y seguridad administrativa
+Estado: en curso, sin cambios funcionales en la reserva.
 
-Estado: completada el 12 de julio de 2026.
+### Próximo checkpoint
 
-Se completaron los bloques P0, P1 y P2 de [`01-backend.md`](01-backend.md):
-contrato administrativo seguro, validacion compartida y division modular.
+- Periodo de recolección: lunes `2026-07-13` a sábado `2026-07-18`.
+- No se realizarán búsquedas el domingo `2026-07-19`, pero ese día ya se
+  puede analizar el periodo cerrado.
+- Fecha recomendada de revisión: lunes `2026-07-20`.
+- Acción del usuario: pedir **"realiza el análisis semanal"**. Codex debe
+  regenerar los reportes, comparar el periodo con la línea base y explicar si
+  existe evidencia suficiente para proponer una mejora.
+- No aplicar optimizaciones automáticamente: cualquier cambio al flujo de
+  reserva se decide con el usuario después de revisar los resultados.
 
-Motivo: antes de ampliar el dashboard hay que asegurar que los listados no
-entreguen documento o WhatsApp completos innecesariamente y definir un endpoint
-de detalle administrativo explicito.
+1. Recoger runs reales con el nuevo desglose de selección.
+2. Regenerar el reporte semanal y la observación por el mismo rango.
+3. Comparar conversión, p50/p90, `slot_lost`, CAPTCHA y defensas.
+4. Revisar la evidencia con el usuario antes de proponer un cambio.
 
-### Fase 2 - Frontend operativo
+Fuente: [`../optimization.md`](../optimization.md).
 
-Estado: completada el 12 de julio de 2026; P0, P1 y P2 cerrados.
+## Prioridad 2 - Elegir un único experimento
 
-Ejecutar completo [`02-frontend.md`](02-frontend.md).
+Solo después de acumular una muestra suficiente:
 
-Motivo: con el contrato seguro y estable se puede terminar el detalle de runs,
-la edicion explicita de datos sensibles y la ergonomia sin rehacer componentes.
+- candidato de bajo riesgo: una espera concreta de selección, si el DOM prueba
+  que es redundante;
+- no cambiar proveedor CAPTCHA sin comparación de costo, precisión y latencia;
+- no habilitar concurrencia si aumentan defensas, `429` o errores de sesión;
+- retirar `fetch_probe` si no anticipa horas útiles y solo agrega carga.
 
-### Fase 3 - Operacion y observabilidad
+## Deuda técnica posterior
 
-Estado: completada el 12 de julio de 2026; P0 y P1 cerrados.
+1. Romper el ciclo entre `appointments.py` y `appointment_selection.py`.
+2. Sustituir la mutación de globals en la fachada `queue_runtime.py` por
+   inyección explícita.
+3. Dividir `continuous_worker.py`, `appointments.py`, `migrations.py` y
+   `notifier.py` en cortes pequeños sin mezclar optimización funcional.
 
-Ejecutar completo [`03-operations.md`](03-operations.md).
+## Regla de ejecución
 
-Motivo: los KPI semanales y alertas deben medir el comportamiento de la
-superficie ya estabilizada antes de cambiar tiempos o concurrencia.
-
-### Fase 4 - Optimizacion de reservas
-
-Estado: siguiente fase.
-
-Ejecutar [`04-optimization.md`](04-optimization.md) por experimentos pequenos.
-
-Motivo: primero se necesita una linea base p50/p90 y resultados exactos; despues
-se optimizan seleccion, CAPTCHA y orden de clientes sin confundir percepcion con
-conversion real.
-
-## Regla de ejecucion
-
-- Terminar una fase y sus criterios de cierre antes de iniciar la siguiente.
-- Un incidente real de reserva puede interrumpir el orden; debe documentarse.
-- No mezclar una optimizacion Playwright con un refactor estructural grande.
-- Cada fase termina con validaciones, actualizacion de estado, commit y push.
+- Un cambio por vez.
+- Mantener sesión, lease y confirmación independientes por orden.
+- No buscar los domingos.
+- Validar Python, Angular, runtime y documentación antes de guardar.

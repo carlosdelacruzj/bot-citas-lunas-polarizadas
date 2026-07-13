@@ -7,6 +7,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from appointment_bot.services.api.finance_routes import (
+    create_finance_entry_payload,
+    finance_categories_payload,
+    finance_entries_payload,
+    finance_entry_action_path,
+    finance_summary_payload,
+    update_finance_entry_payload,
+    void_finance_entry_payload,
+)
 from appointment_bot.services.api.http import (
     RequestBodyError,
     error_payload,
@@ -19,6 +28,7 @@ from appointment_bot.services.api.manual_session_routes import (
     list_manual_sessions_payload,
     open_manual_session_payload,
 )
+from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
@@ -31,9 +41,11 @@ from appointment_bot.services.api.service_order_routes import (
     service_order_action,
     service_order_close_path,
     service_order_contact_path,
+    service_order_priority_path,
     service_order_split_programs_path,
     split_service_order_programs_payload,
     update_service_order_contact_payload,
+    update_service_order_priority_payload,
 )
 from appointment_bot.services.api.worker_routes import (
     enqueue_worker_command_payload,
@@ -89,6 +101,33 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.OK, list_service_orders_payload())
             return
 
+        if path == "/api/v1/monthly-summary":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = monthly_dashboard_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/finance/categories":
+            if not self._require_authorized(strict=True):
+                return
+            self._send_json(HTTPStatus.OK, finance_categories_payload())
+            return
+
+        if path == "/api/v1/finance/entries":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = finance_entries_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/finance/summary":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = finance_summary_payload(query)
+            self._send_json(status, payload)
+            return
+
         if path.startswith("/api/v1/service-orders/"):
             if not self._require_authorized(strict=True):
                 return
@@ -139,12 +178,46 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
 
+        if path == "/api/v1/finance/entries":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = create_finance_entry_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        finance_edit_id = finance_entry_action_path(path, "edit")
+        if finance_edit_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_finance_entry_payload(finance_edit_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        finance_void_id = finance_entry_action_path(path, "void")
+        if finance_void_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = void_finance_entry_payload(finance_void_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
         contact_order_id = service_order_contact_path(path)
         if contact_order_id is not None:
             if not self._require_authorized(strict=True):
                 return
             status, payload = update_service_order_contact_payload(
                 contact_order_id,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
+
+        priority_order_id = service_order_priority_path(path)
+        if priority_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_service_order_priority_payload(
+                priority_order_id,
                 self._read_json(),
             )
             self._send_json(status, payload)
@@ -238,9 +311,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = enqueue_worker_command_payload(command)
             self._send_json(status, payload)
             return
-        payload = (
-            controller.pause() if path.endswith("/pause") else controller.resume()
-        )
+        payload = controller.pause() if path.endswith("/pause") else controller.resume()
         self._send_json(HTTPStatus.OK, payload)
 
     def log_message(self, format: str, *args) -> None:

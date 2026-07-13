@@ -3,6 +3,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.dump
+*.sql
+backups/
 .pytest_cache/
 .ruff_cache/
 logs/*
@@ -10,6 +13,11 @@ screenshots/*
 videos/*
 reports/status/*
 reports/daily/*
+reports/evidence/evidence-events-*.csv
+reports/evidence/evidence-summary-*.md
+reports/operations/weekly-*.csv
+reports/operations/weekly-*.md
+reports/optimization/observation-*.md
 reports/timings/*
 !logs/.gitkeep
 !screenshots/.gitkeep

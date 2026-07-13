@@ -18,8 +18,8 @@ from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 
-OPTIMIZATION_LOG_PATH = Path("docs/reservation-optimization-log.md")
-PARTIAL_AVAILABILITY_LOG_PATH = Path("docs/partial-availability-log.md")
+OPTIMIZATION_LOG_PATH = Path("reports/evidence/history/reservation-optimization-log.md")
+PARTIAL_AVAILABILITY_LOG_PATH = Path("reports/evidence/history/partial-availability-log.md")
 REJECTED_AFTER_SUBMISSION = {"captcha_invalid", "slot_lost", "rejected"}
 OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
 
@@ -42,9 +42,7 @@ def append_optimization_case(report: RunReport) -> None:
 
     OPTIMIZATION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     existing = (
-        OPTIMIZATION_LOG_PATH.read_text(encoding="utf-8")
-        if OPTIMIZATION_LOG_PATH.exists()
-        else ""
+        OPTIMIZATION_LOG_PATH.read_text(encoding="utf-8") if OPTIMIZATION_LOG_PATH.exists() else ""
     )
     if report.run_id and f"- Run: {report.run_id}" in existing:
         return
@@ -152,10 +150,7 @@ def _is_partial_availability_case(report: RunReport, details: dict[str, Any]) ->
     if _looks_like_no_slots(date_text) and _looks_like_no_slots(hour_text):
         return False
     return bool(
-        date_text
-        or hour_text
-        or details.get("date_options")
-        or details.get("hour_options")
+        date_text or hour_text or details.get("date_options") or details.get("hour_options")
     )
 
 
@@ -431,9 +426,7 @@ def _extra_screenshots(report: RunReport) -> list[str]:
     return [
         path
         for path in paths
-        if path
-        and path != report.screenshot_path
-        and OBSOLETE_CAPTCHA_PANEL_ARTIFACT not in path
+        if path and path != report.screenshot_path and OBSOLETE_CAPTCHA_PANEL_ARTIFACT not in path
     ]
 
 

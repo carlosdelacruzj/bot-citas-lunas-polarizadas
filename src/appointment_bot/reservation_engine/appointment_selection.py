@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
 from playwright.sync_api import Page
@@ -36,8 +38,16 @@ def select_available_appointment(
         _wait_for_options_after_selection,
     )
 
+    observation_started = time.monotonic()
+    observation: dict[str, Any] = {
+        "date_postback_seconds": [],
+        "hour_stabilization_seconds": [],
+    }
     logger.info("Selecting available appointment date and hour")
+    options_started = time.monotonic()
     date_options = _real_options(_select_options(page, DATE_SELECTOR))
+    observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
+    observation["date_candidate_count"] = len(date_options)
     if not date_options:
         raise AppointmentWorkflowUnavailable(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
@@ -49,6 +59,7 @@ def select_available_appointment(
         previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
         logger.info("Selecting appointment date: %s", date_option["text"])
+        postback_started = time.monotonic()
         _select_appointment_option(
             date_select,
             date_option["value"],
@@ -61,7 +72,11 @@ def select_available_appointment(
             require_change=not _same_option(previous_date, date_option["text"]),
             timeout=timeout,
         )
+        observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
         real_hour_options = _real_options(hour_options)
+        observation["hour_candidate_count"] = observation.get("hour_candidate_count", 0) + len(
+            real_hour_options
+        )
         if not real_hour_options:
             logger.info("No selectable hours found for date %s", date_option["text"])
             continue
@@ -83,12 +98,16 @@ def select_available_appointment(
                         hour_option["value"],
                         allow_hidden=allow_hidden,
                     )
+                    stabilization_started = time.monotonic()
                     page.wait_for_timeout(500)
                     snapshot = read_stable_appointment_snapshot(
                         page,
                         log_person=include_person,
                     )
                     details = snapshot_details(snapshot, include_person=include_person)
+                    observation["hour_stabilization_seconds"].append(
+                        round(time.monotonic() - stabilization_started, 3)
+                    )
                     details["blocked_by_order_rule"] = True
                     details["blocked_selected_for_evidence"] = True
                     blocked_evidence_result = AvailabilityResult(
@@ -108,16 +127,24 @@ def select_available_appointment(
                 hour_option["value"],
                 allow_hidden=allow_hidden,
             )
+            stabilization_started = time.monotonic()
             page.wait_for_timeout(500)
 
             snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+            observation["hour_stabilization_seconds"].append(
+                round(time.monotonic() - stabilization_started, 3)
+            )
             if _same_option(snapshot.date, date_option["text"]) and _same_option(
                 snapshot.hour, hour_option["text"]
             ):
-                return AvailabilityResult(
-                    status="available",
-                    message="Se seleccionaron una fecha y una hora disponibles.",
-                    details=snapshot_details(snapshot, include_person=include_person),
+                return _with_selection_observation(
+                    AvailabilityResult(
+                        status="available",
+                        message="Se seleccionaron una fecha y una hora disponibles.",
+                        details=snapshot_details(snapshot, include_person=include_person),
+                    ),
+                    observation,
+                    observation_started,
                 )
 
             logger.warning(
@@ -127,25 +154,44 @@ def select_available_appointment(
             )
 
     if blocked_evidence_result is not None:
-        return blocked_evidence_result
+        return _with_selection_observation(
+            blocked_evidence_result, observation, observation_started
+        )
 
     snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
     details = snapshot_details(snapshot, include_person=include_person)
     if is_allowed_appointment is not None:
         details["blocked_by_order_rule"] = True
-    return AvailabilityResult(
-        status="partial",
-        message=(
-            "Se encontraron fechas y horas disponibles, pero ninguna cumple "
-            "la regla de reserva de la orden."
-            if is_allowed_appointment is not None
-            else (
-                "Se encontraron fechas disponibles, pero ninguna tiene una hora "
-                "seleccionable y estable por ahora."
-            )
+    return _with_selection_observation(
+        AvailabilityResult(
+            status="partial",
+            message=(
+                "Se encontraron fechas y horas disponibles, pero ninguna cumple "
+                "la regla de reserva de la orden."
+                if is_allowed_appointment is not None
+                else (
+                    "Se encontraron fechas disponibles, pero ninguna tiene una hora "
+                    "seleccionable y estable por ahora."
+                )
+            ),
+            details=details,
         ),
-        details=details,
+        observation,
+        observation_started,
     )
+
+
+def _with_selection_observation(
+    result: AvailabilityResult,
+    observation: dict[str, Any],
+    started: float,
+) -> AvailabilityResult:
+    details = dict(result.details or {})
+    details["selection_observation"] = {
+        **observation,
+        "total_seconds": round(time.monotonic() - started, 3),
+    }
+    return replace(result, details=details)
 
 
 def has_available_date_options(page: Page) -> bool:

@@ -87,7 +87,7 @@ embebida del worker mientras se conserva compatibilidad.
 La superficie administrativa base, el detalle sanitizado de runs, el flujo de
 tarea y la accesibilidad estan completados. La entrega local se ejecuta en el
 orden definido por
-[`docs/roadmap/02-frontend.md`](../docs/roadmap/02-frontend.md). El estado global
+[`docs/roadmap/README.md`](../docs/roadmap/README.md). El estado global
 esta en [`docs/project-status.md`](../docs/project-status.md).
 
 ## Seguridad

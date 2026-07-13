@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 25
+SCHEMA_VERSION = 26
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -296,6 +296,7 @@ def create_current_schema(connection: Connection) -> None:
         (datetime.now(UTC),),
     )
     _create_worker_commands_schema(connection)
+    _create_finance_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -316,6 +317,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "payments",
         "worker_state",
         "worker_commands",
+        "finance_categories",
+        "finance_entries",
     }
     tables = {
         row["table_name"]
@@ -357,6 +360,11 @@ def _validate_current_schema(connection: Connection) -> None:
         ("worker_commands", "command"),
         ("worker_commands", "status"),
         ("worker_commands", "requested_at"),
+        ("finance_categories", "category_code"),
+        ("finance_entries", "entry_kind"),
+        ("finance_entries", "amount_original"),
+        ("finance_entries", "amount_pen"),
+        ("finance_entries", "status"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -409,6 +417,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("uq_reservation_attempts_active_order")
     if "idx_worker_commands_pending" not in indexes:
         missing.append("idx_worker_commands_pending")
+    if "idx_finance_entries_occurred" not in indexes:
+        missing.append("idx_finance_entries_occurred")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -530,6 +540,96 @@ def _create_worker_commands_schema(connection: Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_worker_commands_pending
         ON worker_commands(requested_at ASC, command_id ASC)
         WHERE status = 'pending'
+        """
+    )
+
+
+def _create_finance_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS finance_categories (
+            category_code text PRIMARY KEY,
+            display_name text NOT NULL,
+            cost_behavior text NOT NULL CHECK (cost_behavior IN ('variable', 'fixed', 'mixed')),
+            active boolean NOT NULL DEFAULT true,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO finance_categories (category_code, display_name, cost_behavior)
+        VALUES
+            ('captcha', 'CAPTCHA', 'variable'),
+            ('marketing', 'Marketing y publicidad', 'variable'),
+            ('payment_fee', 'Comisiones de cobro', 'variable'),
+            ('refund', 'Devoluciones', 'variable'),
+            ('internet', 'Internet', 'fixed'),
+            ('electricity', 'Electricidad', 'mixed'),
+            ('hosting', 'Hosting e infraestructura', 'fixed'),
+            ('backup', 'Backups', 'fixed'),
+            ('equipment', 'Equipos', 'fixed'),
+            ('human_time', 'Tiempo humano', 'mixed'),
+            ('tax', 'Impuestos', 'variable'),
+            ('other', 'Otros', 'mixed')
+        ON CONFLICT (category_code) DO NOTHING
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS finance_entries (
+            entry_id text PRIMARY KEY,
+            occurred_on date NOT NULL,
+            entry_kind text NOT NULL CHECK (
+                entry_kind IN ('expense', 'prepaid_topup', 'prepaid_consumption', 'refund')
+            ),
+            category_code text NOT NULL REFERENCES finance_categories(category_code),
+            vendor text,
+            description text NOT NULL,
+            amount_original numeric(12, 4) NOT NULL CHECK (amount_original > 0),
+            currency char(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+            exchange_rate_pen numeric(12, 6) CHECK (
+                exchange_rate_pen IS NULL OR exchange_rate_pen > 0
+            ),
+            amount_pen numeric(12, 2) CHECK (amount_pen IS NULL OR amount_pen > 0),
+            quantity numeric(12, 3) CHECK (quantity IS NULL OR quantity > 0),
+            unit text,
+            channel text,
+            campaign text,
+            order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            evidence_reference text,
+            notes text,
+            data_quality text NOT NULL DEFAULT 'actual' CHECK (
+                data_quality IN ('actual', 'estimated', 'pending')
+            ),
+            status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'voided')),
+            voided_at timestamptz,
+            void_reason text,
+            created_at timestamptz NOT NULL,
+            updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_finance_entries_conversion CHECK (
+                (currency = 'PEN' AND exchange_rate_pen = 1 AND amount_pen IS NOT NULL)
+                OR currency <> 'PEN'
+            ),
+            CONSTRAINT ck_finance_entries_void CHECK (
+                (status = 'active' AND voided_at IS NULL AND void_reason IS NULL)
+                OR (status = 'voided' AND voided_at IS NOT NULL AND void_reason IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_finance_entries_occurred
+        ON finance_entries(occurred_on DESC, created_at DESC)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_finance_entries_active_month
+        ON finance_entries(occurred_on, entry_kind, category_code)
+        WHERE status = 'active'
         """
     )
 
@@ -719,6 +819,13 @@ def migrate_database(connection: Connection) -> None:
             ADD COLUMN closed_at timestamptz
             """
         )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (25,),
+        )
+        current_version = 25
+    if current_version == 25:
+        _create_finance_schema(connection)
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

@@ -43,4 +43,5 @@ from appointment_bot.db.order_state import (
     service_order_claim_owned,
     set_order_paused,
     update_order_state,
+    update_service_order_priority,
 )

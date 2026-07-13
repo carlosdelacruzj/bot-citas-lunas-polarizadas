@@ -3,7 +3,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Suffix = Get-Date -Format "yyyyMMddHHmmss"
+$Suffix = "{0}-{1}" -f (Get-Date -Format "yyyyMMddHHmmss"), ([guid]::NewGuid().ToString("N").Substring(0, 8))
 $DumpPath = "/tmp/appointment-bot-verify-$Suffix.dump"
 $VerifyDatabase = "appointment_bot_verify_$Suffix"
 
@@ -23,6 +23,7 @@ if (-not $User -or -not $Database) {
 
 try {
     Invoke-PostgresCommand @("pg_dump", "-U", $User, "-d", $Database, "-Fc", "-f", $DumpPath)
+    Invoke-PostgresCommand @("chmod", "600", $DumpPath)
     Invoke-PostgresCommand @("createdb", "-U", $User, $VerifyDatabase)
     Invoke-PostgresCommand @("pg_restore", "-U", $User, "-d", $VerifyDatabase, "--no-owner", $DumpPath)
 
@@ -35,6 +36,12 @@ try {
         }
         Write-Host "$Table verified: $SourceCount rows"
     }
+    $SourceSchema = (& docker exec $Container psql -U $User -d $Database -Atc "SELECT version FROM schema_version WHERE id = 1;").Trim()
+    $RestoredSchema = (& docker exec $Container psql -U $User -d $VerifyDatabase -Atc "SELECT version FROM schema_version WHERE id = 1;").Trim()
+    if ($SourceSchema -ne $RestoredSchema) {
+        throw "Schema version mismatch: source=$SourceSchema restored=$RestoredSchema"
+    }
+    Write-Host "schema_version verified: $SourceSchema"
     Write-Host "Backup and restore verification completed without keeping a dump."
 } finally {
     & docker exec $Container dropdb -U $User --if-exists $VerifyDatabase 2>$null

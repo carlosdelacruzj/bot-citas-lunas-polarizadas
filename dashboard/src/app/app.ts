@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 import {
   ApiActionResponse,
@@ -15,9 +16,17 @@ import {
   CloseServiceOrderPayload,
   ContactUpdatePayload,
   CreateServiceOrderPayload,
+  FinanceCategory,
+  FinanceDataQuality,
+  FinanceEntry,
+  FinanceEntryKind,
+  FinanceEntryPayload,
+  FinanceSummary,
   HealthPayload,
   ManualSession,
+  MonthlySummary,
   PaymentPaidPayload,
+  PriorityUpdatePayload,
   RunDetail,
   RunSummary,
   ServiceOrder,
@@ -26,10 +35,17 @@ import {
   WorkerStatus,
   apiErrorMessage,
 } from './appointment-api.service';
+import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey = 'summary' | 'orders' | 'runs';
-type ModalKind = 'edit-order' | 'order-actions' | 'create-order' | 'worker-restart' | null;
+type ViewKey = 'summary' | 'finance' | 'orders' | 'runs';
+type ModalKind =
+  | 'edit-order'
+  | 'order-actions'
+  | 'create-order'
+  | 'worker-restart'
+  | 'finance-entry'
+  | null;
 type OrderQuickFilter =
   | 'all'
   | 'ready'
@@ -72,6 +88,17 @@ type OrderNextAction = {
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
+const INITIAL_MONTH = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Lima',
+  year: 'numeric',
+  month: '2-digit',
+}).format(new Date());
+const INITIAL_DATE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Lima',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
 
 @Component({
   selector: 'app-root',
@@ -80,6 +107,9 @@ const AUTO_REFRESH_INTERVAL_MS = 15_000;
   styleUrl: './app.css',
 })
 export class App implements OnDestroy {
+  protected readonly formatDate = formatPeruDate;
+  protected readonly formatDateTime = formatPeruDateTime;
+  protected readonly formatTime = formatPeruTime;
   private readonly api = inject(AppointmentApiService);
   private readonly autoRefreshTimer = window.setInterval(() => {
     void this.refreshFromTimer();
@@ -107,16 +137,42 @@ export class App implements OnDestroy {
   protected readonly runDetailError = signal<string | null>(null);
   protected readonly workerCommands = signal<WorkerCommand[]>([]);
   protected readonly manualSessions = signal<ManualSession[]>([]);
+  protected readonly selectedMonth = signal(INITIAL_MONTH);
+  protected readonly monthlySummary = signal<MonthlySummary | null>(null);
+  protected readonly monthlyLoading = signal(false);
+  protected readonly financeCategories = signal<FinanceCategory[]>([]);
+  protected readonly financeEntries = signal<FinanceEntry[]>([]);
+  protected readonly financeSummary = signal<FinanceSummary | null>(null);
+  protected readonly financeLoading = signal(false);
+  protected readonly editingFinanceEntryId = signal('');
+  protected readonly financeOccurredOn = signal(INITIAL_DATE);
+  protected readonly financeEntryKind = signal<FinanceEntryKind>('expense');
+  protected readonly financeCategoryCode = signal('marketing');
+  protected readonly financeVendor = signal('');
+  protected readonly financeDescription = signal('');
+  protected readonly financeAmountOriginal = signal('');
+  protected readonly financeCurrency = signal('PEN');
+  protected readonly financeExchangeRatePen = signal('');
+  protected readonly financeQuantity = signal('');
+  protected readonly financeUnit = signal('');
+  protected readonly financeChannel = signal('');
+  protected readonly financeCampaign = signal('');
+  protected readonly financeOrderId = signal('');
+  protected readonly financeEvidenceReference = signal('');
+  protected readonly financeNotes = signal('');
+  protected readonly financeDataQuality = signal<FinanceDataQuality>('actual');
   protected readonly loadState = signal<LoadState>('idle');
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
   protected readonly copiedLabel = signal<string | null>(null);
   protected readonly selectedOrderId = signal('');
+  protected readonly orderPanelOpen = signal(false);
   protected readonly selectedOrderDetail = signal<ServiceOrderDetail | null>(null);
   protected readonly orderDetailLoading = signal(false);
   protected readonly contactName = signal('');
   protected readonly contactWhatsapp = signal('');
   protected readonly contactSource = signal('whatsapp');
+  protected readonly orderPriority = signal(0);
   protected readonly paymentAmountPaid = signal('');
   protected readonly paymentAmountAgreed = signal('');
   protected readonly newDocumentNumber = signal('');
@@ -285,6 +341,14 @@ export class App implements OnDestroy {
   protected readonly selectedOrderWhatsappPlaceholder = computed(
     () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
   );
+  protected readonly selectedOrderWhatsapp = computed(() => {
+    const order = this.selectedOrder();
+    const detail = this.selectedOrderDetail();
+    if (order && detail?.order_id === order.order_id) {
+      return detail.contact_whatsapp ?? 'sin WhatsApp';
+    }
+    return order?.contact_whatsapp_masked ?? 'sin WhatsApp';
+  });
   protected readonly autoRefreshPaused = computed(
     () =>
       !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
@@ -310,11 +374,15 @@ export class App implements OnDestroy {
       return;
     }
     if (this.pendingAction()) {
-      this.cancelPendingAction();
+      Swal.close();
       return;
     }
     if (this.activeModal()) {
       this.closeModal();
+      return;
+    }
+    if (this.orderPanelOpen()) {
+      this.closeOrderPanel();
     }
   }
 
@@ -324,20 +392,42 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
 
     try {
-      const [worker, orders, runs, workerCommands, manualSessions] = await Promise.all([
+      const [
+        worker,
+        orders,
+        runs,
+        workerCommands,
+        manualSessions,
+        monthlySummary,
+        financeCategories,
+        financeEntries,
+        financeSummary,
+      ] =
+        await Promise.all([
         this.api.getWorker(),
         this.api.getServiceOrders(),
         this.api.getRuns(),
         this.api.getWorkerCommands(),
         this.api.getManualSessions(),
+        this.api.getMonthlySummary(this.selectedMonth()),
+        this.api.getFinanceCategories(),
+        this.api.getFinanceEntries(this.selectedMonth()),
+        this.api.getFinanceSummary(this.selectedMonth()),
       ]);
       this.worker.set(worker);
       this.orders.set(orders);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
       this.manualSessions.set(manualSessions);
+      this.monthlySummary.set(monthlySummary);
+      this.financeCategories.set(financeCategories);
+      this.financeEntries.set(financeEntries);
+      this.financeSummary.set(financeSummary);
       this.keepValidSelection(orders);
       this.hydrateSelectedOrderForms();
+      if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
+        void this.loadSelectedOrderDetail(this.selectedOrderId());
+      }
       this.lastUpdatedAt.set(this.formatClock(new Date()));
       this.loadState.set('ready');
     } catch (error) {
@@ -351,11 +441,199 @@ export class App implements OnDestroy {
     await this.refreshAll();
   }
 
-  protected selectOrder(orderId: string): void {
+  protected async changeMonth(month: string): Promise<void> {
+    if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading()) {
+      return;
+    }
+    this.selectedMonth.set(month);
+    this.monthlyLoading.set(true);
+    this.financeLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const [summary, entries, financeSummary] = await Promise.all([
+        this.api.getMonthlySummary(month),
+        this.api.getFinanceEntries(month),
+        this.api.getFinanceSummary(month),
+      ]);
+      this.monthlySummary.set(summary);
+      this.financeEntries.set(entries);
+      this.financeSummary.set(financeSummary);
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.monthlyLoading.set(false);
+      this.financeLoading.set(false);
+    }
+  }
+
+  protected openNewFinanceEntry(): void {
+    this.clearFinanceForm();
+    this.openModal('finance-entry');
+  }
+
+  protected openEditFinanceEntry(entry: FinanceEntry): void {
+    if (entry.status !== 'active') {
+      return;
+    }
+    this.editingFinanceEntryId.set(entry.entry_id);
+    this.financeOccurredOn.set(entry.occurred_on);
+    this.financeEntryKind.set(entry.entry_kind);
+    this.financeCategoryCode.set(entry.category_code);
+    this.financeVendor.set(entry.vendor ?? '');
+    this.financeDescription.set(entry.description);
+    this.financeAmountOriginal.set(String(entry.amount_original));
+    this.financeCurrency.set(entry.currency);
+    this.financeExchangeRatePen.set(
+      entry.currency === 'PEN' ? '' : String(entry.exchange_rate_pen ?? ''),
+    );
+    this.financeQuantity.set(String(entry.quantity ?? ''));
+    this.financeUnit.set(entry.unit ?? '');
+    this.financeChannel.set(entry.channel ?? '');
+    this.financeCampaign.set(entry.campaign ?? '');
+    this.financeOrderId.set(entry.order_id ?? '');
+    this.financeEvidenceReference.set(entry.evidence_reference ?? '');
+    this.financeNotes.set(entry.notes ?? '');
+    this.financeDataQuality.set(entry.data_quality);
+    this.openModal('finance-entry');
+  }
+
+  protected requestSaveFinanceEntry(): void {
+    const payload = this.financeFormPayload();
+    if (!payload) {
+      return;
+    }
+    const entryId = this.editingFinanceEntryId();
+    this.setPendingAction({
+      title: entryId ? 'Actualizar movimiento' : 'Registrar movimiento',
+      message: entryId
+        ? `Actualizar ${entryId}. El historial conservara la fecha de modificacion.`
+        : `Registrar ${payload.description} por ${payload.amount_original} ${payload.currency}.`,
+      execute: () =>
+        entryId
+          ? this.api.updateFinanceEntry(entryId, payload)
+          : this.api.createFinanceEntry(payload),
+      onSuccess: () => {
+        this.activeModal.set(null);
+        this.clearFinanceForm();
+      },
+    });
+  }
+
+  protected requestVoidFinanceEntry(entry: FinanceEntry): void {
+    if (entry.status !== 'active') {
+      return;
+    }
+    void Swal.fire({
+      title: 'Anular movimiento',
+      text: 'Escribe el motivo. El registro se conservara para auditoria y dejara de calcularse.',
+      input: 'text',
+      inputLabel: 'Motivo de anulacion',
+      inputValidator: (value) =>
+        value.trim().length >= 3 ? undefined : 'Ingresa al menos 3 caracteres.',
+      showCancelButton: true,
+      confirmButtonText: 'Anular',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#b42318',
+    }).then(async (result) => {
+      if (!result.isConfirmed || !result.value) {
+        return;
+      }
+      this.actionBusy.set(true);
+      try {
+        await this.api.voidFinanceEntry(entry.entry_id, String(result.value).trim());
+        await this.refreshAll();
+        await this.showToast('Movimiento anulado');
+      } catch (error) {
+        this.errorMessage.set(this.readError(error));
+      } finally {
+        this.actionBusy.set(false);
+      }
+    });
+  }
+
+  protected financeKindLabel(kind: FinanceEntryKind): string {
+    const labels: Record<FinanceEntryKind, string> = {
+      expense: 'Gasto directo',
+      prepaid_topup: 'Recarga prepagada',
+      prepaid_consumption: 'Consumo prepagado',
+      refund: 'Reembolso',
+    };
+    return labels[kind];
+  }
+
+  protected formatOriginalMoney(entry: FinanceEntry): string {
+    return `${entry.currency} ${entry.amount_original.toFixed(entry.currency === 'PEN' ? 2 : 4)}`;
+  }
+
+  protected formatMoney(value: number): string {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: 'PEN',
+      minimumFractionDigits: 2,
+    }).format(value);
+  }
+
+  protected formatPercent(value: number): string {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
+
+  protected revenueComparison(summary: MonthlySummary): string {
+    const previous = summary.previous.revenue_collected;
+    if (!previous) {
+      return summary.metrics.revenue_collected > 0 ? 'Sin cobros en el mes anterior' : 'Sin cambio';
+    }
+    const change = summary.metrics.revenue_collected / previous - 1;
+    return `${change >= 0 ? '+' : ''}${this.formatPercent(change)} frente al mes anterior`;
+  }
+
+  protected revenueComparisonTone(summary: MonthlySummary): string {
+    return summary.metrics.revenue_collected >= summary.previous.revenue_collected ? 'good' : 'bad';
+  }
+
+  protected dailyRevenueWidth(summary: MonthlySummary, amount: number): number {
+    const maximum = Math.max(...summary.daily_revenue.map((item) => item.amount), 0);
+    return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
+  }
+
+  protected sourceRevenueWidth(summary: MonthlySummary, amount: number): number {
+    const maximum = Math.max(...summary.sources.map((item) => item.revenue_collected), 0);
+    return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
+  }
+
+  protected openOrderFromSummary(orderId: string): void {
+    this.activeView.set('orders');
+    this.selectOrder(orderId);
+  }
+
+  protected selectOrder(orderId: string, loadDetail = true): void {
+    if (!this.orderPanelOpen()) {
+      this.captureFocus();
+    }
     this.selectedOrderId.set(orderId);
+    this.orderPanelOpen.set(true);
     this.selectedOrderDetail.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+    if (loadDetail) {
+      void this.loadSelectedOrderDetail(orderId);
+    }
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>('[data-order-panel]')?.focus();
+    });
+  }
+
+  protected closeOrderPanel(): void {
+    if (this.activeModal() || this.actionBusy()) {
+      return;
+    }
+    this.orderPanelOpen.set(false);
+    this.selectedOrderDetail.set(null);
+    this.formDirty.set(false);
+    this.restoreFocus();
   }
 
   protected async selectRun(runId: string): Promise<void> {
@@ -404,22 +682,9 @@ export class App implements OnDestroy {
   }
 
   protected async openEditOrder(order: ServiceOrder): Promise<void> {
-    this.selectOrder(order.order_id);
+    this.selectOrder(order.order_id, false);
     this.openModal('edit-order');
-    this.orderDetailLoading.set(true);
-    this.errorMessage.set(null);
-    try {
-      const detail = await this.api.getServiceOrder(order.order_id);
-      if (this.selectedOrderId() !== detail.order_id) {
-        return;
-      }
-      this.selectedOrderDetail.set(detail);
-      this.hydrateSelectedOrderForms(detail);
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      this.orderDetailLoading.set(false);
-    }
+    await this.loadSelectedOrderDetail(order.order_id);
   }
 
   protected openOrderActions(order: ServiceOrder): void {
@@ -439,11 +704,14 @@ export class App implements OnDestroy {
     if (this.actionBusy()) {
       return;
     }
+    const modal = this.activeModal();
     this.activeModal.set(null);
-    this.selectedOrderDetail.set(null);
     this.pendingAction.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+    if (modal === 'finance-entry') {
+      this.clearFinanceForm();
+    }
     this.restoreFocus();
   }
 
@@ -462,6 +730,37 @@ export class App implements OnDestroy {
     } else if (action.key === 'review') {
       this.openOrderActions(order);
     }
+  }
+
+  protected rowPrimaryActionLabel(order: ServiceOrder): string {
+    if (order.status === 'ready') {
+      return 'Abrir sesión';
+    }
+    if (order.status === 'paused') {
+      return 'Activar';
+    }
+    if (order.reservation_status === 'confirmed' && order.payment_status !== 'paid') {
+      return 'Registrar pago';
+    }
+    return 'Ver detalle';
+  }
+
+  protected runRowPrimaryAction(order: ServiceOrder): void {
+    if (order.status === 'ready') {
+      void this.openManualSessionNow(order);
+      return;
+    }
+    this.selectOrder(order.order_id);
+    if (order.status === 'paused') {
+      this.requestOrderAction('activate', 'Activar orden');
+    } else if (order.reservation_status === 'confirmed' && order.payment_status !== 'paid') {
+      void this.openEditOrder(order);
+    }
+  }
+
+  protected setQuickPriority(priority: number): void {
+    this.orderPriority.set(priority);
+    this.requestPriorityUpdate();
   }
 
   protected priorityExplanation(order: ServiceOrder): string {
@@ -552,6 +851,32 @@ export class App implements OnDestroy {
         this.activeModal.set(null);
         this.selectedOrderDetail.set(null);
       },
+    });
+  }
+
+  protected requestPriorityUpdate(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    const priority = Number(this.orderPriority());
+    if (!Number.isInteger(priority) || priority < 0) {
+      this.errorMessage.set('La prioridad debe ser un numero entero igual o mayor que 0.');
+      return;
+    }
+    const payload: PriorityUpdatePayload = { priority };
+    const entersFocusedMode = order.priority < 100 && priority >= 100;
+    const leavesFocusedMode = order.priority >= 100 && priority < 100;
+    const effect = entersFocusedMode
+      ? ' Activara enfoque y desplazara una orden de la cola normal.'
+      : leavesFocusedMode
+        ? ' La orden volvera a la cola normal.'
+        : ' Se aplicara en la siguiente seleccion de la cola.';
+    this.setPendingAction({
+      title: 'Actualizar prioridad',
+      message: `Cambiar prioridad de ${order.order_id} de ${order.priority} a ${priority}.${effect}`,
+      execute: () => this.api.updateServiceOrderPriority(order.order_id, payload),
+      onSettled: () => this.orderPriority.set(this.selectedOrder()?.priority ?? priority),
     });
   }
 
@@ -699,8 +1024,8 @@ export class App implements OnDestroy {
       if (response.session_id) {
         this.activeManualSessionIds.add(response.session_id);
       }
-      this.successMessage.set(this.actionResponseMessage(response));
       await this.refreshAll();
+      await this.showToast('Sesión manual abierta');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -716,10 +1041,12 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     this.successMessage.set(null);
     try {
-      const response = await this.api.closeManualSession(session.session_id);
+      await this.api.closeManualSession(session.session_id);
       this.activeManualSessionIds.delete(session.session_id);
-      this.successMessage.set(this.actionResponseMessage(response));
-      await this.refreshAll();
+      this.manualSessions.update((sessions) =>
+        sessions.filter((item) => item.session_id !== session.session_id),
+      );
+      await this.showToast('Cierre solicitado');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -739,38 +1066,6 @@ export class App implements OnDestroy {
         this.api.splitServiceOrderPrograms(order.order_id, this.splitKeepParentActive()),
       onSuccess: () => this.activeModal.set(null),
     });
-  }
-
-  protected cancelPendingAction(): void {
-    this.pendingAction.set(null);
-    this.restoreFocus();
-  }
-
-  protected async confirmPendingAction(): Promise<void> {
-    const action = this.pendingAction();
-    if (!action || this.actionBusy()) {
-      return;
-    }
-    this.actionBusy.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
-    try {
-      const response = await action.execute();
-      this.successMessage.set(this.actionResponseMessage(response));
-      this.pendingAction.set(null);
-      this.formDirty.set(false);
-      action.onSuccess?.(response);
-      this.restoreFocus();
-      await this.refreshAll();
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      action.onSettled?.();
-      if (action.containsSecret) {
-        this.pendingAction.set(null);
-      }
-      this.actionBusy.set(false);
-    }
   }
 
   protected async refreshHealth(): Promise<void> {
@@ -793,11 +1088,6 @@ export class App implements OnDestroy {
     };
     await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2));
     this.markCopied('snapshot');
-  }
-
-  protected async copyOrder(order: ServiceOrder): Promise<void> {
-    await navigator.clipboard.writeText(JSON.stringify(this.sanitizeOrder(order), null, 2));
-    this.markCopied(order.order_id);
   }
 
   protected phaseLabel(phase: string | null | undefined): string {
@@ -949,12 +1239,67 @@ export class App implements OnDestroy {
     return apiErrorMessage(error);
   }
 
-  private setPendingAction(action: PendingAction): void {
+  private async setPendingAction(action: PendingAction): Promise<void> {
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.captureFocus();
     this.pendingAction.set(action);
-    this.focusModal();
+    const result = await Swal.fire({
+      title: action.title,
+      text: action.message,
+      icon: action.title.toLowerCase().includes('cerrar') ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, continuar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      focusCancel: true,
+      allowOutsideClick: !this.actionBusy(),
+    });
+    if (!result.isConfirmed) {
+      this.pendingAction.set(null);
+      action.onSettled?.();
+      this.restoreFocus();
+      return;
+    }
+    this.actionBusy.set(true);
+    try {
+      const response = await action.execute();
+      this.successMessage.set(`${action.title}: completado.`);
+      this.pendingAction.set(null);
+      this.formDirty.set(false);
+      action.onSuccess?.(response);
+      await this.refreshAll();
+      await Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Cambio guardado',
+        showConfirmButton: false,
+        timer: 2200,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      const message = this.readError(error);
+      this.errorMessage.set(message);
+      await Swal.fire({ icon: 'error', title: 'No se pudo completar', text: message });
+    } finally {
+      action.onSettled?.();
+      this.pendingAction.set(null);
+      this.actionBusy.set(false);
+      this.restoreFocus();
+    }
+  }
+
+  private async showToast(title: string): Promise<void> {
+    await Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title,
+      showConfirmButton: false,
+      timer: 2200,
+      timerProgressBar: true,
+    });
   }
 
   private openModal(modal: Exclude<ModalKind, null>): void {
@@ -995,6 +1340,25 @@ export class App implements OnDestroy {
       return null;
     }
     return order;
+  }
+
+  private async loadSelectedOrderDetail(orderId: string): Promise<void> {
+    this.orderDetailLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const detail = await this.api.getServiceOrder(orderId);
+      if (this.selectedOrderId() !== detail.order_id) {
+        return;
+      }
+      this.selectedOrderDetail.set(detail);
+      this.hydrateSelectedOrderForms(detail);
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      if (this.selectedOrderId() === orderId) {
+        this.orderDetailLoading.set(false);
+      }
+    }
   }
 
   private async refreshFromTimer(): Promise<void> {
@@ -1117,6 +1481,7 @@ export class App implements OnDestroy {
     this.contactName.set(order.contact_name ?? '');
     this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
+    this.orderPriority.set(order.priority);
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');
     this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
@@ -1133,34 +1498,82 @@ export class App implements OnDestroy {
     this.newAllowedWeekdays.set([]);
   }
 
+  private financeFormPayload(): FinanceEntryPayload | null {
+    const amountOriginal = String(this.financeAmountOriginal() ?? '').trim();
+    const exchangeRate = String(this.financeExchangeRatePen() ?? '').trim();
+    const quantity = String(this.financeQuantity() ?? '').trim();
+    const amount = Number(amountOriginal);
+    if (!this.financeOccurredOn() || !this.financeDescription().trim()) {
+      this.errorMessage.set('Fecha y descripcion son obligatorias.');
+      return null;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.errorMessage.set('El importe debe ser mayor que cero.');
+      return null;
+    }
+    if (
+      this.financeCurrency() !== 'PEN' &&
+      exchangeRate &&
+      (!Number.isFinite(Number(exchangeRate)) || Number(exchangeRate) <= 0)
+    ) {
+      this.errorMessage.set('El tipo de cambio debe ser mayor que cero.');
+      return null;
+    }
+    return {
+      occurred_on: this.financeOccurredOn(),
+      entry_kind: this.financeEntryKind(),
+      category_code: this.financeCategoryCode(),
+      vendor: this.optionalText(this.financeVendor()),
+      description: this.financeDescription().trim(),
+      amount_original: amountOriginal,
+      currency: this.financeCurrency().trim().toUpperCase(),
+      exchange_rate_pen:
+        this.financeCurrency() === 'PEN' ? null : this.optionalText(exchangeRate),
+      quantity: this.optionalText(quantity),
+      unit: this.optionalText(this.financeUnit()),
+      channel: this.optionalText(this.financeChannel()),
+      campaign: this.optionalText(this.financeCampaign()),
+      order_id: this.optionalText(this.financeOrderId()),
+      evidence_reference: this.optionalText(this.financeEvidenceReference()),
+      notes: this.optionalText(this.financeNotes()),
+      data_quality: this.financeDataQuality(),
+    };
+  }
+
+  private clearFinanceForm(): void {
+    this.editingFinanceEntryId.set('');
+    this.financeOccurredOn.set(INITIAL_DATE);
+    this.financeEntryKind.set('expense');
+    this.financeCategoryCode.set('marketing');
+    this.financeVendor.set('');
+    this.financeDescription.set('');
+    this.financeAmountOriginal.set('');
+    this.financeCurrency.set('PEN');
+    this.financeExchangeRatePen.set('');
+    this.financeQuantity.set('');
+    this.financeUnit.set('');
+    this.financeChannel.set('');
+    this.financeCampaign.set('');
+    this.financeOrderId.set('');
+    this.financeEvidenceReference.set('');
+    this.financeNotes.set('');
+    this.financeDataQuality.set('actual');
+    this.formDirty.set(false);
+  }
+
   private formatClock(date: Date): string {
     return date.toLocaleTimeString('es-PE', {
+      timeZone: 'America/Lima',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      hourCycle: 'h23',
     });
   }
 
   private optionalText(value: string): string | null {
     const trimmed = value.trim();
     return trimmed || null;
-  }
-
-  private actionResponseMessage(response: ApiActionResponse): string {
-    const parts = [response.status];
-    if (response.command) {
-      parts.push(response.command);
-    }
-    if (response.command_id) {
-      parts.push(response.command_id);
-    }
-    if (response.session_id) {
-      parts.push(response.session_id);
-    }
-    if (response.order_id) {
-      parts.push(response.order_id);
-    }
-    return parts.join(' | ');
   }
 
   private closeTrackedManualSessionsWithBeacon(): void {

@@ -71,10 +71,7 @@ class AdminApiHandler(LocalApiHandler):
             "appointment_bot_dashboard="
             f"{session_token}; Path=/; HttpOnly; SameSite=Strict",
         )
-        self.send_header(
-            "Cache-Control",
-            "no-cache" if path.name == "index.html" else "public, max-age=31536000, immutable",
-        )
+        self.send_header("Cache-Control", "no-cache, must-revalidate")
         self.end_headers()
         self.wfile.write(body)
 

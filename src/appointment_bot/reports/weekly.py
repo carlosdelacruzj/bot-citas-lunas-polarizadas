@@ -40,7 +40,7 @@ def export_weekly_report(
     start: date,
     end: date,
     output_dir: Path = Path("reports/operations"),
-    latest_path: Path = Path("docs/operations/weekly-summary.md"),
+    latest_path: Path = Path("reports/operations/latest.md"),
 ) -> WeeklyReportResult:
     if end < start:
         raise ValueError("end must be greater than or equal to start.")
@@ -95,12 +95,11 @@ def _metrics(runs: list[RunDetail]) -> dict[str, Any]:
             submission == "blocked_by_order_rule"
         )
         counts["defense_signals"] += bool(detect_defense_signal(run.message, details))
-        operational_attempt = (
-            run.reservation_attempted
-            or bool(submission)
+        compatible_attempt = (run.reservation_attempted or bool(submission)) and not (
+            submission in {"blocked_by_order_rule", "priority_deferred"}
             or bool(details.get("blocked_by_order_rule"))
         )
-        if operational_attempt:
+        if compatible_attempt:
             attempts += 1
         timing = details.get(TIMING_DETAILS_KEY)
         timing = timing if isinstance(timing, dict) else {}
@@ -114,7 +113,7 @@ def _metrics(runs: list[RunDetail]) -> dict[str, Any]:
         if captcha is not None:
             for threshold in (3, 5, 10, 20):
                 captcha_thresholds[threshold] += captcha > threshold
-        if operational_attempt:
+        if compatible_attempt:
             if (
                 previous
                 and previous.order_id

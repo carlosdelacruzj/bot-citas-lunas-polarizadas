@@ -3,6 +3,7 @@
 from appointment_bot.worker.windows_runtime import (
     DAILY_CUTOFF_REASON,
     DAILY_CUTOFF_TIME,
+    SEARCH_WEEKDAYS,
     WORKER_TIMEZONE,
     HotWindowDecision,
     current_window_end,
@@ -16,6 +17,7 @@ from appointment_bot.worker.windows_runtime import (
 __all__ = [
     "DAILY_CUTOFF_REASON",
     "DAILY_CUTOFF_TIME",
+    "SEARCH_WEEKDAYS",
     "WORKER_TIMEZONE",
     "HotWindowDecision",
     "current_window_end",

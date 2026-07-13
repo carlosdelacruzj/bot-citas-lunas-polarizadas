@@ -22,8 +22,9 @@ from appointment_bot.db.orders import (
     set_order_paused,
     split_service_order_programs,
 )
-from appointment_bot.db.runs import get_run, list_run_details_between, list_runs
+from appointment_bot.db.runs import list_run_details_between
 from appointment_bot.reports.evidence import export_evidence_summary
+from appointment_bot.reports.observation import export_optimization_observation
 from appointment_bot.reports.status import (
     generate_daily_report_image,
     generate_status_report_images,
@@ -168,6 +169,23 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("reports/operations"),
         help="Directorio para la salida fechada.",
+    )
+    observation_parser = subparsers.add_parser(
+        "optimization-observation",
+        help="Genera linea base observacional sin cambiar el flujo de reserva.",
+    )
+    observation_parser.add_argument("--start", required=True, help="Fecha inicial YYYY-MM-DD.")
+    observation_parser.add_argument("--end", required=True, help="Fecha final YYYY-MM-DD.")
+    observation_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/optimization"),
+        help="Directorio para la salida fechada.",
+    )
+    observation_parser.add_argument(
+        "--set-baseline",
+        action="store_true",
+        help="Promueve explicitamente este rango como linea base vigente.",
     )
     weekly_parser.add_argument(
         "--notify",
@@ -329,10 +347,16 @@ def run(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "evidence-summary":
+        now = datetime.now(UTC)
         result = export_evidence_summary(
-            _iter_run_details(),
+            list_run_details_between(
+                started_at=now - timedelta(days=max(args.days, 1)),
+                finished_at=now + timedelta(seconds=1),
+            ),
             output_dir=args.output_dir,
             days=args.days,
+            now=now,
+            update_current=True,
         )
         print(f"Eventos exportados: {result.event_count}")
         print(f"CSV generado: {result.csv_path}")
@@ -367,6 +391,34 @@ def run(argv: Sequence[str] | None = None) -> int:
                 settings,
                 "ALERTA OPERACIONAL\n" + "\n".join(f"- {alert}" for alert in result.alerts),
             )
+        return 0
+
+    if args.command == "optimization-observation":
+        try:
+            start = date.fromisoformat(args.start)
+            end = date.fromisoformat(args.end)
+        except ValueError:
+            parser.error("--start y --end deben usar YYYY-MM-DD.")
+        if end < start:
+            parser.error("--end no puede ser anterior a --start.")
+        query_start = datetime.combine(start, time.min, LIMA_TZ)
+        query_end = datetime.combine(end + timedelta(days=1), time.min, LIMA_TZ)
+        result = export_optimization_observation(
+            list_run_details_between(
+                started_at=query_start.astimezone(UTC),
+                finished_at=query_end.astimezone(UTC),
+            ),
+            start=start,
+            end=end,
+            output_dir=args.output_dir,
+            promote_baseline=args.set_baseline,
+        )
+        print(f"Runs observados: {result.run_count}")
+        print(f"Reporte generado: {result.report_path}")
+        if result.baseline_path is not None:
+            print(f"Linea base vigente: {result.baseline_path}")
+        else:
+            print("Linea base vigente sin cambios; usa --set-baseline para reemplazarla.")
         return 0
 
     if args.command == "contact":
@@ -423,20 +475,6 @@ def _parse_allowed_weekdays(value: str | None) -> list[int] | None:
     if not value:
         return None
     return [int(item.strip()) for item in value.split(",") if item.strip()]
-
-
-def _iter_run_details():
-    offset = 0
-    page_size = 200
-    while True:
-        page = list_runs(limit=page_size, offset=offset)
-        if not page:
-            return
-        for item in page:
-            detail = get_run(item.run_id)
-            if detail is not None:
-                yield detail
-        offset += len(page)
 
 
 def main() -> None:

@@ -17,6 +17,7 @@ from appointment_bot.db.orders import (
     mark_service_order_no_charge,
     set_order_paused,
     split_service_order_programs,
+    update_service_order_priority,
 )
 from appointment_bot.services.api.http import error_payload
 
@@ -59,9 +60,7 @@ PUBLIC_SERVICE_ORDER_DETAIL_FIELDS = PUBLIC_SERVICE_ORDER_FIELDS + (
 
 def list_service_orders_payload() -> dict[str, Any]:
     return {
-        "service_orders": [
-            _public_service_order(order) for order in list_service_order_summaries()
-        ]
+        "service_orders": [_public_service_order(order) for order in list_service_order_summaries()]
     }
 
 
@@ -84,9 +83,7 @@ def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | 
 def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     required = ("document_number", "password", "contact_name", "contact_source")
     missing = [
-        field
-        for field in required
-        if payload.get(field) is None or not str(payload[field]).strip()
+        field for field in required if payload.get(field) is None or not str(payload[field]).strip()
     ]
     if missing:
         return HTTPStatus.BAD_REQUEST, error_payload(
@@ -158,6 +155,29 @@ def update_service_order_contact_payload(
     except ValueError as exc:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
     return HTTPStatus.OK, {"status": "ok"}
+
+
+def update_service_order_priority_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("priority") in {None, ""}:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Missing priority.",
+            field_errors={"priority": "Ingresa una prioridad."},
+        )
+    try:
+        priority = int(payload["priority"])
+        update_service_order_priority(order_id, priority)
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        extra = {"field_errors": {"priority": message}} if status == HTTPStatus.BAD_REQUEST else {}
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request", message, **extra
+        )
+    return HTTPStatus.OK, {"status": "ok", "order_id": order_id, "priority": priority}
 
 
 def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
@@ -251,6 +271,14 @@ def split_service_order_programs_payload(
 def service_order_contact_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/contact"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_priority_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/priority"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))

@@ -4,6 +4,7 @@ from appointment_bot.worker.control import ContinuousWorker, run_host
 from appointment_bot.worker.queue import run_rapid_queue_with_settings, run_service_order
 from appointment_bot.worker.windows import (
     DAILY_CUTOFF_REASON,
+    SEARCH_WEEKDAYS,
     WORKER_TIMEZONE,
     current_window_label,
     daily_cutoff_reached,
@@ -14,6 +15,7 @@ from appointment_bot.worker.windows import (
 __all__ = [
     "ContinuousWorker",
     "DAILY_CUTOFF_REASON",
+    "SEARCH_WEEKDAYS",
     "WORKER_TIMEZONE",
     "current_window_label",
     "daily_cutoff_reached",

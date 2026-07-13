@@ -110,6 +110,126 @@ export interface ManualSession {
   close_requested: boolean;
 }
 
+export interface MonthlySummary {
+  month: string;
+  period: { start: string; end: string };
+  metrics: {
+    revenue_collected: number;
+    payments_received: number;
+    reservations_confirmed: number;
+    orders_created: number;
+    active_orders: number;
+    pending_payments: number;
+    pending_amount: number;
+    average_ticket: number;
+    conversion_rate: number;
+  };
+  previous: {
+    month: string;
+    revenue_collected: number;
+    payments_received: number;
+  };
+  daily_revenue: Array<{ date: string; amount: number; payments: number }>;
+  sources: Array<{
+    source: string;
+    orders_created: number;
+    reservations_confirmed: number;
+    revenue_collected: number;
+  }>;
+  attention: {
+    missing_contact_count: number;
+    pending_payments: Array<{
+      order_id: string;
+      name: string;
+      source: string;
+      amount_agreed: number;
+      reservation_date: string | null;
+      reservation_hour: string | null;
+    }>;
+    aged_active_orders: Array<{
+      order_id: string;
+      name: string;
+      status: string;
+      created_date: string;
+    }>;
+  };
+}
+
+export interface FinanceCategory {
+  category_code: string;
+  display_name: string;
+  cost_behavior: 'variable' | 'fixed' | 'mixed';
+  active: boolean;
+}
+
+export type FinanceEntryKind = 'expense' | 'prepaid_topup' | 'prepaid_consumption' | 'refund';
+export type FinanceDataQuality = 'actual' | 'estimated' | 'pending';
+
+export interface FinanceEntry {
+  entry_id: string;
+  occurred_on: string;
+  entry_kind: FinanceEntryKind;
+  category_code: string;
+  category_name?: string;
+  cost_behavior?: string;
+  vendor: string | null;
+  description: string;
+  amount_original: number;
+  currency: string;
+  exchange_rate_pen: number | null;
+  amount_pen: number | null;
+  quantity: number | null;
+  unit: string | null;
+  channel: string | null;
+  campaign: string | null;
+  order_id: string | null;
+  evidence_reference: string | null;
+  notes: string | null;
+  data_quality: FinanceDataQuality;
+  status: 'active' | 'voided';
+  voided_at: string | null;
+  void_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FinanceEntryPayload {
+  occurred_on: string;
+  entry_kind: FinanceEntryKind;
+  category_code: string;
+  vendor?: string | null;
+  description: string;
+  amount_original: string;
+  currency: string;
+  exchange_rate_pen?: string | null;
+  quantity?: string | null;
+  unit?: string | null;
+  channel?: string | null;
+  campaign?: string | null;
+  order_id?: string | null;
+  evidence_reference?: string | null;
+  notes?: string | null;
+  data_quality: FinanceDataQuality;
+}
+
+export interface FinanceSummary {
+  month: string;
+  revenue_collected: number;
+  recognized_costs: number;
+  operating_margin_before_unregistered_costs: number;
+  net_cash_outflow: number;
+  prepaid_topups: number;
+  prepaid_consumption: number;
+  unconverted_entries: number;
+  active_entries: number;
+  is_complete: boolean;
+  by_category: Array<{
+    category_code: string;
+    category_name: string;
+    recognized_cost: number;
+  }>;
+}
+
 export interface ApiActionResponse {
   status: string;
   message?: string;
@@ -129,6 +249,10 @@ export interface ContactUpdatePayload {
   contact_whatsapp?: string | null;
   contact_name?: string | null;
   contact_source?: string | null;
+}
+
+export interface PriorityUpdatePayload {
+  priority: number;
 }
 
 export interface PaymentPaidPayload {
@@ -219,12 +343,75 @@ export class AppointmentApiService {
     return response.manual_sessions;
   }
 
+  async getMonthlySummary(month: string): Promise<MonthlySummary> {
+    return firstValueFrom(
+      this.http.get<MonthlySummary>(
+        `/api/v1/monthly-summary?month=${encodeURIComponent(month)}`,
+      ),
+    );
+  }
+
+  async getFinanceCategories(): Promise<FinanceCategory[]> {
+    const response = await firstValueFrom(
+      this.http.get<{ categories: FinanceCategory[] }>('/api/v1/finance/categories'),
+    );
+    return response.categories;
+  }
+
+  async getFinanceEntries(month: string): Promise<FinanceEntry[]> {
+    const response = await firstValueFrom(
+      this.http.get<{ entries: FinanceEntry[] }>(
+        `/api/v1/finance/entries?month=${encodeURIComponent(month)}&include_voided=1`,
+      ),
+    );
+    return response.entries;
+  }
+
+  async getFinanceSummary(month: string): Promise<FinanceSummary> {
+    return firstValueFrom(
+      this.http.get<FinanceSummary>(
+        `/api/v1/finance/summary?month=${encodeURIComponent(month)}`,
+      ),
+    );
+  }
+
+  async createFinanceEntry(payload: FinanceEntryPayload): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/finance/entries', payload);
+  }
+
+  async updateFinanceEntry(
+    entryId: string,
+    payload: FinanceEntryPayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/finance/entries/${encodeURIComponent(entryId)}/edit`,
+      payload,
+    );
+  }
+
+  async voidFinanceEntry(entryId: string, reason: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/finance/entries/${encodeURIComponent(entryId)}/void`,
+      { reason },
+    );
+  }
+
   async updateServiceOrderContact(
     orderId: string,
     payload: ContactUpdatePayload,
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/contact`,
+      payload,
+    );
+  }
+
+  async updateServiceOrderPriority(
+    orderId: string,
+    payload: PriorityUpdatePayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/priority`,
       payload,
     );
   }

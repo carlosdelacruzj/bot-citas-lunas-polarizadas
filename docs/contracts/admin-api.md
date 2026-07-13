@@ -29,8 +29,10 @@ referencia en memoria a `ContinuousWorker`.
 GET  /api/v1/worker
 GET  /api/v1/service-orders
 GET  /api/v1/service-orders/{order_id}
+GET  /api/v1/monthly-summary?month=YYYY-MM
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/contact
+POST /api/v1/service-orders/{order_id}/priority
 POST /api/v1/service-orders/{order_id}/payment/paid
 POST /api/v1/service-orders/{order_id}/pause
 POST /api/v1/service-orders/{order_id}/activate
@@ -52,6 +54,24 @@ POST /api/v1/manual-session/close
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
+
+## Resumen mensual
+
+`GET /api/v1/monthly-summary?month=YYYY-MM` calcula el resumen en
+`America/Lima`:
+
+- ingresos cobrados y cantidad de pagos por `payments.paid_at`;
+- reservas confirmadas por `reservations.reserved_at`;
+- órdenes creadas y conversión de su cohorte por `service_orders.created_at`;
+- ticket promedio, comparación de ingresos con el mes anterior e ingresos por
+  día;
+- actividad por fuente de contacto;
+- estado actual separado: órdenes activas, reservas pendientes de cobro,
+  importe pendiente, contactos faltantes y órdenes activas con más de siete
+  días.
+
+El ingreso cobrado nunca incluye pagos pendientes ni proyecciones. La respuesta
+no expone documentos, WhatsApp, credenciales ni evidencia cruda.
 
 ## Detalles de endpoints administrativos
 
@@ -98,8 +118,24 @@ Requiere bearer token estricto y usa una allowlist separada. Puede agregar
 pero nunca password, datos de cifrado, cookies ni leases. El dashboard solo
 consulta este endpoint al abrir la edicion y descarta el detalle al cerrarla.
 
+`POST /api/v1/service-orders/{order_id}/priority` acepta un entero no negativo:
+
+```json
+{"priority": 100}
+```
+
+Los valores `0` a `99` ordenan la cola normal; `100` o más activan enfoque.
+La actualización se usa en la siguiente selección de la cola y no interrumpe
+una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
+aunque varias compartan el mismo contacto.
+
 Snapshots, filtros, tablas y copiado general deben trabajar exclusivamente con
 el DTO enmascarado del listado.
+
+La tarjeta operativa de la orden seleccionada puede mostrar el WhatsApp completo
+obtenido mediante el endpoint de detalle. Debe conservarlo solo en memoria,
+descartarlo al cambiar la orden o recargar la aplicación y evitar incluirlo en snapshots o
+copias masivas.
 
 ## Crear orden
 
@@ -230,6 +266,8 @@ Restricciones:
   navegador/contexto Playwright separado;
 - cada sesion se limpia cuando se cierra su ventana, termina su hilo o el
   dashboard pide cerrar por `session_id`.
+- después de una solicitud de cierre, el registro activo se retira como máximo
+  en ocho segundos aunque el cierre interno de Playwright se demore.
 
 ## Runs
 

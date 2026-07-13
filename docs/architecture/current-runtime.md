@@ -10,6 +10,8 @@ compatibilidad, no como lista de trabajo futuro.
 - `appointment-bot-client` apunta a `appointment_bot.services.client_cli:run`.
 - `appointment-bot-admin-api` apunta a `appointment_bot.admin_api.server:main`.
 - `scripts/start-worker.ps1` levanta Docker/PostgreSQL y ejecuta el host continuo.
+- `scripts/start-admin-dashboard.ps1` construye Angular y levanta el admin API
+  que sirve el dashboard.
 - `scripts/start-worker-hidden.vbs` inicia el bootstrap de Windows sin ventana.
 
 ## Proceso actual
@@ -38,10 +40,10 @@ Los wrappers historicos de `services/postgres_*`, `services/continuous_*`,
 `services/*_reports` fueron retirados en el paso 9.7. Los consumidores internos
 usan rutas nuevas directas.
 
-Tambien existe un proceso separado `appointment-bot-admin-api` para la fase 5
-de migracion. Ese proceso reutiliza los handlers y servicios PostgreSQL
-actuales, escucha por defecto en `127.0.0.1:8766` y no aloja un
-`ContinuousWorker` en memoria.
+También existe el proceso separado `appointment-bot-admin-api`. Reutiliza los
+handlers y servicios PostgreSQL, escucha en `127.0.0.1:8766`, sirve el build
+Angular con sesión local segura y no aloja un `ContinuousWorker` en memoria.
+El proxy Angular queda solo para desarrollo o rollback.
 
 ## API local actual
 
@@ -67,8 +69,14 @@ GET  /api/v1/runs
 GET  /api/v1/runs/{run_id}
 GET  /api/v1/worker/commands
 GET  /api/v1/manual-sessions
+GET  /api/v1/finance/categories
+GET  /api/v1/finance/entries
+GET  /api/v1/finance/summary
 POST /api/v1/manual-session/open
 POST /api/v1/manual-session/close
+POST /api/v1/finance/entries
+POST /api/v1/finance/entries/{entry_id}/edit
+POST /api/v1/finance/entries/{entry_id}/void
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart

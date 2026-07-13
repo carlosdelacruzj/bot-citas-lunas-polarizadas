@@ -11,6 +11,7 @@ from appointment_bot.config import Settings
 WORKER_TIMEZONE = ZoneInfo("America/Lima")
 DAILY_CUTOFF_TIME = datetime_time(hour=18)
 DAILY_CUTOFF_REASON = "daily_cutoff"
+SEARCH_WEEKDAYS = frozenset(range(6))
 
 
 @dataclass(frozen=True)
@@ -31,10 +32,19 @@ def hot_window_wait_decision(
     extended_until: datetime | None,
 ) -> HotWindowDecision:
     windows = settings.observer_hot_windows
+    now = datetime.now(WORKER_TIMEZONE)
+    if now.weekday() not in SEARCH_WEEKDAYS:
+        return HotWindowDecision(
+            should_wait=True,
+            wait_seconds=random.randint(
+                settings.outside_hot_window_min_seconds,
+                settings.outside_hot_window_max_seconds,
+            ),
+            extended_until=None,
+        )
     if not windows:
         return HotWindowDecision(should_wait=False, extended_until=extended_until)
 
-    now = datetime.now(WORKER_TIMEZONE)
     current = now.time()
     if any(start <= current < end for start, end in windows):
         return HotWindowDecision(should_wait=False, extended_until=extended_until)
@@ -85,17 +95,18 @@ def seconds_until_next_window(
     now: datetime,
     windows: tuple[tuple[datetime_time, datetime_time], ...],
 ) -> int:
-    today = now.date()
-    candidates = [
-        datetime.combine(today, start, tzinfo=WORKER_TIMEZONE)
-        for start, _ in windows
-        if datetime.combine(today, start, tzinfo=WORKER_TIMEZONE) > now
-    ]
-    if not candidates:
-        tomorrow = today + timedelta(days=1)
-        candidates = [
-            datetime.combine(tomorrow, start, tzinfo=WORKER_TIMEZONE) for start, _ in windows
-        ]
+    candidates = []
+    for days_ahead in range(8):
+        candidate_date = now.date() + timedelta(days=days_ahead)
+        if candidate_date.weekday() not in SEARCH_WEEKDAYS:
+            continue
+        candidates.extend(
+            candidate
+            for start, _ in windows
+            if (candidate := datetime.combine(candidate_date, start, tzinfo=WORKER_TIMEZONE)) > now
+        )
+        if candidates:
+            break
     return max(1, int((min(candidates) - now).total_seconds()))
 
 
@@ -103,6 +114,8 @@ def current_window_end(
     now: datetime,
     windows: tuple[tuple[datetime_time, datetime_time], ...],
 ) -> datetime | None:
+    if now.weekday() not in SEARCH_WEEKDAYS:
+        return None
     current = now.time()
     for start, end in windows:
         if start <= current < end:

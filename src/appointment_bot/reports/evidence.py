@@ -84,6 +84,7 @@ def export_evidence_summary(
     output_dir: Path,
     days: int,
     now: datetime | None = None,
+    update_current: bool = False,
 ) -> EvidenceSummaryResult:
     output_dir.mkdir(parents=True, exist_ok=True)
     rows = [
@@ -98,8 +99,9 @@ def export_evidence_summary(
     markdown_path = output_dir / f"evidence-summary-{stamp}.md"
     write_evidence_rows(csv_path, rows)
     write_evidence_summary(markdown_path, rows, title=f"Resumen de evidencia - ultimos {days} dias")
-    write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
-    write_evidence_summary(EVIDENCE_SUMMARY_PATH, rows)
+    if update_current:
+        write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
+        write_evidence_summary(EVIDENCE_SUMMARY_PATH, rows)
     return EvidenceSummaryResult(csv_path, markdown_path, len(rows))
 
 
@@ -332,7 +334,7 @@ def _summary_markdown(rows: list[dict[str, str]], *, title: str) -> str:
     lines.extend(["\n", "## Lectura recomendada\n"])
     lines.append("- Usar `docs/evidence-index.csv` para filtrar el caso exacto.\n")
     lines.append("- Abrir las rutas de evidencia solo cuando este resumen apunte a un evento.\n")
-    lines.append("- Comparar cambios contra `docs/roadmap/04-optimization.md`.\n")
+    lines.append("- Comparar cambios contra `docs/optimization.md`.\n")
     return "".join(lines)
 
 

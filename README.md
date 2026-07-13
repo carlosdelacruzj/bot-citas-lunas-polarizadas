@@ -171,5 +171,5 @@ No se versionan `.env`, logs, screenshots, videos, datos ni dumps PostgreSQL.
 - Orden obligatorio de mejoras: [`docs/roadmap/README.md`](docs/roadmap/README.md).
 - Arquitectura y migracion historica: [`docs/architecture/`](docs/architecture/).
 - Contratos estables: [`docs/contracts/`](docs/contracts/).
-- Arranque y rollback: [`docs/operations/deployment-topology.md`](docs/operations/deployment-topology.md).
+- Arranque, salud y rollback: [`docs/operations/README.md`](docs/operations/README.md).
 - Hitos historicos: [`docs/history/milestones.md`](docs/history/milestones.md).
