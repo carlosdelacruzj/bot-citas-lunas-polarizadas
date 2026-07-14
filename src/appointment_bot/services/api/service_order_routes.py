@@ -18,6 +18,7 @@ from appointment_bot.db.orders import (
     set_order_paused,
     split_service_order_programs,
     update_service_order_priority,
+    update_service_order_reservation_constraints,
 )
 from appointment_bot.services.api.http import error_payload
 
@@ -39,6 +40,8 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "payment_status",
     "amount_agreed",
     "amount_paid",
+    "whatsapp_message_status",
+    "whatsapp_message_sent_at",
     "parent_order_id",
     "program_expediente",
     "program_plate",
@@ -47,6 +50,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "closed_at",
     "minimum_reservation_hour",
     "minimum_reservation_date",
+    "maximum_reservation_date",
     "allowed_weekdays",
     "created_at",
     "updated_at",
@@ -107,6 +111,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
                 else None
             ),
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
+            maximum_reservation_date=_optional_text(payload, "maximum_reservation_date"),
             allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
             parent_order_id=_optional_text(payload, "parent_order_id"),
             program_expediente=_optional_text(payload, "program_expediente"),
@@ -178,6 +183,43 @@ def update_service_order_priority_payload(
             "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request", message, **extra
         )
     return HTTPStatus.OK, {"status": "ok", "order_id": order_id, "priority": priority}
+
+
+def update_service_order_restrictions_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    try:
+        minimum_hour = (
+            int(payload["minimum_reservation_hour"])
+            if payload.get("minimum_reservation_hour") not in {None, ""}
+            else None
+        )
+        minimum_date = _optional_text(payload, "minimum_reservation_date")
+        maximum_date = _optional_text(payload, "maximum_reservation_date")
+        allowed_weekdays = _optional_weekdays(payload.get("allowed_weekdays"))
+        update_service_order_reservation_constraints(
+            order_id,
+            minimum_reservation_hour=minimum_hour,
+            minimum_reservation_date=minimum_date,
+            maximum_reservation_date=maximum_date,
+            allowed_weekdays=allowed_weekdays,
+        )
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "order_id": order_id,
+        "minimum_reservation_hour": minimum_hour,
+        "minimum_reservation_date": minimum_date,
+        "maximum_reservation_date": maximum_date,
+        "allowed_weekdays": allowed_weekdays,
+    }
 
 
 def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
@@ -279,6 +321,14 @@ def service_order_contact_path(path: str) -> str | None:
 def service_order_priority_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/priority"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_restrictions_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/restrictions"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))

@@ -56,7 +56,7 @@ class EvidenceSummaryTests(unittest.TestCase):
         self.assertEqual(row["captcha_solver_seconds"], "33.200")
         self.assertNotIn("secret", str(row))
 
-    def test_evidence_cases_include_partial_captcha_and_defense(self) -> None:
+    def test_evidence_cases_exclude_date_only_partial_and_include_failures(self) -> None:
         cases = [
             RunReport(
                 status="partial",
@@ -82,11 +82,9 @@ class EvidenceSummaryTests(unittest.TestCase):
 
         rows = [evidence_row_from_report(case) for case in cases]
 
-        self.assertTrue(all(row is not None for row in rows))
-        assert rows[0] is not None
+        self.assertIsNone(rows[0])
         assert rows[1] is not None
         assert rows[2] is not None
-        self.assertEqual(rows[0]["detection_origin"], "fetch_probe")
         self.assertEqual(rows[1]["submission_outcome"], "captcha_invalid")
         self.assertEqual(rows[2]["defense_signal"], "http_429")
 

@@ -24,7 +24,6 @@ EVIDENCE_INDEX_PATH = Path("docs/evidence-index.csv")
 EVIDENCE_SUMMARY_PATH = Path("docs/evidence-summary.md")
 EVIDENCE_STATUSES = {
     ResultStatus.AVAILABLE,
-    ResultStatus.PARTIAL,
     ResultStatus.REGISTERED,
     ResultStatus.RESERVATION_UNCONFIRMED,
     ResultStatus.UNKNOWN,
@@ -138,7 +137,7 @@ def evidence_row_from_report(report: RunReport) -> dict[str, str] | None:
 
 
 def append_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
-    rows = list(rows)
+    rows = [row for row in rows if _is_useful_evidence_row(row)]
     if not rows:
         return
     existing_ids = _existing_run_ids(path)
@@ -159,7 +158,9 @@ def write_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(_normalized_row(row) for row in rows)
+        writer.writerows(
+            _normalized_row(row) for row in rows if _is_useful_evidence_row(row)
+        )
 
 
 def read_evidence_rows(path: Path) -> list[dict[str, str]]:
@@ -176,7 +177,7 @@ def write_evidence_summary(
     title: str = "Resumen digerido de evidencia",
 ) -> None:
     rows = sorted(
-        list(rows),
+        [row for row in rows if _is_useful_evidence_row(row)],
         key=lambda item: item.get("finished_at_lima", ""),
         reverse=True,
     )
@@ -248,6 +249,8 @@ def _is_evidence_case(
     reservation_attempted: bool,
     reservation_confirmed: bool,
 ) -> bool:
+    if status == ResultStatus.PARTIAL and _has_actionable_partial(details):
+        return True
     if status in EVIDENCE_STATUSES:
         return True
     if reservation_attempted or reservation_confirmed:
@@ -259,6 +262,38 @@ def _is_evidence_case(
     if bool(details.get("blocked_by_order_rule")):
         return True
     return bool(defense_signal)
+
+
+def _has_actionable_partial(details: dict[str, Any]) -> bool:
+    if details.get("blocked_by_order_rule") or details.get("blocked_selected_for_evidence"):
+        return True
+    dates = [details.get("fecha"), details.get("appointment_date")]
+    hours = [
+        details.get("hora"),
+        details.get("appointment_hour"),
+        details.get("hour_options"),
+    ]
+    return _has_selectable_value(dates) and _has_selectable_value(hours)
+
+
+def _is_useful_evidence_row(row: dict[str, str]) -> bool:
+    if row.get("status") != ResultStatus.PARTIAL.value:
+        return True
+    if row.get("submission_outcome") or row.get("defense_signal"):
+        return True
+    return _has_selectable_value(row.get("appointment_date")) and _has_selectable_value(
+        row.get("appointment_hour")
+    )
+
+
+def _has_selectable_value(value: object) -> bool:
+    if isinstance(value, (list, tuple, set)):
+        return any(_has_selectable_value(item) for item in value)
+    text = detail_text(value).strip().casefold()
+    return bool(text) and not any(
+        marker in text
+        for marker in ("sin cupo", "no disponible", "no hay horario", "seleccione")
+    )
 
 
 def detect_defense_signal(message: str, details: dict[str, Any] | None = None) -> str:

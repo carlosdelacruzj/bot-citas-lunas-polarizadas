@@ -7,6 +7,9 @@ from appointment_bot.utils.screenshots import (
     remove_screenshot_paths,
     report_screenshot_paths,
 )
+from appointment_bot.worker.post_reservation_review import (
+    replace_reports_with_reviewed_evidence,
+)
 
 
 class DeferredOrderReports:
@@ -36,6 +39,12 @@ class DeferredOrderReports:
             exit_code=0,
         )
         notify_deferred_queue_summary(summary, self.settings, reports)
+
+    def replace_reviewed_evidence(self, review_results: list[dict[str, str]]) -> None:
+        self._reports = replace_reports_with_reviewed_evidence(
+            self._reports,
+            review_results,
+        )
 
 
 def _has_final_submission_evidence(report: RunReport) -> bool:

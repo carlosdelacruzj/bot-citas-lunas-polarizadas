@@ -201,8 +201,9 @@ def _entry_for_report(
     lines = [
         heading,
         f"- Run: {report.run_id}\n",
-        f"- Corrida/attempt: {_text(details.get('observer_attempt') or details.get('attempt'))}\n",
-        f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
+        "- Corrida/attempt: "
+        f"{_text(details.get('observer_attempt') or details.get('attempt')) or 'no registrado'}\n",
+        f"- Sede: {_text(details.get('sede') or details.get('site')) or 'no registrada'}\n",
         f"- Cita observada: {_appointment_text(details)}\n",
         f"- Cupos observados: {slots_text}\n",
         f"- Origen deteccion: {detection_origin(details)}\n",
@@ -218,7 +219,8 @@ def _entry_for_report(
         "  - Click -> screenshot confirmacion: "
         f"{_duration(timing, 'click_to_confirmation_screenshot_seconds')}\n",
         "- Contexto operativo:\n",
-        f"  - Modo monitoreo: {_text(details.get('monitoring_mode'))}\n",
+        "  - Modo monitoreo: "
+        f"{_text(details.get('monitoring_mode')) or 'no registrado'}\n",
         f"  - Reload probe: {_bool_text(details.get('reload_probe'))}\n",
         f"  - Refresco sede confirmado: {_bool_text(details.get('site_refresh_confirmed'))}\n",
         f"  - Refresco sede cambio opciones: {_bool_text(details.get('site_refresh_changed'))}\n",

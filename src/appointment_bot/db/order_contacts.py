@@ -56,10 +56,13 @@ def list_service_order_summaries(
                    r.status AS reservation_status, r.site AS reservation_site,
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
+                   wm.status AS whatsapp_message_status,
+                   wm.sent_at AS whatsapp_message_sent_at,
                    so.parent_order_id, so.program_expediente, so.program_plate,
                    so.closure_reason, so.closure_note, so.closed_at,
                    so.minimum_hour AS minimum_reservation_hour,
                    so.minimum_date AS minimum_reservation_date,
+                   so.maximum_date AS maximum_reservation_date,
                    so.allowed_weekdays
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -80,6 +83,13 @@ def list_service_order_summaries(
                 ORDER BY created_at DESC
                 LIMIT 1
             ) p ON true
+            LEFT JOIN LATERAL (
+                SELECT status, sent_at
+                FROM whatsapp_messages
+                WHERE order_id = so.order_id AND test_mode = false
+                ORDER BY prepared_at DESC
+                LIMIT 1
+            ) wm ON true
             ORDER BY so.priority DESC, so.created_at ASC
             """
         ).fetchall()
@@ -296,6 +306,8 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         payment_status=row["payment_status"],
         amount_agreed=_decimal_text(row["amount_agreed"]),
         amount_paid=_decimal_text(row["amount_paid"]),
+        whatsapp_message_status=row["whatsapp_message_status"],
+        whatsapp_message_sent_at=_timestamp_text(row["whatsapp_message_sent_at"]),
         parent_order_id=row["parent_order_id"],
         program_expediente=row["program_expediente"],
         program_plate=row["program_plate"],
@@ -313,6 +325,15 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
             else (
                 str(row["minimum_reservation_date"])
                 if row["minimum_reservation_date"] is not None
+                else None
+            )
+        ),
+        maximum_reservation_date=(
+            row["maximum_reservation_date"].isoformat()
+            if isinstance(row["maximum_reservation_date"], date)
+            else (
+                str(row["maximum_reservation_date"])
+                if row["maximum_reservation_date"] is not None
                 else None
             )
         ),

@@ -13,6 +13,7 @@ RESERVATION_RULE_TIMEZONE = ZoneInfo("America/Lima")
 class ReservationConstraints:
     minimum_hour: int | None = None
     minimum_date: date | None = None
+    maximum_date: date | None = None
     allowed_weekdays: tuple[int, ...] | None = None
 
 
@@ -49,6 +50,8 @@ def appointment_matches_constraints(
     if parsed_date is None or parsed_date <= current_reservation_date:
         return False
     if constraints.minimum_date is not None and parsed_date < constraints.minimum_date:
+        return False
+    if constraints.maximum_date is not None and parsed_date > constraints.maximum_date:
         return False
     if (
         constraints.allowed_weekdays is not None

@@ -24,6 +24,10 @@ from appointment_bot.services.order_runtime import (
     order_done_status_from_report,
 )
 from appointment_bot.worker.order_execution import run_service_order
+from appointment_bot.worker.post_reservation_review import (
+    replace_reports_with_reviewed_evidence,
+    review_confirmed_orders_after_queue,
+)
 from appointment_bot.worker.queue_policy import (
     delay_between_orders as _delay_between_orders,
 )
@@ -44,9 +48,11 @@ def run_rapid_queue_with_settings(
     settings: Settings,
     *,
     initial_confirmed_reservations: int = 0,
+    initial_confirmed_order_ids: set[str] | None = None,
     cancel_event: threading.Event | None = None,
     on_order_start: Callable[[ServiceOrderCandidate | ServiceOrderRuntime], None] | None = None,
     on_check: Callable[..., None] | None = None,
+    on_post_review_start: Callable[[], None] | None = None,
     skip_order_ids: set[str] | None = None,
     follow_up_order_ids: set[str] | None = None,
     stop_on_available_without_reserve: bool = True,
@@ -57,6 +63,8 @@ def run_rapid_queue_with_settings(
     failed_orders = 0
     results: list[dict[str, str]] = []
     deferred_reports: list[RunReport] = []
+    confirmed_order_ids = list(initial_confirmed_order_ids or set())
+    completion_reason = "orders_exhausted"
     lease_owner = f"queue-{uuid4().hex}"
     with ExitStack() as claims:
         # La consulta ya excluye ordenes terminadas; por eso la cola
@@ -74,17 +82,27 @@ def run_rapid_queue_with_settings(
             orders.append(order)
             queued_order_ids.add(order.order_id)
         if not orders:
+            details = {
+                "checked_orders": 0,
+                "confirmed_reservations": 0,
+                "uncertain_reservations": 0,
+                "failed_orders": 0,
+                "results": [],
+                "completion_reason": completion_reason,
+            }
+            if confirmed_order_ids:
+                if on_post_review_start is not None:
+                    on_post_review_start()
+                details["post_reservation_reviews"] = review_confirmed_orders_after_queue(
+                    settings,
+                    confirmed_order_ids,
+                    cancel_event=cancel_event,
+                )
             return RunReport(
                 status="completed",
                 message="No quedan ordenes pendientes para la cola rapida.",
                 exit_code=0,
-                details={
-                    "checked_orders": 0,
-                    "confirmed_reservations": 0,
-                    "uncertain_reservations": 0,
-                    "failed_orders": 0,
-                    "results": [],
-                },
+                details=details,
             )
 
         logger.info("Starting order queue with %s active orders", len(orders))
@@ -108,6 +126,7 @@ def run_rapid_queue_with_settings(
             # El valor 0 significa todos los pendientes; un valor positivo
             # conserva un limite opcional de reservas confirmadas por ejecucion.
             if _reservation_limit_reached(settings, confirmed_reservations):
+                completion_reason = "reservation_limit"
                 logger.info(
                     "Queue reservation limit reached: %s",
                     settings.queue_max_reservations_per_run,
@@ -195,6 +214,7 @@ def run_rapid_queue_with_settings(
 
             if outcome is OrderReportOutcome.REGISTERED:
                 confirmed_reservations += 1
+                confirmed_order_ids.append(order.order_id)
                 mark_order_done(order.order_id, settings=settings)
                 promoted_orders = promote_orders_matching_reserved_slot(
                     report.details or {},
@@ -224,6 +244,7 @@ def run_rapid_queue_with_settings(
                 continue
 
             if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
+                completion_reason = "reservation_unconfirmed"
                 uncertain_reservations += 1
                 update_order_state(
                     order.order_id,
@@ -240,6 +261,7 @@ def run_rapid_queue_with_settings(
                 break
 
             if report.status in {"error", "unknown"} or report.exit_code != 0:
+                completion_reason = "technical_error"
                 # Un fallo tecnico o ambiguo detiene la cola para no
                 # saltar la orden prioritaria ni repetir el problema en otras cuentas.
                 if report.status == "unknown":
@@ -268,6 +290,7 @@ def run_rapid_queue_with_settings(
                 and not settings.auto_reserve
                 and stop_on_available_without_reserve
             ):
+                completion_reason = "availability_without_auto_reserve"
                 logger.info(
                     "Stopping queue after availability alert with AUTO_RESERVE=false: %s",
                     order.order_id,
@@ -308,7 +331,26 @@ def run_rapid_queue_with_settings(
             "uncertain_reservations": uncertain_reservations,
             "failed_orders": failed_orders,
             "results": results,
+            "completion_reason": completion_reason,
         },
     )
+    review_results: list[dict[str, str]] = []
+    if (
+        report.status == "completed"
+        and completion_reason == "orders_exhausted"
+        and confirmed_order_ids
+    ):
+        if on_post_review_start is not None:
+            on_post_review_start()
+        review_results = review_confirmed_orders_after_queue(
+            settings,
+            confirmed_order_ids,
+            cancel_event=cancel_event,
+        )
+        report.details["post_reservation_reviews"] = review_results
+        deferred_reports = replace_reports_with_reviewed_evidence(
+            deferred_reports,
+            review_results,
+        )
     notify_deferred_queue_summary(report, settings, deferred_reports)
     return report

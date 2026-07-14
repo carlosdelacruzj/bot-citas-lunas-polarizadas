@@ -136,6 +136,20 @@ def _parse_minimum_reservation_date(value: str | date | None) -> date | None:
     raise ValueError("minimum_reservation_date must use YYYY-MM-DD or DD/MM/YYYY.")
 
 
+def _parse_maximum_reservation_date(value: str | date | None) -> date | None:
+    if value is None or isinstance(value, date):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError("maximum_reservation_date must use YYYY-MM-DD or DD/MM/YYYY.")
+
+
 def _parse_allowed_weekdays(value: Iterable[int] | None) -> list[int] | None:
     if value is None:
         return None

@@ -14,6 +14,9 @@ from appointment_bot.domain import AvailabilityResult
 from appointment_bot.services.detail_helpers import (
     appointment_datetime_details as _appointment_datetime_details,
 )
+from appointment_bot.services.reservation_messages import (
+    format_confirmed_reservation_message,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import normalize_screenshot_paths
 
@@ -504,19 +507,29 @@ def _format_result_message(result: AvailabilityResult) -> str:
 
 def _format_immediate_availability_message(result: AvailabilityResult) -> str:
     details = result.details or {}
+    general_observer = not any(
+        details.get(key) for key in ("orden", "order_id", "cliente", "client_name")
+    )
     date, hour = _appointment_datetime_details(details)
     date_options = _join_options(details.get("date_options"))
     hour_options = _join_options(details.get("hour_options"))
     slots = _format_slots(details.get("cupos") or details.get("slots"))
     sent_at = datetime.now(TELEGRAM_TIMEZONE).strftime("%H:%M:%S")
     lines = [
-        "CUPO DETECTADO",
+        ("CUPO DETECTADO - OBSERVADOR GENERAL" if general_observer else "CUPO DETECTADO"),
         f"Enviado: {sent_at} Lima",
         f"Sede: {_format_availability_field(details.get('sede'))}",
         f"Fechas: {_format_availability_field(date or date_options)}",
         f"Horas: {_format_availability_field(hour or hour_options)}",
         f"Cupos: {slots}",
     ]
+    if general_observer:
+        lines.extend(
+            [
+                "Contexto: detección general sin orden de cliente asociada.",
+                "Antes de actuar: validar las restricciones de las órdenes activas.",
+            ]
+        )
     return "\n".join(lines)
 
 
@@ -570,23 +583,12 @@ def _format_registered_message(result: AvailabilityResult) -> str:
         )
         return "\n".join(lines)
 
-    if person_name:
-        heading = f"Estimado/a {person_name}, su cita ha sido reservada con exito."
-    else:
-        heading = "Su cita ha sido reservada con exito."
-
-    lines = [heading]
-    if date:
-        lines.append(f"Fecha: {date}")
-    if hour:
-        lines.append(f"Hora: {hour}")
-    if site:
-        lines.append(f"Sede: {site}")
-
-    if len(lines) == 1:
-        return lines[0]
-
-    return f"{lines[0]}\n\n" + "\n".join(lines[1:])
+    return format_confirmed_reservation_message(
+        person_name=person_name,
+        date=date,
+        hour=hour,
+        site=site,
+    )
 
 
 def _join_options(value: object) -> str:

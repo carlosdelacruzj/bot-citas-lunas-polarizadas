@@ -112,14 +112,17 @@ def _appointment_filter_for_order(
     order_id: str,
     settings: Settings,
 ) -> Callable[[str, str], bool] | None:
-    minimum_hour, minimum_date, allowed_weekdays = get_reservation_constraints_for_order(
-        order_id,
-        settings=settings,
-    )
+    values = get_reservation_constraints_for_order(order_id, settings=settings)
+    if len(values) == 3:
+        minimum_hour, minimum_date, allowed_weekdays = values
+        maximum_date = None
+    else:
+        minimum_hour, minimum_date, maximum_date, allowed_weekdays = values
     return appointment_filter_from_constraints(
         ReservationConstraints(
             minimum_hour=minimum_hour,
             minimum_date=minimum_date,
+            maximum_date=maximum_date,
             allowed_weekdays=allowed_weekdays,
         )
     )

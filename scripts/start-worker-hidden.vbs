@@ -5,7 +5,9 @@ Dim fso
 Dim scriptDir
 Dim projectRoot
 Dim workerScript
-Dim command
+Dim adminDashboardScript
+Dim workerCommand
+Dim adminDashboardCommand
 
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -13,9 +15,13 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 projectRoot = fso.GetParentFolderName(scriptDir)
 workerScript = fso.BuildPath(scriptDir, "start-worker.ps1")
+adminDashboardScript = fso.BuildPath(scriptDir, "start-admin-dashboard.ps1")
 
 shell.CurrentDirectory = projectRoot
-command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " _
+adminDashboardCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " _
+    & Chr(34) & adminDashboardScript & Chr(34)
+workerCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " _
     & Chr(34) & workerScript & Chr(34)
 
-shell.Run command, 0, True
+shell.Run adminDashboardCommand, 0, False
+shell.Run workerCommand, 0, True

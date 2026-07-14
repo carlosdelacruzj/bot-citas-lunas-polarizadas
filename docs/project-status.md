@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-12`.
+Última revisión integral: `2026-07-14`.
 
 ## Estado ejecutivo
 
@@ -31,12 +31,17 @@ instrumentación no alteraron la regla de confirmación final.
   sesiones manuales y runs sanitizados.
 - UX simplificada: tabla compacta, acción contextual, panel lateral, prioridad
   rápida y confirmaciones SweetAlert2.
+- Edición de restricciones por orden desde el dashboard: fecha mínima, fecha
+  máxima, hora mínima y días permitidos; los límites también se pueden quitar.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y
   simulacro de backup/restore.
 - Medición observacional de selección, CAPTCHA, secuencia y `fetch_probe`.
 - Calendario automático de lunes a sábado; domingo permanece en espera.
+- WhatsApp asistido sin API de Meta: un clic prepara constancia y cobro como álbum
+  local con textos individuales; el operador conserva el envío final y su
+  confirmación manual auditable en PostgreSQL.
 
 ## Validación vigente
 
@@ -57,6 +62,8 @@ instrumentación no alteraron la regla de confirmación final.
   sanitizada; revisar antes de compartir.
 - El simulacro de restore no reemplaza un backup durable cifrado.
 - La nueva instrumentación agrega overhead mínimo de medición, no cero.
+- WhatsApp no confirma entregas: `sent` significa que el operador declaró haber
+  completado el envío. El sistema prepara WhatsApp Web, pero nunca pulsa Enviar.
 - Persisten deuda técnica en el ciclo `appointments`/`appointment_selection` y
   en fachadas que mutan dependencias globales.
 

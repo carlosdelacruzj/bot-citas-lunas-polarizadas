@@ -41,26 +41,28 @@ def get_minimum_reservation_hour_for_order(
 def get_reservation_constraints_for_order(
     order_id: str,
     settings: Settings | None = None,
-) -> tuple[int | None, date | None, tuple[int, ...] | None]:
+) -> tuple[int | None, date | None, date | None, tuple[int, ...] | None]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT minimum_hour, minimum_date, allowed_weekdays
+            SELECT minimum_hour, minimum_date, maximum_date, allowed_weekdays
             FROM service_orders
             WHERE order_id = %s
             """,
             (order_id,),
         ).fetchone()
     if row is None:
-        return None, None, None
+        return None, None, None, None
     minimum_hour = row["minimum_hour"]
     minimum_date = row["minimum_date"]
+    maximum_date = row["maximum_date"]
     allowed_weekdays = row["allowed_weekdays"]
     return (
         int(minimum_hour) if minimum_hour is not None else None,
         minimum_date if isinstance(minimum_date, date) else None,
+        maximum_date if isinstance(maximum_date, date) else None,
         tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None,
     )
 
@@ -80,6 +82,7 @@ def list_active_orders(
             """
             so.minimum_hour IS NULL
             AND so.minimum_date IS NULL
+            AND so.maximum_date IS NULL
             AND so.allowed_weekdays IS NULL
             """
         )
@@ -127,6 +130,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        (
                            so.minimum_hour IS NOT NULL
                            OR so.minimum_date IS NOT NULL
+                           OR so.maximum_date IS NOT NULL
                            OR so.allowed_weekdays IS NOT NULL
                        ) AS is_constrained
                 FROM service_orders so
@@ -186,13 +190,14 @@ def promote_orders_matching_reserved_slot(
     with _connection(_database_url(settings)) as connection:
         rows = connection.execute(
             """
-            SELECT order_id, minimum_hour, minimum_date, allowed_weekdays, priority
+            SELECT order_id, minimum_hour, minimum_date, maximum_date, allowed_weekdays, priority
             FROM service_orders
             WHERE status = 'ready'
               AND order_id <> COALESCE(%s, '')
               AND (
                   minimum_hour IS NOT NULL
                   OR minimum_date IS NOT NULL
+                  OR maximum_date IS NOT NULL
                   OR allowed_weekdays IS NOT NULL
               )
             """,
@@ -219,6 +224,9 @@ def promote_orders_matching_reserved_slot(
                 ),
                 minimum_date=(
                     row["minimum_date"] if isinstance(row["minimum_date"], date) else None
+                ),
+                maximum_date=(
+                    row["maximum_date"] if isinstance(row["maximum_date"], date) else None
                 ),
                 allowed_weekdays=(
                     tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None

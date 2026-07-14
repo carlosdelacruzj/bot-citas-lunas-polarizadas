@@ -17,6 +17,11 @@ Estas rutas generan o actualizan:
 - bitacoras de optimizacion y disponibilidad parcial;
 - fichas de estado y reporte diario.
 
+El indice compacto aplica un criterio operativo: una disponibilidad parcial
+solo se conserva si incluye fecha y hora seleccionables o explica un bloqueo,
+un intento final o una defensa. Las fechas sin hora quedan en PostgreSQL/logs,
+pero no se presentan como evidencia util.
+
 Desde el paso 9.7 se retiraron las rutas antiguas `services/run_reporting.py`,
 `services/status_reports.py`, `services/evidence_summary.py` y
 `services/optimization_log.py`. Los consumidores internos deben importar

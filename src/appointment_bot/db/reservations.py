@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from psycopg import Connection
@@ -19,7 +20,41 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
+from appointment_bot.db.whatsapp_messages import archive_whatsapp_evidence
 from appointment_bot.services.detail_helpers import appointment_datetime_details
+
+
+def replace_confirmed_reservation_evidence(
+    order_id: str,
+    screenshot_path: Path,
+    *,
+    settings: Settings | None = None,
+) -> Path:
+    settings = _settings(settings)
+    init_database(settings)
+    archived = archive_whatsapp_evidence(order_id, [screenshot_path])
+    if archived is None:
+        raise ValueError("La revision no produjo una evidencia PNG segura.")
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE reservations
+            SET evidence_path = %s, updated_at = %s
+            WHERE reservation_id = (
+                SELECT reservation_id
+                FROM reservations
+                WHERE order_id = %s AND status = 'confirmed'
+                ORDER BY reserved_at DESC, created_at DESC
+                LIMIT 1
+            )
+            RETURNING reservation_id
+            """,
+            (str(archived), _now(), order_id),
+        ).fetchone()
+    if row is None:
+        archived.unlink(missing_ok=True)
+        raise ValueError("La orden no tiene una reserva confirmada para actualizar.")
+    return archived
 
 
 def _record_reservation_for_order(
@@ -54,6 +89,14 @@ def _record_reservation_for_order(
         ).fetchone()
         if order is None:
             return
+        evidence_path = getattr(report, "screenshot_path", None)
+        if status == "confirmed":
+            archived = archive_whatsapp_evidence(
+                order_id,
+                [*(getattr(report, "screenshot_paths", None) or []), evidence_path],
+            )
+            if archived is not None:
+                evidence_path = str(archived)
         connection.execute(
             """
             INSERT INTO reservations (
@@ -77,7 +120,7 @@ def _record_reservation_for_order(
                 appointment_date,
                 appointment_hour,
                 _detail_text(details, "cupos"),
-                getattr(report, "screenshot_path", None),
+                evidence_path,
                 Jsonb(sanitize_details(details)) if details else None,
                 now,
                 now,

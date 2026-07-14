@@ -55,6 +55,13 @@ publicos y filtra los campos internos aunque el worker los tenga en memoria.
 - `lease_unavailable`: otro host tiene el lease.
 
 El dashboard debe distinguir API viva de worker realmente procesando.
+Cuando `phase` empieza por `monitoring_observer` y `current_order_id` esta vacio,
+el dashboard debe mostrar `Observador general activo`: la cuenta esta buscando
+cupos, pero no representa una orden de cliente.
+
+Las alertas de disponibilidad sin orden o cliente asociado deben identificarse
+en Telegram como `CUPO DETECTADO - OBSERVADOR GENERAL` y recordar que el cupo
+todavia debe validarse contra las restricciones de las ordenes activas.
 
 ## Comandos actuales
 

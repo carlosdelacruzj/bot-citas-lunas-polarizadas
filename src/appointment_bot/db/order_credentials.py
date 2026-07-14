@@ -20,6 +20,7 @@ from appointment_bot.db.common import (
     _id_from_value,
     _now,
     _parse_allowed_weekdays,
+    _parse_maximum_reservation_date,
     _parse_minimum_reservation_date,
     _settings,
     init_database,
@@ -39,6 +40,7 @@ def create_service_order(
     charge_required: bool = True,
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
+    maximum_reservation_date: str | date | None = None,
     allowed_weekdays: Iterable[int] | None = None,
     parent_order_id: str | None = None,
     program_expediente: str | None = None,
@@ -57,6 +59,13 @@ def create_service_order(
     if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
         raise ValueError("minimum_reservation_hour must be between 0 and 23.")
     parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
+    parsed_maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
+    if (
+        parsed_minimum_date is not None
+        and parsed_maximum_date is not None
+        and parsed_maximum_date < parsed_minimum_date
+    ):
+        raise ValueError("maximum_reservation_date cannot be before minimum_reservation_date.")
     parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
 
     now = _now()
@@ -152,11 +161,11 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                minimum_hour, minimum_date, allowed_weekdays,
+                minimum_hour, minimum_date, maximum_date, allowed_weekdays,
                 parent_order_id, program_expediente, program_plate,
                 status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
@@ -164,6 +173,7 @@ def create_service_order(
                 charge_required = excluded.charge_required,
                 minimum_hour = COALESCE(excluded.minimum_hour, service_orders.minimum_hour),
                 minimum_date = COALESCE(excluded.minimum_date, service_orders.minimum_date),
+                maximum_date = COALESCE(excluded.maximum_date, service_orders.maximum_date),
                 allowed_weekdays = COALESCE(
                     excluded.allowed_weekdays,
                     service_orders.allowed_weekdays
@@ -192,6 +202,7 @@ def create_service_order(
                 charge_required,
                 minimum_reservation_hour,
                 parsed_minimum_date,
+                parsed_maximum_date,
                 parsed_allowed_weekdays,
                 parent_order_id,
                 program_expediente,
@@ -297,7 +308,8 @@ def split_service_order_programs(
     with _connection(_database_url(settings)) as connection:
         parent = connection.execute(
             """
-            SELECT priority, charge_required, minimum_hour, minimum_date, allowed_weekdays
+            SELECT priority, charge_required, minimum_hour, minimum_date, maximum_date,
+                   allowed_weekdays
             FROM service_orders
             WHERE order_id = %s
             """,
@@ -326,6 +338,7 @@ def split_service_order_programs(
                 charge_required=bool(parent["charge_required"]),
                 minimum_reservation_hour=parent["minimum_hour"],
                 minimum_reservation_date=parent["minimum_date"],
+                maximum_reservation_date=parent["maximum_date"],
                 allowed_weekdays=(
                     tuple(int(day) for day in parent["allowed_weekdays"])
                     if parent["allowed_weekdays"]

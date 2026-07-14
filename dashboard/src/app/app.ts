@@ -27,12 +27,15 @@ import {
   MonthlySummary,
   PaymentPaidPayload,
   PriorityUpdatePayload,
+  ReservationRestrictionsUpdatePayload,
   RunDetail,
   RunSummary,
   ServiceOrder,
   ServiceOrderDetail,
   WorkerCommand,
   WorkerStatus,
+  WhatsAppMessagePackage,
+  WhatsAppWebDraftResponse,
   apiErrorMessage,
 } from './appointment-api.service';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
@@ -45,6 +48,7 @@ type ModalKind =
   | 'create-order'
   | 'worker-restart'
   | 'finance-entry'
+  | 'whatsapp'
   | null;
 type OrderQuickFilter =
   | 'all'
@@ -88,6 +92,11 @@ type OrderNextAction = {
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
+const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const SPANISH_LIST_FORMAT = new Intl.ListFormat('es-PE', {
+  style: 'long',
+  type: 'conjunction',
+});
 const INITIAL_MONTH = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Lima',
   year: 'numeric',
@@ -173,6 +182,10 @@ export class App implements OnDestroy {
   protected readonly contactWhatsapp = signal('');
   protected readonly contactSource = signal('whatsapp');
   protected readonly orderPriority = signal(0);
+  protected readonly orderMinimumReservationHour = signal('');
+  protected readonly orderMinimumReservationDate = signal('');
+  protected readonly orderMaximumReservationDate = signal('');
+  protected readonly orderAllowedWeekdays = signal<number[]>([]);
   protected readonly paymentAmountPaid = signal('');
   protected readonly paymentAmountAgreed = signal('');
   protected readonly newDocumentNumber = signal('');
@@ -181,12 +194,20 @@ export class App implements OnDestroy {
   protected readonly newContactWhatsapp = signal('');
   protected readonly newContactSource = signal('');
   protected readonly newMinimumReservationDate = signal('');
+  protected readonly newMaximumReservationDate = signal('');
   protected readonly newAllowedWeekdays = signal<number[]>([]);
   protected readonly splitKeepParentActive = signal(false);
   protected readonly closureReason = signal<ClosureReason>('client_withdrew');
   protected readonly closureNote = signal('');
   protected readonly actionBusy = signal(false);
   protected readonly pendingAction = signal<PendingAction | null>(null);
+  protected readonly whatsappPackage = signal<WhatsAppMessagePackage | null>(null);
+  protected readonly whatsappPackageLoading = signal(false);
+  protected readonly whatsappTestRecipient = signal('');
+  protected readonly whatsappTestMode = signal(false);
+  protected readonly whatsappWebBusy = signal(false);
+  protected readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
+  protected readonly whatsappManualFallbackOpen = signal(false);
 
   protected readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
@@ -581,6 +602,48 @@ export class App implements OnDestroy {
     }).format(value);
   }
 
+  protected hasReservationRestrictions(order: ServiceOrder): boolean {
+    return Boolean(
+      order.minimum_reservation_date ||
+      order.maximum_reservation_date ||
+      order.minimum_reservation_hour !== null ||
+      (order.allowed_weekdays && order.allowed_weekdays.length > 0),
+    );
+  }
+
+  protected restrictionDaysLabel(order: ServiceOrder): string {
+    const days = Array.from(
+      new Set((order.allowed_weekdays ?? []).filter((day) => day >= 1 && day <= 7)),
+    ).sort((left, right) => left - right);
+    if (!days.length) {
+      return 'Cualquier día';
+    }
+    if (days.length === 7) {
+      return 'Todos los días';
+    }
+    const isContinuous = days.every((day, index) => index === 0 || day === days[index - 1] + 1);
+    if (isContinuous && days.length >= 3) {
+      return this.capitalize(`${WEEKDAY_NAMES[days[0] - 1]} a ${WEEKDAY_NAMES[days.at(-1)! - 1]}`);
+    }
+    return this.capitalize(
+      SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])),
+    );
+  }
+
+  protected restrictionTimingLabel(order: ServiceOrder): string {
+    const limits: string[] = [];
+    if (order.minimum_reservation_date) {
+      limits.push(`A partir del ${this.formatDate(order.minimum_reservation_date)}`);
+    }
+    if (order.maximum_reservation_date) {
+      limits.push(`Hasta el ${this.formatDate(order.maximum_reservation_date)}`);
+    }
+    if (order.minimum_reservation_hour !== null) {
+      limits.push(`Desde las ${this.formatTime(order.minimum_reservation_hour)}`);
+    }
+    return limits.length ? limits.join(' · ') : 'Sin límite de fecha u hora';
+  }
+
   protected revenueComparison(summary: MonthlySummary): string {
     const previous = summary.previous.revenue_collected;
     if (!previous) {
@@ -696,6 +759,185 @@ export class App implements OnDestroy {
     this.openModal('create-order');
   }
 
+  protected openWhatsAppTest(): void {
+    this.whatsappPackage.set(null);
+    this.whatsappTestRecipient.set('');
+    this.whatsappTestMode.set(true);
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(false);
+    this.openModal('whatsapp');
+  }
+
+  protected async prepareWhatsAppTest(): Promise<void> {
+    const recipient = this.whatsappTestRecipient().trim();
+    if (!recipient) {
+      this.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
+      return;
+    }
+    const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
+    await this.prepareWhatsAppWebDraft(message);
+  }
+
+  protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
+    this.whatsappPackage.set(null);
+    this.whatsappTestMode.set(false);
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(false);
+    this.openModal('whatsapp');
+    try {
+      const message = await this.loadWhatsAppPackage(() =>
+        this.api.prepareOrderWhatsApp(order.order_id, allowResend),
+      );
+      await this.prepareWhatsAppWebDraft(message);
+    } catch {
+      if (!allowResend && order.whatsapp_message_status === 'sent') {
+        const result = await Swal.fire({
+          icon: 'warning',
+          title: 'Mensaje ya enviado',
+          text: 'Esta orden ya tiene un envio confirmado. ¿Deseas preparar un reenvio?',
+          showCancelButton: true,
+          confirmButtonText: 'Preparar reenvio',
+          cancelButtonText: 'Cancelar',
+        });
+        if (result.isConfirmed) {
+          await this.openOrderWhatsApp(order, true);
+        }
+      }
+    }
+  }
+
+  protected canPrepareOrderWhatsApp(order: ServiceOrder): boolean {
+    const baseEligible = (
+      order.status === 'reserved_payment_pending' &&
+      order.reservation_status === 'confirmed' &&
+      order.payment_status === 'pending' &&
+      !!order.amount_agreed &&
+      order.charge_required
+    );
+    if (!baseEligible) {
+      return false;
+    }
+    const detail = this.selectedOrderDetail();
+    if (!detail || detail.order_id !== order.order_id) {
+      return false;
+    }
+    return /^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '');
+  }
+
+  protected whatsappPreparationHint(order: ServiceOrder): string {
+    if (
+      order.status !== 'reserved_payment_pending' ||
+      order.reservation_status !== 'confirmed' ||
+      order.payment_status !== 'pending' ||
+      !order.amount_agreed ||
+      !order.charge_required
+    ) {
+      return 'Requiere reserva confirmada, pago pendiente y monto acordado.';
+    }
+    const detail = this.selectedOrderDetail();
+    if (!detail || detail.order_id !== order.order_id) {
+      return 'Cargando contacto protegido...';
+    }
+    if (!/^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')) {
+      return 'Corrige el WhatsApp al formato internacional, por ejemplo +51987654321.';
+    }
+    return order.whatsapp_message_status === 'sent'
+      ? 'Ya fue enviado; la siguiente accion preparara un reenvio explicito.'
+      : 'Listo para preparar saludo, constancia y cobro.';
+  }
+
+  protected async copyWhatsAppText(text: string, label: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.markCopied(label);
+      await this.showToast('Texto copiado');
+    } catch {
+      this.errorMessage.set('El navegador no permitio copiar. Selecciona el texto manualmente.');
+    }
+  }
+
+  protected async copyWhatsAppAttachment(): Promise<void> {
+    const message = this.whatsappPackage();
+    if (!message) {
+      return;
+    }
+    try {
+      const blob = await this.api.getWhatsAppAttachment(message.attachment_url);
+      const png = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      this.markCopied('constancia');
+      await this.showToast('Constancia copiada. Pegala con Ctrl+V en WhatsApp.');
+    } catch {
+      this.errorMessage.set(
+        'No se pudo copiar la imagen. Usa Descargar constancia como alternativa.',
+      );
+    }
+  }
+
+  protected async prepareWhatsAppWebDraft(
+    preparedMessage?: WhatsAppMessagePackage,
+  ): Promise<void> {
+    const message = preparedMessage ?? this.whatsappPackage();
+    if (!message || this.whatsappWebBusy()) {
+      return;
+    }
+    this.whatsappWebBusy.set(true);
+    this.errorMessage.set(null);
+    try {
+      const response = await this.api.prepareWhatsAppWebDraft(message.message_id, 'album');
+      this.whatsappWebResult.set(response);
+      this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
+      if (response.status === 'login_required') {
+        await Swal.fire({
+          icon: 'info',
+          title: 'Vincula WhatsApp Web',
+          text: response.message,
+          confirmButtonText: 'Entendido',
+        });
+      } else if (response.status === 'draft_ready') {
+        this.successMessage.set('WhatsApp preparado: revisa el álbum y pulsa Enviar.');
+      }
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+      this.whatsappManualFallbackOpen.set(true);
+    } finally {
+      this.whatsappWebBusy.set(false);
+    }
+  }
+
+  protected async confirmWhatsAppSent(): Promise<void> {
+    const message = this.whatsappPackage();
+    if (!message || message.status === 'sent') {
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'Confirmar envio',
+      text: 'Confirma solo despues de enviar saludo, constancia y cobro en WhatsApp.',
+      showCancelButton: true,
+      confirmButtonText: 'Si, ya lo envie',
+      cancelButtonText: 'Todavia no',
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+    this.actionBusy.set(true);
+    try {
+      const response = await this.api.markWhatsAppSent(message.message_id);
+      this.whatsappPackage.set({
+        ...message,
+        status: 'sent',
+        sent_at: response.sent_at ?? new Date().toISOString(),
+      });
+      await this.refreshAll();
+      await this.showToast('Envio de WhatsApp registrado');
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
   protected openWorkerRestart(): void {
     this.openModal('worker-restart');
   }
@@ -711,6 +953,12 @@ export class App implements OnDestroy {
     this.hydrateSelectedOrderForms();
     if (modal === 'finance-entry') {
       this.clearFinanceForm();
+    }
+    if (modal === 'whatsapp') {
+      this.whatsappPackage.set(null);
+      this.whatsappTestRecipient.set('');
+      this.whatsappWebResult.set(null);
+      this.whatsappManualFallbackOpen.set(false);
     }
     this.restoreFocus();
   }
@@ -880,6 +1128,39 @@ export class App implements OnDestroy {
     });
   }
 
+  protected requestReservationRestrictionsUpdate(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    const minimumHourText = String(this.orderMinimumReservationHour()).trim();
+    const minimumHour = minimumHourText === '' ? null : Number(minimumHourText);
+    if (minimumHour !== null && (!Number.isInteger(minimumHour) || minimumHour < 0 || minimumHour > 23)) {
+      this.errorMessage.set('La hora mínima debe ser un número entero entre 0 y 23.');
+      return;
+    }
+    const payload: ReservationRestrictionsUpdatePayload = {
+      minimum_reservation_hour: minimumHour,
+      minimum_reservation_date: this.optionalText(this.orderMinimumReservationDate()),
+      maximum_reservation_date: this.optionalText(this.orderMaximumReservationDate()),
+      allowed_weekdays:
+        this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
+    };
+    if (
+      payload.minimum_reservation_date &&
+      payload.maximum_reservation_date &&
+      payload.maximum_reservation_date < payload.minimum_reservation_date
+    ) {
+      this.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
+      return;
+    }
+    this.setPendingAction({
+      title: 'Actualizar restricciones',
+      message: `Guardar las restricciones de reserva de ${order.order_id}. Los campos vacíos quitarán esa restricción.`,
+      execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
+    });
+  }
+
   protected requestOrderAction(
     action: 'pause' | 'activate' | 'no-charge' | 'done',
     title: string,
@@ -961,8 +1242,17 @@ export class App implements OnDestroy {
       contact_name: this.newContactName().trim(),
       contact_source: this.newContactSource(),
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
+      maximum_reservation_date: this.optionalText(this.newMaximumReservationDate()),
       allowed_weekdays: this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
     };
+    if (
+      payload.minimum_reservation_date &&
+      payload.maximum_reservation_date &&
+      payload.maximum_reservation_date < payload.minimum_reservation_date
+    ) {
+      this.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
+      return;
+    }
     if (
       !payload.document_number ||
       !payload.password ||
@@ -1097,6 +1387,25 @@ export class App implements OnDestroy {
     return phase.replaceAll('_', ' ');
   }
 
+  protected generalObserverActive(): boolean {
+    const worker = this.worker();
+    return Boolean(
+      worker &&
+      !worker.current_order_id &&
+      worker.phase?.startsWith('monitoring_observer'),
+    );
+  }
+
+  protected currentWorkLabel(): string {
+    if (this.worker()?.current_order_id) {
+      return this.worker()!.current_order_id!;
+    }
+    if (this.generalObserverActive()) {
+      return 'Observador general activo';
+    }
+    return 'Sin orden activa';
+  }
+
   protected orderLabel(order: ServiceOrder | null): string {
     if (!order) {
       return 'Sin orden seleccionada';
@@ -1175,6 +1484,7 @@ export class App implements OnDestroy {
       value === 'ok' ||
       value === 'confirmed' ||
       value === 'paid' ||
+      value === 'sent' ||
       value === 'ready'
     ) {
       return 'good';
@@ -1186,6 +1496,7 @@ export class App implements OnDestroy {
       value === 'outside_hot_window' ||
       value === 'paused' ||
       value === 'pending' ||
+      value === 'prepared' ||
       value === 'opening' ||
       value === 'closing' ||
       value === 'family_no_charge'
@@ -1302,6 +1613,23 @@ export class App implements OnDestroy {
     });
   }
 
+  private async loadWhatsAppPackage(
+    load: () => Promise<WhatsAppMessagePackage>,
+  ): Promise<WhatsAppMessagePackage> {
+    this.whatsappPackageLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const message = await load();
+      this.whatsappPackage.set(message);
+      return message;
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+      throw error;
+    } finally {
+      this.whatsappPackageLoading.set(false);
+    }
+  }
+
   private openModal(modal: Exclude<ModalKind, null>): void {
     this.captureFocus();
     this.activeModal.set(modal);
@@ -1399,11 +1727,7 @@ export class App implements OnDestroy {
     if (filter === 'closed_no_charge') {
       return order.status === 'archived' && !order.charge_required;
     }
-    return Boolean(
-      order.minimum_reservation_date ||
-      order.minimum_reservation_hour !== null ||
-      (order.allowed_weekdays && order.allowed_weekdays.length > 0),
-    );
+    return this.hasReservationRestrictions(order);
   }
 
   private sortOrders(orders: ServiceOrder[]): ServiceOrder[] {
@@ -1482,6 +1806,12 @@ export class App implements OnDestroy {
     this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
     this.orderPriority.set(order.priority);
+    this.orderMinimumReservationHour.set(
+      order.minimum_reservation_hour === null ? '' : String(order.minimum_reservation_hour),
+    );
+    this.orderMinimumReservationDate.set(order.minimum_reservation_date ?? '');
+    this.orderMaximumReservationDate.set(order.maximum_reservation_date ?? '');
+    this.orderAllowedWeekdays.set([...(order.allowed_weekdays ?? [])]);
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');
     this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
@@ -1495,6 +1825,7 @@ export class App implements OnDestroy {
     this.newContactWhatsapp.set('');
     this.newContactSource.set('');
     this.newMinimumReservationDate.set('');
+    this.newMaximumReservationDate.set('');
     this.newAllowedWeekdays.set([]);
   }
 
@@ -1569,6 +1900,10 @@ export class App implements OnDestroy {
       second: '2-digit',
       hourCycle: 'h23',
     });
+  }
+
+  private capitalize(value: string): string {
+    return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
   }
 
   private optionalText(value: string): string | null {

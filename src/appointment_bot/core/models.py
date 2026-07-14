@@ -125,6 +125,8 @@ class ServiceOrderSummary:
     payment_status: str | None
     amount_agreed: str | None
     amount_paid: str | None
+    whatsapp_message_status: str | None
+    whatsapp_message_sent_at: str | None
     parent_order_id: str | None
     program_expediente: str | None
     program_plate: str | None
@@ -133,6 +135,7 @@ class ServiceOrderSummary:
     closed_at: str | None
     minimum_reservation_hour: int | None
     minimum_reservation_date: str | None
+    maximum_reservation_date: str | None
     allowed_weekdays: tuple[int, ...] | None
     created_at: str
     updated_at: str

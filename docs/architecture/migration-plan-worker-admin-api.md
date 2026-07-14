@@ -365,7 +365,8 @@ Antes de mover modulos internos, cerrar las brechas que afectan al panel:
 - exponer en Angular los campos de suborden
   `parent_order_id`, `program_expediente` y `program_plate`;
 - exponer en Angular las reglas de reserva
-  `minimum_reservation_hour`, `minimum_reservation_date` y `allowed_weekdays`;
+  `minimum_reservation_hour`, `minimum_reservation_date`,
+  `maximum_reservation_date` y `allowed_weekdays`;
 - agregar una vista simple del resultado de comandos persistidos
   `worker_commands`, al menos para confirmar `pending`, `applied` y `failed`;
 - agregar endpoint y accion controlada para dividir una orden en subordenes por
@@ -386,7 +387,8 @@ Implementacion:
   documentada como compatibilidad con la API embebida;
 - Angular muestra `parent_order_id`, `program_expediente` y `program_plate`;
 - Angular permite crear ordenes con suborden y reglas de reserva:
-  `minimum_reservation_hour`, `minimum_reservation_date` y `allowed_weekdays`;
+  `minimum_reservation_hour`, `minimum_reservation_date`,
+  `maximum_reservation_date` y `allowed_weekdays`;
 - `GET /api/v1/worker/commands` devuelve comandos recientes sin
   `worker_owner_token`;
 - Angular muestra comandos recientes del worker con estado `pending`,

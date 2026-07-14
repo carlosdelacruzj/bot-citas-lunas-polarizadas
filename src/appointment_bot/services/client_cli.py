@@ -52,6 +52,7 @@ PREFERRED_ORDER_FIELDS = (
     "program_plate",
     "minimum_reservation_hour",
     "minimum_reservation_date",
+    "maximum_reservation_date",
     "allowed_weekdays",
 )
 
@@ -101,6 +102,10 @@ def _build_parser() -> argparse.ArgumentParser:
     order_add_parser.add_argument(
         "--minimum-reservation-date",
         help="Fecha minima permitida para reservar, en formato YYYY-MM-DD o DD/MM/YYYY.",
+    )
+    order_add_parser.add_argument(
+        "--maximum-reservation-date",
+        help="Fecha maxima permitida para reservar, en formato YYYY-MM-DD o DD/MM/YYYY.",
     )
     order_add_parser.add_argument(
         "--allowed-weekdays",
@@ -302,6 +307,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 charge_required=not args.no_charge,
                 minimum_reservation_hour=args.minimum_reservation_hour,
                 minimum_reservation_date=args.minimum_reservation_date,
+                maximum_reservation_date=args.maximum_reservation_date,
                 allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),
                 parent_order_id=args.parent_order_id,
                 program_expediente=args.program_expediente,

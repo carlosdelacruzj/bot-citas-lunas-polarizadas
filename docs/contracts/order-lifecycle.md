@@ -20,8 +20,9 @@ El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` ordenes y
 prioriza siempre las que no tienen restricciones. Si hay menos observadores
 libres que ese limite, completa la rotacion con ordenes restringidas. Una orden
 restringida puede detectar disponibilidad, pero antes de resolver CAPTCHA o
-enviar la reserva debe cumplir estrictamente `minimum_hour`, `minimum_date` y
-`allowed_weekdays`. Si el cupo no cumple, se registra como bloqueado por regla y
+enviar la reserva debe cumplir estrictamente `minimum_hour`, `minimum_date`,
+`maximum_date` y `allowed_weekdays`. Si el cupo no cumple, se registra como
+bloqueado por regla y
 no se intenta reservar.
 
 Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
@@ -52,6 +53,7 @@ cupo compatible y para validar el cupo antes de enviar reserva:
 
 - `minimum_hour`
 - `minimum_date`
+- `maximum_date`
 - `allowed_weekdays`
 
 Una cuenta puede tener varios tramites pendientes. En ese caso la orden
@@ -148,6 +150,19 @@ Estados internos adicionales:
   diferidas cuando vienen de la cola rapida, para no bloquear el inicio del
   siguiente intento. El mensaje copiable para el cliente debe mantenerse
   separado del mensaje operativo de contacto.
+- Al agotarse normalmente la cola rapida, el worker revisa en sesiones nuevas las
+  ordenes confirmadas en ese ciclo y actualiza su evidencia con la vista de nombres
+  y `Separa Cita Peritaje: Programado`. Esa captura reemplaza la imagen de la
+  notificacion diferida de Telegram; si la revision falla, se conserva la captura
+  original como respaldo. Es posprocesamiento: nunca se ejecuta entre intentos ni
+  cuando la cola se detuvo por pausa, limite, incertidumbre o error.
+- WhatsApp es un flujo asistido y no forma parte del camino critico de reserva.
+  Solo una reserva `confirmed` con orden `reserved_payment_pending`, pago pendiente,
+  monto, contacto internacional y constancia segura puede preparar confirmacion y
+  cobro.
+- Preparar o abrir el chat deja el mensaje en `prepared`. Solo la confirmacion
+  explicita del operador lo cambia a `sent`; ese cambio no marca el pago como
+  cobrado. Los paquetes `test_mode=true` no cambian ordenes, reservas ni pagos.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y
   estado pendiente para evitar doble envio.
 - Una orden bloqueada por regla propia puede quedar en espera o cooldown sin

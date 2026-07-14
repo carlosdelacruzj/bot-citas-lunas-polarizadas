@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from collections.abc import Iterable
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from psycopg import Connection
@@ -12,6 +13,9 @@ from appointment_bot.db.common import (
     _database_url,
     _now,
     _operation_connection,
+    _parse_allowed_weekdays,
+    _parse_maximum_reservation_date,
+    _parse_minimum_reservation_date,
     _settings,
     init_database,
 )
@@ -58,6 +62,50 @@ def update_service_order_priority(
         )
         if not cursor.rowcount:
             raise ValueError(f"Service order not found: {order_id}")
+
+
+def update_service_order_reservation_constraints(
+    order_id: str,
+    *,
+    minimum_reservation_hour: int | None,
+    minimum_reservation_date: str | date | None,
+    maximum_reservation_date: str | date | None,
+    allowed_weekdays: Iterable[int] | None,
+    settings: Settings | None = None,
+) -> None:
+    if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
+        raise ValueError("minimum_reservation_hour must be between 0 and 23.")
+    minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
+    maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
+    if minimum_date is not None and maximum_date is not None and maximum_date < minimum_date:
+        raise ValueError("maximum_reservation_date cannot be before minimum_reservation_date.")
+    weekdays = _parse_allowed_weekdays(allowed_weekdays)
+
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE service_orders
+            SET minimum_hour = %s,
+                minimum_date = %s,
+                maximum_date = %s,
+                allowed_weekdays = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_id = %s
+            """,
+            (minimum_reservation_hour, minimum_date, maximum_date, weekdays, order_id),
+        )
+        if not cursor.rowcount:
+            raise ValueError(f"Service order not found: {order_id}")
+        connection.execute(
+            """
+            UPDATE order_state
+            SET next_allowed_at = NULL
+            WHERE order_id = %s
+            """,
+            (order_id,),
+        )
 
 
 def claim_service_order(

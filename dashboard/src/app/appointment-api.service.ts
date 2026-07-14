@@ -46,6 +46,8 @@ export interface ServiceOrder {
   payment_status: string | null;
   amount_agreed: string | null;
   amount_paid: string | null;
+  whatsapp_message_status: string | null;
+  whatsapp_message_sent_at: string | null;
   parent_order_id: string | null;
   program_expediente: string | null;
   program_plate: string | null;
@@ -54,6 +56,7 @@ export interface ServiceOrder {
   closed_at: string | null;
   minimum_reservation_hour: number | null;
   minimum_reservation_date: string | null;
+  maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
   created_at: string;
   updated_at: string;
@@ -243,6 +246,8 @@ export interface ApiActionResponse {
   parent_order_id?: string;
   parent_archived?: boolean;
   service_orders?: ApiActionResponse[];
+  sent_at?: string | null;
+  test_mode?: boolean;
 }
 
 export interface ContactUpdatePayload {
@@ -255,9 +260,42 @@ export interface PriorityUpdatePayload {
   priority: number;
 }
 
+export interface ReservationRestrictionsUpdatePayload {
+  minimum_reservation_hour: number | null;
+  minimum_reservation_date: string | null;
+  maximum_reservation_date: string | null;
+  allowed_weekdays: number[] | null;
+}
+
 export interface PaymentPaidPayload {
   amount_paid: string;
   amount_agreed?: string | null;
+}
+
+export interface WhatsAppMessagePackage {
+  message_id: string;
+  order_id: string | null;
+  test_mode: boolean;
+  status: 'prepared' | 'sent';
+  recipient_phone: string;
+  recipient_phone_masked: string | null;
+  greeting: string;
+  evidence_caption: string;
+  payment_message: string;
+  whatsapp_url: string;
+  attachment_url: string;
+  payment_attachment_url: string;
+  prepared_at: string;
+  sent_at: string | null;
+}
+
+export interface WhatsAppWebDraftResponse {
+  status: 'login_required' | 'draft_ready' | 'web_unavailable';
+  message: string;
+  message_id: string | null;
+  manual_send_required: true;
+  sent: false;
+  draft_mode?: 'caption' | 'queued_text' | 'album';
 }
 
 export interface CloseServiceOrderPayload {
@@ -276,6 +314,7 @@ export interface CreateServiceOrderPayload {
   charge_required?: boolean;
   minimum_reservation_hour?: number | null;
   minimum_reservation_date?: string | null;
+  maximum_reservation_date?: string | null;
   allowed_weekdays?: number[] | null;
   parent_order_id?: string | null;
   program_expediente?: string | null;
@@ -416,6 +455,16 @@ export class AppointmentApiService {
     );
   }
 
+  async updateServiceOrderRestrictions(
+    orderId: string,
+    payload: ReservationRestrictionsUpdatePayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/restrictions`,
+      payload,
+    );
+  }
+
   async runServiceOrderAction(
     orderId: string,
     action: 'pause' | 'activate' | 'no-charge' | 'done',
@@ -444,6 +493,43 @@ export class AppointmentApiService {
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/paid`,
       payload,
     );
+  }
+
+  async prepareWhatsAppTest(recipientPhone: string): Promise<WhatsAppMessagePackage> {
+    return this.post<WhatsAppMessagePackage>('/api/v1/whatsapp-messages/test/prepare', {
+      recipient_phone: recipientPhone,
+    });
+  }
+
+  async prepareOrderWhatsApp(
+    orderId: string,
+    allowResend = false,
+  ): Promise<WhatsAppMessagePackage> {
+    return this.post<WhatsAppMessagePackage>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/whatsapp/prepare`,
+      { allow_resend: allowResend },
+    );
+  }
+
+  async markWhatsAppSent(messageId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/whatsapp-messages/${encodeURIComponent(messageId)}/sent`,
+      {},
+    );
+  }
+
+  async prepareWhatsAppWebDraft(
+    messageId: string,
+    draftKind: 'confirmation' | 'payment' | 'album',
+  ): Promise<WhatsAppWebDraftResponse> {
+    return this.post<WhatsAppWebDraftResponse>(
+      `/api/v1/whatsapp-messages/${encodeURIComponent(messageId)}/web/prepare`,
+      { draft_kind: draftKind },
+    );
+  }
+
+  async getWhatsAppAttachment(url: string): Promise<Blob> {
+    return firstValueFrom(this.http.get(url, { responseType: 'blob' }));
   }
 
   async createServiceOrder(payload: CreateServiceOrderPayload): Promise<ApiActionResponse> {

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Page
 
@@ -11,6 +13,7 @@ from appointment_bot.reservation_engine.appointment_fetch_probe import (
 )
 
 logger = logging.getLogger(__name__)
+LIMA_TZ = ZoneInfo("America/Lima")
 
 
 def read_appointment_availability(
@@ -117,6 +120,16 @@ def availability_result_from_snapshot(
         )
 
     if has_date_options and not has_hour_options:
+        if _only_non_actionable_dates(date_options):
+            details["blocked_by_current_day"] = True
+            return AvailabilityResult(
+                status="unavailable",
+                message=(
+                    "El portal solo muestra fechas del dia actual o anteriores "
+                    "sin una hora seleccionable."
+                ),
+                details=details,
+            )
         return AvailabilityResult(
             status="partial",
             message="Se detecto fecha disponible, pero aun no hay hora seleccionable.",
@@ -286,3 +299,17 @@ def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
         and normalized != "sin cupos"
         and not normalized.startswith("seleccione")
     )
+
+
+def _only_non_actionable_dates(options: list[str]) -> bool:
+    real_options = [option for option in options if _is_real_appointment_option(option)]
+    if not real_options:
+        return False
+    today = datetime.now(LIMA_TZ).date()
+    parsed_dates = []
+    for option in real_options:
+        try:
+            parsed_dates.append(datetime.strptime(option.strip(), "%d/%m/%Y").date())
+        except ValueError:
+            return False
+    return all(value <= today for value in parsed_dates)

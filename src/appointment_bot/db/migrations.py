@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 26
+SCHEMA_VERSION = 29
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -85,6 +85,7 @@ def create_current_schema(connection: Connection) -> None:
                 minimum_hour IS NULL OR (minimum_hour >= 0 AND minimum_hour <= 23)
             ),
             minimum_date date,
+            maximum_date date,
             allowed_weekdays smallint[] CHECK (
                 allowed_weekdays IS NULL OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
             ),
@@ -115,6 +116,9 @@ def create_current_schema(connection: Connection) -> None:
                 REFERENCES portal_accounts(portal_account_id, applicant_id) ON DELETE CASCADE,
             CONSTRAINT ck_service_orders_lease_pair CHECK (
                 (lease_owner IS NULL) = (lease_expires_at IS NULL)
+            ),
+            CONSTRAINT ck_service_orders_reservation_date_range CHECK (
+                maximum_date IS NULL OR minimum_date IS NULL OR maximum_date >= minimum_date
             )
         )
         """
@@ -297,6 +301,7 @@ def create_current_schema(connection: Connection) -> None:
     )
     _create_worker_commands_schema(connection)
     _create_finance_schema(connection)
+    _create_whatsapp_messages_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -319,6 +324,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "worker_commands",
         "finance_categories",
         "finance_entries",
+        "whatsapp_messages",
     }
     tables = {
         row["table_name"]
@@ -334,6 +340,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "status"),
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
+        ("service_orders", "maximum_date"),
         ("service_orders", "allowed_weekdays"),
         ("service_orders", "parent_order_id"),
         ("service_orders", "program_expediente"),
@@ -365,6 +372,13 @@ def _validate_current_schema(connection: Connection) -> None:
         ("finance_entries", "amount_original"),
         ("finance_entries", "amount_pen"),
         ("finance_entries", "status"),
+        ("whatsapp_messages", "message_id"),
+        ("whatsapp_messages", "recipient_phone"),
+        ("whatsapp_messages", "attachment_path"),
+        ("whatsapp_messages", "payment_attachment_path"),
+        ("whatsapp_messages", "status"),
+        ("whatsapp_messages", "test_mode"),
+        ("whatsapp_messages", "sent_at"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -385,6 +399,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "fk_payments_reservation_order",
         "ck_payments_paid_fields",
         "fk_worker_state_current_order",
+        "ck_whatsapp_messages_sent",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -419,6 +434,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_worker_commands_pending")
     if "idx_finance_entries_occurred" not in indexes:
         missing.append("idx_finance_entries_occurred")
+    if "idx_whatsapp_messages_order_prepared" not in indexes:
+        missing.append("idx_whatsapp_messages_order_prepared")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -634,6 +651,42 @@ def _create_finance_schema(connection: Connection) -> None:
     )
 
 
+def _create_whatsapp_messages_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS whatsapp_messages (
+            message_id text PRIMARY KEY,
+            order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            message_kind text NOT NULL CHECK (
+                message_kind IN ('test', 'reservation_confirmation_payment')
+            ),
+            recipient_phone text NOT NULL,
+            greeting text NOT NULL,
+            evidence_caption text NOT NULL,
+            payment_message text NOT NULL,
+            attachment_path text NOT NULL,
+            payment_attachment_path text,
+            status text NOT NULL DEFAULT 'prepared' CHECK (status IN ('prepared', 'sent')),
+            test_mode boolean NOT NULL DEFAULT false,
+            prepared_at timestamptz NOT NULL,
+            sent_at timestamptz,
+            created_at timestamptz NOT NULL,
+            updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_whatsapp_messages_sent CHECK (
+                (status = 'prepared' AND sent_at IS NULL)
+                OR (status = 'sent' AND sent_at IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_order_prepared
+        ON whatsapp_messages(order_id, prepared_at DESC)
+        """
+    )
+
+
 def migrate_database(connection: Connection) -> None:
     """Create the current schema or reject unsupported schema versions atomically."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (_MIGRATION_LOCK_ID,))
@@ -826,6 +879,45 @@ def migrate_database(connection: Connection) -> None:
         current_version = 25
     if current_version == 25:
         _create_finance_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (26,),
+        )
+        current_version = 26
+    if current_version == 26:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN maximum_date date
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD CONSTRAINT ck_service_orders_reservation_date_range CHECK (
+                maximum_date IS NULL OR minimum_date IS NULL OR maximum_date >= minimum_date
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (27,),
+        )
+        current_version = 27
+    if current_version == 27:
+        _create_whatsapp_messages_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (28,),
+        )
+        current_version = 28
+    if current_version == 28:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_messages
+            ADD COLUMN IF NOT EXISTS payment_attachment_path text
+            """
+        )
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (SCHEMA_VERSION,),

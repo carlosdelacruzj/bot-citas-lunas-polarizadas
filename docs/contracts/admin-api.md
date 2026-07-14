@@ -33,7 +33,14 @@ GET  /api/v1/monthly-summary?month=YYYY-MM
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/contact
 POST /api/v1/service-orders/{order_id}/priority
+POST /api/v1/service-orders/{order_id}/restrictions
 POST /api/v1/service-orders/{order_id}/payment/paid
+POST /api/v1/service-orders/{order_id}/whatsapp/prepare
+POST /api/v1/whatsapp-messages/test/prepare
+GET  /api/v1/whatsapp-messages/{message_id}/attachment
+GET  /api/v1/whatsapp-messages/{message_id}/payment-attachment
+POST /api/v1/whatsapp-messages/{message_id}/web/prepare
+POST /api/v1/whatsapp-messages/{message_id}/sent
 POST /api/v1/service-orders/{order_id}/pause
 POST /api/v1/service-orders/{order_id}/activate
 POST /api/v1/service-orders/{order_id}/done
@@ -125,6 +132,23 @@ consulta este endpoint al abrir la edicion y descarta el detalle al cerrarla.
 ```
 
 Los valores `0` a `99` ordenan la cola normal; `100` o más activan enfoque.
+
+`POST /api/v1/service-orders/{order_id}/restrictions` reemplaza el conjunto de
+restricciones de reserva de una orden:
+
+```json
+{
+  "minimum_reservation_hour": 11,
+  "minimum_reservation_date": "2026-08-01",
+  "maximum_reservation_date": "2026-08-31",
+  "allowed_weekdays": [1, 3, 6]
+}
+```
+
+Cada campo acepta `null` para quitar esa restricción. La fecha máxima es
+inclusiva y no puede ser anterior a la mínima; los días usan numeración ISO de
+`1=lunes` a `7=domingo`. Al guardar se limpia `next_allowed_at` para que una
+restricción corregida no quede bloqueada por una espera calculada previamente.
 La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.
@@ -176,6 +200,7 @@ flujos administrativos avanzados, pero no se solicitan al crear un cliente:
 - `charge_required`
 - `minimum_reservation_hour`
 - `minimum_reservation_date`
+- `maximum_reservation_date`
 - `allowed_weekdays`
 - `parent_order_id`
 - `program_expediente`
@@ -184,7 +209,8 @@ flujos administrativos avanzados, pero no se solicitan al crear un cliente:
 La respuesta no debe devolver password. El frontend no debe persistir el valor
 del password despues de enviarlo.
 
-Si no se envian `minimum_reservation_date` ni `allowed_weekdays`, la orden se
+Si no se envian `minimum_reservation_date`, `maximum_reservation_date` ni
+`allowed_weekdays`, la orden se
 crea sin restriccion de fecha. El dashboard no debe inventar restricciones.
 
 ## Subordenes y restricciones en Angular
@@ -201,6 +227,8 @@ forman parte del contrato:
 - `closed_at`: timestamp en que la orden dejo de estar activa.
 - `minimum_reservation_hour`: hora minima aceptable.
 - `minimum_reservation_date`: fecha minima aceptable.
+- `maximum_reservation_date`: fecha maxima aceptable, inclusive; no puede ser
+  anterior a `minimum_reservation_date`.
 - `allowed_weekdays`: dias ISO permitidos, `1=lunes` a `7=domingo`.
 
 Cada suborden debe tratarse como trabajo independiente para pausa, activacion,
@@ -217,6 +245,8 @@ campos o enviarlos como `null`. No debe inventar restricciones por defecto.
 - `no-charge` marca una orden sin cobro.
 - `close` archiva/cierra una orden con `closure_reason` y `closure_note`.
 - `payment/paid` registra cobro y monto.
+- `whatsapp/prepare` crea una copia inmutable del saludo, constancia principal y
+  cobro para una reserva confirmada; no envia nada por si mismo.
 - `worker/restart` solicita reinicio controlado del worker.
 - `manual-session/open` abre una sesion Playwright visible y local para una
   orden seleccionada cuando `MANUAL_SESSION_ENABLED=true`.
@@ -224,6 +254,48 @@ campos o enviarlos como `null`. No debe inventar restricciones por defecto.
   clara del backend.
 - El formulario de creacion envia el password solo en el POST; no debe quedar
   persistido en storage del navegador.
+
+## WhatsApp asistido sin API de Meta
+
+`POST /api/v1/whatsapp-messages/test/prepare` recibe `recipient_phone` en formato
+internacional con `+` y crea un paquete ficticio. No referencia ni modifica una
+orden real. Devuelve confirmacion, cobro de prueba, enlace `wa.me` y las URL
+autenticadas de la constancia y la imagen de pago.
+
+`POST /api/v1/service-orders/{order_id}/whatsapp/prepare` solo acepta una orden
+`reserved_payment_pending` con reserva `confirmed`, pago `pending`, monto acordado,
+cobro habilitado, contacto internacional y una constancia PNG segura. Si ya existe
+un envio confirmado, exige `{"allow_resend": true}` para preparar otra copia.
+
+Los endpoints `attachment` y `payment-attachment` entregan solamente las copias
+preparadas en `screenshots/whatsapp-outgoing/`, requieren autenticacion estricta y
+usan `Cache-Control: no-store`. El endpoint `sent` registra la confirmacion manual;
+abrir `wa.me`, copiar texto o descargar la imagen no cambia el estado ni el pago.
+El listado de ordenes expone solo `whatsapp_message_status` y
+`whatsapp_message_sent_at`; el telefono completo sigue limitado al detalle.
+
+`POST /api/v1/whatsapp-messages/{message_id}/web/prepare` es exclusivamente local
+y acepta `draft_kind` con `confirmation`, `payment` o `album`. Abre o reutiliza un perfil
+Playwright persistente en `.runtime/whatsapp-web-profile/` y prepara dos mensajes
+separados: constancia con saludo y detalle; despues QR con instrucciones y monto.
+Cada imagen lleva su propio pie. Nunca pulsa Enviar ni cambia el paquete a `sent`.
+La primera ejecucion puede devolver `login_required`; `draft_ready` solo significa
+que el borrador solicitado esta visible y pendiente de revision humana.
+
+El dashboard usa `album`: carga constancia y QR en una sola seleccion multiple,
+elige cada miniatura y escribe su texto individual. `draft_ready` solo se devuelve
+despues de volver a seleccionar ambas miniaturas y verificar sus descripciones. El
+boton `Enviar por WhatsApp` encadena la creacion del paquete y esta preparacion sin
+otro clic en el dashboard. Si la pagina o el contexto fueron cerrados, el backend
+abre una ventana nueva y reintenta una vez. El operador revisa el album y pulsa un
+unico `Enviar 2 seleccionados`.
+
+La imagen y los datos de cobro viven exclusivamente en
+`.runtime/whatsapp-payment/`. `payment-details.json` define `phone`,
+`account_name` e `image`; no se versiona. Al preparar el paquete se copia una
+instantanea de la imagen a `screenshots/whatsapp-outgoing/` y se registra en
+`payment_attachment_path`. El monto de produccion siempre procede del pago de la
+orden, no del archivo privado.
 
 ## Compatibilidad de proxy
 

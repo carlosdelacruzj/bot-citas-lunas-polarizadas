@@ -30,6 +30,7 @@ class ObserverOrderDecision:
     queue_requested: bool = False
     rapid_queue_initial_confirmed: int = 0
     confirmed_reservations: int = 0
+    confirmed_order_ids: tuple[str, ...] = ()
     follow_up_order_ids: tuple[str, ...] = ()
     reset_errors: bool = False
     requires_error_handling: bool = False
@@ -94,6 +95,7 @@ def handle_observer_order_report(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
             confirmed_reservations=1,
+            confirmed_order_ids=(order.order_id,),
             follow_up_order_ids=tuple(candidate.order_id for candidate in promoted_orders),
             reset_errors=True,
         )

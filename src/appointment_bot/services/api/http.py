@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hmac
 import json
+import mimetypes
 import os
 from http import HTTPStatus
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 from typing import Any
 
 MAX_JSON_BODY_BYTES = 64 * 1024
@@ -97,6 +99,23 @@ def send_json(
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def send_png(handler: BaseHTTPRequestHandler, path: Path) -> None:
+    send_image(handler, path)
+
+
+def send_image(handler: BaseHTTPRequestHandler, path: Path) -> None:
+    body = path.read_bytes()
+    handler.send_response(HTTPStatus.OK)
+    content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Disposition", f'inline; filename="{path.name}"')
     handler.send_header("Cache-Control", "no-store")
     handler.send_header("X-Content-Type-Options", "nosniff")
     handler.send_header("Content-Length", str(len(body)))

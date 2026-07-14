@@ -45,6 +45,12 @@ En Windows, el camino recomendado sigue siendo:
 scripts/start-worker.ps1
 ```
 
+En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
+ejecuta `scripts/start-worker-hidden.vbs` al iniciar sesion. Ese lanzador inicia
+el bootstrap del worker y `scripts/start-admin-dashboard.ps1` en segundo plano,
+por lo que el dashboard queda disponible sin abrir otra terminal. Ambos
+bootstraps supervisan y reinician sus respectivos procesos.
+
 ## Dashboard Angular
 
 Ejecucion local recomendada en dos procesos:

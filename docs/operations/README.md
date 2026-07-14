@@ -2,6 +2,19 @@
 
 ## Arranque recomendado
 
+En Windows, la tarea programada `AppointmentBotContinuousWorker` ejecuta
+`scripts/start-worker-hidden.vbs` al iniciar sesion. El lanzador levanta en
+segundo plano todo el entorno local:
+
+- Docker y PostgreSQL;
+- worker y API de salud en `127.0.0.1:8765`;
+- build Angular, admin API y dashboard en `127.0.0.1:8766`.
+
+El admin/dashboard se reinicia si su proceso termina. No hace falta abrir
+`npm start`: el admin API sirve directamente el build Angular.
+
+Para un arranque manual sin la tarea programada, usar dos terminales:
+
 Terminal 1:
 
 ```powershell
@@ -117,6 +130,60 @@ appointment-bot-client optimization-observation --start YYYY-MM-DD --end YYYY-MM
 Las salidas vigentes están en `reports/operations/latest.md` y
 `reports/optimization/latest.md`. Agregar `--notify` al reporte semanal solo
 cuando se desee enviar sus alertas por Telegram.
+
+## Prueba base y envio asistido por WhatsApp
+
+El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar WhatsApp`, ingresar
+el numero propio con codigo de pais (por ejemplo, `+51987654321`) y crear el
+paquete ficticio. La prueba usa una cita de demostracion, una constancia PNG y un
+cobro de S/ 40.00 sin tocar ordenes reales.
+
+En una orden real, `Enviar por WhatsApp` crea el paquete y prepara inmediatamente el
+album: carga constancia e imagen de pago, selecciona cada miniatura y coloca su texto
+individual. Comprobar destinatario, ambas imagenes y sus textos; despues pulsar una
+sola vez `Enviar 2 seleccionados`. No hay un segundo paso en el dashboard. Si la
+ventana local fue cerrada durante la preparacion, se vuelve a abrir y se reintenta
+una vez. En el primer uso se debe escanear el QR y repetir la preparacion.
+El perfil queda solo en `.runtime/whatsapp-web-profile/` y no se versiona.
+
+La configuracion privada del cobro se guarda en
+`.runtime/whatsapp-payment/payment-details.json` junto a la imagen indicada por el
+campo `image`. Nunca versionar ese directorio. El monto real se toma de PostgreSQL;
+el simulacro usa S/ 40.00. La alternativa copiar/pegar permanece cerrada y solo se
+muestra como respaldo cuando la preparacion automatica falla; incluye las dos
+imagenes y sus respectivos textos.
+
+Esta automatizacion local no es una integracion oficial de Meta. Usarla solo para
+mensajes transaccionales esperados, uno por uno, sin campanas ni reintentos
+agresivos. Un borrador nunca se considera enviado: cerrar la ventana o el asistente
+mantiene el paquete en `prepared`; solo `Confirmar envio realizado` lo cambia a
+`sent`.
+
+Para clientes reales, `Preparar WhatsApp` se habilita en una reserva confirmada con
+cobro pendiente. El sistema no agrega `51`: el contacto debe guardarse previamente
+en formato internacional. En el detalle de una orden pendiente aparecen juntas las
+acciones `Registrar pago` y `Enviar por WhatsApp`; esta ultima deja el album listo
+para el envio humano final. El texto de confirmacion usa el mismo formateador que
+Telegram. Preparar o confirmar el mensaje no registra el pago.
+
+## Revision diferida de reservas confirmadas
+
+Cuando una cola rapida termina normalmente porque ya no quedan ordenes con cupo, el
+worker vuelve a abrir, en una sesion Playwright nueva por cliente, cada orden que
+confirmo durante ese ciclo. Esta revision ocurre despues del ultimo intento y antes
+de enviar la evidencia diferida de confirmacion: no agrega espera entre reservas ni
+retrasa el siguiente cliente de la cola.
+
+La revision exige encontrar exactamente `Separa Cita Peritaje` en estado
+`Programado`. Entonces guarda un PNG nitido desde `Paterno`, `Materno` y `Nombres`
+hasta esa fila, y reemplaza la evidencia principal de la reserva por una copia
+estable apta para WhatsApp y por la imagen enviada en la secuencia de Telegram. Si
+la revision falla, Telegram conserva como respaldo la captura original del momento
+de confirmacion. No se pulsa ninguna accion de reserva.
+
+El repaso no se ejecuta si la cola termino por pausa, limite de reservas, resultado
+incierto o error tecnico. Un fallo individual de revision queda registrado con una
+captura de error y no cambia la reserva ya confirmada ni detiene las demas revisiones.
 
 ## Simulacro de backup/restore
 

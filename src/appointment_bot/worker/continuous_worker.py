@@ -83,6 +83,7 @@ class ContinuousWorker:
         self._shutdown_reason: str | None = None
         self._hot_window_extended_until: datetime | None = None
         self._rapid_queue_initial_confirmed = 0
+        self._rapid_queue_initial_confirmed_order_ids: set[str] = set()
         self._rapid_queue_follow_up_order_ids: set[str] = set()
         self._deferred_order_reports = DeferredOrderReports(settings)
         self._state_callbacks = WorkerStateCallbacks(
@@ -255,6 +256,7 @@ class ContinuousWorker:
         queue_requested = False
         try:
             self._rapid_queue_initial_confirmed = 0
+            self._rapid_queue_initial_confirmed_order_ids = set()
             self._rapid_queue_follow_up_order_ids = set()
             queue_requested = self._monitor_order(order)
         finally:
@@ -262,6 +264,7 @@ class ContinuousWorker:
         if queue_requested and self.settings.auto_reserve:
             self._run_rapid_queue(
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
+                initial_confirmed_order_ids=self._rapid_queue_initial_confirmed_order_ids,
                 follow_up_order_ids=self._rapid_queue_follow_up_order_ids,
             )
         self._flush_deferred_order_reports()
@@ -339,6 +342,7 @@ class ContinuousWorker:
         if decision.confirmed_reservations:
             self._increment_confirmed(decision.confirmed_reservations)
         self._rapid_queue_initial_confirmed = decision.rapid_queue_initial_confirmed
+        self._rapid_queue_initial_confirmed_order_ids = set(decision.confirmed_order_ids)
         self._rapid_queue_follow_up_order_ids = set(decision.follow_up_order_ids)
         if decision.requires_error_handling:
             self._handle_order_error(order, report)
@@ -377,6 +381,7 @@ class ContinuousWorker:
         self,
         *,
         initial_confirmed_reservations: int = 0,
+        initial_confirmed_order_ids: set[str] | None = None,
         skip_order_ids: set[str] | None = None,
         follow_up_order_ids: set[str] | None = None,
     ) -> None:
@@ -389,13 +394,23 @@ class ContinuousWorker:
         report = run_rapid_queue_with_settings(
             self.settings,
             initial_confirmed_reservations=initial_confirmed_reservations,
+            initial_confirmed_order_ids=initial_confirmed_order_ids,
             cancel_event=self._cancel_event,
             on_order_start=self._state_callbacks.on_rapid_order_start,
             on_check=self._state_callbacks.on_rapid_order_check,
+            on_post_review_start=lambda: self._update_state(
+                phase="post_reservation_review",
+                current_order_id=None,
+                masked_account=None,
+                session_started_at=None,
+            ),
             skip_order_ids=skip_order_ids,
             follow_up_order_ids=follow_up_order_ids,
         )
         confirmed = int((report.details or {}).get("confirmed_reservations", 0))
+        review_results = (report.details or {}).get("post_reservation_reviews")
+        if isinstance(review_results, list):
+            self._deferred_order_reports.replace_reviewed_evidence(review_results)
         if confirmed:
             self._increment_confirmed(confirmed)
         if report.status == "paused":

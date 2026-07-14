@@ -310,8 +310,8 @@
       <article class="panel">
         <div class="panel-header">
           <div>
-            <h2>Orden actual</h2>
-            <p>{{ worker()?.current_order_id ?? 'sin orden activa' }}</p>
+            <h2>Actividad actual</h2>
+            <p>{{ currentWorkLabel() }}</p>
           </div>
           <span class="badge {{ statusTone(worker()?.paused ? 'paused' : worker()?.phase) }}">
             {{ worker()?.paused ? 'pausado' : phaseLabel(worker()?.phase) }}
@@ -338,6 +338,25 @@
             <div>
               <dt>Pago</dt>
               <dd>{{ paymentLabel(order) }}</dd>
+            </div>
+          </dl>
+        } @else if (generalObserverActive()) {
+          <dl class="summary-list">
+            <div>
+              <dt>Modo</dt>
+              <dd>Monitoreo general</dd>
+            </div>
+            <div>
+              <dt>Cuenta</dt>
+              <dd>{{ worker()?.masked_account ?? 'cuenta protegida' }}</dd>
+            </div>
+            <div>
+              <dt>Alcance</dt>
+              <dd>Detecta cupos, pero no representa una orden de cliente.</dd>
+            </div>
+            <div>
+              <dt>Antes de reservar</dt>
+              <dd>El bot debe validar primero las restricciones de cada orden.</dd>
             </div>
           </dl>
         } @else {
@@ -568,7 +587,12 @@
           <h2>Ordenes</h2>
           <p>{{ filteredOrders().length }} visibles de {{ orders().length }} cargadas</p>
         </div>
-        <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
+        <div class="panel-actions">
+          <button type="button" class="secondary" (click)="openWhatsAppTest()">
+            Probar WhatsApp
+          </button>
+          <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
+        </div>
       </div>
 
       @if (orderPanelOpen()) {
@@ -601,14 +625,30 @@
             <span>Siguiente accion valida</span>
             <strong>{{ orderNextAction().label }}</strong>
             <small>{{ orderNextAction().description }}</small>
-            <button
-              type="button"
-              class="primary"
-              [disabled]="orderNextAction().disabled || actionBusy()"
-              (click)="runNextOrderAction()"
-            >
-              {{ orderNextAction().label }}
-            </button>
+            <div class="next-action-buttons">
+              <button
+                type="button"
+                class="primary"
+                [disabled]="orderNextAction().disabled || actionBusy()"
+                (click)="runNextOrderAction()"
+              >
+                {{ orderNextAction().label }}
+              </button>
+              @if (order.payment_status === 'pending') {
+                <button
+                  type="button"
+                  class="whatsapp-action"
+                  [disabled]="!canPrepareOrderWhatsApp(order) || actionBusy()"
+                  [title]="whatsappPreparationHint(order)"
+                  (click)="openOrderWhatsApp(order)"
+                >
+                  {{ order.whatsapp_message_status === 'sent' ? 'Reenviar WhatsApp' : 'Enviar por WhatsApp' }}
+                </button>
+              }
+            </div>
+            @if (order.payment_status === 'pending') {
+              <small>{{ whatsappPreparationHint(order) }}</small>
+            }
           </div>
 
           <div class="drawer-quick-actions" aria-label="Acciones rápidas de la orden">
@@ -670,15 +710,12 @@
                   <dd>{{ priorityExplanation(order) }}</dd>
                 </div>
                 <div>
-                  <dt>Desde</dt>
-                  <dd>{{ formatDate(order.minimum_reservation_date, 'cualquier fecha') }}</dd>
+                  <dt>Días permitidos</dt>
+                  <dd>{{ restrictionDaysLabel(order) }}</dd>
                 </div>
                 <div>
-                  <dt>Hora y dias</dt>
-                  <dd>
-                    {{ formatTime(order.minimum_reservation_hour, 'cualquier hora') }} ·
-                    {{ order.allowed_weekdays?.join(', ') ?? 'todos' }}
-                  </dd>
+                  <dt>Fecha y hora</dt>
+                  <dd>{{ restrictionTimingLabel(order) }}</dd>
                 </div>
               </dl>
               <div class="priority-presets">
@@ -726,6 +763,15 @@
                 <div>
                   <dt>Pago</dt>
                   <dd>{{ paymentLabel(order) }} {{ paymentAmountLabel(order) }}</dd>
+                </div>
+                <div>
+                  <dt>WhatsApp cliente</dt>
+                  <dd>
+                    {{ order.whatsapp_message_status ?? 'sin preparar' }}
+                    @if (order.whatsapp_message_sent_at) {
+                      · {{ formatDateTime(order.whatsapp_message_sent_at) }}
+                    }
+                  </dd>
                 </div>
                 <div>
                   <dt>Cierre</dt>
@@ -852,6 +898,7 @@
                   Pago {{ sortIndicator('payment') }}
                 </button>
               </th>
+              <th>Restricción</th>
               <th>Acción</th>
             </tr>
           </thead>
@@ -885,6 +932,21 @@
                   {{ paymentLabel(order) }}
                   <span>{{ paymentAmountLabel(order) }}</span>
                 </td>
+                <td data-label="Restricción" class="restriction-cell">
+                  <div
+                    class="restriction-summary"
+                    [class.unrestricted]="!hasReservationRestrictions(order)"
+                  >
+                    <strong>
+                      {{
+                        hasReservationRestrictions(order)
+                          ? restrictionDaysLabel(order)
+                          : 'Sin restricciones'
+                      }}
+                    </strong>
+                    <span>{{ restrictionTimingLabel(order) }}</span>
+                  </div>
+                </td>
                 <td data-label="Acciones">
                   <div class="row-actions">
                     <button
@@ -900,7 +962,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="empty">No hay órdenes para mostrar.</td>
+                <td colspan="6" class="empty">No hay órdenes para mostrar.</td>
               </tr>
             }
           </tbody>
@@ -1108,6 +1170,128 @@
     </section>
   }
 
+  @if (activeModal() === 'whatsapp') {
+    <section class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="whatsapp-title">
+      <div class="modal wide-modal whatsapp-modal">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Envío asistido sin API</p>
+            <h2 id="whatsapp-title">
+              {{ whatsappTestMode() ? 'Prueba base de WhatsApp' : 'Confirmación y cobro' }}
+            </h2>
+            <p>WhatsApp nunca se considera enviado hasta que lo confirmes manualmente.</p>
+          </div>
+          <button type="button" class="icon-button" data-modal-initial-focus [disabled]="actionBusy()" (click)="closeModal()">
+            Cerrar
+          </button>
+        </div>
+
+        @if (whatsappTestMode() && !whatsappPackage()) {
+          <section class="admin-block whatsapp-test-form">
+            <h3>1. Indica tu propio número</h3>
+            <label>
+              WhatsApp internacional
+              <input
+                name="whatsappTestRecipient"
+                type="tel"
+                placeholder="+51987654321"
+                [ngModel]="whatsappTestRecipient()"
+                (ngModelChange)="whatsappTestRecipient.set($event)"
+              />
+            </label>
+            <p class="muted">
+              Se usarán datos ficticios, una constancia de demostración y S/ 40.00. No se
+              modificará ninguna orden.
+            </p>
+            <button type="button" class="primary" [disabled]="whatsappPackageLoading()" (click)="prepareWhatsAppTest()">
+              {{ whatsappPackageLoading() ? 'Preparando...' : 'Crear paquete de prueba' }}
+            </button>
+          </section>
+        }
+
+        @if (whatsappPackageLoading() && !whatsappPackage()) {
+          <p class="empty">Preparando textos y constancia...</p>
+        }
+
+        @if (whatsappPackage(); as message) {
+          <section class="whatsapp-package-summary">
+            <div>
+              <span>Destino</span>
+              <strong>{{ message.recipient_phone }}</strong>
+              <small>{{ message.test_mode ? 'prueba ficticia' : message.order_id }}</small>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong class="badge {{ statusTone(message.status) }}">{{ message.status }}</strong>
+              <small>{{ formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            </div>
+          </section>
+
+          <section class="admin-block whatsapp-web-preparation">
+            <p class="eyebrow">Preparación automática · WhatsApp Web local</p>
+            <h3>Constancia y cobro en un solo álbum</h3>
+            <p>
+              El sistema carga las dos imágenes y coloca un texto distinto en cada una.
+              En WhatsApp solo debes revisar el destinatario y pulsar Enviar una vez.
+            </p>
+            <button
+              type="button"
+              class="primary whatsapp-action"
+              [disabled]="whatsappWebBusy() || message.status === 'sent'"
+              (click)="prepareWhatsAppWebDraft()"
+            >
+              {{ whatsappWebBusy() ? 'Preparando WhatsApp Web...' : 'Reintentar preparación automática' }}
+            </button>
+            @if (whatsappWebResult(); as webResult) {
+              <p class="whatsapp-web-status" [class.ready]="webResult.status === 'draft_ready'">
+                {{ webResult.message }}
+              </p>
+            }
+          </section>
+
+          <details class="manual-fallback" [open]="whatsappManualFallbackOpen()">
+            <summary>Respaldo manual si WhatsApp Web no pudo prepararse</summary>
+          <div class="whatsapp-steps">
+            <article class="whatsapp-step">
+              <span class="step-number">1</span>
+              <h3>Constancia y confirmación</h3>
+              <img [src]="message.attachment_url" alt="Constancia preparada para WhatsApp" />
+              <textarea readonly [value]="message.greeting"></textarea>
+              <div class="modal-actions">
+                <a class="button-link whatsapp-action" [href]="message.whatsapp_url" target="_blank" rel="noreferrer">Abrir WhatsApp</a>
+                <button type="button" class="primary" (click)="copyWhatsAppAttachment()">Copiar constancia</button>
+                <a class="button-link secondary" [href]="message.attachment_url" download>Descargar constancia</a>
+                <button type="button" class="secondary" (click)="copyWhatsAppText(message.greeting, 'confirmación')">Copiar texto</button>
+              </div>
+            </article>
+
+            <article class="whatsapp-step">
+              <span class="step-number">2</span>
+              <h3>Imagen y mensaje de cobro</h3>
+              <img [src]="message.payment_attachment_url" alt="Imagen de pago preparada para WhatsApp" />
+              <textarea readonly [value]="message.payment_message"></textarea>
+              <div class="modal-actions">
+                <a class="button-link secondary" [href]="message.payment_attachment_url" download>Descargar imagen de pago</a>
+                <button type="button" class="secondary" (click)="copyWhatsAppText(message.payment_message, 'cobro')">Copiar cobro</button>
+              </div>
+            </article>
+          </div>
+          </details>
+
+          <section class="whatsapp-confirmation">
+            <p>
+              Preparar el borrador no registra un envio. Confirma solo despues de revisar el chat
+              correcto y pulsar Enviar manualmente en WhatsApp.
+            </p>
+            <button type="button" class="primary" [disabled]="message.status === 'sent' || actionBusy()" (click)="confirmWhatsAppSent()">
+              {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío realizado' }}
+            </button>
+          </section>
+        }
+      </div>
+    </section>
+  }
+
   @if (activeModal() === 'edit-order') {
     @if (modalOrder(); as order) {
       <section
@@ -1241,6 +1425,78 @@
                 (click)="requestMarkPaid()"
               >
                 Continuar para confirmar pago
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Restricciones de reserva</h3>
+              <div class="form-grid">
+                <label>
+                  Buscar desde
+                  <input
+                    name="modalMinimumReservationDate"
+                    type="date"
+                    [disabled]="isClosedOrder(order)"
+                    [ngModel]="orderMinimumReservationDate()"
+                    (ngModelChange)="editField(orderMinimumReservationDate, $event)"
+                  />
+                </label>
+                <label>
+                  Buscar hasta
+                  <input
+                    name="modalMaximumReservationDate"
+                    type="date"
+                    [disabled]="isClosedOrder(order)"
+                    [min]="orderMinimumReservationDate() || null"
+                    [ngModel]="orderMaximumReservationDate()"
+                    (ngModelChange)="editField(orderMaximumReservationDate, $event)"
+                  />
+                  <small>La fecha final también se incluye.</small>
+                </label>
+                <label>
+                  Hora mínima
+                  <input
+                    name="modalMinimumReservationHour"
+                    type="number"
+                    min="0"
+                    max="23"
+                    step="1"
+                    placeholder="Sin límite"
+                    [disabled]="isClosedOrder(order)"
+                    [ngModel]="orderMinimumReservationHour()"
+                    (ngModelChange)="editField(orderMinimumReservationHour, $event)"
+                  />
+                </label>
+                <label>
+                  Días permitidos
+                  <select
+                    name="modalAllowedWeekdays"
+                    multiple
+                    [disabled]="isClosedOrder(order)"
+                    [ngModel]="orderAllowedWeekdays()"
+                    (ngModelChange)="editField(orderAllowedWeekdays, $event)"
+                  >
+                    <option [ngValue]="1">Lunes</option>
+                    <option [ngValue]="2">Martes</option>
+                    <option [ngValue]="3">Miércoles</option>
+                    <option [ngValue]="4">Jueves</option>
+                    <option [ngValue]="5">Viernes</option>
+                    <option [ngValue]="6">Sábado</option>
+                    <option [ngValue]="7">Domingo</option>
+                  </select>
+                </label>
+              </div>
+              <p class="muted">
+                Deja un campo vacío para quitar esa restricción. Los cambios se aplican en la
+                siguiente selección de la cola.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="isClosedOrder(order)"
+                (click)="requestReservationRestrictionsUpdate()"
+              >
+                Continuar para guardar restricciones
               </button>
             </section>
 
@@ -1441,7 +1697,7 @@
 
         <div class="form-grid wide">
           <label>
-            Usuario o documento <span aria-hidden="true">*</span>
+            Usuario o documento <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="newDocumentNumber"
               type="text"
@@ -1454,7 +1710,7 @@
             />
           </label>
           <label>
-            Contraseña <span aria-hidden="true">*</span>
+            Contraseña <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="newPassword"
               type="password"
@@ -1467,7 +1723,7 @@
             />
           </label>
           <label>
-            Persona de contacto <span aria-hidden="true">*</span>
+            Persona de contacto <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="newContactName"
               type="text"
@@ -1488,7 +1744,7 @@
             />
           </label>
           <label>
-            Fuente <span aria-hidden="true">*</span>
+            Fuente <span class="required-marker" aria-hidden="true">*</span>
             <select
               name="newContactSource"
               required
@@ -1504,7 +1760,9 @@
             </select>
           </label>
         </div>
-        <p id="create-required-help" class="muted">Los campos marcados con * son obligatorios.</p>
+        <p id="create-required-help" class="required-help">
+          Los campos marcados con * son obligatorios.
+        </p>
 
         <fieldset class="restriction-fields">
           <legend>Restricción de fechas (opcional)</legend>
@@ -1518,6 +1776,17 @@
                 [ngModel]="newMinimumReservationDate()"
                 (ngModelChange)="editField(newMinimumReservationDate, $event)"
               />
+            </label>
+            <label>
+              Buscar hasta
+              <input
+                name="newMaximumReservationDate"
+                type="date"
+                [min]="newMinimumReservationDate() || null"
+                [ngModel]="newMaximumReservationDate()"
+                (ngModelChange)="editField(newMaximumReservationDate, $event)"
+              />
+              <small>La fecha final también se incluye.</small>
             </label>
             <label>
               Días permitidos
@@ -1574,9 +1843,13 @@
           </button>
         </div>
 
+        <p id="finance-required-help" class="required-help">
+          Los campos marcados con * son obligatorios.
+        </p>
+
         <div class="form-grid wide finance-form">
           <label>
-            Fecha <span aria-hidden="true">*</span>
+            Fecha <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="financeOccurredOn"
               type="date"
@@ -1586,7 +1859,7 @@
             />
           </label>
           <label>
-            Tipo <span aria-hidden="true">*</span>
+            Tipo <span class="required-marker" aria-hidden="true">*</span>
             <select
               name="financeEntryKind"
               required
@@ -1600,7 +1873,7 @@
             </select>
           </label>
           <label>
-            Categoría <span aria-hidden="true">*</span>
+            Categoría <span class="required-marker" aria-hidden="true">*</span>
             <select
               name="financeCategoryCode"
               required
@@ -1625,7 +1898,7 @@
             </select>
           </label>
           <label class="finance-description-field">
-            Descripción <span aria-hidden="true">*</span>
+            Descripción <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="financeDescription"
               type="text"
@@ -1645,7 +1918,7 @@
             />
           </label>
           <label>
-            Importe original <span aria-hidden="true">*</span>
+            Importe original <span class="required-marker" aria-hidden="true">*</span>
             <input
               name="financeAmountOriginal"
               type="number"
@@ -1657,7 +1930,7 @@
             />
           </label>
           <label>
-            Moneda <span aria-hidden="true">*</span>
+            Moneda <span class="required-marker" aria-hidden="true">*</span>
             <select
               name="financeCurrency"
               [ngModel]="financeCurrency()"
@@ -1801,8 +2074,8 @@
             </dd>
           </div>
           <div>
-            <dt>Orden actual</dt>
-            <dd>{{ worker()?.current_order_id ?? 'sin orden activa' }}</dd>
+            <dt>Actividad actual</dt>
+            <dd>{{ currentWorkLabel() }}</dd>
           </div>
         </dl>
         <div class="modal-actions">

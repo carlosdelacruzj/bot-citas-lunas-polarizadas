@@ -398,6 +398,7 @@ td span {
 }
 
 .drawer-quick-actions,
+.next-action-buttons,
 .priority-presets {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -523,6 +524,27 @@ td span {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.form-grid label {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  column-gap: 4px;
+  row-gap: 6px;
+}
+
+.form-grid label > :is(input, select, textarea, small) {
+  grid-column: 1 / -1;
+}
+
+.required-marker {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  justify-self: start;
+  color: #b42318;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 .form-grid.wide {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -632,7 +654,7 @@ td {
 }
 
 .order-table :is(th, td):first-child {
-  width: 34%;
+  width: 27%;
 }
 
 .order-table :is(th, td):not(:first-child) {
@@ -640,7 +662,13 @@ td {
 }
 
 .order-table :is(th, td):last-child {
-  width: 170px;
+  width: 150px;
+}
+
+.order-table .restriction-cell {
+  width: 22%;
+  min-width: 170px;
+  text-align: left;
 }
 
 .order-table .sort-header {
@@ -850,6 +878,19 @@ td span {
   margin-bottom: 14px;
 }
 
+.modal-header > div {
+  min-width: 0;
+}
+
+.modal-header :is(h2, p) {
+  overflow-wrap: anywhere;
+}
+
+.modal-header .icon-button {
+  width: auto;
+  justify-self: end;
+}
+
 .modal-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-content: end;
@@ -926,6 +967,7 @@ td span {
   .modal-grid,
   .modal-actions-grid,
   .drawer-quick-actions,
+  .next-action-buttons,
   .priority-presets {
     grid-template-columns: 1fr;
   }
@@ -992,15 +1034,23 @@ td span {
   }
 
   .responsive-table td {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 10px;
+    position: relative;
+    display: block;
+    min-height: 36px;
     border: 0;
-    padding: 8px 0;
+    padding: 8px 0 8px 102px;
   }
 
   .order-table :is(th, td) {
     width: auto;
+    text-align: left;
+  }
+
+  .order-table :is(th, td):first-child,
+  .order-table :is(th, td):last-child,
+  .order-table .restriction-cell {
+    width: 100%;
+    min-width: 0;
     text-align: left;
   }
 
@@ -1014,6 +1064,10 @@ td span {
 
   .responsive-table td::before {
     content: attr(data-label);
+    position: absolute;
+    top: 8px;
+    left: 0;
+    width: 92px;
     color: #65737d;
     font-size: 0.78rem;
     font-weight: 850;

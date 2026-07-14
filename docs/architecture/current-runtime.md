@@ -12,7 +12,12 @@ compatibilidad, no como lista de trabajo futuro.
 - `scripts/start-worker.ps1` levanta Docker/PostgreSQL y ejecuta el host continuo.
 - `scripts/start-admin-dashboard.ps1` construye Angular y levanta el admin API
   que sirve el dashboard.
-- `scripts/start-worker-hidden.vbs` inicia el bootstrap de Windows sin ventana.
+- `scripts/start-worker-hidden.vbs` inicia sin ventanas los bootstraps del
+  worker y del admin/dashboard; la tarea programada de Windows lo ejecuta al
+  iniciar sesion.
+- El build Angular de produccion conserva la hoja de estilos como recurso
+  externo normal (`inlineCritical=false`) para cumplir la politica CSP del admin
+  API sin depender de eventos inline bloqueados por el navegador.
 
 ## Proceso actual
 

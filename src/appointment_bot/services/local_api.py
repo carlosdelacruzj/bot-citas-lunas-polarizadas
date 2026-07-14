@@ -21,7 +21,9 @@ from appointment_bot.services.api.http import (
     error_payload,
     read_json,
     require_authorized,
+    send_image,
     send_json,
+    send_png,
 )
 from appointment_bot.services.api.manual_session_routes import (
     close_manual_session_payload,
@@ -42,10 +44,22 @@ from appointment_bot.services.api.service_order_routes import (
     service_order_close_path,
     service_order_contact_path,
     service_order_priority_path,
+    service_order_restrictions_path,
     service_order_split_programs_path,
     split_service_order_programs_payload,
     update_service_order_contact_payload,
     update_service_order_priority_payload,
+    update_service_order_restrictions_payload,
+)
+from appointment_bot.services.api.whatsapp_routes import (
+    attachment_payload,
+    mark_sent_payload,
+    order_prepare_path,
+    payment_attachment_payload,
+    prepare_order_payload,
+    prepare_test_payload,
+    prepare_web_payload,
+    whatsapp_message_path,
 )
 from appointment_bot.services.api.worker_routes import (
     enqueue_worker_command_payload,
@@ -128,6 +142,28 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
 
+        attachment_message_id = whatsapp_message_path(path, "attachment")
+        if attachment_message_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = attachment_payload(attachment_message_id)
+            if isinstance(payload, dict):
+                self._send_json(status, payload)
+            else:
+                send_png(self, payload)
+            return
+
+        payment_attachment_message_id = whatsapp_message_path(path, "payment-attachment")
+        if payment_attachment_message_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = payment_attachment_payload(payment_attachment_message_id)
+            if isinstance(payload, dict):
+                self._send_json(status, payload)
+            else:
+                send_image(self, payload)
+            return
+
         if path.startswith("/api/v1/service-orders/"):
             if not self._require_authorized(strict=True):
                 return
@@ -178,6 +214,42 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
 
+        if path == "/api/v1/whatsapp-messages/test/prepare":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = prepare_test_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        whatsapp_order_id = order_prepare_path(path)
+        if whatsapp_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = prepare_order_payload(whatsapp_order_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        whatsapp_message_id = whatsapp_message_path(path, "sent")
+        if whatsapp_message_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = mark_sent_payload(whatsapp_message_id)
+            self._send_json(status, payload)
+            return
+
+        whatsapp_web_message_id = whatsapp_message_path(path, "web/prepare")
+        if whatsapp_web_message_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = prepare_web_payload(
+                whatsapp_web_message_id,
+                payload=self._read_json(),
+                server_host=str(self.server.server_address[0]),
+                client_host=str(self.client_address[0]),
+            )
+            self._send_json(status, payload)
+            return
+
         if path == "/api/v1/finance/entries":
             if not self._require_authorized(strict=True):
                 return
@@ -218,6 +290,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_service_order_priority_payload(
                 priority_order_id,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
+
+        restrictions_order_id = service_order_restrictions_path(path)
+        if restrictions_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_service_order_restrictions_payload(
+                restrictions_order_id,
                 self._read_json(),
             )
             self._send_json(status, payload)

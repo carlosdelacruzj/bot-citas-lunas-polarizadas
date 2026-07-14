@@ -25,6 +25,8 @@ ARTIFACT_LABEL_ALIASES = {
     "03-modal-reserva-citas-resultado-desconocido": "resultado",
     "04-reserva-captcha-tecnico-2captcha": "captcha",
     "07-detalle-tramite-etapa-programado-confirmada": "programado",
+    "post-queue-programado-review": "programado-final",
+    "post-queue-review-error": "revision-error",
     "error-flujo-principal": "error",
     "observer-cupo-disponible": "observer-cupo",
 }
@@ -198,6 +200,81 @@ def save_screenshot(page: Page, settings: Settings, label: str) -> Path | None:
         return path
     except PlaywrightError as exc:
         logger.warning("Could not save screenshot %s: %s", path, exc)
+        return None
+
+
+def save_programmed_review_screenshot(page: Page, settings: Settings) -> Path | None:
+    path = _artifact_path(settings, "post-queue-programado-review")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        viewport = page.viewport_size
+        if viewport is not None and viewport["height"] < 1_100:
+            page.set_viewport_size({"width": viewport["width"], "height": 1_100})
+            page.wait_for_timeout(250)
+        clip = page.evaluate(
+            """() => {
+                const wanted = new Set(["paterno", "materno", "nombres"]);
+                const labels = Array.from(document.querySelectorAll("body *"))
+                    .filter(element => {
+                        if (element.children.length) return false;
+                        return wanted.has((element.textContent || "").trim().toLowerCase());
+                    });
+                const stageLabel = Array.from(document.querySelectorAll("body *"))
+                    .find(element => {
+                        if (element.children.length) return false;
+                        return (element.textContent || "").trim().toLowerCase()
+                            === "separa cita peritaje";
+                    });
+                const stageRow = stageLabel?.closest("tr") || stageLabel?.parentElement;
+                const stages = stageRow?.closest("table");
+                if (labels.length !== 3 || !stageRow || !stages) return null;
+                const labelRects = labels.map(element => element.getBoundingClientRect());
+                const labelTop = Math.min(...labelRects.map(rect => rect.top));
+                const labelBottom = Math.max(...labelRects.map(rect => rect.bottom));
+                const controls = Array.from(document.querySelectorAll("input"))
+                    .filter(element => {
+                        const rect = element.getBoundingClientRect();
+                        return rect.width > 0
+                            && rect.top >= labelTop
+                            && rect.top <= labelBottom + 120;
+                    });
+                const identityValues = controls.map(element => (element.value || "").trim());
+                if (identityValues.length < 3 || identityValues.some(value => !value)) return null;
+                const stageText = (stageRow.textContent || "").toLowerCase();
+                if (!stageText.includes("programado")) return null;
+                const rects = [...labels, ...controls]
+                    .map(element => element.getBoundingClientRect())
+                    .filter(rect => rect.width > 0 && rect.height > 0);
+                if (!rects.length) return null;
+                const tableRect = stages.getBoundingClientRect();
+                const stageRowRect = stageRow.getBoundingClientRect();
+                const margin = 24;
+                const left = Math.max(
+                    0,
+                    Math.min(tableRect.left, ...rects.map(rect => rect.left)) - margin
+                );
+                const top = Math.max(0, Math.min(...rects.map(rect => rect.top)) - margin);
+                const right = Math.min(
+                    document.documentElement.clientWidth,
+                    Math.max(tableRect.right, ...rects.map(rect => rect.right)) + margin
+                );
+                const bottom = stageRowRect.bottom + 4;
+                return {
+                    x: left + window.scrollX,
+                    y: top + window.scrollY,
+                    width: right - left,
+                    height: bottom - top
+                };
+            }"""
+        )
+        if not clip:
+            logger.warning("Could not determine identity-to-programmed-stage screenshot region")
+            return None
+        page.screenshot(path=str(path), clip=clip)
+        logger.info("Saved programmed review screenshot: %s", path)
+        return path
+    except PlaywrightError as exc:
+        logger.warning("Could not save programmed review screenshot %s: %s", path, exc)
         return None
 
 
