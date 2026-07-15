@@ -589,7 +589,7 @@
         </div>
         <div class="panel-actions">
           <button type="button" class="secondary" (click)="openWhatsAppTest()">
-            Probar WhatsApp
+            Probar post-pago
           </button>
           <button type="button" class="primary" (click)="openCreateOrder()">Nueva orden</button>
         </div>
@@ -644,10 +644,22 @@
                 >
                   {{ order.whatsapp_message_status === 'sent' ? 'Reenviar WhatsApp' : 'Enviar por WhatsApp' }}
                 </button>
+              } @else if (order.payment_status === 'paid') {
+                <button
+                  type="button"
+                  class="whatsapp-action"
+                  [disabled]="!canPreparePostPaymentWhatsApp(order) || actionBusy()"
+                  [title]="postPaymentWhatsAppHint(order)"
+                  (click)="openPostPaymentWhatsApp(order)"
+                >
+                  Enviar post-pago
+                </button>
               }
             </div>
             @if (order.payment_status === 'pending') {
               <small>{{ whatsappPreparationHint(order) }}</small>
+            } @else if (order.payment_status === 'paid') {
+              <small>{{ postPaymentWhatsAppHint(order) }}</small>
             }
           </div>
 
@@ -1177,7 +1189,7 @@
           <div>
             <p class="eyebrow">Envío asistido sin API</p>
             <h2 id="whatsapp-title">
-              {{ whatsappTestMode() ? 'Prueba base de WhatsApp' : 'Confirmación y cobro' }}
+              {{ whatsappTestMode() ? 'Prueba post-pago' : (whatsappFollowUpMode() ? 'Seguimiento post-pago' : 'Confirmación y cobro') }}
             </h2>
             <p>WhatsApp nunca se considera enviado hasta que lo confirmes manualmente.</p>
           </div>
@@ -1186,9 +1198,9 @@
           </button>
         </div>
 
-        @if (whatsappTestMode() && !whatsappPackage()) {
+        @if (whatsappTestMode() && !whatsappPackage() && !whatsappFollowUpPackage()) {
           <section class="admin-block whatsapp-test-form">
-            <h3>1. Indica tu propio número</h3>
+            <h3>Indica tu propio número</h3>
             <label>
               WhatsApp internacional
               <input
@@ -1200,17 +1212,67 @@
               />
             </label>
             <p class="muted">
-              Se usarán datos ficticios, una constancia de demostración y S/ 40.00. No se
-              modificará ninguna orden.
+              Se usarán datos ficticios y los PDFs configurados para probar el mensaje post-pago.
+              No se modificará ninguna orden.
             </p>
-            <button type="button" class="primary" [disabled]="whatsappPackageLoading()" (click)="prepareWhatsAppTest()">
-              {{ whatsappPackageLoading() ? 'Preparando...' : 'Crear paquete de prueba' }}
+            <button type="button" class="primary" [disabled]="whatsappFollowUpLoading()" (click)="prepareWhatsAppTest()">
+              {{ whatsappFollowUpLoading() ? 'Preparando...' : 'Crear prueba post-pago' }}
             </button>
           </section>
         }
 
         @if (whatsappPackageLoading() && !whatsappPackage()) {
           <p class="empty">Preparando textos y constancia...</p>
+        }
+
+        @if (whatsappFollowUpLoading() && !whatsappFollowUpPackage()) {
+          <p class="empty">Preparando mensajes post-pago...</p>
+        }
+
+        @if (whatsappFollowUpPackage(); as message) {
+          <section class="whatsapp-package-summary">
+            <div>
+              <span>Destino</span>
+              <strong>{{ message.recipient_phone }}</strong>
+              <small>{{ message.order_id }}</small>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong class="badge {{ statusTone(message.status) }}">{{ message.status }}</strong>
+              <small>{{ formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            </div>
+          </section>
+
+          <section class="admin-block whatsapp-web-preparation">
+            <p class="eyebrow">Preparación automática · WhatsApp Web local</p>
+            <h3>PDFs y texto post-pago en un solo envío</h3>
+            <p>
+              El sistema adjunta los PDFs, consolida las indicaciones, envía el paquete y cierra WhatsApp
+              cuando termina.
+            </p>
+            <button
+              type="button"
+              class="primary whatsapp-action"
+              [disabled]="whatsappWebBusy() || message.status === 'sent'"
+              (click)="prepareWhatsAppFollowUpWebDraft()"
+            >
+              {{ whatsappWebBusy() ? 'Enviando por WhatsApp...' : 'Enviar automáticamente' }}
+            </button>
+            @if (whatsappWebResult(); as webResult) {
+              <p class="whatsapp-web-status" [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'">
+                {{ webResult.message }}
+              </p>
+            }
+          </section>
+
+          <section class="whatsapp-confirmation">
+            <p>
+              Si el envío automático no termina, puedes confirmar manualmente solo después de enviarlo en WhatsApp.
+            </p>
+            <button type="button" class="primary" [disabled]="message.status === 'sent' || actionBusy()" (click)="confirmWhatsAppFollowUpSent()">
+              {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
+            </button>
+          </section>
         }
 
         @if (whatsappPackage(); as message) {

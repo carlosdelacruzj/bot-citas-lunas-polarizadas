@@ -289,13 +289,32 @@ export interface WhatsAppMessagePackage {
   sent_at: string | null;
 }
 
+export interface WhatsAppFollowUpStep {
+  title: string;
+  text: string;
+  attachment_urls: string[];
+}
+
+export interface WhatsAppFollowUpPackage {
+  message_id: string;
+  order_id: string | null;
+  test_mode: boolean;
+  status: 'prepared' | 'sent';
+  recipient_phone: string;
+  recipient_phone_masked: string | null;
+  steps: WhatsAppFollowUpStep[];
+  prepared_at: string;
+  sent_at: string | null;
+}
+
 export interface WhatsAppWebDraftResponse {
-  status: 'login_required' | 'draft_ready' | 'web_unavailable';
+  status: 'login_required' | 'draft_ready' | 'web_unavailable' | 'sent';
   message: string;
   message_id: string | null;
-  manual_send_required: true;
-  sent: false;
-  draft_mode?: 'caption' | 'queued_text' | 'album';
+  manual_send_required: boolean;
+  sent: boolean;
+  sent_at?: string | null;
+  draft_mode?: 'caption' | 'queued_text' | 'album' | 'documents';
 }
 
 export interface CloseServiceOrderPayload {
@@ -501,6 +520,12 @@ export class AppointmentApiService {
     });
   }
 
+  async prepareWhatsAppFollowUpTest(recipientPhone: string): Promise<WhatsAppFollowUpPackage> {
+    return this.post<WhatsAppFollowUpPackage>('/api/v1/whatsapp-followup-messages/test/prepare', {
+      recipient_phone: recipientPhone,
+    });
+  }
+
   async prepareOrderWhatsApp(
     orderId: string,
     allowResend = false,
@@ -511,9 +536,35 @@ export class AppointmentApiService {
     );
   }
 
+  async preparePostPaymentWhatsApp(
+    orderId: string,
+    allowResend = false,
+  ): Promise<WhatsAppFollowUpPackage> {
+    return this.post<WhatsAppFollowUpPackage>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/whatsapp-followup/prepare`,
+      { allow_resend: allowResend },
+    );
+  }
+
   async markWhatsAppSent(messageId: string): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/whatsapp-messages/${encodeURIComponent(messageId)}/sent`,
+      {},
+    );
+  }
+
+  async markWhatsAppFollowUpSent(messageId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/whatsapp-followup-messages/${encodeURIComponent(messageId)}/sent`,
+      {},
+    );
+  }
+
+  async prepareWhatsAppFollowUpWebDraft(
+    messageId: string,
+  ): Promise<WhatsAppWebDraftResponse> {
+    return this.post<WhatsAppWebDraftResponse>(
+      `/api/v1/whatsapp-followup-messages/${encodeURIComponent(messageId)}/web/prepare`,
       {},
     );
   }

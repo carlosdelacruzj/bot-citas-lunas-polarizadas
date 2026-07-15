@@ -133,10 +133,10 @@ cuando se desee enviar sus alertas por Telegram.
 
 ## Prueba base y envio asistido por WhatsApp
 
-El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar WhatsApp`, ingresar
+El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar post-pago`, ingresar
 el numero propio con codigo de pais (por ejemplo, `+51987654321`) y crear el
-paquete ficticio. La prueba usa una cita de demostracion, una constancia PNG y un
-cobro de S/ 40.00 sin tocar ordenes reales.
+paquete ficticio. La prueba usa una cita de demostracion y los PDFs configurados en
+`.runtime/whatsapp-followup/followup-details.json`, sin tocar ordenes reales.
 
 En una orden real, `Enviar por WhatsApp` crea el paquete y prepara inmediatamente el
 album: carga constancia e imagen de pago, selecciona cada miniatura y coloca su texto
@@ -165,6 +165,14 @@ en formato internacional. En el detalle de una orden pendiente aparecen juntas l
 acciones `Registrar pago` y `Enviar por WhatsApp`; esta ultima deja el album listo
 para el envio humano final. El texto de confirmacion usa el mismo formateador que
 Telegram. Preparar o confirmar el mensaje no registra el pago.
+
+Despues de confirmar la transferencia y registrar el pago, el detalle de una orden
+pagada muestra `Enviar post-pago`. Esta accion es independiente del album de cobro:
+abre WhatsApp Web, adjunta los PDFs configurados en
+`.runtime/whatsapp-followup/followup-details.json`, envia primero los PDFs y luego
+envia el texto post-pago como segundo mensaje. Si WhatsApp confirma el envio, el
+paquete queda registrado como enviado automaticamente. Usar `Confirmar envio
+post-pago` solo como respaldo si el operador tuvo que enviarlo manualmente.
 
 ## Revision diferida de reservas confirmadas
 

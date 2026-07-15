@@ -297,6 +297,21 @@ instantanea de la imagen a `screenshots/whatsapp-outgoing/` y se registra en
 `payment_attachment_path`. El monto de produccion siempre procede del pago de la
 orden, no del archivo privado.
 
+`POST /api/v1/service-orders/{order_id}/whatsapp-followup/prepare` prepara el
+seguimiento posterior al pago. Es un flujo separado del cobro: solo acepta una
+orden `paid` con reserva `confirmed`, pago `paid` y WhatsApp internacional. El
+paquete conserva cuatro secciones internas, adjunta los PDFs configurados y
+consolida el texto post-pago.
+
+Los PDFs post-pago se configuran localmente en
+`.runtime/whatsapp-followup/followup-details.json` con una lista `documents`.
+Cada archivo debe ser PDF y se copia a `screenshots/whatsapp-followup-outgoing/`
+al preparar el paquete. `POST /api/v1/whatsapp-followup-messages/{message_id}/web/prepare`
+abre WhatsApp Web localmente, envia primero los PDFs y luego envia el texto como
+segundo mensaje. Si el envio automatico termina correctamente, el paquete queda
+marcado como `sent`; `POST /api/v1/whatsapp-followup-messages/{message_id}/sent`
+queda como confirmacion manual de respaldo.
+
 ## Compatibilidad de proxy
 
 Durante la migracion hay dos targets validos para Angular:

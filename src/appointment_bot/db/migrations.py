@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 29
+SCHEMA_VERSION = 30
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -302,6 +302,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_worker_commands_schema(connection)
     _create_finance_schema(connection)
     _create_whatsapp_messages_schema(connection)
+    _create_whatsapp_followup_messages_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -325,6 +326,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "finance_categories",
         "finance_entries",
         "whatsapp_messages",
+        "whatsapp_followup_messages",
     }
     tables = {
         row["table_name"]
@@ -379,6 +381,12 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_messages", "status"),
         ("whatsapp_messages", "test_mode"),
         ("whatsapp_messages", "sent_at"),
+        ("whatsapp_followup_messages", "message_id"),
+        ("whatsapp_followup_messages", "recipient_phone"),
+        ("whatsapp_followup_messages", "steps"),
+        ("whatsapp_followup_messages", "status"),
+        ("whatsapp_followup_messages", "test_mode"),
+        ("whatsapp_followup_messages", "sent_at"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -400,6 +408,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_payments_paid_fields",
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
+        "ck_whatsapp_followup_messages_sent",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -436,6 +445,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_finance_entries_occurred")
     if "idx_whatsapp_messages_order_prepared" not in indexes:
         missing.append("idx_whatsapp_messages_order_prepared")
+    if "idx_whatsapp_followup_messages_order_prepared" not in indexes:
+        missing.append("idx_whatsapp_followup_messages_order_prepared")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -687,6 +698,35 @@ def _create_whatsapp_messages_schema(connection: Connection) -> None:
     )
 
 
+def _create_whatsapp_followup_messages_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS whatsapp_followup_messages (
+            message_id text PRIMARY KEY,
+            order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            recipient_phone text NOT NULL,
+            steps jsonb NOT NULL,
+            status text NOT NULL DEFAULT 'prepared' CHECK (status IN ('prepared', 'sent')),
+            test_mode boolean NOT NULL DEFAULT false,
+            prepared_at timestamptz NOT NULL,
+            sent_at timestamptz,
+            created_at timestamptz NOT NULL,
+            updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_whatsapp_followup_messages_sent CHECK (
+                (status = 'prepared' AND sent_at IS NULL)
+                OR (status = 'sent' AND sent_at IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_followup_messages_order_prepared
+        ON whatsapp_followup_messages(order_id, prepared_at DESC)
+        """
+    )
+
+
 def migrate_database(connection: Connection) -> None:
     """Create the current schema or reject unsupported schema versions atomically."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (_MIGRATION_LOCK_ID,))
@@ -920,9 +960,16 @@ def migrate_database(connection: Connection) -> None:
         )
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
-            (SCHEMA_VERSION,),
+            (29,),
         )
-        current_version = SCHEMA_VERSION
+        current_version = 29
+    if current_version == 29:
+        _create_whatsapp_followup_messages_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (30,),
+        )
+        current_version = 30
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

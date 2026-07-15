@@ -65,6 +65,20 @@ class WhatsAppWebDraftManager:
                     result = _prepare_draft(context, command.draft)
                 except PlaywrightError as exc:
                     if _is_closed_target_error(exc):
+                        if command.draft.get("disable_closed_target_retry"):
+                            logger.warning(
+                                "WhatsApp Web window closed while preparing draft; not retrying"
+                            )
+                            context = _close_context(context)
+                            result = _result(
+                                "web_unavailable",
+                                "WhatsApp Web se cerro durante la preparacion. "
+                                "Si ya enviaste el mensaje, confirma el envio manualmente; "
+                                "si no, vuelve a preparar el borrador.",
+                                message_id=str(command.draft.get("message_id") or ""),
+                            )
+                            command.response.put(result)
+                            continue
                         logger.warning(
                             "WhatsApp Web window closed while preparing draft; reopening once"
                         )
@@ -90,6 +104,8 @@ class WhatsAppWebDraftManager:
                         )
                 except Exception as exc:
                     logger.exception("Could not prepare WhatsApp Web draft")
+                    if command.draft.get("close_on_error"):
+                        context = _close_context(context)
                     result = _result(
                         "web_unavailable",
                         f"No se pudo preparar WhatsApp Web: {exc}",
@@ -122,6 +138,17 @@ def prepare_whatsapp_web_album(
     return _MANAGER.prepare(album_draft)
 
 
+def prepare_whatsapp_web_documents(draft: dict[str, object]) -> dict[str, object]:
+    document_draft = {
+        **draft,
+        "document_items": list(draft["attachment_paths"]),
+        "disable_closed_target_retry": True,
+        "close_on_error": True,
+        "auto_send": True,
+    }
+    return _MANAGER.prepare(document_draft)
+
+
 def _ensure_context(playwright, context: BrowserContext | None) -> BrowserContext:
     if context is not None:
         try:
@@ -141,6 +168,8 @@ def _ensure_context(playwright, context: BrowserContext | None) -> BrowserContex
 def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
     if draft.get("album_items"):
         return _prepare_album(context, draft)
+    if draft.get("document_items"):
+        return _prepare_documents(context, draft)
     page = context.pages[0] if context.pages else context.new_page()
     phone = "".join(character for character in str(draft["recipient_phone"]) if character.isdigit())
     message_id = str(draft["message_id"])
@@ -246,6 +275,72 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
         "Las dos imagenes tienen su propio texto. Revisa el album y pulsa Enviar una sola vez.",
         message_id=str(draft["message_id"]),
         draft_mode="album",
+    )
+
+
+def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
+    page = _fresh_whatsapp_page(context)
+    phone = "".join(
+        character
+        for character in str(draft["recipient_phone"])
+        if character.isdigit()
+    )
+    message_id = str(draft["message_id"])
+    target = f"https://web.whatsapp.com/send?phone={phone}"
+    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
+    if not _wait_for_chat(page):
+        return _result(
+            "login_required",
+            "Escanea el QR en la ventana de WhatsApp Web y vuelve a preparar el post-pago.",
+            message_id=message_id,
+        )
+    attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
+    if not all(path.is_file() for path in attachments):
+        raise FileNotFoundError("Uno de los PDFs preparados ya no esta disponible.")
+    _attach_document(page, attachments)
+    if draft.get("auto_send"):
+        _click_send_button(page, attachments)
+        _send_plain_text_message(page, str(draft["caption"]))
+        context.close()
+        logger.info(
+            "WhatsApp Web follow-up sent automatically: message_id=%s documents=%s",
+            message_id,
+            len(attachments),
+        )
+        return _result(
+            "sent",
+            "PDFs y texto post-pago enviados automaticamente.",
+            message_id=message_id,
+            draft_mode="documents",
+            manual_send_required=False,
+            sent=True,
+        )
+    draft_mode = _fill_caption(
+        page,
+        str(draft["caption"]),
+        require_full_match=True,
+        allow_footer_editor=True,
+        trust_inserted_text=True,
+    )
+    if draft_mode != "caption":
+        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-caption-not-ready")
+        raise RuntimeError(
+            "WhatsApp no permitio unir el texto a los documentos; "
+            "el borrador no se considera listo."
+        )
+    ready_screenshot = Path(".runtime/whatsapp-followup-ready.png").resolve()
+    ready_screenshot.parent.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(ready_screenshot))
+    logger.info(
+        "WhatsApp Web follow-up ready: message_id=%s documents=%s",
+        message_id,
+        len(attachments),
+    )
+    return _result(
+        "draft_ready",
+        "PDFs y texto post-pago listos. Revisa WhatsApp y pulsa Enviar una sola vez.",
+        message_id=message_id,
+        draft_mode="documents",
     )
 
 
@@ -373,12 +468,104 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
     page.wait_for_timeout(1_000)
 
 
+def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
+    files = (
+        [str(item) for item in attachment]
+        if isinstance(attachment, list)
+        else [str(attachment)]
+    )
+    deadline = time.monotonic() + 10
+    file_input = None
+    attachment_opened = False
+    while time.monotonic() < deadline and file_input is None:
+        direct_input = _document_file_input(page)
+        if direct_input is not None:
+            direct_input.set_input_files(files)
+            page.wait_for_timeout(1_000)
+            return
+        if not attachment_opened:
+            for selector in (
+                "footer [role='button'][aria-label*='Attach' i]",
+                "footer [role='button'][aria-label*='Adjuntar' i]",
+                "footer button[aria-label*='Attach' i]",
+                "footer button[aria-label*='Adjuntar' i]",
+                "footer [title*='Attach' i]",
+                "footer [title*='Adjuntar' i]",
+                "footer span[data-icon='plus-rounded']",
+                "footer span[data-icon='plus']",
+                "footer span[data-icon='clip']",
+            ):
+                locator = page.locator(selector).first
+                if locator.count() and locator.is_visible():
+                    locator.click()
+                    attachment_opened = True
+                    page.wait_for_timeout(600)
+                    break
+        elif attachment_opened:
+            if _choose_document_files(page, files):
+                return
+            logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
+            logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
+            file_input = _document_file_input(page)
+        page.wait_for_timeout(400)
+    if file_input is None:
+        logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
+        raise RuntimeError("No se encontro el control para adjuntar documentos en WhatsApp Web.")
+    file_input.set_input_files(files)
+    page.wait_for_timeout(1_000)
+
+
+def _choose_document_files(page: Page, files: list[str]) -> bool:
+    candidates = [
+        page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).first,
+        page.locator("[aria-label*='Documento' i], [aria-label*='Document' i]").first,
+        page.locator("[title*='Documento' i], [title*='Document' i]").first,
+    ]
+    for candidate in candidates:
+        if not candidate.count() or not candidate.is_visible():
+            continue
+        click_targets = [candidate]
+        button_ancestor = candidate.locator("xpath=ancestor::*[@role='button'][1]")
+        menuitem_ancestor = candidate.locator("xpath=ancestor::*[@role='menuitem'][1]")
+        listitem_ancestor = candidate.locator("xpath=ancestor::li[1]")
+        for ancestor in (button_ancestor, menuitem_ancestor, listitem_ancestor):
+            if ancestor.count():
+                click_targets.append(ancestor.first)
+        for target in click_targets:
+            option_input = target.locator("input[type='file']")
+            if option_input.count():
+                option_input.first.set_input_files(files)
+                page.wait_for_timeout(1_000)
+                return True
+            try:
+                with page.expect_file_chooser(timeout=5_000) as chooser_info:
+                    target.click(timeout=2_000, force=True)
+                chooser_info.value.set_files(files)
+                page.wait_for_timeout(1_000)
+                return True
+            except PlaywrightError:
+                logger.info("Documento target did not open a file chooser")
+    return False
+
+
 def _image_file_input(page: Page):
     inputs = page.locator("input[type='file']")
     for index in range(inputs.count() - 1, -1, -1):
         locator = inputs.nth(index)
         accept = (locator.get_attribute("accept") or "").casefold()
         if "image" in accept and "video" in accept:
+            return locator
+    return None
+
+
+def _document_file_input(page: Page):
+    inputs = page.locator("input[type='file']")
+    for index in range(inputs.count() - 1, -1, -1):
+        locator = inputs.nth(index)
+        accept = (locator.get_attribute("accept") or "").casefold()
+        if "image" in accept or "video" in accept:
+            continue
+        if "pdf" in accept or "application" in accept or not accept:
             return locator
     return None
 
@@ -391,12 +578,18 @@ def _file_input_summary(page: Page) -> list[dict[str, object]]:
         label = locator.locator("xpath=ancestor::li[1]")
         if not label.count():
             label = locator.locator("xpath=ancestor::*[@role='button'][1]")
+        label_text = ""
+        if label.count():
+            try:
+                label_text = label.inner_text(timeout=1_000)[:80]
+            except PlaywrightError:
+                label_text = ""
         summary.append(
             {
                 "index": index,
-                "accept": locator.get_attribute("accept"),
-                "multiple": locator.get_attribute("multiple"),
-                "label": (label.inner_text() if label.count() else "")[:80],
+                "accept": _safe_get_attribute(locator, "accept"),
+                "multiple": _safe_get_attribute(locator, "multiple"),
+                "label": label_text,
             }
         )
     return summary
@@ -409,10 +602,14 @@ def _attachment_menu_summary(page: Page) -> list[dict[str, object]]:
         control = controls.nth(index)
         if not control.is_visible():
             continue
+        try:
+            text = control.inner_text(timeout=1_000)[:80]
+        except PlaywrightError:
+            text = ""
         summary.append(
             {
-                "text": control.inner_text()[:80],
-                "aria_label": control.get_attribute("aria-label"),
+                "text": text,
+                "aria_label": _safe_get_attribute(control, "aria-label"),
                 "inputs": _file_input_summary_from(control),
             }
         )
@@ -421,37 +618,259 @@ def _attachment_menu_summary(page: Page) -> list[dict[str, object]]:
 
 def _file_input_summary_from(root) -> list[str | None]:
     inputs = root.locator("input[type='file']")
-    return [inputs.nth(index).get_attribute("accept") for index in range(inputs.count())]
+    return [_safe_get_attribute(inputs.nth(index), "accept") for index in range(inputs.count())]
 
 
-def _fill_caption(page: Page, caption: str) -> str:
+def _fill_caption(
+    page: Page,
+    caption: str,
+    *,
+    require_full_match: bool = False,
+    allow_footer_editor: bool = False,
+    trust_inserted_text: bool = False,
+) -> str:
     deadline = time.monotonic() + 4
     while time.monotonic() < deadline:
-        editor = _caption_editor(page)
+        editor = _caption_editor(page, allow_footer_editor=allow_footer_editor)
         if editor is not None:
-            editor.click()
-            page.keyboard.press("Control+A")
-            page.keyboard.insert_text(caption)
+            _focus_and_replace_text(page, editor, caption)
             page.wait_for_timeout(300)
-            if _same_editor_text(editor.text_content(), caption):
+            if trust_inserted_text and _document_preview_visible(page, []):
+                return "caption"
+            if _same_editor_text(
+                _safe_text_content(editor),
+                caption,
+                require_full_match=require_full_match,
+            ):
                 return "caption"
         page.wait_for_timeout(400)
     composer = page.locator("div[data-testid='conversation-compose-box-input']").first
     if composer.count() and composer.is_visible():
-        composer.evaluate("element => element.focus()")
-        page.keyboard.press("Control+A")
-        page.keyboard.insert_text(caption)
+        _focus_and_replace_text(page, composer, caption)
         page.wait_for_timeout(300)
-        if _same_editor_text(composer.text_content(), caption):
+        if trust_inserted_text and _document_preview_visible(page, []):
             return "queued_text"
-    debug_screenshot = Path(".runtime/whatsapp-caption-field-missing.png").resolve()
-    debug_screenshot.parent.mkdir(parents=True, exist_ok=True)
-    page.screenshot(path=str(debug_screenshot))
+        if _same_editor_text(
+            _safe_text_content(composer),
+            caption,
+            require_full_match=require_full_match,
+        ):
+            return "queued_text"
+    _save_whatsapp_debug_screenshot(page, "whatsapp-caption-field-missing")
     logger.info("WhatsApp Web caption editors: %s", _caption_editor_summary(page))
     raise RuntimeError("La imagen se adjunto, pero no se encontro el campo para el texto.")
 
 
-def _caption_editor(page: Page):
+def _focus_and_replace_text(page: Page, editor, text: str) -> None:
+    editor.evaluate(
+        """
+        element => {
+            element.focus();
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        """
+    )
+    page.keyboard.press("Control+A")
+    page.keyboard.insert_text(text)
+
+
+def _click_send_button(page: Page, attachments: list[Path]) -> None:
+    if _document_preview_visible(page, [attachment.name for attachment in attachments]):
+        for _ in range(2):
+            if _click_bottom_right_send_button(page):
+                try:
+                    _wait_until_send_attempt_finishes(page)
+                    return
+                except RuntimeError:
+                    page.wait_for_timeout(800)
+    selectors = (
+        "[data-testid='send']",
+        "button[aria-label*='Enviar' i]",
+        "button[aria-label*='Send' i]",
+        "[role='button'][aria-label*='Enviar' i]",
+        "[role='button'][aria-label*='Send' i]",
+        "span[data-icon='send']",
+        "span[data-icon*='send' i]",
+        "button:has(span[data-icon*='send' i])",
+        "[role='button']:has(span[data-icon*='send' i])",
+    )
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline:
+        for selector in selectors:
+            locator = page.locator(selector).last
+            if not locator.count() or not locator.is_visible():
+                continue
+            target = locator
+            button = locator.locator("xpath=ancestor::button[1]")
+            role_button = locator.locator("xpath=ancestor::*[@role='button'][1]")
+            if button.count():
+                target = button.first
+            elif role_button.count():
+                target = role_button.first
+            _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-send")
+            target.click(timeout=2_000, force=True)
+            _wait_until_send_attempt_finishes(page)
+            return
+        page.wait_for_timeout(500)
+    if _click_bottom_right_send_button(page):
+        _wait_until_send_attempt_finishes(page)
+        return
+    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-button-missing")
+    raise RuntimeError("No se encontro el boton Enviar de WhatsApp.")
+
+
+def _click_bottom_right_send_button(page: Page) -> bool:
+    viewport = page.viewport_size or {"width": 0, "height": 0}
+    if not viewport["width"] or not viewport["height"]:
+        return False
+    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-coordinate-send")
+    page.mouse.click(viewport["width"] - 48, viewport["height"] - 50)
+    return True
+
+
+def _send_plain_text_message(page: Page, text: str) -> None:
+    deadline = time.monotonic() + 15
+    composer = None
+    while time.monotonic() < deadline:
+        candidate = page.locator("footer div[contenteditable='true']").last
+        if candidate.count() and candidate.is_visible():
+            composer = candidate
+            break
+        candidate = page.locator("div[data-testid='conversation-compose-box-input']").last
+        if candidate.count() and candidate.is_visible():
+            composer = candidate
+            break
+        page.wait_for_timeout(500)
+    if composer is None:
+        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-composer-missing")
+        raise RuntimeError("No se encontro el campo para enviar el texto post-pago.")
+    logger.info("WhatsApp Web follow-up documents sent; preparing text message")
+    _click_and_replace_text(page, composer, text)
+    page.wait_for_timeout(500)
+    if not _plain_text_ready(page, text):
+        _paste_text_message(page, composer, text)
+        page.wait_for_timeout(500)
+    if not _plain_text_ready(page, text):
+        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-not-ready")
+        raise RuntimeError("WhatsApp no dejo listo el texto post-pago.")
+    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-text-send")
+    if not _click_visible_send_button(page):
+        page.keyboard.press("Enter")
+    page.wait_for_timeout(1_500)
+    logger.info("WhatsApp Web follow-up text message sent")
+
+
+def _click_and_replace_text(page: Page, editor, text: str) -> None:
+    box = editor.bounding_box()
+    if box:
+        page.mouse.click(box["x"] + min(40, box["width"] / 2), box["y"] + box["height"] / 2)
+    else:
+        editor.click(timeout=2_000, force=True)
+    page.keyboard.press("Control+A")
+    page.keyboard.insert_text(text)
+
+
+def _paste_text_message(page: Page, editor, text: str) -> None:
+    try:
+        page.context.grant_permissions(
+            ["clipboard-read", "clipboard-write"],
+            origin="https://web.whatsapp.com",
+        )
+        page.evaluate("value => navigator.clipboard.writeText(value)", text)
+        box = editor.bounding_box()
+        if box:
+            page.mouse.click(box["x"] + min(40, box["width"] / 2), box["y"] + box["height"] / 2)
+        else:
+            editor.click(timeout=2_000, force=True)
+        page.keyboard.press("Control+A")
+        page.keyboard.press("Control+V")
+    except PlaywrightError:
+        logger.info("Could not paste follow-up text via clipboard")
+
+
+def _plain_text_ready(page: Page, expected: str) -> bool:
+    editors = page.locator(
+        "footer div[contenteditable='true'], "
+        "div[data-testid='conversation-compose-box-input']"
+    )
+    for index in range(editors.count() - 1, -1, -1):
+        text = _safe_text_content(editors.nth(index))
+        if _same_editor_text(text, expected) or (
+            "TikTok" in text and "citaspolarizadasperu" in text
+        ):
+            return True
+    return False
+
+
+def _click_visible_send_button(page: Page) -> bool:
+    selectors = (
+        "button[aria-label*='Enviar' i]",
+        "button[aria-label*='Send' i]",
+        "[role='button'][aria-label*='Enviar' i]",
+        "[role='button'][aria-label*='Send' i]",
+        "button:has(span[data-icon*='send' i])",
+        "[role='button']:has(span[data-icon*='send' i])",
+        "span[data-icon*='send' i]",
+    )
+    for selector in selectors:
+        locator = page.locator(selector).last
+        if not locator.count() or not locator.is_visible():
+            continue
+        target = locator
+        button = locator.locator("xpath=ancestor::button[1]")
+        role_button = locator.locator("xpath=ancestor::*[@role='button'][1]")
+        if button.count():
+            target = button.first
+        elif role_button.count():
+            target = role_button.first
+        target.click(timeout=2_000, force=True)
+        return True
+    return _click_bottom_right_send_button(page)
+
+
+def _wait_until_send_attempt_finishes(page: Page) -> None:
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if _normal_chat_composer_visible(page):
+            page.wait_for_timeout(1_000)
+            return
+        page.wait_for_timeout(500)
+    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-not-confirmed")
+    raise RuntimeError("WhatsApp no confirmo el envio; no volvio al chat normal.")
+
+
+def _normal_chat_composer_visible(page: Page) -> bool:
+    composer = page.locator("footer div[contenteditable='true']").last
+    return bool(composer.count() and composer.is_visible())
+
+
+def _document_preview_visible(page: Page, names: list[str]) -> bool:
+    if page.locator("[data-icon='media-document']").count():
+        return True
+    for name in names:
+        preview_text = page.get_by_text(name, exact=True)
+        if preview_text.count() and preview_text.first.is_visible():
+            return True
+    return False
+
+
+def _fresh_whatsapp_page(context: BrowserContext) -> Page:
+    page = context.new_page()
+    for existing in list(context.pages):
+        if existing == page:
+            continue
+        try:
+            existing.close()
+        except PlaywrightError:
+            pass
+    return page
+
+
+def _caption_editor(page: Page, *, allow_footer_editor: bool = False):
     editors = page.locator("div[contenteditable='true']")
     candidates = []
     for index in range(editors.count()):
@@ -481,7 +900,9 @@ def _caption_editor(page: Page):
         in_footer = bool(editor.locator("xpath=ancestor::footer").count())
         if not in_footer and editor.get_attribute("role") == "textbox":
             score += 40
-        if in_footer:
+        if in_footer and allow_footer_editor:
+            score += 80
+        elif in_footer:
             score -= 50
         candidates.append((score, index, editor))
     if not candidates:
@@ -490,12 +911,30 @@ def _caption_editor(page: Page):
     return candidates[0][2] if candidates[0][0] > 0 else None
 
 
-def _same_editor_text(actual: str | None, expected: str) -> bool:
+def _same_editor_text(
+    actual: str | None,
+    expected: str,
+    *,
+    require_full_match: bool = False,
+) -> bool:
     def normalize(value: str) -> str:
         return " ".join(value.replace("\u200b", "").split())
 
     actual_normalized = normalize(actual or "")
     expected_normalized = normalize(expected)
+    if require_full_match:
+        return actual_normalized == expected_normalized or (
+            len(actual_normalized) >= 80
+            and actual_normalized in expected_normalized
+            and any(
+                marker in actual_normalized
+                for marker in (
+                    "TikTok",
+                    "citaspolarizadasperu",
+                    "Gracias por confiar",
+                )
+            )
+        )
     return actual_normalized == expected_normalized or len(actual_normalized) >= max(
         20,
         len(expected_normalized) // 2,
@@ -530,6 +969,26 @@ def _caption_editor_summary(page: Page) -> list[dict[str, object]]:
     return summary
 
 
+def _save_whatsapp_debug_screenshot(page: Page, name: str) -> None:
+    debug_screenshot = Path(f".runtime/{name}.png").resolve()
+    debug_screenshot.parent.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(debug_screenshot))
+
+
+def _safe_get_attribute(locator, name: str) -> str | None:
+    try:
+        return locator.get_attribute(name, timeout=1_000)
+    except PlaywrightError:
+        return None
+
+
+def _safe_text_content(locator) -> str:
+    try:
+        return locator.text_content(timeout=1_000) or ""
+    except PlaywrightError:
+        return ""
+
+
 def _visible(page: Page, selector: str) -> bool:
     locator = page.locator(selector).first
     return bool(locator.count() and locator.is_visible())
@@ -546,12 +1005,12 @@ def _attachment_control_summary(page: Page) -> list[dict[str, object]]:
         summary.append(
             {
                 "tag": control.evaluate("element => element.tagName"),
-                "aria_label": control.get_attribute("aria-label"),
-                "title": control.get_attribute("title"),
-                "data_testid": control.get_attribute("data-testid"),
-                "data_icon": control.get_attribute("data-icon"),
+                "aria_label": _safe_get_attribute(control, "aria-label"),
+                "title": _safe_get_attribute(control, "title"),
+                "data_testid": _safe_get_attribute(control, "data-testid"),
+                "data_icon": _safe_get_attribute(control, "data-icon"),
                 "icons": [
-                    icons.nth(icon_index).get_attribute("data-icon")
+                    _safe_get_attribute(icons.nth(icon_index), "data-icon")
                     for icon_index in range(min(icons.count(), 4))
                 ],
             }
@@ -574,13 +1033,15 @@ def _result(
     *,
     message_id: str | None = None,
     draft_mode: str | None = None,
+    manual_send_required: bool = True,
+    sent: bool = False,
 ) -> dict[str, Any]:
     result = {
         "status": status,
         "message": message,
         "message_id": message_id,
-        "manual_send_required": True,
-        "sent": False,
+        "manual_send_required": manual_send_required,
+        "sent": sent,
     }
     if draft_mode is not None:
         result["draft_mode"] = draft_mode

@@ -34,6 +34,7 @@ import {
   ServiceOrderDetail,
   WorkerCommand,
   WorkerStatus,
+  WhatsAppFollowUpPackage,
   WhatsAppMessagePackage,
   WhatsAppWebDraftResponse,
   apiErrorMessage,
@@ -202,9 +203,12 @@ export class App implements OnDestroy {
   protected readonly actionBusy = signal(false);
   protected readonly pendingAction = signal<PendingAction | null>(null);
   protected readonly whatsappPackage = signal<WhatsAppMessagePackage | null>(null);
+  protected readonly whatsappFollowUpPackage = signal<WhatsAppFollowUpPackage | null>(null);
   protected readonly whatsappPackageLoading = signal(false);
+  protected readonly whatsappFollowUpLoading = signal(false);
   protected readonly whatsappTestRecipient = signal('');
   protected readonly whatsappTestMode = signal(false);
+  protected readonly whatsappFollowUpMode = signal(false);
   protected readonly whatsappWebBusy = signal(false);
   protected readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
   protected readonly whatsappManualFallbackOpen = signal(false);
@@ -761,10 +765,12 @@ export class App implements OnDestroy {
 
   protected openWhatsAppTest(): void {
     this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
     this.whatsappTestRecipient.set('');
     this.whatsappTestMode.set(true);
+    this.whatsappFollowUpMode.set(true);
     this.whatsappWebResult.set(null);
-    this.whatsappManualFallbackOpen.set(false);
+    this.whatsappManualFallbackOpen.set(true);
     this.openModal('whatsapp');
   }
 
@@ -774,13 +780,17 @@ export class App implements OnDestroy {
       this.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
       return;
     }
-    const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
-    await this.prepareWhatsAppWebDraft(message);
+    const message = await this.loadWhatsAppFollowUpPackage(() =>
+      this.api.prepareWhatsAppFollowUpTest(recipient),
+    );
+    await this.prepareWhatsAppFollowUpWebDraft(message);
   }
 
   protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
     this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
     this.whatsappTestMode.set(false);
+    this.whatsappFollowUpMode.set(false);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(false);
     this.openModal('whatsapp');
@@ -803,6 +813,24 @@ export class App implements OnDestroy {
           await this.openOrderWhatsApp(order, true);
         }
       }
+    }
+  }
+
+  protected async openPostPaymentWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
+    this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
+    this.whatsappTestMode.set(false);
+    this.whatsappFollowUpMode.set(true);
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(true);
+    this.openModal('whatsapp');
+    try {
+      const message = await this.loadWhatsAppFollowUpPackage(() =>
+        this.api.preparePostPaymentWhatsApp(order.order_id, allowResend),
+      );
+      await this.prepareWhatsAppFollowUpWebDraft(message);
+    } catch {
+      // Error surfaced by loadWhatsAppFollowUpPackage.
     }
   }
 
@@ -844,6 +872,39 @@ export class App implements OnDestroy {
     return order.whatsapp_message_status === 'sent'
       ? 'Ya fue enviado; la siguiente accion preparara un reenvio explicito.'
       : 'Listo para preparar saludo, constancia y cobro.';
+  }
+
+  protected canPreparePostPaymentWhatsApp(order: ServiceOrder): boolean {
+    if (
+      order.status !== 'paid' ||
+      order.reservation_status !== 'confirmed' ||
+      order.payment_status !== 'paid'
+    ) {
+      return false;
+    }
+    const detail = this.selectedOrderDetail();
+    if (!detail || detail.order_id !== order.order_id) {
+      return false;
+    }
+    return /^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '');
+  }
+
+  protected postPaymentWhatsAppHint(order: ServiceOrder): string {
+    if (
+      order.status !== 'paid' ||
+      order.reservation_status !== 'confirmed' ||
+      order.payment_status !== 'paid'
+    ) {
+      return 'Requiere reserva confirmada y pago ya registrado.';
+    }
+    const detail = this.selectedOrderDetail();
+    if (!detail || detail.order_id !== order.order_id) {
+      return 'Cargando contacto protegido...';
+    }
+    if (!/^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')) {
+      return 'Corrige el WhatsApp al formato internacional, por ejemplo +51987654321.';
+    }
+    return 'Listo para preparar indicaciones post-pago y PDFs.';
   }
 
   protected async copyWhatsAppText(text: string, label: string): Promise<void> {
@@ -905,6 +966,44 @@ export class App implements OnDestroy {
     }
   }
 
+  protected async prepareWhatsAppFollowUpWebDraft(
+    preparedMessage?: WhatsAppFollowUpPackage,
+  ): Promise<void> {
+    const message = preparedMessage ?? this.whatsappFollowUpPackage();
+    if (!message || this.whatsappWebBusy()) {
+      return;
+    }
+    this.whatsappWebBusy.set(true);
+    this.errorMessage.set(null);
+    try {
+      const response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+      this.whatsappWebResult.set(response);
+      this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
+      if (response.status === 'login_required') {
+        await Swal.fire({
+          icon: 'info',
+          title: 'Vincula WhatsApp Web',
+          text: response.message,
+          confirmButtonText: 'Entendido',
+        });
+      } else if (response.status === 'draft_ready') {
+        this.successMessage.set('Post-pago preparado: revisa WhatsApp y pulsa Enviar.');
+      } else if (response.status === 'sent') {
+        this.whatsappFollowUpPackage.set({
+          ...message,
+          status: 'sent',
+          sent_at: response.sent_at ?? new Date().toISOString(),
+        });
+        this.successMessage.set('Post-pago enviado automaticamente por WhatsApp.');
+      }
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+      this.whatsappManualFallbackOpen.set(true);
+    } finally {
+      this.whatsappWebBusy.set(false);
+    }
+  }
+
   protected async confirmWhatsAppSent(): Promise<void> {
     const message = this.whatsappPackage();
     if (!message || message.status === 'sent') {
@@ -938,6 +1037,38 @@ export class App implements OnDestroy {
     }
   }
 
+  protected async confirmWhatsAppFollowUpSent(): Promise<void> {
+    const message = this.whatsappFollowUpPackage();
+    if (!message || message.status === 'sent') {
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'Confirmar seguimiento',
+      text: 'Confirma solo despues de enviar el paquete post-pago en WhatsApp.',
+      showCancelButton: true,
+      confirmButtonText: 'Si, ya lo envie',
+      cancelButtonText: 'Todavia no',
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+    this.actionBusy.set(true);
+    try {
+      const response = await this.api.markWhatsAppFollowUpSent(message.message_id);
+      this.whatsappFollowUpPackage.set({
+        ...message,
+        status: 'sent',
+        sent_at: response.sent_at ?? new Date().toISOString(),
+      });
+      await this.showToast('Seguimiento post-pago registrado');
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
   protected openWorkerRestart(): void {
     this.openModal('worker-restart');
   }
@@ -956,7 +1087,10 @@ export class App implements OnDestroy {
     }
     if (modal === 'whatsapp') {
       this.whatsappPackage.set(null);
+      this.whatsappFollowUpPackage.set(null);
       this.whatsappTestRecipient.set('');
+      this.whatsappTestMode.set(false);
+      this.whatsappFollowUpMode.set(false);
       this.whatsappWebResult.set(null);
       this.whatsappManualFallbackOpen.set(false);
     }
@@ -1627,6 +1761,23 @@ export class App implements OnDestroy {
       throw error;
     } finally {
       this.whatsappPackageLoading.set(false);
+    }
+  }
+
+  private async loadWhatsAppFollowUpPackage(
+    load: () => Promise<WhatsAppFollowUpPackage>,
+  ): Promise<WhatsAppFollowUpPackage> {
+    this.whatsappFollowUpLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const message = await load();
+      this.whatsappFollowUpPackage.set(message);
+      return message;
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+      throw error;
+    } finally {
+      this.whatsappFollowUpLoading.set(false);
     }
   }
 
