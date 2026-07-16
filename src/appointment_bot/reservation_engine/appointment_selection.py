@@ -16,6 +16,52 @@ from appointment_bot.reservation_engine.appointment_reader import (
 
 logger = logging.getLogger(__name__)
 
+IDENTITY_READ_ATTEMPTS = 3
+IDENTITY_READ_RETRY_MS = 150
+_MASKED_IDENTITY_VALUES = {"", "***", "usuario oculto"}
+
+
+def _name_tokens(value: str) -> tuple[str, ...]:
+    from appointment_bot.utils.sanitization import normalize_option
+
+    return tuple(part for part in normalize_option(value).split() if part)
+
+
+def _same_person_name(actual: str, expected: str) -> bool:
+    actual_tokens = _name_tokens(actual)
+    expected_tokens = _name_tokens(expected)
+    if not actual_tokens or not expected_tokens:
+        return False
+    if actual_tokens == expected_tokens:
+        return True
+    if sorted(actual_tokens) == sorted(expected_tokens):
+        return True
+
+    actual_name = " ".join(actual_tokens)
+    expected_name = " ".join(expected_tokens)
+    return expected_name in actual_name or actual_name in expected_name
+
+
+def _read_stable_person_name(
+    page: Page,
+    read_person_name: Callable[[Page], str],
+    *,
+    expected_person_name: str,
+) -> str:
+    last_name = ""
+    for attempt in range(1, IDENTITY_READ_ATTEMPTS + 1):
+        candidate = read_person_name(page).strip()
+        normalized_candidate = " ".join(_name_tokens(candidate))
+        if normalized_candidate not in _MASKED_IDENTITY_VALUES:
+            if _same_person_name(candidate, expected_person_name):
+                return candidate
+            if candidate == last_name:
+                return candidate
+            last_name = candidate
+        if attempt < IDENTITY_READ_ATTEMPTS:
+            page.wait_for_timeout(IDENTITY_READ_RETRY_MS)
+    return last_name
+
 
 def select_available_appointment(
     page: Page,
@@ -247,11 +293,25 @@ def validate_selected_appointment(
         raise AppointmentWorkflowUnavailable(
             "El portal indica que el cupo seleccionado ya no esta disponible."
         )
-    actual_person_name = _read_person_name(page)
-    if expected_person_name and actual_person_name:
-        expected_name = normalize_option(expected_person_name)
-        actual_name = normalize_option(actual_person_name)
-        if expected_name not in actual_name and actual_name not in expected_name:
+    if expected_person_name:
+        actual_person_name = _read_stable_person_name(
+            page,
+            _read_person_name,
+            expected_person_name=expected_person_name,
+        )
+        if not actual_person_name:
+            logger.warning(
+                "Could not read a stable portal identity before reservation submission"
+            )
+            raise AppointmentWorkflowUnavailable(
+                "No se pudo validar de forma estable la identidad mostrada por el portal."
+            )
+        if not _same_person_name(actual_person_name, expected_person_name):
+            logger.warning(
+                "Portal identity mismatch after stable reread: expected_tokens=%s actual_tokens=%s",
+                len(_name_tokens(expected_person_name)),
+                len(_name_tokens(actual_person_name)),
+            )
             raise AppointmentWorkflowUnavailable(
                 "La identidad mostrada por el portal no coincide con la persona de la orden."
             )
