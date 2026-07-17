@@ -66,8 +66,19 @@ def report_from_result(
     )
 
 
-def settings_for_order(settings: Settings, *, username: str, password: str) -> Settings:
-    return replace(settings, login_username=username, login_password=password)
+def settings_for_order(
+    settings: Settings,
+    *,
+    username: str,
+    password: str,
+    document_type: str = "dni",
+) -> Settings:
+    return replace(
+        settings,
+        login_username=username,
+        login_password=password,
+        login_document_type=document_type,
+    )
 
 
 def reservation_confirmed(report: RunReport) -> bool:

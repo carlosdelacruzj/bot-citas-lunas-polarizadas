@@ -452,6 +452,85 @@ def save_revealed_element_screenshot(
     return None
 
 
+def save_revealed_centered_modal_screenshot(
+    page: Page,
+    settings: Settings,
+    label: str,
+    selectors: list[str],
+    *,
+    ready_check: Callable[[object], bool] | None = None,
+) -> Path | None:
+    path = _artifact_path(settings, label)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    for selector in selectors:
+        locator = page.locator(selector).first
+        try:
+            if locator.count() == 0:
+                continue
+            locator.evaluate(
+                """element => {
+                    const changed = [];
+                    for (
+                        let node = element;
+                        node && node !== document.body;
+                        node = node.parentElement
+                    ) {
+                        const style = getComputedStyle(node);
+                        if (
+                            style.display === "none"
+                            || style.visibility === "hidden"
+                            || style.opacity === "0"
+                        ) {
+                            changed.push({node, style: node.getAttribute("style")});
+                            node.style.setProperty("display", "block", "important");
+                            node.style.setProperty("visibility", "visible", "important");
+                            node.style.setProperty("opacity", "1", "important");
+                        }
+                    }
+                    window.__appointmentBotRevealedCenteredModal = changed;
+                }"""
+            )
+            locator.scroll_into_view_if_needed(timeout=5_000)
+            if ready_check is not None and not ready_check(locator):
+                logger.warning(
+                    "Revealed modal was not ready for screenshot using selector %s",
+                    selector,
+                )
+                continue
+            bounds = locator.bounding_box()
+            viewport = page.viewport_size
+            if bounds is None or viewport is None:
+                continue
+            clip = _centered_modal_clip(bounds, viewport)
+            with mask_sensitive_page(page):
+                page.screenshot(path=str(path), clip=clip)
+            logger.info("Saved revealed centered modal screenshot: %s", path)
+            return path
+        except PlaywrightError as exc:
+            logger.warning(
+                "Could not save revealed centered modal screenshot %s: %s",
+                path,
+                exc,
+            )
+        finally:
+            try:
+                page.evaluate(
+                    """() => {
+                        const changed = window.__appointmentBotRevealedCenteredModal || [];
+                        changed.forEach(item => {
+                            if (item.style === null) item.node.removeAttribute("style");
+                            else item.node.setAttribute("style", item.style);
+                        });
+                        delete window.__appointmentBotRevealedCenteredModal;
+                    }"""
+                )
+            except PlaywrightError:
+                logger.warning("Could not restore centered modal styles after screenshot")
+
+    return None
+
+
 def save_error_screenshot(page: Page, settings: Settings, label: str = "error") -> Path | None:
     if not settings.screenshot_on_error:
         return None

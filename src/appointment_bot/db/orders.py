@@ -16,6 +16,7 @@ from appointment_bot.db.order_credentials import (
     get_service_order_runtime,
     record_order_program_listing,
     split_service_order_programs,
+    update_service_order_document_type,
 )
 from appointment_bot.db.order_queue import (
     FOCUSED_PRIORITY_THRESHOLD,

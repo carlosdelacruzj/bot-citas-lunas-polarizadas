@@ -8,6 +8,7 @@ from typing import Any
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
+from appointment_bot.core.documents import normalize_document_type
 from appointment_bot.core.models import (
     ServiceOrderCreateResult,
     ServiceOrderRuntime,
@@ -32,6 +33,7 @@ def create_service_order(
     *,
     document_number: str,
     password: str,
+    document_type: str = "dni",
     priority: int = 0,
     contact_whatsapp: str | None = None,
     contact_name: str | None = None,
@@ -54,6 +56,7 @@ def create_service_order(
         raise ValueError("document_number is required.")
     if not password:
         raise ValueError("password is required.")
+    document_type = normalize_document_type(document_type)
     if priority < 0:
         raise ValueError("priority must be non-negative.")
     if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
@@ -111,15 +114,25 @@ def create_service_order(
         connection.execute(
             """
             INSERT INTO portal_accounts (
-                portal_account_id, applicant_id, username, password, created_at, updated_at
+                portal_account_id, applicant_id, username, document_type, password,
+                created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT(username) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
+                document_type = excluded.document_type,
                 password = excluded.password,
                 updated_at = excluded.updated_at
             """,
-            (portal_account_id, applicant_id, document_number, encrypted_password, now, now),
+            (
+                portal_account_id,
+                applicant_id,
+                document_number,
+                document_type,
+                encrypted_password,
+                now,
+                now,
+            ),
         )
         portal_account_id = str(
             connection.execute(
@@ -230,6 +243,32 @@ def create_service_order(
         portal_account_id=portal_account_id,
         contact_id=contact_id,
     )
+
+
+def update_service_order_document_type(
+    order_id: str,
+    document_type: str,
+    *,
+    settings: Settings | None = None,
+) -> None:
+    settings = _settings(settings)
+    init_database(settings)
+    normalized_type = normalize_document_type(document_type)
+    with _connection(_database_url(settings)) as connection:
+        updated = connection.execute(
+            """
+            UPDATE portal_accounts pa
+            SET document_type = %s,
+                updated_at = CURRENT_TIMESTAMP
+            FROM service_orders so
+            WHERE so.order_id = %s
+              AND so.portal_account_id = pa.portal_account_id
+            RETURNING pa.portal_account_id
+            """,
+            (normalized_type, order_id),
+        ).fetchone()
+        if updated is None:
+            raise ValueError(f"Service order not found: {order_id}")
 
 
 def record_order_program_listing(
@@ -376,7 +415,7 @@ def get_service_order_runtime(
         row = connection.execute(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                   pa.username, pa.password, wc.display_name AS contact_name,
+                   pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
@@ -405,7 +444,7 @@ def get_claimed_service_order_runtime(
         row = connection.execute(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                   pa.username, pa.password, wc.display_name AS contact_name,
+                   pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
@@ -428,6 +467,7 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         order_id=str(row["order_id"]),
         name=str(row["name"]),
         username=str(row["username"]),
+        document_type=str(row["document_type"]),
         password=_credential_cipher(settings).decrypt(str(row["password"])),
         priority=int(row["priority"]),
         status=str(row["status"]),

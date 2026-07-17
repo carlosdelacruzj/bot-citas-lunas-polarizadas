@@ -2741,7 +2741,6 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\14-07-2026\cupo-095238-order-***-e42a4d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
-
 ## 2026-07-14 10:44:36 - order-44096258 - unavailable
 
 - Run: 20260714-104406-bc4334c8
@@ -2864,3 +2863,1178 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\14-07-2026\cupo-123649-order-***-92158c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.766s).
+## 2026-07-15 09:39:50 - order-09265081 - unavailable
+
+- Run: 20260715-093935-7dd37d88
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 05/08/2026 11:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 8.703s
+  - Seleccion fecha/hora: 1.813s
+  - Imagen CAPTCHA: 0.125s
+  - 2captcha: 1.609s
+  - Llenar CAPTCHA -> click: 1.734s
+  - Click -> respuesta portal: 0.062s
+  - Click -> screenshot confirmacion: 1.750s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-41654824 -> order-09265081 en 3.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-093935-order-***-9a07bc.png
+  - CAPTCHA enviado: kgyg4
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=kgyg4, duracion=3.766s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9673, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-093935-order-***-990e4b.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-093935-order-***-9a07bc.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-093935-order-***-d499ee.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-093935-order-***-990e4b.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-093935-order-***-4d09ae.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.813s).
+
+## 2026-07-15 09:40:29 - order-44096258 - registered
+
+- Run: 20260715-093952-bf78c59e
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 05/08/2026 12:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 8.282s
+  - Seleccion fecha/hora: 1.860s
+  - Imagen CAPTCHA: 0.109s
+  - 2captcha: 1.609s
+  - Llenar CAPTCHA -> click: 1.781s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.344s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-09265081 -> order-44096258 en 2.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-093952-order-***-0e33a5.png
+  - CAPTCHA enviado: wywra
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=wywra, duracion=3.953s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10167, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-093952-order-***-571b2a.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-093952-order-***-0e33a5.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-093952-order-***-f82728.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-093952-order-***-571b2a.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-093952-order-***-09368b.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.860s).
+
+## 2026-07-15 10:44:45 - order-09265081 - unavailable
+
+- Run: 20260715-104350-3dd4948e
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 04/08/2026 12:00
+- Cupos observados: 5
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 19.109s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.062s
+  - 2captcha: 11.891s
+  - Llenar CAPTCHA -> click: 1.844s
+  - Click -> respuesta portal: 0.078s
+  - Click -> screenshot confirmacion: 1.875s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-28275388 -> order-09265081 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-104350-order-***-584d71.png
+  - CAPTCHA enviado: mdnyh
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=mdnyh, duracion=14.078s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10608, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-104350-order-***-a01299.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-104350-order-***-584d71.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-104350-order-***-de0659.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-104350-order-***-a01299.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-104350-order-***-a02384.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.891s).
+
+## 2026-07-15 12:52:55 - order-09265081 - unavailable
+
+- Run: 20260715-125227-795a8b78
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 06/08/2026 10:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.938s
+  - Seleccion fecha/hora: 1.718s
+  - Imagen CAPTCHA: 0.079s
+  - 2captcha: 1.296s
+  - Llenar CAPTCHA -> click: 1.703s
+  - Click -> respuesta portal: 0.031s
+  - Click -> screenshot confirmacion: 1.563s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-28275388 -> order-09265081 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-125227-order-***-d0981d.png
+  - CAPTCHA enviado: DVFFT
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=DVFFT, duracion=3.296s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10199, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-125227-order-***-94f971.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-125227-order-***-d0981d.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-125227-order-***-5862d8.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-125227-order-***-94f971.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-125227-order-***-7eb1d9.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.718s).
+
+## 2026-07-15 12:54:31 - order-09265081 - unavailable
+
+- Run: 20260715-125336-f02e5fed
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 06/08/2026 09:00
+- Cupos observados: 15
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.312s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.062s
+  - 2captcha: 11.954s
+  - Llenar CAPTCHA -> click: 1.328s
+  - Click -> respuesta portal: 0.031s
+  - Click -> screenshot confirmacion: 1.735s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-28275388 -> order-09265081 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-125336-order-***-034118.png
+  - CAPTCHA enviado: NWTFF
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=NWTFF, duracion=13.578s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10185, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-125336-order-***-3926e5.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-125336-order-***-034118.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-125336-order-***-99f744.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-125336-order-***-3926e5.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-125336-order-***-3d42e0.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.954s).
+
+## 2026-07-15 13:03:46 - order-28275388 - unavailable
+
+- Run: 20260715-130255-00102de4
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 01/08/2026 11:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 19.062s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 11.938s
+  - Llenar CAPTCHA -> click: 1.781s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.922s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-09265081 -> order-28275388 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-130255-order-***-a7d308.png
+  - CAPTCHA enviado: KNJLT
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=KNJLT, duracion=14.063s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10680, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-130255-order-***-a7d308.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-130255-order-***-a2061a.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-130255-order-***-efad41.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.938s).
+
+## 2026-07-15 13:14:12 - order-09265081 - unavailable
+
+- Run: 20260715-131323-82d24348
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 06/08/2026 10:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.531s
+  - Seleccion fecha/hora: 1.735s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 12.140s
+  - Llenar CAPTCHA -> click: 1.781s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.954s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-28275388 -> order-09265081 en 1.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-131323-order-***-807d6d.png
+  - CAPTCHA enviado: qrwa6
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=qrwa6, duracion=14.234s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png, mime=image/jpeg, formato_detectado=png, bytes=10558, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131323-order-***-8f283b.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131323-order-***-807d6d.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131323-order-***-e63cb3.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131323-order-***-8f283b.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-131323-order-***-123cbd.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.140s).
+
+## 2026-07-15 13:14:44 - order-28275388 - registered
+
+- Run: 20260715-131415-35a6e177
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 06/08/2026 12:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.359s
+  - Seleccion fecha/hora: 1.704s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 11.875s
+  - Llenar CAPTCHA -> click: 2.125s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 1.047s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-09265081 -> order-28275388 en 3.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-131415-order-***-d72a01.png
+  - CAPTCHA enviado: qetf4
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=qetf4, duracion=14.406s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png, mime=image/jpeg, formato_detectado=png, bytes=8801, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131415-order-***-d72a01.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131415-order-***-1a1aab.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-131415-order-***-a3fdf4.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.875s).
+
+## 2026-07-15 13:14:58 - order-09265081 - registered
+
+- Run: 20260715-131444-4527d771
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 07/08/2026 09:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.562s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.094s
+  - 2captcha: 1.266s
+  - Llenar CAPTCHA -> click: 1.890s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 0.953s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-28275388 -> order-09265081 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-131444-order-***-9b4069.png
+  - CAPTCHA enviado: wrsug
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=wrsug, duracion=3.688s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png, mime=image/jpeg, formato_detectado=png, bytes=9743, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131444-order-***-ea411a.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131444-order-***-9b4069.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131444-order-***-b69d7d.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131444-order-***-ea411a.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-131444-order-***-456950.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.890s).
+
+## 2026-07-15 14:19:10 - order-74815023 - registered
+
+- Run: 20260715-141820-7762c2a3
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 07/08/2026 08:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 6.484s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 1.375s
+  - Llenar CAPTCHA -> click: 1.218s
+  - Click -> respuesta portal: 0.032s
+  - Click -> screenshot confirmacion: 0.844s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-74815023 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-141820-order-***-4b6139.png
+  - CAPTCHA enviado: 9HAST
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=9HAST, duracion=3.016s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png, mime=image/jpeg, formato_detectado=png, bytes=9821, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-141820-order-***-4b6139.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-141820-order-***-0cd47c.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-141820-order-***-155768.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
+
+## 2026-07-15 14:20:14 - order-46345678 - unavailable
+
+- Run: 20260715-142002-d267709f
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 07/08/2026 09:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.485s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.062s
+  - 2captcha: 1.344s
+  - Llenar CAPTCHA -> click: 1.562s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.406s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-41654824 -> order-46345678 en 2.000s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-142002-order-***-bf908f.png
+  - CAPTCHA enviado: xnwyu
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=xnwyu, duracion=3.172s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png, mime=image/jpeg, formato_detectado=png, bytes=10569, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-142002-order-***-6a0289.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-142002-order-***-bf908f.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-142002-order-***-0301cf.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-142002-order-***-6a0289.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-142002-order-***-1c4f53.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
+
+## 2026-07-15 14:23:15 - order-46345678 - unavailable
+
+- Run: 20260715-142125-08a72870
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 07/08/2026 10:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 71.219s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 64.891s
+  - Llenar CAPTCHA -> click: 1.500s
+  - Click -> respuesta portal: 0.109s
+  - Click -> screenshot confirmacion: 1.672s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\portal-1-142125-order-***-f0d299.png
+  - CAPTCHA enviado: G79E4
+  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=G79E4, duracion=66.75s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png, mime=image/jpeg, formato_detectado=png, bytes=9834, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
+  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
+  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-142125-order-***-f0d299.png
+  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-142125-order-***-11c673.html
+  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-142125-order-***-368484.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (64.891s).
+
+## 2026-07-16 12:13:28 - order-46345678 - unavailable
+
+- Run: 20260716-121245-8190929c
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 04/08/2026 12:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.797s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 12.172s
+  - Llenar CAPTCHA -> click: 1.593s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.641s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-72534765 -> order-46345678 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-121245-order-***-d3d8d5.png
+  - CAPTCHA enviado: te49v
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=te49v, duracion=14.047s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png, mime=image/jpeg, formato_detectado=png, bytes=9769, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121245-order-***-4a778e.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121245-order-***-d3d8d5.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121245-order-***-48033f.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121245-order-***-4a778e.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-121245-order-***-754972.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.172s).
+
+## 2026-07-16 12:15:58 - order-46345678 - unavailable
+
+- Run: 20260716-121517-69c5f047
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 08:00
+- Cupos observados: 5
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.141s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.062s
+  - 2captcha: 11.953s
+  - Llenar CAPTCHA -> click: 1.515s
+  - Click -> respuesta portal: 0.032s
+  - Click -> screenshot confirmacion: 1.485s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-72534765 -> order-46345678 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-121517-order-***-1d230b.png
+  - CAPTCHA enviado: grmv3
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=grmv3, duracion=13.734s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10653, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121517-order-***-608292.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121517-order-***-1d230b.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121517-order-***-bd6114.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121517-order-***-608292.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-121517-order-***-2f425d.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.953s).
+
+## 2026-07-16 12:16:45 - order-72534765 - unavailable
+
+- Run: 20260716-121601-150ffbae
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 10:00
+- Cupos observados: 5
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.156s
+  - Seleccion fecha/hora: 1.687s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 11.969s
+  - Llenar CAPTCHA -> click: 1.532s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.484s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-72534765 en 3.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-121601-order-***-7da60e.png
+  - CAPTCHA enviado: kpuen
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=kpuen, duracion=13.797s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9997, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121601-order-***-ba296c.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121601-order-***-7da60e.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121601-order-***-c51d3c.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121601-order-***-ba296c.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-121601-order-***-b6bfed.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.969s).
+
+## 2026-07-16 12:25:02 - order-72534765 - unavailable
+
+- Run: 20260716-122423-e2593980
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 22/07/2026 12:00
+- Cupos observados: 22
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.453s
+  - Seleccion fecha/hora: 1.719s
+  - Imagen CAPTCHA: 0.062s
+  - 2captcha: 11.875s
+  - Llenar CAPTCHA -> click: 1.531s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 1.719s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-72534765 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-122423-order-***-4b89e7.png
+  - CAPTCHA enviado: eawzr
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=eawzr, duracion=13.703s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png, mime=image/jpeg, formato_detectado=png, bytes=10047, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-122423-order-***-e515e0.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-122423-order-***-4b89e7.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-122423-order-***-eefb90.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-122423-order-***-e515e0.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-122423-order-***-e52246.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.875s).
+
+## 2026-07-16 12:47:08 - order-46345678 - unavailable
+
+- Run: 20260716-124626-6045f6e1
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 08:00
+- Cupos observados: 15
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.250s
+  - Seleccion fecha/hora: 1.735s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 12.360s
+  - Llenar CAPTCHA -> click: 1.610s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.640s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-72534765 -> order-46345678 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-124626-order-***-9d0659.png
+  - CAPTCHA enviado: QSN4Q
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=QSN4Q, duracion=14.282s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png, mime=image/jpeg, formato_detectado=png, bytes=9788, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124626-order-***-8430d8.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124626-order-***-9d0659.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124626-order-***-4bf150.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124626-order-***-8430d8.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-124626-order-***-3c7999.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.360s).
+
+## 2026-07-16 12:48:58 - order-72534765 - unavailable
+
+- Run: 20260716-124820-f9f9ad4d
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 24/07/2026 11:00
+- Cupos observados: 16
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.343s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 1.312s
+  - Llenar CAPTCHA -> click: 1.469s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.406s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-72534765 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-124820-order-***-ccc5b2.png
+  - CAPTCHA enviado: YLAEY
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=YLAEY, duracion=3.047s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9604, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124820-order-***-f2edee.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124820-order-***-ccc5b2.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124820-order-***-4bf4bb.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124820-order-***-f2edee.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-124820-order-***-569050.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
+
+## 2026-07-16 12:49:54 - order-72534765 - registered
+
+- Run: 20260716-124940-3a2b04dc
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 10:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.031s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 1.313s
+  - Llenar CAPTCHA -> click: 1.640s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 0.922s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-72534765 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-124940-order-***-7da1f7.png
+  - CAPTCHA enviado: gekze
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=gekze, duracion=3.422s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png, mime=image/jpeg, formato_detectado=png, bytes=9547, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124940-order-***-7da1f7.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124940-order-***-618677.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-124940-order-***-112ae8.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
+
+## 2026-07-16 12:50:09 - order-46345678 - registered
+
+- Run: 20260716-124955-099bf82d
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 11:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.172s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 1.297s
+  - Llenar CAPTCHA -> click: 1.719s
+  - Click -> respuesta portal: 0.062s
+  - Click -> screenshot confirmacion: 1.000s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-72534765 -> order-46345678 en 1.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-124955-order-***-3c5cb9.png
+  - CAPTCHA enviado: 3l6ey
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=3l6ey, duracion=3.469s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9908, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124955-order-***-3c5cb9.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124955-order-***-6619a9.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-124955-order-***-77232b.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.719s).
+
+## 2026-07-16 12:50:21 - order-41632475 - completed
+
+- Run: 20260716-125010-6147dda7
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 10/08/2026 10:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - 2captcha: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-46345678 -> order-41632475 en 1.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\etapas-125010-order-***-10c98b.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.
+
+## 2026-07-16 12:51:58 - order-41654824 - registered
+
+- Run: 20260716-125041-8633b41a
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 11/08/2026 11:00
+- Cupos observados: 5
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 27.922s
+  - Seleccion fecha/hora: 1.687s
+  - Imagen CAPTCHA: 0.079s
+  - 2captcha: 22.500s
+  - Llenar CAPTCHA -> click: 1.500s
+  - Click -> respuesta portal: 0.032s
+  - Click -> screenshot confirmacion: 0.766s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-41632475 -> order-41654824 en 20.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-125041-order-***-6c3a0d.png
+  - CAPTCHA enviado: qldn9
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=qldn9, duracion=24.406s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10135, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-125041-order-***-3b4832.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-125041-order-***-6c3a0d.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-125041-order-***-8b5d04.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-125041-order-***-3b4832.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-125041-order-***-dee944.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (22.500s).
+
+## 2026-07-16 15:22:11 - order-80141015 - unavailable
+
+- Run: 20260716-152147-5c209cbe
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 31/07/2026 11:00
+- Cupos observados: 18
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 18.281s
+  - Seleccion fecha/hora: 1.688s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 11.922s
+  - Llenar CAPTCHA -> click: 1.500s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.547s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-47259691 -> order-80141015 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-152147-order-***-6fa50b.png
+  - CAPTCHA enviado: ftmsx
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=ftmsx, duracion=13.703s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png, mime=image/jpeg, formato_detectado=png, bytes=10170, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-152147-order-***-e19801.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-152147-order-***-6fa50b.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-152147-order-***-8b2a38.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-152147-order-***-e19801.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-152147-order-***-2e3855.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.922s).
+
+## 2026-07-16 15:25:58 - order-80141015 - registered
+
+- Run: 20260716-152510-cf09462f
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 03/08/2026 09:00
+- Cupos observados: 15
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 6.859s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.079s
+  - 2captcha: 1.328s
+  - Llenar CAPTCHA -> click: 1.562s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 0.984s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-47259691 -> order-80141015 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\16-07-2026\portal-1-152510-order-***-255b7c.png
+  - CAPTCHA enviado: TZHJH
+  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=TZHJH, duracion=3.343s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png, mime=image/jpeg, formato_detectado=png, bytes=9732, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
+  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-152510-order-***-38f51f.png
+  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-152510-order-***-255b7c.png
+  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-152510-order-***-145498.html
+  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-152510-order-***-38f51f.png
+  - Screenshot adicional: screenshots\16-07-2026\cupo-152510-order-***-3bd101.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
+
+## 2026-07-17 08:46:28 - order-006148174 - registered
+
+- Run: 20260717-084552-1bd65200
+- Corrida/attempt: 2
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 08/08/2026 12:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.516s
+  - Seleccion fecha/hora: 1.719s
+  - Imagen CAPTCHA: 0.109s
+  - 2captcha: 1.375s
+  - Llenar CAPTCHA -> click: 1.594s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.078s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-10422078 -> order-006148174 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\portal-1-084552-order-***-d06913.png
+  - CAPTCHA enviado: WSYLJ
+  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=WSYLJ, duracion=3.5s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10245, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
+  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084552-order-***-f73d71.png
+  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084552-order-***-d06913.png
+  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084552-order-***-91f27e.html
+  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084552-order-***-f73d71.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-084552-order-***-339543.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
+
+## 2026-07-17 08:46:43 - order-10422078 - registered
+
+- Run: 20260717-084628-4391b902
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 08/08/2026 12:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 6.875s
+  - Seleccion fecha/hora: 1.703s
+  - Imagen CAPTCHA: 0.078s
+  - 2captcha: 1.344s
+  - Llenar CAPTCHA -> click: 1.516s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 0.937s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-006148174 -> order-10422078 en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\portal-1-084628-order-***-0792f1.png
+  - CAPTCHA enviado: blrab
+  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=blrab, duracion=3.344s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png, mime=image/jpeg, formato_detectado=png, bytes=10521, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
+  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
+  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084628-order-***-0792f1.png
+  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084628-order-***-c54450.html
+  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-084628-order-***-38ff08.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
+
+## 2026-07-17 08:46:57 - order-47259691 - unavailable
+
+- Run: 20260717-084644-f674320e
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 08/08/2026 12:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.922s
+  - Seleccion fecha/hora: 1.813s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 1.359s
+  - Llenar CAPTCHA -> click: 1.516s
+  - Click -> respuesta portal: 0.093s
+  - Click -> screenshot confirmacion: 1.593s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-10422078 -> order-47259691 en 1.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\portal-1-084644-order-***-0e07a3.png
+  - CAPTCHA enviado: nqkrh
+  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=nqkrh, duracion=3.219s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png, mime=image/jpeg, formato_detectado=png, bytes=10120, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
+  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
+  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084644-order-***-0e07a3.png
+  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084644-order-***-521f3d.html
+  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-084644-order-***-d76660.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.813s).
+
+## 2026-07-17 08:53:10 - order-09806339 - registered
+
+- Run: 20260717-085241-37b492cf
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 11:00
+- Cupos observados: 20
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 17.515s
+  - Seleccion fecha/hora: 1.687s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 11.984s
+  - Llenar CAPTCHA -> click: 1.532s
+  - Click -> respuesta portal: 0.062s
+  - Click -> screenshot confirmacion: 0.968s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\portal-1-085241-order-***-75b635.png
+  - CAPTCHA enviado: mkbhp
+  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=mkbhp, duracion=13.985s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png, mime=image/jpeg, formato_detectado=png, bytes=10193, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
+  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
+  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-085241-order-***-75b635.png
+  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-085241-order-***-bcb390.html
+  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-085241-order-***-692f52.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.984s).
+
+## 2026-07-17 08:53:26 - order-47259691 - registered
+
+- Run: 20260717-085311-89d44ad2
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 10/08/2026 12:00
+- Cupos observados: 10
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.063s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.063s
+  - 2captcha: 1.296s
+  - Llenar CAPTCHA -> click: 1.671s
+  - Click -> respuesta portal: 0.063s
+  - Click -> screenshot confirmacion: 0.907s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Cambio de usuario: order-09806339 -> order-47259691 en 1.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\portal-1-085311-order-***-120f1d.png
+  - CAPTCHA enviado: wxb7f
+  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=wxb7f, duracion=3.453s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10059, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
+  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
+  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-085311-order-***-120f1d.png
+  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-085311-order-***-0c2414.html
+  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-085311-order-***-e793e4.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).

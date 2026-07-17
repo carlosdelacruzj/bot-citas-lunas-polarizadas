@@ -41,6 +41,11 @@ GET  /api/v1/whatsapp-messages/{message_id}/attachment
 GET  /api/v1/whatsapp-messages/{message_id}/payment-attachment
 POST /api/v1/whatsapp-messages/{message_id}/web/prepare
 POST /api/v1/whatsapp-messages/{message_id}/sent
+POST /api/v1/service-orders/{order_id}/whatsapp-followup/prepare
+POST /api/v1/whatsapp-followup-messages/test/prepare
+GET  /api/v1/whatsapp-followup-messages/{message_id}/attachments/{step}/{attachment}
+POST /api/v1/whatsapp-followup-messages/{message_id}/web/prepare
+POST /api/v1/whatsapp-followup-messages/{message_id}/sent
 POST /api/v1/service-orders/{order_id}/pause
 POST /api/v1/service-orders/{order_id}/activate
 POST /api/v1/service-orders/{order_id}/done
@@ -112,6 +117,8 @@ La lista de ordenes debe exponer solo datos publicos o enmascarados:
 - `contact_source`
 - `contact_whatsapp_masked`
 - prioridad, cobro, estado, reserva y pago
+- `whatsapp_message_status`, `whatsapp_message_sent_at`
+- `whatsapp_followup_status`, `whatsapp_followup_sent_at`
 - `parent_order_id`, `program_expediente`, `program_plate`
 - reglas de reserva
 - timestamps
@@ -166,6 +173,8 @@ copias masivas.
 `POST /api/v1/service-orders` acepta:
 
 - `document_number`: obligatorio; usuario o documento del cliente.
+- `document_type`: obligatorio; `dni` o `foreign_resident_card`. El portal usa
+  respectivamente las opciones DNI y Carné de Extranjería.
 - `password`: obligatorio.
 - `contact_name`: obligatorio; persona que contacto al negocio.
 - `contact_source`: obligatorio; `tiktok`, `facebook` o `whatsapp`.

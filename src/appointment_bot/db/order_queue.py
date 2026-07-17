@@ -96,7 +96,7 @@ def list_active_orders(
         rows = connection.execute(
             f"""
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                   pa.username, wc.display_name AS contact_name,
+                   pa.username, pa.document_type, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
@@ -122,7 +122,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             """
             WITH eligible_orders AS (
                 SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                       pa.username, wc.display_name AS contact_name,
+                       pa.username, pa.document_type, wc.display_name AS contact_name,
                        wc.phone AS contact_phone, wc.contact_source,
                        so.priority, so.status, so.created_at, so.updated_at,
                        so.parent_order_id, so.program_expediente, so.program_plate,
@@ -156,7 +156,8 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                     created_at ASC
                 LIMIT %s
             )
-            SELECT order_id, name, username, contact_name, contact_phone, contact_source,
+            SELECT order_id, name, username, document_type,
+                   contact_name, contact_phone, contact_source,
                    priority, status, created_at, updated_at, parent_order_id,
                    program_expediente, program_plate
             FROM active_block
@@ -251,7 +252,7 @@ def promote_orders_matching_reserved_slot(
         promoted_rows = connection.execute(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
-                   pa.username, wc.display_name AS contact_name,
+                   pa.username, pa.document_type, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
@@ -274,6 +275,7 @@ def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
         order_id=str(row["order_id"]),
         name=str(row["name"]),
         username=str(row["username"]),
+        document_type=str(row["document_type"]),
         priority=int(row["priority"]),
         status=str(row["status"]),
         created_at=str(row["created_at"]),

@@ -27,6 +27,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "applicant_id",
     "applicant_name",
     "document_number_masked",
+    "document_type",
     "contact_name",
     "contact_whatsapp_masked",
     "contact_source",
@@ -42,6 +43,8 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "amount_paid",
     "whatsapp_message_status",
     "whatsapp_message_sent_at",
+    "whatsapp_followup_status",
+    "whatsapp_followup_sent_at",
     "parent_order_id",
     "program_expediente",
     "program_plate",
@@ -85,7 +88,13 @@ def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | 
 
 
 def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
-    required = ("document_number", "password", "contact_name", "contact_source")
+    required = (
+        "document_number",
+        "document_type",
+        "password",
+        "contact_name",
+        "contact_source",
+    )
     missing = [
         field for field in required if payload.get(field) is None or not str(payload[field]).strip()
     ]
@@ -98,6 +107,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
     try:
         result = create_service_order(
             document_number=str(payload["document_number"]).strip(),
+            document_type=str(payload["document_type"]).strip(),
             password=str(payload["password"]),
             priority=int(payload.get("priority", 0) or 0),
             contact_whatsapp=_optional_text(payload, "contact_whatsapp"),

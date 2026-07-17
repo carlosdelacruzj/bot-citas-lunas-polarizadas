@@ -21,6 +21,9 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site,
 )
 from appointment_bot.reservation_engine.programs import click_program_action
+from appointment_bot.reservation_engine.reservation_captcha_refresh import (
+    ensure_reservation_captcha_loaded,
+)
 from appointment_bot.reservation_engine.reservation_flow import (
     capture_blocked_captcha_evidence,
     complete_available_reservation,
@@ -29,6 +32,7 @@ from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.utils.screenshots import (
     save_centered_modal_screenshot,
     save_result_screenshot,
+    save_revealed_centered_modal_screenshot,
     save_screenshot,
 )
 
@@ -249,6 +253,10 @@ def _try_reservation_from_availability(
         session_age_seconds=time.monotonic() - session_started,
         check_duration_seconds=time.monotonic() - check_started,
     )
+    if selected_result.status == "available":
+        selected_screenshot_path = save_available_appointment_snapshot(page, settings)
+        if selected_screenshot_path is not None:
+            screenshot_path = selected_screenshot_path
     if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
         if on_check is not None:
             on_check(selected_result, attempt, None)
@@ -422,11 +430,10 @@ def with_monitor_diagnostics(
 
 
 def save_relevant_result_snapshot(page, settings: Settings, status: str) -> Path | None:
-    if status not in {"available", "partial"}:
+    if status != "partial":
         return None
 
     label_by_status = {
-        "available": "03-modal-reserva-citas-cupo-disponible",
         "partial": "03-modal-reserva-citas-disponibilidad-parcial",
     }
     centered_path = save_centered_modal_screenshot(
@@ -439,3 +446,16 @@ def save_relevant_result_snapshot(page, settings: Settings, status: str) -> Path
         return centered_path
 
     return save_screenshot(page, settings, label=label_by_status[status])
+
+
+def save_available_appointment_snapshot(page, settings: Settings) -> Path | None:
+    return save_revealed_centered_modal_screenshot(
+        page,
+        settings,
+        "03-modal-reserva-citas-cupo-disponible",
+        APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+        ready_check=lambda panel: ensure_reservation_captcha_loaded(
+            panel,
+            timeout=settings.read_timeout_seconds * 1_000,
+        ),
+    )

@@ -186,6 +186,7 @@ def run_service_order(
         settings,
         username=order.username,
         password=order.password,
+        document_type=order.document_type,
     )
     pending_submission = order_reservation_pending(
         order.order_id,

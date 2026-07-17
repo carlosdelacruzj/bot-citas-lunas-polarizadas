@@ -290,10 +290,10 @@ def _build_followup_steps(
             "text": _followup_step_text(
                 applicant_name=applicant_name,
                 body=(
-                    "Cuando llegue su turno, el peritaje suele demorar "
-                    "aproximadamente 5 minutos.\n"
-                    "Luego de aproximadamente 2 dias, podra ingresar a la misma "
-                    "pagina donde realizo la reserva:\n"
+                    "Cuando llegue su turno, el peritaje suele demorar aprox. "
+                    "5 minutos.\n"
+                    "Despues de pasarlo, en aproximadamente 2 dias ingrese a la "
+                    "misma pagina donde realizo la reserva:\n"
                     "https://sistemas.policia.gob.pe/lunasoscurecidas/"
                     "Solicitud_Menu.aspx\n"
                     "Ahí aparecera su autorizacion virtual, con la cual podra "
@@ -309,8 +309,8 @@ def _build_followup_steps(
                 body=(
                     "Eso seria todo.\n"
                     "Muchas gracias por confiar en nosotros.\n"
-                    "Tambien nos seria de mucha ayuda si pudiera dejarnos un "
-                    "mensaje o comentario en nuestro TikTok.\n"
+                    "Si pudiera dejarnos un comentario en nuestro TikTok, nos "
+                    "ayuda muchisimo:\n"
                     "https://www.tiktok.com/@citaspolarizadasperu?_r=1&_t=ZS-97wsIXhTdoq\n"
                     "Gracias de antemano."
                 ),
@@ -453,9 +453,10 @@ def _combined_followup_text(steps: list[dict[str, object]]) -> str:
         f"{details}\n\n"
         "📄 Lleve los PDFs adjuntos impresos, llenados y firmados. Revise requisitos "
         "y copias.\n\n"
-        "🔍 Peritaje: aprox. 5 min. En 2 días consulte su autorización virtual en la "
-        "misma web de reserva.\n\n"
-        "Gracias por confiar en nosotros. TikTok: @citaspolarizadasperu"
+        "🔍 El peritaje dura aprox. 5 min. Después de pasarlo, en 2 días consulte "
+        "su autorización virtual en la misma web de reserva.\n\n"
+        "Gracias por confiar en nosotros. Si puede dejarnos un comentario en TikTok "
+        "nos ayuda muchísimo: @citaspolarizadasperu"
     )
 
 

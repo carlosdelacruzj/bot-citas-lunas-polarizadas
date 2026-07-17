@@ -135,9 +135,11 @@
             <small>{{ summary.metrics.orders_created }} órdenes creadas</small>
           </article>
           <article class="monthly-kpi warn-kpi">
-            <span>Pendiente por cobrar</span>
-            <strong>{{ formatMoney(summary.metrics.pending_amount) }}</strong>
-            <small>{{ summary.metrics.pending_payments }} reservas pendientes</small>
+            <button type="button" class="metric-action" (click)="showPendingPayments()">
+              <span>Pendiente por cobrar</span>
+              <strong>{{ formatMoney(summary.metrics.pending_amount) }}</strong>
+              <small>{{ summary.metrics.pending_payments }} reservas pendientes · Ver cobros</small>
+            </button>
           </article>
           <article class="monthly-kpi">
             <span>Órdenes activas</span>
@@ -226,7 +228,8 @@
             @if (summary.attention.pending_payments.length) {
               <div class="attention-list">
                 @for (item of summary.attention.pending_payments; track item.order_id) {
-                  <button type="button" (click)="openOrderFromSummary(item.order_id)">
+                  <div class="attention-action-row">
+                    <button type="button" (click)="openOrderFromSummary(item.order_id)">
                     <span>
                       <strong>{{ item.name }}</strong>
                       <small>
@@ -235,7 +238,15 @@
                       </small>
                     </span>
                     <strong>{{ formatMoney(item.amount_agreed) }}</strong>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      class="primary compact-action"
+                      (click)="openPaymentFromSummary(item.order_id)"
+                    >
+                      Cobrar
+                    </button>
+                  </div>
                 }
               </div>
             } @else {
@@ -297,12 +308,14 @@
         <strong>{{ readyOrders() }}</strong>
         <small>{{ filteredOrders().length }} visibles</small>
       </article>
-      <article>
-        <span>Pagos pendientes</span>
-        <strong [class]="pendingPaymentOrders() > 0 ? 'warn' : 'good'">
-          {{ pendingPaymentOrders() }}
-        </strong>
-        <small>{{ confirmedOrders() }} reservas confirmadas</small>
+      <article class="clickable-metric">
+        <button type="button" class="metric-action" (click)="showPendingPayments()">
+          <span>Pagos pendientes</span>
+          <strong [class]="pendingPaymentOrders() > 0 ? 'warn' : 'good'">
+            {{ pendingPaymentOrders() }}
+          </strong>
+          <small>{{ confirmedOrders() }} reservas confirmadas · Filtrar</small>
+        </button>
       </article>
     </section>
 
@@ -588,6 +601,9 @@
           <p>{{ filteredOrders().length }} visibles de {{ orders().length }} cargadas</p>
         </div>
         <div class="panel-actions">
+          <button type="button" class="secondary" (click)="openWhatsAppEvidenceTest()">
+            Probar evidencias
+          </button>
           <button type="button" class="secondary" (click)="openWhatsAppTest()">
             Probar post-pago
           </button>
@@ -652,7 +668,7 @@
                   [title]="postPaymentWhatsAppHint(order)"
                   (click)="openPostPaymentWhatsApp(order)"
                 >
-                  Enviar post-pago
+                  {{ order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago' }}
                 </button>
               }
             </div>
@@ -664,8 +680,20 @@
           </div>
 
           <div class="drawer-quick-actions" aria-label="Acciones rápidas de la orden">
-            <button type="button" class="secondary" (click)="openEditOrder(order)">
-              Editar datos y pago
+            @if (order.payment_status === 'pending') {
+              <button type="button" class="primary" (click)="openPayment(order)">
+                Registrar pago
+              </button>
+            }
+            <button type="button" class="secondary" (click)="openEditOrder(order, 'contact')">
+              Editar contacto
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              (click)="openEditOrder(order, 'restrictions')"
+            >
+              Editar restricciones
             </button>
             @if (order.status === 'ready') {
               <button
@@ -707,6 +735,20 @@
                       {{ selectedOrderWhatsapp() }}
                     }
                   </dd>
+                </div>
+                <div class="inline-actions">
+                  @if (selectedOrderDetail()?.contact_whatsapp) {
+                    <button type="button" class="secondary" (click)="openSelectedOrderWhatsapp()">
+                      Abrir WhatsApp
+                    </button>
+                    <button type="button" class="secondary" (click)="copySelectedOrderWhatsapp()">
+                      {{ copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
+                    </button>
+                  } @else {
+                    <button type="button" class="secondary" (click)="openEditOrder(order, 'contact')">
+                      Agregar WhatsApp
+                    </button>
+                  }
                 </div>
                 <div>
                   <dt>Fuente</dt>
@@ -1215,8 +1257,8 @@
               Se usarán datos ficticios y los PDFs configurados para probar el mensaje post-pago.
               No se modificará ninguna orden.
             </p>
-            <button type="button" class="primary" [disabled]="whatsappFollowUpLoading()" (click)="prepareWhatsAppTest()">
-              {{ whatsappFollowUpLoading() ? 'Preparando...' : 'Crear prueba post-pago' }}
+            <button type="button" class="primary" [disabled]="whatsappFollowUpLoading() || whatsappPackageLoading()" (click)="prepareWhatsAppTest()">
+              {{ whatsappFollowUpLoading() || whatsappPackageLoading() ? 'Preparando...' : (whatsappFollowUpMode() ? 'Crear prueba post-pago' : 'Crear prueba de evidencias') }}
             </button>
           </section>
         }
@@ -1290,7 +1332,7 @@
           </section>
 
           <section class="admin-block whatsapp-web-preparation">
-            <p class="eyebrow">Preparación automática · WhatsApp Web local</p>
+            <p class="eyebrow">Borrador asistido · WhatsApp Web local</p>
             <h3>Constancia y cobro en un solo álbum</h3>
             <p>
               El sistema carga las dos imágenes y coloca un texto distinto en cada una.
@@ -1302,10 +1344,10 @@
               [disabled]="whatsappWebBusy() || message.status === 'sent'"
               (click)="prepareWhatsAppWebDraft()"
             >
-              {{ whatsappWebBusy() ? 'Preparando WhatsApp Web...' : 'Reintentar preparación automática' }}
+              {{ whatsappWebBusy() ? 'Preparando WhatsApp Web...' : 'Reintentar borrador asistido' }}
             </button>
             @if (whatsappWebResult(); as webResult) {
-              <p class="whatsapp-web-status" [class.ready]="webResult.status === 'draft_ready'">
+              <p class="whatsapp-web-status" [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'">
                 {{ webResult.message }}
               </p>
             }
@@ -1352,6 +1394,77 @@
         }
       </div>
     </section>
+  }
+
+  @if (activeModal() === 'payment') {
+    @if (modalOrder(); as order) {
+      <section
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payment-title"
+      >
+        <div class="modal compact-modal payment-modal">
+          <div class="modal-header">
+            <div>
+              <h2 id="payment-title">Registrar pago</h2>
+              <p>{{ orderLabel(order) }}</p>
+            </div>
+            <button type="button" class="icon-button" data-modal-initial-focus (click)="closeModal()">
+              Cerrar
+            </button>
+          </div>
+
+          <dl class="payment-summary">
+            <div>
+              <dt>Monto acordado</dt>
+              <dd>{{ formatMoney(+paymentAmountAgreed()) }}</dd>
+            </div>
+            <div>
+              <dt>Reserva</dt>
+              <dd>{{ formatDate(order.reservation_date, 'sin fecha') }} {{ formatTime(order.reservation_hour) }}</dd>
+            </div>
+          </dl>
+
+          <label>
+            Monto recibido
+            <input
+              name="quickPaymentAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+              [ngModel]="paymentAmountPaid()"
+              (ngModelChange)="editField(paymentAmountPaid, $event)"
+            />
+          </label>
+          <div class="quick-amounts" aria-label="Montos rápidos">
+            <button type="button" class="secondary" (click)="setQuickPaymentAmount('40.00')">S/40</button>
+            <button type="button" class="secondary" (click)="setQuickPaymentAmount('50.00')">S/50</button>
+            @if (paymentAmountAgreed()) {
+              <button
+                type="button"
+                class="secondary"
+                (click)="setQuickPaymentAmount(paymentAmountAgreed())"
+              >
+                Total acordado
+              </button>
+            }
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="!paymentAmountPaid() || actionBusy()"
+              (click)="requestMarkPaid()"
+            >
+              Confirmar pago de S/{{ paymentAmountPaid() || '0.00' }}
+            </button>
+          </div>
+        </div>
+      </section>
+    }
   }
 
   @if (activeModal() === 'edit-order') {
@@ -1404,6 +1517,7 @@
           </section>
 
           <div class="modal-grid">
+            @if (editOrderSection() === 'all' || editOrderSection() === 'contact') {
             <section class="admin-block action-card">
               <h3>Contacto</h3>
               @if (orderDetailLoading()) {
@@ -1451,45 +1565,9 @@
                 Guardar contacto
               </button>
             </section>
+            }
 
-            <section class="admin-block action-card">
-              <h3>Pago</h3>
-              <div class="form-grid">
-                <label>
-                  Pagado
-                  <input
-                    name="modalPaymentAmountPaid"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    [ngModel]="paymentAmountPaid()"
-                    (ngModelChange)="editField(paymentAmountPaid, $event)"
-                  />
-                </label>
-                <label>
-                  Acordado
-                  <input
-                    name="modalPaymentAmountAgreed"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    [ngModel]="paymentAmountAgreed()"
-                    (ngModelChange)="editField(paymentAmountAgreed, $event)"
-                  />
-                </label>
-              </div>
-              <button
-                type="button"
-                class="primary"
-                [disabled]="
-                  !order.charge_required || order.payment_status === 'paid' || isClosedOrder(order)
-                "
-                (click)="requestMarkPaid()"
-              >
-                Continuar para confirmar pago
-              </button>
-            </section>
-
+            @if (editOrderSection() === 'all' || editOrderSection() === 'restrictions') {
             <section class="admin-block action-card">
               <h3>Restricciones de reserva</h3>
               <div class="form-grid">
@@ -1589,6 +1667,7 @@
                 Continuar para guardar prioridad
               </button>
             </section>
+            }
           </div>
         </div>
       </section>
@@ -1758,6 +1837,18 @@
         </div>
 
         <div class="form-grid wide">
+          <label>
+            Tipo de documento <span class="required-marker" aria-hidden="true">*</span>
+            <select
+              name="newDocumentType"
+              required
+              [ngModel]="newDocumentType()"
+              (ngModelChange)="editField(newDocumentType, $event)"
+            >
+              <option value="dni">DNI</option>
+              <option value="foreign_resident_card">Carné de Extranjería</option>
+            </select>
+          </label>
           <label>
             Usuario o documento <span class="required-marker" aria-hidden="true">*</span>
             <input

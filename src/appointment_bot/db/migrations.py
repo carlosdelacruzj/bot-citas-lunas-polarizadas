@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 30
+SCHEMA_VERSION = 31
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -34,6 +34,9 @@ def create_current_schema(connection: Connection) -> None:
             portal_account_id text PRIMARY KEY,
             applicant_id text NOT NULL REFERENCES applicants(applicant_id) ON DELETE CASCADE,
             username text NOT NULL UNIQUE,
+            document_type text NOT NULL DEFAULT 'dni' CHECK (
+                document_type IN ('dni', 'foreign_resident_card')
+            ),
             password text NOT NULL,
             created_at timestamptz NOT NULL,
             updated_at timestamptz NOT NULL,
@@ -339,6 +342,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_contacts", "contact_source"),
         ("portal_accounts", "applicant_id"),
         ("portal_accounts", "password"),
+        ("portal_accounts", "document_type"),
         ("service_orders", "status"),
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
@@ -970,6 +974,20 @@ def migrate_database(connection: Connection) -> None:
             (30,),
         )
         current_version = 30
+    if current_version == 30:
+        connection.execute(
+            """
+            ALTER TABLE portal_accounts
+            ADD COLUMN document_type text NOT NULL DEFAULT 'dni' CHECK (
+                document_type IN ('dni', 'foreign_resident_card')
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (31,),
+        )
+        current_version = 31
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

@@ -33,7 +33,7 @@ from appointment_bot.reservation_engine.reservation_captcha_refresh import (
 )
 from appointment_bot.utils.screenshots import (
     save_result_screenshot,
-    save_revealed_element_screenshot,
+    save_revealed_centered_modal_screenshot,
     save_screenshot,
 )
 
@@ -284,7 +284,7 @@ def _save_sanitized_observer_screenshot(
 
 
 def _save_available_observer_screenshot(page, settings: Settings) -> Path | None:
-    path = save_revealed_element_screenshot(
+    path = save_revealed_centered_modal_screenshot(
         page,
         settings,
         "observer-cupo-disponible",
@@ -310,13 +310,19 @@ def _collect_observer_captcha_samples(
             break
 
         try:
-            captcha_paths.append(
-                save_reservation_captcha_image(
-                    page,
-                    settings,
-                    f"observer-captcha-sample-{sample_number}",
-                )
+            captcha_audit: dict[str, object] = {}
+            save_reservation_captcha_image(
+                page,
+                settings,
+                f"observer-captcha-sample-{sample_number}",
+                captcha_audit=captcha_audit,
             )
+            original_path = captcha_audit.get("captcha_original_html_path")
+            if not original_path:
+                raise RuntimeError(
+                    "The observer CAPTCHA was not available as an original HTML image."
+                )
+            captcha_paths.append(Path(str(original_path)))
         except Exception as exc:
             logger.warning("Could not save observer CAPTCHA sample %s: %s", sample_number, exc)
             break

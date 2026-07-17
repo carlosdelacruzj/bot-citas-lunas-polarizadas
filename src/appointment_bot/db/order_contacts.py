@@ -49,6 +49,7 @@ def list_service_order_summaries(
         rows = connection.execute(
             """
             SELECT so.order_id, so.applicant_id, a.full_name, a.document_number,
+                   pa.document_type,
                    wc.display_name AS contact_name, wc.phone AS contact_phone,
                    wc.contact_source,
                    so.priority, so.charge_required, so.status,
@@ -58,6 +59,8 @@ def list_service_order_summaries(
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
                    wm.status AS whatsapp_message_status,
                    wm.sent_at AS whatsapp_message_sent_at,
+                   wfm.status AS whatsapp_followup_status,
+                   wfm.sent_at AS whatsapp_followup_sent_at,
                    so.parent_order_id, so.program_expediente, so.program_plate,
                    so.closure_reason, so.closure_note, so.closed_at,
                    so.minimum_hour AS minimum_reservation_hour,
@@ -66,6 +69,7 @@ def list_service_order_summaries(
                    so.allowed_weekdays
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
+            JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
             LEFT JOIN applicant_contacts ac
                 ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
@@ -90,6 +94,13 @@ def list_service_order_summaries(
                 ORDER BY prepared_at DESC
                 LIMIT 1
             ) wm ON true
+            LEFT JOIN LATERAL (
+                SELECT status, sent_at
+                FROM whatsapp_followup_messages
+                WHERE order_id = so.order_id AND test_mode = false
+                ORDER BY prepared_at DESC
+                LIMIT 1
+            ) wfm ON true
             ORDER BY so.priority DESC, so.created_at ASC
             """
         ).fetchall()
@@ -292,6 +303,7 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         applicant_name=row["full_name"],
         document_number=str(row["document_number"]),
         document_number_masked=_mask_username(str(row["document_number"])),
+        document_type=str(row["document_type"]),
         contact_name=row["contact_name"],
         contact_whatsapp=row["contact_phone"],
         contact_whatsapp_masked=_mask_phone(row["contact_phone"]),
@@ -308,6 +320,8 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         amount_paid=_decimal_text(row["amount_paid"]),
         whatsapp_message_status=row["whatsapp_message_status"],
         whatsapp_message_sent_at=_timestamp_text(row["whatsapp_message_sent_at"]),
+        whatsapp_followup_status=row["whatsapp_followup_status"],
+        whatsapp_followup_sent_at=_timestamp_text(row["whatsapp_followup_sent_at"]),
         parent_order_id=row["parent_order_id"],
         program_expediente=row["program_expediente"],
         program_plate=row["program_plate"],

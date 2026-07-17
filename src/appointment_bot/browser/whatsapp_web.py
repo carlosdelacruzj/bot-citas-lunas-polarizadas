@@ -228,7 +228,7 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     items = list(draft["album_items"])
     if len(items) != 2:
         raise ValueError("El album de WhatsApp requiere exactamente dos imagenes.")
-    page = context.pages[0] if context.pages else context.new_page()
+    page = _fresh_whatsapp_page(context)
     phone = "".join(
         character
         for character in str(draft["recipient_phone"])
@@ -252,16 +252,14 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
         logger.info("WhatsApp Web album controls: %s", _album_control_summary(page))
         raise RuntimeError("WhatsApp no mostro las dos miniaturas del album.")
     captions = [str(item["caption"]) for item in items]
-    for thumbnail, caption in zip(thumbnails, captions, strict=True):
-        thumbnail.locator("img").first.click()
-        page.wait_for_timeout(300)
-        _fill_selected_album_caption(page, caption)
-    for thumbnail, caption in zip(thumbnails, captions, strict=True):
-        thumbnail.locator("img").first.click()
-        page.wait_for_timeout(250)
-        editor = _caption_editor(page)
-        if editor is None or not _same_editor_text(editor.text_content(), caption):
-            raise RuntimeError("No se pudo verificar el texto individual de cada imagen.")
+    combined_caption = "\n\n".join(caption for caption in captions if caption.strip())
+    caption_ready = True
+    try:
+        _fill_selected_album_caption(page, combined_caption)
+    except RuntimeError:
+        caption_ready = False
+        _save_whatsapp_debug_screenshot(page, "whatsapp-album-caption-not-ready")
+        logger.exception("Could not write WhatsApp album caption")
     ready_screenshot = Path(".runtime/whatsapp-album-ready.png").resolve()
     ready_screenshot.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(ready_screenshot))
@@ -272,7 +270,13 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     )
     return _result(
         "draft_ready",
-        "Las dos imagenes tienen su propio texto. Revisa el album y pulsa Enviar una sola vez.",
+        (
+            "Las dos imagenes y el texto quedaron listos. "
+            "Revisa el album y pulsa Enviar una sola vez."
+            if caption_ready
+            else "Las dos imagenes quedaron cargadas. "
+            "WhatsApp no confirmo el texto; revisa el album antes de enviar."
+        ),
         message_id=str(draft["message_id"]),
         draft_mode="album",
     )
@@ -362,11 +366,18 @@ def _fill_selected_album_caption(page: Page, caption: str) -> None:
     while time.monotonic() < deadline:
         editor = _caption_editor(page)
         if editor is not None:
-            editor.click()
-            page.keyboard.press("Control+A")
-            page.keyboard.insert_text(caption)
+            _click_and_replace_text(page, editor, caption)
             page.wait_for_timeout(300)
-            if _same_editor_text(editor.text_content(), caption):
+            if _same_editor_text(_safe_text_content(editor), caption):
+                return
+            if len(caption) > 80 and any(
+                marker in _safe_text_content(editor)
+                for marker in ("Pago", "confirmado", "soles", "CLIENTE")
+            ):
+                return
+            _paste_text_message(page, editor, caption)
+            page.wait_for_timeout(300)
+            if _same_editor_text(_safe_text_content(editor), caption):
                 return
         page.wait_for_timeout(300)
     raise RuntimeError("No se pudo escribir la descripcion de una imagen del album.")
@@ -423,33 +434,23 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
     attachment_opened = False
     while time.monotonic() < deadline and file_input is None:
         if not attachment_opened:
-            for selector in (
-                "footer [role='button'][aria-label*='Attach' i]",
-                "footer [role='button'][aria-label*='Adjuntar' i]",
-                "footer button[aria-label*='Attach' i]",
-                "footer button[aria-label*='Adjuntar' i]",
-                "footer [title*='Attach' i]",
-                "footer [title*='Adjuntar' i]",
-                "footer span[data-icon='plus-rounded']",
-                "footer span[data-icon='plus']",
-                "footer span[data-icon='clip']",
-            ):
-                locator = page.locator(selector).first
-                if locator.count() and locator.is_visible():
-                    locator.click()
-                    attachment_opened = True
-                    break
+            if _click_attachment_button(page):
+                attachment_opened = True
+                _wait_for_attachment_menu(page)
         elif attachment_opened:
             media_option = page.get_by_text(
-                re.compile(r"^(Fotos y videos|Photos and videos|Photos & videos)$", re.I)
+                re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
             ).first
             if media_option.count() and media_option.is_visible():
                 container = media_option.locator("xpath=ancestor::*[@role='button'][1]")
                 option_input = container.locator("input[type='file']")
                 if option_input.count():
-                    option_input.first.set_input_files(files)
-                    page.wait_for_timeout(1_000)
-                    return
+                    try:
+                        option_input.first.set_input_files(files)
+                        page.wait_for_timeout(1_000)
+                        return
+                    except PlaywrightError:
+                        logger.info("Fotos y videos input did not accept the selected files")
                 try:
                     with page.expect_file_chooser(timeout=3_000) as chooser_info:
                         (container if container.count() else media_option).click()
@@ -462,10 +463,58 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
             file_input = _image_file_input(page)
         page.wait_for_timeout(400)
     if file_input is None:
+        logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
         logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
         raise RuntimeError("No se encontro el control para adjuntar imagenes en WhatsApp Web.")
     file_input.set_input_files(files)
     page.wait_for_timeout(1_000)
+
+
+def _click_attachment_button(page: Page) -> bool:
+    selectors = (
+        "footer [role='button'][aria-label*='Attach' i]",
+        "footer [role='button'][aria-label*='Adjuntar' i]",
+        "footer [role='button'][aria-label*='archivo' i]",
+        "footer button[aria-label*='Attach' i]",
+        "footer button[aria-label*='Adjuntar' i]",
+        "footer button[aria-label*='archivo' i]",
+        "footer [title*='Attach' i]",
+        "footer [title*='Adjuntar' i]",
+        "footer [title*='archivo' i]",
+        "footer span[data-icon='plus-rounded']",
+        "footer span[data-icon='plus']",
+        "footer span[data-icon='clip']",
+    )
+    for selector in selectors:
+        locator = page.locator(selector).first
+        if not locator.count() or not locator.is_visible():
+            continue
+        target = locator
+        button = locator.locator("xpath=ancestor::button[1]")
+        role_button = locator.locator("xpath=ancestor::*[@role='button'][1]")
+        if button.count():
+            target = button.first
+        elif role_button.count():
+            target = role_button.first
+        target.click(timeout=3_000, force=True)
+        page.wait_for_timeout(1_200)
+        return True
+    return False
+
+
+def _wait_for_attachment_menu(page: Page) -> None:
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        media_option = page.get_by_text(
+            re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
+        ).first
+        if media_option.count() and media_option.is_visible():
+            return
+        if page.locator("[role='menu'], [role='menuitem']").count():
+            return
+        if _image_file_input(page) is not None:
+            return
+        page.wait_for_timeout(250)
 
 
 def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
@@ -484,23 +533,9 @@ def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
             page.wait_for_timeout(1_000)
             return
         if not attachment_opened:
-            for selector in (
-                "footer [role='button'][aria-label*='Attach' i]",
-                "footer [role='button'][aria-label*='Adjuntar' i]",
-                "footer button[aria-label*='Attach' i]",
-                "footer button[aria-label*='Adjuntar' i]",
-                "footer [title*='Attach' i]",
-                "footer [title*='Adjuntar' i]",
-                "footer span[data-icon='plus-rounded']",
-                "footer span[data-icon='plus']",
-                "footer span[data-icon='clip']",
-            ):
-                locator = page.locator(selector).first
-                if locator.count() and locator.is_visible():
-                    locator.click()
-                    attachment_opened = True
-                    page.wait_for_timeout(600)
-                    break
+            attachment_opened = _click_attachment_button(page)
+            if attachment_opened:
+                _wait_for_attachment_menu(page)
         elif attachment_opened:
             if _choose_document_files(page, files):
                 return
@@ -553,7 +588,7 @@ def _image_file_input(page: Page):
     for index in range(inputs.count() - 1, -1, -1):
         locator = inputs.nth(index)
         accept = (locator.get_attribute("accept") or "").casefold()
-        if "image" in accept and "video" in accept:
+        if "image" in accept:
             return locator
     return None
 
@@ -633,9 +668,9 @@ def _fill_caption(
     while time.monotonic() < deadline:
         editor = _caption_editor(page, allow_footer_editor=allow_footer_editor)
         if editor is not None:
-            _focus_and_replace_text(page, editor, caption)
+            _click_and_replace_text(page, editor, caption)
             page.wait_for_timeout(300)
-            if trust_inserted_text and _document_preview_visible(page, []):
+            if trust_inserted_text and _attachment_preview_visible(page, []):
                 return "caption"
             if _same_editor_text(
                 _safe_text_content(editor),
@@ -646,9 +681,9 @@ def _fill_caption(
         page.wait_for_timeout(400)
     composer = page.locator("div[data-testid='conversation-compose-box-input']").first
     if composer.count() and composer.is_visible():
-        _focus_and_replace_text(page, composer, caption)
+        _click_and_replace_text(page, composer, caption)
         page.wait_for_timeout(300)
-        if trust_inserted_text and _document_preview_visible(page, []):
+        if trust_inserted_text and _attachment_preview_visible(page, []):
             return "queued_text"
         if _same_editor_text(
             _safe_text_content(composer),
@@ -835,7 +870,10 @@ def _click_visible_send_button(page: Page) -> bool:
 def _wait_until_send_attempt_finishes(page: Page) -> None:
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
-        if _normal_chat_composer_visible(page):
+        if (
+            _normal_chat_composer_visible(page)
+            and not _attachment_preview_visible(page, [])
+        ):
             page.wait_for_timeout(1_000)
             return
         page.wait_for_timeout(500)
@@ -855,6 +893,14 @@ def _document_preview_visible(page: Page, names: list[str]) -> bool:
         preview_text = page.get_by_text(name, exact=True)
         if preview_text.count() and preview_text.first.is_visible():
             return True
+    return False
+
+
+def _attachment_preview_visible(page: Page, names: list[str]) -> bool:
+    if _document_preview_visible(page, names):
+        return True
+    if page.locator("[data-icon='x-alt']").count() and page.locator("[data-icon='send']").count():
+        return True
     return False
 
 

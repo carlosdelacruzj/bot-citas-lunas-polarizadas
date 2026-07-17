@@ -45,6 +45,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'summary' | 'finance' | 'orders' | 'runs';
 type ModalKind =
   | 'edit-order'
+  | 'payment'
   | 'order-actions'
   | 'create-order'
   | 'worker-restart'
@@ -83,10 +84,11 @@ type PendingAction = {
   execute: () => Promise<ApiActionResponse>;
   containsSecret?: boolean;
   onSuccess?: (response: ApiActionResponse) => void;
+  afterRefresh?: (response: ApiActionResponse) => void | Promise<void>;
   onSettled?: () => void;
 };
 type OrderNextAction = {
-  key: 'manual-session' | 'activate' | 'payment' | 'review' | 'none';
+  key: 'manual-session' | 'activate' | 'payment' | 'post-payment-whatsapp' | 'review' | 'none';
   label: string;
   description: string;
   disabled: boolean;
@@ -189,7 +191,9 @@ export class App implements OnDestroy {
   protected readonly orderAllowedWeekdays = signal<number[]>([]);
   protected readonly paymentAmountPaid = signal('');
   protected readonly paymentAmountAgreed = signal('');
+  protected readonly editOrderSection = signal<'all' | 'contact' | 'restrictions'>('all');
   protected readonly newDocumentNumber = signal('');
+  protected readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
   protected readonly newPassword = signal('');
   protected readonly newContactName = signal('');
   protected readonly newContactWhatsapp = signal('');
@@ -318,6 +322,18 @@ export class App implements OnDestroy {
         label: 'Selecciona una orden',
         description: 'Elige una fila para ver el siguiente paso operativo.',
         disabled: true,
+      };
+    }
+    if (this.isPostPaymentWhatsAppCandidate(order)) {
+      return {
+        key: 'post-payment-whatsapp',
+        label:
+          order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago',
+        description:
+          order.whatsapp_followup_status === 'sent'
+            ? 'El paquete post-pago ya figura enviado; usa esto solo para un reenvio.'
+            : 'La reserva esta pagada; envia indicaciones y PDFs al cliente.',
+        disabled: this.actionBusy(),
       };
     }
     if (this.isClosedOrder(order)) {
@@ -676,6 +692,16 @@ export class App implements OnDestroy {
     this.selectOrder(orderId);
   }
 
+  protected openPaymentFromSummary(orderId: string): void {
+    const order = this.orders().find((item) => item.order_id === orderId);
+    if (!order) {
+      this.openOrderFromSummary(orderId);
+      return;
+    }
+    this.activeView.set('orders');
+    void this.openPayment(order);
+  }
+
   protected selectOrder(orderId: string, loadDetail = true): void {
     if (!this.orderPanelOpen()) {
       this.captureFocus();
@@ -748,10 +774,36 @@ export class App implements OnDestroy {
     return run.screenshot_path ? [run.screenshot_path] : [];
   }
 
-  protected async openEditOrder(order: ServiceOrder): Promise<void> {
+  protected async openEditOrder(
+    order: ServiceOrder,
+    section: 'all' | 'contact' | 'restrictions' = 'all',
+  ): Promise<void> {
     this.selectOrder(order.order_id, false);
+    this.editOrderSection.set(section);
     this.openModal('edit-order');
     await this.loadSelectedOrderDetail(order.order_id);
+  }
+
+  protected async openPayment(order: ServiceOrder): Promise<void> {
+    this.selectOrder(order.order_id, false);
+    this.paymentAmountAgreed.set(order.amount_agreed ?? '40.00');
+    this.paymentAmountPaid.set(order.amount_agreed ?? '40.00');
+    this.openModal('payment');
+    await this.loadSelectedOrderDetail(order.order_id);
+    const refreshed = this.selectedOrderDetail();
+    if (refreshed?.order_id === order.order_id) {
+      this.paymentAmountAgreed.set(refreshed.amount_agreed ?? '40.00');
+      this.paymentAmountPaid.set(refreshed.amount_agreed ?? '40.00');
+    }
+  }
+
+  protected setQuickPaymentAmount(amount: string): void {
+    this.editField(this.paymentAmountPaid, amount);
+  }
+
+  protected showPendingPayments(): void {
+    this.activeView.set('orders');
+    this.orderQuickFilter.set('payment_pending');
   }
 
   protected openOrderActions(order: ServiceOrder): void {
@@ -774,16 +826,32 @@ export class App implements OnDestroy {
     this.openModal('whatsapp');
   }
 
+  protected openWhatsAppEvidenceTest(): void {
+    this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
+    this.whatsappTestRecipient.set('');
+    this.whatsappTestMode.set(true);
+    this.whatsappFollowUpMode.set(false);
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(true);
+    this.openModal('whatsapp');
+  }
+
   protected async prepareWhatsAppTest(): Promise<void> {
     const recipient = this.whatsappTestRecipient().trim();
     if (!recipient) {
       this.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
       return;
     }
-    const message = await this.loadWhatsAppFollowUpPackage(() =>
-      this.api.prepareWhatsAppFollowUpTest(recipient),
-    );
-    await this.prepareWhatsAppFollowUpWebDraft(message);
+    if (this.whatsappFollowUpMode()) {
+      const message = await this.loadWhatsAppFollowUpPackage(() =>
+        this.api.prepareWhatsAppFollowUpTest(recipient),
+      );
+      await this.prepareWhatsAppFollowUpWebDraft(message);
+      return;
+    }
+    const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
+    await this.prepareWhatsAppWebDraft(message);
   }
 
   protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
@@ -830,7 +898,19 @@ export class App implements OnDestroy {
       );
       await this.prepareWhatsAppFollowUpWebDraft(message);
     } catch {
-      // Error surfaced by loadWhatsAppFollowUpPackage.
+      if (!allowResend && order.whatsapp_followup_status === 'sent') {
+        const result = await Swal.fire({
+          icon: 'warning',
+          title: 'Post-pago ya enviado',
+          text: 'Esta orden ya tiene un seguimiento post-pago confirmado. ¿Deseas preparar un reenvio?',
+          showCancelButton: true,
+          confirmButtonText: 'Preparar reenvio',
+          cancelButtonText: 'Cancelar',
+        });
+        if (result.isConfirmed) {
+          await this.openPostPaymentWhatsApp(order, true);
+        }
+      }
     }
   }
 
@@ -875,11 +955,7 @@ export class App implements OnDestroy {
   }
 
   protected canPreparePostPaymentWhatsApp(order: ServiceOrder): boolean {
-    if (
-      order.status !== 'paid' ||
-      order.reservation_status !== 'confirmed' ||
-      order.payment_status !== 'paid'
-    ) {
+    if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return false;
     }
     const detail = this.selectedOrderDetail();
@@ -890,11 +966,7 @@ export class App implements OnDestroy {
   }
 
   protected postPaymentWhatsAppHint(order: ServiceOrder): string {
-    if (
-      order.status !== 'paid' ||
-      order.reservation_status !== 'confirmed' ||
-      order.payment_status !== 'paid'
-    ) {
+    if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return 'Requiere reserva confirmada y pago ya registrado.';
     }
     const detail = this.selectedOrderDetail();
@@ -904,7 +976,17 @@ export class App implements OnDestroy {
     if (!/^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')) {
       return 'Corrige el WhatsApp al formato internacional, por ejemplo +51987654321.';
     }
-    return 'Listo para preparar indicaciones post-pago y PDFs.';
+    return order.whatsapp_followup_status === 'sent'
+      ? 'Ya fue enviado; la siguiente accion preparara un reenvio explicito.'
+      : 'Listo para preparar indicaciones post-pago y PDFs.';
+  }
+
+  protected isPostPaymentWhatsAppCandidate(order: ServiceOrder): boolean {
+    return (
+      order.status === 'paid' &&
+      order.reservation_status === 'confirmed' &&
+      order.payment_status === 'paid'
+    );
   }
 
   protected async copyWhatsAppText(text: string, label: string): Promise<void> {
@@ -957,6 +1039,13 @@ export class App implements OnDestroy {
         });
       } else if (response.status === 'draft_ready') {
         this.successMessage.set('WhatsApp preparado: revisa el álbum y pulsa Enviar.');
+      } else if (response.status === 'sent') {
+        this.whatsappPackage.set({
+          ...message,
+          status: 'sent',
+          sent_at: response.sent_at ?? new Date().toISOString(),
+        });
+        this.successMessage.set('Constancia y cobro enviados automaticamente por WhatsApp.');
       }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -1108,35 +1197,47 @@ export class App implements OnDestroy {
     } else if (action.key === 'activate') {
       this.requestOrderAction('activate', 'Activar orden');
     } else if (action.key === 'payment') {
-      void this.openEditOrder(order);
+      void this.openPayment(order);
+    } else if (action.key === 'post-payment-whatsapp') {
+      void this.openPostPaymentWhatsApp(order);
     } else if (action.key === 'review') {
       this.openOrderActions(order);
     }
   }
 
   protected rowPrimaryActionLabel(order: ServiceOrder): string {
-    if (order.status === 'ready') {
-      return 'Abrir sesión';
+    if (order.payment_status === 'pending') {
+      return 'Registrar pago';
+    }
+    if (this.isPostPaymentWhatsAppCandidate(order)) {
+      return order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago';
     }
     if (order.status === 'paused') {
       return 'Activar';
     }
-    if (order.reservation_status === 'confirmed' && order.payment_status !== 'paid') {
-      return 'Registrar pago';
+    if (order.status === 'ready') {
+      return 'Abrir sesión';
     }
     return 'Ver detalle';
   }
 
   protected runRowPrimaryAction(order: ServiceOrder): void {
-    if (order.status === 'ready') {
-      void this.openManualSessionNow(order);
+    if (order.payment_status === 'pending') {
+      void this.openPayment(order);
       return;
     }
-    this.selectOrder(order.order_id);
+    if (this.isPostPaymentWhatsAppCandidate(order)) {
+      this.selectOrder(order.order_id);
+      void this.openPostPaymentWhatsApp(order);
+      return;
+    }
     if (order.status === 'paused') {
+      this.selectOrder(order.order_id);
       this.requestOrderAction('activate', 'Activar orden');
-    } else if (order.reservation_status === 'confirmed' && order.payment_status !== 'paid') {
-      void this.openEditOrder(order);
+    } else if (order.status === 'ready') {
+      void this.openManualSessionNow(order);
+    } else {
+      this.selectOrder(order.order_id);
     }
   }
 
@@ -1365,12 +1466,30 @@ export class App implements OnDestroy {
       message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
       execute: () => this.api.markPaymentPaid(order.order_id, payload),
       onSuccess: () => this.activeModal.set(null),
+      afterRefresh: () => this.offerPostPaymentAfterPayment(order.order_id),
     });
+  }
+
+  protected async copySelectedOrderWhatsapp(): Promise<void> {
+    const phone = this.selectedOrderDetail()?.contact_whatsapp;
+    if (!phone) {
+      return;
+    }
+    await navigator.clipboard.writeText(phone);
+    this.markCopied('whatsapp-number');
+  }
+
+  protected openSelectedOrderWhatsapp(): void {
+    const digits = this.selectedOrderDetail()?.contact_whatsapp?.replace(/\D/g, '');
+    if (digits) {
+      window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
+    }
   }
 
   protected requestCreateOrder(): void {
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
+      document_type: this.newDocumentType(),
       password: this.newPassword(),
       contact_whatsapp: this.optionalText(this.newContactWhatsapp()),
       contact_name: this.newContactName().trim(),
@@ -1389,6 +1508,7 @@ export class App implements OnDestroy {
     }
     if (
       !payload.document_number ||
+      !payload.document_type ||
       !payload.password ||
       !payload.contact_name ||
       !payload.contact_source
@@ -1684,6 +1804,24 @@ export class App implements OnDestroy {
     return apiErrorMessage(error);
   }
 
+  private async offerPostPaymentAfterPayment(orderId: string): Promise<void> {
+    const order = this.orders().find((item) => item.order_id === orderId);
+    if (!order || !this.isPostPaymentWhatsAppCandidate(order)) {
+      return;
+    }
+    const result = await Swal.fire({
+      title: 'Pago registrado',
+      text: '¿Deseas preparar ahora las indicaciones y archivos post-pago?',
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Preparar post-pago',
+      cancelButtonText: 'Cerrar',
+    });
+    if (result.isConfirmed) {
+      await this.openPostPaymentWhatsApp(order);
+    }
+  }
+
   private async setPendingAction(action: PendingAction): Promise<void> {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -1714,6 +1852,7 @@ export class App implements OnDestroy {
       this.formDirty.set(false);
       action.onSuccess?.(response);
       await this.refreshAll();
+      await action.afterRefresh?.(response);
       await Swal.fire({
         toast: true,
         position: 'top-end',
@@ -1971,6 +2110,7 @@ export class App implements OnDestroy {
 
   private clearCreateOrderForm(): void {
     this.newDocumentNumber.set('');
+    this.newDocumentType.set('dni');
     this.newPassword.set('');
     this.newContactName.set('');
     this.newContactWhatsapp.set('');

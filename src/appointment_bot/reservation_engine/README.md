@@ -1,5 +1,15 @@
 # Reservation Engine
 
+## Evidencia de cupos y CAPTCHA
+
+La ejecución normal y el observador usan el mismo encuadre centrado del panel de
+citas después de seleccionar fecha y hora y comprobar que el CAPTCHA cargó. Cada
+detección conserva una sola captura del modal.
+
+El observador conserva además cinco muestras consecutivas del CAPTCHA original
+extraído del HTML. Esas muestras son evidencia independiente y no generan cinco
+capturas del modal ni se sustituyen por recortes de pantalla.
+
 Estructura futura para el motor de reservas: Playwright, login, lectura de
 cupos, seleccion de fecha/hora, CAPTCHA, envio y confirmacion.
 

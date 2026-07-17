@@ -4,11 +4,11 @@ from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from appointment_bot.config import Settings
+from appointment_bot.core.documents import PORTAL_DOCUMENT_TYPE_VALUES, normalize_document_type
 
 logger = logging.getLogger(__name__)
 
 DOCUMENT_TYPE_SELECTOR = "select#DdlDocumento"
-DOCUMENT_TYPE_VALUE = "1"  # DNI
 USERNAME_SELECTOR = (
     'input[name="username"], input[name="email"], input[type="email"], input[type="text"]'
 )
@@ -39,7 +39,11 @@ def login(page: Page, settings: Settings) -> None:
 
     logger.info("Filling login form")
     try:
-        page.locator(DOCUMENT_TYPE_SELECTOR).select_option(DOCUMENT_TYPE_VALUE, timeout=timeout)
+        document_type = normalize_document_type(settings.login_document_type)
+        page.locator(DOCUMENT_TYPE_SELECTOR).select_option(
+            PORTAL_DOCUMENT_TYPE_VALUES[document_type],
+            timeout=timeout,
+        )
         page.locator(USERNAME_SELECTOR).first.fill(settings.login_username, timeout=timeout)
         page.locator(PASSWORD_SELECTOR).first.fill(settings.login_password, timeout=timeout)
         page.locator(SUBMIT_SELECTOR).first.click(timeout=timeout)

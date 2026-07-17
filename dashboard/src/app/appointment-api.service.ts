@@ -33,6 +33,7 @@ export interface ServiceOrder {
   applicant_id: string;
   applicant_name: string | null;
   document_number_masked: string;
+  document_type: 'dni' | 'foreign_resident_card';
   contact_name: string | null;
   contact_whatsapp_masked: string | null;
   contact_source: string | null;
@@ -48,6 +49,8 @@ export interface ServiceOrder {
   amount_paid: string | null;
   whatsapp_message_status: string | null;
   whatsapp_message_sent_at: string | null;
+  whatsapp_followup_status: string | null;
+  whatsapp_followup_sent_at: string | null;
   parent_order_id: string | null;
   program_expediente: string | null;
   program_plate: string | null;
@@ -314,7 +317,7 @@ export interface WhatsAppWebDraftResponse {
   manual_send_required: boolean;
   sent: boolean;
   sent_at?: string | null;
-  draft_mode?: 'caption' | 'queued_text' | 'album' | 'documents';
+  draft_mode?: 'caption' | 'queued_text' | 'album' | 'documents' | 'image_sequence' | 'document_sequence';
 }
 
 export interface CloseServiceOrderPayload {
@@ -324,6 +327,7 @@ export interface CloseServiceOrderPayload {
 
 export interface CreateServiceOrderPayload {
   document_number: string;
+  document_type: 'dni' | 'foreign_resident_card';
   password: string;
   contact_name: string;
   contact_source: string;
@@ -631,6 +635,7 @@ export function apiErrorMessage(error: unknown): string {
     if (fieldErrors && typeof fieldErrors === 'object') {
       const labels: Record<string, string> = {
         document_number: 'Usuario o documento',
+        document_type: 'Tipo de documento',
         password: 'Contraseña',
         contact_name: 'Persona de contacto',
         contact_source: 'Fuente',

@@ -21,6 +21,7 @@ from appointment_bot.db.orders import (
     mark_service_order_no_charge,
     set_order_paused,
     split_service_order_programs,
+    update_service_order_document_type,
 )
 from appointment_bot.db.runs import list_run_details_between
 from appointment_bot.reports.evidence import export_evidence_summary
@@ -66,6 +67,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     order_add_parser = subparsers.add_parser("order-add", help="Crea un trabajo de reserva.")
     order_add_parser.add_argument("--document", required=True, help="DNI/documento del titular.")
+    order_add_parser.add_argument(
+        "--document-type",
+        choices=("dni", "foreign_resident_card"),
+        default="dni",
+        help="Tipo de documento usado para ingresar al portal.",
+    )
     order_add_parser.add_argument(
         "--password",
         help="Clave de acceso. Si se omite, se solicita de forma oculta.",
@@ -124,6 +131,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--keep-parent-active",
         action="store_true",
         help="No archiva la orden generica despues de crear subordenes.",
+    )
+
+    document_type_parser = subparsers.add_parser(
+        "order-document-type",
+        help="Actualiza el tipo de documento usado para ingresar al portal.",
+    )
+    document_type_parser.add_argument("order_id")
+    document_type_parser.add_argument(
+        "document_type",
+        choices=("dni", "foreign_resident_card"),
     )
 
     subparsers.add_parser("orders", help="Lista trabajos de reserva.")
@@ -298,6 +315,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         try:
             result = create_service_order(
                 document_number=args.document,
+                document_type=args.document_type,
                 password=password,
                 priority=args.priority,
                 contact_whatsapp=args.whatsapp,
@@ -325,6 +343,14 @@ def run(argv: Sequence[str] | None = None) -> int:
         )
         for result in results:
             print(f"Suborden guardada: {result.order_id}")
+        return 0
+
+    if args.command == "order-document-type":
+        try:
+            update_service_order_document_type(args.order_id, args.document_type)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(f"Tipo de documento actualizado: {args.order_id} -> {args.document_type}")
         return 0
 
     if args.command == "orders":

@@ -15,6 +15,7 @@ def continuous_order_settings(
         base_settings,
         username=order.username,
         password=getattr(order, "password", ""),
+        document_type=order.document_type,
     )
     return continuous_settings(order_settings)
 

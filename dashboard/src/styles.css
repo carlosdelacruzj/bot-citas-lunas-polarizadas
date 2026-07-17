@@ -76,6 +76,64 @@ body {
   padding: 14px;
 }
 
+.metric-action {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.metric-action:hover small {
+  color: #1d4ed8;
+}
+
+.clickable-metric {
+  padding: 0 !important;
+}
+
+.clickable-metric .metric-action {
+  padding: 16px;
+}
+
+.inline-actions,
+.quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.payment-modal {
+  width: min(520px, 100%);
+}
+
+.payment-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.payment-summary div {
+  border: 1px solid #dbe7f3;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.payment-summary dt {
+  color: #65737d;
+  font-size: 0.78rem;
+}
+
+.payment-summary dd {
+  margin: 5px 0 0;
+  font-weight: 700;
+}
+
 .monthly-kpi span,
 .monthly-kpi small {
   color: #65737d;
@@ -204,7 +262,7 @@ body {
   text-align: right;
 }
 
-.attention-list button {
+.attention-list .attention-action-row > button:first-child {
   display: flex;
   justify-content: space-between;
   gap: 14px;
@@ -217,13 +275,24 @@ body {
   text-align: left;
 }
 
-.attention-list button:hover {
+.attention-list .attention-action-row > button:first-child:hover {
   border-color: #93c5fd;
   background: #f8fbff;
 }
 
-.attention-list button > span:first-child {
+.attention-list .attention-action-row > button:first-child > span:first-child {
   min-width: 0;
+}
+
+.attention-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.attention-action-row .compact-action {
+  align-self: stretch;
+  min-width: 88px;
 }
 
 .attention-list strong,

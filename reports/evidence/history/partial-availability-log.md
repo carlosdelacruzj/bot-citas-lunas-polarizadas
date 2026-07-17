@@ -1473,3 +1473,246 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-15 08:45:19 - order-44096258 - partial
+
+- Run: 20260715-084434-4b0d2038
+- Orden: order-***
+- Cliente: CRISTHIAN ANDRE HUAMAN ATO | Contacto: Analiz
+- Cuenta: 44***8
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 24/07/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 24/07/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 45.616s
+  - Seleccion fecha/hora: 1.812s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-084434-order-***-f1bda2.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-15 09:39:32 - order-41654824 - partial
+
+- Run: 20260715-093923-b0fbcc0f
+- Orden: order-***
+- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cuenta: 41***4
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 05/08/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 05/08/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.658s
+  - Seleccion fecha/hora: 1.797s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-093923-order-***-1debf8.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-15 09:41:18 - order-09265081 - partial
+
+- Run: 20260715-094051-5a0ef969
+- Orden: order-***
+- Cliente: DOIRA LUZ HUALPA GALLEGOS | Contacto: Willangel
+- Cuenta: 09***1
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 20/07/2026
+- Hora detectada: 08:00
+- Cupos observados: 30
+- Opciones fecha: 20/07/2026
+- Opciones hora: 08:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 27.147s
+  - Seleccion fecha/hora: 1.828s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-094051-order-***-c89851.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-15 14:20:00 - order-41654824 - partial
+
+- Run: 20260715-141926-7a7273e8
+- Orden: order-***
+- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cuenta: 41***4
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 07/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 20
+- Opciones fecha: 07/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 34.043s
+  - Seleccion fecha/hora: 1.656s
+- Evidencia:
+  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
+  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
+  - Screenshot adicional: screenshots\15-07-2026\cupo-141926-order-***-85aa4b.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-17 08:52:41 - order-09806339 - partial
+
+- Run: 20260717-085233-1f623673
+- Orden: order-***
+- Cliente: MIRIAM YRIS GUTIERREZ MAYHUASCA | Contacto: Valeria gutierrez
+- Cuenta: 09***9
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 10/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 20
+- Opciones fecha: 10/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Reserva diferida porque hay una orden de mayor prioridad lista.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: priority_deferred
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 7.632s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-085233-order-***-4b268f.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal.
+
+## 2026-07-17 10:42:42 - order-72452392 - partial
+
+- Run: 20260717-104218-8a2acf37
+- Orden: order-***
+- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cuenta: 72***2
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 12:00
+- Cupos observados: 25
+- Opciones fecha: 21/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 24.165s
+  - Seleccion fecha/hora: 1.844s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-17 10:44:12 - order-72452392 - partial
+
+- Run: 20260717-104337-01d985ff
+- Orden: order-***
+- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cuenta: 72***2
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/07/2026
+- Hora detectada: 12:00
+- Cupos observados: 30
+- Opciones fecha: 21/07/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 34.880s
+  - Seleccion fecha/hora: 1.719s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

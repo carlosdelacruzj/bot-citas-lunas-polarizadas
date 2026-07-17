@@ -172,6 +172,13 @@ def prepare_web_payload(
         if draft_kind == "album"
         else prepare_whatsapp_web_draft(draft)
     )
+    if result.get("sent"):
+        sent_payload = mark_whatsapp_message_sent(message_id)
+        result = {
+            **result,
+            "status": "sent",
+            "sent_at": sent_payload.get("sent_at"),
+        }
     status = (
         HTTPStatus.SERVICE_UNAVAILABLE
         if result["status"] == "web_unavailable"

@@ -1,5 +1,20 @@
 # Manual operativo
 
+## Flujo rápido de cobranza
+
+El dashboard permite registrar un pago desde la tabla, el resumen mensual o el
+panel de la orden sin abrir el formulario general. La ventana compacta propone
+el monto acordado, incluye accesos rápidos para S/40 y S/50, y conserva una sola
+confirmación antes de modificar el estado financiero.
+
+Después de registrar el pago, el operador puede preparar inmediatamente el
+paquete post-pago. Esta transición nunca confirma el envío automáticamente: los
+mensajes y archivos continúan sujetos a revisión manual.
+
+El panel separa las acciones frecuentes de contacto, restricciones y pago. Los
+indicadores de pagos pendientes funcionan también como filtros y el número
+completo de WhatsApp puede copiarse o abrirse desde el detalle protegido.
+
 ## Arranque recomendado
 
 En Windows, la tarea programada `AppointmentBotContinuousWorker` ejecuta
@@ -166,13 +181,14 @@ acciones `Registrar pago` y `Enviar por WhatsApp`; esta ultima deja el album lis
 para el envio humano final. El texto de confirmacion usa el mismo formateador que
 Telegram. Preparar o confirmar el mensaje no registra el pago.
 
-Despues de confirmar la transferencia y registrar el pago, el detalle de una orden
-pagada muestra `Enviar post-pago`. Esta accion es independiente del album de cobro:
-abre WhatsApp Web, adjunta los PDFs configurados en
+Despues de confirmar la transferencia y registrar el pago, una orden pagada muestra
+`Enviar post-pago` como accion directa en la fila y en el detalle. Esta accion es
+independiente del album de cobro: abre WhatsApp Web, adjunta los PDFs configurados en
 `.runtime/whatsapp-followup/followup-details.json`, envia primero los PDFs y luego
 envia el texto post-pago como segundo mensaje. Si WhatsApp confirma el envio, el
-paquete queda registrado como enviado automaticamente. Usar `Confirmar envio
-post-pago` solo como respaldo si el operador tuvo que enviarlo manualmente.
+paquete queda registrado como enviado automaticamente y la accion pasa a
+`Reenviar post-pago`. Usar `Confirmar envio post-pago` solo como respaldo si el
+operador tuvo que enviarlo manualmente.
 
 ## Revision diferida de reservas confirmadas
 

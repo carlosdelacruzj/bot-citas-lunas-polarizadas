@@ -42,6 +42,7 @@ class ServiceOrderCandidate:
     order_id: str
     name: str
     username: str
+    document_type: str
     priority: int
     status: str
     created_at: str
@@ -75,6 +76,7 @@ class ServiceOrderRuntime:
     order_id: str
     name: str
     username: str
+    document_type: str
     password: str
     priority: int
     status: str
@@ -111,6 +113,7 @@ class ServiceOrderSummary:
     applicant_name: str | None
     document_number: str
     document_number_masked: str
+    document_type: str
     contact_name: str | None
     contact_whatsapp: str | None
     contact_whatsapp_masked: str | None
@@ -127,6 +130,8 @@ class ServiceOrderSummary:
     amount_paid: str | None
     whatsapp_message_status: str | None
     whatsapp_message_sent_at: str | None
+    whatsapp_followup_status: str | None
+    whatsapp_followup_sent_at: str | None
     parent_order_id: str | None
     program_expediente: str | None
     program_plate: str | None
