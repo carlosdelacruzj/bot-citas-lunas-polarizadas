@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 1 implementada y activa; validacion conversacional pendiente.
+Estado general: Fase 1 implementada y activa; recuperacion del worker pendiente.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -265,8 +265,8 @@ la operacion diaria.
 
 ### Fase 1 - Crear el receptor independiente de Telegram
 
-Estado: implementada y activa el `2026-07-18`; falta confirmar desde el celular
-los tres comandos y una recuperacion supervisada antes de cerrarla.
+Estado: implementada y activa el `2026-07-18`; falta probar la recuperacion
+supervisada del worker antes de cerrarla.
 
 1. Crear un modulo separado para recibir actualizaciones de Telegram.
 2. Usar el mismo bot de alertas, manteniendo separado el codigo de envio y el
@@ -317,12 +317,19 @@ Pruebas completadas:
 
 Pruebas pendientes para cierre:
 
-1. enviar `/estado`, `/ayuda` y `/cancelar` desde el celular autorizado;
-2. verificar visualmente claridad y formato de las respuestas;
-3. reiniciar solo el receptor despues de procesar un comando y comprobar que no
-   repite la respuesta;
-4. detener temporalmente el worker en una prueba coordinada y comprobar que el
+1. detener temporalmente el worker en una prueba coordinada y comprobar que el
    receptor permanece activo y el supervisor recupera el worker.
+
+Validacion conversacional y de recuperacion realizada:
+
+- `/estado`: respondio correctamente en el celular autorizado;
+- `/ayuda`: respondio correctamente en el celular autorizado;
+- `/cancelar`: respondio `No hay una operacion guiada activa`, resultado
+  esperado porque no existia una conversacion abierta;
+- offset antes del reinicio del receptor: `89336802`;
+- el supervisor recupero el receptor 15 segundos despues de terminar su
+  proceso;
+- offset despues del reinicio: `89336802`, sin repetir respuestas anteriores.
 
 ### Fase 2 - Control seguro del worker
 
@@ -479,7 +486,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 |---|---|---|---|---|---|
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
-| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado y activo; prueba desde celular pendiente | Logs de bootstrap y seccion Fase 1 | Probar `/estado`, `/ayuda` y `/cancelar` desde Telegram |
+| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado, activo y validado desde celular; falta recuperacion del worker | Logs de bootstrap y seccion Fase 1 | Ejecutar prueba coordinada de caida del worker |
 
 ## Decisiones pendientes
 
