@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 1 implementada y activa; recuperacion del worker pendiente.
+Estado general: Fase 1 implementada y activa; confirmacion final desde Telegram pendiente.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -265,8 +265,8 @@ la operacion diaria.
 
 ### Fase 1 - Crear el receptor independiente de Telegram
 
-Estado: implementada y activa el `2026-07-18`; falta probar la recuperacion
-supervisada del worker antes de cerrarla.
+Estado: implementada y activa el `2026-07-18`; recuperacion supervisada probada
+y pendiente de confirmacion visual final desde Telegram.
 
 1. Crear un modulo separado para recibir actualizaciones de Telegram.
 2. Usar el mismo bot de alertas, manteniendo separado el codigo de envio y el
@@ -317,8 +317,8 @@ Pruebas completadas:
 
 Pruebas pendientes para cierre:
 
-1. detener temporalmente el worker en una prueba coordinada y comprobar que el
-   receptor permanece activo y el supervisor recupera el worker.
+1. enviar `/estado` despues de la recuperacion y confirmar visualmente que
+   informa `Activo, esperando la siguiente ventana de trabajo`.
 
 Validacion conversacional y de recuperacion realizada:
 
@@ -330,6 +330,21 @@ Validacion conversacional y de recuperacion realizada:
 - el supervisor recupero el receptor 15 segundos despues de terminar su
   proceso;
 - offset despues del reinicio: `89336802`, sin repetir respuestas anteriores.
+
+Prueba de caida abrupta del worker:
+
+- realizada el `2026-07-18` fuera de una ventana activa;
+- Telegram permanecio activo con los mismos procesos durante toda la prueba;
+- el cierre forzado dejo correctamente el lease de PostgreSQL vigente durante
+  cinco minutos para impedir un segundo propietario simultaneo;
+- el primer intento del bootstrap salio con codigo `76` por lease vigente;
+- se detecto que el reintento anterior de `300` segundos agregaba una espera
+  innecesaria despues del primer intento;
+- `LeaseUnavailableDelaySeconds` se redujo a `30` segundos para reintentar de
+  forma prudente sin forzar ni borrar el lease;
+- despues de expirar el lease se reinicio la tarea programada y el worker volvio
+  saludable en `outside_hot_window`;
+- la prueba final confirmo `worker_running=true` y receptor Telegram activo.
 
 ### Fase 2 - Control seguro del worker
 
@@ -486,7 +501,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 |---|---|---|---|---|---|
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
-| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado, activo y validado desde celular; falta recuperacion del worker | Logs de bootstrap y seccion Fase 1 | Ejecutar prueba coordinada de caida del worker |
+| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado; recuperacion probada y espera final reducida | Logs de bootstrap y seccion Fase 1 | Confirmar `/estado` despues de la recuperacion |
 
 ## Decisiones pendientes
 

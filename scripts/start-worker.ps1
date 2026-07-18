@@ -2,7 +2,7 @@ param(
     [int]$DockerTimeoutSeconds = 180,
     [int]$PostgresTimeoutSeconds = 180,
     [int]$WorkerRestartDelaySeconds = 30,
-    [int]$LeaseUnavailableDelaySeconds = 300,
+    [int]$LeaseUnavailableDelaySeconds = 30,
     [string]$DailyResumeTime = "07:30"
 )
 
