@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 4 implementada; activacion y validacion desde Telegram pendientes.
+Estado general: Fase 4 completada y validada en operacion real.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -494,8 +494,7 @@ Validacion desde Telegram:
 
 ### Fase 4 - Actualizacion de reglas y prioridad
 
-Estado: implementada el `2026-07-18`; pendiente de recargar el receptor y
-validar el flujo desde el celular autorizado.
+Estado: completada el `2026-07-18`.
 
 1. Implementar `/prioridad` con validacion y confirmacion.
 2. Implementar el flujo conversacional de `/reglas_editar`.
@@ -540,14 +539,21 @@ Pruebas locales completadas:
 - prioridad y reglas originales restauradas al terminar la prueba;
 - compilacion, Ruff y `git diff --check` correctos.
 
-Pruebas pendientes para cierre:
+Pruebas pendientes para cierre: ninguna.
 
-1. probar `/prioridad ORDER_ID VALOR` y pulsar `Cancelar`;
-2. confirmar un cambio de prioridad y verificarlo con `/cliente ORDER_ID`;
-3. iniciar `/reglas_editar ORDER_ID`, responder los cuatro pasos y cancelar la
-   confirmacion final;
-4. repetir, confirmar y verificar con `/reglas ORDER_ID`;
-5. restaurar desde Telegram los valores originales y volver a verificarlos.
+Validacion desde Telegram y restauracion:
+
+- el operador completo la prueba conversacional desde el celular autorizado;
+- las fechas fueron solicitadas y mostradas en `DD-MM-YYYY`;
+- una fecha minima ingresada como `14-05-1998` se persistio internamente como
+  `1998-05-14`, confirmando la conversion correcta hacia API/BD;
+- la prioridad termino restaurada en `0`;
+- la fecha minima de prueba se restauro a `null`;
+- fecha maxima, hora minima y dias permitidos quedaron en `null`;
+- una lectura final confirmo prioridad `0` y las cuatro restricciones sin
+  limite;
+- el worker permanecio saludable en `outside_hot_window`;
+- con esta evidencia se cumplen los criterios de cierre de la Fase 4.
 
 ### Fase 5 - Alta remota de clientes
 
@@ -655,7 +661,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
 | 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
 | 2026-07-18 | 3 | Consultas operativas y detalle deliberado | Completado y validado desde Telegram | Admin API y seccion Fase 3 | Iniciar Fase 4: prioridad y reglas remotas |
-| 2026-07-18 | 4 | Prioridad y restricciones remotas | Implementado y validado localmente con restauracion | Admin API y seccion Fase 4 | Recargar y validar desde Telegram |
+| 2026-07-18 | 4 | Prioridad y restricciones remotas | Completado desde Telegram; formato peruano y restauracion verificados | Admin API y seccion Fase 4 | Iniciar Fase 5: alta remota de clientes |
 
 ## Decisiones pendientes
 
