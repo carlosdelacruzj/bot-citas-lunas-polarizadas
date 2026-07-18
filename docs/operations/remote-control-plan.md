@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 2 implementada y activa; validacion desde Telegram pendiente.
+Estado general: Fase 2 completada y validada en operacion real.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -348,8 +348,7 @@ Prueba de caida abrupta del worker:
 
 ### Fase 2 - Control seguro del worker
 
-Estado: implementada y activa el `2026-07-18`; pendiente de validacion
-conversacional desde el celular autorizado.
+Estado: completada el `2026-07-18`.
 
 1. Implementar `/pausar`, `/reanudar` y `/reiniciar` mediante la Admin API.
 2. Agregar botones de confirmar y cancelar.
@@ -397,15 +396,20 @@ Pruebas locales completadas:
 - las tres acciones de validacion quedaron auditadas como
   `requested_by=phase2_validation`.
 
-Pruebas pendientes para cierre:
+Pruebas pendientes para cierre: ninguna.
 
-1. abrir `/pausar` y pulsar `Cancelar`; comprobar que el worker no cambia;
-2. confirmar `/pausar` y comprobar el mensaje final;
-3. consultar `/estado` y comprobar `Pausado: si`;
-4. confirmar `/reanudar` y comprobar `Pausado: no`;
-5. confirmar `/reiniciar` y comprobar recuperación y respuesta final;
-6. pulsar dos veces un boton ya consumido y comprobar que no genera un segundo
-   comando.
+Validacion desde Telegram:
+
+- el operador completo la secuencia desde el celular autorizado;
+- se registro exactamente un comando `pause`, uno `resume` y uno `restart` con
+  el mismo actor Telegram saneado;
+- los tres comandos terminaron en `applied` y tienen timestamps de solicitud y
+  procesamiento;
+- no se encontraron comandos Telegram duplicados en la secuencia;
+- estado final: `worker_running=true`, `paused=false`, fase
+  `outside_hot_window`, `consecutive_errors=0` y sin `last_error`;
+- receptor Telegram activo y offset persistido despues de la prueba;
+- con esta evidencia se cumplen los criterios de cierre de la Fase 2.
 
 ### Fase 3 - Consultas operativas
 
@@ -544,7 +548,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
-| 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Implementado; pause, resume y restart reales aplicados | `worker_commands` y seccion Fase 2 | Validar botones desde Telegram |
+| 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
 
 ## Decisiones pendientes
 
