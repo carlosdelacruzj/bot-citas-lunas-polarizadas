@@ -557,17 +557,69 @@ Validacion desde Telegram y restauracion:
 
 ### Fase 5 - Alta remota de clientes
 
-Estado: pendiente.
+Estado: implementada; pendiente de prueba final con un alta real desde Telegram.
 
 1. Implementar `/cliente_nuevo` como conversacion con estado y vencimiento.
 2. Solicitar solamente los campos definidos por el contrato vigente.
 3. No inventar datos opcionales que el usuario no proporcione.
 4. Validar cada campo mediante la Admin API.
-5. Mostrar un resumen enmascarado antes de crear la orden.
+5. Mostrar un resumen completo antes de crear la orden, incluida la contrasena,
+   solamente en el chat autorizado del unico operador.
 6. Pedir confirmacion explicita.
 7. Mostrar el `order_id`, estado inicial y resultado del preflight.
-8. Definir un mecanismo seguro para los campos sensibles antes de habilitarlos
-   en produccion; no enviarlos en texto abierto por Telegram.
+8. Permitir `/credenciales ORDER_ID` como consulta individual y deliberada; no
+   incluir contrasenas en `/clientes`, `/cliente`, logs ni respuestas masivas.
+
+Decision operativa sobre credenciales:
+
+- el sistema es operado exclusivamente por una persona y el operador solicito
+  expresamente ver usuario/documento y contrasena completos cuando los necesite;
+- `/cliente_nuevo` muestra esos valores completos en el resumen previo a la
+  confirmacion y `/credenciales ORDER_ID` los muestra bajo demanda;
+- ambos comandos solo procesan mensajes provenientes de `TELEGRAM_CHAT_ID` o
+  `TELEGRAM_CONTROL_CHAT_IDS` autorizados;
+- Telegram conserva historial: cada respuesta con credenciales debe tratarse
+  como un mensaje sensible y el bot lo advierte expresamente;
+- la contrasena sigue cifrada en PostgreSQL y solo se descifra para una consulta
+  individual autenticada; no se agrega a los DTO de listado ni detalle general;
+- ningun valor sensible se escribe en logs o en este documento.
+
+Avance realizado:
+
+- implementado `/cliente_nuevo` como conversacion de seis pasos con vencimiento
+  de diez minutos;
+- se solicitan tipo y numero de documento, contrasena, nombre del contacto,
+  fuente y WhatsApp opcional; escribir `OMITIR` no inventa un telefono;
+- el titular no se confunde con el contacto: el nombre del titular continuara
+  obteniendose del portal durante el preflight;
+- el resumen previo muestra todos los valores y requiere el boton `Crear cliente`;
+- una confirmacion consumida se elimina antes del POST, por lo que una segunda
+  pulsacion del mismo boton no vuelve a crear la orden;
+- despues del alta se informa `order_id`, estado inicial y resultado observado
+  del preflight;
+- implementado endpoint administrativo autenticado para credenciales de una
+  sola orden y comando `/credenciales ORDER_ID`;
+- `/cancelar` elimina conversaciones y confirmaciones pendientes sin persistir
+  informacion parcial.
+
+Pruebas locales completadas sin crear ordenes reales:
+
+- contrato protegido de credenciales consultado contra una orden existente;
+- valores descifrados presentes pero no impresos en consola ni logs;
+- conversacion completa validada con dobles;
+- contrasena completa presente en el resumen de confirmacion;
+- doble callback de confirmacion: exactamente una solicitud de creacion;
+- sintaxis, lint y espacios pendientes validados.
+- Admin API y receptor Telegram reiniciados por sus supervisores con esta
+  version; endpoint protegido consultado en vivo sin imprimir sus valores;
+- `--check` confirmo un chat autorizado, receptor valido y worker activo en
+  `outside_hot_window`.
+
+Prueba pendiente para cierre:
+
+- ejecutar `/credenciales ORDER_ID` desde el celular autorizado;
+- ejecutar `/cliente_nuevo` con un cliente real, confirmar el alta y comprobar
+  el resultado del preflight. No se creo una orden ficticia para esta prueba.
 
 Criterio de cierre:
 
@@ -662,6 +714,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
 | 2026-07-18 | 3 | Consultas operativas y detalle deliberado | Completado y validado desde Telegram | Admin API y seccion Fase 3 | Iniciar Fase 4: prioridad y reglas remotas |
 | 2026-07-18 | 4 | Prioridad y restricciones remotas | Completado desde Telegram; formato peruano y restauracion verificados | Admin API y seccion Fase 4 | Iniciar Fase 5: alta remota de clientes |
+| 2026-07-18 | 5 | Alta remota y credenciales individuales | Implementado y desplegado; falta prueba con cliente real | Admin API, Telegram y seccion Fase 5 | Probar `/credenciales` y `/cliente_nuevo` desde el celular |
 
 ## Decisiones pendientes
 

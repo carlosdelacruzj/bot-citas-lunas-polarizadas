@@ -10,6 +10,7 @@ from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
     close_service_order,
     create_service_order,
+    get_service_order_runtime,
     has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
@@ -90,6 +91,23 @@ def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | 
     payload = asdict(order)
     return HTTPStatus.OK, {
         field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
+    }
+
+
+def get_service_order_credentials_payload(
+    path: str,
+) -> tuple[HTTPStatus, dict[str, Any]] | None:
+    order_id = service_order_credentials_path(path)
+    if order_id is None:
+        return None
+    order = get_service_order_runtime(order_id)
+    if order is None:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    return HTTPStatus.OK, {
+        "order_id": order.order_id,
+        "document_type": order.document_type,
+        "username": order.username,
+        "password": order.password,
     }
 
 
@@ -347,6 +365,15 @@ def service_order_contact_path(path: str) -> str | None:
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_credentials_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/credentials"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+    return order_id if order_id and "/" not in order_id else None
 
 
 def service_order_priority_path(path: str) -> str | None:

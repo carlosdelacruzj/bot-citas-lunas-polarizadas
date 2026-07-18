@@ -32,6 +32,7 @@ DEFAULT_POLL_TIMEOUT_SECONDS = 30
 RETRY_DELAY_SECONDS = 5
 CONFIRMATION_TTL_SECONDS = 120
 CONVERSATION_TTL_SECONDS = 300
+NEW_CLIENT_CONVERSATION_TTL_SECONDS = 600
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 CLIENTS_PAGE_SIZE = 8
@@ -44,6 +45,8 @@ HELP_TEXT = """Control remoto disponible:
 /ultimos_errores - Incidentes operativos recientes
 /prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
 /reglas_editar ORDER_ID - Editar restricciones paso a paso
+/cliente_nuevo - Registrar un cliente paso a paso
+/credenciales ORDER_ID - Ver usuario y contrasena de una orden
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
@@ -95,6 +98,22 @@ class RulesConversation:
     expires_at: float
 
 
+@dataclass
+class NewClientConversation:
+    chat_id: str
+    values: dict[str, Any]
+    step: int
+    expires_at: float
+
+
+@dataclass(frozen=True)
+class PendingClientCreation:
+    operation_id: str
+    chat_id: str
+    values: dict[str, Any]
+    expires_at: float
+
+
 class AdminApiClient:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url.rstrip("/")
@@ -112,6 +131,16 @@ class AdminApiClient:
 
     def get_service_order(self, order_id: str) -> dict[str, Any]:
         return self._request("GET", f"/api/v1/service-orders/{quote(order_id, safe='')}")
+
+    def get_service_order_credentials(self, order_id: str) -> dict[str, Any]:
+        return self._request(
+            "GET", f"/api/v1/service-orders/{quote(order_id, safe='')}/credentials"
+        )
+
+    def create_service_order(self, values: dict[str, Any], *, actor: str) -> dict[str, Any]:
+        return self._request(
+            "POST", "/api/v1/service-orders", payload=values, actor=actor
+        )
 
     def get_runs(self, *, limit: int = 50) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/v1/runs?limit={limit}")
@@ -330,6 +359,8 @@ def run_control(*, check_only: bool = False) -> int:
     pending_confirmations: dict[str, PendingWorkerConfirmation] = {}
     pending_order_changes: dict[str, PendingOrderChange] = {}
     rules_conversations: dict[str, RulesConversation] = {}
+    new_client_conversations: dict[str, NewClientConversation] = {}
+    pending_client_creations: dict[str, PendingClientCreation] = {}
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
     logger.info("Telegram control long polling started.")
@@ -358,6 +389,8 @@ def run_control(*, check_only: bool = False) -> int:
                         pending_confirmations=pending_confirmations,
                         pending_order_changes=pending_order_changes,
                         rules_conversations=rules_conversations,
+                        new_client_conversations=new_client_conversations,
+                        pending_client_creations=pending_client_creations,
                         confirmation_lock=confirmation_lock,
                         executor=executor,
                     )
@@ -384,6 +417,8 @@ def _process_update(
     pending_confirmations: dict[str, PendingWorkerConfirmation],
     pending_order_changes: dict[str, PendingOrderChange],
     rules_conversations: dict[str, RulesConversation],
+    new_client_conversations: dict[str, NewClientConversation],
+    pending_client_creations: dict[str, PendingClientCreation],
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -396,6 +431,7 @@ def _process_update(
             admin_api,
             pending_confirmations,
             pending_order_changes,
+            pending_client_creations,
             confirmation_lock,
             executor,
         )
@@ -414,6 +450,15 @@ def _process_update(
     if not isinstance(text, str):
         return
     if not text.strip().startswith("/"):
+        if _process_new_client_message(
+            chat_id,
+            text,
+            telegram,
+            new_client_conversations,
+            pending_client_creations,
+            confirmation_lock,
+        ):
+            return
         if _process_rules_conversation_message(
             chat_id,
             text,
@@ -437,9 +482,14 @@ def _process_update(
             rules_conversations,
             confirmation_lock,
         )
+        with confirmation_lock:
+            client_removed = new_client_conversations.pop(chat_id, None) is not None
+            client_removed = _cancel_pending_client_creation_unlocked(
+                chat_id, pending_client_creations
+            ) or client_removed
         response = (
             "Operacion pendiente cancelada."
-            if removed or order_removed
+            if removed or order_removed or client_removed
             else "No hay una operacion guiada activa."
         )
         telegram.send_message(chat_id, response)
@@ -458,6 +508,19 @@ def _process_update(
         return
     if command in {"cliente", "reglas"}:
         _send_order_query(chat_id, command, arguments, telegram, admin_api)
+        return
+    if command == "credenciales":
+        _send_credentials(chat_id, arguments, telegram, admin_api)
+        return
+    if command == "cliente_nuevo":
+        _start_new_client_conversation(
+            chat_id,
+            arguments,
+            telegram,
+            new_client_conversations,
+            pending_client_creations,
+            confirmation_lock,
+        )
         return
     if command == "prioridad":
         _request_priority_change(
@@ -587,6 +650,170 @@ def _send_order_query(
         return
     response = format_order_rules(order) if command == "reglas" else format_order_detail(order)
     telegram.send_message(chat_id, response)
+
+
+def _send_credentials(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    order_id = arguments.strip()
+    if not _valid_order_id(order_id):
+        telegram.send_message(chat_id, "Uso: /credenciales ORDER_ID")
+        return
+    try:
+        credentials = admin_api.get_service_order_credentials(order_id)
+    except TelegramControlError as exc:
+        logger.warning("Could not read credentials for order %s: %s", order_id, exc)
+        telegram.send_message(chat_id, "No pude consultar las credenciales de esa orden.")
+        return
+    telegram.send_message(
+        chat_id,
+        "CREDENCIALES DEL PORTAL\n\n"
+        f"Orden: {credentials.get('order_id') or order_id}\n"
+        f"Tipo: {credentials.get('document_type') or 'no disponible'}\n"
+        f"Usuario / documento: {credentials.get('username') or 'no disponible'}\n"
+        f"Contrasena: {credentials.get('password') or 'no disponible'}\n\n"
+        "Mensaje sensible: quedara en el historial de este chat.",
+    )
+
+
+def _start_new_client_conversation(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    conversations: dict[str, NewClientConversation],
+    pending_creations: dict[str, PendingClientCreation],
+    confirmation_lock: Lock,
+) -> None:
+    if arguments:
+        telegram.send_message(chat_id, "Uso: /cliente_nuevo")
+        return
+    with confirmation_lock:
+        _cancel_pending_client_creation_unlocked(chat_id, pending_creations)
+        conversations[chat_id] = NewClientConversation(
+            chat_id=chat_id,
+            values={},
+            step=0,
+            expires_at=time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS,
+        )
+    telegram.send_message(
+        chat_id,
+        "ALTA DE CLIENTE\n\nPaso 1 de 6: escribe el tipo de documento: DNI o CE.\n"
+        "Puedes cancelar en cualquier momento con /cancelar.",
+    )
+
+
+def _process_new_client_message(
+    chat_id: str,
+    text: str,
+    telegram: TelegramBotApi,
+    conversations: dict[str, NewClientConversation],
+    pending_creations: dict[str, PendingClientCreation],
+    confirmation_lock: Lock,
+) -> bool:
+    with confirmation_lock:
+        conversation = conversations.get(chat_id)
+    if conversation is None:
+        return False
+    if conversation.expires_at <= time.monotonic():
+        with confirmation_lock:
+            conversations.pop(chat_id, None)
+        telegram.send_message(chat_id, "El alta vencio. Inicia nuevamente con /cliente_nuevo.")
+        return True
+    value = text.strip()
+    try:
+        prompt = _apply_new_client_value(conversation, value)
+    except ValueError as exc:
+        telegram.send_message(chat_id, str(exc))
+        return True
+    conversation.expires_at = time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS
+    if prompt is not None:
+        telegram.send_message(chat_id, prompt)
+        return True
+    with confirmation_lock:
+        conversations.pop(chat_id, None)
+        _cancel_pending_client_creation_unlocked(chat_id, pending_creations)
+        creation = PendingClientCreation(
+            operation_id=secrets.token_hex(6),
+            chat_id=chat_id,
+            values=dict(conversation.values),
+            expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+        )
+        pending_creations[creation.operation_id] = creation
+    telegram.send_message(
+        chat_id,
+        _format_new_client_confirmation(creation.values),
+        reply_markup={
+            "inline_keyboard": [[
+                {"text": "Crear cliente", "callback_data": f"nc:{creation.operation_id}:yes"},
+                {"text": "Cancelar", "callback_data": f"nc:{creation.operation_id}:no"},
+            ]]
+        },
+    )
+    return True
+
+
+def _apply_new_client_value(
+    conversation: NewClientConversation, value: str
+) -> str | None:
+    if conversation.step == 0:
+        normalized = value.lower().replace(" ", "_")
+        aliases = {
+            "dni": "dni",
+            "ce": "foreign_resident_card",
+            "carnet_extranjeria": "foreign_resident_card",
+        }
+        if normalized not in aliases:
+            raise ValueError("Tipo invalido. Escribe DNI o CE.")
+        conversation.values["document_type"] = aliases[normalized]
+        prompt = "Paso 2 de 6: escribe el numero de documento completo."
+    elif conversation.step == 1:
+        if not re.fullmatch(r"[A-Za-z0-9]{6,20}", value):
+            raise ValueError("Documento invalido. Usa entre 6 y 20 letras o numeros.")
+        conversation.values["document_number"] = value
+        prompt = "Paso 3 de 6: escribe la contrasena del portal."
+    elif conversation.step == 2:
+        if not value:
+            raise ValueError("La contrasena no puede estar vacia.")
+        conversation.values["password"] = value
+        prompt = "Paso 4 de 6: escribe el nombre de la persona que te contacto."
+    elif conversation.step == 3:
+        if not value:
+            raise ValueError("El nombre de contacto no puede estar vacio.")
+        conversation.values["contact_name"] = value
+        prompt = "Paso 5 de 6: escribe la fuente: TikTok, Facebook o WhatsApp."
+    elif conversation.step == 4:
+        source = value.lower()
+        if source not in {"tiktok", "facebook", "whatsapp"}:
+            raise ValueError("Fuente invalida. Escribe TikTok, Facebook o WhatsApp.")
+        conversation.values["contact_source"] = source
+        prompt = "Paso 6 de 6: escribe el WhatsApp completo o escribe OMITIR."
+    else:
+        if value.lower() != "omitir":
+            phone = re.sub(r"[\s()+-]", "", value)
+            if not re.fullmatch(r"\d{7,15}", phone):
+                raise ValueError("WhatsApp invalido. Escribe solo un numero valido u OMITIR.")
+            conversation.values["contact_whatsapp"] = phone
+        prompt = None
+    conversation.step += 1
+    return prompt
+
+
+def _format_new_client_confirmation(values: dict[str, Any]) -> str:
+    document_type = "DNI" if values.get("document_type") == "dni" else "CE"
+    return (
+        "CONFIRMAR ALTA\n\n"
+        f"Tipo: {document_type}\n"
+        f"Usuario / documento: {values.get('document_number')}\n"
+        f"Contrasena: {values.get('password')}\n"
+        f"Contacto: {values.get('contact_name')}\n"
+        f"Fuente: {values.get('contact_source')}\n"
+        f"WhatsApp: {values.get('contact_whatsapp') or 'no registrado'}\n\n"
+        "Los datos sensibles se muestran completos por decision del unico operador. "
+        "La confirmacion vence en 2 minutos."
+    )
 
 
 def _send_recent_errors(
@@ -1095,6 +1322,7 @@ def _process_callback_query(
     admin_api: AdminApiClient,
     pending_confirmations: dict[str, PendingWorkerConfirmation],
     pending_order_changes: dict[str, PendingOrderChange],
+    pending_client_creations: dict[str, PendingClientCreation],
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -1111,10 +1339,27 @@ def _process_callback_query(
         logger.warning("Ignored Telegram callback from an unauthorized chat.")
         return
     parts = data.split(":")
-    if len(parts) != 3 or parts[0] not in {"wc", "oc"} or parts[2] not in {"yes", "no"}:
+    if len(parts) != 3 or parts[0] not in {"wc", "oc", "nc"} or parts[2] not in {"yes", "no"}:
         telegram.answer_callback_query(callback_id, "Accion no reconocida.")
         return
     operation_id = parts[1]
+    if parts[0] == "nc":
+        with confirmation_lock:
+            creation = pending_client_creations.pop(operation_id, None)
+        if (
+            creation is None
+            or creation.chat_id != chat_id
+            or creation.expires_at <= time.monotonic()
+        ):
+            telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
+            return
+        if parts[2] == "no":
+            telegram.answer_callback_query(callback_id, "Operacion cancelada.")
+            telegram.send_message(chat_id, "Alta cancelada. No se creo ningun cliente.")
+            return
+        telegram.answer_callback_query(callback_id, "Alta confirmada.")
+        executor.submit(_execute_client_creation, creation, telegram, admin_api)
+        return
     if parts[0] == "oc":
         with confirmation_lock:
             change = pending_order_changes.pop(operation_id, None)
@@ -1193,6 +1438,60 @@ def _execute_order_change(
         )
     except Exception:
         logger.exception("Unexpected order change execution failure")
+
+
+def _execute_client_creation(
+    creation: PendingClientCreation,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    actor = _telegram_actor(creation.chat_id)
+    try:
+        created = admin_api.create_service_order(creation.values, actor=actor)
+        order_id = str(created.get("order_id") or "")
+        if not order_id:
+            raise TelegramControlError("Admin API did not return an order_id.")
+        telegram.send_message(
+            creation.chat_id,
+            "Cliente creado una sola vez. Validando credenciales en el portal...\n"
+            f"Orden: {order_id}\nEstado inicial: {created.get('status') or 'validation_pending'}",
+        )
+        validated = _wait_for_order_preflight(admin_api, order_id)
+        telegram.send_message(
+            creation.chat_id,
+            "RESULTADO DEL ALTA\n\n"
+            f"Orden: {order_id}\n"
+            f"Estado: {validated.get('status') or 'desconocido'}\n"
+            f"Preflight: {validated.get('preflight_status') or 'pendiente'}\n"
+            f"Detalle: {validated.get('preflight_message') or 'sin detalle'}",
+        )
+        logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
+    except TelegramControlError as exc:
+        logger.warning("Telegram client creation failed: %s", exc)
+        telegram.send_message(
+            creation.chat_id,
+            "No pude completar el alta. No vuelvas a confirmar el mismo boton; "
+            "consulta /clientes antes de intentar nuevamente.",
+        )
+    except Exception:
+        logger.exception("Unexpected Telegram client creation failure")
+
+
+def _wait_for_order_preflight(
+    admin_api: AdminApiClient, order_id: str
+) -> dict[str, Any]:
+    deadline = time.monotonic() + WORKER_COMMAND_TIMEOUT_SECONDS
+    last_order: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        last_order = admin_api.get_service_order(order_id)
+        if str(last_order.get("preflight_status") or "") not in {
+            "",
+            "pending",
+            "running",
+        }:
+            return last_order
+        time.sleep(2)
+    return last_order
 
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
@@ -1326,6 +1625,20 @@ def _cancel_chat_confirmations_unlocked(
     ]
     for operation_id in operation_ids:
         pending_confirmations.pop(operation_id, None)
+    return bool(operation_ids)
+
+
+def _cancel_pending_client_creation_unlocked(
+    chat_id: str,
+    pending_creations: dict[str, PendingClientCreation],
+) -> bool:
+    operation_ids = [
+        operation_id
+        for operation_id, creation in pending_creations.items()
+        if creation.chat_id == chat_id
+    ]
+    for operation_id in operation_ids:
+        pending_creations.pop(operation_id, None)
     return bool(operation_ids)
 
 

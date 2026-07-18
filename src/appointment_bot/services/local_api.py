@@ -36,6 +36,7 @@ from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
     close_service_order_payload,
     create_service_order_payload,
+    get_service_order_credentials_payload,
     get_service_order_payload,
     list_service_orders_payload,
     mark_payment_paid_payload,
@@ -207,6 +208,11 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
         if path.startswith("/api/v1/service-orders/"):
             if not self._require_authorized(strict=True):
+                return
+            credentials_result = get_service_order_credentials_payload(path)
+            if credentials_result is not None:
+                status, payload = credentials_result
+                self._send_json(status, payload)
                 return
             result = get_service_order_payload(path)
             if result is not None:
