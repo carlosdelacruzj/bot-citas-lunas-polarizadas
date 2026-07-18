@@ -116,9 +116,9 @@ vez. Despues de confirmar, Telegram espera el estado terminal de
 Las consultas operativas separan indice y detalle deliberado:
 
 - `/clientes` muestra ocho ordenes por pagina y acepta el numero de pagina;
-- `/cliente` muestra el nombre de cliente/contacto y el titular del portal por
-  separado, documento y WhatsApp completos, ademas de estado, prioridad,
-  reserva y pago;
+- `/cliente` trata al titular identificado por el portal como cliente y muestra
+  por separado a la persona de contacto; incluye documento y WhatsApp
+  completos, ademas de estado, prioridad, reserva y pago;
 - `/reglas` muestra fechas, hora minima y dias permitidos;
 - `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
   cinco incidentes saneados.
@@ -126,6 +126,11 @@ Las consultas operativas separan indice y detalle deliberado:
 El detalle completo se entrega solamente cuando el chat autorizado consulta un
 `ORDER_ID` especifico. Nunca incluye password, tokens, cookies, datos de
 cifrado, leases ni detalles crudos de runs.
+
+Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
+muestra `Titular no identificado por el portal`; no se presenta el documento
+como si fuera un nombre. El contacto conserva su nombre independiente porque no
+necesariamente es el titular.
 
 ## Salud y calendario
 

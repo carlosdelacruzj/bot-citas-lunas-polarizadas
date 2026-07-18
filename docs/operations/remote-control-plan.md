@@ -447,8 +447,9 @@ Decision operativa y de seguridad:
 - `/clientes` usa `GET /api/v1/service-orders` como indice paginado y no vuelca
   documentos ni telefonos de toda la base;
 - `/cliente ORDER_ID` usa deliberadamente el detalle administrativo protegido y
-  muestra cliente/contacto, titular del portal, documento y WhatsApp completos
-  al chat autorizado;
+  muestra como cliente al titular identificado por el portal y, por separado,
+  al contacto; tambien muestra documento y WhatsApp completos al chat
+  autorizado;
 - `/reglas` continua usando el DTO del listado porque no necesita datos
   personales completos;
 - password, tokens, cookies, datos de cifrado, leases y detalles crudos de runs
@@ -468,8 +469,11 @@ Pruebas locales completadas con datos reales:
 - indice confirmado sin volcado masivo de documento ni WhatsApp;
 - detalle especifico confirmado con cliente, documento y WhatsApp completos,
   sin password ni datos internos;
-- el nombre de cliente prioriza `contact_name`; el titular del portal se muestra
-  aparte y ninguno de los dos pasa por el enmascarador numerico general;
+- `applicant_name` es el cliente/titular y `contact_name` es quien contacto al
+  negocio; nunca se asume que son la misma persona;
+- si `applicant_name` contiene el documento o no fue obtenido, Telegram informa
+  `Titular no identificado por el portal` en vez de presentar un numero como
+  nombre;
 - errores confirmados sin rutas de Windows ni URLs;
 - compilacion, Ruff y `git diff --check` correctos;
 - receptor reiniciado por su supervisor y validado contra Admin API.

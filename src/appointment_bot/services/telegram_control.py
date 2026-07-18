@@ -438,12 +438,12 @@ def _send_clients(
         "",
     ]
     for order in visible:
-        name = _display_text(
-            order.get("contact_name") or order.get("applicant_name") or "Sin nombre",
-            32,
-        )
+        applicant_name = _applicant_display_name(order)
+        contact_name = _display_text(order.get("contact_name") or "Sin contacto", 32)
         lines.append(
-            f"{order.get('order_id', 'sin-id')} | {name}\n"
+            f"{order.get('order_id', 'sin-id')}\n"
+            f"Titular: {applicant_name}\n"
+            f"Contacto: {contact_name}\n"
             f"Estado: {order.get('status') or 'desconocido'} | "
             f"Prioridad: {order.get('priority', 0)}"
         )
@@ -519,18 +519,20 @@ def _send_recent_errors(
 
 
 def format_order_detail(order: dict[str, Any]) -> str:
-    client_name = order.get("contact_name") or order.get("applicant_name") or "Sin nombre"
-    applicant_name = order.get("applicant_name") or "Sin nombre"
+    applicant_name = _applicant_display_name(order)
+    contact_name = _display_text(order.get("contact_name") or "Sin contacto", 60)
     lines = [
         "DETALLE DE ORDEN",
         "",
         f"Orden: {order.get('order_id') or 'desconocida'}",
-        f"Cliente: {_display_text(client_name, 60)}",
-        f"Titular del portal: {_display_text(applicant_name, 60)}",
+        f"Cliente / titular: {applicant_name}",
         f"Tipo de documento: {order.get('document_type') or 'no disponible'}",
         f"Documento: {order.get('document_number') or 'no disponible'}",
+        "",
+        f"Contacto: {contact_name}",
         f"WhatsApp: {order.get('contact_whatsapp') or 'no registrado'}",
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
+        "",
         f"Estado: {order.get('status') or 'desconocido'}",
         f"Preflight: {order.get('preflight_status') or 'desconocido'}",
         f"Prioridad: {order.get('priority', 0)}",
@@ -609,6 +611,22 @@ def _short_text(value: Any, limit: int) -> str:
 def _display_text(value: Any, limit: int) -> str:
     text = " ".join(str(value).split())
     return text if len(text) <= limit else f"{text[: limit - 1]}…"
+
+
+def _applicant_display_name(order: dict[str, Any]) -> str:
+    applicant_name = " ".join(str(order.get("applicant_name") or "").split())
+    document_number = "".join(str(order.get("document_number") or "").split())
+    masked_document = "".join(str(order.get("document_number_masked") or "").split())
+    if not applicant_name:
+        return "Titular no identificado por el portal"
+    normalized_applicant = "".join(applicant_name.split())
+    if document_number and normalized_applicant == document_number:
+        return "Titular no identificado por el portal"
+    if masked_document and normalized_applicant == masked_document:
+        return "Titular no identificado por el portal"
+    if re.fullmatch(r"\d{8,16}", normalized_applicant):
+        return "Titular no identificado por el portal"
+    return _display_text(applicant_name, 60)
 
 
 def _valid_order_id(value: str) -> bool:
