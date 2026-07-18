@@ -47,6 +47,22 @@ def get_worker_state(settings: Settings | None = None) -> WorkerState:
     )
 
 
+def is_worker_lease_active(settings: Settings | None = None) -> bool:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT owner_token IS NOT NULL
+                   AND lease_expires_at IS NOT NULL
+                   AND lease_expires_at > CURRENT_TIMESTAMP AS active
+            FROM worker_state
+            WHERE id = 1
+            """
+        ).fetchone()
+    return bool(row and row["active"])
+
+
 def acquire_worker_lease(
     owner_token: str,
     *,

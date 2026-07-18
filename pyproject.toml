@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 appointment-bot-admin-api = "appointment_bot.admin_api.server:main"
 appointment-bot-client = "appointment_bot.services.client_cli:run"
+appointment-bot-telegram-control = "appointment_bot.services.telegram_control:main"
 appointment-bot-worker = "appointment_bot.worker.host:main"
 
 [tool.setuptools.packages.find]

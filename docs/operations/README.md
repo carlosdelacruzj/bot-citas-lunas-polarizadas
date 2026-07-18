@@ -38,11 +38,12 @@ segundo plano todo el entorno local:
 - Docker y PostgreSQL;
 - worker y API de salud en `127.0.0.1:8765`;
 - build Angular, admin API y dashboard en `127.0.0.1:8766`.
+- receptor independiente de control remoto por Telegram.
 
 El admin/dashboard se reinicia si su proceso termina. No hace falta abrir
 `npm start`: el admin API sirve directamente el build Angular.
 
-Para un arranque manual sin la tarea programada, usar dos terminales:
+Para un arranque manual sin la tarea programada, usar tres terminales:
 
 Terminal 1:
 
@@ -56,6 +57,12 @@ Terminal 2:
 scripts/start-admin-dashboard.ps1
 ```
 
+Terminal 3:
+
+```powershell
+scripts/start-telegram-control.ps1
+```
+
 Abrir `http://127.0.0.1:8766/`. El admin API sirve Angular y usa una sesión
 local `HttpOnly`/`SameSite=Strict`; no exponer ni redirigir este puerto fuera de
 loopback.
@@ -67,6 +74,31 @@ publicar un build nuevo.
 
 Rollback/desarrollo: ejecutar `appointment-bot-admin-api` y `npm start` dentro
 de `dashboard/`. El proxy sigue apuntando a `127.0.0.1:8766`.
+
+## Control remoto por Telegram
+
+El proceso `appointment-bot-telegram-control` recibe comandos sin compartir
+memoria con el worker. En la primera version admite:
+
+- `/estado`;
+- `/ayuda`;
+- `/cancelar`.
+
+Solo responde al `TELEGRAM_CHAT_ID` configurado. Opcionalmente,
+`TELEGRAM_CONTROL_CHAT_IDS` permite una lista separada por comas. Un chat fuera
+de esa lista se ignora sin revelar informacion.
+
+El receptor usa long polling y guarda el siguiente `update_id` en
+`.runtime/telegram-control-offset.json`. Antes de iniciarlo se puede comprobar
+Telegram y la Admin API sin consumir mensajes:
+
+```powershell
+appointment-bot-telegram-control --check
+```
+
+El bot no ejecuta PowerShell ni consulta PostgreSQL directamente. `/estado`
+consulta el Admin API autenticado; `worker_running` se calcula con el lease
+vigente del worker y `outside_hot_window` significa activo pero esperando.
 
 ## Salud y calendario
 

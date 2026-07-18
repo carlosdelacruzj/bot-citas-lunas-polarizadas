@@ -9,7 +9,7 @@ from appointment_bot.db.worker_commands import (
     enqueue_worker_command,
     list_worker_commands,
 )
-from appointment_bot.db.worker_state import get_worker_state
+from appointment_bot.db.worker_state import get_worker_state, is_worker_lease_active
 from appointment_bot.services.api.http import error_payload
 
 PUBLIC_WORKER_FIELDS = {
@@ -54,7 +54,7 @@ def worker_payload(worker_controller: Any | None) -> dict[str, Any]:
         return public_worker_payload(worker_controller.status())
     settings = load_settings(require_login=False)
     payload = asdict(get_worker_state(settings))
-    payload["worker_running"] = False
+    payload["worker_running"] = is_worker_lease_active(settings)
     payload["continuous_worker_enabled"] = settings.continuous_worker_enabled
     return public_worker_payload(payload)
 

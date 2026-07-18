@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 0 completada; implementacion funcional no iniciada.
+Estado general: Fase 1 implementada y activa; validacion conversacional pendiente.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -265,7 +265,8 @@ la operacion diaria.
 
 ### Fase 1 - Crear el receptor independiente de Telegram
 
-Estado: pendiente.
+Estado: implementada y activa el `2026-07-18`; falta confirmar desde el celular
+los tres comandos y una recuperacion supervisada antes de cerrarla.
 
 1. Crear un modulo separado para recibir actualizaciones de Telegram.
 2. Usar el mismo bot de alertas, manteniendo separado el codigo de envio y el
@@ -283,6 +284,45 @@ Criterio de cierre:
 - el receptor sigue respondiendo aunque el worker se cierre;
 - un chat no autorizado no obtiene datos ni puede cambiar estado;
 - reiniciar el receptor no vuelve a ejecutar actualizaciones confirmadas.
+
+Avance realizado:
+
+- creado `appointment_bot.services.telegram_control` como proceso separado;
+- agregado entrypoint `appointment-bot-telegram-control`;
+- long polling validado sin webhook configurado;
+- autorizacion inicial mediante `TELEGRAM_CHAT_ID`, con soporte opcional para
+  `TELEGRAM_CONTROL_CHAT_IDS` separado por comas;
+- chats no autorizados ignorados sin respuesta ni datos;
+- implementados `/ayuda`, `/estado` y `/cancelar`;
+- comandos dirigidos al bot con sufijo `@nombre_bot` normalizados;
+- offset guardado atomicamente en `.runtime/telegram-control-offset.json` tras
+  procesar cada actualizacion valida;
+- agregado modo `--check`, que valida Telegram y Admin API sin consumir
+  actualizaciones;
+- creado `scripts/start-telegram-control.ps1` con recuperacion ante salida;
+- integrado el nuevo supervisor en `scripts/start-worker-hidden.vbs`;
+- receptor iniciado y long polling activo desde las `00:34` de Lima;
+- liveness corregido: el Admin API separado calcula `worker_running` usando el
+  lease vigente de PostgreSQL en vez de asumir `false` por no compartir memoria.
+
+Pruebas completadas:
+
+- `--check`: identidad de Telegram, ausencia de webhook y Admin API correctos;
+- enrutamiento manual con dobles: `/estado`, `/ayuda` y `/cancelar` correctos;
+- chat no autorizado: ignorado sin respuesta;
+- persistencia y lectura del offset: correctas;
+- Admin API reiniciada por su supervisor y nueva lectura autenticada con
+  `worker_running=true`, `phase=outside_hot_window`;
+- receptor levantado por su supervisor y long polling confirmado en logs.
+
+Pruebas pendientes para cierre:
+
+1. enviar `/estado`, `/ayuda` y `/cancelar` desde el celular autorizado;
+2. verificar visualmente claridad y formato de las respuestas;
+3. reiniciar solo el receptor despues de procesar un comando y comprobar que no
+   repite la respuesta;
+4. detener temporalmente el worker en una prueba coordinada y comprobar que el
+   receptor permanece activo y el supervisor recupera el worker.
 
 ### Fase 2 - Control seguro del worker
 
@@ -439,6 +479,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 |---|---|---|---|---|---|
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
+| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado y activo; prueba desde celular pendiente | Logs de bootstrap y seccion Fase 1 | Probar `/estado`, `/ayuda` y `/cancelar` desde Telegram |
 
 ## Decisiones pendientes
 

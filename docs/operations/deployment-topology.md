@@ -24,6 +24,7 @@ controlar el worker porque comparte memoria con `ContinuousWorker`.
 PostgreSQL
   |-- appointment-bot-worker
   |-- appointment-bot-admin-api + dashboard Angular local
+  |-- appointment-bot-telegram-control
   |-- n8n supervisor externo
 ```
 
@@ -47,13 +48,13 @@ scripts/start-worker.ps1
 
 En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
 ejecuta `scripts/start-worker-hidden.vbs` al iniciar sesion. Ese lanzador inicia
-el bootstrap del worker y `scripts/start-admin-dashboard.ps1` en segundo plano,
-por lo que el dashboard queda disponible sin abrir otra terminal. Ambos
-bootstraps supervisan y reinician sus respectivos procesos.
+el bootstrap del worker, `scripts/start-admin-dashboard.ps1` y
+`scripts/start-telegram-control.ps1` en segundo plano. Cada bootstrap supervisa
+y reinicia su proceso sin compartir memoria con los demas.
 
-## Dashboard Angular
+## Procesos administrativos
 
-Ejecucion local recomendada en dos procesos:
+Ejecucion local recomendada en tres procesos:
 
 ```powershell
 # Terminal 1
@@ -61,6 +62,9 @@ scripts/start-worker.ps1
 
 # Terminal 2
 scripts/start-admin-dashboard.ps1
+
+# Terminal 3
+scripts/start-telegram-control.ps1
 ```
 
 Abrir `http://127.0.0.1:8766/`. El admin API sirve el build Angular y entrega
@@ -105,9 +109,11 @@ Para el estado validado y el orden de trabajo usar `docs/project-status.md` y
 - No guardar secretos en Angular.
 - No versionar `.env`, logs, screenshots, videos, dumps ni `node_modules`.
 - Usar `GET /health` para liveness.
-- Usar `GET /api/v1/worker` para fase real del worker.
+- Usar `GET /api/v1/worker` para fase real y lease vigente del worker.
 - Usar `worker_commands` para controlar el worker desde procesos que no tienen
   `ContinuousWorker` en memoria.
+- Autorizar el receptor de Telegram con una lista explicita de `chat_id` y no
+  registrar identificadores completos en logs.
 
 ## Rollback
 
