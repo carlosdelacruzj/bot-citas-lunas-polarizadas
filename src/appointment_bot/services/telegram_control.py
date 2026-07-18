@@ -16,7 +16,7 @@ from pathlib import Path
 from threading import Event, Lock
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -85,6 +85,9 @@ class AdminApiClient:
         if not isinstance(orders, list):
             raise TelegramControlError("Admin API returned an invalid service order list.")
         return [item for item in orders if isinstance(item, dict)]
+
+    def get_service_order(self, order_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/api/v1/service-orders/{quote(order_id, safe='')}")
 
     def get_runs(self, *, limit: int = 50) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/v1/runs?limit={limit}")
@@ -463,14 +466,17 @@ def _send_order_query(
         telegram.send_message(chat_id, f"Uso: /{command} ORDER_ID")
         return
     try:
-        order = next(
-            (
-                item
-                for item in admin_api.get_service_orders()
-                if item.get("order_id") == order_id
-            ),
-            None,
-        )
+        if command == "cliente":
+            order = admin_api.get_service_order(order_id)
+        else:
+            order = next(
+                (
+                    item
+                    for item in admin_api.get_service_orders()
+                    if item.get("order_id") == order_id
+                ),
+                None,
+            )
     except TelegramControlError as exc:
         logger.warning("Could not read service order: %s", exc)
         telegram.send_message(chat_id, "No pude consultar esa orden.")
@@ -518,9 +524,10 @@ def format_order_detail(order: dict[str, Any]) -> str:
         "",
         f"Orden: {order.get('order_id') or 'desconocida'}",
         f"Cliente: {_short_text(order.get('applicant_name') or 'Sin nombre', 60)}",
-        f"Documento: {order.get('document_number_masked') or 'no disponible'}",
+        f"Tipo de documento: {order.get('document_type') or 'no disponible'}",
+        f"Documento: {order.get('document_number') or 'no disponible'}",
         f"Contacto: {_short_text(order.get('contact_name') or 'Sin contacto', 60)}",
-        f"WhatsApp: {order.get('contact_whatsapp_masked') or 'no registrado'}",
+        f"WhatsApp: {order.get('contact_whatsapp') or 'no registrado'}",
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
         f"Estado: {order.get('status') or 'desconocido'}",
         f"Preflight: {order.get('preflight_status') or 'desconocido'}",

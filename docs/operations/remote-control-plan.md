@@ -442,14 +442,19 @@ Avance realizado:
 - pagina y sintaxis invalidas devuelven ayuda corta sin consultar datos;
 - ninguna de estas consultas usa `include_details=1`.
 
-Decision de seguridad:
+Decision operativa y de seguridad:
 
-- `/cliente` y `/reglas` usan solamente `GET /api/v1/service-orders`, cuyo DTO
-  contiene documento y WhatsApp enmascarados;
-- no llaman a `GET /api/v1/service-orders/{order_id}`, porque ese endpoint
-  administrativo puede devolver documento y WhatsApp completos;
-- por tanto, los valores completos no entran al proceso de formateo de
-  Telegram.
+- `/clientes` usa `GET /api/v1/service-orders` como indice paginado y no vuelca
+  documentos ni telefonos de toda la base;
+- `/cliente ORDER_ID` usa deliberadamente el detalle administrativo protegido y
+  muestra cliente, documento y WhatsApp completos al chat autorizado;
+- `/reglas` continua usando el DTO del listado porque no necesita datos
+  personales completos;
+- password, tokens, cookies, datos de cifrado, leases y detalles crudos de runs
+  permanecen excluidos siempre;
+- esta decision responde a la necesidad operativa confirmada por el usuario:
+  cliente, documento y WhatsApp no deben ocultarse al consultar una orden
+  especifica desde su chat autorizado.
 
 Pruebas locales completadas con datos reales:
 
@@ -459,7 +464,9 @@ Pruebas locales completadas con datos reales:
 - reglas: 159 caracteres;
 - errores recientes: 74 caracteres;
 - todas las respuestas por debajo del limite de Telegram;
-- DTO confirmado sin `document_number` ni `contact_whatsapp` completos;
+- indice confirmado sin volcado masivo de documento ni WhatsApp;
+- detalle especifico confirmado con cliente, documento y WhatsApp completos,
+  sin password ni datos internos;
 - errores confirmados sin rutas de Windows ni URLs;
 - compilacion, Ruff y `git diff --check` correctos;
 - receptor reiniciado por su supervisor y validado contra Admin API.
@@ -470,8 +477,8 @@ Pruebas pendientes para cierre:
 2. copiar un `ORDER_ID` del listado y probar `/cliente ORDER_ID`;
 3. probar `/reglas ORDER_ID` con la misma orden;
 4. probar `/ultimos_errores`;
-5. confirmar visualmente que no aparecen documentos, WhatsApp completos, rutas
-   ni datos tecnicos innecesarios.
+5. confirmar visualmente que `/cliente` muestra cliente, documento y WhatsApp
+   completos, pero no contrasena, rutas ni datos tecnicos innecesarios.
 
 ### Fase 4 - Actualizacion de reglas y prioridad
 

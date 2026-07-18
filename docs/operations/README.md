@@ -113,16 +113,18 @@ vez. Despues de confirmar, Telegram espera el estado terminal de
 `worker_commands` y comprueba el efecto real antes de anunciar exito. Un HTTP
 `202` por si solo nunca se presenta como accion completada.
 
-Las consultas operativas usan exclusivamente DTOs publicos o enmascarados:
+Las consultas operativas separan indice y detalle deliberado:
 
 - `/clientes` muestra ocho ordenes por pagina y acepta el numero de pagina;
-- `/cliente` muestra estado, contacto enmascarado, prioridad, reserva y pago;
+- `/cliente` muestra cliente, documento y WhatsApp completos, ademas de estado,
+  prioridad, reserva y pago;
 - `/reglas` muestra fechas, hora minima y dias permitidos;
 - `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
   cinco incidentes saneados.
 
-Estas consultas no solicitan detalles crudos de runs ni el endpoint de orden que
-contiene documento y WhatsApp completos.
+El detalle completo se entrega solamente cuando el chat autorizado consulta un
+`ORDER_ID` especifico. Nunca incluye password, tokens, cookies, datos de
+cifrado, leases ni detalles crudos de runs.
 
 ## Salud y calendario
 
