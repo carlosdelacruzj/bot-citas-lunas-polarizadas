@@ -81,6 +81,10 @@ El proceso `appointment-bot-telegram-control` recibe comandos sin compartir
 memoria con el worker. En la primera version admite:
 
 - `/estado`;
+- `/clientes [pagina]`;
+- `/cliente ORDER_ID`;
+- `/reglas ORDER_ID`;
+- `/ultimos_errores`;
 - `/pausar`;
 - `/reanudar`;
 - `/reiniciar`;
@@ -108,6 +112,17 @@ Los tres comandos que cambian el worker muestran botones `Confirmar` y
 vez. Despues de confirmar, Telegram espera el estado terminal de
 `worker_commands` y comprueba el efecto real antes de anunciar exito. Un HTTP
 `202` por si solo nunca se presenta como accion completada.
+
+Las consultas operativas usan exclusivamente DTOs publicos o enmascarados:
+
+- `/clientes` muestra ocho ordenes por pagina y acepta el numero de pagina;
+- `/cliente` muestra estado, contacto enmascarado, prioridad, reserva y pago;
+- `/reglas` muestra fechas, hora minima y dias permitidos;
+- `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
+  cinco incidentes saneados.
+
+Estas consultas no solicitan detalles crudos de runs ni el endpoint de orden que
+contiene documento y WhatsApp completos.
 
 ## Salud y calendario
 

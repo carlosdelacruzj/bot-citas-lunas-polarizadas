@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import secrets
 import signal
 import time
@@ -21,6 +22,7 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +33,14 @@ RETRY_DELAY_SECONDS = 5
 CONFIRMATION_TTL_SECONDS = 120
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
+CLIENTS_PAGE_SIZE = 8
 HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
+/clientes [pagina] - Resumen paginado de la cola
+/cliente ORDER_ID - Detalle operativo enmascarado
+/reglas ORDER_ID - Restricciones de una orden
+/ultimos_errores - Incidentes operativos recientes
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
@@ -71,6 +78,20 @@ class AdminApiClient:
 
     def get_worker(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/worker")
+
+    def get_service_orders(self) -> list[dict[str, Any]]:
+        payload = self._request("GET", "/api/v1/service-orders")
+        orders = payload.get("service_orders", [])
+        if not isinstance(orders, list):
+            raise TelegramControlError("Admin API returned an invalid service order list.")
+        return [item for item in orders if isinstance(item, dict)]
+
+    def get_runs(self, *, limit: int = 50) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/v1/runs?limit={limit}")
+        runs = payload.get("runs", [])
+        if not isinstance(runs, list):
+            raise TelegramControlError("Admin API returned an invalid run list.")
+        return [item for item in runs if isinstance(item, dict)]
 
     def enqueue_worker_command(self, command: str, *, actor: str) -> dict[str, Any]:
         return self._request(
@@ -325,7 +346,7 @@ def _process_update(
     text = message.get("text")
     if not isinstance(text, str):
         return
-    command = _command_name(text)
+    command, arguments = _command_parts(text)
     if command is None:
         return
     if command in {"ayuda", "help", "start"}:
@@ -349,7 +370,19 @@ def _process_update(
             response = "No pude consultar el estado del sistema. La Admin API no responde."
         telegram.send_message(chat_id, response)
         return
+    if command == "clientes":
+        _send_clients(chat_id, arguments, telegram, admin_api)
+        return
+    if command in {"cliente", "reglas"}:
+        _send_order_query(chat_id, command, arguments, telegram, admin_api)
+        return
+    if command == "ultimos_errores":
+        _send_recent_errors(chat_id, telegram, admin_api)
+        return
     if command in {"pausar", "reanudar", "reiniciar"}:
+        if arguments:
+            telegram.send_message(chat_id, f"Uso: /{command}")
+            return
         worker_command = {
             "pausar": "pause",
             "reanudar": "resume",
@@ -364,6 +397,233 @@ def _process_update(
         )
         return
     telegram.send_message(chat_id, "Comando no reconocido. Usa /ayuda.")
+
+
+def _send_clients(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        page = int(arguments) if arguments else 1
+        if page < 1:
+            raise ValueError
+    except ValueError:
+        telegram.send_message(chat_id, "Uso: /clientes [pagina]")
+        return
+    try:
+        orders = admin_api.get_service_orders()
+    except TelegramControlError as exc:
+        logger.warning("Could not list service orders: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar la cola en este momento.")
+        return
+    total_pages = max(1, (len(orders) + CLIENTS_PAGE_SIZE - 1) // CLIENTS_PAGE_SIZE)
+    if page > total_pages:
+        telegram.send_message(chat_id, f"La ultima pagina disponible es {total_pages}.")
+        return
+    counts = _order_status_counts(orders)
+    start = (page - 1) * CLIENTS_PAGE_SIZE
+    visible = orders[start : start + CLIENTS_PAGE_SIZE]
+    lines = [
+        f"CLIENTES - PAGINA {page}/{total_pages}",
+        "",
+        (
+            f"Activos: {counts['active']} | Pausados: {counts['paused']} | "
+            f"Pendientes de pago: {counts['payment_pending']} | Cerrados: {counts['closed']}"
+        ),
+        "",
+    ]
+    for order in visible:
+        name = _short_text(
+            order.get("contact_name") or order.get("applicant_name") or "Sin nombre",
+            32,
+        )
+        lines.append(
+            f"{order.get('order_id', 'sin-id')} | {name}\n"
+            f"Estado: {order.get('status') or 'desconocido'} | "
+            f"Prioridad: {order.get('priority', 0)}"
+        )
+    if not visible:
+        lines.append("No hay clientes registrados.")
+    if page < total_pages:
+        lines.extend(["", f"Siguiente: /clientes {page + 1}"])
+    telegram.send_message(chat_id, "\n\n".join(lines))
+
+
+def _send_order_query(
+    chat_id: str,
+    command: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    order_id = arguments.strip()
+    if not _valid_order_id(order_id):
+        telegram.send_message(chat_id, f"Uso: /{command} ORDER_ID")
+        return
+    try:
+        order = next(
+            (
+                item
+                for item in admin_api.get_service_orders()
+                if item.get("order_id") == order_id
+            ),
+            None,
+        )
+    except TelegramControlError as exc:
+        logger.warning("Could not read service order: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar esa orden.")
+        return
+    if order is None:
+        telegram.send_message(chat_id, "No pude encontrar esa orden.")
+        return
+    response = format_order_rules(order) if command == "reglas" else format_order_detail(order)
+    telegram.send_message(chat_id, response)
+
+
+def _send_recent_errors(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        worker = admin_api.get_worker()
+        runs = admin_api.get_runs(limit=50)
+    except TelegramControlError as exc:
+        logger.warning("Could not read recent errors: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar los incidentes recientes.")
+        return
+    failures = [run for run in runs if _is_failed_run(run)][:5]
+    lines = ["ULTIMOS ERRORES", ""]
+    if worker.get("last_error"):
+        lines.append("El worker conserva un error reciente. Revisa el dashboard para el detalle.")
+    if not failures and not worker.get("last_error"):
+        lines.append("No hay errores recientes en las ultimas 50 ejecuciones.")
+    for run in failures:
+        timestamp = _format_lima_datetime(run.get("finished_at") or run.get("started_at"))
+        order_id = run.get("order_id") or "sin orden"
+        status = run.get("status") or "error"
+        message = _safe_run_message(run.get("message"))
+        lines.append(
+            f"{timestamp or 'Sin fecha'} | {order_id}\n"
+            f"{status}: {message}"
+        )
+    telegram.send_message(chat_id, "\n\n".join(lines))
+
+
+def format_order_detail(order: dict[str, Any]) -> str:
+    lines = [
+        "DETALLE DE ORDEN",
+        "",
+        f"Orden: {order.get('order_id') or 'desconocida'}",
+        f"Cliente: {_short_text(order.get('applicant_name') or 'Sin nombre', 60)}",
+        f"Documento: {order.get('document_number_masked') or 'no disponible'}",
+        f"Contacto: {_short_text(order.get('contact_name') or 'Sin contacto', 60)}",
+        f"WhatsApp: {order.get('contact_whatsapp_masked') or 'no registrado'}",
+        f"Fuente: {order.get('contact_source') or 'no registrada'}",
+        f"Estado: {order.get('status') or 'desconocido'}",
+        f"Preflight: {order.get('preflight_status') or 'desconocido'}",
+        f"Prioridad: {order.get('priority', 0)}",
+        f"Reserva: {order.get('reservation_status') or 'sin reserva'}",
+        f"Pago: {order.get('payment_status') or 'sin pago'}",
+    ]
+    if order.get("reservation_date") or order.get("reservation_hour"):
+        lines.append(
+            "Cita: "
+            f"{order.get('reservation_date') or 'sin fecha'} "
+            f"{order.get('reservation_hour') or 'sin hora'}"
+        )
+    return "\n".join(lines)
+
+
+def format_order_rules(order: dict[str, Any]) -> str:
+    weekdays = order.get("allowed_weekdays")
+    if isinstance(weekdays, list) and weekdays:
+        weekday_text = ", ".join(_weekday_name(day) for day in weekdays)
+    else:
+        weekday_text = "todos"
+    return "\n".join(
+        [
+            "REGLAS DE RESERVA",
+            "",
+            f"Orden: {order.get('order_id') or 'desconocida'}",
+            f"Fecha minima: {order.get('minimum_reservation_date') or 'sin limite'}",
+            f"Fecha maxima: {order.get('maximum_reservation_date') or 'sin limite'}",
+            f"Hora minima: {_format_minimum_hour(order.get('minimum_reservation_hour'))}",
+            f"Dias permitidos: {weekday_text}",
+        ]
+    )
+
+
+def _order_status_counts(orders: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"active": 0, "paused": 0, "payment_pending": 0, "closed": 0}
+    for order in orders:
+        status = str(order.get("status") or "")
+        if status == "paused":
+            counts["paused"] += 1
+        elif status == "reserved_payment_pending":
+            counts["payment_pending"] += 1
+        elif status in {"archived", "paid", "completed", "no_charge"}:
+            counts["closed"] += 1
+        else:
+            counts["active"] += 1
+    return counts
+
+
+def _is_failed_run(run: dict[str, Any]) -> bool:
+    try:
+        exit_code = int(run.get("exit_code") or 0)
+    except (TypeError, ValueError):
+        exit_code = 0
+    status = str(run.get("status") or "").lower()
+    return exit_code != 0 or status in {
+        "error",
+        "failed",
+        "unknown",
+        "reservation_unconfirmed",
+    }
+
+
+def _safe_run_message(value: Any) -> str:
+    text = sanitize_text(str(value or "Sin mensaje"))
+    text = re.sub(r"(?i)[a-z]:[\\/][^\s]+", "[ruta]", text)
+    text = re.sub(r"https?://\S+", "[url]", text)
+    return _short_text(text, 160)
+
+
+def _short_text(value: Any, limit: int) -> str:
+    text = sanitize_text(" ".join(str(value).split()))
+    return text if len(text) <= limit else f"{text[: limit - 1]}…"
+
+
+def _valid_order_id(value: str) -> bool:
+    return re.fullmatch(r"[A-Za-z0-9_-]{1,80}", value) is not None
+
+
+def _weekday_name(value: Any) -> str:
+    names = {
+        1: "lunes",
+        2: "martes",
+        3: "miercoles",
+        4: "jueves",
+        5: "viernes",
+        6: "sabado",
+        7: "domingo",
+    }
+    try:
+        return names.get(int(value), str(value))
+    except (TypeError, ValueError):
+        return "desconocido"
+
+
+def _format_minimum_hour(value: Any) -> str:
+    if value in {None, ""}:
+        return "sin limite"
+    try:
+        return f"{int(value):02d}:00"
+    except (TypeError, ValueError):
+        return "desconocida"
 
 
 def _request_worker_confirmation(
@@ -632,11 +892,13 @@ def format_worker_status(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _command_name(text: str) -> str | None:
-    first = text.strip().split(maxsplit=1)[0] if text.strip() else ""
+def _command_parts(text: str) -> tuple[str | None, str]:
+    stripped = text.strip()
+    first, separator, arguments = stripped.partition(" ")
     if not first.startswith("/"):
-        return None
-    return first[1:].split("@", maxsplit=1)[0].strip().lower() or None
+        return None, ""
+    command = first[1:].split("@", maxsplit=1)[0].strip().lower() or None
+    return command, arguments.strip() if separator else ""
 
 
 def _format_lima_datetime(value: Any) -> str | None:

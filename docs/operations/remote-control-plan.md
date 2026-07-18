@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 2 completada y validada en operacion real.
+Estado general: Fase 3 implementada y activa; validacion desde Telegram pendiente.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -413,7 +413,8 @@ Validacion desde Telegram:
 
 ### Fase 3 - Consultas operativas
 
-Estado: pendiente.
+Estado: implementada y activa el `2026-07-18`; pendiente de validacion visual
+desde el celular autorizado.
 
 1. Implementar `/clientes` con una respuesta corta y paginada.
 2. Separar ordenes activas, pausadas, reservadas pendientes de pago y cerradas.
@@ -425,6 +426,52 @@ Criterio de cierre:
 
 - la informacion coincide con Admin API/PostgreSQL;
 - ningun mensaje contiene tokens, contrasenas o datos completos innecesarios.
+
+Avance realizado:
+
+- `/clientes [pagina]` implementado con ocho ordenes por pagina;
+- el encabezado separa activos, pausados, reservas pendientes de pago y
+  cerrados;
+- `/cliente ORDER_ID` muestra un resumen operativo enmascarado;
+- `/reglas ORDER_ID` muestra fecha minima, fecha maxima, hora minima y dias
+  permitidos;
+- `/ultimos_errores` revisa las ultimas 50 ejecuciones y devuelve como maximo
+  cinco incidentes;
+- mensajes de error saneados y limitados, sin URLs ni rutas locales;
+- identificadores de orden validados antes de consultar;
+- pagina y sintaxis invalidas devuelven ayuda corta sin consultar datos;
+- ninguna de estas consultas usa `include_details=1`.
+
+Decision de seguridad:
+
+- `/cliente` y `/reglas` usan solamente `GET /api/v1/service-orders`, cuyo DTO
+  contiene documento y WhatsApp enmascarados;
+- no llaman a `GET /api/v1/service-orders/{order_id}`, porque ese endpoint
+  administrativo puede devolver documento y WhatsApp completos;
+- por tanto, los valores completos no entran al proceso de formateo de
+  Telegram.
+
+Pruebas locales completadas con datos reales:
+
+- listado consultado y paginado sobre 66 ordenes;
+- respuesta de clientes: 597 caracteres;
+- detalle enmascarado: 261 caracteres;
+- reglas: 159 caracteres;
+- errores recientes: 74 caracteres;
+- todas las respuestas por debajo del limite de Telegram;
+- DTO confirmado sin `document_number` ni `contact_whatsapp` completos;
+- errores confirmados sin rutas de Windows ni URLs;
+- compilacion, Ruff y `git diff --check` correctos;
+- receptor reiniciado por su supervisor y validado contra Admin API.
+
+Pruebas pendientes para cierre:
+
+1. enviar `/clientes` y comprobar formato y siguiente pagina;
+2. copiar un `ORDER_ID` del listado y probar `/cliente ORDER_ID`;
+3. probar `/reglas ORDER_ID` con la misma orden;
+4. probar `/ultimos_errores`;
+5. confirmar visualmente que no aparecen documentos, WhatsApp completos, rutas
+   ni datos tecnicos innecesarios.
 
 ### Fase 4 - Actualizacion de reglas y prioridad
 
@@ -549,6 +596,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
 | 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
+| 2026-07-18 | 3 | Consultas operativas enmascaradas | Implementado y validado localmente con datos reales | Admin API y seccion Fase 3 | Validar cuatro consultas desde Telegram |
 
 ## Decisiones pendientes
 
