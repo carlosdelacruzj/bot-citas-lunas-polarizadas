@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: planificado, sin implementacion funcional iniciada.
+Estado general: Fase 0 completada; implementacion funcional no iniciada.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -118,7 +118,7 @@ debe conservar una correspondencia clara con la Admin API.
 
 ### Fase 0 - Congelar contratos y linea base
 
-Estado: pendiente.
+Estado: completada el `2026-07-18`.
 
 1. Inventariar los endpoints exactos que usara cada comando.
 2. Confirmar los campos admitidos al crear una orden y editar restricciones.
@@ -130,6 +130,138 @@ Criterio de cierre:
 
 - existe un mapa comando -> endpoint -> respuesta -> verificacion;
 - ninguna operacion requiere SQL directo ni ejecucion arbitraria de shell.
+
+#### Mapa congelado de comandos
+
+| Comando | Operacion interna | Respuesta esperada | Verificacion real |
+|---|---|---|---|
+| `/ayuda` | Local en `telegram_control` | Lista de comandos permitidos | No aplica |
+| `/cancelar` | Local en `telegram_control` | Conversacion cancelada o ausencia de flujo activo | Estado conversacional eliminado |
+| `/estado` | `GET /health` y `GET /api/v1/worker` | Salud de API, fase y tiempos operativos | Combinar heartbeat persistido con liveness del proceso; ver brecha 1 |
+| `/clientes` | `GET /api/v1/service-orders` | Lista resumida y paginada | Conteos por estado coinciden con el DTO enmascarado |
+| `/cliente ORDEN` | `GET /api/v1/service-orders/{order_id}` | Resumen saneado de la orden | Filtrar nuevamente documento y WhatsApp antes de enviarlos a Telegram |
+| `/pausar` | `POST /api/v1/worker/pause` | HTTP `202`, `status=queued`, `command_id` | Consultar `GET /api/v1/worker/commands` hasta `applied` o `failed`; despues consultar worker |
+| `/reanudar` | `POST /api/v1/worker/resume` | HTTP `202`, `status=queued`, `command_id` | Igual que pausa y confirmar `paused=false` |
+| `/reiniciar` | `POST /api/v1/worker/restart` | HTTP `202`, `status=queued`, `command_id` | Confirmar `applied`, salida controlada y actividad posterior del worker |
+| `/prioridad ORDEN VALOR` | `POST /api/v1/service-orders/{order_id}/priority` con `{"priority": N}` | HTTP `200`, prioridad y orden actualizadas | Volver a consultar el detalle de la orden |
+| `/reglas ORDEN` | `GET /api/v1/service-orders/{order_id}` | Restricciones actuales | Extraer solo los cuatro campos de restricciones |
+| `/reglas_editar ORDEN` | `POST /api/v1/service-orders/{order_id}/restrictions` | HTTP `200` y restricciones normalizadas | Volver a consultar el detalle de la orden |
+| `/cliente_nuevo` | `POST /api/v1/service-orders` | HTTP `201`, `status=validation_pending`, `order_id` | Consultar la orden hasta que preflight quede validado o fallido |
+| `/ultimos_errores` | `GET /api/v1/runs?limit=N` y estado publico del worker | Resumen corto y saneado | No solicitar `include_details=1` ni enviar evidencia cruda |
+
+Todos los endpoints bajo `/api/v1/` requieren
+`Authorization: Bearer <APPOINTMENT_BOT_API_TOKEN>`. La comprobacion sin token
+del `2026-07-18` devolvio HTTP `401` para worker y ordenes.
+
+#### Contrato de alta congelado
+
+Campos obligatorios actuales:
+
+- `document_number`;
+- `document_type`: `dni` o `foreign_resident_card`;
+- `password`;
+- `contact_name`;
+- `contact_source`: `tiktok`, `facebook` o `whatsapp`.
+
+`contact_whatsapp` es opcional. Prioridad, nombre del solicitante, cobro y
+restricciones son campos administrativos opcionales. La orden nace pausada y
+entra a preflight; no se debe anunciar como activa hasta comprobar el resultado
+de esa validacion.
+
+La contrasena obligatoria impide habilitar `/cliente_nuevo` de produccion hasta
+definir un mecanismo de ingreso aceptable. Telegram no debe guardar la
+contrasena en estado persistente, logs ni mensajes de confirmacion.
+
+#### Contrato de restricciones congelado
+
+El endpoint reemplaza en una sola operacion:
+
+```json
+{
+  "minimum_reservation_hour": 11,
+  "minimum_reservation_date": "2026-08-01",
+  "maximum_reservation_date": "2026-08-31",
+  "allowed_weekdays": [1, 3, 6]
+}
+```
+
+Cada campo acepta `null`. Los dias son ISO `1=lunes` a `7=domingo`; la fecha
+maxima es inclusiva y no puede preceder a la minima. La confirmacion de Telegram
+debe mostrar los valores anteriores y nuevos antes de enviar el POST.
+
+#### Respuestas estandar congeladas
+
+El receptor traducira las respuestas de la API a estas categorias:
+
+| Categoria | Condicion API | Respuesta al operador |
+|---|---|---|
+| Exito confirmado | HTTP `200/201` y verificacion posterior correcta | Accion completada con identificador y estado final |
+| Aceptado y esperando | HTTP `202` o preflight en curso | Solicitud recibida; mostrar progreso hasta estado terminal |
+| Entrada invalida | `bad_request` y posibles `field_errors` | Mostrar campos corregibles sin detalles internos |
+| No encontrado | `not_found` | Informar que la orden o recurso no existe |
+| Conflicto | `conflict` | Explicar el estado que impide la accion |
+| No autorizado | HTTP `401` o chat fuera de allowlist | No mostrar informacion administrativa |
+| Configuracion incompleta | `configuration_error` | Informar indisponibilidad administrativa sin revelar secretos |
+| Fallo operativo | `failed`, timeout o API inaccesible | No confirmar el cambio; indicar verificacion pendiente o fallo |
+
+#### Linea base operativa de 2026-07-18
+
+Comprobacion realizada aproximadamente a las `00:25` en `America/Lima`:
+
+- tarea programada `AppointmentBotContinuousWorker`: `Running`;
+- bootstrap del worker: activo y propietario del arranque de PostgreSQL y del
+  proceso `appointment_bot.worker.host`;
+- bootstrap del dashboard: activo y supervisor de
+  `appointment_bot.admin_api.server`;
+- PostgreSQL `appointment-bot-postgres`: saludable;
+- n8n local: activo, pero no forma parte del camino critico definido;
+- API embebida `8765`: saludable, `worker_running=true`, fase
+  `outside_hot_window`;
+- Admin API `8766`: saludable en modo `api_only`;
+- estado persistido: sin pausa, sin error reciente, fase
+  `outside_hot_window`;
+- comandos recientes consultados: tres reinicios, todos `applied`;
+- Telegram habilitado, token y chat configurados, `getMe` correcto;
+- Telegram sin webhook configurado y sin actualizaciones pendientes, compatible
+  con la decision de usar long polling;
+- no existe todavia un receptor permanente `getUpdates`; el unico lector
+  encontrado es un script manual de benchmark CAPTCHA.
+
+Los conteos de ordenes consultados se usaron solamente para comprobar el
+contrato de listado y no se congelan como verdad de negocio, porque cambian con
+la operacion diaria.
+
+#### Brechas detectadas para las siguientes fases
+
+1. **Liveness ambiguo en Admin API.** El proceso separado devuelve
+   `worker_running=false` porque no contiene un `ContinuousWorker` en memoria,
+   aunque el worker real este activo. `/estado` necesita una señal persistida de
+   heartbeat con umbral de antiguedad o un liveness agregado antes de informar
+   que el worker esta caido.
+2. **Bind del API embebido.** La linea base encontro `8765` escuchando en
+   `0.0.0.0`, mientras `8766` permanece en `127.0.0.1`. Las rutas
+   administrativas de `8765` exigen token, pero antes del control remoto se debe
+   confirmar si ese bind amplio es intencional y restringirlo si no lo es.
+3. **Auditoria del actor.** El Admin API registra actualmente
+   `requested_by=admin_api`. El control remoto necesita conservar un actor
+   Telegram saneado sin aceptar texto arbitrario del cliente.
+4. **Credenciales de altas.** El alta requiere password. Esta accion no se
+   habilitara hasta decidir su tratamiento seguro.
+5. **Resultado terminal.** Un HTTP `202` solo significa encolado. El receptor
+   debe esperar `applied` o `failed` y verificar el estado posterior.
+
+#### Evidencia de cierre
+
+- contratos revisados: `docs/contracts/admin-api.md` y
+  `docs/contracts/worker-control.md`;
+- rutas verificadas en `services/api/worker_routes.py`,
+  `services/api/service_order_routes.py` y `services/local_api.py`;
+- supervision verificada en `scripts/start-worker.ps1`,
+  `scripts/start-worker-hidden.vbs` y `scripts/start-admin-dashboard.ps1`;
+- runtime consultado mediante endpoints locales, procesos de Windows, tarea
+  programada, Docker y metodos de lectura de Telegram;
+- no se escribieron ordenes, reglas, comandos ni configuracion durante la linea
+  base.
 
 ### Fase 1 - Crear el receptor independiente de Telegram
 
@@ -306,6 +438,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | Fecha | Fase | Cambio o prueba | Resultado | Evidencia | Proximo paso |
 |---|---|---|---|---|---|
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
+| 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
 
 ## Decisiones pendientes
 
