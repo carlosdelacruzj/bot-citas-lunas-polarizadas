@@ -11,7 +11,7 @@ import signal
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from threading import Event, Lock
 from typing import Any
@@ -31,6 +31,7 @@ DEFAULT_ADMIN_API_URL = "http://127.0.0.1:8766"
 DEFAULT_POLL_TIMEOUT_SECONDS = 30
 RETRY_DELAY_SECONDS = 5
 CONFIRMATION_TTL_SECONDS = 120
+CONVERSATION_TTL_SECONDS = 300
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 CLIENTS_PAGE_SIZE = 8
@@ -41,6 +42,8 @@ HELP_TEXT = """Control remoto disponible:
 /cliente ORDER_ID - Detalle operativo enmascarado
 /reglas ORDER_ID - Restricciones de una orden
 /ultimos_errores - Incidentes operativos recientes
+/prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
+/reglas_editar ORDER_ID - Editar restricciones paso a paso
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
@@ -71,6 +74,27 @@ class PendingWorkerConfirmation:
     expires_at: float
 
 
+@dataclass(frozen=True)
+class PendingOrderChange:
+    operation_id: str
+    chat_id: str
+    action: str
+    order_id: str
+    original: dict[str, Any]
+    updated: dict[str, Any]
+    expires_at: float
+
+
+@dataclass
+class RulesConversation:
+    chat_id: str
+    order_id: str
+    original: dict[str, Any]
+    updated: dict[str, Any]
+    step: int
+    expires_at: float
+
+
 class AdminApiClient:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url.rstrip("/")
@@ -95,6 +119,34 @@ class AdminApiClient:
         if not isinstance(runs, list):
             raise TelegramControlError("Admin API returned an invalid run list.")
         return [item for item in runs if isinstance(item, dict)]
+
+    def update_order_priority(
+        self,
+        order_id: str,
+        priority: int,
+        *,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/priority",
+            payload={"priority": priority},
+            actor=actor,
+        )
+
+    def update_order_rules(
+        self,
+        order_id: str,
+        rules: dict[str, Any],
+        *,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/restrictions",
+            payload=rules,
+            actor=actor,
+        )
 
     def enqueue_worker_command(self, command: str, *, actor: str) -> dict[str, Any]:
         return self._request(
@@ -276,6 +328,8 @@ def run_control(*, check_only: bool = False) -> int:
     _install_signal_handlers(stop_event)
     next_offset = _load_next_offset(config.offset_path)
     pending_confirmations: dict[str, PendingWorkerConfirmation] = {}
+    pending_order_changes: dict[str, PendingOrderChange] = {}
+    rules_conversations: dict[str, RulesConversation] = {}
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
     logger.info("Telegram control long polling started.")
@@ -287,6 +341,11 @@ def run_control(*, check_only: bool = False) -> int:
                     timeout_seconds=config.poll_timeout_seconds,
                 )
                 _remove_expired_confirmations(pending_confirmations, confirmation_lock)
+                _remove_expired_order_state(
+                    pending_order_changes,
+                    rules_conversations,
+                    confirmation_lock,
+                )
                 for update in updates:
                     update_id = _update_id(update)
                     if update_id is None:
@@ -297,6 +356,8 @@ def run_control(*, check_only: bool = False) -> int:
                         telegram,
                         admin_api,
                         pending_confirmations=pending_confirmations,
+                        pending_order_changes=pending_order_changes,
+                        rules_conversations=rules_conversations,
                         confirmation_lock=confirmation_lock,
                         executor=executor,
                     )
@@ -321,6 +382,8 @@ def _process_update(
     admin_api: AdminApiClient,
     *,
     pending_confirmations: dict[str, PendingWorkerConfirmation],
+    pending_order_changes: dict[str, PendingOrderChange],
+    rules_conversations: dict[str, RulesConversation],
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -332,6 +395,7 @@ def _process_update(
             telegram,
             admin_api,
             pending_confirmations,
+            pending_order_changes,
             confirmation_lock,
             executor,
         )
@@ -349,6 +413,16 @@ def _process_update(
     text = message.get("text")
     if not isinstance(text, str):
         return
+    if not text.strip().startswith("/"):
+        if _process_rules_conversation_message(
+            chat_id,
+            text,
+            telegram,
+            rules_conversations,
+            pending_order_changes,
+            confirmation_lock,
+        ):
+            return
     command, arguments = _command_parts(text)
     if command is None:
         return
@@ -357,9 +431,15 @@ def _process_update(
         return
     if command == "cancelar":
         removed = _cancel_chat_confirmations(chat_id, pending_confirmations, confirmation_lock)
+        order_removed = _cancel_chat_order_state(
+            chat_id,
+            pending_order_changes,
+            rules_conversations,
+            confirmation_lock,
+        )
         response = (
             "Operacion pendiente cancelada."
-            if removed
+            if removed or order_removed
             else "No hay una operacion guiada activa."
         )
         telegram.send_message(chat_id, response)
@@ -378,6 +458,27 @@ def _process_update(
         return
     if command in {"cliente", "reglas"}:
         _send_order_query(chat_id, command, arguments, telegram, admin_api)
+        return
+    if command == "prioridad":
+        _request_priority_change(
+            chat_id,
+            arguments,
+            telegram,
+            admin_api,
+            pending_order_changes,
+            confirmation_lock,
+        )
+        return
+    if command == "reglas_editar":
+        _start_rules_conversation(
+            chat_id,
+            arguments,
+            telegram,
+            admin_api,
+            rules_conversations,
+            pending_order_changes,
+            confirmation_lock,
+        )
         return
     if command == "ultimos_errores":
         _send_recent_errors(chat_id, telegram, admin_api)
@@ -658,6 +759,283 @@ def _format_minimum_hour(value: Any) -> str:
         return "desconocida"
 
 
+def _request_priority_change(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> None:
+    parts = arguments.split()
+    if len(parts) != 2 or not _valid_order_id(parts[0]):
+        telegram.send_message(chat_id, "Uso: /prioridad ORDER_ID VALOR")
+        return
+    try:
+        priority = int(parts[1])
+        if priority < 0:
+            raise ValueError
+    except ValueError:
+        telegram.send_message(chat_id, "La prioridad debe ser un entero no negativo.")
+        return
+    try:
+        order = admin_api.get_service_order(parts[0])
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare priority change: %s", exc)
+        telegram.send_message(chat_id, "No pude encontrar o consultar esa orden.")
+        return
+    original_priority = int(order.get("priority") or 0)
+    if priority == original_priority:
+        telegram.send_message(chat_id, f"La prioridad ya es {priority}. No hay cambios.")
+        return
+    change = PendingOrderChange(
+        operation_id=secrets.token_hex(6),
+        chat_id=chat_id,
+        action="priority",
+        order_id=parts[0],
+        original={"priority": original_priority},
+        updated={"priority": priority},
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+    )
+    _store_order_change(change, pending_order_changes, confirmation_lock)
+    _send_order_change_confirmation(change, telegram)
+
+
+def _start_rules_conversation(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    rules_conversations: dict[str, RulesConversation],
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> None:
+    order_id = arguments.strip()
+    if not _valid_order_id(order_id):
+        telegram.send_message(chat_id, "Uso: /reglas_editar ORDER_ID")
+        return
+    try:
+        order = next(
+            (item for item in admin_api.get_service_orders() if item.get("order_id") == order_id),
+            None,
+        )
+    except TelegramControlError as exc:
+        logger.warning("Could not start rules conversation: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar esa orden.")
+        return
+    if order is None:
+        telegram.send_message(chat_id, "No pude encontrar esa orden.")
+        return
+    original = _rules_payload(order)
+    conversation = RulesConversation(
+        chat_id=chat_id,
+        order_id=order_id,
+        original=original,
+        updated=dict(original),
+        step=0,
+        expires_at=time.monotonic() + CONVERSATION_TTL_SECONDS,
+    )
+    with confirmation_lock:
+        _cancel_chat_order_state_unlocked(
+            chat_id,
+            pending_order_changes,
+            rules_conversations,
+        )
+        rules_conversations[chat_id] = conversation
+    telegram.send_message(
+        chat_id,
+        f"EDITAR REGLAS\n\n{format_order_rules(order)}\n\n{_rules_step_prompt(0)}",
+    )
+
+
+def _process_rules_conversation_message(
+    chat_id: str,
+    text: str,
+    telegram: TelegramBotApi,
+    rules_conversations: dict[str, RulesConversation],
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> bool:
+    with confirmation_lock:
+        conversation = rules_conversations.get(chat_id)
+    if conversation is None:
+        return False
+    if conversation.expires_at <= time.monotonic():
+        with confirmation_lock:
+            rules_conversations.pop(chat_id, None)
+        telegram.send_message(chat_id, "La edicion de reglas vencio. Inicia nuevamente.")
+        return True
+    try:
+        field, value = _parse_rules_step(conversation.step, text, conversation.updated)
+    except ValueError as exc:
+        telegram.send_message(chat_id, f"{exc}\n\n{_rules_step_prompt(conversation.step)}")
+        return True
+    conversation.updated[field] = value
+    conversation.step += 1
+    conversation.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
+    if conversation.step < 4:
+        telegram.send_message(chat_id, _rules_step_prompt(conversation.step))
+        return True
+    try:
+        _validate_rules_payload(conversation.updated)
+    except ValueError as exc:
+        with confirmation_lock:
+            rules_conversations.pop(chat_id, None)
+        telegram.send_message(
+            chat_id,
+            f"No se guardo ningun cambio: {exc}\nInicia nuevamente con /reglas_editar.",
+        )
+        return True
+    with confirmation_lock:
+        rules_conversations.pop(chat_id, None)
+    if conversation.updated == conversation.original:
+        telegram.send_message(chat_id, "No hay cambios en las reglas.")
+        return True
+    change = PendingOrderChange(
+        operation_id=secrets.token_hex(6),
+        chat_id=chat_id,
+        action="rules",
+        order_id=conversation.order_id,
+        original=conversation.original,
+        updated=conversation.updated,
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+    )
+    _store_order_change(change, pending_order_changes, confirmation_lock)
+    _send_order_change_confirmation(change, telegram)
+    return True
+
+
+def _parse_rules_step(
+    step: int,
+    text: str,
+    current: dict[str, Any],
+) -> tuple[str, Any]:
+    value = text.strip().lower()
+    fields = (
+        "minimum_reservation_date",
+        "maximum_reservation_date",
+        "minimum_reservation_hour",
+        "allowed_weekdays",
+    )
+    field = fields[step]
+    if value in {"igual", "mantener"}:
+        return field, current.get(field)
+    if value in {"quitar", "ninguno", "todos"}:
+        return field, None
+    if step in {0, 1}:
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("Usa YYYY-MM-DD, igual o quitar.") from exc
+        return field, parsed.isoformat()
+    if step == 2:
+        try:
+            hour = int(value)
+        except ValueError as exc:
+            raise ValueError("Usa una hora de 0 a 23, igual o quitar.") from exc
+        if hour < 0 or hour > 23:
+            raise ValueError("La hora debe estar entre 0 y 23.")
+        return field, hour
+    try:
+        weekdays = sorted({int(item.strip()) for item in value.split(",") if item.strip()})
+    except ValueError as exc:
+        raise ValueError("Usa dias ISO separados por coma, igual o todos.") from exc
+    if not weekdays or any(day < 1 or day > 7 for day in weekdays):
+        raise ValueError("Los dias deben estar entre 1=lunes y 7=domingo.")
+    return field, weekdays
+
+
+def _rules_step_prompt(step: int) -> str:
+    return (
+        "Paso 1/4 - Fecha minima. Responde YYYY-MM-DD, igual o quitar.",
+        "Paso 2/4 - Fecha maxima. Responde YYYY-MM-DD, igual o quitar.",
+        "Paso 3/4 - Hora minima. Responde 0 a 23, igual o quitar.",
+        "Paso 4/4 - Dias permitidos. Responde 1,2,...7; igual o todos.",
+    )[step]
+
+
+def _validate_rules_payload(rules: dict[str, Any]) -> None:
+    minimum = rules.get("minimum_reservation_date")
+    maximum = rules.get("maximum_reservation_date")
+    if minimum and maximum and date.fromisoformat(maximum) < date.fromisoformat(minimum):
+        raise ValueError("la fecha maxima no puede ser anterior a la minima")
+
+
+def _rules_payload(order: dict[str, Any]) -> dict[str, Any]:
+    weekdays = order.get("allowed_weekdays")
+    return {
+        "minimum_reservation_date": order.get("minimum_reservation_date"),
+        "maximum_reservation_date": order.get("maximum_reservation_date"),
+        "minimum_reservation_hour": order.get("minimum_reservation_hour"),
+        "allowed_weekdays": list(weekdays) if isinstance(weekdays, list) else None,
+    }
+
+
+def _store_order_change(
+    change: PendingOrderChange,
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> None:
+    with confirmation_lock:
+        stale = [
+            key
+            for key, item in pending_order_changes.items()
+            if item.chat_id == change.chat_id
+        ]
+        for key in stale:
+            pending_order_changes.pop(key, None)
+        pending_order_changes[change.operation_id] = change
+
+
+def _send_order_change_confirmation(
+    change: PendingOrderChange,
+    telegram: TelegramBotApi,
+) -> None:
+    comparison = _format_order_change_comparison(change)
+    telegram.send_message(
+        change.chat_id,
+        f"CONFIRMAR CAMBIO\n\n{comparison}\n\nLa confirmacion vence en 2 minutos.",
+        reply_markup={
+            "inline_keyboard": [
+                [
+                    {"text": "Confirmar", "callback_data": f"oc:{change.operation_id}:yes"},
+                    {"text": "Cancelar", "callback_data": f"oc:{change.operation_id}:no"},
+                ]
+            ]
+        },
+    )
+
+
+def _format_order_change_comparison(change: PendingOrderChange) -> str:
+    if change.action == "priority":
+        return (
+            f"Orden: {change.order_id}\n"
+            f"Prioridad anterior: {change.original['priority']}\n"
+            f"Prioridad nueva: {change.updated['priority']}"
+        )
+    return "\n".join(
+        [
+            f"Orden: {change.order_id}",
+            "",
+            "Fecha minima: "
+            + _change_value(change.original, change.updated, "minimum_reservation_date"),
+            "Fecha maxima: "
+            + _change_value(change.original, change.updated, "maximum_reservation_date"),
+            "Hora minima: "
+            + _change_value(change.original, change.updated, "minimum_reservation_hour"),
+            f"Dias: {_change_value(change.original, change.updated, 'allowed_weekdays')}",
+        ]
+    )
+
+
+def _change_value(original: dict[str, Any], updated: dict[str, Any], field: str) -> str:
+    old = original.get(field)
+    new = updated.get(field)
+    old_text = old if old is not None else "sin limite"
+    new_text = new if new is not None else "sin limite"
+    return f"{old_text} -> {new_text}"
+
+
 def _request_worker_confirmation(
     chat_id: str,
     command: str,
@@ -702,6 +1080,7 @@ def _process_callback_query(
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
     pending_confirmations: dict[str, PendingWorkerConfirmation],
+    pending_order_changes: dict[str, PendingOrderChange],
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -718,10 +1097,27 @@ def _process_callback_query(
         logger.warning("Ignored Telegram callback from an unauthorized chat.")
         return
     parts = data.split(":")
-    if len(parts) != 3 or parts[0] != "wc" or parts[2] not in {"yes", "no"}:
+    if len(parts) != 3 or parts[0] not in {"wc", "oc"} or parts[2] not in {"yes", "no"}:
         telegram.answer_callback_query(callback_id, "Accion no reconocida.")
         return
     operation_id = parts[1]
+    if parts[0] == "oc":
+        with confirmation_lock:
+            change = pending_order_changes.pop(operation_id, None)
+        if (
+            change is None
+            or change.chat_id != chat_id
+            or change.expires_at <= time.monotonic()
+        ):
+            telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
+            return
+        if parts[2] == "no":
+            telegram.answer_callback_query(callback_id, "Operacion cancelada.")
+            telegram.send_message(chat_id, "Operacion cancelada. No se realizaron cambios.")
+            return
+        telegram.answer_callback_query(callback_id, "Cambio confirmado.")
+        executor.submit(_execute_order_change, change, telegram, admin_api)
+        return
     with confirmation_lock:
         confirmation = pending_confirmations.pop(operation_id, None)
     if (
@@ -742,6 +1138,51 @@ def _process_callback_query(
         telegram,
         admin_api,
     )
+
+
+def _execute_order_change(
+    change: PendingOrderChange,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    operation_short = change.operation_id[:8]
+    actor = _telegram_actor(change.chat_id)
+    try:
+        if change.action == "priority":
+            admin_api.update_order_priority(
+                change.order_id,
+                int(change.updated["priority"]),
+                actor=actor,
+            )
+        else:
+            admin_api.update_order_rules(change.order_id, change.updated, actor=actor)
+        verified = admin_api.get_service_order(change.order_id)
+        if not _order_change_matches(change, verified):
+            raise TelegramControlError("Saved order values do not match the requested change.")
+        telegram.send_message(
+            change.chat_id,
+            "Cambio aplicado y verificado.\n"
+            f"Solicitud: {operation_short}\n"
+            f"Orden: {change.order_id}",
+        )
+        logger.info(
+            "Applied Telegram order change action=%s actor=%s order_id=%s",
+            change.action,
+            actor,
+            change.order_id,
+        )
+    except TelegramControlError as exc:
+        logger.warning("Order change %s failed: %s", change.action, exc)
+        telegram.send_message(
+            change.chat_id,
+            f"No pude verificar la solicitud {operation_short}. No confirmo el cambio.",
+        )
+    except Exception:
+        logger.exception("Unexpected order change execution failure")
+
+
+def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
+    return all(order.get(field) == value for field, value in change.updated.items())
 
 
 def _execute_worker_command(
@@ -887,6 +1328,59 @@ def _remove_expired_confirmations(
         ]
         for operation_id in expired:
             pending_confirmations.pop(operation_id, None)
+
+
+def _cancel_chat_order_state(
+    chat_id: str,
+    pending_order_changes: dict[str, PendingOrderChange],
+    rules_conversations: dict[str, RulesConversation],
+    confirmation_lock: Lock,
+) -> bool:
+    with confirmation_lock:
+        return _cancel_chat_order_state_unlocked(
+            chat_id,
+            pending_order_changes,
+            rules_conversations,
+        )
+
+
+def _cancel_chat_order_state_unlocked(
+    chat_id: str,
+    pending_order_changes: dict[str, PendingOrderChange],
+    rules_conversations: dict[str, RulesConversation],
+) -> bool:
+    operation_ids = [
+        operation_id
+        for operation_id, change in pending_order_changes.items()
+        if change.chat_id == chat_id
+    ]
+    for operation_id in operation_ids:
+        pending_order_changes.pop(operation_id, None)
+    conversation_removed = rules_conversations.pop(chat_id, None) is not None
+    return bool(operation_ids) or conversation_removed
+
+
+def _remove_expired_order_state(
+    pending_order_changes: dict[str, PendingOrderChange],
+    rules_conversations: dict[str, RulesConversation],
+    confirmation_lock: Lock,
+) -> None:
+    now = time.monotonic()
+    with confirmation_lock:
+        expired_changes = [
+            operation_id
+            for operation_id, change in pending_order_changes.items()
+            if change.expires_at <= now
+        ]
+        for operation_id in expired_changes:
+            pending_order_changes.pop(operation_id, None)
+        expired_chats = [
+            chat_id
+            for chat_id, conversation in rules_conversations.items()
+            if conversation.expires_at <= now
+        ]
+        for chat_id in expired_chats:
+            rules_conversations.pop(chat_id, None)
 
 
 def format_worker_status(payload: dict[str, Any]) -> str:

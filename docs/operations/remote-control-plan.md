@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 3 completada y validada en operacion real.
+Estado general: Fase 4 implementada; activacion y validacion desde Telegram pendientes.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -494,7 +494,8 @@ Validacion desde Telegram:
 
 ### Fase 4 - Actualizacion de reglas y prioridad
 
-Estado: pendiente.
+Estado: implementada el `2026-07-18`; pendiente de recargar el receptor y
+validar el flujo desde el celular autorizado.
 
 1. Implementar `/prioridad` con validacion y confirmacion.
 2. Implementar el flujo conversacional de `/reglas_editar`.
@@ -509,6 +510,43 @@ Criterio de cierre:
 - cancelar o dejar vencer la conversacion no realiza cambios parciales;
 - el worker observa las reglas nuevas sin requerir una modificacion manual de
   la base de datos.
+
+Avance realizado:
+
+- `/prioridad ORDER_ID VALOR` implementado con entero no negativo;
+- compara prioridad anterior y nueva antes de confirmar;
+- evita confirmacion si el valor ya es el actual;
+- `/reglas_editar ORDER_ID` implementado como conversacion de cuatro pasos;
+- cada campo permite `igual` para conservarlo y `quitar` para llevarlo a
+  `null`; dias tambien acepta `todos`;
+- fechas usan `YYYY-MM-DD`, hora `0..23` y dias ISO `1..7`;
+- se rechaza una fecha maxima anterior a la minima;
+- la conversacion vence despues de cinco minutos de inactividad;
+- `/cancelar` elimina conversaciones y confirmaciones sin guardar;
+- al completar los pasos se muestra anterior -> nuevo para los cuatro campos;
+- solo el boton final `Confirmar` envia un POST atomico;
+- botones consumidos o vencidos no pueden repetir la escritura;
+- despues del POST se vuelve a consultar el detalle y solo se confirma si todos
+  los valores coinciden.
+
+Pruebas locales completadas:
+
+- prioridad genera comparacion y confirmacion;
+- editor guiado recoge los cuatro campos sin escrituras parciales;
+- comparacion final y botones generados correctamente;
+- persistencia real de prioridad verificada sobre una orden archivada;
+- persistencia real de las cuatro restricciones verificada;
+- prioridad y reglas originales restauradas al terminar la prueba;
+- compilacion, Ruff y `git diff --check` correctos.
+
+Pruebas pendientes para cierre:
+
+1. probar `/prioridad ORDER_ID VALOR` y pulsar `Cancelar`;
+2. confirmar un cambio de prioridad y verificarlo con `/cliente ORDER_ID`;
+3. iniciar `/reglas_editar ORDER_ID`, responder los cuatro pasos y cancelar la
+   confirmacion final;
+4. repetir, confirmar y verificar con `/reglas ORDER_ID`;
+5. restaurar desde Telegram los valores originales y volver a verificarlos.
 
 ### Fase 5 - Alta remota de clientes
 
@@ -616,6 +654,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
 | 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
 | 2026-07-18 | 3 | Consultas operativas y detalle deliberado | Completado y validado desde Telegram | Admin API y seccion Fase 3 | Iniciar Fase 4: prioridad y reglas remotas |
+| 2026-07-18 | 4 | Prioridad y restricciones remotas | Implementado y validado localmente con restauracion | Admin API y seccion Fase 4 | Recargar y validar desde Telegram |
 
 ## Decisiones pendientes
 
