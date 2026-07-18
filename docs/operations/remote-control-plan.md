@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 3 implementada y activa; validacion desde Telegram pendiente.
+Estado general: Fase 3 completada y validada en operacion real.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -413,8 +413,7 @@ Validacion desde Telegram:
 
 ### Fase 3 - Consultas operativas
 
-Estado: implementada y activa el `2026-07-18`; pendiente de validacion visual
-desde el celular autorizado.
+Estado: completada el `2026-07-18`.
 
 1. Implementar `/clientes` con una respuesta corta y paginada.
 2. Separar ordenes activas, pausadas, reservadas pendientes de pago y cerradas.
@@ -478,14 +477,20 @@ Pruebas locales completadas con datos reales:
 - compilacion, Ruff y `git diff --check` correctos;
 - receptor reiniciado por su supervisor y validado contra Admin API.
 
-Pruebas pendientes para cierre:
+Pruebas pendientes para cierre: ninguna.
 
-1. enviar `/clientes` y comprobar formato y siguiente pagina;
-2. copiar un `ORDER_ID` del listado y probar `/cliente ORDER_ID`;
-3. probar `/reglas ORDER_ID` con la misma orden;
-4. probar `/ultimos_errores`;
-5. confirmar visualmente que `/cliente` muestra cliente, documento y WhatsApp
-   completos, pero no contrasena, rutas ni datos tecnicos innecesarios.
+Validacion desde Telegram:
+
+- `/clientes` y paginacion respondieron correctamente;
+- `/cliente ORDER_ID` fue probado con una orden sin nombre de titular obtenido y
+  con otra orden que si conserva titular identificado;
+- se confirmo que cliente/titular y contacto se muestran como personas
+  independientes;
+- documento y WhatsApp completos aparecen en el detalle deliberado;
+- `/reglas ORDER_ID` y `/ultimos_errores` respondieron correctamente;
+- no se reportaron contrasenas, rutas ni datos tecnicos innecesarios;
+- worker y receptor permanecieron activos despues de las consultas;
+- con esta validacion se cumplen los criterios de cierre de la Fase 3.
 
 ### Fase 4 - Actualizacion de reglas y prioridad
 
@@ -610,7 +615,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
 | 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Completado; pause, resume y restart aplicados una vez desde Telegram | `worker_commands` y seccion Fase 2 | Iniciar Fase 3: consultas operativas |
-| 2026-07-18 | 3 | Consultas operativas enmascaradas | Implementado y validado localmente con datos reales | Admin API y seccion Fase 3 | Validar cuatro consultas desde Telegram |
+| 2026-07-18 | 3 | Consultas operativas y detalle deliberado | Completado y validado desde Telegram | Admin API y seccion Fase 3 | Iniciar Fase 4: prioridad y reglas remotas |
 
 ## Decisiones pendientes
 
