@@ -629,7 +629,7 @@ Criterio de cierre:
 
 ### Fase 6 - Auditoria, recuperacion y endurecimiento
 
-Estado: pendiente.
+Estado: completada el `18-07-2026`.
 
 1. Persistir auditoria de acciones remotas.
 2. Definir vencimiento para confirmaciones y conversaciones abandonadas.
@@ -644,6 +644,54 @@ Criterio de cierre:
 - cada cambio remoto puede reconstruirse desde la auditoria;
 - la caida de un componente no provoca acciones duplicadas;
 - no existe una ruta de ejecucion arbitraria desde Telegram.
+
+Avance realizado:
+
+- esquema PostgreSQL elevado a version `33` con `remote_control_audit`;
+- cada evento conserva actor Telegram hasheado, accion, orden opcional, estado,
+  identificador de operacion y fecha;
+- la auditoria no recibe mensajes escritos por el usuario, documentos,
+  telefonos, contrasenas, tokens ni respuestas completas;
+- resultados `accepted`, `applied`, `failed`, `cancelled`, `denied`,
+  `rate_limited` y `started` permiten reconstruir el ciclo de una accion;
+- limite por chat de 30 consultas o 15 acciones/conversaciones por minuto;
+- una solicitud limitada no ejecuta Admin API ni consume una confirmacion;
+- conversaciones y confirmaciones vencidas se eliminan tambien durante el
+  long polling, sin esperar un nuevo mensaje del operador;
+- cada inicio o recuperacion del receptor envia `CONTROL REMOTO DISPONIBLE` al
+  chat autorizado con la fase observada del worker;
+- chats no autorizados siguen sin recibir respuesta y ahora dejan solamente un
+  actor hasheado con estado `denied`;
+- Telegram continua limitado a rutas concretas de Admin API: no existe comando
+  para PowerShell, SQL, archivos ni texto arbitrario.
+
+Validacion realizada:
+
+- migracion real a esquema `33` aplicada correctamente;
+- escritura y lectura de auditoria persistente verificadas;
+- barrera de frecuencia y recuperacion despues de 60 segundos verificadas;
+- escaneo de los eventos persistidos sin campos sensibles;
+- Admin API y receptor terminados de forma controlada y recuperados por sus
+  supervisores independientes;
+- primer intento de Telegram fallo mientras Admin API reiniciaba y el siguiente
+  intento se recupero automaticamente;
+- receptor recuperado con `authorized_chats=1`, worker activo en
+  `outside_hot_window` y evento `receiver/started` persistido;
+- aviso de recuperacion aceptado por Telegram para el chat autorizado.
+
+Rotacion de secretos, sin versionarlos:
+
+1. Token de Telegram: revocarlo y generar otro mediante BotFather.
+2. Sustituir `TELEGRAM_BOT_TOKEN` solamente en la configuracion local ignorada
+   por Git; nunca pegarlo en documentos, commits, capturas o chats de soporte.
+3. Token de Admin API: generar un valor aleatorio nuevo y sustituir
+   `APPOINTMENT_BOT_API_TOKEN` en la misma configuracion local.
+4. Reiniciar Admin API y receptor mediante sus supervisores; no reiniciar el
+   worker si solo cambio el token de Telegram.
+5. Ejecutar `appointment-bot-telegram-control --check` y confirmar el nuevo
+   aviso en el chat autorizado.
+6. Revisar `git diff` antes de cualquier commit para comprobar que ningun valor
+   secreto entro al repositorio.
 
 ### Fase 7 - Monitoreo externo con n8n
 
@@ -674,21 +722,21 @@ Telegram.
 
 | Escenario | Resultado esperado | Estado |
 |---|---|---|
-| Worker activo | `/estado` informa fase y siguiente accion reales | Pendiente |
-| Fuera de ventana | Se informa activo pero esperando, no apagado | Pendiente |
-| Worker pausado | Estado y motivo coherentes | Pendiente |
-| Reinicio normal | Comando aplicado y nueva actividad verificada | Pendiente |
-| Worker completamente caido | Supervisor lo recupera y Telegram lo verifica | Pendiente |
-| Admin API caida | Error claro, sin ejecutar una ruta alternativa insegura | Pendiente |
+| Worker activo | `/estado` informa fase y siguiente accion reales | Completado |
+| Fuera de ventana | Se informa activo pero esperando, no apagado | Completado |
+| Worker pausado | Estado y motivo coherentes | Completado |
+| Reinicio normal | Comando aplicado y nueva actividad verificada | Completado |
+| Worker completamente caido | Supervisor lo recupera y Telegram lo verifica | Completado |
+| Admin API caida | Error claro, sin ejecutar una ruta alternativa insegura | Completado |
 | PostgreSQL no disponible | No se confirma ninguna escritura | Pendiente |
 | Telegram sin Internet | Al recuperar conexion no duplica comandos | Pendiente |
-| `update_id` repetido | La accion se procesa una sola vez | Pendiente |
-| Chat no autorizado | No obtiene datos ni ejecuta acciones | Pendiente |
-| Confirmacion vencida | No se realiza el cambio | Pendiente |
-| Conversacion cancelada | No queda informacion parcial aplicada | Pendiente |
-| Regla invalida | Se muestran errores y se conserva la regla anterior | Pendiente |
-| Alta repetida | No se crean ordenes duplicadas | Pendiente |
-| Mensaje de error | No revela tokens, credenciales ni datos sensibles | Pendiente |
+| `update_id` repetido | La accion se procesa una sola vez | Completado |
+| Chat no autorizado | No obtiene datos ni ejecuta acciones | Completado |
+| Confirmacion vencida | No se realiza el cambio | Completado |
+| Conversacion cancelada | No queda informacion parcial aplicada | Completado |
+| Regla invalida | Se muestran errores y se conserva la regla anterior | Completado |
+| Alta repetida | No se crean ordenes duplicadas | Validacion local; alta real diferida |
+| Mensaje de error | No revela tokens, credenciales ni datos sensibles | Completado |
 
 ## Validacion al cerrar cada fase
 
@@ -715,12 +763,10 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 3 | Consultas operativas y detalle deliberado | Completado y validado desde Telegram | Admin API y seccion Fase 3 | Iniciar Fase 4: prioridad y reglas remotas |
 | 2026-07-18 | 4 | Prioridad y restricciones remotas | Completado desde Telegram; formato peruano y restauracion verificados | Admin API y seccion Fase 4 | Iniciar Fase 5: alta remota de clientes |
 | 2026-07-18 | 5 | Alta remota y credenciales individuales | Implementado y desplegado; falta prueba con cliente real | Admin API, Telegram y seccion Fase 5 | Probar `/credenciales` y `/cliente_nuevo` desde el celular |
+| 18-07-2026 | 6 | Auditoria, limites y recuperacion | Completado; esquema 33 y aviso de reinicio desplegados | PostgreSQL, supervisores y seccion Fase 6 | Priorizar mejoras de interfaz Telegram |
 
 ## Decisiones pendientes
 
-- Definir el mecanismo seguro para ingresar o actualizar credenciales de una
-  orden desde fuera de la computadora.
-- Definir cuantos `chat_id` estaran autorizados inicialmente.
 - Decidir si n8n se desplegara fuera de la computadora operativa.
 - Decidir si se necesita acceso privado al dashboard despues de validar
   Telegram.

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -310,6 +310,7 @@ def create_current_schema(connection: Connection) -> None:
         (datetime.now(UTC),),
     )
     _create_worker_commands_schema(connection)
+    _create_remote_control_audit_schema(connection)
     _create_finance_schema(connection)
     _create_whatsapp_messages_schema(connection)
     _create_whatsapp_followup_messages_schema(connection)
@@ -333,6 +334,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "payments",
         "worker_state",
         "worker_commands",
+        "remote_control_audit",
         "finance_categories",
         "finance_entries",
         "whatsapp_messages",
@@ -385,6 +387,10 @@ def _validate_current_schema(connection: Connection) -> None:
         ("worker_commands", "command"),
         ("worker_commands", "status"),
         ("worker_commands", "requested_at"),
+        ("remote_control_audit", "actor"),
+        ("remote_control_audit", "action"),
+        ("remote_control_audit", "status"),
+        ("remote_control_audit", "created_at"),
         ("finance_categories", "category_code"),
         ("finance_entries", "entry_kind"),
         ("finance_entries", "amount_original"),
@@ -584,6 +590,39 @@ def _create_worker_commands_schema(connection: Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_worker_commands_pending
         ON worker_commands(requested_at ASC, command_id ASC)
         WHERE status = 'pending'
+        """
+    )
+
+
+def _create_remote_control_audit_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS remote_control_audit (
+            audit_id text PRIMARY KEY,
+            actor text NOT NULL,
+            action text NOT NULL,
+            target_type text,
+            target_id text,
+            status text NOT NULL CHECK (
+                status IN ('accepted', 'applied', 'failed', 'cancelled',
+                           'denied', 'rate_limited', 'started')
+            ),
+            operation_id text,
+            detail text,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_remote_control_audit_created
+        ON remote_control_audit(created_at DESC, audit_id DESC)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_remote_control_audit_target
+        ON remote_control_audit(target_type, target_id, created_at DESC)
         """
     )
 
@@ -1018,6 +1057,13 @@ def migrate_database(connection: Connection) -> None:
             (32,),
         )
         current_version = 32
+    if current_version == 32:
+        _create_remote_control_audit_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (33,),
+        )
+        current_version = 33
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

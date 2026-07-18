@@ -9,6 +9,7 @@ import re
 import secrets
 import signal
 import time
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -21,6 +22,7 @@ from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -36,6 +38,24 @@ NEW_CLIENT_CONVERSATION_TTL_SECONDS = 600
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 CLIENTS_PAGE_SIZE = 8
+GENERAL_RATE_LIMIT = 30
+MUTATION_RATE_LIMIT = 15
+RATE_LIMIT_WINDOW_SECONDS = 60
+MUTATING_COMMANDS = {
+    "cliente_nuevo",
+    "pausar",
+    "prioridad",
+    "reanudar",
+    "reglas_editar",
+    "reiniciar",
+}
+ORDER_TARGET_COMMANDS = {
+    "cliente",
+    "credenciales",
+    "prioridad",
+    "reglas",
+    "reglas_editar",
+}
 HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
@@ -112,6 +132,24 @@ class PendingClientCreation:
     chat_id: str
     values: dict[str, Any]
     expires_at: float
+
+
+class TelegramRateLimiter:
+    def __init__(self) -> None:
+        self._events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+
+    def allow(self, chat_id: str, *, mutation: bool, now: float | None = None) -> bool:
+        current = time.monotonic() if now is None else now
+        bucket_name = "mutation" if mutation else "general"
+        limit = MUTATION_RATE_LIMIT if mutation else GENERAL_RATE_LIMIT
+        events = self._events[(chat_id, bucket_name)]
+        cutoff = current - RATE_LIMIT_WINDOW_SECONDS
+        while events and events[0] <= cutoff:
+            events.popleft()
+        if len(events) >= limit:
+            return False
+        events.append(current)
+        return True
 
 
 class AdminApiClient:
@@ -361,8 +399,11 @@ def run_control(*, check_only: bool = False) -> int:
     rules_conversations: dict[str, RulesConversation] = {}
     new_client_conversations: dict[str, NewClientConversation] = {}
     pending_client_creations: dict[str, PendingClientCreation] = {}
+    rate_limiter = TelegramRateLimiter()
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
+    _record_audit_safe(actor="telegram-control", action="receiver", status="started")
+    _send_startup_notice(config, telegram, worker)
     logger.info("Telegram control long polling started.")
     try:
         while not stop_event.is_set():
@@ -375,6 +416,11 @@ def run_control(*, check_only: bool = False) -> int:
                 _remove_expired_order_state(
                     pending_order_changes,
                     rules_conversations,
+                    confirmation_lock,
+                )
+                _remove_expired_client_state(
+                    new_client_conversations,
+                    pending_client_creations,
                     confirmation_lock,
                 )
                 for update in updates:
@@ -391,6 +437,7 @@ def run_control(*, check_only: bool = False) -> int:
                         rules_conversations=rules_conversations,
                         new_client_conversations=new_client_conversations,
                         pending_client_creations=pending_client_creations,
+                        rate_limiter=rate_limiter,
                         confirmation_lock=confirmation_lock,
                         executor=executor,
                     )
@@ -419,6 +466,7 @@ def _process_update(
     rules_conversations: dict[str, RulesConversation],
     new_client_conversations: dict[str, NewClientConversation],
     pending_client_creations: dict[str, PendingClientCreation],
+    rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -432,6 +480,7 @@ def _process_update(
             pending_confirmations,
             pending_order_changes,
             pending_client_creations,
+            rate_limiter,
             confirmation_lock,
             executor,
         )
@@ -445,11 +494,25 @@ def _process_update(
     chat_id = str(chat["id"])
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram update from an unauthorized chat.")
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action="message", status="denied"
+        )
         return
     text = message.get("text")
     if not isinstance(text, str):
         return
     if not text.strip().startswith("/"):
+        if not rate_limiter.allow(chat_id, mutation=True):
+            _record_audit_safe(
+                actor=_telegram_actor(chat_id),
+                action="conversation_reply",
+                status="rate_limited",
+            )
+            telegram.send_message(
+                chat_id,
+                "Estas respondiendo demasiado rapido. Espera un minuto para continuar.",
+            )
+            return
         if _process_new_client_message(
             chat_id,
             text,
@@ -471,6 +534,29 @@ def _process_update(
     command, arguments = _command_parts(text)
     if command is None:
         return
+    mutation = command in MUTATING_COMMANDS
+    if not rate_limiter.allow(chat_id, mutation=mutation):
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id),
+            action=command,
+            status="rate_limited",
+            target_id=(
+                _audit_target(arguments) if command in ORDER_TARGET_COMMANDS else None
+            ),
+        )
+        telegram.send_message(
+            chat_id,
+            "Recibi demasiadas solicitudes seguidas. Espera un minuto y vuelve a intentar.",
+        )
+        return
+    audit_target = _audit_target(arguments) if command in ORDER_TARGET_COMMANDS else None
+    _record_audit_safe(
+        actor=_telegram_actor(chat_id),
+        action=command,
+        status="accepted",
+        target_type="service_order" if audit_target else None,
+        target_id=audit_target,
+    )
     if command in {"ayuda", "help", "start"}:
         telegram.send_message(chat_id, HELP_TEXT)
         return
@@ -1323,6 +1409,7 @@ def _process_callback_query(
     pending_confirmations: dict[str, PendingWorkerConfirmation],
     pending_order_changes: dict[str, PendingOrderChange],
     pending_client_creations: dict[str, PendingClientCreation],
+    rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
 ) -> None:
@@ -1337,6 +1424,15 @@ def _process_callback_query(
     chat_id = str(chat["id"])
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram callback from an unauthorized chat.")
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action="callback", status="denied"
+        )
+        return
+    if not rate_limiter.allow(chat_id, mutation=True):
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action="callback", status="rate_limited"
+        )
+        telegram.answer_callback_query(callback_id, "Espera un minuto y vuelve a intentar.")
         return
     parts = data.split(":")
     if len(parts) != 3 or parts[0] not in {"wc", "oc", "nc"} or parts[2] not in {"yes", "no"}:
@@ -1354,10 +1450,18 @@ def _process_callback_query(
             telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
             return
         if parts[2] == "no":
+            _record_audit_safe(
+                actor=_telegram_actor(chat_id), action="client_create",
+                status="cancelled", operation_id=operation_id,
+            )
             telegram.answer_callback_query(callback_id, "Operacion cancelada.")
             telegram.send_message(chat_id, "Alta cancelada. No se creo ningun cliente.")
             return
         telegram.answer_callback_query(callback_id, "Alta confirmada.")
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action="client_create",
+            status="accepted", operation_id=operation_id,
+        )
         executor.submit(_execute_client_creation, creation, telegram, admin_api)
         return
     if parts[0] == "oc":
@@ -1371,10 +1475,20 @@ def _process_callback_query(
             telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
             return
         if parts[2] == "no":
+            _record_audit_safe(
+                actor=_telegram_actor(chat_id), action=change.action,
+                status="cancelled", target_type="service_order",
+                target_id=change.order_id, operation_id=operation_id,
+            )
             telegram.answer_callback_query(callback_id, "Operacion cancelada.")
             telegram.send_message(chat_id, "Operacion cancelada. No se realizaron cambios.")
             return
         telegram.answer_callback_query(callback_id, "Cambio confirmado.")
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action=change.action,
+            status="accepted", target_type="service_order",
+            target_id=change.order_id, operation_id=operation_id,
+        )
         executor.submit(_execute_order_change, change, telegram, admin_api)
         return
     with confirmation_lock:
@@ -1387,10 +1501,18 @@ def _process_callback_query(
         telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
         return
     if parts[2] == "no":
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id), action=confirmation.command,
+            status="cancelled", operation_id=operation_id,
+        )
         telegram.answer_callback_query(callback_id, "Operacion cancelada.")
         telegram.send_message(chat_id, "Operacion cancelada. No se realizaron cambios.")
         return
     telegram.answer_callback_query(callback_id, "Solicitud confirmada.")
+    _record_audit_safe(
+        actor=_telegram_actor(chat_id), action=confirmation.command,
+        status="accepted", operation_id=operation_id,
+    )
     executor.submit(
         _execute_worker_command,
         confirmation,
@@ -1430,11 +1552,28 @@ def _execute_order_change(
             actor,
             change.order_id,
         )
+        _record_audit_safe(
+            actor=actor,
+            action=change.action,
+            status="applied",
+            target_type="service_order",
+            target_id=change.order_id,
+            operation_id=change.operation_id,
+        )
     except TelegramControlError as exc:
         logger.warning("Order change %s failed: %s", change.action, exc)
         telegram.send_message(
             change.chat_id,
             f"No pude verificar la solicitud {operation_short}. No confirmo el cambio.",
+        )
+        _record_audit_safe(
+            actor=actor,
+            action=change.action,
+            status="failed",
+            target_type="service_order",
+            target_id=change.order_id,
+            operation_id=change.operation_id,
+            detail="Admin API action could not be verified.",
         )
     except Exception:
         logger.exception("Unexpected order change execution failure")
@@ -1466,12 +1605,28 @@ def _execute_client_creation(
             f"Detalle: {validated.get('preflight_message') or 'sin detalle'}",
         )
         logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
+        _record_audit_safe(
+            actor=actor,
+            action="client_create",
+            status="applied",
+            target_type="service_order",
+            target_id=order_id,
+            operation_id=creation.operation_id,
+            detail=f"preflight={validated.get('preflight_status') or 'pending'}",
+        )
     except TelegramControlError as exc:
         logger.warning("Telegram client creation failed: %s", exc)
         telegram.send_message(
             creation.chat_id,
             "No pude completar el alta. No vuelvas a confirmar el mismo boton; "
             "consulta /clientes antes de intentar nuevamente.",
+        )
+        _record_audit_safe(
+            actor=actor,
+            action="client_create",
+            status="failed",
+            operation_id=creation.operation_id,
+            detail="Admin API creation could not be confirmed.",
         )
     except Exception:
         logger.exception("Unexpected Telegram client creation failure")
@@ -1522,11 +1677,25 @@ def _execute_worker_command(
                 confirmation.chat_id,
                 f"La solicitud {operation_short} {detail}. No confirmo el cambio.",
             )
+            _record_audit_safe(
+                actor=actor,
+                action=confirmation.command,
+                status="failed",
+                operation_id=confirmation.operation_id,
+                detail=f"worker_command_status={status or 'unknown'}",
+            )
             return
         worker = _wait_for_worker_effect(admin_api, confirmation.command)
         telegram.send_message(
             confirmation.chat_id,
             _format_worker_command_success(confirmation.command, operation_short, worker),
+        )
+        _record_audit_safe(
+            actor=actor,
+            action=confirmation.command,
+            status="applied",
+            operation_id=confirmation.operation_id,
+            detail=f"worker_phase={worker.get('phase') or 'unknown'}",
         )
     except TelegramControlError as exc:
         logger.warning("Worker command %s failed: %s", confirmation.command, exc)
@@ -1537,6 +1706,13 @@ def _execute_worker_command(
             )
         except TelegramControlError:
             logger.warning("Could not deliver the worker command failure message.")
+        _record_audit_safe(
+            actor=actor,
+            action=confirmation.command,
+            status="failed",
+            operation_id=confirmation.operation_id,
+            detail="Worker command could not be completed.",
+        )
     except Exception:
         logger.exception("Unexpected worker command execution failure")
 
@@ -1603,6 +1779,55 @@ def _worker_command_label(command: str) -> str:
 def _telegram_actor(chat_id: str) -> str:
     digest = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
     return f"telegram:{digest}"
+
+
+def _audit_target(arguments: str) -> str | None:
+    candidate = arguments.strip().split(maxsplit=1)[0] if arguments.strip() else ""
+    return candidate if _valid_order_id(candidate) else None
+
+
+def _record_audit_safe(
+    *,
+    actor: str,
+    action: str,
+    status: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    operation_id: str | None = None,
+    detail: str | None = None,
+) -> None:
+    try:
+        record_remote_control_audit(
+            actor=actor,
+            action=action,
+            status=status,
+            target_type=target_type,
+            target_id=target_id,
+            operation_id=operation_id,
+            detail=detail,
+        )
+    except Exception:
+        logger.warning("Could not persist remote-control audit action=%s", action)
+
+
+def _send_startup_notice(
+    config: TelegramControlConfig,
+    telegram: TelegramBotApi,
+    worker: dict[str, Any],
+) -> None:
+    phase = str(worker.get("phase") or "desconocida")
+    message = (
+        "CONTROL REMOTO DISPONIBLE\n\n"
+        "El receptor de Telegram acaba de iniciar o recuperarse.\n"
+        f"Worker: {'activo' if worker.get('worker_running') else 'sin confirmar'}\n"
+        f"Fase: {phase}\n\n"
+        "Usa /estado para actualizar la informacion."
+    )
+    for chat_id in config.authorized_chat_ids:
+        try:
+            telegram.send_message(chat_id, message)
+        except TelegramControlError:
+            logger.warning("Could not deliver Telegram control startup notice.")
 
 
 def _cancel_chat_confirmations(
@@ -1708,6 +1933,29 @@ def _remove_expired_order_state(
         ]
         for chat_id in expired_chats:
             rules_conversations.pop(chat_id, None)
+
+
+def _remove_expired_client_state(
+    conversations: dict[str, NewClientConversation],
+    pending_creations: dict[str, PendingClientCreation],
+    confirmation_lock: Lock,
+) -> None:
+    now = time.monotonic()
+    with confirmation_lock:
+        expired_chats = [
+            chat_id
+            for chat_id, conversation in conversations.items()
+            if conversation.expires_at <= now
+        ]
+        for chat_id in expired_chats:
+            conversations.pop(chat_id, None)
+        expired_operations = [
+            operation_id
+            for operation_id, creation in pending_creations.items()
+            if creation.expires_at <= now
+        ]
+        for operation_id in expired_operations:
+            pending_creations.pop(operation_id, None)
 
 
 def format_worker_status(payload: dict[str, Any]) -> str:

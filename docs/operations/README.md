@@ -126,8 +126,16 @@ Las consultas operativas separan indice y detalle deliberado:
   cinco incidentes saneados.
 
 El detalle completo se entrega solamente cuando el chat autorizado consulta un
-`ORDER_ID` especifico. Nunca incluye password, tokens, cookies, datos de
-cifrado, leases ni detalles crudos de runs.
+`ORDER_ID` especifico. `/credenciales ORDER_ID` muestra deliberadamente usuario
+y contrasena completos porque existe un unico operador autorizado; el mensaje
+advierte que Telegram conserva historial. Las credenciales no aparecen en
+`/clientes`, `/cliente`, logs ni auditoria. Tokens, cookies, datos de cifrado,
+leases y detalles crudos de runs nunca se muestran.
+
+El receptor registra acciones en `remote_control_audit` con actor hasheado,
+accion, objetivo, resultado y fecha, sin guardar el texto escrito ni datos
+sensibles. Aplica limites por chat y avisa `CONTROL REMOTO DISPONIBLE` despues
+de iniciar o recuperarse.
 
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento
