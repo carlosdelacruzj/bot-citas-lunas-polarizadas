@@ -116,8 +116,9 @@ vez. Despues de confirmar, Telegram espera el estado terminal de
 Las consultas operativas separan indice y detalle deliberado:
 
 - `/clientes` muestra ocho ordenes por pagina y acepta el numero de pagina;
-- `/cliente` muestra cliente, documento y WhatsApp completos, ademas de estado,
-  prioridad, reserva y pago;
+- `/cliente` muestra el nombre de cliente/contacto y el titular del portal por
+  separado, documento y WhatsApp completos, ademas de estado, prioridad,
+  reserva y pago;
 - `/reglas` muestra fechas, hora minima y dias permitidos;
 - `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
   cinco incidentes saneados.

@@ -438,7 +438,7 @@ def _send_clients(
         "",
     ]
     for order in visible:
-        name = _short_text(
+        name = _display_text(
             order.get("contact_name") or order.get("applicant_name") or "Sin nombre",
             32,
         )
@@ -519,14 +519,16 @@ def _send_recent_errors(
 
 
 def format_order_detail(order: dict[str, Any]) -> str:
+    client_name = order.get("contact_name") or order.get("applicant_name") or "Sin nombre"
+    applicant_name = order.get("applicant_name") or "Sin nombre"
     lines = [
         "DETALLE DE ORDEN",
         "",
         f"Orden: {order.get('order_id') or 'desconocida'}",
-        f"Cliente: {_short_text(order.get('applicant_name') or 'Sin nombre', 60)}",
+        f"Cliente: {_display_text(client_name, 60)}",
+        f"Titular del portal: {_display_text(applicant_name, 60)}",
         f"Tipo de documento: {order.get('document_type') or 'no disponible'}",
         f"Documento: {order.get('document_number') or 'no disponible'}",
-        f"Contacto: {_short_text(order.get('contact_name') or 'Sin contacto', 60)}",
         f"WhatsApp: {order.get('contact_whatsapp') or 'no registrado'}",
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
         f"Estado: {order.get('status') or 'desconocido'}",
@@ -601,6 +603,11 @@ def _safe_run_message(value: Any) -> str:
 
 def _short_text(value: Any, limit: int) -> str:
     text = sanitize_text(" ".join(str(value).split()))
+    return text if len(text) <= limit else f"{text[: limit - 1]}…"
+
+
+def _display_text(value: Any, limit: int) -> str:
+    text = " ".join(str(value).split())
     return text if len(text) <= limit else f"{text[: limit - 1]}…"
 
 
