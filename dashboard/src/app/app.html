@@ -638,6 +638,15 @@
             </button>
           </div>
           <div class="next-action-card">
+            <span>Control previo del portal</span>
+            <strong class="badge {{ statusTone(order.preflight_status) }}">
+              {{ preflightLabel(order) }}
+            </strong>
+            @if (order.preflight_message) {
+              <small>{{ order.preflight_message }}</small>
+            }
+          </div>
+          <div class="next-action-card">
             <span>Siguiente accion valida</span>
             <strong>{{ orderNextAction().label }}</strong>
             <small>{{ orderNextAction().description }}</small>
@@ -680,6 +689,16 @@
           </div>
 
           <div class="drawer-quick-actions" aria-label="Acciones rápidas de la orden">
+            @if (order.preflight_status !== 'not_required' && order.preflight_status !== 'validated') {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.preflight_status === 'running' || actionBusy()"
+                (click)="requestOrderValidation(order)"
+              >
+                {{ order.preflight_status === 'failed' ? 'Volver a validar' : 'Validar acceso' }}
+              </button>
+            }
             @if (order.payment_status === 'pending') {
               <button type="button" class="primary" (click)="openPayment(order)">
                 Registrar pago
@@ -707,7 +726,7 @@
               <button
                 type="button"
                 class="primary"
-                [disabled]="hasActiveChildOrders(order)"
+                [disabled]="hasActiveChildOrders(order) || (order.preflight_status !== 'not_required' && order.preflight_status !== 'validated')"
                 (click)="requestOrderAction('activate', 'Activar orden')"
               >
                 Activar
@@ -975,6 +994,9 @@
                 </td>
                 <td data-label="Estado">
                   <span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span>
+                  <span class="badge {{ statusTone(order.preflight_status) }}">
+                    {{ preflightLabel(order) }}
+                  </span>
                 </td>
                 <td data-label="Reserva">
                   {{ order.reservation_status ?? 'pendiente' }}
@@ -1915,6 +1937,10 @@
         </div>
         <p id="create-required-help" class="required-help">
           Los campos marcados con * son obligatorios.
+        </p>
+        <p class="required-help">
+          Al crearla, la orden quedara pausada mientras el sistema comprueba el acceso,
+          obtiene el nombre real y confirma los programas pendientes. Solo entonces entrara a la cola.
         </p>
 
         <fieldset class="restriction-fields">

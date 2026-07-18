@@ -142,6 +142,11 @@ class ServiceOrderSummary:
     minimum_reservation_date: str | None
     maximum_reservation_date: str | None
     allowed_weekdays: tuple[int, ...] | None
+    preflight_status: str
+    preflight_message: str | None
+    preflight_started_at: str | None
+    preflight_validated_at: str | None
+    preflight_details: dict[str, Any] | None
     created_at: str
     updated_at: str
 

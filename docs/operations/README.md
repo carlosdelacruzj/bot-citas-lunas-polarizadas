@@ -1,5 +1,19 @@
 # Manual operativo
 
+## Validacion de clientes nuevos
+
+Toda orden nueva queda fuera de la cola hasta que una sesion independiente
+ingresa al portal, obtiene el nombre del titular y confirma que existe al menos
+un tramite pendiente. En el dashboard se muestra `Validacion pendiente`,
+`Validando acceso`, `Acceso validado` o `Validacion fallida`.
+
+Si falla, revisar el mensaje visible en la orden y la captura guardada en
+`screenshots/preflight/`, corregir el tipo de documento o la contrasena y usar
+`Volver a validar`. No activar manualmente la orden: el backend bloquea esa
+accion hasta completar el control. El comando `appointment-bot-client
+order-add` realiza la misma validacion de forma sincrona y termina con codigo 1
+si la cuenta no pasa el control.
+
 ## Flujo rápido de cobranza
 
 El dashboard permite registrar un pago desde la tabla, el resumen mensual o el
@@ -189,6 +203,11 @@ envia el texto post-pago como segundo mensaje. Si WhatsApp confirma el envio, el
 paquete queda registrado como enviado automaticamente y la accion pasa a
 `Reenviar post-pago`. Usar `Confirmar envio post-pago` solo como respaldo si el
 operador tuvo que enviarlo manualmente.
+
+La automatizacion espera a que el menu de adjuntos muestre una opcion real antes
+de seleccionar archivos. Para el album normal exige un control con capacidad
+multiple cuando hay dos imagenes; para post-pago limita `Documento` al menu de
+adjuntos y no reutiliza coincidencias encontradas en mensajes antiguos del chat.
 
 ## Revision diferida de reservas confirmadas
 

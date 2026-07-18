@@ -47,6 +47,7 @@ def create_service_order(
     parent_order_id: str | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
+    require_preflight: bool = True,
     settings: Settings | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)
@@ -88,6 +89,7 @@ def create_service_order(
     if program_key and parent_order_id is None:
         parent_order_id = base_order_id
     contact_id = None
+    initial_status = "paused" if require_preflight else "ready"
     with _connection(_database_url(settings)) as connection:
         connection.execute(
             """
@@ -178,7 +180,7 @@ def create_service_order(
                 parent_order_id, program_expediente, program_plate,
                 status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'ready', %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
@@ -203,7 +205,7 @@ def create_service_order(
                 status = CASE
                     WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
                         THEN service_orders.status
-                    ELSE 'ready'
+                    ELSE excluded.status
                 END,
                 updated_at = excluded.updated_at
             """,
@@ -220,13 +222,27 @@ def create_service_order(
                 parent_order_id,
                 program_expediente,
                 program_plate,
+                initial_status,
                 now,
                 now,
             ),
         )
         connection.execute(
-            "INSERT INTO order_state (order_id) VALUES (%s) ON CONFLICT DO NOTHING",
-            (order_id,),
+            """
+            INSERT INTO order_state (order_id, preflight_status, preflight_message)
+            VALUES (%s, %s, %s)
+            ON CONFLICT(order_id) DO UPDATE SET
+                preflight_status = excluded.preflight_status,
+                preflight_message = excluded.preflight_message,
+                preflight_started_at = NULL,
+                preflight_validated_at = NULL,
+                preflight_details = NULL
+            """,
+            (
+                order_id,
+                "pending" if require_preflight else "not_required",
+                "Validacion de acceso pendiente." if require_preflight else None,
+            ),
         )
         if contact_whatsapp or contact_name:
             contact_id = _upsert_contact(
@@ -386,6 +402,7 @@ def split_service_order_programs(
                 parent_order_id=order_id,
                 program_expediente=expediente,
                 program_plate=plate,
+                require_preflight=False,
                 settings=settings,
             )
         )

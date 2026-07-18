@@ -31,6 +31,7 @@ GET  /api/v1/service-orders
 GET  /api/v1/service-orders/{order_id}
 GET  /api/v1/monthly-summary?month=YYYY-MM
 POST /api/v1/service-orders
+POST /api/v1/service-orders/{order_id}/validate
 POST /api/v1/service-orders/{order_id}/contact
 POST /api/v1/service-orders/{order_id}/priority
 POST /api/v1/service-orders/{order_id}/restrictions
@@ -179,6 +180,27 @@ copias masivas.
 - `contact_name`: obligatorio; persona que contacto al negocio.
 - `contact_source`: obligatorio; `tiktok`, `facebook` o `whatsapp`.
 - `contact_whatsapp`: opcional.
+
+El alta no habilita inmediatamente la orden. Se guarda con `status=paused` y
+`preflight_status=pending`, y el API inicia una validacion en segundo plano con
+una sesion Playwright exclusiva. La validacion:
+
+1. comprueba tipo de documento, usuario y contrasena en el portal;
+2. sustituye `applicant_name` por el nombre real mostrado por el portal;
+3. obtiene y conserva el listado de tramites;
+4. exige al menos un tramite con estado `PENDIENTE`;
+5. cambia la orden a `ready` solo si todo lo anterior termina correctamente.
+
+Si falla, la orden permanece pausada con `preflight_status=failed`,
+`preflight_message` y evidencia visual en `screenshots/preflight/`. El operador
+puede corregir las credenciales y ejecutar
+`POST /api/v1/service-orders/{order_id}/validate`. Mientras el estado sea
+`pending`, `running` o `failed`, el endpoint de activacion rechaza la orden.
+
+`GET /api/v1/service-orders` y el detalle incluyen `preflight_status`,
+`preflight_message`, `preflight_started_at`, `preflight_validated_at` y
+`preflight_details`. Las ordenes creadas antes de este contrato conservan
+`preflight_status=not_required` para no alterar la cola historica.
 
 Las fuentes permitidas viven en `core/contacts.py`: `tiktok`, `facebook` y
 `whatsapp`. API, DB y CLI usan esa misma lista. La fuente se normaliza a

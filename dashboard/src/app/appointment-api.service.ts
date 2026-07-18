@@ -61,6 +61,11 @@ export interface ServiceOrder {
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
+  preflight_status: 'not_required' | 'pending' | 'running' | 'validated' | 'failed';
+  preflight_message: string | null;
+  preflight_started_at: string | null;
+  preflight_validated_at: string | null;
+  preflight_details: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -589,6 +594,13 @@ export class AppointmentApiService {
 
   async createServiceOrder(payload: CreateServiceOrderPayload): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>('/api/v1/service-orders', payload);
+  }
+
+  async revalidateServiceOrder(orderId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/validate`,
+      {},
+    );
   }
 
   async restartWorker(): Promise<ApiActionResponse> {

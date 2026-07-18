@@ -17,6 +17,7 @@ from appointment_bot.db.orders import (
     has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
+    mark_order_preflight_failed,
     mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
@@ -32,6 +33,7 @@ from appointment_bot.reports.status import (
 )
 from appointment_bot.reports.weekly import LIMA_TZ, export_weekly_report
 from appointment_bot.services.notifier import send_telegram_message
+from appointment_bot.services.order_preflight import validate_order_preflight
 
 SENSITIVE_FIELDS = {"password", "login_password"}
 PREFERRED_ORDER_FIELDS = (
@@ -334,7 +336,19 @@ def run(argv: Sequence[str] | None = None) -> int:
         except ContactValidationError as exc:
             parser.error(str(exc))
         print(f"Trabajo guardado: {result.order_id}")
-        return 0
+        try:
+            validation = validate_order_preflight(result.order_id)
+        except Exception as exc:
+            mark_order_preflight_failed(result.order_id, str(exc))
+            print(f"Validacion fallida: {exc}")
+            print("El trabajo quedo pausado y no entrara a la cola.")
+            return 1
+        if validation["status"] == "validated":
+            print("Validacion del portal completada. El trabajo ya esta activo.")
+            return 0
+        print(f"Validacion fallida: {validation.get('message') or 'error desconocido'}")
+        print("El trabajo quedo pausado y no entrara a la cola.")
+        return 1
 
     if args.command == "order-split-programs":
         results = split_service_order_programs(

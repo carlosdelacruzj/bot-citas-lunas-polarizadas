@@ -1416,6 +1416,26 @@ export class App implements OnDestroy {
     });
   }
 
+  protected requestOrderValidation(order: ServiceOrder): void {
+    this.setPendingAction({
+      title: 'Validar acceso',
+      message: `Ingresar al portal y validar identidad y programas de ${order.order_id}.`,
+      execute: () => this.api.revalidateServiceOrder(order.order_id),
+      onSuccess: () => this.activeModal.set(null),
+    });
+  }
+
+  protected preflightLabel(order: ServiceOrder): string {
+    const labels: Record<ServiceOrder['preflight_status'], string> = {
+      not_required: 'Sin validacion previa',
+      pending: 'Validacion pendiente',
+      running: 'Validando acceso',
+      validated: 'Acceso validado',
+      failed: 'Validacion fallida',
+    };
+    return labels[order.preflight_status] ?? order.preflight_status;
+  }
+
   protected requestCloseOrder(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
@@ -1739,11 +1759,18 @@ export class App implements OnDestroy {
       value === 'confirmed' ||
       value === 'paid' ||
       value === 'sent' ||
-      value === 'ready'
+      value === 'ready' ||
+      value === 'validated'
     ) {
       return 'good';
     }
-    if (value === false || value === 'degraded' || value === 'error' || value === 'rejected') {
+    if (
+      value === false ||
+      value === 'degraded' ||
+      value === 'error' ||
+      value === 'rejected' ||
+      value === 'failed'
+    ) {
       return 'bad';
     }
     if (
@@ -1753,7 +1780,8 @@ export class App implements OnDestroy {
       value === 'prepared' ||
       value === 'opening' ||
       value === 'closing' ||
-      value === 'family_no_charge'
+      value === 'family_no_charge' ||
+      value === 'running'
     ) {
       return 'warn';
     }

@@ -348,6 +348,18 @@ def set_order_paused(order_id: str, paused: bool, *, settings: Settings | None =
     init_database(settings)
     now = _now()
     with _connection(_database_url(settings)) as connection:
+        if not paused:
+            preflight = connection.execute(
+                "SELECT preflight_status FROM order_state WHERE order_id = %s",
+                (order_id,),
+            ).fetchone()
+            if preflight is not None and preflight["preflight_status"] not in {
+                "not_required",
+                "validated",
+            }:
+                raise ValueError(
+                    "La orden no puede activarse hasta completar la validacion de acceso."
+                )
         cursor = connection.execute(
             """
             UPDATE service_orders

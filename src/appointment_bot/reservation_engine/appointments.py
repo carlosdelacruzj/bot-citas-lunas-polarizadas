@@ -539,6 +539,10 @@ def _read_person_name(page: Page) -> str:
     )
 
 
+def read_person_name(page: Page) -> str:
+    return _read_person_name(page)
+
+
 def _is_real_site_option(option: dict[str, Any]) -> bool:
     normalized = str(option["text"]).strip().lower()
     return (

@@ -440,9 +440,9 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
         elif attachment_opened:
             media_option = page.get_by_text(
                 re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
-            ).first
+            ).last
             if media_option.count() and media_option.is_visible():
-                container = media_option.locator("xpath=ancestor::*[@role='button'][1]")
+                container = _attachment_option_container(media_option)
                 option_input = container.locator("input[type='file']")
                 if option_input.count():
                     try:
@@ -453,14 +453,16 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
                         logger.info("Fotos y videos input did not accept the selected files")
                 try:
                     with page.expect_file_chooser(timeout=3_000) as chooser_info:
-                        (container if container.count() else media_option).click()
+                        container.click()
                     chooser_info.value.set_files(files)
                     page.wait_for_timeout(1_000)
                     return
                 except PlaywrightError:
                     logger.info("Fotos y videos did not open a file chooser")
             logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
-            file_input = _image_file_input(page)
+            file_input = _image_file_input(page, require_multiple=len(files) > 1)
+            if file_input is None:
+                attachment_opened = False
         page.wait_for_timeout(400)
     if file_input is None:
         logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
@@ -503,16 +505,17 @@ def _click_attachment_button(page: Page) -> bool:
 
 
 def _wait_for_attachment_menu(page: Page) -> None:
-    deadline = time.monotonic() + 3
+    deadline = time.monotonic() + 6
     while time.monotonic() < deadline:
         media_option = page.get_by_text(
             re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
-        ).first
+        ).last
         if media_option.count() and media_option.is_visible():
             return
-        if page.locator("[role='menu'], [role='menuitem']").count():
+        document_option = page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).last
+        if document_option.count() and document_option.is_visible():
             return
-        if _image_file_input(page) is not None:
+        if page.locator("[role='menuitem']:visible").count():
             return
         page.wait_for_timeout(250)
 
@@ -552,21 +555,27 @@ def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
 
 def _choose_document_files(page: Page, files: list[str]) -> bool:
     candidates = [
-        page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).first,
-        page.locator("[aria-label*='Documento' i], [aria-label*='Document' i]").first,
-        page.locator("[title*='Documento' i], [title*='Document' i]").first,
+        page.locator(
+            "[role='menu'] [aria-label='Documento'], "
+            "[role='menu'] [aria-label='Document']"
+        ).last,
+        page.locator("[role='menuitem']").filter(
+            has_text=re.compile(r"^(Documento|Document)$", re.I)
+        ).last,
+        page.locator("[role='button']").filter(
+            has_text=re.compile(r"^(Documento|Document)$", re.I)
+        ).last,
+        page.locator("li").filter(has_text=re.compile(r"^(Documento|Document)$", re.I)).last,
+        page.locator("[tabindex='0']").filter(
+            has_text=re.compile(r"^(Documento|Document)$", re.I)
+        ).last,
     ]
     for candidate in candidates:
         if not candidate.count() or not candidate.is_visible():
             continue
-        click_targets = [candidate]
-        button_ancestor = candidate.locator("xpath=ancestor::*[@role='button'][1]")
-        menuitem_ancestor = candidate.locator("xpath=ancestor::*[@role='menuitem'][1]")
-        listitem_ancestor = candidate.locator("xpath=ancestor::li[1]")
-        for ancestor in (button_ancestor, menuitem_ancestor, listitem_ancestor):
-            if ancestor.count():
-                click_targets.append(ancestor.first)
-        for target in click_targets:
+        if candidate.get_attribute("title") and candidate.get_attribute("title").startswith("Ver "):
+            continue
+        for target in [candidate]:
             option_input = target.locator("input[type='file']")
             if option_input.count():
                 option_input.first.set_input_files(files)
@@ -583,12 +592,26 @@ def _choose_document_files(page: Page, files: list[str]) -> bool:
     return False
 
 
-def _image_file_input(page: Page):
+def _attachment_option_container(option):
+    for xpath in (
+        "ancestor-or-self::*[@role='menuitem'][1]",
+        "ancestor-or-self::*[@role='button'][1]",
+        "ancestor-or-self::li[1]",
+        "ancestor-or-self::*[@tabindex='0'][1]",
+    ):
+        candidate = option.locator(f"xpath={xpath}")
+        if candidate.count() and candidate.first.is_visible():
+            return candidate.first
+    return option
+
+
+def _image_file_input(page: Page, *, require_multiple: bool = False):
     inputs = page.locator("input[type='file']")
     for index in range(inputs.count() - 1, -1, -1):
         locator = inputs.nth(index)
         accept = (locator.get_attribute("accept") or "").casefold()
-        if "image" in accept:
+        allows_multiple = locator.evaluate("element => element.multiple")
+        if "image" in accept and (not require_multiple or allows_multiple):
             return locator
     return None
 

@@ -1716,3 +1716,106 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-17 12:33:36 - order-72452392 - partial
+
+- Run: 20260717-123329-81c9d48e
+- Orden: order-***
+- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cuenta: 72***2
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 31/07/2026
+- Hora detectada: 09:00
+- Cupos observados: 30
+- Opciones fecha: 31/07/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 7.723s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-17 12:49:23 - order-72452392 - partial
+
+- Run: 20260717-124843-654f2dfb
+- Orden: order-***
+- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cuenta: 72***2
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 31/07/2026
+- Hora detectada: 11:00
+- Cupos observados: 30
+- Opciones fecha: 31/07/2026
+- Opciones hora: 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 39.812s
+  - Seleccion fecha/hora: 1.766s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-17 17:00:26 - order-74207543 - partial
+
+- Run: 20260717-165945-4cd206d1
+- Orden: order-***
+- Cliente: JOHAN GIOMAR CRUZ MONDRAGON | Contacto: Johan giomar cruz Mondragón
+- Cuenta: 74***3
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 11/08/2026
+- Hora detectada: 12:00
+- Cupos observados: 15
+- Opciones fecha: 11/08/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Reserva diferida porque hay una orden de mayor prioridad lista.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: priority_deferred
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 40.890s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
+  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
+  - Screenshot adicional: screenshots\17-07-2026\cupo-165945-order-***-c5548d.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal.
+

@@ -18,6 +18,12 @@ from appointment_bot.db.order_credentials import (
     split_service_order_programs,
     update_service_order_document_type,
 )
+from appointment_bot.db.order_preflight import (
+    mark_order_preflight_failed,
+    mark_order_preflight_pending,
+    mark_order_preflight_running,
+    mark_order_preflight_validated,
+)
 from appointment_bot.db.order_queue import (
     FOCUSED_PRIORITY_THRESHOLD,
     get_minimum_reservation_hour_for_order,

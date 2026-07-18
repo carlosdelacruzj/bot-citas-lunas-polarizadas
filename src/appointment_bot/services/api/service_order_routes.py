@@ -21,6 +21,7 @@ from appointment_bot.db.orders import (
     update_service_order_reservation_constraints,
 )
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.order_preflight import schedule_order_preflight
 
 PUBLIC_SERVICE_ORDER_FIELDS = (
     "order_id",
@@ -55,6 +56,11 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "minimum_reservation_date",
     "maximum_reservation_date",
     "allowed_weekdays",
+    "preflight_status",
+    "preflight_message",
+    "preflight_started_at",
+    "preflight_validated_at",
+    "preflight_details",
     "created_at",
     "updated_at",
 )
@@ -135,7 +141,22 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
         )
     except (TypeError, ValueError) as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
-    return HTTPStatus.CREATED, {"status": "created", **asdict(result)}
+    scheduled = schedule_order_preflight(result.order_id)
+    return HTTPStatus.CREATED, {
+        "status": "validation_pending",
+        "validation_scheduled": scheduled,
+        **asdict(result),
+    }
+
+
+def revalidate_service_order_payload(order_id: str) -> tuple[HTTPStatus, dict[str, Any]]:
+    if not any(order.order_id == order_id for order in list_service_order_summaries()):
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    scheduled = schedule_order_preflight(order_id)
+    return HTTPStatus.ACCEPTED, {
+        "status": "validation_pending" if scheduled else "validation_running",
+        "order_id": order_id,
+    }
 
 
 def update_service_order_contact_payload(
@@ -339,6 +360,14 @@ def service_order_priority_path(path: str) -> str | None:
 def service_order_restrictions_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/restrictions"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_revalidate_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/validate"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))

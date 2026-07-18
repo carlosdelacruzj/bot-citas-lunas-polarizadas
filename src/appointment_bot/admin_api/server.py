@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlparse
 from appointment_bot.config import load_settings
 from appointment_bot.services.local_api import DEFAULT_HOST, LocalApiHandler
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.order_preflight import resume_pending_order_preflights
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,9 @@ def run_admin_api() -> int:
     _set_working_directory()
     settings = load_settings(require_login=False)
     setup_logging(settings)
+    resumed_preflights = resume_pending_order_preflights(settings=settings)
+    if resumed_preflights:
+        logger.info("Resumed %s pending order validations", resumed_preflights)
     server = create_admin_api_server()
     host, port = server.server_address[:2]
     logger.info("Admin API listening on http://%s:%s", host, port)

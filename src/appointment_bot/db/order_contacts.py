@@ -66,13 +66,17 @@ def list_service_order_summaries(
                    so.minimum_hour AS minimum_reservation_hour,
                    so.minimum_date AS minimum_reservation_date,
                    so.maximum_date AS maximum_reservation_date,
-                   so.allowed_weekdays
+                   so.allowed_weekdays,
+                   COALESCE(os.preflight_status, 'not_required') AS preflight_status,
+                   os.preflight_message, os.preflight_started_at,
+                   os.preflight_validated_at, os.preflight_details
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
             LEFT JOIN applicant_contacts ac
                 ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            LEFT JOIN order_state os ON os.order_id = so.order_id
             LEFT JOIN LATERAL (
                 SELECT status, site, appointment_date, appointment_hour
                 FROM reservations
@@ -353,6 +357,13 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         ),
         allowed_weekdays=(
             tuple(int(day) for day in row["allowed_weekdays"]) if row["allowed_weekdays"] else None
+        ),
+        preflight_status=str(row["preflight_status"]),
+        preflight_message=row["preflight_message"],
+        preflight_started_at=_timestamp_text(row["preflight_started_at"]),
+        preflight_validated_at=_timestamp_text(row["preflight_validated_at"]),
+        preflight_details=(
+            row["preflight_details"] if isinstance(row["preflight_details"], dict) else None
         ),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),

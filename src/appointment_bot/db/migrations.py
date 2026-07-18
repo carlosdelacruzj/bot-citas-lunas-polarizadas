@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 31
+SCHEMA_VERSION = 32
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -157,7 +157,14 @@ def create_current_schema(connection: Connection) -> None:
             last_run_at timestamptz,
             last_success_at timestamptz,
             programmed_at timestamptz,
-            program_listing jsonb
+            program_listing jsonb,
+            preflight_status text NOT NULL DEFAULT 'not_required' CHECK (
+                preflight_status IN ('not_required', 'pending', 'running', 'validated', 'failed')
+            ),
+            preflight_message text,
+            preflight_started_at timestamptz,
+            preflight_validated_at timestamptz,
+            preflight_details jsonb
         )
         """
     )
@@ -361,6 +368,11 @@ def _validate_current_schema(connection: Connection) -> None:
         ("order_checks", "checked_at"),
         ("order_state", "credential_failures"),
         ("order_state", "program_listing"),
+        ("order_state", "preflight_status"),
+        ("order_state", "preflight_message"),
+        ("order_state", "preflight_started_at"),
+        ("order_state", "preflight_validated_at"),
+        ("order_state", "preflight_details"),
         ("reservation_attempts", "idempotency_key"),
         ("reservation_attempts", "status"),
         ("reservations", "run_id"),
@@ -988,6 +1000,24 @@ def migrate_database(connection: Connection) -> None:
             (31,),
         )
         current_version = 31
+    if current_version == 31:
+        connection.execute(
+            """
+            ALTER TABLE order_state
+            ADD COLUMN preflight_status text NOT NULL DEFAULT 'not_required' CHECK (
+                preflight_status IN ('not_required', 'pending', 'running', 'validated', 'failed')
+            ),
+            ADD COLUMN preflight_message text,
+            ADD COLUMN preflight_started_at timestamptz,
+            ADD COLUMN preflight_validated_at timestamptz,
+            ADD COLUMN preflight_details jsonb
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (32,),
+        )
+        current_version = 32
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

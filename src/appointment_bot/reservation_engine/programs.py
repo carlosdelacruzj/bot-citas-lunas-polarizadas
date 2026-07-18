@@ -216,6 +216,10 @@ def _read_program_action_rows(page: Page) -> list[dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)]
 
 
+def read_program_action_rows(page: Page) -> list[dict[str, Any]]:
+    return _read_program_action_rows(page)
+
+
 def _wait_for_program_detail(page: Page) -> None:
     try:
         page.wait_for_load_state("load", timeout=10_000)
