@@ -137,8 +137,8 @@ necesariamente es el titular.
 `/prioridad` muestra el valor anterior y nuevo antes de guardar. El editor
 `/reglas_editar` pregunta en cuatro pasos:
 
-1. fecha minima: `YYYY-MM-DD`, `igual` o `quitar`;
-2. fecha maxima: `YYYY-MM-DD`, `igual` o `quitar`;
+1. fecha minima: `DD-MM-YYYY`, `igual` o `quitar`;
+2. fecha maxima: `DD-MM-YYYY`, `igual` o `quitar`;
 3. hora minima: `0` a `23`, `igual` o `quitar`;
 4. dias ISO: por ejemplo `1,3,6`, `igual` o `todos`.
 
@@ -146,6 +146,10 @@ La conversacion vence en cinco minutos por inactividad. Ningun paso modifica la
 orden; solo el boton final `Confirmar` envia el conjunto completo. Despues de
 guardar, el receptor vuelve a consultar la orden y solo anuncia exito si los
 valores persistidos coinciden.
+
+Todas las fechas visibles o ingresadas por el operador usan `DD-MM-YYYY`. El
+receptor convierte internamente a ISO `YYYY-MM-DD` solamente al comunicarse con
+la Admin API y PostgreSQL.
 
 ## Salud y calendario
 

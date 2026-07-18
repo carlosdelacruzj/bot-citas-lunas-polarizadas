@@ -519,7 +519,8 @@ Avance realizado:
 - `/reglas_editar ORDER_ID` implementado como conversacion de cuatro pasos;
 - cada campo permite `igual` para conservarlo y `quitar` para llevarlo a
   `null`; dias tambien acepta `todos`;
-- fechas usan `YYYY-MM-DD`, hora `0..23` y dias ISO `1..7`;
+- fechas visibles y de entrada usan `DD-MM-YYYY`, hora `0..23` y dias ISO
+  `1..7`; la conversion a `YYYY-MM-DD` es solamente interna para API/BD;
 - se rechaza una fecha maxima anterior a la minima;
 - la conversacion vence despues de cinco minutos de inactividad;
 - `/cancelar` elimina conversaciones y confirmaciones sin guardar;

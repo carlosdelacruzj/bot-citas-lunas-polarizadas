@@ -660,8 +660,10 @@ def format_order_rules(order: dict[str, Any]) -> str:
             "REGLAS DE RESERVA",
             "",
             f"Orden: {order.get('order_id') or 'desconocida'}",
-            f"Fecha minima: {order.get('minimum_reservation_date') or 'sin limite'}",
-            f"Fecha maxima: {order.get('maximum_reservation_date') or 'sin limite'}",
+            "Fecha minima: "
+            + _format_operator_date(order.get("minimum_reservation_date")),
+            "Fecha maxima: "
+            + _format_operator_date(order.get("maximum_reservation_date")),
             f"Hora minima: {_format_minimum_hour(order.get('minimum_reservation_hour'))}",
             f"Dias permitidos: {weekday_text}",
         ]
@@ -924,9 +926,9 @@ def _parse_rules_step(
         return field, None
     if step in {0, 1}:
         try:
-            parsed = date.fromisoformat(value)
+            parsed = datetime.strptime(value, "%d-%m-%Y").date()
         except ValueError as exc:
-            raise ValueError("Usa YYYY-MM-DD, igual o quitar.") from exc
+            raise ValueError("Usa DD-MM-YYYY, igual o quitar.") from exc
         return field, parsed.isoformat()
     if step == 2:
         try:
@@ -947,8 +949,8 @@ def _parse_rules_step(
 
 def _rules_step_prompt(step: int) -> str:
     return (
-        "Paso 1/4 - Fecha minima. Responde YYYY-MM-DD, igual o quitar.",
-        "Paso 2/4 - Fecha maxima. Responde YYYY-MM-DD, igual o quitar.",
+        "Paso 1/4 - Fecha minima. Responde DD-MM-YYYY, igual o quitar.",
+        "Paso 2/4 - Fecha maxima. Responde DD-MM-YYYY, igual o quitar.",
         "Paso 3/4 - Hora minima. Responde 0 a 23, igual o quitar.",
         "Paso 4/4 - Dias permitidos. Responde 1,2,...7; igual o todos.",
     )[step]
@@ -1031,9 +1033,21 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
 def _change_value(original: dict[str, Any], updated: dict[str, Any], field: str) -> str:
     old = original.get(field)
     new = updated.get(field)
+    if field in {"minimum_reservation_date", "maximum_reservation_date"}:
+        return f"{_format_operator_date(old)} -> {_format_operator_date(new)}"
     old_text = old if old is not None else "sin limite"
     new_text = new if new is not None else "sin limite"
     return f"{old_text} -> {new_text}"
+
+
+def _format_operator_date(value: Any) -> str:
+    if value in {None, ""}:
+        return "sin limite"
+    try:
+        parsed = date.fromisoformat(str(value))
+    except ValueError:
+        return "fecha invalida"
+    return parsed.strftime("%d-%m-%Y")
 
 
 def _request_worker_confirmation(
