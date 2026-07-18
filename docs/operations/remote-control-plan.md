@@ -709,6 +709,55 @@ Criterio de cierre:
 - n8n detecta una indisponibilidad que el sistema local no puede reportar;
 - una caida de n8n no impide la operacion normal del bot.
 
+### Mejora transversal - Interfaz operativa con botones
+
+Estado: implementada el `18-07-2026`.
+
+Objetivo: reducir al minimo la escritura de comandos y `ORDER_ID` desde el
+celular sin eliminar la compatibilidad con los comandos existentes.
+
+Funciones implementadas:
+
+- `/menu` abre un menu principal con Estado, Clientes, Nuevo cliente, Buscar,
+  Resumen de hoy, Recientes, Worker y Errores;
+- `/clientes` conserva ocho registros por pagina y agrega botones por cliente,
+  Anterior, Siguiente, Actualizar y Menu;
+- seleccionar un cliente abre su panel con datos completos autorizados y
+  accesos a Credenciales, Reglas, Prioridad y Actualizar;
+- el mensaje de credenciales incluye `Eliminar este mensaje` para retirarlo
+  inmediatamente del historial y `Volver al cliente`;
+- las prioridades ofrecen valores rapidos: Baja `0`, Normal `10`, Alta `50` y
+  Urgente `100`, siempre con confirmacion antes de guardar;
+- el editor de reglas ofrece Mantener, Quitar limite, horas comunes, Lunes a
+  sabado, Solo sabado y Todos; las fechas especiales se escriben en
+  `DD-MM-YYYY`;
+- el alta permite elegir DNI/CE, fuente y omision de WhatsApp mediante botones;
+  documento, contrasena, nombres y telefono permanecen como entrada escrita;
+- `/buscar TEXTO` usa un endpoint administrativo protegido y encuentra por
+  titular, contacto, documento completo, WhatsApp completo u `ORDER_ID` sin
+  agregar esos datos al listado general; la consulta usa `POST` para que el
+  valor buscado no aparezca en la URL registrada por Admin API;
+- `/recientes` conserva hasta ocho clientes consultados mientras el receptor
+  permanece activo;
+- `/resumen` muestra fecha peruana, worker, fase, clientes activos, pausados,
+  reservas del dia, pendientes de pago y errores consecutivos;
+- el panel del worker muestra solo Pausar o Reanudar segun su estado, ademas de
+  Reiniciar, Actualizar y Menu;
+- avisos de inicio, cambios aplicados y altas completadas incluyen botones para
+  continuar la operacion;
+- todos los callbacks respetan autorizacion, limites de frecuencia, vencimiento
+  y confirmaciones de una sola ejecucion.
+
+Validacion sin mutaciones reales:
+
+- menu y callbacks comprobados con dobles locales;
+- limites de 64 bytes de Telegram comprobados para todos los botones;
+- navegacion, recientes, resumen, alta guiada y eliminacion de mensajes
+  sensibles comprobados;
+- listado con botones validado contra las `66` ordenes reales sin enviar
+  mensajes ni modificar datos;
+- busqueda protegida validada sin imprimir documentos ni telefonos.
+
 ### Fase 8 - Acceso privado al dashboard
 
 Estado: opcional y pendiente.
@@ -764,6 +813,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | 4 | Prioridad y restricciones remotas | Completado desde Telegram; formato peruano y restauracion verificados | Admin API y seccion Fase 4 | Iniciar Fase 5: alta remota de clientes |
 | 2026-07-18 | 5 | Alta remota y credenciales individuales | Implementado y desplegado; falta prueba con cliente real | Admin API, Telegram y seccion Fase 5 | Probar `/credenciales` y `/cliente_nuevo` desde el celular |
 | 18-07-2026 | 6 | Auditoria, limites y recuperacion | Completado; esquema 33 y aviso de reinicio desplegados | PostgreSQL, supervisores y seccion Fase 6 | Priorizar mejoras de interfaz Telegram |
+| 18-07-2026 | UX | Menu y operacion mediante botones | Implementado y validado sin mutar ordenes | Telegram, Admin API y mejora transversal | Validar navegacion desde el celular |
 
 ## Decisiones pendientes
 

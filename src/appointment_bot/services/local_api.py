@@ -42,6 +42,7 @@ from appointment_bot.services.api.service_order_routes import (
     mark_payment_paid_payload,
     payment_paid_path,
     revalidate_service_order_payload,
+    search_service_orders_payload,
     service_order_action,
     service_order_close_path,
     service_order_contact_path,
@@ -259,6 +260,16 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = create_service_order_payload(self._read_json())
             self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/service-orders/search":
+            if not self._require_authorized(strict=True):
+                return
+            payload = self._read_json()
+            self._send_json(
+                HTTPStatus.OK,
+                search_service_orders_payload(str(payload.get("query") or "")),
+            )
             return
 
         if path == "/api/v1/whatsapp-messages/test/prepare":

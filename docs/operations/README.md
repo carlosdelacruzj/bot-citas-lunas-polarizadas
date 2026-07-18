@@ -137,6 +137,14 @@ accion, objetivo, resultado y fecha, sin guardar el texto escrito ni datos
 sensibles. Aplica limites por chat y avisa `CONTROL REMOTO DISPONIBLE` despues
 de iniciar o recuperarse.
 
+`/menu` abre la interfaz principal con botones. Desde ella se puede navegar por
+clientes paginados, abrir un cliente sin copiar su `ORDER_ID`, consultar o
+eliminar el mensaje de credenciales, elegir prioridades comunes, editar reglas,
+controlar el worker y volver al menu. `/buscar TEXTO` admite titular, contacto,
+documento completo, WhatsApp completo u orden mediante una consulta
+administrativa protegida. `/recientes` y `/resumen` reducen las consultas
+repetitivas desde el celular.
+
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento
 como si fuera un nombre. El contacto conserva su nombre independiente porque no

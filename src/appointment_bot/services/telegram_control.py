@@ -72,6 +72,10 @@ HELP_TEXT = """Control remoto disponible:
 /reiniciar - Reiniciar el worker con confirmacion
 /ayuda - Mostrar esta ayuda
 /cancelar - Cancelar la operacion guiada actual
+/menu - Abrir el menu principal con botones
+/buscar TEXTO - Buscar cliente u orden
+/recientes - Ultimos clientes consultados
+/resumen - Resumen operativo del dia
 """
 
 
@@ -169,6 +173,15 @@ class AdminApiClient:
 
     def get_service_order(self, order_id: str) -> dict[str, Any]:
         return self._request("GET", f"/api/v1/service-orders/{quote(order_id, safe='')}")
+
+    def search_service_orders(self, query: str) -> list[dict[str, Any]]:
+        payload = self._request(
+            "POST", "/api/v1/service-orders/search", payload={"query": query}
+        )
+        orders = payload.get("service_orders", [])
+        if not isinstance(orders, list):
+            raise TelegramControlError("Admin API returned an invalid search result.")
+        return [item for item in orders if isinstance(item, dict)]
 
     def get_service_order_credentials(self, order_id: str) -> dict[str, Any]:
         return self._request(
@@ -298,7 +311,7 @@ class TelegramBotApi:
         text: str,
         *,
         reply_markup: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> dict[str, Any]:
         payload = {
             "chat_id": chat_id,
             "text": text,
@@ -306,9 +319,15 @@ class TelegramBotApi:
         }
         if reply_markup is not None:
             payload["reply_markup"] = json.dumps(reply_markup)
-        self._request(
+        return self._request(
             "sendMessage",
             payload,
+        )
+
+    def delete_message(self, chat_id: str, message_id: int) -> None:
+        self._request(
+            "deleteMessage",
+            {"chat_id": chat_id, "message_id": str(message_id)},
         )
 
     def answer_callback_query(self, callback_query_id: str, text: str) -> None:
@@ -399,6 +418,7 @@ def run_control(*, check_only: bool = False) -> int:
     rules_conversations: dict[str, RulesConversation] = {}
     new_client_conversations: dict[str, NewClientConversation] = {}
     pending_client_creations: dict[str, PendingClientCreation] = {}
+    recent_orders: dict[str, deque[str]] = defaultdict(lambda: deque(maxlen=8))
     rate_limiter = TelegramRateLimiter()
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
@@ -437,6 +457,7 @@ def run_control(*, check_only: bool = False) -> int:
                         rules_conversations=rules_conversations,
                         new_client_conversations=new_client_conversations,
                         pending_client_creations=pending_client_creations,
+                        recent_orders=recent_orders,
                         rate_limiter=rate_limiter,
                         confirmation_lock=confirmation_lock,
                         executor=executor,
@@ -466,6 +487,7 @@ def _process_update(
     rules_conversations: dict[str, RulesConversation],
     new_client_conversations: dict[str, NewClientConversation],
     pending_client_creations: dict[str, PendingClientCreation],
+    recent_orders: dict[str, deque[str]],
     rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
@@ -480,6 +502,9 @@ def _process_update(
             pending_confirmations,
             pending_order_changes,
             pending_client_creations,
+            new_client_conversations,
+            rules_conversations,
+            recent_orders,
             rate_limiter,
             confirmation_lock,
             executor,
@@ -557,8 +582,11 @@ def _process_update(
         target_type="service_order" if audit_target else None,
         target_id=audit_target,
     )
-    if command in {"ayuda", "help", "start"}:
-        telegram.send_message(chat_id, HELP_TEXT)
+    if command in {"menu", "start"}:
+        _send_main_menu(chat_id, telegram)
+        return
+    if command in {"ayuda", "help"}:
+        telegram.send_message(chat_id, HELP_TEXT, reply_markup=_main_menu_markup())
         return
     if command == "cancelar":
         removed = _cancel_chat_confirmations(chat_id, pending_confirmations, confirmation_lock)
@@ -581,16 +609,19 @@ def _process_update(
         telegram.send_message(chat_id, response)
         return
     if command == "estado":
-        try:
-            payload = admin_api.get_worker()
-            response = format_worker_status(payload)
-        except TelegramControlError as exc:
-            logger.warning("Could not read worker status: %s", exc)
-            response = "No pude consultar el estado del sistema. La Admin API no responde."
-        telegram.send_message(chat_id, response)
+        _send_worker_panel(chat_id, telegram, admin_api)
         return
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
+        return
+    if command == "buscar":
+        _send_search_results(chat_id, arguments, telegram, admin_api)
+        return
+    if command == "recientes":
+        _send_recent_orders(chat_id, telegram, admin_api, recent_orders)
+        return
+    if command == "resumen":
+        _send_daily_summary(chat_id, telegram, admin_api)
         return
     if command in {"cliente", "reglas"}:
         _send_order_query(chat_id, command, arguments, telegram, admin_api)
@@ -652,6 +683,37 @@ def _process_update(
     telegram.send_message(chat_id, "Comando no reconocido. Usa /ayuda.")
 
 
+def _main_menu_markup() -> dict[str, Any]:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "Estado", "callback_data": "ui:status:show"},
+                {"text": "Clientes", "callback_data": "ui:clients:1"},
+            ],
+            [
+                {"text": "Nuevo cliente", "callback_data": "ui:new:start"},
+                {"text": "Buscar", "callback_data": "ui:search:help"},
+            ],
+            [
+                {"text": "Resumen de hoy", "callback_data": "ui:summary:show"},
+                {"text": "Recientes", "callback_data": "ui:recent:show"},
+            ],
+            [
+                {"text": "Worker", "callback_data": "ui:worker:show"},
+                {"text": "Errores", "callback_data": "ui:errors:show"},
+            ],
+        ]
+    }
+
+
+def _send_main_menu(chat_id: str, telegram: TelegramBotApi) -> None:
+    telegram.send_message(
+        chat_id,
+        "MENU PRINCIPAL\n\nElige una accion. No necesitas recordar comandos.",
+        reply_markup=_main_menu_markup(),
+    )
+
+
 def _send_clients(
     chat_id: str,
     arguments: str,
@@ -701,7 +763,35 @@ def _send_clients(
         lines.append("No hay clientes registrados.")
     if page < total_pages:
         lines.extend(["", f"Siguiente: /clientes {page + 1}"])
-    telegram.send_message(chat_id, "\n\n".join(lines))
+    keyboard: list[list[dict[str, str]]] = []
+    for order in visible:
+        order_id = str(order.get("order_id") or "")
+        if not order_id or len(f"om:{order_id}:show".encode()) > 64:
+            continue
+        label = _applicant_display_name(order)
+        if label == "Titular no identificado por el portal":
+            label = str(order.get("contact_name") or order_id)
+        keyboard.append(
+            [{"text": _display_text(label, 34), "callback_data": f"om:{order_id}:show"}]
+        )
+    navigation: list[dict[str, str]] = []
+    if page > 1:
+        navigation.append({"text": "Anterior", "callback_data": f"ui:clients:{page - 1}"})
+    if page < total_pages:
+        navigation.append({"text": "Siguiente", "callback_data": f"ui:clients:{page + 1}"})
+    if navigation:
+        keyboard.append(navigation)
+    keyboard.append(
+        [
+            {"text": "Actualizar", "callback_data": f"ui:clients:{page}"},
+            {"text": "Menu", "callback_data": "ui:menu:main"},
+        ]
+    )
+    telegram.send_message(
+        chat_id,
+        "\n\n".join(lines),
+        reply_markup={"inline_keyboard": keyboard},
+    )
 
 
 def _send_order_query(
@@ -735,7 +825,241 @@ def _send_order_query(
         telegram.send_message(chat_id, "No pude encontrar esa orden.")
         return
     response = format_order_rules(order) if command == "reglas" else format_order_detail(order)
-    telegram.send_message(chat_id, response)
+    reply_markup = None
+    if command == "reglas":
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "Editar reglas", "callback_data": f"om:{order_id}:editrules"}],
+                [{"text": "Volver al cliente", "callback_data": f"om:{order_id}:show"}],
+            ]
+        }
+    telegram.send_message(chat_id, response, reply_markup=reply_markup)
+
+
+def _send_priority_menu(
+    chat_id: str,
+    order_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        order = admin_api.get_service_order(order_id)
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare priority menu: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar la prioridad.")
+        return
+    current = int(order.get("priority") or 0)
+    presets = [("Baja", 0), ("Normal", 10), ("Alta", 50), ("Urgente", 100)]
+    telegram.send_message(
+        chat_id,
+        f"PRIORIDAD\n\nOrden: {order_id}\nValor actual: {current}\n\nElige un valor:",
+        reply_markup={
+            "inline_keyboard": [
+                [
+                    {"text": label, "callback_data": f"pq:{order_id}:{value}"}
+                    for label, value in presets[:2]
+                ],
+                [
+                    {"text": label, "callback_data": f"pq:{order_id}:{value}"}
+                    for label, value in presets[2:]
+                ],
+                [{"text": "Volver", "callback_data": f"om:{order_id}:show"}],
+            ]
+        },
+    )
+
+
+def _send_worker_panel(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        worker = admin_api.get_worker()
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare worker panel: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar el worker.")
+        return
+    paused = bool(worker.get("paused"))
+    action_row = (
+        [{"text": "Reanudar", "callback_data": "wk:resume:ask"}]
+        if paused
+        else [{"text": "Pausar", "callback_data": "wk:pause:ask"}]
+    )
+    action_row.append({"text": "Reiniciar", "callback_data": "wk:restart:ask"})
+    telegram.send_message(
+        chat_id,
+        format_worker_status(worker),
+        reply_markup={
+            "inline_keyboard": [
+                action_row,
+                [
+                    {"text": "Actualizar", "callback_data": "ui:worker:show"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ],
+            ]
+        },
+    )
+
+
+def _send_order_panel(
+    chat_id: str,
+    order_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    recent_orders: dict[str, deque[str]],
+) -> None:
+    try:
+        order = admin_api.get_service_order(order_id)
+    except TelegramControlError as exc:
+        logger.warning("Could not open service order panel: %s", exc)
+        telegram.send_message(chat_id, "No pude abrir ese cliente.")
+        return
+    history = recent_orders[chat_id]
+    if order_id in history:
+        history.remove(order_id)
+    history.appendleft(order_id)
+    telegram.send_message(
+        chat_id,
+        format_order_detail(order),
+        reply_markup={
+            "inline_keyboard": [
+                [
+                    {"text": "Credenciales", "callback_data": f"om:{order_id}:credentials"},
+                    {"text": "Reglas", "callback_data": f"om:{order_id}:rules"},
+                ],
+                [
+                    {"text": "Prioridad", "callback_data": f"om:{order_id}:priority"},
+                    {"text": "Actualizar", "callback_data": f"om:{order_id}:show"},
+                ],
+                [
+                    {"text": "Clientes", "callback_data": "ui:clients:1"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ],
+            ]
+        },
+    )
+
+
+def _send_search_results(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    query = " ".join(arguments.lower().split())
+    if len(query) < 2:
+        telegram.send_message(
+            chat_id,
+            "Escribe /buscar seguido de nombre, contacto, documento visible u ORDER_ID.\n"
+            "Ejemplo: /buscar Pedro",
+            reply_markup={"inline_keyboard": [[{"text": "Menu", "callback_data": "ui:menu:main"}]]},
+        )
+        return
+    try:
+        matches = admin_api.search_service_orders(query)
+    except TelegramControlError as exc:
+        logger.warning("Could not search service orders: %s", exc)
+        telegram.send_message(chat_id, "No pude buscar clientes en este momento.")
+        return
+    keyboard = [
+        [{
+            "text": _display_text(
+                _applicant_display_name(order)
+                if _applicant_display_name(order) != "Titular no identificado por el portal"
+                else order.get("contact_name") or order.get("order_id"),
+                36,
+            ),
+            "callback_data": f"om:{order.get('order_id')}:show",
+        }]
+        for order in matches
+        if len(f"om:{order.get('order_id')}:show".encode()) <= 64
+    ]
+    keyboard.append([{"text": "Menu", "callback_data": "ui:menu:main"}])
+    telegram.send_message(
+        chat_id,
+        f"BUSQUEDA: {arguments.strip()}\n\n"
+        + (f"Coincidencias: {len(matches)}" if matches else "No encontre coincidencias."),
+        reply_markup={"inline_keyboard": keyboard},
+    )
+
+
+def _send_recent_orders(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    recent_orders: dict[str, deque[str]],
+) -> None:
+    order_ids = list(recent_orders.get(chat_id, ()))
+    if not order_ids:
+        telegram.send_message(
+            chat_id,
+            "Aun no consultaste clientes desde este inicio del receptor.",
+            reply_markup={
+                "inline_keyboard": [[{"text": "Clientes", "callback_data": "ui:clients:1"}]]
+            },
+        )
+        return
+    try:
+        orders = {str(item.get("order_id")): item for item in admin_api.get_service_orders()}
+    except TelegramControlError as exc:
+        logger.warning("Could not read recent service orders: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar los clientes recientes.")
+        return
+    keyboard = []
+    for order_id in order_ids:
+        order = orders.get(order_id, {})
+        label = _applicant_display_name(order) if order else order_id
+        if label == "Titular no identificado por el portal":
+            label = str(order.get("contact_name") or order_id)
+        keyboard.append([
+            {"text": _display_text(label, 36), "callback_data": f"om:{order_id}:show"}
+        ])
+    keyboard.append([{"text": "Menu", "callback_data": "ui:menu:main"}])
+    telegram.send_message(
+        chat_id,
+        "CLIENTES RECIENTES",
+        reply_markup={"inline_keyboard": keyboard},
+    )
+
+
+def _send_daily_summary(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        worker = admin_api.get_worker()
+        orders = admin_api.get_service_orders()
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare daily summary: %s", exc)
+        telegram.send_message(chat_id, "No pude preparar el resumen de hoy.")
+        return
+    today = datetime.now(LIMA_TIMEZONE).date().isoformat()
+    reserved_today = sum(1 for order in orders if str(order.get("reservation_date") or "") == today)
+    counts = _order_status_counts(orders)
+    lines = [
+        "RESUMEN DE HOY",
+        "",
+        f"Fecha: {_format_operator_date(today)}",
+        f"Worker: {'activo' if worker.get('worker_running') else 'sin confirmar'}",
+        f"Fase: {worker.get('phase') or 'desconocida'}",
+        f"Clientes activos: {counts['active']}",
+        f"Pausados: {counts['paused']}",
+        f"Reservas de hoy: {reserved_today}",
+        f"Pendientes de pago: {counts['payment_pending']}",
+        f"Errores consecutivos: {worker.get('consecutive_errors') or 0}",
+    ]
+    telegram.send_message(
+        chat_id,
+        "\n".join(lines),
+        reply_markup={
+            "inline_keyboard": [[
+                {"text": "Actualizar", "callback_data": "ui:summary:show"},
+                {"text": "Menu", "callback_data": "ui:menu:main"},
+            ]]
+        },
+    )
 
 
 def _send_credentials(
@@ -762,6 +1086,12 @@ def _send_credentials(
         f"Usuario / documento: {credentials.get('username') or 'no disponible'}\n"
         f"Contrasena: {credentials.get('password') or 'no disponible'}\n\n"
         "Mensaje sensible: quedara en el historial de este chat.",
+        reply_markup={
+            "inline_keyboard": [
+                [{"text": "Eliminar este mensaje", "callback_data": "ui:delete:message"}],
+                [{"text": "Volver al cliente", "callback_data": f"om:{order_id}:show"}],
+            ]
+        },
     )
 
 
@@ -786,8 +1116,9 @@ def _start_new_client_conversation(
         )
     telegram.send_message(
         chat_id,
-        "ALTA DE CLIENTE\n\nPaso 1 de 6: escribe el tipo de documento: DNI o CE.\n"
+        "ALTA DE CLIENTE\n\nPaso 1 de 6: elige el tipo de documento.\n"
         "Puedes cancelar en cualquier momento con /cancelar.",
+        reply_markup=_new_client_prompt_markup(0),
     )
 
 
@@ -808,7 +1139,25 @@ def _process_new_client_message(
             conversations.pop(chat_id, None)
         telegram.send_message(chat_id, "El alta vencio. Inicia nuevamente con /cliente_nuevo.")
         return True
-    value = text.strip()
+    return _continue_new_client_conversation(
+        conversation,
+        text.strip(),
+        telegram,
+        conversations,
+        pending_creations,
+        confirmation_lock,
+    )
+
+
+def _continue_new_client_conversation(
+    conversation: NewClientConversation,
+    value: str,
+    telegram: TelegramBotApi,
+    conversations: dict[str, NewClientConversation],
+    pending_creations: dict[str, PendingClientCreation],
+    confirmation_lock: Lock,
+) -> bool:
+    chat_id = conversation.chat_id
     try:
         prompt = _apply_new_client_value(conversation, value)
     except ValueError as exc:
@@ -816,7 +1165,11 @@ def _process_new_client_message(
         return True
     conversation.expires_at = time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS
     if prompt is not None:
-        telegram.send_message(chat_id, prompt)
+        telegram.send_message(
+            chat_id,
+            prompt,
+            reply_markup=_new_client_prompt_markup(conversation.step),
+        )
         return True
     with confirmation_lock:
         conversations.pop(chat_id, None)
@@ -839,6 +1192,28 @@ def _process_new_client_message(
         },
     )
     return True
+
+
+def _new_client_prompt_markup(step: int) -> dict[str, Any] | None:
+    if step == 0:
+        keyboard = [[
+            {"text": "DNI", "callback_data": "nf:type:dni"},
+            {"text": "CE", "callback_data": "nf:type:ce"},
+        ]]
+    elif step == 4:
+        keyboard = [
+            [
+                {"text": "TikTok", "callback_data": "nf:source:tiktok"},
+                {"text": "Facebook", "callback_data": "nf:source:facebook"},
+            ],
+            [{"text": "WhatsApp", "callback_data": "nf:source:whatsapp"}],
+        ]
+    elif step == 5:
+        keyboard = [[{"text": "Omitir WhatsApp", "callback_data": "nf:phone:omit"}]]
+    else:
+        return None
+    keyboard.append([{"text": "Cancelar alta", "callback_data": "ui:cancel:guided"}])
+    return {"inline_keyboard": keyboard}
 
 
 def _apply_new_client_value(
@@ -929,7 +1304,16 @@ def _send_recent_errors(
             f"{timestamp or 'Sin fecha'} | {order_id}\n"
             f"{status}: {message}"
         )
-    telegram.send_message(chat_id, "\n\n".join(lines))
+    telegram.send_message(
+        chat_id,
+        "\n\n".join(lines),
+        reply_markup={
+            "inline_keyboard": [[
+                {"text": "Actualizar", "callback_data": "ui:errors:show"},
+                {"text": "Menu", "callback_data": "ui:menu:main"},
+            ]]
+        },
+    )
 
 
 def format_order_detail(order: dict[str, Any]) -> str:
@@ -1160,6 +1544,7 @@ def _start_rules_conversation(
     telegram.send_message(
         chat_id,
         f"EDITAR REGLAS\n\n{format_order_rules(order)}\n\n{_rules_step_prompt(0)}",
+        reply_markup=_rules_prompt_markup(0),
     )
 
 
@@ -1180,16 +1565,43 @@ def _process_rules_conversation_message(
             rules_conversations.pop(chat_id, None)
         telegram.send_message(chat_id, "La edicion de reglas vencio. Inicia nuevamente.")
         return True
+    return _continue_rules_conversation(
+        conversation,
+        text,
+        telegram,
+        rules_conversations,
+        pending_order_changes,
+        confirmation_lock,
+    )
+
+
+def _continue_rules_conversation(
+    conversation: RulesConversation,
+    text: str,
+    telegram: TelegramBotApi,
+    rules_conversations: dict[str, RulesConversation],
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> bool:
+    chat_id = conversation.chat_id
     try:
         field, value = _parse_rules_step(conversation.step, text, conversation.updated)
     except ValueError as exc:
-        telegram.send_message(chat_id, f"{exc}\n\n{_rules_step_prompt(conversation.step)}")
+        telegram.send_message(
+            chat_id,
+            f"{exc}\n\n{_rules_step_prompt(conversation.step)}",
+            reply_markup=_rules_prompt_markup(conversation.step),
+        )
         return True
     conversation.updated[field] = value
     conversation.step += 1
     conversation.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
     if conversation.step < 4:
-        telegram.send_message(chat_id, _rules_step_prompt(conversation.step))
+        telegram.send_message(
+            chat_id,
+            _rules_step_prompt(conversation.step),
+            reply_markup=_rules_prompt_markup(conversation.step),
+        )
         return True
     try:
         _validate_rules_payload(conversation.updated)
@@ -1267,6 +1679,39 @@ def _rules_step_prompt(step: int) -> str:
         "Paso 3/4 - Hora minima. Responde 0 a 23, igual o quitar.",
         "Paso 4/4 - Dias permitidos. Responde 1,2,...7; igual o todos.",
     )[step]
+
+
+def _rules_prompt_markup(step: int) -> dict[str, Any]:
+    if step in {0, 1}:
+        rows = [[
+            {"text": "Mantener", "callback_data": "rf:value:keep"},
+            {"text": "Quitar limite", "callback_data": "rf:value:clear"},
+        ]]
+    elif step == 2:
+        rows = [
+            [
+                {"text": "08:00", "callback_data": "rf:hour:8"},
+                {"text": "09:00", "callback_data": "rf:hour:9"},
+                {"text": "10:00", "callback_data": "rf:hour:10"},
+            ],
+            [
+                {"text": "Mantener", "callback_data": "rf:value:keep"},
+                {"text": "Sin limite", "callback_data": "rf:value:clear"},
+            ],
+        ]
+    else:
+        rows = [
+            [
+                {"text": "Lun-Sab", "callback_data": "rf:days:mon_sat"},
+                {"text": "Solo sabado", "callback_data": "rf:days:sat"},
+            ],
+            [
+                {"text": "Todos", "callback_data": "rf:value:clear"},
+                {"text": "Mantener", "callback_data": "rf:value:keep"},
+            ],
+        ]
+    rows.append([{"text": "Cancelar", "callback_data": "ui:cancel:guided"}])
+    return {"inline_keyboard": rows}
 
 
 def _validate_rules_payload(rules: dict[str, Any]) -> None:
@@ -1401,6 +1846,175 @@ def _request_worker_confirmation(
     )
 
 
+def _process_interface_callback(
+    callback_id: str,
+    data: str,
+    message: Any,
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    pending_order_changes: dict[str, PendingOrderChange],
+    pending_client_creations: dict[str, PendingClientCreation],
+    new_client_conversations: dict[str, NewClientConversation],
+    rules_conversations: dict[str, RulesConversation],
+    recent_orders: dict[str, deque[str]],
+    confirmation_lock: Lock,
+) -> bool:
+    parts = data.split(":")
+    if len(parts) != 3 or parts[0] not in {"ui", "om", "pq", "wk", "nf", "rf"}:
+        return False
+    prefix, subject, action = parts
+    telegram.answer_callback_query(callback_id, "Procesando...")
+    if prefix == "ui":
+        if subject == "menu":
+            _send_main_menu(chat_id, telegram)
+        elif subject == "status":
+            _send_worker_panel(chat_id, telegram, admin_api)
+        elif subject == "clients":
+            _send_clients(chat_id, action, telegram, admin_api)
+        elif subject == "new":
+            _start_new_client_conversation(
+                chat_id,
+                "",
+                telegram,
+                new_client_conversations,
+                pending_client_creations,
+                confirmation_lock,
+            )
+        elif subject == "search":
+            _send_search_results(chat_id, "", telegram, admin_api)
+        elif subject == "summary":
+            _send_daily_summary(chat_id, telegram, admin_api)
+        elif subject == "recent":
+            _send_recent_orders(chat_id, telegram, admin_api, recent_orders)
+        elif subject == "worker":
+            _send_worker_panel(chat_id, telegram, admin_api)
+        elif subject == "errors":
+            _send_recent_errors(chat_id, telegram, admin_api)
+        elif subject == "delete":
+            message_id = message.get("message_id") if isinstance(message, dict) else None
+            if isinstance(message_id, int):
+                try:
+                    telegram.delete_message(chat_id, message_id)
+                except TelegramControlError:
+                    telegram.send_message(chat_id, "No pude eliminar ese mensaje.")
+        elif subject == "cancel":
+            with confirmation_lock:
+                removed = new_client_conversations.pop(chat_id, None) is not None
+                removed = _cancel_pending_client_creation_unlocked(
+                    chat_id, pending_client_creations
+                ) or removed
+                removed = rules_conversations.pop(chat_id, None) is not None or removed
+            telegram.send_message(
+                chat_id,
+                "Alta cancelada." if removed else "No habia un alta activa.",
+                reply_markup=_main_menu_markup(),
+            )
+        else:
+            telegram.send_message(chat_id, "Accion de menu no reconocida.")
+        return True
+    if prefix == "om":
+        order_id = subject
+        if not _valid_order_id(order_id):
+            telegram.send_message(chat_id, "La orden seleccionada no es valida.")
+        elif action == "show":
+            _send_order_panel(chat_id, order_id, telegram, admin_api, recent_orders)
+        elif action == "credentials":
+            _send_credentials(chat_id, order_id, telegram, admin_api)
+        elif action == "rules":
+            _send_order_query(chat_id, "reglas", order_id, telegram, admin_api)
+        elif action == "priority":
+            _send_priority_menu(chat_id, order_id, telegram, admin_api)
+        elif action == "editrules":
+            _start_rules_conversation(
+                chat_id,
+                order_id,
+                telegram,
+                admin_api,
+                rules_conversations,
+                pending_order_changes,
+                confirmation_lock,
+            )
+        else:
+            telegram.send_message(chat_id, "Accion de cliente no reconocida.")
+        return True
+    if prefix == "pq":
+        _request_priority_change(
+            chat_id,
+            f"{subject} {action}",
+            telegram,
+            admin_api,
+            pending_order_changes,
+            confirmation_lock,
+        )
+        return True
+    if prefix == "wk":
+        if subject not in {"pause", "resume", "restart"}:
+            telegram.send_message(chat_id, "Accion de worker no reconocida.")
+        else:
+            _request_worker_confirmation(
+                chat_id,
+                subject,
+                telegram,
+                pending_confirmations,
+                confirmation_lock,
+            )
+        return True
+    if prefix == "rf":
+        conversation = rules_conversations.get(chat_id)
+        if conversation is None:
+            telegram.send_message(chat_id, "La edicion de reglas ya no esta activa.")
+            return True
+        values = {
+            ("value", "keep"): "igual",
+            ("value", "clear"): "quitar",
+            ("hour", "8"): "8",
+            ("hour", "9"): "9",
+            ("hour", "10"): "10",
+            ("days", "mon_sat"): "1,2,3,4,5,6",
+            ("days", "sat"): "6",
+        }
+        value = values.get((subject, action))
+        if value is None:
+            telegram.send_message(chat_id, "Opcion de reglas no reconocida.")
+            return True
+        _continue_rules_conversation(
+            conversation,
+            value,
+            telegram,
+            rules_conversations,
+            pending_order_changes,
+            confirmation_lock,
+        )
+        return True
+    conversation = new_client_conversations.get(chat_id)
+    if conversation is None:
+        telegram.send_message(chat_id, "El alta ya no esta activa. Usa /cliente_nuevo.")
+        return True
+    values = {
+        ("type", "dni"): "DNI",
+        ("type", "ce"): "CE",
+        ("source", "tiktok"): "TikTok",
+        ("source", "facebook"): "Facebook",
+        ("source", "whatsapp"): "WhatsApp",
+        ("phone", "omit"): "OMITIR",
+    }
+    value = values.get((subject, action))
+    if value is None:
+        telegram.send_message(chat_id, "Opcion de alta no reconocida.")
+        return True
+    _continue_new_client_conversation(
+        conversation,
+        value,
+        telegram,
+        new_client_conversations,
+        pending_client_creations,
+        confirmation_lock,
+    )
+    return True
+
+
 def _process_callback_query(
     callback_query: dict[str, Any],
     config: TelegramControlConfig,
@@ -1409,6 +2023,9 @@ def _process_callback_query(
     pending_confirmations: dict[str, PendingWorkerConfirmation],
     pending_order_changes: dict[str, PendingOrderChange],
     pending_client_creations: dict[str, PendingClientCreation],
+    new_client_conversations: dict[str, NewClientConversation],
+    rules_conversations: dict[str, RulesConversation],
+    recent_orders: dict[str, deque[str]],
     rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
     executor: ThreadPoolExecutor,
@@ -1433,6 +2050,22 @@ def _process_callback_query(
             actor=_telegram_actor(chat_id), action="callback", status="rate_limited"
         )
         telegram.answer_callback_query(callback_id, "Espera un minuto y vuelve a intentar.")
+        return
+    if _process_interface_callback(
+        callback_id,
+        data,
+        message,
+        chat_id,
+        telegram,
+        admin_api,
+        pending_confirmations,
+        pending_order_changes,
+        pending_client_creations,
+        new_client_conversations,
+        rules_conversations,
+        recent_orders,
+        confirmation_lock,
+    ):
         return
     parts = data.split(":")
     if len(parts) != 3 or parts[0] not in {"wc", "oc", "nc"} or parts[2] not in {"yes", "no"}:
@@ -1545,6 +2178,12 @@ def _execute_order_change(
             "Cambio aplicado y verificado.\n"
             f"Solicitud: {operation_short}\n"
             f"Orden: {change.order_id}",
+            reply_markup={
+                "inline_keyboard": [[
+                    {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ]]
+            },
         )
         logger.info(
             "Applied Telegram order change action=%s actor=%s order_id=%s",
@@ -1603,6 +2242,12 @@ def _execute_client_creation(
             f"Estado: {validated.get('status') or 'desconocido'}\n"
             f"Preflight: {validated.get('preflight_status') or 'pendiente'}\n"
             f"Detalle: {validated.get('preflight_message') or 'sin detalle'}",
+            reply_markup={
+                "inline_keyboard": [[
+                    {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ]]
+            },
         )
         logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
         _record_audit_safe(
@@ -1825,7 +2470,7 @@ def _send_startup_notice(
     )
     for chat_id in config.authorized_chat_ids:
         try:
-            telegram.send_message(chat_id, message)
+            telegram.send_message(chat_id, message, reply_markup=_main_menu_markup())
         except TelegramControlError:
             logger.warning("Could not deliver Telegram control startup notice.")
 

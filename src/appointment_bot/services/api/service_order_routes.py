@@ -78,6 +78,33 @@ def list_service_orders_payload() -> dict[str, Any]:
     }
 
 
+def search_service_orders_payload(query: str) -> dict[str, Any]:
+    normalized = " ".join(query.lower().split())
+    if len(normalized) < 2:
+        return {"service_orders": []}
+    matches: list[dict[str, Any]] = []
+    for order in list_service_order_summaries():
+        payload = asdict(order)
+        searchable = " ".join(
+            str(payload.get(field) or "").lower()
+            for field in (
+                "order_id",
+                "applicant_name",
+                "document_number",
+                "contact_name",
+                "contact_whatsapp",
+            )
+        )
+        if normalized not in searchable:
+            continue
+        matches.append({
+            field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
+        })
+        if len(matches) >= 10:
+            break
+    return {"service_orders": matches}
+
+
 def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
     order_id = service_order_detail_path(path)
     if order_id is None:
