@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 1 implementada y activa; confirmacion final desde Telegram pendiente.
+Estado general: Fase 1 completada y validada en operacion real.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -265,8 +265,7 @@ la operacion diaria.
 
 ### Fase 1 - Crear el receptor independiente de Telegram
 
-Estado: implementada y activa el `2026-07-18`; recuperacion supervisada probada
-y pendiente de confirmacion visual final desde Telegram.
+Estado: completada el `2026-07-18`.
 
 1. Crear un modulo separado para recibir actualizaciones de Telegram.
 2. Usar el mismo bot de alertas, manteniendo separado el codigo de envio y el
@@ -315,10 +314,7 @@ Pruebas completadas:
   `worker_running=true`, `phase=outside_hot_window`;
 - receptor levantado por su supervisor y long polling confirmado en logs.
 
-Pruebas pendientes para cierre:
-
-1. enviar `/estado` despues de la recuperacion y confirmar visualmente que
-   informa `Activo, esperando la siguiente ventana de trabajo`.
+Pruebas pendientes para cierre: ninguna.
 
 Validacion conversacional y de recuperacion realizada:
 
@@ -345,6 +341,10 @@ Prueba de caida abrupta del worker:
 - despues de expirar el lease se reinicio la tarea programada y el worker volvio
   saludable en `outside_hot_window`;
 - la prueba final confirmo `worker_running=true` y receptor Telegram activo.
+- despues de recuperar el worker, el operador envio `/estado` desde el celular
+  autorizado y recibio correctamente la respuesta esperada;
+- con esa comprobacion quedaron satisfechos los criterios de cierre de la Fase
+  1: independencia del worker, autorizacion, deduplicacion y recuperacion.
 
 ### Fase 2 - Control seguro del worker
 
@@ -501,7 +501,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 |---|---|---|---|---|---|
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
-| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Implementado; recuperacion probada y espera final reducida | Logs de bootstrap y seccion Fase 1 | Confirmar `/estado` despues de la recuperacion |
+| 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
 
 ## Decisiones pendientes
 
