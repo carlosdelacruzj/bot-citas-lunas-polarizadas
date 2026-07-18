@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from http import HTTPStatus
 from typing import Any
@@ -63,9 +64,16 @@ def public_worker_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return {field: payload.get(field) for field in PUBLIC_WORKER_FIELDS if field in payload}
 
 
-def enqueue_worker_command_payload(command: str) -> tuple[HTTPStatus, dict[str, Any]]:
+def enqueue_worker_command_payload(
+    command: str,
+    *,
+    requested_by: str | None = None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
     try:
-        queued = enqueue_worker_command(command, requested_by="admin_api")
+        queued = enqueue_worker_command(
+            command,
+            requested_by=_requested_by(requested_by),
+        )
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
     return HTTPStatus.ACCEPTED, {
@@ -74,6 +82,15 @@ def enqueue_worker_command_payload(command: str) -> tuple[HTTPStatus, dict[str, 
         "command": queued.command,
         "message": "Worker command queued for the continuous worker.",
     }
+
+
+def _requested_by(value: str | None) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return "admin_api"
+    if len(normalized) > 64 or re.fullmatch(r"[A-Za-z0-9:_-]+", normalized) is None:
+        return "admin_api"
+    return normalized
 
 
 def list_worker_commands_payload(query: dict[str, list[str]]) -> dict[str, Any]:

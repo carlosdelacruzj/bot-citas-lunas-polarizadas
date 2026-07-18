@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
+import secrets
 import signal
+import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from threading import Event
+from threading import Event, Lock
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -24,14 +28,18 @@ LIMA_TIMEZONE = ZoneInfo("America/Lima")
 DEFAULT_ADMIN_API_URL = "http://127.0.0.1:8766"
 DEFAULT_POLL_TIMEOUT_SECONDS = 30
 RETRY_DELAY_SECONDS = 5
+CONFIRMATION_TTL_SECONDS = 120
+WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
+/pausar - Pausar el worker con confirmacion
+/reanudar - Reanudar el worker con confirmacion
+/reiniciar - Reiniciar el worker con confirmacion
 /ayuda - Mostrar esta ayuda
 /cancelar - Cancelar la operacion guiada actual
-
-Los comandos que cambian estado se habilitaran en la siguiente fase."""
+"""
 
 
 class TelegramControlError(RuntimeError):
@@ -48,22 +56,71 @@ class TelegramControlConfig:
     poll_timeout_seconds: int
 
 
+@dataclass(frozen=True)
+class PendingWorkerConfirmation:
+    operation_id: str
+    chat_id: str
+    command: str
+    expires_at: float
+
+
 class AdminApiClient:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url.rstrip("/")
         self.token = token
 
     def get_worker(self) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/worker")
+
+    def enqueue_worker_command(self, command: str, *, actor: str) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/worker/{command}",
+            payload={},
+            actor=actor,
+        )
+
+    def get_worker_command(self, command_id: str) -> dict[str, Any] | None:
+        payload = self._request("GET", "/api/v1/worker/commands?limit=100")
+        commands = payload.get("commands", [])
+        if not isinstance(commands, list):
+            raise TelegramControlError("Admin API returned an invalid command list.")
+        return next(
+            (
+                item
+                for item in commands
+                if isinstance(item, dict) and item.get("command_id") == command_id
+            ),
+            None,
+        )
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        actor: str | None = None,
+    ) -> dict[str, Any]:
+        headers = {"Authorization": f"Bearer {self.token}"}
+        if actor:
+            headers["X-Appointment-Actor"] = actor
+        body = None
+        if payload is not None:
+            headers["Content-Type"] = "application/json"
+            body = json.dumps(payload).encode("utf-8")
         request = Request(
-            f"{self.base_url}/api/v1/worker",
-            headers={"Authorization": f"Bearer {self.token}"},
+            f"{self.base_url}{path}",
+            data=body,
+            headers=headers,
+            method=method,
         )
         try:
             with urlopen(request, timeout=5) as response:
                 return _read_json_response(response)
         except HTTPError as exc:
             raise TelegramControlError(
-                f"Admin API rejected worker status with HTTP {exc.code}."
+                f"Admin API rejected the action with HTTP {exc.code}."
             ) from exc
         except (URLError, TimeoutError) as exc:
             raise TelegramControlError("Admin API is not reachable.") from exc
@@ -82,7 +139,7 @@ class TelegramBotApi:
     def get_updates(self, *, offset: int | None, timeout_seconds: int) -> list[dict[str, Any]]:
         payload: dict[str, str] = {
             "timeout": str(timeout_seconds),
-            "allowed_updates": json.dumps(["message"]),
+            "allowed_updates": json.dumps(["message", "callback_query"]),
         }
         if offset is not None:
             payload["offset"] = str(offset)
@@ -92,14 +149,29 @@ class TelegramBotApi:
             raise TelegramControlError("Telegram returned an invalid updates list.")
         return [item for item in result if isinstance(item, dict)]
 
-    def send_message(self, chat_id: str, text: str) -> None:
+    def send_message(
+        self,
+        chat_id: str,
+        text: str,
+        *,
+        reply_markup: dict[str, Any] | None = None,
+    ) -> None:
+        payload = {
+            "chat_id": chat_id,
+            "text": text,
+            "disable_web_page_preview": "true",
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = json.dumps(reply_markup)
         self._request(
             "sendMessage",
-            {
-                "chat_id": chat_id,
-                "text": text,
-                "disable_web_page_preview": "true",
-            },
+            payload,
+        )
+
+    def answer_callback_query(self, callback_query_id: str, text: str) -> None:
+        self._request(
+            "answerCallbackQuery",
+            {"callback_query_id": callback_query_id, "text": text},
         )
 
     def _request(
@@ -179,26 +251,41 @@ def run_control(*, check_only: bool = False) -> int:
     stop_event = Event()
     _install_signal_handlers(stop_event)
     next_offset = _load_next_offset(config.offset_path)
+    pending_confirmations: dict[str, PendingWorkerConfirmation] = {}
+    confirmation_lock = Lock()
+    executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
     logger.info("Telegram control long polling started.")
-    while not stop_event.is_set():
-        try:
-            updates = telegram.get_updates(
-                offset=next_offset,
-                timeout_seconds=config.poll_timeout_seconds,
-            )
-            for update in updates:
-                update_id = _update_id(update)
-                if update_id is None:
-                    continue
-                _process_update(update, config, telegram, admin_api)
-                next_offset = update_id + 1
-                _store_next_offset(config.offset_path, next_offset)
-        except TelegramControlError as exc:
-            logger.warning("Telegram control polling failed: %s", exc)
-            stop_event.wait(RETRY_DELAY_SECONDS)
-        except Exception:
-            logger.exception("Unexpected Telegram control polling failure")
-            stop_event.wait(RETRY_DELAY_SECONDS)
+    try:
+        while not stop_event.is_set():
+            try:
+                updates = telegram.get_updates(
+                    offset=next_offset,
+                    timeout_seconds=config.poll_timeout_seconds,
+                )
+                _remove_expired_confirmations(pending_confirmations, confirmation_lock)
+                for update in updates:
+                    update_id = _update_id(update)
+                    if update_id is None:
+                        continue
+                    _process_update(
+                        update,
+                        config,
+                        telegram,
+                        admin_api,
+                        pending_confirmations=pending_confirmations,
+                        confirmation_lock=confirmation_lock,
+                        executor=executor,
+                    )
+                    next_offset = update_id + 1
+                    _store_next_offset(config.offset_path, next_offset)
+            except TelegramControlError as exc:
+                logger.warning("Telegram control polling failed: %s", exc)
+                stop_event.wait(RETRY_DELAY_SECONDS)
+            except Exception:
+                logger.exception("Unexpected Telegram control polling failure")
+                stop_event.wait(RETRY_DELAY_SECONDS)
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
     logger.info("Telegram control stopped.")
     return 0
 
@@ -208,7 +295,23 @@ def _process_update(
     config: TelegramControlConfig,
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
+    *,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+    executor: ThreadPoolExecutor,
 ) -> None:
+    callback_query = update.get("callback_query")
+    if isinstance(callback_query, dict):
+        _process_callback_query(
+            callback_query,
+            config,
+            telegram,
+            admin_api,
+            pending_confirmations,
+            confirmation_lock,
+            executor,
+        )
+        return
     message = update.get("message")
     if not isinstance(message, dict):
         return
@@ -229,7 +332,13 @@ def _process_update(
         telegram.send_message(chat_id, HELP_TEXT)
         return
     if command == "cancelar":
-        telegram.send_message(chat_id, "No hay una operacion guiada activa.")
+        removed = _cancel_chat_confirmations(chat_id, pending_confirmations, confirmation_lock)
+        response = (
+            "Operacion pendiente cancelada."
+            if removed
+            else "No hay una operacion guiada activa."
+        )
+        telegram.send_message(chat_id, response)
         return
     if command == "estado":
         try:
@@ -240,7 +349,252 @@ def _process_update(
             response = "No pude consultar el estado del sistema. La Admin API no responde."
         telegram.send_message(chat_id, response)
         return
+    if command in {"pausar", "reanudar", "reiniciar"}:
+        worker_command = {
+            "pausar": "pause",
+            "reanudar": "resume",
+            "reiniciar": "restart",
+        }[command]
+        _request_worker_confirmation(
+            chat_id,
+            worker_command,
+            telegram,
+            pending_confirmations,
+            confirmation_lock,
+        )
+        return
     telegram.send_message(chat_id, "Comando no reconocido. Usa /ayuda.")
+
+
+def _request_worker_confirmation(
+    chat_id: str,
+    command: str,
+    telegram: TelegramBotApi,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+) -> None:
+    operation_id = secrets.token_hex(6)
+    confirmation = PendingWorkerConfirmation(
+        operation_id=operation_id,
+        chat_id=chat_id,
+        command=command,
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+    )
+    with confirmation_lock:
+        _cancel_chat_confirmations_unlocked(chat_id, pending_confirmations)
+        pending_confirmations[operation_id] = confirmation
+    label = _worker_command_label(command)
+    telegram.send_message(
+        chat_id,
+        f"Confirmar: {label}.\n\nLa confirmacion vence en 2 minutos.",
+        reply_markup={
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Confirmar",
+                        "callback_data": f"wc:{operation_id}:yes",
+                    },
+                    {
+                        "text": "Cancelar",
+                        "callback_data": f"wc:{operation_id}:no",
+                    },
+                ]
+            ]
+        },
+    )
+
+
+def _process_callback_query(
+    callback_query: dict[str, Any],
+    config: TelegramControlConfig,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+    executor: ThreadPoolExecutor,
+) -> None:
+    callback_id = callback_query.get("id")
+    data = callback_query.get("data")
+    message = callback_query.get("message")
+    chat = message.get("chat") if isinstance(message, dict) else None
+    if not isinstance(callback_id, str) or not isinstance(data, str):
+        return
+    if not isinstance(chat, dict) or chat.get("id") is None:
+        return
+    chat_id = str(chat["id"])
+    if chat_id not in config.authorized_chat_ids:
+        logger.warning("Ignored Telegram callback from an unauthorized chat.")
+        return
+    parts = data.split(":")
+    if len(parts) != 3 or parts[0] != "wc" or parts[2] not in {"yes", "no"}:
+        telegram.answer_callback_query(callback_id, "Accion no reconocida.")
+        return
+    operation_id = parts[1]
+    with confirmation_lock:
+        confirmation = pending_confirmations.pop(operation_id, None)
+    if (
+        confirmation is None
+        or confirmation.chat_id != chat_id
+        or confirmation.expires_at <= time.monotonic()
+    ):
+        telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
+        return
+    if parts[2] == "no":
+        telegram.answer_callback_query(callback_id, "Operacion cancelada.")
+        telegram.send_message(chat_id, "Operacion cancelada. No se realizaron cambios.")
+        return
+    telegram.answer_callback_query(callback_id, "Solicitud confirmada.")
+    executor.submit(
+        _execute_worker_command,
+        confirmation,
+        telegram,
+        admin_api,
+    )
+
+
+def _execute_worker_command(
+    confirmation: PendingWorkerConfirmation,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    operation_short = confirmation.operation_id[:8]
+    actor = _telegram_actor(confirmation.chat_id)
+    try:
+        queued = admin_api.enqueue_worker_command(confirmation.command, actor=actor)
+        command_id = queued.get("command_id")
+        if not isinstance(command_id, str) or not command_id:
+            raise TelegramControlError("Admin API did not return a command_id.")
+        telegram.send_message(
+            confirmation.chat_id,
+            f"Solicitud {operation_short} encolada. Verificando resultado real...",
+        )
+        command = _wait_for_worker_command(admin_api, command_id)
+        status = command.get("status")
+        if status != "applied":
+            detail = "fallo" if status == "failed" else "no termino a tiempo"
+            telegram.send_message(
+                confirmation.chat_id,
+                f"La solicitud {operation_short} {detail}. No confirmo el cambio.",
+            )
+            return
+        worker = _wait_for_worker_effect(admin_api, confirmation.command)
+        telegram.send_message(
+            confirmation.chat_id,
+            _format_worker_command_success(confirmation.command, operation_short, worker),
+        )
+    except TelegramControlError as exc:
+        logger.warning("Worker command %s failed: %s", confirmation.command, exc)
+        try:
+            telegram.send_message(
+                confirmation.chat_id,
+                f"No pude completar la solicitud {operation_short}. El cambio no fue confirmado.",
+            )
+        except TelegramControlError:
+            logger.warning("Could not deliver the worker command failure message.")
+    except Exception:
+        logger.exception("Unexpected worker command execution failure")
+
+
+def _wait_for_worker_command(
+    admin_api: AdminApiClient,
+    command_id: str,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + WORKER_COMMAND_TIMEOUT_SECONDS
+    last_command: dict[str, Any] | None = None
+    while time.monotonic() < deadline:
+        last_command = admin_api.get_worker_command(command_id)
+        if last_command is not None and last_command.get("status") in {"applied", "failed"}:
+            return last_command
+        time.sleep(1)
+    return last_command or {"status": "timeout"}
+
+
+def _wait_for_worker_effect(admin_api: AdminApiClient, command: str) -> dict[str, Any]:
+    deadline = time.monotonic() + WORKER_COMMAND_TIMEOUT_SECONDS
+    last_worker: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        try:
+            last_worker = admin_api.get_worker()
+        except TelegramControlError:
+            time.sleep(1)
+            continue
+        paused = bool(last_worker.get("paused"))
+        running = bool(last_worker.get("worker_running"))
+        phase = str(last_worker.get("phase") or "")
+        if command == "pause" and paused:
+            return last_worker
+        if command == "resume" and running and not paused:
+            return last_worker
+        if command == "restart" and running and phase != "restarting":
+            return last_worker
+        time.sleep(1)
+    raise TelegramControlError("Worker state did not reach the expected result.")
+
+
+def _format_worker_command_success(
+    command: str,
+    operation_id: str,
+    worker: dict[str, Any],
+) -> str:
+    phase = str(worker.get("phase") or "desconocida")
+    if command == "pause":
+        result = "Worker pausado correctamente."
+    elif command == "resume":
+        result = "Worker reanudado correctamente."
+    else:
+        result = "Worker reiniciado y recuperado correctamente."
+    return f"{result}\nSolicitud: {operation_id}\nFase actual: {phase}"
+
+
+def _worker_command_label(command: str) -> str:
+    return {
+        "pause": "pausar el worker",
+        "resume": "reanudar el worker",
+        "restart": "reiniciar el worker",
+    }[command]
+
+
+def _telegram_actor(chat_id: str) -> str:
+    digest = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    return f"telegram:{digest}"
+
+
+def _cancel_chat_confirmations(
+    chat_id: str,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+) -> bool:
+    with confirmation_lock:
+        return _cancel_chat_confirmations_unlocked(chat_id, pending_confirmations)
+
+
+def _cancel_chat_confirmations_unlocked(
+    chat_id: str,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+) -> bool:
+    operation_ids = [
+        operation_id
+        for operation_id, confirmation in pending_confirmations.items()
+        if confirmation.chat_id == chat_id
+    ]
+    for operation_id in operation_ids:
+        pending_confirmations.pop(operation_id, None)
+    return bool(operation_ids)
+
+
+def _remove_expired_confirmations(
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+) -> None:
+    now = time.monotonic()
+    with confirmation_lock:
+        expired = [
+            operation_id
+            for operation_id, confirmation in pending_confirmations.items()
+            if confirmation.expires_at <= now
+        ]
+        for operation_id in expired:
+            pending_confirmations.pop(operation_id, None)
 
 
 def format_worker_status(payload: dict[str, Any]) -> str:

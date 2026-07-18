@@ -436,7 +436,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             controller = getattr(self.server, "worker_controller", None)
             restart_callback = getattr(self.server, "restart_callback", None)
             if controller is None or restart_callback is None:
-                status, payload = enqueue_worker_command_payload("restart")
+                status, payload = enqueue_worker_command_payload(
+                    "restart",
+                    requested_by=self.headers.get("X-Appointment-Actor"),
+                )
                 self._send_json(status, payload)
                 return
             controller.prepare_restart()
@@ -478,7 +481,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         controller = getattr(self.server, "worker_controller", None)
         if controller is None:
             command = "pause" if path.endswith("/pause") else "resume"
-            status, payload = enqueue_worker_command_payload(command)
+            status, payload = enqueue_worker_command_payload(
+                command,
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
             self._send_json(status, payload)
             return
         payload = controller.pause() if path.endswith("/pause") else controller.resume()

@@ -1,6 +1,6 @@
 # Plan de control remoto por Telegram
 
-Estado general: Fase 1 completada y validada en operacion real.
+Estado general: Fase 2 implementada y activa; validacion desde Telegram pendiente.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -348,7 +348,8 @@ Prueba de caida abrupta del worker:
 
 ### Fase 2 - Control seguro del worker
 
-Estado: pendiente.
+Estado: implementada y activa el `2026-07-18`; pendiente de validacion
+conversacional desde el celular autorizado.
 
 1. Implementar `/pausar`, `/reanudar` y `/reiniciar` mediante la Admin API.
 2. Agregar botones de confirmar y cancelar.
@@ -364,6 +365,47 @@ Criterio de cierre:
 - Telegram confirma el resultado real, no solamente un HTTP aceptado;
 - las solicitudes repetidas no generan reinicios duplicados;
 - pausa, reanudacion y reinicio quedan auditados.
+
+Avance realizado:
+
+- implementados `/pausar`, `/reanudar` y `/reiniciar`;
+- cada comando genera una confirmacion unica con botones `Confirmar` y
+  `Cancelar`;
+- las confirmaciones vencen en dos minutos;
+- una confirmacion consumida o vencida no puede volver a encolar el comando;
+- `/cancelar` elimina la confirmacion pendiente del chat sin realizar cambios;
+- la ejecucion ocurre en un hilo separado para mantener activo el long polling;
+- Telegram muestra primero `encolada` y solo anuncia exito despues de observar
+  `applied` y verificar el efecto real en el estado del worker;
+- `failed`, timeout o API inaccesible no se presentan como exito;
+- el actor se envia en `X-Appointment-Actor` como hash corto del `chat_id` y se
+  persiste en `worker_commands.requested_by` sin guardar el chat completo;
+- el Admin API normaliza actores ausentes o invalidos a `admin_api`.
+
+Pruebas locales completadas:
+
+- botones de confirmacion generados correctamente;
+- cancelacion sin mutacion verificada;
+- doble confirmacion verificada: una sola ejecucion;
+- actor valido e invalido normalizados correctamente;
+- Admin API y receptor reiniciados por sus supervisores con la nueva version;
+- pausa real: comando `applied`, fase `paused`, `paused=true`;
+- reanudacion real: comando `applied`, fase `outside_hot_window`,
+  `paused=false`;
+- reinicio real: comando `applied`, worker recuperado en
+  `outside_hot_window`, `worker_running=true`;
+- las tres acciones de validacion quedaron auditadas como
+  `requested_by=phase2_validation`.
+
+Pruebas pendientes para cierre:
+
+1. abrir `/pausar` y pulsar `Cancelar`; comprobar que el worker no cambia;
+2. confirmar `/pausar` y comprobar el mensaje final;
+3. consultar `/estado` y comprobar `Pausado: si`;
+4. confirmar `/reanudar` y comprobar `Pausado: no`;
+5. confirmar `/reiniciar` y comprobar recuperación y respuesta final;
+6. pulsar dos veces un boton ya consumido y comprobar que no genera un segundo
+   comando.
 
 ### Fase 3 - Consultas operativas
 
@@ -502,6 +544,7 @@ alterar ordenes reales salvo que la prueba lo indique y el usuario lo autorice.
 | 2026-07-18 | Plan | Creacion del documento principal | Completado | `docs/operations/remote-control-plan.md` | Ejecutar Fase 0 |
 | 2026-07-18 | 0 | Contratos, bootstraps y linea base de runtime | Completado con cinco brechas documentadas | Seccion Fase 0 de este documento | Resolver liveness y disenar receptor de Fase 1 |
 | 2026-07-18 | 1 | Receptor Telegram, liveness por lease y supervisor | Completado y validado desde celular despues de recuperar el worker | Logs de bootstrap y seccion Fase 1 | Iniciar Fase 2: control seguro del worker |
+| 2026-07-18 | 2 | Confirmaciones y control persistido del worker | Implementado; pause, resume y restart reales aplicados | `worker_commands` y seccion Fase 2 | Validar botones desde Telegram |
 
 ## Decisiones pendientes
 

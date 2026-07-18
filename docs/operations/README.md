@@ -81,6 +81,9 @@ El proceso `appointment-bot-telegram-control` recibe comandos sin compartir
 memoria con el worker. En la primera version admite:
 
 - `/estado`;
+- `/pausar`;
+- `/reanudar`;
+- `/reiniciar`;
 - `/ayuda`;
 - `/cancelar`.
 
@@ -99,6 +102,12 @@ appointment-bot-telegram-control --check
 El bot no ejecuta PowerShell ni consulta PostgreSQL directamente. `/estado`
 consulta el Admin API autenticado; `worker_running` se calcula con el lease
 vigente del worker y `outside_hot_window` significa activo pero esperando.
+
+Los tres comandos que cambian el worker muestran botones `Confirmar` y
+`Cancelar`. La confirmacion vence en dos minutos y solo puede consumirse una
+vez. Despues de confirmar, Telegram espera el estado terminal de
+`worker_commands` y comprueba el efecto real antes de anunciar exito. Un HTTP
+`202` por si solo nunca se presenta como accion completada.
 
 ## Salud y calendario
 

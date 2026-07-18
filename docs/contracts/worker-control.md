@@ -73,6 +73,12 @@ Todos estos comandos requieren `Authorization: Bearer
 <APPOINTMENT_BOT_API_TOKEN>`. Si el token no esta configurado, la API responde
 `configuration_error` para evitar controles administrativos abiertos.
 
+Un cliente administrativo autenticado puede enviar `X-Appointment-Actor` con
+un identificador saneado de hasta 64 caracteres formado por letras, numeros,
+`:`, `_` o `-`. El valor se persiste como `requested_by`; cualquier valor
+ausente o invalido se normaliza a `admin_api`. Telegram usa un hash corto del
+`chat_id` y nunca guarda el identificador completo en `worker_commands`.
+
 ## Canal persistido
 
 El canal persistido permite que `appointment-bot-admin-api` solicite acciones
