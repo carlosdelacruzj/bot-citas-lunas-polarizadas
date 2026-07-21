@@ -104,3 +104,9 @@ Desde el 21 de julio de 2026 las pestañas superiores se reemplazan por una nave
 
 No se usa carrusel porque ocultaría destinos y requeriría desplazamiento adicional. El sidebar
 permite añadir nuevos módulos sin volver a apilar controles en la parte superior.
+
+Implementación validada con el build Angular de producción y activada en
+`http://127.0.0.1:8766/`. El bundle desplegado contiene la navegación agrupada, el control de
+colapso y el drawer móvil; el dashboard respondió HTTP 200 con sesión local, mientras el worker y
+el servicio CAPTCHA permanecieron saludables. La revisión visual automatizada siguió
+indisponible, por lo que se mantuvo la validación estructural y responsive mediante el build.
