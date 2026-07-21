@@ -95,6 +95,67 @@ export interface RunSummary {
 
 export type RunDetail = RunSummary;
 
+export interface CaptchaPrediction {
+  model_name: 'v1_real' | 'v2_scratch' | 'v2_selected' | string;
+  prediction: string;
+  mean_confidence: number;
+  min_char_confidence: number;
+  sequence_confidence_product: number;
+  char_confidences: number[];
+  inference_ms: number;
+  created_at_utc: string;
+}
+
+export interface CaptchaEvent {
+  event_id: string;
+  received_at_utc: string;
+  external_answer: string | null;
+  external_solve_ms: number | null;
+  portal_accepted: boolean | null;
+  selected_matches_external: boolean;
+  image_url: string;
+  metadata: {
+    run_id?: string | null;
+    order_id?: string | null;
+    attempt?: number | null;
+    captured_at_utc?: string | null;
+    source_image_kind?: string | null;
+    detection_origin?: string | null;
+    backfilled?: boolean | null;
+  };
+  predictions: CaptchaPrediction[];
+}
+
+export interface CaptchaSummary {
+  status: string;
+  device: string | null;
+  models: string[];
+  started_at_utc: string | null;
+  stats: {
+    events: number;
+    with_external_answer: number;
+    portal_accepted: number;
+    models: Record<
+      string,
+      {
+        predictions: number;
+        matches_external: number;
+        accepted_reference_total: number;
+        matches_accepted_reference: number;
+        accepted_reference_accuracy: number | null;
+        average_inference_ms: number;
+      }
+    >;
+  };
+  outbox: { pending: number; processed: number; attempts: number };
+}
+
+export interface CaptchaEventsPage {
+  events: CaptchaEvent[];
+  pagination: { page: number; page_size: number; total: number; total_pages: number };
+  filters: { q: string; agreement: string; portal_status: string };
+}
+
 interface ServiceOrdersResponse {
   service_orders: ServiceOrder[];
 }
@@ -393,6 +454,29 @@ export class AppointmentApiService {
   async getRun(runId: string): Promise<RunDetail> {
     return firstValueFrom(
       this.http.get<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`),
+    );
+  }
+
+  async getCaptchaSummary(): Promise<CaptchaSummary> {
+    return firstValueFrom(this.http.get<CaptchaSummary>('/api/v1/captcha-shadow/summary'));
+  }
+
+  async getCaptchaEvents(
+    page: number,
+    pageSize: number,
+    query: string,
+    agreement: string,
+    portalStatus: string,
+  ): Promise<CaptchaEventsPage> {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+      q: query,
+      agreement,
+      portal_status: portalStatus,
+    });
+    return firstValueFrom(
+      this.http.get<CaptchaEventsPage>(`/api/v1/captcha-shadow/events?${params.toString()}`),
     );
   }
 

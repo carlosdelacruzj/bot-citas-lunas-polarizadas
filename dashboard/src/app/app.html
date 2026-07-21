@@ -46,6 +46,14 @@
       Runs
       <span>{{ filteredRuns().length }}</span>
     </button>
+    <button
+      type="button"
+      [class.active]="activeView() === 'captchas'"
+      (click)="showView('captchas')"
+    >
+      CAPTCHA
+      <span>{{ captchaSummary()?.stats?.events ?? captchaTotal() }}</span>
+    </button>
   </nav>
 
   @if (errorMessage()) {
@@ -1044,6 +1052,265 @@
           </tbody>
         </table>
       </div>
+    </section>
+  }
+
+  @if (activeView() === 'captchas') {
+    <section class="captcha-dashboard" aria-labelledby="captcha-dashboard-title">
+      <div class="captcha-heading">
+        <div>
+          <p class="eyebrow">Comparación en tiempo real</p>
+          <h2 id="captcha-dashboard-title">Control de CAPTCHA</h2>
+          <p>La misma imagen frente a 2Captcha y tus tres modelos locales.</p>
+        </div>
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="captchaState() === 'loading'"
+          (click)="loadCaptchaData()"
+        >
+          Actualizar CAPTCHA
+        </button>
+      </div>
+
+      @if (captchaSummary(); as summary) {
+        <div class="captcha-kpis" aria-label="Resumen de CAPTCHA">
+          <article>
+            <span>Servicio local</span>
+            <strong class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
+              {{ summary.status === 'ok' ? 'Activo' : summary.status }}
+            </strong>
+            <small>{{ summary.device ?? 'Sin dispositivo' }} · {{ summary.models.length }} modelos</small>
+          </article>
+          <article>
+            <span>Muestras guardadas</span>
+            <strong>{{ summary.stats.events }}</strong>
+            <small>{{ summary.outbox.pending }} entregas pendientes</small>
+          </article>
+          <article>
+            <span>Coincidencia v2_selected</span>
+            <strong>
+              {{ captchaSelectedStats()?.matches_external ?? 0 }} / {{ summary.stats.with_external_answer }}
+            </strong>
+            <small>Comparación contra 2Captcha</small>
+          </article>
+          <article>
+            <span>Confirmadas por portal</span>
+            <strong>{{ summary.stats.portal_accepted }}</strong>
+            <small>
+              Inferencia promedio:
+              {{ formatMilliseconds(captchaSelectedStats()?.average_inference_ms) }}
+            </small>
+          </article>
+        </div>
+      }
+
+      <section class="panel captcha-controls" aria-label="Filtros de CAPTCHA">
+        <form class="captcha-search" (submit)="$event.preventDefault(); applyCaptchaFilters()">
+          <label class="filter captcha-query">
+            Buscar orden, run o respuesta
+            <input
+              name="captchaSearch"
+              type="search"
+              placeholder="Ej. order-09045304 o 9M9FH"
+              [ngModel]="captchaSearch()"
+              (ngModelChange)="captchaSearch.set($event)"
+            />
+          </label>
+          <button type="submit" class="primary">Buscar</button>
+        </form>
+
+        <div class="captcha-filter-row">
+          <div class="captcha-filter-chips" aria-label="Coincidencia con 2Captcha">
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchaAgreement() === 'all'"
+              (click)="setCaptchaAgreement('all')"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchaAgreement() === 'match'"
+              (click)="setCaptchaAgreement('match')"
+            >
+              Coinciden
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchaAgreement() === 'mismatch'"
+              (click)="setCaptchaAgreement('mismatch')"
+            >
+              Difieren
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="captchaAgreement() === 'pending'"
+              (click)="setCaptchaAgreement('pending')"
+            >
+              Pendientes
+            </button>
+          </div>
+
+          <label class="filter">
+            Portal
+            <select
+              name="captchaPortalStatus"
+              [ngModel]="captchaPortalStatus()"
+              (ngModelChange)="changeCaptchaPortalStatus($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="accepted">Aceptados</option>
+              <option value="rejected">Rechazados</option>
+              <option value="unverified">Sin validar</option>
+            </select>
+          </label>
+          <label class="filter">
+            Por página
+            <select
+              name="captchaPageSize"
+              [ngModel]="captchaPageSize()"
+              (ngModelChange)="changeCaptchaPageSize($event)"
+            >
+              <option [ngValue]="12">12</option>
+              <option [ngValue]="24">24</option>
+              <option [ngValue]="48">48</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      @if (captchaState() === 'loading') {
+        <section class="panel captcha-state" role="status">Cargando evidencias CAPTCHA...</section>
+      } @else if (captchaState() === 'error') {
+        <section class="notice bad captcha-state" role="alert">
+          <strong>No se pudo cargar esta vista.</strong>
+          <span>{{ captchaError() }}</span>
+          <button type="button" class="secondary" (click)="loadCaptchaData()">Reintentar</button>
+        </section>
+      } @else {
+        <div class="captcha-results-meta">
+          <strong>{{ captchaTotal() }} resultados</strong>
+          <span>Página {{ captchaPage() }} de {{ captchaTotalPages() }}</span>
+        </div>
+
+        <div class="captcha-event-list">
+          @for (event of captchaEvents(); track event.event_id) {
+            <article class="captcha-event-card">
+              <div class="captcha-event-topline">
+                <div>
+                  <strong>{{ captchaOrderLabel(event) }}</strong>
+                  <span>
+                    {{ formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc) }} ·
+                    intento {{ event.metadata.attempt ?? 1 }}
+                  </span>
+                </div>
+                <div class="captcha-statuses">
+                  <span class="badge {{ captchaAgreementTone(event) }}">
+                    {{ captchaAgreementLabel(event) }}
+                  </span>
+                  <span class="badge {{ captchaPortalTone(event) }}">
+                    {{ captchaPortalLabel(event) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="captcha-event-body">
+                <a
+                  class="captcha-image-link"
+                  [href]="event.image_url"
+                  target="_blank"
+                  rel="noopener"
+                  title="Abrir imagen original"
+                >
+                  <img [src]="event.image_url" alt="CAPTCHA original" loading="lazy" />
+                  <span>Imagen original · abrir</span>
+                </a>
+
+                <div class="captcha-comparison-grid">
+                  <article class="captcha-answer external">
+                    <span>2Captcha</span>
+                    <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
+                    <small>{{ formatMilliseconds(event.external_solve_ms) }}</small>
+                  </article>
+
+                  @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
+                    @if (captchaPrediction(event, modelName); as prediction) {
+                      <article class="captcha-answer {{ captchaPredictionTone(event, prediction) }}">
+                        <span>{{ modelName }}</span>
+                        <strong>{{ prediction.prediction }}</strong>
+                        <small>{{ formatMilliseconds(prediction.inference_ms) }}</small>
+                        <small>
+                          Confianza {{ formatConfidence(prediction.mean_confidence) }} · mínima
+                          {{ formatConfidence(prediction.min_char_confidence) }}
+                        </small>
+                      </article>
+                    } @else {
+                      <article class="captcha-answer neutral">
+                        <span>{{ modelName }}</span>
+                        <strong>Pendiente</strong>
+                        <small>Sin predicción</small>
+                      </article>
+                    }
+                  }
+                </div>
+              </div>
+
+              <details class="captcha-details">
+                <summary>Detalles técnicos</summary>
+                <dl>
+                  <div><dt>Evento</dt><dd>{{ event.event_id }}</dd></div>
+                  <div><dt>Run</dt><dd>{{ event.metadata.run_id ?? 'Sin run' }}</dd></div>
+                  <div>
+                    <dt>Origen</dt>
+                    <dd>{{ event.metadata.source_image_kind ?? 'Sin dato' }}</dd>
+                  </div>
+                </dl>
+              </details>
+            </article>
+          } @empty {
+            <section class="panel captcha-state">
+              No hay CAPTCHA que coincidan con los filtros actuales.
+            </section>
+          }
+        </div>
+
+        @if (captchaTotalPages() > 1) {
+          <nav class="captcha-pagination" aria-label="Páginas de CAPTCHA">
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="captchaPage() === 1"
+              (click)="goToCaptchaPage(captchaPage() - 1)"
+            >
+              Anterior
+            </button>
+            @for (page of captchaPageNumbers(); track page) {
+              <button
+                type="button"
+                class="page-button"
+                [class.active]="page === captchaPage()"
+                [attr.aria-current]="page === captchaPage() ? 'page' : null"
+                (click)="goToCaptchaPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="captchaPage() === captchaTotalPages()"
+              (click)="goToCaptchaPage(captchaPage() + 1)"
+            >
+              Siguiente
+            </button>
+          </nav>
+        }
+      }
     </section>
   }
 

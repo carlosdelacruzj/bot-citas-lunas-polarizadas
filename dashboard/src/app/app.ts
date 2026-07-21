@@ -13,6 +13,10 @@ import Swal from 'sweetalert2';
 import {
   ApiActionResponse,
   AppointmentApiService,
+  CaptchaEvent,
+  CaptchaEventsPage,
+  CaptchaPrediction,
+  CaptchaSummary,
   CloseServiceOrderPayload,
   ContactUpdatePayload,
   CreateServiceOrderPayload,
@@ -42,7 +46,9 @@ import {
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey = 'summary' | 'finance' | 'orders' | 'runs';
+type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
+type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
+type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -143,6 +149,17 @@ export class App implements OnDestroy {
   protected readonly worker = signal<WorkerStatus | null>(null);
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
+  protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
+  protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
+  protected readonly captchaState = signal<LoadState>('idle');
+  protected readonly captchaError = signal<string | null>(null);
+  protected readonly captchaPage = signal(1);
+  protected readonly captchaPageSize = signal(12);
+  protected readonly captchaTotal = signal(0);
+  protected readonly captchaTotalPages = signal(1);
+  protected readonly captchaSearch = signal('');
+  protected readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
+  protected readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
   protected readonly runDetailState = signal<LoadState>('idle');
@@ -291,6 +308,16 @@ export class App implements OnDestroy {
       ),
     ).sort(),
   );
+  protected readonly captchaSelectedStats = computed(
+    () => this.captchaSummary()?.stats.models['v2_selected'] ?? null,
+  );
+  protected readonly captchaPageNumbers = computed(() => {
+    const total = this.captchaTotalPages();
+    const current = this.captchaPage();
+    const start = Math.max(1, Math.min(current - 2, total - 4));
+    const end = Math.min(total, start + 4);
+    return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+  });
   protected readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
   );
@@ -480,6 +507,143 @@ export class App implements OnDestroy {
   protected async refreshNow(): Promise<void> {
     this.formDirty.set(false);
     await this.refreshAll();
+    if (this.activeView() === 'captchas') {
+      await this.loadCaptchaData(false);
+    }
+  }
+
+  protected async showView(view: ViewKey): Promise<void> {
+    this.activeView.set(view);
+    if (view === 'captchas' && this.captchaState() === 'idle') {
+      await this.loadCaptchaData();
+    }
+  }
+
+  protected async loadCaptchaData(showLoading = true): Promise<void> {
+    if (showLoading) {
+      this.captchaState.set('loading');
+    }
+    this.captchaError.set(null);
+    try {
+      const [summary, page] = await Promise.all([
+        this.api.getCaptchaSummary(),
+        this.api.getCaptchaEvents(
+          this.captchaPage(),
+          this.captchaPageSize(),
+          this.captchaSearch().trim(),
+          this.captchaAgreement(),
+          this.captchaPortalStatus(),
+        ),
+      ]);
+      this.captchaSummary.set(summary);
+      this.applyCaptchaPage(page);
+      this.captchaState.set('ready');
+    } catch (error) {
+      this.captchaState.set('error');
+      this.captchaError.set(this.readError(error));
+    }
+  }
+
+  protected async applyCaptchaFilters(): Promise<void> {
+    this.captchaPage.set(1);
+    await this.loadCaptchaData();
+  }
+
+  protected async setCaptchaAgreement(filter: CaptchaAgreementFilter): Promise<void> {
+    if (this.captchaAgreement() === filter) {
+      return;
+    }
+    this.captchaAgreement.set(filter);
+    await this.applyCaptchaFilters();
+  }
+
+  protected async changeCaptchaPortalStatus(value: CaptchaPortalFilter): Promise<void> {
+    this.captchaPortalStatus.set(value);
+    await this.applyCaptchaFilters();
+  }
+
+  protected async changeCaptchaPageSize(value: number | string): Promise<void> {
+    this.captchaPageSize.set(Number(value));
+    await this.applyCaptchaFilters();
+  }
+
+  protected async goToCaptchaPage(page: number): Promise<void> {
+    if (page < 1 || page > this.captchaTotalPages() || page === this.captchaPage()) {
+      return;
+    }
+    this.captchaPage.set(page);
+    await this.loadCaptchaData();
+  }
+
+  protected captchaPrediction(event: CaptchaEvent, modelName: string): CaptchaPrediction | null {
+    return event.predictions.find((prediction) => prediction.model_name === modelName) ?? null;
+  }
+
+  protected captchaPredictionTone(event: CaptchaEvent, prediction: CaptchaPrediction): string {
+    if (!event.external_answer) {
+      return 'neutral';
+    }
+    return prediction.prediction === event.external_answer ? 'good' : 'warn';
+  }
+
+  protected captchaPortalLabel(event: CaptchaEvent): string {
+    if (event.portal_accepted === true) {
+      return 'Aceptado por el portal';
+    }
+    if (event.portal_accepted === false) {
+      return 'CAPTCHA rechazado';
+    }
+    return 'Sin validar por el portal';
+  }
+
+  protected captchaPortalTone(event: CaptchaEvent): string {
+    if (event.portal_accepted === true) {
+      return 'good';
+    }
+    if (event.portal_accepted === false) {
+      return 'bad';
+    }
+    return 'neutral';
+  }
+
+  protected captchaAgreementLabel(event: CaptchaEvent): string {
+    if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
+      return 'Comparación pendiente';
+    }
+    return event.selected_matches_external ? 'Coincide con 2Captcha' : 'Difiere de 2Captcha';
+  }
+
+  protected captchaAgreementTone(event: CaptchaEvent): string {
+    if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
+      return 'neutral';
+    }
+    return event.selected_matches_external ? 'good' : 'warn';
+  }
+
+  protected formatMilliseconds(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return 'Sin dato';
+    }
+    return value >= 1000 ? `${(value / 1000).toFixed(3)} s` : `${value.toFixed(3)} ms`;
+  }
+
+  protected formatConfidence(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return 'Sin dato';
+    }
+    return `${(value * 100).toFixed(1)}%`;
+  }
+
+  protected captchaOrderLabel(event: CaptchaEvent): string {
+    return event.metadata.order_id || (event.metadata.run_id ? 'Observador' : 'Sin orden');
+  }
+
+  private applyCaptchaPage(page: CaptchaEventsPage): void {
+    this.captchaEvents.set(page.events);
+    this.captchaPage.set(page.pagination.page);
+    this.captchaPageSize.set(page.pagination.page_size);
+    this.captchaTotal.set(page.pagination.total);
+    this.captchaTotalPages.set(page.pagination.total_pages);
   }
 
   protected async changeMonth(month: string): Promise<void> {
@@ -2012,6 +2176,9 @@ export class App implements OnDestroy {
       return;
     }
     await this.refreshAll();
+    if (this.activeView() === 'captchas') {
+      await this.loadCaptchaData(false);
+    }
   }
 
   private keepValidSelection(orders: ServiceOrder[]): void {
