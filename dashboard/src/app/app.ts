@@ -117,6 +117,13 @@ const INITIAL_DATE = new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 }).format(new Date());
+const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
+  summary: { label: 'Resumen', group: 'Operación' },
+  orders: { label: 'Órdenes', group: 'Operación' },
+  runs: { label: 'Runs y actividad', group: 'Operación' },
+  finance: { label: 'Finanzas', group: 'Administración' },
+  captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
+};
 
 @Component({
   selector: 'app-root',
@@ -136,6 +143,10 @@ export class App implements OnDestroy {
   private lastFocusedElement: HTMLElement | null = null;
 
   protected readonly activeView = signal<ViewKey>('orders');
+  protected readonly sidebarCollapsed = signal(
+    window.localStorage.getItem('appointment-dashboard-sidebar-collapsed') === 'true',
+  );
+  protected readonly mobileMenuOpen = signal(false);
   protected readonly activeModal = signal<ModalKind>(null);
   protected readonly autoRefreshEnabled = signal(true);
   protected readonly formDirty = signal(false);
@@ -421,6 +432,8 @@ export class App implements OnDestroy {
     () =>
       !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
   );
+  protected readonly activeViewLabel = computed(() => VIEW_LABELS[this.activeView()].label);
+  protected readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
 
   constructor() {
     void this.refreshAll();
@@ -443,6 +456,10 @@ export class App implements OnDestroy {
     }
     if (this.pendingAction()) {
       Swal.close();
+      return;
+    }
+    if (this.mobileMenuOpen()) {
+      this.mobileMenuOpen.set(false);
       return;
     }
     if (this.activeModal()) {
@@ -514,9 +531,19 @@ export class App implements OnDestroy {
 
   protected async showView(view: ViewKey): Promise<void> {
     this.activeView.set(view);
+    this.mobileMenuOpen.set(false);
     if (view === 'captchas' && this.captchaState() === 'idle') {
       await this.loadCaptchaData();
     }
+  }
+
+  protected toggleSidebar(): void {
+    const collapsed = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(collapsed);
+    window.localStorage.setItem(
+      'appointment-dashboard-sidebar-collapsed',
+      String(collapsed),
+    );
   }
 
   protected async loadCaptchaData(showLoading = true): Promise<void> {
