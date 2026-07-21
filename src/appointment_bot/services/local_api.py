@@ -9,9 +9,11 @@ from urllib.parse import parse_qs, urlparse
 
 from appointment_bot.services.api.captcha_shadow_routes import (
     captcha_shadow_events_payload,
+    captcha_shadow_human_label_event_id,
     captcha_shadow_image_event_id,
     captcha_shadow_image_payload,
     captcha_shadow_summary_payload,
+    save_captcha_shadow_human_label_payload,
 )
 from appointment_bot.services.api.finance_routes import (
     create_finance_entry_payload,
@@ -285,6 +287,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        captcha_event_id = captcha_shadow_human_label_event_id(path)
+        if captcha_event_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = save_captcha_shadow_human_label_payload(
+                captcha_event_id,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
 
         if path == "/api/v1/service-orders":
             if not self._require_authorized(strict=True):

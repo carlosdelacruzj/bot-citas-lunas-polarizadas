@@ -22,6 +22,7 @@ ALLOWED_PAGE_SIZES = {12, 24, 48}
 ALLOWED_AGREEMENTS = {"all", "match", "mismatch", "pending"}
 ALLOWED_PORTAL_STATUSES = {"all", "accepted", "rejected", "unverified"}
 ALLOWED_SOURCES = {"all", "reservation", "observer"}
+ALLOWED_REVIEW_STATUSES = {"all", "validated", "pending"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
@@ -68,10 +69,12 @@ def captcha_shadow_events_payload(
     agreement = _query_value(query, "agreement", "all")
     portal_status = _query_value(query, "portal_status", "all")
     source = _query_value(query, "source", "all")
+    review_status = _query_value(query, "review_status", "all")
     if (
         agreement not in ALLOWED_AGREEMENTS
         or portal_status not in ALLOWED_PORTAL_STATUSES
         or source not in ALLOWED_SOURCES
+        or review_status not in ALLOWED_REVIEW_STATUSES
     ):
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request", "Los filtros de CAPTCHA no son válidos."
@@ -87,6 +90,7 @@ def captcha_shadow_events_payload(
             "agreement": agreement,
             "portal_status": portal_status,
             "source": source,
+            "review_status": review_status,
         }
     )
     try:
@@ -133,8 +137,69 @@ def captcha_shadow_events_payload(
             "agreement": agreement,
             "portal_status": portal_status,
             "source": source,
+            "review_status": review_status,
         },
     }
+
+
+def captcha_shadow_human_label_event_id(path: str) -> str | None:
+    prefix = "/api/v1/captcha-shadow/events/"
+    suffix = "/human-label"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    value = path[len(prefix) : -len(suffix)]
+    return unquote(value) if value else None
+
+
+def save_captcha_shadow_human_label_payload(
+    event_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    answer = str(payload.get("answer") or "").strip().upper()
+    image_sha256 = str(payload.get("expected_image_sha256") or "").strip().lower()
+    note = str(payload.get("note") or "").strip()
+    allowed_answer_characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    if len(answer) != 5 or any(char not in allowed_answer_characters for char in answer):
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "La respuesta debe tener exactamente cinco letras o números."
+        )
+    if len(image_sha256) != 64 or any(char not in "0123456789abcdef" for char in image_sha256):
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "La imagen cambió; actualiza la vista antes de validar."
+        )
+    settings = load_settings(require_login=False)
+    try:
+        response = _shadow_post(
+            settings,
+            f"/v1/events/{quote(event_id, safe='')}/human-label",
+            {
+                "answer": answer,
+                "expected_image_sha256": image_sha256,
+                "reviewer": "dashboard-owner",
+                "note": note[:500],
+            },
+        )
+    except HTTPError as exc:
+        if exc.code == HTTPStatus.NOT_FOUND:
+            return HTTPStatus.NOT_FOUND, error_payload(
+                "not_found", "No se encontró el evento CAPTCHA."
+            )
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "captcha_label_rejected", "No se pudo guardar la validación del CAPTCHA."
+        )
+    except (URLError, TimeoutError, OSError, ValueError) as exc:
+        logger.warning("captcha_shadow_human_label_failed event_id=%s error=%s", event_id, exc)
+        return HTTPStatus.SERVICE_UNAVAILABLE, error_payload(
+            "captcha_shadow_unavailable",
+            "El servicio local no pudo guardar la validación.",
+        )
+    event = response.get("event")
+    if not isinstance(event, dict):
+        return HTTPStatus.BAD_GATEWAY, error_payload(
+            "captcha_shadow_invalid_response",
+            "El servicio local devolvió una respuesta inesperada.",
+        )
+    return HTTPStatus.OK, {"event": _sanitize_event(event, {})}
 
 
 def captcha_shadow_image_payload(
@@ -197,6 +262,24 @@ def _shadow_get(settings: Settings, path: str) -> dict[str, Any]:
     return payload
 
 
+def _shadow_post(settings: Settings, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    base_url = settings.captcha_shadow_url.rstrip("/")
+    parsed = urlparse(base_url)
+    if parsed.scheme != "http" or parsed.hostname not in LOOPBACK_HOSTS:
+        raise ValueError("CAPTCHA_SHADOW_URL must use a local HTTP address")
+    request = Request(
+        f"{base_url}{path}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlopen(request, timeout=settings.captcha_shadow_timeout_seconds) as response:
+        response_payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(response_payload, dict):
+        raise ValueError("Invalid CAPTCHA shadow response")
+    return response_payload
+
+
 def _sanitize_event(
     event: dict[str, Any],
     external_timings: dict[str, float],
@@ -229,10 +312,12 @@ def _sanitize_event(
     external_answer = event.get("external_answer")
     return {
         "event_id": event_id,
+        "image_sha256": event.get("image_sha256"),
         "received_at_utc": event.get("received_at_utc"),
         "external_answer": external_answer,
         "external_solve_ms": external_timings.get(event_id),
         "portal_accepted": event.get("portal_accepted"),
+        "human_label": event.get("human_label"),
         "metadata": {
             key: metadata.get(key)
             for key in (
