@@ -177,6 +177,12 @@ Después de validar, las respuestas iguales a la etiqueta humana se marcan en ve
 en rojo. Elegir una predicción es una confirmación humana explícita, no una aprobación automática
 del modelo.
 
+Los avisos de éxito se ocultan automáticamente después de 3.5 segundos; los errores permanecen
+entre 5 y 6 segundos. Ningún mensaje bloquea la navegación. Si una imagen ya tiene etiqueta, elegir
+otra respuesta o guardar un valor manual distinto solo abre una confirmación dentro de la tarjeta.
+La etiqueta no cambia hasta pulsar `Confirmar cambio`; `Cancelar` restaura el valor vigente. Las
+primeras validaciones continúan guardándose con un único clic.
+
 Cada validación:
 
 - se guarda separada de `external_answer` y de las predicciones;
