@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 33
+SCHEMA_VERSION = 34
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -314,6 +314,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_finance_schema(connection)
     _create_whatsapp_messages_schema(connection)
     _create_whatsapp_followup_messages_schema(connection)
+    _create_captcha_shadow_outbox_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -339,6 +340,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "finance_entries",
         "whatsapp_messages",
         "whatsapp_followup_messages",
+        "captcha_shadow_outbox",
     }
     tables = {
         row["table_name"]
@@ -409,6 +411,11 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_followup_messages", "status"),
         ("whatsapp_followup_messages", "test_mode"),
         ("whatsapp_followup_messages", "sent_at"),
+        ("captcha_shadow_outbox", "event_key"),
+        ("captcha_shadow_outbox", "event_id"),
+        ("captcha_shadow_outbox", "sequence"),
+        ("captcha_shadow_outbox", "status"),
+        ("captcha_shadow_outbox", "next_attempt_at"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -469,6 +476,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_whatsapp_messages_order_prepared")
     if "idx_whatsapp_followup_messages_order_prepared" not in indexes:
         missing.append("idx_whatsapp_followup_messages_order_prepared")
+    if "idx_captcha_shadow_outbox_pending" not in indexes:
+        missing.append("idx_captcha_shadow_outbox_pending")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -782,6 +791,39 @@ def _create_whatsapp_followup_messages_schema(connection: Connection) -> None:
     )
 
 
+def _create_captcha_shadow_outbox_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS captcha_shadow_outbox (
+            event_key text PRIMARY KEY,
+            event_id text NOT NULL,
+            sequence smallint NOT NULL CHECK (sequence BETWEEN 1 AND 3),
+            endpoint text NOT NULL CHECK (
+                endpoint IN ('/v1/predict', '/v1/results/external')
+            ),
+            payload jsonb NOT NULL,
+            status text NOT NULL DEFAULT 'pending' CHECK (
+                status IN ('pending', 'processed')
+            ),
+            attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+            next_attempt_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_error text,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            processed_at timestamptz,
+            UNIQUE (event_id, sequence)
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_captcha_shadow_outbox_pending
+        ON captcha_shadow_outbox(next_attempt_at, created_at)
+        WHERE status = 'pending'
+        """
+    )
+
+
 def migrate_database(connection: Connection) -> None:
     """Create the current schema or reject unsupported schema versions atomically."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (_MIGRATION_LOCK_ID,))
@@ -1064,6 +1106,13 @@ def migrate_database(connection: Connection) -> None:
             (33,),
         )
         current_version = 33
+    if current_version == 33:
+        _create_captcha_shadow_outbox_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (34,),
+        )
+        current_version = 34
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

@@ -52,6 +52,7 @@ def _enqueue_shadow_portal_result(
         event_id=str(event_id),
         external_answer=str(external_answer),
         portal_accepted=portal_accepted,
+        final_result=True,
     )
 
 

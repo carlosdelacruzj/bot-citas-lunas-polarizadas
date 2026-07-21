@@ -22,7 +22,8 @@ añadir espera de red al hilo de Playwright.
 - `portal_accepted=true` requiere confirmación explícita o etapa `Programado`.
 - `portal_accepted=false` se usa únicamente para `captcha_invalid`.
 - Los demás resultados se conservan como `null`.
-- La primera fase usa memoria; no incorpora outbox durable ni reintentos tras reiniciar.
+- Cada evento se conserva en una outbox PostgreSQL antes de enviarse.
+- Los fallos se reintentan de forma diferida y sobreviven al reinicio del worker.
 
 ## Plan y avance
 
@@ -141,6 +142,38 @@ ruta relativa de la imagen. Como el servicio sombra se ejecuta desde otro direct
 El productor ahora resuelve `captcha_path_for_solver` a una ruta absoluta antes de encolarla.
 Esto conserva la misma imagen canónica y permite que el servicio la encuentre dentro de la raíz
 autorizada del proyecto del bot.
+
+Las dos imágenes afectadas se reprocesaron desde la evidencia conservada:
+
+| Evento | Respuesta 2Captcha | `v2_selected` | Inferencia | Solicitud completa |
+| --- | --- | --- | ---: | ---: |
+| Reserva confirmada de las 14:14 | `E9UHM` | `E9UHM` | 8.543 ms | 532.048 ms en la primera llamada |
+| Cupo perdido de las 14:15 | `9M9FH` | `9M9FH` | 5.448 ms | 44.859 ms con modelos calientes |
+
+La primera respuesta tiene referencia confirmada por el portal. En la segunda, el modelo
+seleccionado y 2Captcha coincidieron, pero `portal_accepted` permanece `null` porque el cupo se
+perdió y el portal no validó explícitamente el CAPTCHA.
+
+## Recuperación durable
+
+El esquema PostgreSQL 34 incorpora `captcha_shadow_outbox`. Cada CAPTCHA genera hasta tres filas
+ordenadas por `event_id`: predicción, respuesta externa inicial y resultado final del portal.
+
+El productor persiste cada fila antes de devolver control al flujo de reserva. El consumidor:
+
+1. procesa únicamente el siguiente paso cuyo paso anterior ya terminó;
+2. marca el evento como procesado después de recibir una respuesta HTTP correcta;
+3. conserva los fallos como pendientes;
+4. aplica reintentos diferidos de 1 segundo hasta un máximo de 5 minutos entre intentos;
+5. recupera automáticamente pendientes al reiniciar el worker.
+
+La validación forzó un timeout contra un puerto sin servicio. La fila permaneció pendiente con
+su error y luego fue recuperada por un dispatcher nuevo contra `127.0.0.1:8787`, terminando con
+`pending=0`, `processed=3` y un reintento registrado.
+
+La persistencia observada por evento estuvo entre 4.559 y 34.326 ms durante la validación. La
+primera fila de predicción tardó 6.161 ms; la inferencia HTTP continúa fuera del hilo de
+Playwright.
 
 ## Historial de entregas publicadas
 
