@@ -8,6 +8,7 @@ from pathlib import Path
 
 from appointment_bot.config import load_settings
 from appointment_bot.reports.status import generate_daily_report_image
+from appointment_bot.services.captcha_shadow import configure_captcha_shadow
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.worker.continuous_worker import (
@@ -36,6 +37,8 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         worker_controller=worker,
         restart_callback=restart_event.set,
     )
+    captcha_shadow_dispatcher = configure_captcha_shadow(settings)
+    captcha_shadow_dispatcher.start()
     worker_failure: list[BaseException] = []
     health_failure = False
     daily_cutoff_report_generated = False
@@ -65,6 +68,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     if not worker.wait_until_ready(timeout=10):
         stop_event.set()
         worker_thread.join(timeout=5)
+        captcha_shadow_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker did not become ready before timeout.")
@@ -72,8 +76,10 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         logger.warning("Another host owns the worker lease; retrying later.")
         server.server_close()
         worker_thread.join(timeout=5)
+        captcha_shadow_dispatcher.stop()
         return LEASE_UNAVAILABLE_EXIT_CODE
     if not worker.is_running and worker.shutdown_reason != DAILY_CUTOFF_REASON:
+        captcha_shadow_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker stopped during startup.")
@@ -129,6 +135,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         server.shutdown()
         server.server_close()
         server_thread.join(timeout=10)
+        captcha_shadow_dispatcher.stop()
         if worker_thread.is_alive():
             raise RuntimeError("Continuous worker did not stop within operation timeouts.")
     if worker_failure:

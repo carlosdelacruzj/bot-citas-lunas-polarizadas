@@ -5,6 +5,7 @@ import logging
 import queue
 import re
 import threading
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -72,12 +73,15 @@ class CaptchaShadowDispatcher:
     def stop(self, *, timeout: float = 2.0) -> None:
         if self._thread is None:
             return
+        deadline = time.monotonic() + max(timeout, 0.0)
+        while self._events.unfinished_tasks and time.monotonic() < deadline:
+            time.sleep(0.02)
         self._stop_event.set()
-        self._thread.join(timeout=max(timeout, 0.0))
+        self._thread.join(timeout=max(deadline - time.monotonic(), 0.0))
         if self._thread.is_alive():
             logger.warning("CAPTCHA shadow dispatcher did not stop before timeout")
         else:
-            logger.info("CAPTCHA shadow dispatcher stopped")
+            logger.info("CAPTCHA shadow dispatcher stopped: %s", self.status())
             self._thread = None
 
     def enqueue(self, event: CaptchaShadowEvent) -> bool:

@@ -32,7 +32,7 @@ añadir espera de red al hilo de Playwright.
 | 2. Configuración y dispatcher | Completado | Cliente fail-open, cola acotada y configuración apagada. |
 | 3. Correlación y predicción | Completado | Propagación de contexto y `/v1/predict`. |
 | 4. Resultado externo | Completado | Respuesta 2Captcha y clasificación del portal. |
-| 5. Ciclo de vida | Pendiente | Inicio/cierre junto con el worker continuo. |
+| 5. Ciclo de vida | Completado | Inicio/cierre junto con el worker continuo. |
 | 6. Validación final | Pendiente | Pruebas manuales, sintaxis, lint y cierre documental. |
 
 ## Archivos existentes preservados
@@ -75,3 +75,12 @@ Después se registra `true` para `confirmed` o una confirmación posterior en `P
 `false` exclusivamente para `captcha_invalid`, y `null` para los demás resultados. Como ambos
 tipos de trabajo comparten el mismo consumidor FIFO, la actualización externa no se adelanta a
 la creación del evento.
+
+## Paso 5: ciclo de vida
+
+`worker/host.py` configura e inicia el consumidor antes de arrancar el hilo del worker y lo
+detiene en las salidas de inicio y en el cierre normal. El dispatcher intenta vaciar brevemente
+la cola durante el apagado, pero su espera está limitada y su hilo es daemon.
+
+No se consulta `/health` como requisito de arranque. Si el servicio de `127.0.0.1:8787` está
+apagado, el worker arranca normalmente y cada fallo queda aislado en el consumidor.
