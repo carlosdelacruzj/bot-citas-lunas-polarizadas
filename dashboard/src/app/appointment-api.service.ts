@@ -108,10 +108,21 @@ export interface CaptchaPrediction {
 
 export interface CaptchaEvent {
   event_id: string;
+  image_sha256: string;
   received_at_utc: string;
   external_answer: string | null;
   external_solve_ms: number | null;
   portal_accepted: boolean | null;
+  human_label: {
+    review_id: number;
+    event_id: string;
+    image_sha256: string;
+    answer: string;
+    reviewer: string;
+    note: string;
+    supersedes_id: number | null;
+    created_at_utc: string;
+  } | null;
   selected_matches_external: boolean;
   image_url: string;
   metadata: {
@@ -137,6 +148,7 @@ export interface CaptchaSummary {
     events: number;
     with_external_answer: number;
     portal_accepted: number;
+    human_labeled: number;
     models: Record<
       string,
       {
@@ -155,7 +167,17 @@ export interface CaptchaSummary {
 export interface CaptchaEventsPage {
   events: CaptchaEvent[];
   pagination: { page: number; page_size: number; total: number; total_pages: number };
-  filters: { q: string; agreement: string; portal_status: string; source: string };
+  filters: {
+    q: string;
+    agreement: string;
+    portal_status: string;
+    source: string;
+    review_status: string;
+  };
+}
+
+export interface CaptchaHumanLabelResponse {
+  event: CaptchaEvent;
 }
 
 interface ServiceOrdersResponse {
@@ -470,6 +492,7 @@ export class AppointmentApiService {
     agreement: string,
     portalStatus: string,
     source: string,
+    reviewStatus: string,
   ): Promise<CaptchaEventsPage> {
     const params = new URLSearchParams({
       page: String(page),
@@ -478,9 +501,21 @@ export class AppointmentApiService {
       agreement,
       portal_status: portalStatus,
       source,
+      review_status: reviewStatus,
     });
     return firstValueFrom(
       this.http.get<CaptchaEventsPage>(`/api/v1/captcha-shadow/events?${params.toString()}`),
+    );
+  }
+
+  async saveCaptchaHumanLabel(
+    eventId: string,
+    imageSha256: string,
+    answer: string,
+  ): Promise<CaptchaHumanLabelResponse> {
+    return this.post<CaptchaHumanLabelResponse>(
+      `/api/v1/captcha-shadow/events/${encodeURIComponent(eventId)}/human-label`,
+      { answer, expected_image_sha256: imageSha256 },
     );
   }
 

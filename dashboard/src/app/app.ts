@@ -50,6 +50,7 @@ type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
+type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -173,6 +174,11 @@ export class App implements OnDestroy {
   protected readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
   protected readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
   protected readonly captchaSource = signal<CaptchaSourceFilter>('all');
+  protected readonly captchaReviewStatus = signal<CaptchaReviewFilter>('all');
+  protected readonly captchaDrafts = signal<Record<string, string>>({});
+  protected readonly captchaSavingEventId = signal('');
+  protected readonly captchaRevealedEvents = signal<Set<string>>(new Set());
+  protected readonly captchaReviewMessage = signal<string | null>(null);
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
   protected readonly runDetailState = signal<LoadState>('idle');
@@ -563,6 +569,7 @@ export class App implements OnDestroy {
           this.captchaAgreement(),
           this.captchaPortalStatus(),
           this.captchaSource(),
+          this.captchaReviewStatus(),
         ),
       ]);
       this.captchaSummary.set(summary);
@@ -597,6 +604,19 @@ export class App implements OnDestroy {
     await this.applyCaptchaFilters();
   }
 
+  protected async changeCaptchaReviewStatus(value: CaptchaReviewFilter): Promise<void> {
+    this.captchaReviewStatus.set(value);
+    await this.applyCaptchaFilters();
+  }
+
+  protected async showPendingCaptchaReview(): Promise<void> {
+    this.captchaSource.set('observer');
+    this.captchaReviewStatus.set('pending');
+    this.captchaAgreement.set('all');
+    this.captchaPortalStatus.set('all');
+    await this.applyCaptchaFilters();
+  }
+
   protected async changeCaptchaPageSize(value: number | string): Promise<void> {
     this.captchaPageSize.set(Number(value));
     await this.applyCaptchaFilters();
@@ -615,10 +635,11 @@ export class App implements OnDestroy {
   }
 
   protected captchaPredictionTone(event: CaptchaEvent, prediction: CaptchaPrediction): string {
-    if (!event.external_answer) {
+    const reference = event.human_label?.answer ?? event.external_answer;
+    if (!reference) {
       return 'neutral';
     }
-    return prediction.prediction === event.external_answer ? 'good' : 'warn';
+    return prediction.prediction === reference ? 'good' : 'warn';
   }
 
   protected captchaPortalLabel(event: CaptchaEvent): string {
@@ -680,7 +701,7 @@ export class App implements OnDestroy {
 
   protected captchaOrderLabel(event: CaptchaEvent): string {
     if (this.isObserverCaptcha(event)) {
-      return `Observador · muestra ${event.metadata.attempt ?? '?'} de 5`;
+      return `Observador · muestra ${event.metadata.attempt ?? '?'} de 15`;
     }
     return event.metadata.order_id || (event.metadata.run_id ? 'Observador' : 'Sin orden');
   }
@@ -699,12 +720,79 @@ export class App implements OnDestroy {
     );
   }
 
+  protected captchaDraft(event: CaptchaEvent): string {
+    return this.captchaDrafts()[event.event_id] ?? event.human_label?.answer ?? '';
+  }
+
+  protected updateCaptchaDraft(eventId: string, value: string): void {
+    const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+    this.captchaDrafts.update((drafts) => ({ ...drafts, [eventId]: normalized }));
+    this.captchaReviewMessage.set(null);
+  }
+
+  protected captchaAnswersVisible(event: CaptchaEvent): boolean {
+    return Boolean(event.human_label) || this.captchaRevealedEvents().has(event.event_id);
+  }
+
+  protected revealCaptchaAnswers(eventId: string): void {
+    this.captchaRevealedEvents.update((events) => new Set([...events, eventId]));
+  }
+
+  protected async saveCaptchaHumanLabel(event: CaptchaEvent): Promise<void> {
+    const answer = this.captchaDraft(event);
+    if (!/^[A-Z0-9]{5}$/.test(answer)) {
+      this.captchaReviewMessage.set('Escribe exactamente cinco letras o números.');
+      return;
+    }
+    this.captchaSavingEventId.set(event.event_id);
+    this.captchaReviewMessage.set(null);
+    try {
+      const response = await this.api.saveCaptchaHumanLabel(
+        event.event_id,
+        event.image_sha256,
+        answer,
+      );
+      this.captchaRevealedEvents.update(
+        (events) => new Set([...events, event.event_id]),
+      );
+      this.captchaReviewMessage.set(`Respuesta ${answer} guardada para entrenamiento.`);
+      if (this.captchaReviewStatus() === 'pending') {
+        await this.loadCaptchaData(false);
+      } else {
+        this.captchaEvents.update((events) =>
+          events.map((item) => (item.event_id === event.event_id ? response.event : item)),
+        );
+        this.captchaSummary.update((summary) =>
+          summary && !event.human_label
+            ? {
+                ...summary,
+                stats: { ...summary.stats, human_labeled: summary.stats.human_labeled + 1 },
+              }
+            : summary,
+        );
+      }
+    } catch (error) {
+      this.captchaReviewMessage.set(this.readError(error));
+    } finally {
+      this.captchaSavingEventId.set('');
+    }
+  }
+
   private applyCaptchaPage(page: CaptchaEventsPage): void {
     this.captchaEvents.set(page.events);
     this.captchaPage.set(page.pagination.page);
     this.captchaPageSize.set(page.pagination.page_size);
     this.captchaTotal.set(page.pagination.total);
     this.captchaTotalPages.set(page.pagination.total_pages);
+    this.captchaDrafts.update((drafts) => {
+      const next = { ...drafts };
+      for (const event of page.events) {
+        if (!(event.event_id in next) && event.human_label) {
+          next[event.event_id] = event.human_label.answer;
+        }
+      }
+      return next;
+    });
   }
 
   protected async changeMonth(month: string): Promise<void> {

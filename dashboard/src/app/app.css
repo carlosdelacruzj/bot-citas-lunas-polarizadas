@@ -1132,6 +1132,13 @@ td span {
   gap: 4px;
 }
 
+.captcha-heading-actions,
+.captcha-review-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .captcha-heading p,
 .captcha-event-topline span,
 .captcha-results-meta span,
@@ -1257,6 +1264,50 @@ td span {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 9px;
+}
+
+.captcha-review-column {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.captcha-human-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #93c5fd;
+  border-radius: 9px;
+  background: #eff6ff;
+  padding: 12px;
+}
+
+.captcha-human-review > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.captcha-human-review small {
+  color: #475569;
+}
+
+.captcha-review-actions input {
+  width: 118px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.captcha-reveal-button {
+  justify-self: start;
+}
+
+.captcha-review-message {
+  margin: 0;
 }
 
 .captcha-answer {
@@ -1503,6 +1554,26 @@ td span {
   .captcha-results-meta {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .captcha-heading-actions,
+  .captcha-review-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .captcha-heading-actions button,
+  .captcha-review-actions button {
+    flex: 1;
+  }
+
+  .captcha-human-review {
+    grid-template-columns: 1fr;
+  }
+
+  .captcha-review-actions input {
+    flex: 1;
+    width: min(100%, 180px);
   }
 
   .captcha-kpis,

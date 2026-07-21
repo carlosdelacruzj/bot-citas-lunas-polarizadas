@@ -1162,14 +1162,19 @@
           <h2 id="captcha-dashboard-title">Control de CAPTCHA</h2>
           <p>La misma imagen frente a 2Captcha y tus tres modelos locales.</p>
         </div>
-        <button
-          type="button"
-          class="secondary"
-          [disabled]="captchaState() === 'loading'"
-          (click)="loadCaptchaData()"
-        >
-          Actualizar CAPTCHA
-        </button>
+        <div class="captcha-heading-actions">
+          <button type="button" class="primary" (click)="showPendingCaptchaReview()">
+            Validar pendientes
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="captchaState() === 'loading'"
+            (click)="loadCaptchaData()"
+          >
+            Actualizar CAPTCHA
+          </button>
+        </div>
       </div>
 
       @if (captchaSummary(); as summary) {
@@ -1194,11 +1199,10 @@
             <small>Comparación contra 2Captcha</small>
           </article>
           <article>
-            <span>Confirmadas por portal</span>
-            <strong>{{ summary.stats.portal_accepted }}</strong>
+            <span>Validadas por ti</span>
+            <strong>{{ summary.stats.human_labeled }}</strong>
             <small>
-              Inferencia promedio:
-              {{ formatMilliseconds(captchaSelectedStats()?.average_inference_ms) }}
+              {{ summary.stats.portal_accepted }} confirmadas por portal
             </small>
           </article>
         </div>
@@ -1268,6 +1272,18 @@
             </select>
           </label>
           <label class="filter">
+            Revisión humana
+            <select
+              name="captchaReviewStatus"
+              [ngModel]="captchaReviewStatus()"
+              (ngModelChange)="changeCaptchaReviewStatus($event)"
+            >
+              <option value="all">Todas</option>
+              <option value="pending">Por validar</option>
+              <option value="validated">Validadas</option>
+            </select>
+          </label>
+          <label class="filter">
             Portal
             <select
               name="captchaPortalStatus"
@@ -1309,6 +1325,12 @@
           <span>Página {{ captchaPage() }} de {{ captchaTotalPages() }}</span>
         </div>
 
+        @if (captchaReviewMessage()) {
+          <div class="notice neutral captcha-review-message" role="status">
+            {{ captchaReviewMessage() }}
+          </div>
+        }
+
         <div class="captcha-event-list">
           @for (event of captchaEvents(); track event.event_id) {
             <article class="captcha-event-card">
@@ -1326,6 +1348,9 @@
                   </span>
                   <span class="badge {{ captchaPortalTone(event) }}">
                     {{ captchaPortalLabel(event) }}
+                  </span>
+                  <span class="badge {{ event.human_label ? 'good' : 'neutral' }}">
+                    {{ event.human_label ? 'Validado: ' + event.human_label.answer : 'Sin validar por ti' }}
                   </span>
                   <span class="badge neutral">
                     Total local: {{ formatMilliseconds(captchaLocalTotalMs(event)) }}
@@ -1345,35 +1370,82 @@
                   <span>Imagen original · abrir</span>
                 </a>
 
-                <div class="captcha-comparison-grid">
-                  <article class="captcha-answer external">
-                    <span>2Captcha</span>
-                    <strong>
-                      {{ isObserverCaptcha(event) ? 'No enviado' : (event.external_answer ?? 'Pendiente') }}
-                    </strong>
-                    <small>
-                      {{ isObserverCaptcha(event) ? 'No aplica' : formatMilliseconds(event.external_solve_ms) }}
-                    </small>
-                  </article>
+                <div class="captcha-review-column">
+                  <form
+                    class="captcha-human-review"
+                    (submit)="$event.preventDefault(); saveCaptchaHumanLabel(event)"
+                  >
+                    <div>
+                      <span class="eyebrow">Tu respuesta es la etiqueta de entrenamiento</span>
+                      <strong>
+                        {{ event.human_label ? 'Revisar o corregir' : 'Lee primero la imagen' }}
+                      </strong>
+                      <small>
+                        Las respuestas automáticas se ocultan hasta guardar para evitar influirte.
+                      </small>
+                    </div>
+                    <div class="captcha-review-actions">
+                      <input
+                        [name]="'humanAnswer-' + event.event_id"
+                        type="text"
+                        inputmode="text"
+                        autocomplete="off"
+                        maxlength="5"
+                        placeholder="ABCDE"
+                        aria-label="Respuesta humana del CAPTCHA"
+                        [ngModel]="captchaDraft(event)"
+                        (ngModelChange)="updateCaptchaDraft(event.event_id, $event)"
+                      />
+                      <button
+                        type="submit"
+                        class="primary"
+                        [disabled]="captchaSavingEventId() === event.event_id"
+                      >
+                        {{ captchaSavingEventId() === event.event_id ? 'Guardando...' : 'Guardar y seguir' }}
+                      </button>
+                    </div>
+                  </form>
 
-                  @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
-                    @if (captchaPrediction(event, modelName); as prediction) {
-                      <article class="captcha-answer {{ captchaPredictionTone(event, prediction) }}">
-                        <span>{{ modelName }}</span>
-                        <strong>{{ prediction.prediction }}</strong>
-                        <small>{{ formatMilliseconds(prediction.inference_ms) }}</small>
+                  @if (captchaAnswersVisible(event)) {
+                    <div class="captcha-comparison-grid">
+                      <article class="captcha-answer external">
+                        <span>2Captcha</span>
+                        <strong>
+                          {{ isObserverCaptcha(event) ? 'No enviado' : (event.external_answer ?? 'Pendiente') }}
+                        </strong>
                         <small>
-                          Confianza {{ formatConfidence(prediction.mean_confidence) }} · mínima
-                          {{ formatConfidence(prediction.min_char_confidence) }}
+                          {{ isObserverCaptcha(event) ? 'No aplica' : formatMilliseconds(event.external_solve_ms) }}
                         </small>
                       </article>
-                    } @else {
-                      <article class="captcha-answer neutral">
-                        <span>{{ modelName }}</span>
-                        <strong>Pendiente</strong>
-                        <small>Sin predicción</small>
-                      </article>
-                    }
+
+                      @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
+                        @if (captchaPrediction(event, modelName); as prediction) {
+                          <article class="captcha-answer {{ captchaPredictionTone(event, prediction) }}">
+                            <span>{{ modelName }}</span>
+                            <strong>{{ prediction.prediction }}</strong>
+                            <small>{{ formatMilliseconds(prediction.inference_ms) }}</small>
+                            <small>
+                              Confianza {{ formatConfidence(prediction.mean_confidence) }} · mínima
+                              {{ formatConfidence(prediction.min_char_confidence) }}
+                            </small>
+                          </article>
+                        } @else {
+                          <article class="captcha-answer neutral">
+                            <span>{{ modelName }}</span>
+                            <strong>Pendiente</strong>
+                            <small>Sin predicción</small>
+                          </article>
+                        }
+                      }
+                    </div>
+                  } @else {
+                    <button
+                      type="button"
+                      class="text-button captcha-reveal-button"
+                      (click)="revealCaptchaAnswers(event.event_id)"
+                    >
+                      Ver respuestas automáticas antes de validar
+                    </button>
                   }
                 </div>
               </div>
