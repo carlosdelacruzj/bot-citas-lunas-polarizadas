@@ -131,6 +131,7 @@ class Settings:
     session_rotation_seconds: int
     observer_session_seconds: int
     observer_max_attempts: int
+    observer_captcha_sample_limit: int
     observer_interval_min_seconds: int
     observer_interval_max_seconds: int
     observer_active_order_limit: int
@@ -314,6 +315,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=4,
             minimum=1,
         ),
+        observer_captcha_sample_limit=_parse_int(
+            os.getenv("OBSERVER_CAPTCHA_SAMPLE_LIMIT"),
+            default=5,
+            minimum=0,
+        ),
         observer_interval_min_seconds=_parse_int(
             os.getenv("OBSERVER_INTERVAL_MIN_SECONDS"),
             default=25,
@@ -442,6 +448,9 @@ def load_settings(*, require_login: bool = True) -> Settings:
             "OBSERVER_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "OBSERVER_INTERVAL_MIN_SECONDS"
         )
+
+    if settings.observer_captcha_sample_limit > 50:
+        raise ValueError("OBSERVER_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50")
 
     if settings.outside_hot_window_max_seconds < settings.outside_hot_window_min_seconds:
         raise ValueError(

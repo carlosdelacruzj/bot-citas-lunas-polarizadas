@@ -431,6 +431,7 @@ class ContinuousWorker:
         report = run_observer_with_report(
             cycle_settings,
             cancel_event=self._cancel_event,
+            should_continue_captcha_sampling=self._observer_captcha_sampling_allowed,
             on_check=self._state_callbacks.on_observer_check,
         )
         self._record_check(report)
@@ -465,6 +466,16 @@ class ContinuousWorker:
             cancel_event=self._cancel_event,
             capture_captcha_samples=False,
         )
+
+    def _observer_captcha_sampling_allowed(self) -> bool:
+        try:
+            return not list_active_orders(self.settings, include_constrained=False)
+        except Exception as exc:
+            logger.warning(
+                "Stopping observer CAPTCHA sampling because active orders could not be checked: %s",
+                exc,
+            )
+            return False
 
     def _handle_order_error(
         self,

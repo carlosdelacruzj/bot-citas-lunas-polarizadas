@@ -75,13 +75,14 @@ desde el navegador.
 
 ## Muestras del observador sin clientes
 
-Cuando el observador general encuentra una cita, conserva hasta cinco CAPTCHA originales
-consecutivos. Cada imagen se registra como un evento independiente:
+Cuando el observador general encuentra una cita y no existen órdenes activas, conserva hasta la
+cantidad configurada en `OBSERVER_CAPTCHA_SAMPLE_LIMIT`. En producción se usan quince CAPTCHA
+originales consecutivos. Cada imagen se registra como un evento independiente:
 
 ```text
 {run_id}:observer:captcha-1
 ...
-{run_id}:observer:captcha-5
+{run_id}:observer:captcha-15
 ```
 
 Estas muestras:
@@ -135,10 +136,12 @@ indisponible, por lo que se mantuvo la validación estructural y responsive medi
 
 ## Validación de muestras del observador
 
-La captura queda limitada a un único lote de hasta cinco imágenes por cita detectada:
+La captura queda limitada a un único lote configurable por cita detectada:
 
-- la detección inicial conserva y encola las muestras disponibles;
-- la comprobación de confirmación no vuelve a capturarlas, evitando llegar a diez imágenes;
+- la detección inicial conserva y encola hasta quince muestras disponibles;
+- antes de cada imagen se vuelve a comprobar que no haya clientes activos;
+- si aparece un cliente, el lote se interrumpe para priorizarlo;
+- la comprobación de confirmación no vuelve a capturar imágenes;
 - cada muestra se ejecuta en los tres modelos locales y conserva un tiempo independiente;
 - 2Captcha no se invoca para estos eventos y sus campos permanecen vacíos.
 

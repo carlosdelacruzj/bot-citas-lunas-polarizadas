@@ -40,14 +40,12 @@ from appointment_bot.utils.screenshots import (
 
 logger = logging.getLogger(__name__)
 
-OBSERVER_CAPTCHA_SAMPLE_LIMIT = 5
-
-
 def run_observer_with_report(
     settings: Settings,
     *,
     cancel_event: threading.Event | None = None,
     capture_captcha_samples: bool = True,
+    should_continue_captcha_sampling: Callable[[], bool] | None = None,
     on_check: Callable[
         [AvailabilityResult, Path | None, int, int | None],
         None,
@@ -73,6 +71,7 @@ def run_observer_with_report(
                     on_check,
                     run_id=run_id,
                     capture_captcha_samples=capture_captcha_samples,
+                    should_continue_captcha_sampling=should_continue_captcha_sampling,
                 )
                 if result_screenshot is not None:
                     screenshot_paths.insert(0, result_screenshot)
@@ -132,6 +131,7 @@ def _monitor_observer(
     *,
     run_id: str,
     capture_captcha_samples: bool,
+    should_continue_captcha_sampling: Callable[[], bool] | None,
 ) -> tuple[AvailabilityResult, Path | None]:
     deadline = time.monotonic() + settings.monitor_window_seconds
     attempt = 1
@@ -184,6 +184,7 @@ def _monitor_observer(
                     cancel_event,
                     run_id=run_id,
                     availability_details=dict(result.details or {}),
+                    should_continue=should_continue_captcha_sampling,
                 )
                 if captcha_paths:
                     details = dict(result.details or {})
@@ -321,11 +322,19 @@ def _collect_observer_captcha_samples(
     *,
     run_id: str,
     availability_details: dict[str, object],
+    should_continue: Callable[[], bool] | None,
 ) -> tuple[list[Path], list[str]]:
     captcha_paths: list[Path] = []
     shadow_event_ids: list[str] = []
-    for sample_number in range(1, OBSERVER_CAPTCHA_SAMPLE_LIMIT + 1):
+    sample_limit = settings.observer_captcha_sample_limit
+    for sample_number in range(1, sample_limit + 1):
         if cancel_event is not None and cancel_event.is_set():
+            break
+        if should_continue is not None and not should_continue():
+            logger.info(
+                "Stopping observer CAPTCHA sampling before sample %s because an order is active",
+                sample_number,
+            )
             break
 
         try:
@@ -371,7 +380,7 @@ def _collect_observer_captcha_samples(
             logger.warning("Could not save observer CAPTCHA sample %s: %s", sample_number, exc)
             break
 
-        if sample_number >= OBSERVER_CAPTCHA_SAMPLE_LIMIT:
+        if sample_number >= sample_limit:
             break
         if cancel_event is not None and cancel_event.is_set():
             break
