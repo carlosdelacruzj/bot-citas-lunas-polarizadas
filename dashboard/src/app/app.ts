@@ -52,6 +52,11 @@ type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
 type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
 type CaptchaPredictionOption = { answer: string; modelNames: string[] };
+type CaptchaPendingCorrection = {
+  eventId: string;
+  previousAnswer: string;
+  nextAnswer: string;
+};
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -143,6 +148,7 @@ export class App implements OnDestroy {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
   private readonly activeManualSessionIds = new Set<string>();
+  private captchaReviewMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
 
   protected readonly activeView = signal<ViewKey>('orders');
@@ -179,6 +185,7 @@ export class App implements OnDestroy {
   protected readonly captchaDrafts = signal<Record<string, string>>({});
   protected readonly captchaSavingEventId = signal('');
   protected readonly captchaReviewMessage = signal<string | null>(null);
+  protected readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
   protected readonly runDetailState = signal<LoadState>('idle');
@@ -449,6 +456,9 @@ export class App implements OnDestroy {
 
   ngOnDestroy(): void {
     window.clearInterval(this.autoRefreshTimer);
+    if (this.captchaReviewMessageTimer !== null) {
+      window.clearTimeout(this.captchaReviewMessageTimer);
+    }
     this.closeTrackedManualSessionsWithBeacon();
   }
 
@@ -727,7 +737,7 @@ export class App implements OnDestroy {
   protected updateCaptchaDraft(eventId: string, value: string): void {
     const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
     this.captchaDrafts.update((drafts) => ({ ...drafts, [eventId]: normalized }));
-    this.captchaReviewMessage.set(null);
+    this.clearCaptchaReviewMessage();
   }
 
   protected captchaPredictionOptions(event: CaptchaEvent): CaptchaPredictionOption[] {
@@ -764,27 +774,64 @@ export class App implements OnDestroy {
 
   protected async chooseCaptchaPrediction(event: CaptchaEvent, answer: string): Promise<void> {
     this.updateCaptchaDraft(event.event_id, answer);
-    await this.persistCaptchaHumanLabel(event, answer);
+    await this.requestCaptchaHumanLabel(event, answer);
   }
 
   protected async saveCaptchaHumanLabel(event: CaptchaEvent): Promise<void> {
-    await this.persistCaptchaHumanLabel(event, this.captchaDraft(event));
+    await this.requestCaptchaHumanLabel(event, this.captchaDraft(event));
+  }
+
+  protected pendingCaptchaCorrection(eventId: string): CaptchaPendingCorrection | null {
+    const correction = this.captchaPendingCorrection();
+    return correction?.eventId === eventId ? correction : null;
+  }
+
+  protected async confirmCaptchaCorrection(event: CaptchaEvent): Promise<void> {
+    const correction = this.pendingCaptchaCorrection(event.event_id);
+    if (!correction) {
+      return;
+    }
+    await this.persistCaptchaHumanLabel(event, correction.nextAnswer);
+  }
+
+  protected cancelCaptchaCorrection(event: CaptchaEvent): void {
+    this.captchaPendingCorrection.set(null);
+    this.updateCaptchaDraft(event.event_id, event.human_label?.answer ?? '');
+  }
+
+  private async requestCaptchaHumanLabel(event: CaptchaEvent, answer: string): Promise<void> {
+    if (!/^[A-Z0-9]{5}$/.test(answer)) {
+      this.showCaptchaReviewMessage('Escribe exactamente cinco letras o números.', 5_000);
+      return;
+    }
+    const currentAnswer = event.human_label?.answer;
+    if (currentAnswer === answer) {
+      this.captchaPendingCorrection.set(null);
+      this.showCaptchaReviewMessage(`La respuesta ${answer} ya está validada.`);
+      return;
+    }
+    if (currentAnswer) {
+      this.captchaPendingCorrection.set({
+        eventId: event.event_id,
+        previousAnswer: currentAnswer,
+        nextAnswer: answer,
+      });
+      return;
+    }
+    await this.persistCaptchaHumanLabel(event, answer);
   }
 
   private async persistCaptchaHumanLabel(event: CaptchaEvent, answer: string): Promise<void> {
-    if (!/^[A-Z0-9]{5}$/.test(answer)) {
-      this.captchaReviewMessage.set('Escribe exactamente cinco letras o números.');
-      return;
-    }
     this.captchaSavingEventId.set(event.event_id);
-    this.captchaReviewMessage.set(null);
+    this.captchaPendingCorrection.set(null);
+    this.clearCaptchaReviewMessage();
     try {
       const response = await this.api.saveCaptchaHumanLabel(
         event.event_id,
         event.image_sha256,
         answer,
       );
-      this.captchaReviewMessage.set(`Respuesta ${answer} guardada para entrenamiento.`);
+      this.showCaptchaReviewMessage(`Respuesta ${answer} guardada para entrenamiento.`);
       if (this.captchaReviewStatus() === 'pending') {
         await this.loadCaptchaData(false);
       } else {
@@ -801,10 +848,27 @@ export class App implements OnDestroy {
         );
       }
     } catch (error) {
-      this.captchaReviewMessage.set(this.readError(error));
+      this.showCaptchaReviewMessage(this.readError(error), 6_000);
     } finally {
       this.captchaSavingEventId.set('');
     }
+  }
+
+  private showCaptchaReviewMessage(message: string, durationMs = 3_500): void {
+    this.clearCaptchaReviewMessage();
+    this.captchaReviewMessage.set(message);
+    this.captchaReviewMessageTimer = window.setTimeout(() => {
+      this.captchaReviewMessage.set(null);
+      this.captchaReviewMessageTimer = null;
+    }, durationMs);
+  }
+
+  private clearCaptchaReviewMessage(): void {
+    if (this.captchaReviewMessageTimer !== null) {
+      window.clearTimeout(this.captchaReviewMessageTimer);
+      this.captchaReviewMessageTimer = null;
+    }
+    this.captchaReviewMessage.set(null);
   }
 
   private applyCaptchaPage(page: CaptchaEventsPage): void {
@@ -813,6 +877,10 @@ export class App implements OnDestroy {
     this.captchaPageSize.set(page.pagination.page_size);
     this.captchaTotal.set(page.pagination.total);
     this.captchaTotalPages.set(page.pagination.total_pages);
+    const correction = this.captchaPendingCorrection();
+    if (correction && !page.events.some((event) => event.event_id === correction.eventId)) {
+      this.captchaPendingCorrection.set(null);
+    }
     this.captchaDrafts.update((drafts) => {
       const next = { ...drafts };
       for (const event of page.events) {

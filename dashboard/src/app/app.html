@@ -1435,6 +1435,32 @@
                         </button>
                       </div>
                     </form>
+
+                    @if (pendingCaptchaCorrection(event.event_id); as correction) {
+                      <div class="notice warn captcha-correction-confirmation" role="alert">
+                        <div>
+                          <strong>¿Cambiar {{ correction.previousAnswer }} por {{ correction.nextAnswer }}?</strong>
+                          <small>La etiqueta actual seguirá intacta hasta que confirmes.</small>
+                        </div>
+                        <div class="button-row">
+                          <button
+                            type="button"
+                            class="danger"
+                            [disabled]="captchaSavingEventId() === event.event_id"
+                            (click)="confirmCaptchaCorrection(event)"
+                          >
+                            Confirmar cambio
+                          </button>
+                          <button
+                            type="button"
+                            class="secondary"
+                            (click)="cancelCaptchaCorrection(event)"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </section>
 
                   <div class="captcha-comparison-grid">

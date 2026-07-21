@@ -1350,6 +1350,10 @@ td span {
   font-weight: 800;
 }
 
+.captcha-correction-confirmation {
+  margin: 0;
+}
+
 .captcha-review-actions input {
   width: 118px;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -1628,6 +1632,7 @@ td span {
   .captcha-manual-review {
     grid-template-columns: 1fr;
   }
+
 
   .captcha-review-actions input {
     flex: 1;
