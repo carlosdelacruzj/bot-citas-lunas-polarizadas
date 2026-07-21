@@ -431,6 +431,7 @@ class ContinuousWorker:
         report = run_observer_with_report(
             cycle_settings,
             cancel_event=self._cancel_event,
+            capture_captcha_samples=False,
             on_check=self._state_callbacks.on_observer_check,
         )
         self._record_check(report)

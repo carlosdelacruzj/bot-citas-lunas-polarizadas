@@ -31,6 +31,7 @@ from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     ensure_reservation_captcha_loaded,
     refresh_reservation_captcha,
 )
+from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
 from appointment_bot.utils.screenshots import (
     save_result_screenshot,
     save_revealed_centered_modal_screenshot,
@@ -46,6 +47,7 @@ def run_observer_with_report(
     settings: Settings,
     *,
     cancel_event: threading.Event | None = None,
+    capture_captcha_samples: bool = True,
     on_check: Callable[
         [AvailabilityResult, Path | None, int, int | None],
         None,
@@ -69,6 +71,8 @@ def run_observer_with_report(
                     settings,
                     cancel_event,
                     on_check,
+                    run_id=run_id,
+                    capture_captcha_samples=capture_captcha_samples,
                 )
                 if result_screenshot is not None:
                     screenshot_paths.insert(0, result_screenshot)
@@ -125,6 +129,9 @@ def _monitor_observer(
         None,
     ]
     | None = None,
+    *,
+    run_id: str,
+    capture_captcha_samples: bool,
 ) -> tuple[AvailabilityResult, Path | None]:
     deadline = time.monotonic() + settings.monitor_window_seconds
     attempt = 1
@@ -170,13 +177,21 @@ def _monitor_observer(
                 include_person=False,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
-            if result.status == "available":
-                captcha_paths = _collect_observer_captcha_samples(page, settings, cancel_event)
+            if result.status == "available" and capture_captcha_samples:
+                captcha_paths, shadow_event_ids = _collect_observer_captcha_samples(
+                    page,
+                    settings,
+                    cancel_event,
+                    run_id=run_id,
+                    availability_details=dict(result.details or {}),
+                )
                 if captcha_paths:
                     details = dict(result.details or {})
                     details["observer_captcha_image_paths"] = [
                         str(path) for path in captcha_paths
                     ]
+                    details["observer_captcha_shadow_event_ids"] = shadow_event_ids
+                    details["observer_captcha_shadow_enqueued"] = len(shadow_event_ids)
                     result = AvailabilityResult(
                         status=result.status,
                         message=result.message,
@@ -303,8 +318,12 @@ def _collect_observer_captcha_samples(
     page,
     settings: Settings,
     cancel_event: threading.Event | None,
-) -> list[Path]:
+    *,
+    run_id: str,
+    availability_details: dict[str, object],
+) -> tuple[list[Path], list[str]]:
     captcha_paths: list[Path] = []
+    shadow_event_ids: list[str] = []
     for sample_number in range(1, OBSERVER_CAPTCHA_SAMPLE_LIMIT + 1):
         if cancel_event is not None and cancel_event.is_set():
             break
@@ -322,7 +341,32 @@ def _collect_observer_captcha_samples(
                 raise RuntimeError(
                     "The observer CAPTCHA was not available as an original HTML image."
                 )
-            captcha_paths.append(Path(str(original_path)))
+            captcha_path = Path(str(original_path))
+            captcha_paths.append(captcha_path)
+            event_id = f"{run_id}:observer:captcha-{sample_number}"
+            enqueued = enqueue_shadow_prediction(
+                event_id=event_id,
+                image_path=str(captcha_path.resolve()),
+                metadata={
+                    "run_id": run_id,
+                    "order_id": None,
+                    "observer": 1,
+                    "attempt": sample_number,
+                    "captured_at_utc": datetime.now(UTC).isoformat(),
+                    "source_image_kind": (
+                        captcha_audit.get("captcha_sent_source") or "original_html"
+                    ),
+                    "detection_origin": availability_details.get("detection_origin"),
+                    "portal_stage": "observer_captcha_sample",
+                },
+            )
+            if enqueued:
+                shadow_event_ids.append(event_id)
+            else:
+                logger.warning(
+                    "Observer CAPTCHA shadow event was not enqueued: %s",
+                    event_id,
+                )
         except Exception as exc:
             logger.warning("Could not save observer CAPTCHA sample %s: %s", sample_number, exc)
             break
@@ -335,4 +379,4 @@ def _collect_observer_captcha_samples(
             logger.warning("Could not refresh observer CAPTCHA after sample %s", sample_number)
             break
 
-    return captcha_paths
+    return captcha_paths, shadow_event_ids
