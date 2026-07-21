@@ -173,6 +173,7 @@ export interface CaptchaEventsPage {
     portal_status: string;
     source: string;
     review_status: string;
+    sort: string;
   };
 }
 
@@ -493,6 +494,7 @@ export class AppointmentApiService {
     portalStatus: string,
     source: string,
     reviewStatus: string,
+    sort: string,
   ): Promise<CaptchaEventsPage> {
     const params = new URLSearchParams({
       page: String(page),
@@ -502,6 +504,7 @@ export class AppointmentApiService {
       portal_status: portalStatus,
       source,
       review_status: reviewStatus,
+      sort,
     });
     return firstValueFrom(
       this.http.get<CaptchaEventsPage>(`/api/v1/captcha-shadow/events?${params.toString()}`),

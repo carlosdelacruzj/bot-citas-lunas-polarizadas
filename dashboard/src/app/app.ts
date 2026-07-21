@@ -51,6 +51,7 @@ type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
 type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
+type CaptchaWorkspaceMode = 'review' | 'history';
 type CaptchaPredictionOption = { answer: string; modelNames: string[] };
 type CaptchaPendingCorrection = {
   eventId: string;
@@ -171,6 +172,11 @@ export class App implements OnDestroy {
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
   protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
+  protected readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
+  protected readonly captchaReviewTotal = signal(0);
+  protected readonly captchaReviewPosition = signal(0);
+  protected readonly captchaWorkspaceMode = signal<CaptchaWorkspaceMode>('review');
+  protected readonly captchaHistoryFiltersOpen = signal(false);
   protected readonly captchaState = signal<LoadState>('idle');
   protected readonly captchaError = signal<string | null>(null);
   protected readonly captchaPage = signal(1);
@@ -186,6 +192,9 @@ export class App implements OnDestroy {
   protected readonly captchaSavingEventId = signal('');
   protected readonly captchaReviewMessage = signal<string | null>(null);
   protected readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
+  protected readonly activeCaptchaReview = computed(
+    () => this.captchaReviewQueue()[this.captchaReviewPosition()] ?? null,
+  );
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
   protected readonly runDetailState = signal<LoadState>('idle');
@@ -489,6 +498,46 @@ export class App implements OnDestroy {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  protected handleCaptchaReviewKeyboard(event: KeyboardEvent): void {
+    if (
+      this.activeView() !== 'captchas'
+      || this.captchaWorkspaceMode() !== 'review'
+      || event.ctrlKey
+      || event.metaKey
+      || event.altKey
+    ) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.matches('input, textarea, select, button')) {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      this.moveCaptchaReview(1);
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      this.moveCaptchaReview(-1);
+      return;
+    }
+    const captcha = this.activeCaptchaReview();
+    if (!captcha || this.captchaSavingEventId()) {
+      return;
+    }
+    const options = this.captchaPredictionOptions(captcha);
+    const optionIndex = Number(event.key) - 1;
+    if (Number.isInteger(optionIndex) && optionIndex >= 0 && options[optionIndex]) {
+      event.preventDefault();
+      void this.chooseCaptchaPrediction(captcha, options[optionIndex].answer);
+      return;
+    }
+    if (event.key === 'Enter' && this.captchaChoiceMode(captcha) === 'consensus') {
+      event.preventDefault();
+      void this.chooseCaptchaPrediction(captcha, options[0].answer);
+    }
+  }
+
   protected async refreshAll(): Promise<void> {
     await this.refreshHealth();
     this.loadState.set('loading');
@@ -570,7 +619,7 @@ export class App implements OnDestroy {
     }
     this.captchaError.set(null);
     try {
-      const [summary, page] = await Promise.all([
+      const [summary, page, reviewPage] = await Promise.all([
         this.api.getCaptchaSummary(),
         this.api.getCaptchaEvents(
           this.captchaPage(),
@@ -580,10 +629,26 @@ export class App implements OnDestroy {
           this.captchaPortalStatus(),
           this.captchaSource(),
           this.captchaReviewStatus(),
+          'newest',
+        ),
+        this.api.getCaptchaEvents(
+          1,
+          48,
+          '',
+          'all',
+          'all',
+          'all',
+          'pending',
+          'review_priority',
         ),
       ]);
       this.captchaSummary.set(summary);
       this.applyCaptchaPage(page);
+      this.captchaReviewQueue.set(reviewPage.events);
+      this.captchaReviewTotal.set(reviewPage.pagination.total);
+      if (this.captchaReviewPosition() >= reviewPage.events.length) {
+        this.captchaReviewPosition.set(0);
+      }
       this.captchaState.set('ready');
     } catch (error) {
       this.captchaState.set('error');
@@ -620,11 +685,35 @@ export class App implements OnDestroy {
   }
 
   protected async showPendingCaptchaReview(): Promise<void> {
-    this.captchaSource.set('observer');
-    this.captchaReviewStatus.set('pending');
-    this.captchaAgreement.set('all');
-    this.captchaPortalStatus.set('all');
-    await this.applyCaptchaFilters();
+    this.captchaWorkspaceMode.set('review');
+    this.captchaReviewPosition.set(0);
+    await this.loadCaptchaData();
+  }
+
+  protected showCaptchaWorkspace(mode: CaptchaWorkspaceMode): void {
+    this.captchaWorkspaceMode.set(mode);
+    this.captchaPendingCorrection.set(null);
+    this.clearCaptchaReviewMessage();
+  }
+
+  protected toggleCaptchaHistoryFilters(): void {
+    this.captchaHistoryFiltersOpen.update((open) => !open);
+  }
+
+  protected captchaActiveFilterCount(): number {
+    return Number(this.captchaAgreement() !== 'all')
+      + Number(this.captchaPortalStatus() !== 'all')
+      + Number(this.captchaSource() !== 'all');
+  }
+
+  protected moveCaptchaReview(offset: number): void {
+    const next = this.captchaReviewPosition() + offset;
+    if (next < 0 || next >= this.captchaReviewQueue().length) {
+      return;
+    }
+    this.captchaReviewPosition.set(next);
+    this.captchaPendingCorrection.set(null);
+    this.clearCaptchaReviewMessage();
   }
 
   protected async changeCaptchaPageSize(value: number | string): Promise<void> {
@@ -765,6 +854,31 @@ export class App implements OnDestroy {
     return 'manual';
   }
 
+  protected captchaChoiceLabel(event: CaptchaEvent): string {
+    const mode = this.captchaChoiceMode(event);
+    if (mode === 'consensus') {
+      return 'Consenso';
+    }
+    if (mode === 'majority') {
+      return 'Mayoría 2–1';
+    }
+    return event.predictions.length === 3 ? 'Tres respuestas' : 'Sin consenso';
+  }
+
+  protected captchaModelLabel(modelName: string): string {
+    return (
+      {
+        v1_real: 'Modelo A',
+        v2_scratch: 'Modelo B',
+        v2_selected: 'Modelo C',
+      }[modelName] ?? modelName
+    );
+  }
+
+  protected captchaSourceLabel(event: CaptchaEvent): string {
+    return this.isObserverCaptcha(event) ? 'Observador' : 'Reserva';
+  }
+
   protected captchaSuggestionTone(event: CaptchaEvent, answer: string): string {
     if (!event.human_label) {
       return 'neutral';
@@ -832,7 +946,11 @@ export class App implements OnDestroy {
         answer,
       );
       this.showCaptchaReviewMessage(`Respuesta ${answer} guardada para entrenamiento.`);
-      if (this.captchaReviewStatus() === 'pending') {
+      if (
+        this.captchaWorkspaceMode() === 'review'
+        || this.captchaReviewStatus() === 'pending'
+      ) {
+        this.captchaReviewPosition.set(0);
         await this.loadCaptchaData(false);
       } else {
         this.captchaEvents.update((events) =>
