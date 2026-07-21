@@ -73,6 +73,28 @@ La vista se carga únicamente al seleccionarla. El auto-refresco mantiene filtro
 actualiza solo los datos de CAPTCHA cuando esa vista está activa. Las imágenes usan carga diferida
 desde el navegador.
 
+## Muestras del observador sin clientes
+
+Cuando el observador general encuentra una cita, conserva hasta cinco CAPTCHA originales
+consecutivos. Cada imagen se registra como un evento independiente:
+
+```text
+{run_id}:observer:captcha-1
+...
+{run_id}:observer:captcha-5
+```
+
+Estas muestras:
+
+- no se envían a 2Captcha y no generan consumo externo;
+- sí se persisten en el outbox y se procesan por `v1_real`, `v2_scratch` y `v2_selected`;
+- conservan los tiempos `inference_ms` de cada modelo;
+- aparecen en el dashboard como `Solo modelos locales` y `2Captcha: No enviado`;
+- no se presentan como aceptadas por el portal porque nunca se envían al formulario.
+
+El tiempo de 2Captcha se muestra únicamente en los intentos reales de reserva donde exista
+`external_solve_ms`. Para las muestras del observador se muestra `No aplica`.
+
 ## Estado implementado
 
 Implementado y activado el 21 de julio de 2026:
