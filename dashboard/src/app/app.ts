@@ -51,6 +51,7 @@ type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
 type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
+type CaptchaPredictionOption = { answer: string; modelNames: string[] };
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -177,7 +178,6 @@ export class App implements OnDestroy {
   protected readonly captchaReviewStatus = signal<CaptchaReviewFilter>('all');
   protected readonly captchaDrafts = signal<Record<string, string>>({});
   protected readonly captchaSavingEventId = signal('');
-  protected readonly captchaRevealedEvents = signal<Set<string>>(new Set());
   protected readonly captchaReviewMessage = signal<string | null>(null);
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
@@ -730,16 +730,48 @@ export class App implements OnDestroy {
     this.captchaReviewMessage.set(null);
   }
 
-  protected captchaAnswersVisible(event: CaptchaEvent): boolean {
-    return Boolean(event.human_label) || this.captchaRevealedEvents().has(event.event_id);
+  protected captchaPredictionOptions(event: CaptchaEvent): CaptchaPredictionOption[] {
+    const groups = new Map<string, string[]>();
+    for (const prediction of event.predictions) {
+      const models = groups.get(prediction.prediction) ?? [];
+      groups.set(prediction.prediction, [...models, prediction.model_name]);
+    }
+    return [...groups.entries()]
+      .map(([answer, modelNames]) => ({ answer, modelNames }))
+      .sort(
+        (left, right) =>
+          right.modelNames.length - left.modelNames.length || left.answer.localeCompare(right.answer),
+      );
   }
 
-  protected revealCaptchaAnswers(eventId: string): void {
-    this.captchaRevealedEvents.update((events) => new Set([...events, eventId]));
+  protected captchaChoiceMode(event: CaptchaEvent): 'consensus' | 'majority' | 'manual' {
+    const options = this.captchaPredictionOptions(event);
+    if (event.predictions.length === 3 && options.length === 1) {
+      return 'consensus';
+    }
+    if (event.predictions.length === 3 && options.length === 2) {
+      return 'majority';
+    }
+    return 'manual';
+  }
+
+  protected captchaSuggestionTone(event: CaptchaEvent, answer: string): string {
+    if (!event.human_label) {
+      return 'neutral';
+    }
+    return event.human_label.answer === answer ? 'good' : 'bad';
+  }
+
+  protected async chooseCaptchaPrediction(event: CaptchaEvent, answer: string): Promise<void> {
+    this.updateCaptchaDraft(event.event_id, answer);
+    await this.persistCaptchaHumanLabel(event, answer);
   }
 
   protected async saveCaptchaHumanLabel(event: CaptchaEvent): Promise<void> {
-    const answer = this.captchaDraft(event);
+    await this.persistCaptchaHumanLabel(event, this.captchaDraft(event));
+  }
+
+  private async persistCaptchaHumanLabel(event: CaptchaEvent, answer: string): Promise<void> {
     if (!/^[A-Z0-9]{5}$/.test(answer)) {
       this.captchaReviewMessage.set('Escribe exactamente cinco letras o números.');
       return;
@@ -751,9 +783,6 @@ export class App implements OnDestroy {
         event.event_id,
         event.image_sha256,
         answer,
-      );
-      this.captchaRevealedEvents.update(
-        (events) => new Set([...events, event.event_id]),
       );
       this.captchaReviewMessage.set(`Respuesta ${answer} guardada para entrenamiento.`);
       if (this.captchaReviewStatus() === 'pending') {
