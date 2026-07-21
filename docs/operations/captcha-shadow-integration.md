@@ -105,9 +105,9 @@ La suite completa existente ejecutó 53 pruebas y mantuvo 3 fallos y 5 errores e
 ajenos a esta integración: `document_type`, acciones/leases de órdenes y captura de muestras del
 observador. No se modificaron esos módulos ni sus pruebas como parte de este alcance.
 
-## Activación controlada pendiente
+## Activación controlada
 
-No se modificó `.env`. Cuando se autorice la prueba real, se configurará:
+Activada el 21 de julio de 2026. `.env` contiene localmente:
 
 ```text
 CAPTCHA_SHADOW_ENABLED=true
@@ -116,9 +116,21 @@ CAPTCHA_SHADOW_QUEUE_SIZE=100
 CAPTCHA_SHADOW_TIMEOUT_SECONDS=2
 ```
 
-Después será necesario reiniciar el worker y comprobar que `/v1/stats` acumule tres predicciones
-por cada CAPTCHA realmente enviado a 2Captcha. La reversión consiste en volver a
-`CAPTCHA_SHADOW_ENABLED=false` y reiniciar el worker.
+Se realizó un reinicio controlado mediante `/api/v1/worker/restart`. Después del reinicio:
+
+- `/health` del bot respondió `status=ok` y `worker_running=true`;
+- el worker quedó activo y no pausado;
+- el log `run-20260721-134456.log` confirmó el inicio del dispatcher en
+  `http://127.0.0.1:8787`;
+- `/health` del servicio sombra continuó saludable con CUDA y tres modelos;
+- `/v1/stats` permaneció en cero porque todavía no ocurrió un CAPTCHA real posterior a la
+  activación.
+
+La siguiente verificación operacional ocurrirá con el próximo intento real que llegue a
+2Captcha: `/v1/stats` deberá acumular un evento y tres predicciones por CAPTCHA. La reversión
+consiste en volver a `CAPTCHA_SHADOW_ENABLED=false` y reiniciar el worker.
+
+`.env` no se versiona ni se publica porque puede contener credenciales reales.
 
 ## Historial de entregas publicadas
 
