@@ -211,3 +211,27 @@ python -m recognizer.src.train `
 La etiqueta humana es la referencia autorizada. El consenso de los tres modelos sirve para
 priorizar revisión, pero nunca se incorpora automáticamente como verdad. Una respuesta de
 2Captcha solo es evidencia fuerte cuando `portal_accepted=true`.
+
+## Cola de revisión e historial compacto
+
+La vista CAPTCHA se divide en dos modos dentro del mismo apartado:
+
+- `Revisar` muestra una sola imagen, sus opciones únicas y el ingreso manual. Al guardar avanza
+  automáticamente. Las teclas `1` a `3` eligen opciones, `Enter` confirma un consenso y las flechas
+  izquierda/derecha navegan por el lote cargado.
+- `Historial` presenta filas compactas paginadas. Cada fila contiene miniatura, etiqueta humana,
+  tipo de consenso, origen y tiempo local; las respuestas, confianzas, correcciones y datos técnicos
+  aparecen únicamente al desplegarla.
+
+La cola se ordena en el servidor por valor de revisión: tres respuestas distintas, mayoría 2–1 y
+consenso de menor a mayor confianza. El guardado elimina el evento de pendientes y carga el
+siguiente. Cuando la cola está vacía se muestra `Todo validado`.
+
+En Historial permanecen visibles solo la búsqueda y `Todos / Pendientes / Validados`. Origen,
+portal y coincidencia se encuentran detrás del botón `Filtros`; el tamaño de página se movió al pie.
+Los eventos del observador no muestran un bloque vacío de 2Captcha. Los modelos se presentan como
+`Modelo A`, `Modelo B` y `Modelo C`, conservando sus identificadores técnicos en los datos.
+
+La cabecera se redujo a una línea con servicio, total, validados, pendientes y entregas en cola.
+El 21 de julio de 2026 la activación confirmó 10 eventos, 10 etiquetas humanas y 0 pendientes; el
+historial priorizado colocó primero el evento con desacuerdo entre modelos.
