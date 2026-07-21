@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -109,9 +110,15 @@ def solve_reservation_captcha_and_click_reserve(
     try:
         if timing is not None:
             timing.mark("captcha_solver_started")
+        captcha_solver_started = time.monotonic()
         captcha_solution = solve_normal_captcha(captcha_path_for_solver, settings)
+        captcha_solver_duration_ms = round(
+            max(time.monotonic() - captcha_solver_started, 0.0) * 1000,
+            3,
+        )
         if captcha_audit is not None:
             captcha_audit["captcha_solution_sent"] = captcha_solution
+            captcha_audit["captcha_solver_duration_ms"] = captcha_solver_duration_ms
             shadow_event_id = captcha_audit.get("captcha_shadow_event_id")
             if shadow_event_id:
                 captcha_audit["captcha_shadow_external_enqueued"] = (
@@ -119,6 +126,7 @@ def solve_reservation_captcha_and_click_reserve(
                         event_id=str(shadow_event_id),
                         external_answer=captcha_solution,
                         portal_accepted=None,
+                        external_solve_ms=captcha_solver_duration_ms,
                     )
                 )
         if timing is not None:

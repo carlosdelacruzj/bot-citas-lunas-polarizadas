@@ -7,6 +7,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from appointment_bot.services.api.captcha_shadow_routes import (
+    captcha_shadow_events_payload,
+    captcha_shadow_image_event_id,
+    captcha_shadow_image_payload,
+    captcha_shadow_summary_payload,
+)
 from appointment_bot.services.api.finance_routes import (
     create_finance_entry_payload,
     finance_categories_payload,
@@ -118,6 +124,31 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = list_manual_sessions_payload()
             self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/captcha-shadow/summary":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_summary_payload()
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/captcha-shadow/events":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_events_payload(query)
+            self._send_json(status, payload)
+            return
+
+        captcha_event_id = captcha_shadow_image_event_id(path)
+        if captcha_event_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_image_payload(captcha_event_id)
+            if isinstance(payload, dict):
+                self._send_json(status, payload)
+            else:
+                send_image(self, payload)
             return
 
         if path == "/api/v1/service-orders":

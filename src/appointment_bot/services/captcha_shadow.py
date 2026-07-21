@@ -337,6 +337,7 @@ def enqueue_shadow_external_result(
     event_id: str,
     external_answer: str,
     portal_accepted: bool | None,
+    external_solve_ms: float | None = None,
     final_result: bool = False,
 ) -> bool:
     normalized_answer = external_answer.strip().upper()
@@ -346,13 +347,16 @@ def enqueue_shadow_external_result(
             event_id,
         )
         return False
+    payload: dict[str, Any] = {
+        "event_id": event_id,
+        "external_answer": normalized_answer,
+        "portal_accepted": portal_accepted,
+    }
+    if external_solve_ms is not None:
+        payload["external_solve_ms"] = round(max(external_solve_ms, 0.0), 3)
     event = CaptchaShadowEvent(
         endpoint="/v1/results/external",
-        payload={
-            "event_id": event_id,
-            "external_answer": normalized_answer,
-            "portal_accepted": portal_accepted,
-        },
+        payload=payload,
         event_key=f"{event_id}:external:{'final' if final_result else 'initial'}",
         sequence=3 if final_result else 2,
     )

@@ -52,8 +52,18 @@ def _enqueue_shadow_portal_result(
         event_id=str(event_id),
         external_answer=str(external_answer),
         portal_accepted=portal_accepted,
+        external_solve_ms=_optional_float(
+            captcha_audit.get("captcha_solver_duration_ms")
+        ),
         final_result=True,
     )
+
+
+def _optional_float(value: object) -> float | None:
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _add_diagnostic_artifact(

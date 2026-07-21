@@ -141,3 +141,31 @@ def captcha_shadow_outbox_status(*, settings: Settings) -> dict[str, int]:
         "processed": int(row["processed"] or 0),
         "attempts": int(row["attempts"] or 0),
     }
+
+
+def captcha_shadow_external_timings(
+    event_ids: list[str],
+    *,
+    settings: Settings,
+) -> dict[str, float]:
+    if not event_ids:
+        return {}
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT event_id,
+                   MAX((payload ->> 'external_solve_ms')::double precision)
+                       AS external_solve_ms
+            FROM captcha_shadow_outbox
+            WHERE event_id = ANY(%s)
+              AND payload ? 'external_solve_ms'
+            GROUP BY event_id
+            """,
+            (event_ids,),
+        ).fetchall()
+    return {
+        str(row["event_id"]): float(row["external_solve_ms"])
+        for row in rows
+        if row["external_solve_ms"] is not None
+    }
