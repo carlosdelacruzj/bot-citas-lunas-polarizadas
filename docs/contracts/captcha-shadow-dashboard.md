@@ -72,3 +72,21 @@ logs: 1374 ms y 12617 ms.
 La vista se carga únicamente al seleccionarla. El auto-refresco mantiene filtros y página, y
 actualiza solo los datos de CAPTCHA cuando esa vista está activa. Las imágenes usan carga diferida
 desde el navegador.
+
+## Estado implementado
+
+Implementado y activado el 21 de julio de 2026:
+
+- build Angular de producción completado;
+- dashboard administrativo reiniciado en `http://127.0.0.1:8766/`;
+- API confirmó dos eventos, tres predicciones por evento y ambas imágenes disponibles;
+- filtro `Coinciden` devolvió dos eventos;
+- filtro de portal `Aceptados` devolvió un evento;
+- búsqueda `9M9FH` devolvió el evento esperado;
+- tiempos históricos de 2Captcha visibles: 1374 ms y 12617 ms;
+- worker reiniciado con captura futura de `external_solve_ms` activa;
+- dispatcher durable reiniciado con `pending=0`.
+
+La revisión visual automatizada no estuvo disponible en esta sesión. La validación cubrió
+compilación Angular, contratos de tipos, respuestas HTTP reales, filtros, paginación y entrega de
+imágenes; queda recomendada una revisión visual humana breve desde la pestaña `CAPTCHA`.
