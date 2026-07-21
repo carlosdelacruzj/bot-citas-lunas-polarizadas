@@ -33,7 +33,7 @@ añadir espera de red al hilo de Playwright.
 | 3. Correlación y predicción | Completado | Propagación de contexto y `/v1/predict`. |
 | 4. Resultado externo | Completado | Respuesta 2Captcha y clasificación del portal. |
 | 5. Ciclo de vida | Completado | Inicio/cierre junto con el worker continuo. |
-| 6. Validación final | Pendiente | Pruebas manuales, sintaxis, lint y cierre documental. |
+| 6. Validación final | Completado | Pruebas manuales, sintaxis, lint y cierre documental. |
 
 ## Archivos existentes preservados
 
@@ -84,3 +84,46 @@ la cola durante el apagado, pero su espera está limitada y su hilo es daemon.
 
 No se consulta `/health` como requisito de arranque. Si el servicio de `127.0.0.1:8787` está
 apagado, el worker arranca normalmente y cada fallo queda aislado en el consumidor.
+
+## Paso 6: validación final
+
+Validaciones realizadas:
+
+- `python -m compileall -q src`: correcto;
+- `python -m ruff check src`: correcto;
+- pruebas existentes de reserva/CAPTCHA: 6 aprobadas;
+- servicio sombra: 21 pruebas aprobadas;
+- `/health`: `status=ok`, CUDA y tres modelos cargados;
+- cola FIFO: orden `predict` -> respuesta externa -> resultado del portal confirmado;
+- servicio apagado: error absorbido y contabilizado sin propagarse al productor;
+- URL no local: integración desactivada de forma segura sin impedir el arranque;
+- cola llena: descarte inmediato con advertencia;
+- benchmark local de 500 inserciones: máximo observado de 0.711 ms por `enqueue`, por debajo
+  del objetivo de 10 ms.
+
+La suite completa existente ejecutó 53 pruebas y mantuvo 3 fallos y 5 errores en contratos
+ajenos a esta integración: `document_type`, acciones/leases de órdenes y captura de muestras del
+observador. No se modificaron esos módulos ni sus pruebas como parte de este alcance.
+
+## Activación controlada pendiente
+
+No se modificó `.env`. Cuando se autorice la prueba real, se configurará:
+
+```text
+CAPTCHA_SHADOW_ENABLED=true
+CAPTCHA_SHADOW_URL=http://127.0.0.1:8787
+CAPTCHA_SHADOW_QUEUE_SIZE=100
+CAPTCHA_SHADOW_TIMEOUT_SECONDS=2
+```
+
+Después será necesario reiniciar el worker y comprobar que `/v1/stats` acumule tres predicciones
+por cada CAPTCHA realmente enviado a 2Captcha. La reversión consiste en volver a
+`CAPTCHA_SHADOW_ENABLED=false` y reiniciar el worker.
+
+## Historial de entregas publicadas
+
+- `9f0f30c`: contrato y registro de implementación;
+- `b0af482`: configuración y dispatcher;
+- `c99d621`: correlación y predicción;
+- `c01a315`: respuesta externa y resultado del portal;
+- `388e86e`: ciclo de vida del worker.

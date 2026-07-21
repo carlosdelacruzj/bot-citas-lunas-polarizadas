@@ -9,6 +9,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from appointment_bot.config import Settings
@@ -51,8 +52,15 @@ class CaptchaShadowDispatcher:
 
     @classmethod
     def from_settings(cls, settings: Settings) -> CaptchaShadowDispatcher:
+        enabled = settings.captcha_shadow_enabled
+        if enabled and not _is_local_http_url(settings.captcha_shadow_url):
+            logger.error(
+                "CAPTCHA shadow disabled because URL is not local HTTP: %s",
+                settings.captcha_shadow_url,
+            )
+            enabled = False
         return cls(
-            enabled=settings.captcha_shadow_enabled,
+            enabled=enabled,
             base_url=settings.captcha_shadow_url,
             max_queue_size=settings.captcha_shadow_queue_size,
             timeout_seconds=settings.captcha_shadow_timeout_seconds,
@@ -156,6 +164,21 @@ class CaptchaShadowDispatcher:
     def _increment(self, key: str) -> None:
         with self._counters_lock:
             self._counters[key] += 1
+
+
+def _is_local_http_url(value: str) -> bool:
+    try:
+        parsed = urlparse(value)
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "http"
+        and parsed.hostname in {"127.0.0.1", "localhost", "::1"}
+        and parsed.username is None
+        and parsed.password is None
+        and port is not None
+    )
 
 
 _dispatcher = CaptchaShadowDispatcher(
