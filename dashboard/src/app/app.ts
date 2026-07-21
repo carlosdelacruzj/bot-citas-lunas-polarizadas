@@ -49,6 +49,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
+type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -171,6 +172,7 @@ export class App implements OnDestroy {
   protected readonly captchaSearch = signal('');
   protected readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
   protected readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
+  protected readonly captchaSource = signal<CaptchaSourceFilter>('all');
   protected readonly selectedRunId = signal('');
   protected readonly selectedRunDetail = signal<RunDetail | null>(null);
   protected readonly runDetailState = signal<LoadState>('idle');
@@ -560,6 +562,7 @@ export class App implements OnDestroy {
           this.captchaSearch().trim(),
           this.captchaAgreement(),
           this.captchaPortalStatus(),
+          this.captchaSource(),
         ),
       ]);
       this.captchaSummary.set(summary);
@@ -589,6 +592,11 @@ export class App implements OnDestroy {
     await this.applyCaptchaFilters();
   }
 
+  protected async changeCaptchaSource(value: CaptchaSourceFilter): Promise<void> {
+    this.captchaSource.set(value);
+    await this.applyCaptchaFilters();
+  }
+
   protected async changeCaptchaPageSize(value: number | string): Promise<void> {
     this.captchaPageSize.set(Number(value));
     await this.applyCaptchaFilters();
@@ -614,6 +622,9 @@ export class App implements OnDestroy {
   }
 
   protected captchaPortalLabel(event: CaptchaEvent): string {
+    if (this.isObserverCaptcha(event)) {
+      return 'Portal no aplica';
+    }
     if (event.portal_accepted === true) {
       return 'Aceptado por el portal';
     }
@@ -634,6 +645,9 @@ export class App implements OnDestroy {
   }
 
   protected captchaAgreementLabel(event: CaptchaEvent): string {
+    if (this.isObserverCaptcha(event)) {
+      return event.predictions.length ? 'Solo modelos locales' : 'Inferencia pendiente';
+    }
     if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
       return 'Comparación pendiente';
     }
@@ -641,6 +655,9 @@ export class App implements OnDestroy {
   }
 
   protected captchaAgreementTone(event: CaptchaEvent): string {
+    if (this.isObserverCaptcha(event)) {
+      return event.predictions.length ? 'good' : 'neutral';
+    }
     if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
       return 'neutral';
     }
@@ -662,7 +679,24 @@ export class App implements OnDestroy {
   }
 
   protected captchaOrderLabel(event: CaptchaEvent): string {
+    if (this.isObserverCaptcha(event)) {
+      return `Observador · muestra ${event.metadata.attempt ?? '?'} de 5`;
+    }
     return event.metadata.order_id || (event.metadata.run_id ? 'Observador' : 'Sin orden');
+  }
+
+  protected isObserverCaptcha(event: CaptchaEvent): boolean {
+    return event.metadata.observer === 1 || event.metadata.observer === true;
+  }
+
+  protected captchaLocalTotalMs(event: CaptchaEvent): number | null {
+    if (!event.predictions.length) {
+      return null;
+    }
+    return event.predictions.reduce(
+      (total, prediction) => total + prediction.inference_ms,
+      0,
+    );
   }
 
   private applyCaptchaPage(page: CaptchaEventsPage): void {

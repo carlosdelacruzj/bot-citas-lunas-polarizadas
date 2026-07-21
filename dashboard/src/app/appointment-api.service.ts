@@ -122,6 +122,8 @@ export interface CaptchaEvent {
     source_image_kind?: string | null;
     detection_origin?: string | null;
     backfilled?: boolean | null;
+    observer?: number | boolean | null;
+    portal_stage?: string | null;
   };
   predictions: CaptchaPrediction[];
 }
@@ -153,7 +155,7 @@ export interface CaptchaSummary {
 export interface CaptchaEventsPage {
   events: CaptchaEvent[];
   pagination: { page: number; page_size: number; total: number; total_pages: number };
-  filters: { q: string; agreement: string; portal_status: string };
+  filters: { q: string; agreement: string; portal_status: string; source: string };
 }
 
 interface ServiceOrdersResponse {
@@ -467,6 +469,7 @@ export class AppointmentApiService {
     query: string,
     agreement: string,
     portalStatus: string,
+    source: string,
   ): Promise<CaptchaEventsPage> {
     const params = new URLSearchParams({
       page: String(page),
@@ -474,6 +477,7 @@ export class AppointmentApiService {
       q: query,
       agreement,
       portal_status: portalStatus,
+      source,
     });
     return firstValueFrom(
       this.http.get<CaptchaEventsPage>(`/api/v1/captcha-shadow/events?${params.toString()}`),

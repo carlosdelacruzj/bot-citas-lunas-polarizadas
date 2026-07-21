@@ -1256,6 +1256,18 @@
           </div>
 
           <label class="filter">
+            Origen
+            <select
+              name="captchaSource"
+              [ngModel]="captchaSource()"
+              (ngModelChange)="changeCaptchaSource($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="reservation">Reservas con cliente</option>
+              <option value="observer">Observador local</option>
+            </select>
+          </label>
+          <label class="filter">
             Portal
             <select
               name="captchaPortalStatus"
@@ -1315,6 +1327,9 @@
                   <span class="badge {{ captchaPortalTone(event) }}">
                     {{ captchaPortalLabel(event) }}
                   </span>
+                  <span class="badge neutral">
+                    Total local: {{ formatMilliseconds(captchaLocalTotalMs(event)) }}
+                  </span>
                 </div>
               </div>
 
@@ -1333,8 +1348,12 @@
                 <div class="captcha-comparison-grid">
                   <article class="captcha-answer external">
                     <span>2Captcha</span>
-                    <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
-                    <small>{{ formatMilliseconds(event.external_solve_ms) }}</small>
+                    <strong>
+                      {{ isObserverCaptcha(event) ? 'No enviado' : (event.external_answer ?? 'Pendiente') }}
+                    </strong>
+                    <small>
+                      {{ isObserverCaptcha(event) ? 'No aplica' : formatMilliseconds(event.external_solve_ms) }}
+                    </small>
                   </article>
 
                   @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
