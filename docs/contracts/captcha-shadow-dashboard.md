@@ -164,9 +164,18 @@ la respuesta y el tiempo de los tres modelos, además del total local. Para esta
 
 ## Validación humana y dataset de entrenamiento
 
-El dashboard incorpora el acceso directo `Validar pendientes`. La cola muestra primero la imagen
-y mantiene ocultas las respuestas automáticas hasta guardar la lectura humana o pedir revelarlas
-explícitamente. La respuesta debe contener exactamente cinco caracteres `A-Z0-9`.
+El dashboard incorpora el acceso directo `Validar pendientes`. La respuesta debe contener
+exactamente cinco caracteres `A-Z0-9` y puede confirmarse con estos atajos:
+
+- si los tres modelos coinciden, se muestra una única respuesta para validar con un clic;
+- si dos coinciden y uno difiere, se muestran las dos opciones indicando cuántos modelos apoyan
+  cada respuesta;
+- si los tres difieren, se solicita directamente la lectura manual;
+- el ingreso manual permanece disponible para corregir incluso cuando exista consenso o mayoría.
+
+Después de validar, las respuestas iguales a la etiqueta humana se marcan en verde y las distintas
+en rojo. Elegir una predicción es una confirmación humana explícita, no una aprobación automática
+del modelo.
 
 Cada validación:
 
