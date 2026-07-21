@@ -153,6 +153,10 @@ class Settings:
     client_videos_dir: Path
     credential_encryption_keys: tuple[str, ...] = ()
     artifact_prefix: str = ""
+    captcha_shadow_enabled: bool = False
+    captcha_shadow_url: str = "http://127.0.0.1:8787"
+    captcha_shadow_queue_size: int = 100
+    captcha_shadow_timeout_seconds: int = 2
 
     @property
     def safe_username(self) -> str:
@@ -395,6 +399,24 @@ def load_settings(*, require_login: bool = True) -> Settings:
             key.strip()
             for key in os.getenv("APPOINTMENT_CREDENTIAL_KEYS", "").split(",")
             if key.strip()
+        ),
+        captcha_shadow_enabled=_parse_bool(
+            os.getenv("CAPTCHA_SHADOW_ENABLED"),
+            default=False,
+        ),
+        captcha_shadow_url=(
+            os.getenv("CAPTCHA_SHADOW_URL", "http://127.0.0.1:8787").strip()
+            or "http://127.0.0.1:8787"
+        ),
+        captcha_shadow_queue_size=_parse_int(
+            os.getenv("CAPTCHA_SHADOW_QUEUE_SIZE"),
+            default=100,
+            minimum=1,
+        ),
+        captcha_shadow_timeout_seconds=_parse_int(
+            os.getenv("CAPTCHA_SHADOW_TIMEOUT_SECONDS"),
+            default=2,
+            minimum=1,
         ),
     )
 
