@@ -161,3 +161,38 @@ El dashboard permite aislar estos registros con `Origen: Observador local`. En c
 la respuesta y el tiempo de los tres modelos, además del total local. Para estas muestras indica
 `2Captcha: No enviado` y `No aplica`; en una reserva real continúa mostrando la respuesta y
 `external_solve_ms` cuando 2Captcha haya participado.
+
+## Validación humana y dataset de entrenamiento
+
+El dashboard incorpora el acceso directo `Validar pendientes`. La cola muestra primero la imagen
+y mantiene ocultas las respuestas automáticas hasta guardar la lectura humana o pedir revelarlas
+explícitamente. La respuesta debe contener exactamente cinco caracteres `A-Z0-9`.
+
+Cada validación:
+
+- se guarda separada de `external_answer` y de las predicciones;
+- usa el SHA-256 de la imagen como identidad para evitar duplicados;
+- conserva revisiones anteriores cuando una respuesta se corrige;
+- copia la imagen a un dataset inmutable antes de depender de la retención de screenshots;
+- actualiza un CSV mínimo compatible con el entrenador y un manifiesto trazable.
+
+Los artefactos se encuentran en el proyecto `test-captcha`:
+
+```text
+outputs/human_validated_captchas/images/<sha256>.png
+outputs/human_validated_captchas/labels.csv
+outputs/human_validated_captchas/manifest.csv
+```
+
+`labels.csv` tiene las columnas `filename,answer` que consume `recognizer.src.train`. Para añadir
+estas etiquetas a una ejecución futura se usan como dataset adicional:
+
+```powershell
+python -m recognizer.src.train `
+  --extra-csv outputs/human_validated_captchas/labels.csv `
+  --extra-data-root outputs/human_validated_captchas/images
+```
+
+La etiqueta humana es la referencia autorizada. El consenso de los tres modelos sirve para
+priorizar revisión, pero nunca se incorpora automáticamente como verdad. Una respuesta de
+2Captcha solo es evidencia fuerte cuando `portal_accepted=true`.
