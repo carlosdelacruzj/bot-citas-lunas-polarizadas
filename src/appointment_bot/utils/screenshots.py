@@ -1,5 +1,6 @@
 import logging
 import re
+import shutil
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -110,6 +111,101 @@ def report_screenshot_paths(report: RunReport) -> list[Path]:
     primary = Path(report.screenshot_path) if report.screenshot_path else None
     additional = [Path(item) for item in report.screenshot_paths or []]
     return normalize_screenshot_paths(primary, additional)
+
+
+def archive_unique_slot_screenshot(
+    settings: Settings,
+    report: RunReport,
+) -> Path | None:
+    slot_key = _unique_slot_key(report.details or {})
+    if slot_key is None:
+        return None
+
+    source = next(
+        (
+            path
+            for path in report_screenshot_paths(report)
+            if _is_slot_screenshot(path) and path.is_file()
+        ),
+        None,
+    )
+    if source is None:
+        return None
+
+    destination = screenshot_artifact_dir(settings, "cupos-unicos") / f"{slot_key}.png"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        logger.info(
+            "Unique slot screenshot already archived for %s: %s",
+            slot_key,
+            destination,
+        )
+        return destination
+
+    try:
+        with source.open("rb") as source_file, destination.open("xb") as destination_file:
+            shutil.copyfileobj(source_file, destination_file)
+    except FileExistsError:
+        logger.info(
+            "Unique slot screenshot was archived concurrently for %s: %s",
+            slot_key,
+            destination,
+        )
+        return destination
+    except OSError as exc:
+        logger.warning(
+            "Could not archive unique slot screenshot %s from %s: %s",
+            slot_key,
+            source,
+            exc,
+        )
+        return None
+
+    logger.info("Archived unique slot screenshot: %s", destination)
+    return destination
+
+
+def _is_slot_screenshot(path: Path) -> bool:
+    return path.name.startswith(("cupo-", "observer-cupo-"))
+
+
+def _unique_slot_key(details: dict) -> str | None:
+    date_text = str(details.get("fecha") or "").strip()
+    hour_text = str(details.get("hora") or "").strip()
+    date_match = re.match(
+        r"^(?P<day>\d{1,2})[/-](?P<month>\d{1,2})[/-](?P<year>\d{4})"
+        r"(?:\s+(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?)?",
+        date_text,
+    )
+    if date_match is None:
+        return None
+
+    hour_match = re.match(r"^(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?", hour_text)
+    hour = hour_match.group("hour") if hour_match is not None else date_match.group("hour")
+    minute = (
+        hour_match.group("minute")
+        if hour_match is not None
+        else date_match.group("minute")
+    )
+    if hour is None:
+        return None
+
+    day = int(date_match.group("day"))
+    month = int(date_match.group("month"))
+    year = int(date_match.group("year"))
+    hour_number = int(hour)
+    minute_number = int(minute or "0")
+    try:
+        datetime(year, month, day)
+    except ValueError:
+        return None
+    if not 0 <= hour_number <= 23 or not 0 <= minute_number <= 59:
+        return None
+
+    return (
+        f"{day:02d}-{month:02d}-{year:04d}_"
+        f"{hour_number:02d}-{minute_number:02d}"
+    )
 
 
 def remove_screenshot_paths(paths: list[Path]) -> None:

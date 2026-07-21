@@ -6,6 +6,11 @@ La ejecución normal y el observador usan el mismo encuadre centrado del panel d
 citas después de seleccionar fecha y hora y comprobar que el CAPTCHA cargó. Cada
 detección conserva una sola captura del modal.
 
+Después de registrar cada resultado, la primera captura de una combinación de
+fecha y hora se copia en `screenshots/DD-MM-YYYY/cupos-unicos/`. El observador y
+las órdenes normales comparten la carpeta y la regla: si el cupo ya existe para
+esa fecha y hora, no se genera otra copia.
+
 El observador conserva además cinco muestras consecutivas del CAPTCHA original
 extraído del HTML. Esas muestras son evidencia independiente y no generan cinco
 capturas del modal ni se sustituyen por recortes de pantalla.

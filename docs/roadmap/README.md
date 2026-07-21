@@ -5,7 +5,8 @@ Esta es la única lista de tareas futuras. Las fases cerradas están resumidas e
 
 ## Prioridad 1 - Acumular evidencia observacional
 
-Estado: en curso, sin cambios funcionales en la reserva.
+Estado: completada y analizada el `2026-07-19`, sin cambios funcionales en la
+reserva.
 
 ### Próximo checkpoint
 
@@ -19,6 +20,16 @@ Estado: en curso, sin cambios funcionales en la reserva.
 - No aplicar optimizaciones automáticamente: cualquier cambio al flujo de
   reserva se decide con el usuario después de revisar los resultados.
 
+Resultado del checkpoint:
+
+- se generaron `reports/operations/weekly-20260713-20260718.md` y
+  `reports/optimization/observation-20260713-20260718.md`;
+- la conversión atribuible a submits quedó estable: 49.1% frente a 48.4%;
+- selección estable y sin evidencia para retirar esperas;
+- la cola lenta de CAPTCHA concentró 16 de 29 `slot_lost`;
+- el único experimento recomendado es bajar el polling del SDK de 10 a 5
+  segundos, previa aprobación del usuario.
+
 1. Recoger runs reales con el nuevo desglose de selección.
 2. Regenerar el reporte semanal y la observación por el mismo rango.
 3. Comparar conversión, p50/p90, `slot_lost`, CAPTCHA y defensas.
@@ -28,7 +39,20 @@ Fuente: [`../optimization.md`](../optimization.md).
 
 ## Prioridad 2 - Elegir un único experimento
 
-Solo después de acumular una muestra suficiente:
+Estado: experimento aprobado y aplicado el `2026-07-19`.
+
+La muestra ya es suficiente. Experimento recomendado:
+
+- configurar `pollingInterval=5` en el cliente 2Captcha;
+- mantener proveedor, timeout, reintentos, selección y concurrencia sin cambios;
+- comparar al menos 30 nuevos submits o una semana completa contra este cierre;
+- conservar solo si baja el p90 de CAPTCHA y `slot_lost` sin aumentar errores
+  del proveedor ni señales de defensa.
+
+No se modificaron proveedor, timeout, reintentos, selección, confirmación, cola
+ni concurrencia.
+
+Alternativas descartadas por ahora:
 
 - candidato de bajo riesgo: una espera concreta de selección, si el DOM prueba
   que es redundante;

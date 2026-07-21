@@ -587,7 +587,7 @@ Decision operativa sobre credenciales:
 Avance realizado:
 
 - implementado `/cliente_nuevo` como conversacion de seis pasos con vencimiento
-  de diez minutos;
+  de 60 segundos por paso y 60 segundos para la confirmacion final;
 - se solicitan tipo y numero de documento, contrasena, nombre del contacto,
   fuente y WhatsApp opcional; escribir `OMITIR` no inventa un telefono;
 - el titular no se confunde con el contacto: el nombre del titular continuara
@@ -601,6 +601,12 @@ Avance realizado:
   sola orden y comando `/credenciales ORDER_ID`;
 - `/cancelar` elimina conversaciones y confirmaciones pendientes sin persistir
   informacion parcial.
+- cada alta y sesion de CAPTCHA usa un identificador propio, por lo que los
+  botones antiguos quedan invalidados;
+- solo existe un asistente activo por chat: iniciar alta, CAPTCHA o reglas
+  cierra los otros flujos temporales;
+- una imagen CAPTCHA vence a los 30 segundos sin respuesta valida y no se marca
+  como resuelta.
 
 Pruebas locales completadas sin crear ordenes reales:
 

@@ -20,7 +20,10 @@ from appointment_bot.reports.optimization import (
 )
 from appointment_bot.services.database_models import RunRecord
 from appointment_bot.utils.sanitization import sanitize_text
-from appointment_bot.utils.screenshots import normalize_screenshot_paths
+from appointment_bot.utils.screenshots import (
+    archive_unique_slot_screenshot,
+    normalize_screenshot_paths,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +116,7 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
     screenshot_paths = report.screenshot_paths or []
     if report.screenshot_path and report.screenshot_path not in screenshot_paths:
         screenshot_paths = [report.screenshot_path, *screenshot_paths]
+    archive_unique_slot_screenshot(settings, report)
     try:
         person_name = str((report.details or {}).get("nombre") or "").strip() or None
         record_run_outcome(

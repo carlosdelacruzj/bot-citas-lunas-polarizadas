@@ -6,6 +6,7 @@ from twocaptcha import TwoCaptcha
 from appointment_bot.config import Settings
 
 logger = logging.getLogger(__name__)
+CAPTCHA_POLLING_INTERVAL_SECONDS = 5
 
 
 def solve_normal_captcha(image_path: Path, settings: Settings) -> str:
@@ -16,6 +17,7 @@ def solve_normal_captcha(image_path: Path, settings: Settings) -> str:
     solver = TwoCaptcha(
         settings.captcha_api_key,
         defaultTimeout=settings.reservation_timeout_seconds,
+        pollingInterval=CAPTCHA_POLLING_INTERVAL_SECONDS,
     )
     result = solver.normal(
         str(image_path),
