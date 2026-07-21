@@ -98,7 +98,7 @@ Validaciones realizadas:
 - cola FIFO: orden `predict` -> respuesta externa -> resultado del portal confirmado;
 - servicio apagado: error absorbido y contabilizado sin propagarse al productor;
 - URL no local: integración desactivada de forma segura sin impedir el arranque;
-- cola llena: descarte inmediato con advertencia;
+- cola llena: la reserva continúa; la entrega queda pendiente en PostgreSQL;
 - benchmark local de 500 inserciones: máximo observado de 0.711 ms por `enqueue`, por debajo
   del objetivo de 10 ms.
 
@@ -175,6 +175,23 @@ La persistencia observada por evento estuvo entre 4.559 y 34.326 ms durante la v
 primera fila de predicción tardó 6.161 ms; la inferencia HTTP continúa fuera del hilo de
 Playwright.
 
+## Estado desplegado después de la recuperación durable
+
+Se reinició el worker con el esquema 34 y la recuperación durable activa. La verificación en
+vivo del 21 de julio de 2026 confirmó:
+
+- API del bot saludable con `worker_running=true`;
+- servicio sombra saludable, ejecutándose con CUDA y los tres modelos cargados;
+- outbox en `pending=0`, `processed=3`, `attempts=1`;
+- dos eventos reales preservados y reprocesados;
+- `v2_selected` coincidió con 2Captcha en los dos eventos y promedió 6.995 ms de inferencia;
+- una sola respuesta cuenta con aceptación explícita del portal, por lo que todavía no existe
+  una muestra suficiente para reemplazar 2Captcha.
+
+El arranque quedó registrado en `logs/run-20260721-151049.log`. A partir de este despliegue, un
+fallo de red, timeout, servicio apagado, cola en memoria llena o reinicio del worker ya no elimina
+la muestra: permanece en PostgreSQL hasta poder entregarse al servicio sombra.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;
@@ -182,3 +199,5 @@ Playwright.
 - `c99d621`: correlación y predicción;
 - `c01a315`: respuesta externa y resultado del portal;
 - `388e86e`: ciclo de vida del worker.
+- `0d9924d`: ruta absoluta para que el servicio pueda leer la imagen.
+- `34ac809`: outbox PostgreSQL y recuperación durable.
