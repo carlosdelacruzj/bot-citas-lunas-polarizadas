@@ -23,6 +23,7 @@ ALLOWED_AGREEMENTS = {"all", "match", "mismatch", "pending"}
 ALLOWED_PORTAL_STATUSES = {"all", "accepted", "rejected", "unverified"}
 ALLOWED_SOURCES = {"all", "reservation", "observer"}
 ALLOWED_REVIEW_STATUSES = {"all", "validated", "pending"}
+ALLOWED_SORTS = {"newest", "oldest", "review_priority"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
@@ -70,11 +71,13 @@ def captcha_shadow_events_payload(
     portal_status = _query_value(query, "portal_status", "all")
     source = _query_value(query, "source", "all")
     review_status = _query_value(query, "review_status", "all")
+    sort = _query_value(query, "sort", "newest")
     if (
         agreement not in ALLOWED_AGREEMENTS
         or portal_status not in ALLOWED_PORTAL_STATUSES
         or source not in ALLOWED_SOURCES
         or review_status not in ALLOWED_REVIEW_STATUSES
+        or sort not in ALLOWED_SORTS
     ):
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request", "Los filtros de CAPTCHA no son válidos."
@@ -91,6 +94,7 @@ def captcha_shadow_events_payload(
             "portal_status": portal_status,
             "source": source,
             "review_status": review_status,
+            "sort": sort,
         }
     )
     try:
@@ -138,6 +142,7 @@ def captcha_shadow_events_payload(
             "portal_status": portal_status,
             "source": source,
             "review_status": review_status,
+            "sort": sort,
         },
     }
 
