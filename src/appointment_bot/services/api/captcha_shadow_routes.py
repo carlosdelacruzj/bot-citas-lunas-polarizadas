@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 ALLOWED_PAGE_SIZES = {12, 24, 48}
 ALLOWED_AGREEMENTS = {"all", "match", "mismatch", "pending"}
 ALLOWED_PORTAL_STATUSES = {"all", "accepted", "rejected", "unverified"}
+ALLOWED_SOURCES = {"all", "reservation", "observer"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
@@ -66,7 +67,12 @@ def captcha_shadow_events_payload(
         )
     agreement = _query_value(query, "agreement", "all")
     portal_status = _query_value(query, "portal_status", "all")
-    if agreement not in ALLOWED_AGREEMENTS or portal_status not in ALLOWED_PORTAL_STATUSES:
+    source = _query_value(query, "source", "all")
+    if (
+        agreement not in ALLOWED_AGREEMENTS
+        or portal_status not in ALLOWED_PORTAL_STATUSES
+        or source not in ALLOWED_SOURCES
+    ):
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request", "Los filtros de CAPTCHA no son válidos."
         )
@@ -80,6 +86,7 @@ def captcha_shadow_events_payload(
             "q": search,
             "agreement": agreement,
             "portal_status": portal_status,
+            "source": source,
         }
     )
     try:
@@ -125,6 +132,7 @@ def captcha_shadow_events_payload(
             "q": search,
             "agreement": agreement,
             "portal_status": portal_status,
+            "source": source,
         },
     }
 
@@ -235,6 +243,8 @@ def _sanitize_event(
                 "source_image_kind",
                 "detection_origin",
                 "backfilled",
+                "observer",
+                "portal_stage",
             )
         },
         "predictions": predictions,
