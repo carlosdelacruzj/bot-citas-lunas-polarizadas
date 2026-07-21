@@ -132,3 +132,29 @@ Implementación validada con el build Angular de producción y activada en
 colapso y el drawer móvil; el dashboard respondió HTTP 200 con sesión local, mientras el worker y
 el servicio CAPTCHA permanecieron saludables. La revisión visual automatizada siguió
 indisponible, por lo que se mantuvo la validación estructural y responsive mediante el build.
+
+## Validación de muestras del observador
+
+La captura queda limitada a un único lote de hasta cinco imágenes por cita detectada:
+
+- la detección inicial conserva y encola las muestras disponibles;
+- la comprobación de confirmación no vuelve a capturarlas, evitando llegar a diez imágenes;
+- cada muestra se ejecuta en los tres modelos locales y conserva un tiempo independiente;
+- 2Captcha no se invoca para estos eventos y sus campos permanecen vacíos.
+
+Se reprocesaron de forma controlada las cinco muestras reales conservadas el 20 de julio de 2026.
+El resultado fue de cinco eventos, quince predicciones locales y cero envíos a 2Captcha. El outbox
+terminó sin elementos pendientes. Los tiempos observados, en milisegundos, fueron:
+
+| Muestra | `v1_real` | `v2_scratch` | `v2_selected` |
+| --- | ---: | ---: | ---: |
+| 1 | 40.630 | 5.639 | 32.432 |
+| 2 | 17.607 | 18.375 | 51.924 |
+| 3 | 25.719 | 17.566 | 12.985 |
+| 4 | 10.549 | 3.035 | 2.490 |
+| 5 | 12.773 | 5.047 | 3.293 |
+
+El dashboard permite aislar estos registros con `Origen: Observador local`. En cada tarjeta muestra
+la respuesta y el tiempo de los tres modelos, además del total local. Para estas muestras indica
+`2Captcha: No enviado` y `No aplica`; en una reserva real continúa mostrando la respuesta y
+`external_solve_ms` cuando 2Captcha haya participado.
