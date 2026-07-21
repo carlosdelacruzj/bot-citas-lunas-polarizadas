@@ -27,7 +27,10 @@ from appointment_bot.reservation_engine.reservation_controls import (
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.services.captcha import solve_normal_captcha
-from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
+from appointment_bot.services.captcha_shadow import (
+    enqueue_shadow_external_result,
+    enqueue_shadow_prediction,
+)
 from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
@@ -109,6 +112,15 @@ def solve_reservation_captcha_and_click_reserve(
         captcha_solution = solve_normal_captcha(captcha_path_for_solver, settings)
         if captcha_audit is not None:
             captcha_audit["captcha_solution_sent"] = captcha_solution
+            shadow_event_id = captcha_audit.get("captcha_shadow_event_id")
+            if shadow_event_id:
+                captcha_audit["captcha_shadow_external_enqueued"] = (
+                    enqueue_shadow_external_result(
+                        event_id=str(shadow_event_id),
+                        external_answer=captcha_solution,
+                        portal_accepted=None,
+                    )
+                )
         if timing is not None:
             timing.mark("captcha_solver_finished")
     finally:

@@ -31,7 +31,7 @@ añadir espera de red al hilo de Playwright.
 | 1. Auditar y fijar el contrato | Completado | Alcance, riesgos y secuencia documentados. |
 | 2. Configuración y dispatcher | Completado | Cliente fail-open, cola acotada y configuración apagada. |
 | 3. Correlación y predicción | Completado | Propagación de contexto y `/v1/predict`. |
-| 4. Resultado externo | Pendiente | Respuesta 2Captcha y clasificación del portal. |
+| 4. Resultado externo | Completado | Respuesta 2Captcha y clasificación del portal. |
 | 5. Ciclo de vida | Pendiente | Inicio/cierre junto con el worker continuo. |
 | 6. Validación final | Pendiente | Pruebas manuales, sintaxis, lint y cierre documental. |
 
@@ -64,3 +64,14 @@ la ruta canónica `captcha_path_for_solver`.
 
 El `captcha_audit` conserva el identificador y si el productor pudo encolarlo. Los flujos que
 solo capturan evidencia por una regla bloqueada no producen eventos sombra.
+
+## Paso 4: respuesta externa y resultado del portal
+
+Al recibir la solución de 2Captcha se encola `/v1/results/external` con
+`portal_accepted=null`; la normalización a mayúsculas ocurre solo en la copia sombra. La cadena
+operativa enviada al portal permanece intacta.
+
+Después se registra `true` para `confirmed` o una confirmación posterior en `Programado`,
+`false` exclusivamente para `captcha_invalid`, y `null` para los demás resultados. Como ambos
+tipos de trabajo comparten el mismo consumidor FIFO, la actualización externa no se adelanta a
+la creación del evento.

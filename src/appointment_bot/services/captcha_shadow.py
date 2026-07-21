@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import queue
+import re
 import threading
 from dataclasses import dataclass
 from typing import Any
@@ -13,6 +14,7 @@ from appointment_bot.config import Settings
 
 logger = logging.getLogger(__name__)
 _dispatcher_lock = threading.Lock()
+CAPTCHA_ANSWER_PATTERN = re.compile(r"[A-Z0-9]{5}")
 
 
 @dataclass(frozen=True)
@@ -186,6 +188,30 @@ def enqueue_shadow_prediction(
             "event_id": event_id,
             "image_path": image_path,
             "metadata": metadata,
+        },
+    )
+    return captcha_shadow_dispatcher().enqueue(event)
+
+
+def enqueue_shadow_external_result(
+    *,
+    event_id: str,
+    external_answer: str,
+    portal_accepted: bool | None,
+) -> bool:
+    normalized_answer = external_answer.strip().upper()
+    if not CAPTCHA_ANSWER_PATTERN.fullmatch(normalized_answer):
+        logger.warning(
+            "captcha_shadow_invalid_external_answer event_id=%s",
+            event_id,
+        )
+        return False
+    event = CaptchaShadowEvent(
+        endpoint="/v1/results/external",
+        payload={
+            "event_id": event_id,
+            "external_answer": normalized_answer,
+            "portal_accepted": portal_accepted,
         },
     )
     return captcha_shadow_dispatcher().enqueue(event)

@@ -29,6 +29,7 @@ from appointment_bot.reservation_engine.timings import (
     ReservationTiming,
     add_reservation_timing_details,
 )
+from appointment_bot.services.captcha_shadow import enqueue_shadow_external_result
 from appointment_bot.utils.diagnostics import (
     read_visible_page_text,
     save_sanitized_page_html,
@@ -36,6 +37,22 @@ from appointment_bot.utils.diagnostics import (
 from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
+
+
+def _enqueue_shadow_portal_result(
+    captcha_audit: dict[str, object],
+    portal_accepted: bool | None,
+) -> None:
+    event_id = captcha_audit.get("captcha_shadow_event_id")
+    external_answer = captcha_audit.get("captcha_solution_sent")
+    if not event_id or not external_answer:
+        return
+    captcha_audit["captcha_shadow_portal_accepted"] = portal_accepted
+    captcha_audit["captcha_shadow_result_enqueued"] = enqueue_shadow_external_result(
+        event_id=str(event_id),
+        external_answer=str(external_answer),
+        portal_accepted=portal_accepted,
+    )
 
 
 def _add_diagnostic_artifact(
@@ -223,6 +240,16 @@ def complete_available_reservation(
                 }
             )
             captcha_audit["submission_outcome"] = submission_outcome
+            _enqueue_shadow_portal_result(
+                captcha_audit,
+                (
+                    True
+                    if submission_outcome == "confirmed"
+                    else False
+                    if submission_outcome == "captcha_invalid"
+                    else None
+                ),
+            )
             captcha_audit["duration_seconds"] = round(
                 max(time.monotonic() - attempt_started, 0.0),
                 3,
@@ -405,6 +432,16 @@ def complete_available_reservation(
     if submission_error:
         details["confirmacion_error"] = submission_error
     if programmed_stage is not None:
+        _enqueue_shadow_portal_result(latest_captcha_audit, True)
+        if captcha_attempts:
+            captcha_attempts[-1] = dict(latest_captcha_audit)
+        details = reservation_details()
+        details["submission_outcome"] = "confirmed"
+        details["confirmacion_texto"] = (
+            "detectada" if confirmation_text_detected else "no detectada"
+        )
+        details["confirmacion_etapa"] = "Programado"
+        details["confirmation_source"] = confirmation_source
         details["fecha_programada"] = programmed_stage.date
 
     if programmed_stage is None:
