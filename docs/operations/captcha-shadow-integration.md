@@ -132,6 +132,16 @@ consiste en volver a `CAPTCHA_SHADOW_ENABLED=false` y reiniciar el worker.
 
 `.env` no se versiona ni se publica porque puede contener credenciales reales.
 
+## Corrección posterior a los primeros intentos reales
+
+Los primeros dos intentos posteriores a la activación revelaron que el productor enviaba la
+ruta relativa de la imagen. Como el servicio sombra se ejecuta desde otro directorio, ambos
+`/v1/predict` respondieron HTTP 400 y no ejecutaron inferencia.
+
+El productor ahora resuelve `captcha_path_for_solver` a una ruta absoluta antes de encolarla.
+Esto conserva la misma imagen canónica y permite que el servicio la encuentre dentro de la raíz
+autorizada del proyecto del bot.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;

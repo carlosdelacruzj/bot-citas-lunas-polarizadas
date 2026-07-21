@@ -100,7 +100,7 @@ def solve_reservation_captcha_and_click_reserve(
         }
         shadow_enqueued = enqueue_shadow_prediction(
             event_id=shadow_event_id,
-            image_path=str(captcha_path_for_solver),
+            image_path=str(captcha_path_for_solver.resolve()),
             metadata=shadow_metadata,
         )
         if captcha_audit is not None:
