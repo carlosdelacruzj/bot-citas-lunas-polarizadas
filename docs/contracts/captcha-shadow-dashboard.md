@@ -90,3 +90,17 @@ Implementado y activado el 21 de julio de 2026:
 La revisión visual automatizada no estuvo disponible en esta sesión. La validación cubrió
 compilación Angular, contratos de tipos, respuestas HTTP reales, filtros, paginación y entrega de
 imágenes; queda recomendada una revisión visual humana breve desde la pestaña `CAPTCHA`.
+
+## Navegación escalable del dashboard
+
+Desde el 21 de julio de 2026 las pestañas superiores se reemplazan por una navegación lateral:
+
+- sidebar persistente en escritorio, con grupos `Operación`, `Administración` y `Automatización`;
+- modo contraído de iconos para ganar espacio horizontal, recordado localmente;
+- drawer superpuesto en móvil, abierto desde un único botón `Menú`;
+- selección de vista en un clic y cierre automático del drawer después de navegar;
+- título de la vista activa, estado del worker y actualización permanecen visibles en la cabecera;
+- contadores de órdenes, runs, finanzas y CAPTCHA continúan junto a su opción.
+
+No se usa carrusel porque ocultaría destinos y requeriría desplazamiento adicional. El sidebar
+permite añadir nuevos módulos sin volver a apilar controles en la parte superior.
