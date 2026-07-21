@@ -59,6 +59,8 @@ def monitor_appointment_availability(
     expected_person_name: str | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
+    run_id: str | None = None,
+    order_id: str | None = None,
 ):
     deadline = time.monotonic() + settings.monitor_window_seconds
     session_started = time.monotonic()
@@ -165,6 +167,8 @@ def monitor_appointment_availability(
                 on_submission_intent,
                 on_submission_started,
                 expected_person_name,
+                run_id,
+                order_id,
             )
             if reservation_outcome.completed_result is not None:
                 return reservation_outcome.completed_result
@@ -237,6 +241,8 @@ def _try_reservation_from_availability(
     on_submission_intent: Callable[[dict | None], None] | None,
     on_submission_started: Callable[[dict | None], None] | None,
     expected_person_name: str | None,
+    run_id: str | None,
+    order_id: str | None,
 ):
     timing = reservation_timing or ReservationTiming()
     timing.mark("selection_started")
@@ -326,6 +332,8 @@ def _try_reservation_from_availability(
                     on_submission_intent,
                     on_submission_started,
                     expected_person_name,
+                    run_id=run_id,
+                    order_id=order_id,
                 ),
                 selected_result=selected_result,
             )

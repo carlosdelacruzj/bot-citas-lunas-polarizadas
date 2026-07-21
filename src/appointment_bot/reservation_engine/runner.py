@@ -87,6 +87,7 @@ def run_with_report(
                 flow_result = execute_session_flow(
                     page,
                     settings,
+                    run_id=run_id,
                     order_id=order_id,
                     client_name=client_name,
                     cancel_event=cancel_event,

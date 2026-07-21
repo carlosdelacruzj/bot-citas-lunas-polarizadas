@@ -30,7 +30,7 @@ añadir espera de red al hilo de Playwright.
 | --- | --- | --- |
 | 1. Auditar y fijar el contrato | Completado | Alcance, riesgos y secuencia documentados. |
 | 2. Configuración y dispatcher | Completado | Cliente fail-open, cola acotada y configuración apagada. |
-| 3. Correlación y predicción | Pendiente | Propagación de contexto y `/v1/predict`. |
+| 3. Correlación y predicción | Completado | Propagación de contexto y `/v1/predict`. |
 | 4. Resultado externo | Pendiente | Respuesta 2Captcha y clasificación del portal. |
 | 5. Ciclo de vida | Pendiente | Inicio/cierre junto con el worker continuo. |
 | 6. Validación final | Pendiente | Pruebas manuales, sintaxis, lint y cierre documental. |
@@ -54,3 +54,13 @@ apagado, `http://127.0.0.1:8787`, 100 eventos y 2 segundos.
 `services/captcha_shadow.py` contiene una cola FIFO acotada y un consumidor único. Encolar no
 realiza red ni espera espacio; una cola llena devuelve inmediatamente y registra el descarte.
 Los errores HTTP, de conexión y timeout se absorben dentro del consumidor.
+
+## Paso 3: correlación y predicción
+
+`run_id` y `order_id` se propagan explícitamente desde `runner.py` hasta
+`reservation_submit.py`. Después de comprobar que el intento realmente continuará hacia
+2Captcha, el flujo construye `{run_id}:{order_id_o_observer}:captcha-{attempt_number}` y encola
+la ruta canónica `captcha_path_for_solver`.
+
+El `captcha_audit` conserva el identificador y si el productor pudo encolarlo. Los flujos que
+solo capturan evidencia por una regla bloqueada no producen eventos sombra.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from playwright.sync_api import Error as PlaywrightError
@@ -26,6 +27,7 @@ from appointment_bot.reservation_engine.reservation_controls import (
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.services.captcha import solve_normal_captcha
+from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
 from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,8 @@ def solve_reservation_captcha_and_click_reserve(
     captcha_audit: dict[str, Any] | None = None,
     attempt_number: int = 1,
     timing: ReservationTiming | None = None,
+    run_id: str | None = None,
+    order_id: str | None = None,
 ) -> Page:
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
@@ -77,6 +81,28 @@ def solve_reservation_captcha_and_click_reserve(
             "Reserva diferida porque hay una orden de mayor prioridad lista.",
             dict(captcha_audit or {}),
         )
+    if run_id:
+        shadow_event_id = (
+            f"{run_id}:{order_id or 'observer'}:captcha-{attempt_number}"
+        )
+        shadow_metadata = {
+            "run_id": run_id,
+            "order_id": order_id,
+            "observer": int(order_id is None),
+            "attempt": attempt_number,
+            "captured_at_utc": datetime.now(UTC).isoformat(),
+            "source_image_kind": effective_captcha_audit.get("captcha_sent_source"),
+            "detection_origin": (expected_details or {}).get("detection_origin"),
+            "portal_stage": "reservation_captcha",
+        }
+        shadow_enqueued = enqueue_shadow_prediction(
+            event_id=shadow_event_id,
+            image_path=str(captcha_path_for_solver),
+            metadata=shadow_metadata,
+        )
+        if captcha_audit is not None:
+            captcha_audit["captcha_shadow_event_id"] = shadow_event_id
+            captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_enqueued
     try:
         if timing is not None:
             timing.mark("captcha_solver_started")

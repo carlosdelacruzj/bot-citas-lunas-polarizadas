@@ -32,6 +32,7 @@ def execute_session_flow(
     page,
     settings: Settings,
     *,
+    run_id: str | None = None,
     order_id: str | None = None,
     client_name: str | None = None,
     cancel_event: threading.Event | None = None,
@@ -90,6 +91,8 @@ def execute_session_flow(
         expected_person_name,
         program_expediente,
         program_plate,
+        run_id,
+        order_id,
     )
     result = with_client_context(
         result,

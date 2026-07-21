@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 from appointment_bot.config import Settings
 
 logger = logging.getLogger(__name__)
+_dispatcher_lock = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -149,3 +150,42 @@ class CaptchaShadowDispatcher:
     def _increment(self, key: str) -> None:
         with self._counters_lock:
             self._counters[key] += 1
+
+
+_dispatcher = CaptchaShadowDispatcher(
+    enabled=False,
+    base_url="http://127.0.0.1:8787",
+    max_queue_size=1,
+    timeout_seconds=2,
+)
+
+
+def configure_captcha_shadow(settings: Settings) -> CaptchaShadowDispatcher:
+    global _dispatcher
+    with _dispatcher_lock:
+        if _dispatcher.status()["running"]:
+            _dispatcher.stop()
+        _dispatcher = CaptchaShadowDispatcher.from_settings(settings)
+        return _dispatcher
+
+
+def captcha_shadow_dispatcher() -> CaptchaShadowDispatcher:
+    with _dispatcher_lock:
+        return _dispatcher
+
+
+def enqueue_shadow_prediction(
+    *,
+    event_id: str,
+    image_path: str,
+    metadata: dict[str, Any],
+) -> bool:
+    event = CaptchaShadowEvent(
+        endpoint="/v1/predict",
+        payload={
+            "event_id": event_id,
+            "image_path": image_path,
+            "metadata": metadata,
+        },
+    )
+    return captcha_shadow_dispatcher().enqueue(event)

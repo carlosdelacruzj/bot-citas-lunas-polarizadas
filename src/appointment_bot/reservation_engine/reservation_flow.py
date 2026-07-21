@@ -99,6 +99,8 @@ def complete_available_reservation(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    run_id: str | None = None,
+    order_id: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
     confirmation_source = "unconfirmed"
@@ -155,6 +157,8 @@ def complete_available_reservation(
                     captcha_audit=captcha_audit,
                     attempt_number=captcha_attempt,
                     timing=timing,
+                    run_id=run_id,
+                    order_id=order_id,
                 )
             except ReservationDeferredForPriority as exc:
                 if timing is not None:
