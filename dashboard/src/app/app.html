@@ -212,7 +212,35 @@
       </section>
     }
 
-    <router-outlet />
+    @if (activeViewState(); as state) {
+      <app-view-state
+        [state]="state"
+        [compact]="state === 'refreshing' || state === 'stale'"
+        [title]="
+          state === 'loading'
+            ? 'Preparando ' + activeViewLabel().toLowerCase()
+            : state === 'refreshing'
+              ? 'Actualizando en segundo plano'
+              : state === 'stale'
+                ? 'Los datos visibles pueden estar desactualizados'
+                : 'No se pudo cargar ' + activeViewLabel().toLowerCase()
+        "
+        [message]="
+          state === 'refreshing'
+            ? 'Puedes seguir trabajando mientras llegan los cambios.'
+            : state === 'stale'
+              ? viewLoadError() || 'Se conservaron los últimos datos disponibles.'
+              : state === 'error'
+                ? viewLoadError() || 'Comprueba que la API local esté disponible.'
+                : 'Esto solo tomará un momento.'
+        "
+        (retry)="refreshNow()"
+      />
+    }
+
+    <div [hidden]="activeViewState() === 'loading' || activeViewState() === 'error'">
+      <router-outlet />
+    </div>
 
 
     @if (activeModal() === 'whatsapp') {

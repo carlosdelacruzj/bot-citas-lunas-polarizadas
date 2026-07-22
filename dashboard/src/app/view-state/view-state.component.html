@@ -1,0 +1,36 @@
+<section
+  class="view-state {{ state }}"
+  [class.compact]="compact"
+  [attr.role]="state === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="state === 'error' ? 'assertive' : 'polite'"
+>
+  @if (state === 'loading') {
+    <div class="state-copy">
+      <span class="state-mark pulse" aria-hidden="true"></span>
+      <div>
+        <strong>{{ title || 'Cargando información' }}</strong>
+        <p>{{ message || 'Preparando esta vista…' }}</p>
+      </div>
+    </div>
+    <div class="skeleton-list" aria-hidden="true">
+      @for (item of skeletonItems(); track item) {
+        <span class="skeleton-row"></span>
+      }
+    </div>
+  } @else {
+    <div class="state-copy">
+      <span class="state-mark" aria-hidden="true">
+        {{ state === 'empty' ? '—' : state === 'error' ? '!' : state === 'stale' ? '↻' : '·' }}
+      </span>
+      <div>
+        <strong>{{ title }}</strong>
+        @if (message) {
+          <p>{{ message }}</p>
+        }
+      </div>
+    </div>
+    @if (state === 'error' || state === 'stale') {
+      <button type="button" class="state-action" (click)="retry.emit()">{{ retryLabel }}</button>
+    }
+  }
+</section>

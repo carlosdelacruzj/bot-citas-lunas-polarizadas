@@ -51,6 +51,7 @@ import {
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
+import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'inbox' | 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
@@ -278,6 +279,7 @@ function paginationWindow(current: number, total: number): number[] {
   imports: [
     FormsModule,
     ReservationRulesEditorComponent,
+    ViewStateComponent,
     RouterOutlet,
     RouterLink,
   ],
@@ -385,6 +387,8 @@ export class App implements OnDestroy {
   protected readonly financeNotes = signal('');
   protected readonly financeDataQuality = signal<FinanceDataQuality>('actual');
   protected readonly loadState = signal<LoadState>('idle');
+  protected readonly viewLoadError = signal<string | null>(null);
+  protected readonly refreshingViewState = signal<ViewKey | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly copiedLabel = signal<string | null>(null);
   protected readonly selectedOrderId = signal('');
@@ -727,6 +731,40 @@ export class App implements OnDestroy {
   );
   protected readonly activeViewLabel = computed(() => VIEW_LABELS[this.activeView()].label);
   protected readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
+  protected readonly hasActiveViewData = computed(() => {
+    const view = this.activeView();
+    const state = this.loadState();
+    if (view === 'summary') {
+      return this.monthlySummary() !== null;
+    }
+    if (view === 'finance') {
+      return this.financeSummary() !== null;
+    }
+    if (view === 'orders') {
+      return this.orders().length > 0 || state === 'ready';
+    }
+    if (view === 'runs') {
+      return this.runs().length > 0 || this.workerCommands().length > 0 || state === 'ready';
+    }
+    if (view === 'captchas') {
+      return this.captchaSummary() !== null;
+    }
+    return this.orders().length > 0 || this.captchaReviewTotal() > 0 || state === 'ready';
+  });
+  protected readonly activeViewState = computed<ViewStateKind | null>(() => {
+    const state = this.loadState();
+    const hasData = this.hasActiveViewData();
+    if (state === 'loading' && !hasData) {
+      return 'loading';
+    }
+    if (state === 'error') {
+      return hasData ? 'stale' : 'error';
+    }
+    if (this.refreshingViewState() === this.activeView() && hasData) {
+      return 'refreshing';
+    }
+    return null;
+  });
 
   constructor() {
     effect(() => {
@@ -918,18 +956,26 @@ export class App implements OnDestroy {
   }
 
   private async performViewRefresh(view: ViewKey, showLoading: boolean): Promise<void> {
+    this.refreshingViewState.set(view);
     if (showLoading) {
       this.loadState.set('loading');
     }
     this.errorMessage.set(null);
+    this.viewLoadError.set(null);
     try {
       await Promise.all([this.refreshCommonData(), this.refreshViewData(view, showLoading)]);
       this.loadedViews.add(view);
       this.lastUpdatedAt.set(this.formatClock(new Date()));
       this.loadState.set('ready');
     } catch (error) {
+      const message = this.readError(error);
       this.loadState.set('error');
-      this.errorMessage.set(this.readError(error));
+      this.viewLoadError.set(message);
+      this.errorMessage.set(message);
+    } finally {
+      if (this.refreshingViewState() === view) {
+        this.refreshingViewState.set(null);
+      }
     }
   }
 

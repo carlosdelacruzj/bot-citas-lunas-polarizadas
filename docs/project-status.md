@@ -63,6 +63,11 @@ instrumentación no alteraron la regla de confirmación final.
 - SweetAlert2 también se carga bajo demanda. La compilación del cambio redujo
   el bundle inicial de aproximadamente 563 kB a 501 kB, por debajo del límite
   preventivo configurado en 520 kB.
+- Las vistas comparten un único estado visual para carga inicial, ausencia de
+  resultados, errores recuperables y datos posiblemente desactualizados. Las
+  actualizaciones con información existente son silenciosas: conservan el
+  contenido visible, informan en una franja compacta y permiten reintentar sin
+  bloquear el trabajo.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

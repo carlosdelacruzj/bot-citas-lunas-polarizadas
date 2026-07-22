@@ -38,7 +38,14 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="5" class="empty">No hay comandos recientes.</td>
+            <td colspan="5" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay comandos recientes"
+                message="Los nuevos comandos del worker aparecerán aquí."
+              />
+            </td>
           </tr>
         }
       </tbody>
@@ -195,7 +202,14 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6" class="empty">No hay runs para mostrar.</td>
+            <td colspan="6" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay corridas para mostrar"
+                message="Cambia el filtro o espera la siguiente ejecución."
+              />
+            </td>
           </tr>
         }
       </tbody>

@@ -34,13 +34,11 @@
 </section>
 
 @if (dashboard.inboxPendingTotal() === 0) {
-  <section class="panel inbox-empty" role="status">
-    <span aria-hidden="true">✓</span>
-    <div>
-      <h3>Todo está al día</h3>
-      <p>No hay pagos, accesos, mensajes ni CAPTCHA esperando intervención.</p>
-    </div>
-  </section>
+  <app-view-state
+    state="empty"
+    title="Todo está al día"
+    message="No hay pagos, accesos, mensajes ni CAPTCHA esperando intervención."
+  />
 } @else {
   <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
     <div class="panel-header">

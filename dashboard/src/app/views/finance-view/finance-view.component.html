@@ -175,7 +175,14 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="empty">No hay movimientos para este mes.</td>
+                <td colspan="7" class="empty">
+                  <app-view-state
+                    state="empty"
+                    [compact]="true"
+                    title="No hay movimientos para este mes"
+                    message="Registra un costo, recarga o ajuste cuando corresponda."
+                  />
+                </td>
               </tr>
             }
           </tbody>

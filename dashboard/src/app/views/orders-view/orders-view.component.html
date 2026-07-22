@@ -484,7 +484,14 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6" class="empty">No hay órdenes para mostrar.</td>
+            <td colspan="6" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay órdenes para mostrar"
+                message="Prueba otro filtro o crea una nueva orden."
+              />
+            </td>
           </tr>
         }
       </tbody>
