@@ -15,6 +15,7 @@ class ReservationConstraints:
     minimum_date: date | None = None
     maximum_date: date | None = None
     allowed_weekdays: tuple[int, ...] | None = None
+    excluded_date_ranges: tuple[tuple[date, date], ...] = ()
 
 
 def appointment_filter_from_constraints(
@@ -52,6 +53,11 @@ def appointment_matches_constraints(
     if constraints.minimum_date is not None and parsed_date < constraints.minimum_date:
         return False
     if constraints.maximum_date is not None and parsed_date > constraints.maximum_date:
+        return False
+    if any(
+        start_date <= parsed_date <= end_date
+        for start_date, end_date in constraints.excluded_date_ranges
+    ):
         return False
     if (
         constraints.allowed_weekdays is not None

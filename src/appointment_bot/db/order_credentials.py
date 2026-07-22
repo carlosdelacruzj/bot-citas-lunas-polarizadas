@@ -18,9 +18,11 @@ from appointment_bot.db.common import (
     _connection,
     _credential_cipher,
     _database_url,
+    _excluded_date_ranges_json,
     _id_from_value,
     _now,
     _parse_allowed_weekdays,
+    _parse_excluded_date_ranges,
     _parse_maximum_reservation_date,
     _parse_minimum_reservation_date,
     _settings,
@@ -44,6 +46,7 @@ def create_service_order(
     minimum_reservation_date: str | date | None = None,
     maximum_reservation_date: str | date | None = None,
     allowed_weekdays: Iterable[int] | None = None,
+    excluded_date_ranges: Iterable[dict[str, object] | Iterable[object]] | None = None,
     parent_order_id: str | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
@@ -71,6 +74,7 @@ def create_service_order(
     ):
         raise ValueError("maximum_reservation_date cannot be before minimum_reservation_date.")
     parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
+    parsed_excluded_date_ranges = _parse_excluded_date_ranges(excluded_date_ranges)
 
     now = _now()
     encrypted_password = _credential_cipher(settings).encrypt(password)
@@ -177,10 +181,14 @@ def create_service_order(
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
                 minimum_hour, minimum_date, maximum_date, allowed_weekdays,
+                excluded_date_ranges,
                 parent_order_id, program_expediente, program_plate,
                 status, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s
+            )
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
@@ -193,6 +201,11 @@ def create_service_order(
                     excluded.allowed_weekdays,
                     service_orders.allowed_weekdays
                 ),
+                excluded_date_ranges = CASE
+                    WHEN excluded.excluded_date_ranges = '[]'::jsonb
+                        THEN service_orders.excluded_date_ranges
+                    ELSE excluded.excluded_date_ranges
+                END,
                 parent_order_id = COALESCE(
                     excluded.parent_order_id,
                     service_orders.parent_order_id
@@ -219,6 +232,7 @@ def create_service_order(
                 parsed_minimum_date,
                 parsed_maximum_date,
                 parsed_allowed_weekdays,
+                Jsonb(_excluded_date_ranges_json(parsed_excluded_date_ranges)),
                 parent_order_id,
                 program_expediente,
                 program_plate,
@@ -364,7 +378,7 @@ def split_service_order_programs(
         parent = connection.execute(
             """
             SELECT priority, charge_required, minimum_hour, minimum_date, maximum_date,
-                   allowed_weekdays
+                   allowed_weekdays, excluded_date_ranges
             FROM service_orders
             WHERE order_id = %s
             """,
@@ -399,6 +413,7 @@ def split_service_order_programs(
                     if parent["allowed_weekdays"]
                     else None
                 ),
+                excluded_date_ranges=parent["excluded_date_ranges"],
                 parent_order_id=order_id,
                 program_expediente=expediente,
                 program_plate=plate,

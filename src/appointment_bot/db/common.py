@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import threading
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
@@ -148,6 +148,68 @@ def _parse_maximum_reservation_date(value: str | date | None) -> date | None:
         except ValueError:
             continue
     raise ValueError("maximum_reservation_date must use YYYY-MM-DD or DD/MM/YYYY.")
+
+
+def _parse_reservation_date(value: object, field_name: str) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    text = str(value or "").strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"{field_name} must use YYYY-MM-DD or DD/MM/YYYY.")
+
+
+def _parse_excluded_date_ranges(
+    value: Iterable[Mapping[str, object] | Iterable[object]] | None,
+) -> tuple[tuple[date, date], ...]:
+    if value is None:
+        return ()
+    parsed: list[tuple[date, date]] = []
+    for index, item in enumerate(value):
+        if isinstance(item, Mapping):
+            start_value = item.get("start_date")
+            end_value = item.get("end_date")
+        else:
+            pair = list(item)
+            if len(pair) != 2:
+                raise ValueError(f"excluded_date_ranges[{index}] must contain two dates.")
+            start_value, end_value = pair
+        start_date = _parse_reservation_date(
+            start_value,
+            f"excluded_date_ranges[{index}].start_date",
+        )
+        end_date = _parse_reservation_date(
+            end_value,
+            f"excluded_date_ranges[{index}].end_date",
+        )
+        if end_date < start_date:
+            raise ValueError(
+                f"excluded_date_ranges[{index}].end_date cannot be before start_date."
+            )
+        parsed.append((start_date, end_date))
+
+    merged: list[tuple[date, date]] = []
+    for start_date, end_date in sorted(set(parsed)):
+        if merged and start_date <= merged[-1][1]:
+            previous_start, previous_end = merged[-1]
+            merged[-1] = (previous_start, max(previous_end, end_date))
+        else:
+            merged.append((start_date, end_date))
+    return tuple(merged)
+
+
+def _excluded_date_ranges_json(
+    ranges: Iterable[tuple[date, date]],
+) -> list[dict[str, str]]:
+    return [
+        {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()}
+        for start_date, end_date in ranges
+    ]
 
 
 def _parse_allowed_weekdays(value: Iterable[int] | None) -> list[int] | None:

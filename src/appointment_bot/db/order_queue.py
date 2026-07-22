@@ -13,6 +13,7 @@ from appointment_bot.db.common import (
     _connection,
     _database_url,
     _now,
+    _parse_excluded_date_ranges,
     _settings,
     init_database,
 )
@@ -41,20 +42,27 @@ def get_minimum_reservation_hour_for_order(
 def get_reservation_constraints_for_order(
     order_id: str,
     settings: Settings | None = None,
-) -> tuple[int | None, date | None, date | None, tuple[int, ...] | None]:
+) -> tuple[
+    int | None,
+    date | None,
+    date | None,
+    tuple[int, ...] | None,
+    tuple[tuple[date, date], ...],
+]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT minimum_hour, minimum_date, maximum_date, allowed_weekdays
+            SELECT minimum_hour, minimum_date, maximum_date, allowed_weekdays,
+                   excluded_date_ranges
             FROM service_orders
             WHERE order_id = %s
             """,
             (order_id,),
         ).fetchone()
     if row is None:
-        return None, None, None, None
+        return None, None, None, None, ()
     minimum_hour = row["minimum_hour"]
     minimum_date = row["minimum_date"]
     maximum_date = row["maximum_date"]
@@ -64,6 +72,7 @@ def get_reservation_constraints_for_order(
         minimum_date if isinstance(minimum_date, date) else None,
         maximum_date if isinstance(maximum_date, date) else None,
         tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None,
+        _parse_excluded_date_ranges(row["excluded_date_ranges"]),
     )
 
 
@@ -84,6 +93,7 @@ def list_active_orders(
             AND so.minimum_date IS NULL
             AND so.maximum_date IS NULL
             AND so.allowed_weekdays IS NULL
+            AND so.excluded_date_ranges = '[]'::jsonb
             """
         )
     if order_ids is not None:
@@ -132,6 +142,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                            OR so.minimum_date IS NOT NULL
                            OR so.maximum_date IS NOT NULL
                            OR so.allowed_weekdays IS NOT NULL
+                           OR so.excluded_date_ranges <> '[]'::jsonb
                        ) AS is_constrained
                 FROM service_orders so
                 JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -191,7 +202,8 @@ def promote_orders_matching_reserved_slot(
     with _connection(_database_url(settings)) as connection:
         rows = connection.execute(
             """
-            SELECT order_id, minimum_hour, minimum_date, maximum_date, allowed_weekdays, priority
+            SELECT order_id, minimum_hour, minimum_date, maximum_date, allowed_weekdays,
+                   excluded_date_ranges, priority
             FROM service_orders
             WHERE status = 'ready'
               AND order_id <> COALESCE(%s, '')
@@ -200,6 +212,7 @@ def promote_orders_matching_reserved_slot(
                   OR minimum_date IS NOT NULL
                   OR maximum_date IS NOT NULL
                   OR allowed_weekdays IS NOT NULL
+                  OR excluded_date_ranges <> '[]'::jsonb
               )
             """,
             (excluded_order_id,),
@@ -232,6 +245,7 @@ def promote_orders_matching_reserved_slot(
                 allowed_weekdays=(
                     tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None
                 ),
+                excluded_date_ranges=_parse_excluded_date_ranges(row["excluded_date_ranges"]),
             )
             is_allowed = appointment_filter_from_constraints(constraints)
             if not is_allowed(date_text, hour_text):

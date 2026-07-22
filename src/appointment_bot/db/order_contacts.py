@@ -67,6 +67,7 @@ def list_service_order_summaries(
                    so.minimum_date AS minimum_reservation_date,
                    so.maximum_date AS maximum_reservation_date,
                    so.allowed_weekdays,
+                   so.excluded_date_ranges,
                    COALESCE(os.preflight_status, 'not_required') AS preflight_status,
                    os.preflight_message, os.preflight_started_at,
                    os.preflight_validated_at, os.preflight_details
@@ -357,6 +358,14 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         ),
         allowed_weekdays=(
             tuple(int(day) for day in row["allowed_weekdays"]) if row["allowed_weekdays"] else None
+        ),
+        excluded_date_ranges=tuple(
+            {
+                "start_date": str(item["start_date"]),
+                "end_date": str(item["end_date"]),
+            }
+            for item in (row["excluded_date_ranges"] or [])
+            if isinstance(item, dict) and item.get("start_date") and item.get("end_date")
         ),
         preflight_status=str(row["preflight_status"]),
         preflight_message=row["preflight_message"],

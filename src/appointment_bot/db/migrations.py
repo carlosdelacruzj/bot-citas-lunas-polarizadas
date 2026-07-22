@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 34
+SCHEMA_VERSION = 35
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -91,6 +91,9 @@ def create_current_schema(connection: Connection) -> None:
             maximum_date date,
             allowed_weekdays smallint[] CHECK (
                 allowed_weekdays IS NULL OR allowed_weekdays <@ ARRAY[1,2,3,4,5,6,7]::smallint[]
+            ),
+            excluded_date_ranges jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (
+                jsonb_typeof(excluded_date_ranges) = 'array'
             ),
             parent_order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
             program_expediente text,
@@ -359,6 +362,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "minimum_date"),
         ("service_orders", "maximum_date"),
         ("service_orders", "allowed_weekdays"),
+        ("service_orders", "excluded_date_ranges"),
         ("service_orders", "parent_order_id"),
         ("service_orders", "program_expediente"),
         ("service_orders", "program_plate"),
@@ -1113,6 +1117,20 @@ def migrate_database(connection: Connection) -> None:
             (34,),
         )
         current_version = 34
+    if current_version == 34:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN excluded_date_ranges jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (
+                jsonb_typeof(excluded_date_ranges) = 'array'
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (35,),
+        )
+        current_version = 35
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

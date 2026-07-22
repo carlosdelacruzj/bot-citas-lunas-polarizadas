@@ -57,6 +57,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "minimum_reservation_date",
     "maximum_reservation_date",
     "allowed_weekdays",
+    "excluded_date_ranges",
     "preflight_status",
     "preflight_message",
     "preflight_started_at",
@@ -174,6 +175,9 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
             maximum_reservation_date=_optional_text(payload, "maximum_reservation_date"),
             allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
+            excluded_date_ranges=_optional_excluded_date_ranges(
+                payload.get("excluded_date_ranges")
+            ),
             parent_order_id=_optional_text(payload, "parent_order_id"),
             program_expediente=_optional_text(payload, "program_expediente"),
             program_plate=_optional_text(payload, "program_plate"),
@@ -274,12 +278,16 @@ def update_service_order_restrictions_payload(
         minimum_date = _optional_text(payload, "minimum_reservation_date")
         maximum_date = _optional_text(payload, "maximum_reservation_date")
         allowed_weekdays = _optional_weekdays(payload.get("allowed_weekdays"))
+        excluded_date_ranges = _optional_excluded_date_ranges(
+            payload.get("excluded_date_ranges")
+        )
         update_service_order_reservation_constraints(
             order_id,
             minimum_reservation_hour=minimum_hour,
             minimum_reservation_date=minimum_date,
             maximum_reservation_date=maximum_date,
             allowed_weekdays=allowed_weekdays,
+            excluded_date_ranges=excluded_date_ranges,
         )
     except (TypeError, ValueError) as exc:
         message = str(exc)
@@ -295,6 +303,7 @@ def update_service_order_restrictions_payload(
         "minimum_reservation_date": minimum_date,
         "maximum_reservation_date": maximum_date,
         "allowed_weekdays": allowed_weekdays,
+        "excluded_date_ranges": excluded_date_ranges,
     }
 
 
@@ -486,6 +495,19 @@ def _optional_weekdays(value: Any) -> list[int] | None:
     if isinstance(value, list):
         return [int(item) for item in value]
     return [int(item.strip()) for item in str(value).split(",") if item.strip()]
+
+
+def _optional_excluded_date_ranges(value: Any) -> list[dict[str, object]]:
+    if value is None or value == "":
+        return []
+    if not isinstance(value, list):
+        raise ValueError("excluded_date_ranges must be a list.")
+    ranges: list[dict[str, object]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            raise ValueError(f"excluded_date_ranges[{index}] must be an object.")
+        ranges.append(item)
+    return ranges
 
 
 def _optional_bool(payload: dict[str, Any], name: str, *, default: bool) -> bool:
