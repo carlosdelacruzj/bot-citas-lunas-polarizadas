@@ -1,0 +1,173 @@
+@if (view.activeModal() === 'edit-order') {
+  @if (view.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-order-title"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="edit-order-title">Editar orden</h2>
+            <p>{{ view.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="view.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+          <div>
+            <span>Estado</span>
+            <strong>{{ view.statusLabel(order.status) }}</strong>
+            <small>{{ view.statusLabel(order.reservation_status, 'Sin reserva') }}</small>
+          </div>
+          <div>
+            <span>Contacto actual</span>
+            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+            <small
+              >{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} |
+              {{ order.contact_source ?? 'sin fuente' }}</small
+            >
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>{{ view.paymentLabel(order) }}</strong>
+            <small>{{
+              order.charge_required
+                ? (order.amount_paid ?? '0.00') +
+                  ' / ' +
+                  (order.amount_agreed ?? 'sin acordado')
+                : 'no requiere pago'
+            }}</small>
+          </div>
+        </section>
+
+        <div class="modal-grid">
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'contact') {
+            <section class="admin-block action-card">
+              <h3>Contacto</h3>
+              @if (view.orderDetailLoading()) {
+                <p class="muted">Cargando detalle protegido...</p>
+              }
+              <div class="form-grid">
+                <label>
+                  Nombre
+                  <input
+                    name="modalContactName"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactName()"
+                    (ngModelChange)="view.editField(view.contactName, $event)"
+                  />
+                </label>
+                <label>
+                  WhatsApp
+                  <input
+                    name="modalContactWhatsapp"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [placeholder]="view.selectedOrderWhatsappPlaceholder()"
+                    [ngModel]="view.contactWhatsapp()"
+                    (ngModelChange)="view.editField(view.contactWhatsapp, $event)"
+                  />
+                </label>
+                <label>
+                  Fuente
+                  <input
+                    name="modalContactSource"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactSource()"
+                    (ngModelChange)="view.editField(view.contactSource, $event)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.orderDetailLoading()"
+                (click)="view.requestContactUpdate()"
+              >
+                Guardar contacto
+              </button>
+            </section>
+          }
+
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'restrictions') {
+            <section class="admin-block action-card">
+              <h3>Reglas de reserva</h3>
+              <app-reservation-rules-editor
+                controlPrefix="modal"
+                [disabled]="view.isClosedOrder(order)"
+                [minimumDate]="view.orderMinimumReservationDate()"
+                [maximumDate]="view.orderMaximumReservationDate()"
+                [minimumHour]="view.orderMinimumReservationHour()"
+                [allowedWeekdays]="view.orderAllowedWeekdays()"
+                [excludedDateRanges]="view.orderExcludedDateRanges()"
+                [excludedDateStart]="view.orderExcludedDateStart()"
+                [excludedDateEnd]="view.orderExcludedDateEnd()"
+                (minimumDateChange)="view.editField(view.orderMinimumReservationDate, $event)"
+                (maximumDateChange)="view.editField(view.orderMaximumReservationDate, $event)"
+                (minimumHourChange)="view.editField(view.orderMinimumReservationHour, $event)"
+                (allowedWeekdaysChange)="view.editField(view.orderAllowedWeekdays, $event)"
+                (excludedDateStartChange)="view.editField(view.orderExcludedDateStart, $event)"
+                (excludedDateEndChange)="view.editField(view.orderExcludedDateEnd, $event)"
+                (addExcludedDateRange)="view.addOrderExcludedDateRange()"
+                (removeExcludedDateRange)="view.removeOrderExcludedDateRange($event)"
+                (clearExcludedDateRanges)="view.clearOrderExcludedDateRanges()"
+              />
+              <p class="muted">
+                Deja un campo vacío para quitar esa regla. Los cambios se aplican en la
+                siguiente selección de la cola.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.isClosedOrder(order)"
+                (click)="view.requestReservationRestrictionsUpdate()"
+              >
+                Continuar para guardar reglas
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Prioridad de búsqueda</h3>
+              <label>
+                Prioridad
+                <input
+                  name="modalOrderPriority"
+                  type="number"
+                  min="0"
+                  step="1"
+                  [disabled]="view.isClosedOrder(order)"
+                  [ngModel]="view.orderPriority()"
+                  (ngModelChange)="view.editField(view.orderPriority, $event)"
+                />
+              </label>
+              <p class="muted">
+                0–99 mantiene la cola normal. 100 o más activa enfoque. Para ocupar dos
+                observadores con dos registros, asigna 100 a cada orden por separado.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.isClosedOrder(order) || view.orderPriority() === order.priority"
+                (click)="view.requestPriorityUpdate()"
+              >
+                Continuar para guardar prioridad
+              </button>
+            </section>
+          }
+        </div>
+      </div>
+    </section>
+  }
+}
+

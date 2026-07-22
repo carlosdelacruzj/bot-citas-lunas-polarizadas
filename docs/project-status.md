@@ -72,6 +72,10 @@ instrumentación no alteraron la regla de confirmación final.
   actualizaciones con información existente son silenciosas: conservan el
   contenido visible, informan en una franja compacta y permiten reintentar sin
   bloquear el trabajo.
+- Los siete modales operativos están separados por responsabilidad (WhatsApp,
+  pago, edición, acciones, alta, finanzas y reinicio) y se cargan bajo demanda
+  al abrirse. `App` conserva únicamente la coordinación de efectos, la
+  confirmación final y la restauración de foco para no duplicar comportamiento.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

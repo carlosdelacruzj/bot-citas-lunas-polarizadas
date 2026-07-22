@@ -1,0 +1,141 @@
+@if (view.activeModal() === 'create-order') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-order-title"
+  >
+    <div class="modal wide-modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="create-order-title">Nueva orden</h2>
+          <p>Alta operativa de cliente</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          (click)="view.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div class="form-grid wide">
+        <label>
+          Tipo de documento <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="newDocumentType"
+            required
+            [ngModel]="view.newDocumentType()"
+            (ngModelChange)="view.editField(view.newDocumentType, $event)"
+          >
+            <option value="dni">DNI</option>
+            <option value="foreign_resident_card">Carné de Extranjería</option>
+          </select>
+        </label>
+        <label>
+          Usuario o documento <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newDocumentNumber"
+            type="text"
+            autocomplete="off"
+            required
+            [attr.aria-invalid]="!view.newDocumentNumber().trim() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newDocumentNumber()"
+            (ngModelChange)="view.editField(view.newDocumentNumber, $event)"
+          />
+        </label>
+        <label>
+          Contraseña <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newPassword"
+            type="password"
+            autocomplete="new-password"
+            required
+            [attr.aria-invalid]="!view.newPassword() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newPassword()"
+            (ngModelChange)="view.editField(view.newPassword, $event)"
+          />
+        </label>
+        <label>
+          Persona de contacto <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newContactName"
+            type="text"
+            required
+            [attr.aria-invalid]="!view.newContactName().trim() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newContactName()"
+            (ngModelChange)="view.editField(view.newContactName, $event)"
+          />
+        </label>
+        <label>
+          Número de WhatsApp (opcional)
+          <input
+            name="newContactWhatsapp"
+            type="text"
+            [ngModel]="view.newContactWhatsapp()"
+            (ngModelChange)="view.editField(view.newContactWhatsapp, $event)"
+          />
+        </label>
+        <label>
+          Fuente <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="newContactSource"
+            required
+            [attr.aria-invalid]="!view.newContactSource() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newContactSource()"
+            (ngModelChange)="view.editField(view.newContactSource, $event)"
+          >
+            <option value="">Selecciona una fuente</option>
+            <option value="tiktok">TikTok</option>
+            <option value="facebook">Facebook</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
+        </label>
+      </div>
+      <p id="create-required-help" class="required-help">
+        Los campos marcados con * son obligatorios.
+      </p>
+      <p class="required-help">
+        Al crearla, la orden quedara pausada mientras el sistema comprueba el acceso, obtiene el
+        nombre real y confirma los programas pendientes. Solo entonces entrara a la cola.
+      </p>
+
+      <fieldset class="restriction-fields">
+        <legend>Restricción de fechas (opcional)</legend>
+        <p>Déjalo vacío para buscar cualquier fecha disponible.</p>
+        <app-reservation-rules-editor
+          controlPrefix="new"
+          [showMinimumHour]="false"
+          [minimumDate]="view.newMinimumReservationDate()"
+          [maximumDate]="view.newMaximumReservationDate()"
+          [allowedWeekdays]="view.newAllowedWeekdays()"
+          [excludedDateRanges]="view.newExcludedDateRanges()"
+          [excludedDateStart]="view.newExcludedDateStart()"
+          [excludedDateEnd]="view.newExcludedDateEnd()"
+          (minimumDateChange)="view.editField(view.newMinimumReservationDate, $event)"
+          (maximumDateChange)="view.editField(view.newMaximumReservationDate, $event)"
+          (allowedWeekdaysChange)="view.editField(view.newAllowedWeekdays, $event)"
+          (excludedDateStartChange)="view.editField(view.newExcludedDateStart, $event)"
+          (excludedDateEndChange)="view.editField(view.newExcludedDateEnd, $event)"
+          (addExcludedDateRange)="view.addNewExcludedDateRange()"
+          (removeExcludedDateRange)="view.removeNewExcludedDateRange($event)"
+          (clearExcludedDateRanges)="view.clearNewExcludedDateRanges()"
+        />
+      </fieldset>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
+        <button type="button" class="primary" (click)="view.requestCreateOrder()">
+          Crear orden
+        </button>
+      </div>
+    </div>
+  </section>
+}
+

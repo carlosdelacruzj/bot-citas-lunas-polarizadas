@@ -1,0 +1,252 @@
+@if (view.activeModal() === 'whatsapp') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="whatsapp-title"
+  >
+    <div class="modal wide-modal whatsapp-modal">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Envío asistido sin API</p>
+          <h2 id="whatsapp-title">
+            {{
+              view.whatsappTestMode()
+                ? 'Prueba post-pago'
+                : view.whatsappFollowUpMode()
+                  ? 'Seguimiento post-pago'
+                  : 'Confirmación y cobro'
+            }}
+          </h2>
+          <p>WhatsApp nunca se considera enviado hasta que lo confirmes manualmente.</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          [disabled]="view.actionBusy()"
+          (click)="view.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      @if (view.whatsappTestMode() && !view.whatsappPackage() && !view.whatsappFollowUpPackage()) {
+        <section class="admin-block whatsapp-test-form">
+          <h3>Indica tu propio número</h3>
+          <label>
+            WhatsApp internacional
+            <input
+              name="whatsappTestRecipient"
+              type="tel"
+              placeholder="+51987654321"
+              [ngModel]="view.whatsappTestRecipient()"
+              (ngModelChange)="view.whatsappTestRecipient.set($event)"
+            />
+          </label>
+          <p class="muted">
+            Se usarán datos ficticios y los PDFs configurados para probar el mensaje post-pago.
+            No se modificará ninguna orden.
+          </p>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="view.whatsappFollowUpLoading() || view.whatsappPackageLoading()"
+            (click)="view.prepareWhatsAppTest()"
+          >
+            {{
+              view.whatsappFollowUpLoading() || view.whatsappPackageLoading()
+                ? 'Preparando...'
+                : view.whatsappFollowUpMode()
+                  ? 'Crear prueba post-pago'
+                  : 'Crear prueba de evidencias'
+            }}
+          </button>
+        </section>
+      }
+
+      @if (view.whatsappPackageLoading() && !view.whatsappPackage()) {
+        <p class="empty">Preparando textos y constancia...</p>
+      }
+
+      @if (view.whatsappFollowUpLoading() && !view.whatsappFollowUpPackage()) {
+        <p class="empty">Preparando mensajes post-pago...</p>
+      }
+
+      @if (view.whatsappFollowUpPackage(); as message) {
+        <section class="whatsapp-package-summary">
+          <div>
+            <span>Destino</span>
+            <strong>{{ message.recipient_phone }}</strong>
+            <small>{{ message.order_id }}</small>
+          </div>
+          <div>
+            <span>Estado</span>
+            <strong class="badge {{ view.statusTone(message.status) }}">{{
+              view.statusLabel(message.status)
+            }}</strong>
+            <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+          </div>
+        </section>
+
+        <section class="admin-block whatsapp-web-preparation">
+          <p class="eyebrow">Preparación automática · WhatsApp Web local</p>
+          <h3>PDFs y texto post-pago en un solo envío</h3>
+          <p>
+            El sistema adjunta los PDFs, consolida las indicaciones, envía el paquete y cierra
+            WhatsApp cuando termina.
+          </p>
+          <button
+            type="button"
+            class="primary whatsapp-action"
+            [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
+            (click)="view.prepareWhatsAppFollowUpWebDraft()"
+          >
+            {{ view.whatsappWebBusy() ? 'Enviando por WhatsApp...' : 'Enviar automáticamente' }}
+          </button>
+          @if (view.whatsappWebResult(); as webResult) {
+            <p
+              class="whatsapp-web-status"
+              [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'"
+            >
+              {{ webResult.message }}
+            </p>
+          }
+        </section>
+
+        <section class="whatsapp-confirmation">
+          <p>
+            Si el envío automático no termina, puedes confirmar manualmente solo después de
+            enviarlo en WhatsApp.
+          </p>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="message.status === 'sent' || view.actionBusy()"
+            (click)="view.confirmWhatsAppFollowUpSent()"
+          >
+            {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
+          </button>
+        </section>
+      }
+
+      @if (view.whatsappPackage(); as message) {
+        <section class="whatsapp-package-summary">
+          <div>
+            <span>Destino</span>
+            <strong>{{ message.recipient_phone }}</strong>
+            <small>{{ message.test_mode ? 'prueba ficticia' : message.order_id }}</small>
+          </div>
+          <div>
+            <span>Estado</span>
+            <strong class="badge {{ view.statusTone(message.status) }}">{{
+              view.statusLabel(message.status)
+            }}</strong>
+            <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+          </div>
+        </section>
+
+        <section class="admin-block whatsapp-web-preparation">
+          <p class="eyebrow">Borrador asistido · WhatsApp Web local</p>
+          <h3>Constancia y cobro en un solo álbum</h3>
+          <p>
+            El sistema carga las dos imágenes y coloca un texto distinto en cada una. En
+            WhatsApp solo debes revisar el destinatario y pulsar Enviar una vez.
+          </p>
+          <button
+            type="button"
+            class="primary whatsapp-action"
+            [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
+            (click)="view.prepareWhatsAppWebDraft()"
+          >
+            {{
+              view.whatsappWebBusy() ? 'Preparando WhatsApp Web...' : 'Reintentar borrador asistido'
+            }}
+          </button>
+          @if (view.whatsappWebResult(); as webResult) {
+            <p
+              class="whatsapp-web-status"
+              [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'"
+            >
+              {{ webResult.message }}
+            </p>
+          }
+        </section>
+
+        <details class="manual-fallback" [open]="view.whatsappManualFallbackOpen()">
+          <summary>Respaldo manual si WhatsApp Web no pudo prepararse</summary>
+          <div class="whatsapp-steps">
+            <article class="whatsapp-step">
+              <span class="step-number">1</span>
+              <h3>Constancia y confirmación</h3>
+              <img [src]="message.attachment_url" alt="Constancia preparada para WhatsApp" />
+              <textarea readonly [value]="message.greeting"></textarea>
+              <div class="modal-actions">
+                <a
+                  class="button-link whatsapp-action"
+                  [href]="message.whatsapp_url"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Abrir WhatsApp</a
+                >
+                <button type="button" class="primary" (click)="view.copyWhatsAppAttachment()">
+                  Copiar constancia
+                </button>
+                <a class="button-link secondary" [href]="message.attachment_url" download
+                  >Descargar constancia</a
+                >
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="view.copyWhatsAppText(message.greeting, 'confirmación')"
+                >
+                  Copiar texto
+                </button>
+              </div>
+            </article>
+
+            <article class="whatsapp-step">
+              <span class="step-number">2</span>
+              <h3>Imagen y mensaje de cobro</h3>
+              <img
+                [src]="message.payment_attachment_url"
+                alt="Imagen de pago preparada para WhatsApp"
+              />
+              <textarea readonly [value]="message.payment_message"></textarea>
+              <div class="modal-actions">
+                <a
+                  class="button-link secondary"
+                  [href]="message.payment_attachment_url"
+                  download
+                  >Descargar imagen de pago</a
+                >
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="view.copyWhatsAppText(message.payment_message, 'cobro')"
+                >
+                  Copiar cobro
+                </button>
+              </div>
+            </article>
+          </div>
+        </details>
+
+        <section class="whatsapp-confirmation">
+          <p>
+            Preparar el borrador no registra un envio. Confirma solo despues de revisar el chat
+            correcto y pulsar Enviar manualmente en WhatsApp.
+          </p>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="message.status === 'sent' || view.actionBusy()"
+            (click)="view.confirmWhatsAppSent()"
+          >
+            {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío realizado' }}
+          </button>
+        </section>
+      }
+    </div>
+  </section>
+}

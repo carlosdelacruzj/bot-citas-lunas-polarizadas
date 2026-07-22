@@ -1,0 +1,45 @@
+@if (view.activeModal() === 'worker-restart') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="worker-restart-title"
+  >
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="worker-restart-title">Reiniciar worker</h2>
+          <p>{{ view.phaseLabel(view.worker()?.phase ?? view.health()?.reason) }}</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          (click)="view.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+      <dl class="summary-list">
+        <div>
+          <dt>Worker</dt>
+          <dd>
+            {{
+              view.worker()?.worker_running || view.health()?.worker_running ? 'activo' : 'sin confirmar'
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Actividad actual</dt>
+          <dd>{{ view.currentWorkLabel() }}</dd>
+        </div>
+      </dl>
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
+        <button type="button" class="danger" (click)="view.requestRestartWorker()">
+          Reiniciar worker
+        </button>
+      </div>
+    </div>
+  </section>
+}

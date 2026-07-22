@@ -49,9 +49,15 @@ import {
   apiErrorMessage,
 } from './appointment-api.service';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
-import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
+import { WhatsappModalComponent } from './modals/whatsapp-modal.component';
+import { PaymentModalComponent } from './modals/payment-modal.component';
+import { EditOrderModalComponent } from './modals/edit-order-modal.component';
+import { OrderActionsModalComponent } from './modals/order-actions-modal.component';
+import { CreateOrderModalComponent } from './modals/create-order-modal.component';
+import { FinanceEntryModalComponent } from './modals/finance-entry-modal.component';
+import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'inbox' | 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
@@ -278,10 +284,16 @@ function paginationWindow(current: number, total: number): number[] {
   selector: 'app-root',
   imports: [
     FormsModule,
-    ReservationRulesEditorComponent,
     ViewStateComponent,
     RouterOutlet,
     RouterLink,
+    WhatsappModalComponent,
+    PaymentModalComponent,
+    EditOrderModalComponent,
+    OrderActionsModalComponent,
+    CreateOrderModalComponent,
+    FinanceEntryModalComponent,
+    WorkerRestartModalComponent,
   ],
   providers: [{ provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) }],
   templateUrl: './app.html',
