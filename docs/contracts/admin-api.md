@@ -149,7 +149,10 @@ restricciones de reserva de una orden:
   "minimum_reservation_hour": 11,
   "minimum_reservation_date": "2026-08-01",
   "maximum_reservation_date": "2026-08-31",
-  "allowed_weekdays": [1, 3, 6]
+  "allowed_weekdays": [1, 3, 6],
+  "excluded_date_ranges": [
+    {"start_date": "2026-08-10", "end_date": "2026-08-20"}
+  ]
 }
 ```
 
@@ -157,6 +160,10 @@ Cada campo acepta `null` para quitar esa restricción. La fecha máxima es
 inclusiva y no puede ser anterior a la mínima; los días usan numeración ISO de
 `1=lunes` a `7=domingo`. Al guardar se limpia `next_allowed_at` para que una
 restricción corregida no quede bloqueada por una espera calculada previamente.
+`excluded_date_ranges` acepta una lista de rangos inclusivos; cada elemento
+requiere `start_date` y `end_date`. Una fecha dentro de cualquiera de esos
+periodos se rechaza aunque cumpla los demás límites. Los rangos superpuestos se
+ordenan y consolidan antes de persistirlos; una lista vacía quita las exclusiones.
 La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.
@@ -233,6 +240,7 @@ flujos administrativos avanzados, pero no se solicitan al crear un cliente:
 - `minimum_reservation_date`
 - `maximum_reservation_date`
 - `allowed_weekdays`
+- `excluded_date_ranges`
 - `parent_order_id`
 - `program_expediente`
 - `program_plate`
@@ -240,8 +248,8 @@ flujos administrativos avanzados, pero no se solicitan al crear un cliente:
 La respuesta no debe devolver password. El frontend no debe persistir el valor
 del password despues de enviarlo.
 
-Si no se envian `minimum_reservation_date`, `maximum_reservation_date` ni
-`allowed_weekdays`, la orden se
+Si no se envian `minimum_reservation_date`, `maximum_reservation_date`,
+`allowed_weekdays` ni `excluded_date_ranges`, la orden se
 crea sin restriccion de fecha. El dashboard no debe inventar restricciones.
 
 ## Subordenes y restricciones en Angular
@@ -261,6 +269,8 @@ forman parte del contrato:
 - `maximum_reservation_date`: fecha maxima aceptable, inclusive; no puede ser
   anterior a `minimum_reservation_date`.
 - `allowed_weekdays`: dias ISO permitidos, `1=lunes` a `7=domingo`.
+- `excluded_date_ranges`: periodos inclusivos que el bot debe ignorar aunque el
+  resto de las reglas permita la fecha.
 
 Cada suborden debe tratarse como trabajo independiente para pausa, activacion,
 pago, reporte, sesion manual y cierre. Aunque comparta credenciales con la orden
@@ -268,6 +278,9 @@ padre, no debe mezclarse su estado de reserva ni su estado de pago.
 
 Cuando el usuario cree una orden sin restricciones, Angular debe omitir estos
 campos o enviarlos como `null`. No debe inventar restricciones por defecto.
+En la edición, Angular permite agregar varios rangos como etiquetas removibles.
+Si el operador completa un único rango y guarda sin pulsar `Agregar otro rango`,
+el rango pendiente también forma parte de la actualización.
 
 ## Acciones administrativas
 

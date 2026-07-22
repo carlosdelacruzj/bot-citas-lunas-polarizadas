@@ -32,7 +32,8 @@ instrumentación no alteraron la regla de confirmación final.
 - UX simplificada: tabla compacta, acción contextual, panel lateral, prioridad
   rápida y confirmaciones SweetAlert2.
 - Edición de restricciones por orden desde el dashboard: fecha mínima, fecha
-  máxima, hora mínima y días permitidos; los límites también se pueden quitar.
+  máxima, hora mínima, días permitidos y varios rangos de fechas excluidas; los
+  límites también se pueden quitar y los rangos aparecen resumidos en la orden.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

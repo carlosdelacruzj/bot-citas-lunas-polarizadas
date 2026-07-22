@@ -21,9 +21,9 @@ prioriza siempre las que no tienen restricciones. Si hay menos observadores
 libres que ese limite, completa la rotacion con ordenes restringidas. Una orden
 restringida puede detectar disponibilidad, pero antes de resolver CAPTCHA o
 enviar la reserva debe cumplir estrictamente `minimum_hour`, `minimum_date`,
-`maximum_date` y `allowed_weekdays`. Si el cupo no cumple, se registra como
-bloqueado por regla y
-no se intenta reservar.
+`maximum_date`, `allowed_weekdays` y `excluded_date_ranges`. Los límites de cada
+exclusión son inclusivos. Si el cupo incumple cualquier regla o cae dentro de un
+rango excluido, se registra como bloqueado por regla y no se intenta reservar.
 
 Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
 normal. Una prioridad `100` o superior activa prioridad de enfoque: esas ordenes
@@ -55,6 +55,7 @@ cupo compatible y para validar el cupo antes de enviar reserva:
 - `minimum_date`
 - `maximum_date`
 - `allowed_weekdays`
+- `excluded_date_ranges`
 
 Una cuenta puede tener varios tramites pendientes. En ese caso la orden
 generica puede dividirse en subordenes con:
@@ -73,6 +74,8 @@ Cuando una reserva queda confirmada (`registered`), el worker busca ordenes
 restringidas `ready` que coincidan con la fecha/hora confirmada. Solo esas
 ordenes se agregan como seguimiento a la cola rapida. Si ya no encuentran cupo,
 permanecen `ready` para esperar otra coincidencia.
+Una orden nunca debe promocionarse por una fecha incluida en uno de sus rangos
+excluidos.
 
 La espera entre ordenes dentro de la cola rapida se controla con:
 
