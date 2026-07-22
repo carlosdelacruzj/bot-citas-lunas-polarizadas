@@ -100,6 +100,90 @@
             </section>
           }
 
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'credentials') {
+            <section class="admin-block action-card credential-card">
+              <div class="credential-card-heading">
+                <div>
+                  <h3>Acceso al portal</h3>
+                  <p class="muted">Corrige el usuario o reemplaza la contraseña.</p>
+                </div>
+                <span class="badge {{ view.statusTone(order.preflight_status) }}">
+                  {{ view.statusLabel(order.preflight_status) }}
+                </span>
+              </div>
+              @if (view.orderDetailLoading()) {
+                <p class="muted">Cargando acceso protegido...</p>
+              }
+              <div class="form-grid credential-form">
+                <label>
+                  Tipo de documento
+                  <select
+                    name="modalOrderDocumentType"
+                    [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                    [ngModel]="view.orderDocumentType()"
+                    (ngModelChange)="view.editField(view.orderDocumentType, $event)"
+                  >
+                    <option value="dni">DNI</option>
+                    <option value="foreign_resident_card">Carné de Extranjería</option>
+                  </select>
+                </label>
+                <label>
+                  Usuario o documento
+                  <input
+                    name="modalOrderDocumentNumber"
+                    type="text"
+                    autocomplete="off"
+                    required
+                    [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                    [ngModel]="view.orderDocumentNumber()"
+                    (ngModelChange)="view.editField(view.orderDocumentNumber, $event)"
+                    aria-describedby="credentials-help dashboard-error"
+                  />
+                </label>
+                <label class="credential-password-field">
+                  Nueva contraseña
+                  <span class="credential-password-control">
+                    <input
+                      name="modalOrderPassword"
+                      [type]="view.orderPasswordVisible() ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      required
+                      [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                      [ngModel]="view.orderPassword()"
+                      (ngModelChange)="view.editField(view.orderPassword, $event)"
+                      aria-describedby="credentials-help dashboard-error"
+                    />
+                    <button
+                      type="button"
+                      class="secondary credential-password-toggle"
+                      [disabled]="!view.orderPassword()"
+                      (click)="view.toggleOrderPasswordVisibility()"
+                    >
+                      {{ view.orderPasswordVisible() ? 'Ocultar' : 'Mostrar' }}
+                    </button>
+                  </span>
+                </label>
+              </div>
+              <p id="credentials-help" class="credential-help">
+                La contraseña actual nunca se muestra. Después de guardar, la cuenta permanecerá
+                pausada hasta que el portal valide el nuevo acceso.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="
+                  view.orderDetailLoading() ||
+                  view.isClosedOrder(order) ||
+                  !view.orderDocumentNumber().trim() ||
+                  !view.orderPassword()
+                "
+                (click)="view.requestCredentialsUpdate()"
+              >
+                Guardar y validar acceso
+              </button>
+            </section>
+          }
+
           @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'restrictions') {
             <section class="admin-block action-card">
               <h3>Reglas de reserva</h3>
@@ -170,4 +254,3 @@
     </section>
   }
 }
-

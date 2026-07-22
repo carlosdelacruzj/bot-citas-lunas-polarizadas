@@ -206,6 +206,59 @@ body .modal-actions {
   border-top: 1px solid var(--line);
 }
 
+body .credential-card {
+  grid-column: 1 / -1;
+  border-color: rgba(32, 160, 165, 0.3);
+  background: linear-gradient(145deg, #ffffff, #f1fafa);
+}
+
+body .credential-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+
+body .credential-card-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+body .credential-password-field {
+  grid-column: 1 / -1;
+}
+
+body .credential-password-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+body .credential-password-toggle {
+  min-width: 88px;
+}
+
+body .credential-help {
+  margin: 0;
+  border-left: 3px solid var(--accent-500);
+  border-radius: var(--radius-sm);
+  background: #e9f7f6;
+  padding: 10px 12px;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 620px) {
+  body .credential-card-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body .credential-password-control {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Jerarquía de las superficies operativas. */
 body .order-controls,
 body .captcha-controls {

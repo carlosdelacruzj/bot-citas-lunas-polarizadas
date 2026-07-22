@@ -444,6 +444,10 @@ export class App implements OnDestroy {
   protected readonly contactName = signal('');
   protected readonly contactWhatsapp = signal('');
   protected readonly contactSource = signal('whatsapp');
+  protected readonly orderDocumentNumber = signal('');
+  protected readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
+  protected readonly orderPassword = signal('');
+  protected readonly orderPasswordVisible = signal(false);
   protected readonly orderPriority = signal(0);
   protected readonly orderMinimumReservationHour = signal('');
   protected readonly orderMinimumReservationDate = signal('');
@@ -454,7 +458,9 @@ export class App implements OnDestroy {
   protected readonly orderExcludedDateEnd = signal('');
   protected readonly paymentAmountPaid = signal('');
   protected readonly paymentAmountAgreed = signal('');
-  protected readonly editOrderSection = signal<'all' | 'contact' | 'restrictions'>('all');
+  protected readonly editOrderSection = signal<
+    'all' | 'contact' | 'credentials' | 'restrictions'
+  >('all');
   protected readonly newDocumentNumber = signal('');
   protected readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
   protected readonly newPassword = signal('');
@@ -2087,7 +2093,7 @@ export class App implements OnDestroy {
 
   protected async openEditOrder(
     order: ServiceOrder,
-    section: 'all' | 'contact' | 'restrictions' = 'all',
+    section: 'all' | 'contact' | 'credentials' | 'restrictions' = 'all',
   ): Promise<void> {
     this.selectOrder(order.order_id, false);
     this.editOrderSection.set(section);
@@ -2679,6 +2685,54 @@ export class App implements OnDestroy {
       message: `Actualizar contacto de ${order.order_id}.`,
       execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
       onSuccess: () => {
+        this.activeModal.set(null);
+        this.selectedOrderDetail.set(null);
+      },
+    });
+  }
+
+  protected needsCredentialCorrection(order: ServiceOrder): boolean {
+    return order.preflight_details?.['error_type'] === 'invalid_credentials';
+  }
+
+  protected toggleOrderPasswordVisibility(): void {
+    this.orderPasswordVisible.update((visible) => !visible);
+  }
+
+  protected requestCredentialsUpdate(): void {
+    if (this.orderDetailLoading()) {
+      this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
+      return;
+    }
+    const order = this.requireSelectedOrder();
+    const detail = this.selectedOrderDetail();
+    if (!order || !detail) {
+      this.errorMessage.set('No se pudo cargar el acceso actual de la orden.');
+      return;
+    }
+    const documentNumber = this.orderDocumentNumber().trim();
+    const password = this.orderPassword();
+    if (!documentNumber || !password) {
+      this.errorMessage.set('Usuario o documento y nueva contraseña son obligatorios.');
+      return;
+    }
+    const documentChanged = documentNumber !== detail.document_number;
+    const message = documentChanged
+      ? 'Cambiarás el usuario o documento de acceso. La cuenta y sus subórdenes se pausarán hasta validar la nueva identidad en el portal.'
+      : 'Reemplazarás la contraseña. La cuenta y sus subórdenes se pausarán hasta validar nuevamente el acceso al portal.';
+    this.setPendingAction({
+      title: documentChanged ? 'Cambiar usuario y contraseña' : 'Cambiar contraseña',
+      message,
+      containsSecret: true,
+      execute: () =>
+        this.api.updateServiceOrderCredentials(order.order_id, {
+          document_number: documentNumber,
+          document_type: this.orderDocumentType(),
+          password,
+        }),
+      onSuccess: () => {
+        this.orderPassword.set('');
+        this.orderPasswordVisible.set(false);
         this.activeModal.set(null);
         this.selectedOrderDetail.set(null);
       },
@@ -3581,6 +3635,10 @@ export class App implements OnDestroy {
     this.contactName.set(order.contact_name ?? '');
     this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
+    this.orderDocumentNumber.set(detail?.document_number ?? '');
+    this.orderDocumentType.set(order.document_type);
+    this.orderPassword.set('');
+    this.orderPasswordVisible.set(false);
     this.orderPriority.set(order.priority);
     this.orderMinimumReservationHour.set(
       order.minimum_reservation_hour === null ? '' : String(order.minimum_reservation_hour),

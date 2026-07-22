@@ -532,6 +532,12 @@ export interface CreateServiceOrderPayload {
   program_plate?: string | null;
 }
 
+export interface CredentialsUpdatePayload {
+  document_number: string;
+  document_type: 'dni' | 'foreign_resident_card';
+  password: string;
+}
+
 export interface WorkerCommand {
   command_id: string;
   command: string;
@@ -715,6 +721,16 @@ export class AppointmentApiService {
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/contact`,
+      payload,
+    );
+  }
+
+  async updateServiceOrderCredentials(
+    orderId: string,
+    payload: CredentialsUpdatePayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/credentials`,
       payload,
     );
   }

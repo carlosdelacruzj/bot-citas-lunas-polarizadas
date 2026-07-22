@@ -108,16 +108,27 @@
             order.preflight_status !== 'not_required' &&
             order.preflight_status !== 'validated'
           ) {
-            <button
-              type="button"
-              class="primary"
-              [disabled]="order.preflight_status === 'running' || dashboard.actionBusy()"
-              (click)="dashboard.requestOrderValidation(order)"
-            >
-              {{
-                order.preflight_status === 'failed' ? 'Volver a validar' : 'Validar acceso'
-              }}
-            </button>
+            @if (dashboard.needsCredentialCorrection(order)) {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="dashboard.actionBusy()"
+                (click)="dashboard.openEditOrder(order, 'credentials')"
+              >
+                Corregir acceso
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.preflight_status === 'running' || dashboard.actionBusy()"
+                (click)="dashboard.requestOrderValidation(order)"
+              >
+                {{
+                  order.preflight_status === 'failed' ? 'Volver a validar' : 'Validar acceso'
+                }}
+              </button>
+            }
           }
           @if (order.payment_status === 'pending') {
             <button type="button" class="primary" (click)="dashboard.openPayment(order)">
@@ -210,6 +221,15 @@
                 <dd>{{ order.contact_source ?? 'sin fuente' }}</dd>
               </div>
             </dl>
+            @if (!dashboard.isClosedOrder(order)) {
+              <button
+                type="button"
+                class="secondary"
+                (click)="dashboard.openEditOrder(order, 'credentials')"
+              >
+                Editar acceso al portal
+              </button>
+            }
           </article>
           <article>
             <h4>Reglas y prioridad</h4>

@@ -27,10 +27,11 @@ instrumentación no alteraron la regla de confirmación final.
   prioriza las tareas, Órdenes conserva filtros y contexto al desplazarse,
   CAPTCHA destaca la imagen y las respuestas, Resumen/Finanzas separan métricas
   ejecutivas y Actividad diferencia comandos, corridas y evidencias.
-- Las credenciales de una orden activa o pausada pueden reemplazarse sin crear
-  otra orden ni perder contacto, pagos o historial. El cambio se guarda cifrado,
-  pausa todas las subórdenes de la cuenta, limpia el error operativo anterior y
-  exige una nueva validación del portal antes de reactivarlas.
+- Desde `Editar orden > Acceso al portal`, las credenciales de una orden activa
+  o pausada pueden reemplazarse sin crear otra orden ni perder contacto, pagos o
+  historial. El cambio se guarda cifrado, pausa todas las subórdenes de la
+  cuenta, limpia el error operativo anterior y exige una nueva validación del
+  portal antes de reactivarlas.
 - Reserva automática con resultado `registered` o evidencia explícita del
   portal; estados ambiguos no autorizan un segundo submit.
 - `reservation_attempts`, submission pendiente y heartbeat de lease.
