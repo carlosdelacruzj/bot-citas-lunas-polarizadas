@@ -24,13 +24,12 @@
     <nav class="sidebar-nav" aria-label="Secciones del dashboard">
       <section class="sidebar-group">
         <p>Operación</p>
-        <button
-          type="button"
+        <a
           class="sidebar-link"
+          routerLink="/pendientes"
           [class.active]="activeView() === 'inbox'"
           [attr.aria-current]="activeView() === 'inbox' ? 'page' : null"
           title="Pendientes"
-          (click)="showView('inbox')"
         >
           <span class="nav-icon" aria-hidden="true">!</span>
           <span class="nav-label">Pendientes</span>
@@ -39,70 +38,68 @@
               {{ inboxPendingTotal() > 99 ? '99+' : inboxPendingTotal() }}
             </span>
           }
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
           class="sidebar-link"
+          routerLink="/resumen"
+          [queryParams]="{ month: selectedMonth() }"
           [class.active]="activeView() === 'summary'"
           [attr.aria-current]="activeView() === 'summary' ? 'page' : null"
           title="Resumen"
-          (click)="showView('summary')"
         >
           <span class="nav-icon" aria-hidden="true">⌂</span>
           <span class="nav-label">Resumen</span>
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
           class="sidebar-link"
+          routerLink="/ordenes"
           [class.active]="activeView() === 'orders'"
           [attr.aria-current]="activeView() === 'orders' ? 'page' : null"
           title="Órdenes"
-          (click)="showView('orders')"
         >
           <span class="nav-icon" aria-hidden="true">≡</span>
           <span class="nav-label">Órdenes</span>
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
           class="sidebar-link"
+          routerLink="/actividad"
           [class.active]="activeView() === 'runs'"
           [attr.aria-current]="activeView() === 'runs' ? 'page' : null"
           title="Runs"
-          (click)="showView('runs')"
         >
           <span class="nav-icon" aria-hidden="true">↻</span>
           <span class="nav-label">Actividad</span>
-        </button>
+        </a>
       </section>
 
       <section class="sidebar-group">
         <p>Administración</p>
-        <button
-          type="button"
+        <a
           class="sidebar-link"
+          routerLink="/finanzas"
+          [queryParams]="{ month: selectedMonth() }"
           [class.active]="activeView() === 'finance'"
           [attr.aria-current]="activeView() === 'finance' ? 'page' : null"
           title="Finanzas"
-          (click)="showView('finance')"
         >
           <span class="nav-icon text-icon" aria-hidden="true">S/</span>
           <span class="nav-label">Finanzas</span>
-        </button>
+        </a>
       </section>
 
       <section class="sidebar-group">
         <p>Automatización</p>
-        <button
-          type="button"
+        <a
           class="sidebar-link"
+          routerLink="/captchas"
+          [queryParams]="{ mode: captchaWorkspaceMode() }"
           [class.active]="activeView() === 'captchas'"
           [attr.aria-current]="activeView() === 'captchas' ? 'page' : null"
           title="CAPTCHA"
-          (click)="showView('captchas')"
         >
           <span class="nav-icon text-icon" aria-hidden="true">A9</span>
           <span class="nav-label">CAPTCHA</span>
-        </button>
+        </a>
       </section>
     </nav>
 
@@ -215,29 +212,7 @@
       </section>
     }
 
-    @if (activeView() === 'inbox') {
-      <app-inbox-view [dashboard]="dashboard" />
-    }
-
-    @if (activeView() === 'summary') {
-      <app-summary-view [dashboard]="dashboard" />
-    }
-
-    @if (activeView() === 'finance') {
-      <app-finance-view [dashboard]="dashboard" />
-    }
-
-    @if (activeView() === 'orders') {
-      <app-orders-view [dashboard]="dashboard" />
-    }
-
-    @if (activeView() === 'captchas') {
-      <app-captchas-view [dashboard]="dashboard" />
-    }
-
-    @if (activeView() === 'runs') {
-      <app-runs-view [dashboard]="dashboard" />
-    }
+    <router-outlet />
 
 
     @if (activeModal() === 'whatsapp') {

@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DashboardViewFacade } from '../../dashboard-view.facade';
+import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 
 @Component({
   selector: 'app-summary-view',
@@ -11,5 +11,5 @@ import { DashboardViewFacade } from '../../dashboard-view.facade';
   encapsulation: ViewEncapsulation.None,
 })
 export class SummaryViewComponent {
-  @Input({ required: true }) dashboard!: DashboardViewFacade;
+  protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
 }

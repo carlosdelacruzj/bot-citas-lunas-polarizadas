@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 
-import { DashboardViewFacade } from '../../dashboard-view.facade';
+import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 
 @Component({
   selector: 'app-inbox-view',
@@ -10,5 +10,5 @@ import { DashboardViewFacade } from '../../dashboard-view.facade';
   encapsulation: ViewEncapsulation.None,
 })
 export class InboxViewComponent {
-  @Input({ required: true }) dashboard!: DashboardViewFacade;
+  protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
 }

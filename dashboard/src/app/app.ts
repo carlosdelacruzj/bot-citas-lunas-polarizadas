@@ -6,11 +6,13 @@ import {
   WritableSignal,
   computed,
   effect,
+  forwardRef,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import Swal from 'sweetalert2';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
 
 import {
   ApiActionResponse,
@@ -48,12 +50,7 @@ import {
 } from './appointment-api.service';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
-import { CaptchasViewComponent } from './views/captchas-view/captchas-view.component';
-import { FinanceViewComponent } from './views/finance-view/finance-view.component';
-import { InboxViewComponent } from './views/inbox-view/inbox-view.component';
-import { OrdersViewComponent } from './views/orders-view/orders-view.component';
-import { RunsViewComponent } from './views/runs-view/runs-view.component';
-import { SummaryViewComponent } from './views/summary-view/summary-view.component';
+import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'inbox' | 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
@@ -281,29 +278,29 @@ function paginationWindow(current: number, total: number): number[] {
   imports: [
     FormsModule,
     ReservationRulesEditorComponent,
-    InboxViewComponent,
-    SummaryViewComponent,
-    FinanceViewComponent,
-    OrdersViewComponent,
-    CaptchasViewComponent,
-    RunsViewComponent,
+    RouterOutlet,
+    RouterLink,
   ],
+  providers: [{ provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) }],
   templateUrl: './app.html',
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class App implements OnDestroy {
-  protected readonly dashboard = this;
   protected readonly formatDate = formatPeruDate;
   protected readonly formatDateTime = formatPeruDateTime;
   protected readonly formatTime = formatPeruTime;
   private readonly api = inject(AppointmentApiService);
+  private readonly router = inject(Router);
   private readonly autoRefreshTimer = window.setInterval(() => {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
   private readonly activeManualSessionIds = new Set<string>();
   private readonly loadedViews = new Set<ViewKey>();
   private refreshInFlight: Promise<void> | null = null;
+  private refreshingView: ViewKey | null = null;
+  private routerSubscription: Subscription | null = null;
+  private sweetAlertPromise: Promise<typeof import('sweetalert2').default> | null = null;
   private captchaReviewMessageTimer: number | null = null;
   private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
@@ -745,11 +742,14 @@ export class App implements OnDestroy {
         }, ERROR_MESSAGE_DURATION_MS);
       }
     });
-    void this.refreshAll();
+    this.routerSubscription = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => void this.activateRoute(event.urlAfterRedirects));
   }
 
   ngOnDestroy(): void {
     window.clearInterval(this.autoRefreshTimer);
+    this.routerSubscription?.unsubscribe();
     if (this.captchaReviewMessageTimer !== null) {
       window.clearTimeout(this.captchaReviewMessageTimer);
     }
@@ -770,7 +770,7 @@ export class App implements OnDestroy {
       return;
     }
     if (this.pendingAction()) {
-      Swal.close();
+      void this.getSweetAlert().then((sweetAlert) => sweetAlert.close());
       return;
     }
     if (this.mobileMenuOpen()) {
@@ -835,10 +835,69 @@ export class App implements OnDestroy {
     await this.refreshAll();
   }
 
-  protected async showView(view: ViewKey): Promise<void> {
+  private async activateRoute(url: string): Promise<void> {
+    const tree = this.router.parseUrl(url);
+    const segments = tree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
+    const section = segments[0] ?? 'pendientes';
+    const viewBySection: Record<string, ViewKey> = {
+      pendientes: 'inbox',
+      resumen: 'summary',
+      ordenes: 'orders',
+      actividad: 'runs',
+      finanzas: 'finance',
+      captchas: 'captchas',
+    };
+    const view = viewBySection[section] ?? 'inbox';
+    const previousView = this.activeView();
+    let queryChanged = false;
+    const month = tree.queryParams['month'];
+    if (
+      ['summary', 'finance'].includes(view) &&
+      /^\d{4}-\d{2}$/.test(month ?? '') &&
+      month !== this.selectedMonth()
+    ) {
+      this.selectedMonth.set(month);
+      queryChanged = true;
+    }
+    const captchaMode = tree.queryParams['mode'];
+    if (view === 'captchas' && ['review', 'history'].includes(captchaMode)) {
+      this.captchaWorkspaceMode.set(captchaMode as CaptchaWorkspaceMode);
+    }
     this.activeView.set(view);
     this.mobileMenuOpen.set(false);
-    await this.refreshView(view, !this.loadedViews.has(view));
+
+    const needsRefresh = previousView !== view || !this.loadedViews.has(view) || queryChanged;
+    if (this.refreshingView === view && this.refreshInFlight) {
+      await this.refreshInFlight;
+    } else if (needsRefresh) {
+      await this.refreshView(view, !this.loadedViews.has(view));
+    }
+
+    if (view === 'orders') {
+      const orderId = segments[1];
+      if (orderId) {
+        if (!this.orders().some((order) => order.order_id === orderId)) {
+          this.errorMessage.set(`La orden ${orderId} no existe o ya no está disponible.`);
+          await this.router.navigateByUrl('/ordenes', { replaceUrl: true });
+          return;
+        }
+        if (this.selectedOrderId() !== orderId || !this.orderPanelOpen()) {
+          this.selectOrder(orderId, true, false);
+        }
+      } else if (this.orderPanelOpen()) {
+        this.closeOrderPanel(false);
+      }
+    }
+    if (view === 'runs') {
+      const runId = segments[1];
+      if (runId) {
+        if (this.selectedRunId() !== runId) {
+          void this.selectRun(runId, false);
+        }
+      } else if (this.selectedRunId()) {
+        this.closeRunDetail(false);
+      }
+    }
   }
 
   private async refreshView(view: ViewKey, showLoading: boolean): Promise<void> {
@@ -847,11 +906,13 @@ export class App implements OnDestroy {
     }
     const refresh = this.performViewRefresh(view, showLoading);
     this.refreshInFlight = refresh;
+    this.refreshingView = view;
     try {
       await refresh;
     } finally {
       if (this.refreshInFlight === refresh) {
         this.refreshInFlight = null;
+        this.refreshingView = null;
       }
     }
   }
@@ -1013,7 +1074,7 @@ export class App implements OnDestroy {
   }
 
   protected async showPendingCaptchaReview(): Promise<void> {
-    this.captchaWorkspaceMode.set('review');
+    this.showCaptchaWorkspace('review');
     this.captchaReviewPosition.set(0);
     await this.loadCaptchaData();
   }
@@ -1022,6 +1083,13 @@ export class App implements OnDestroy {
     this.captchaWorkspaceMode.set(mode);
     this.captchaPendingCorrection.set(null);
     this.clearCaptchaReviewMessage();
+    if (this.activeView() === 'captchas') {
+      void this.router.navigate([], {
+        queryParams: { mode },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   protected toggleCaptchaHistoryFilters(): void {
@@ -1364,6 +1432,13 @@ export class App implements OnDestroy {
       this.monthlyLoading.set(false);
       this.financeLoading.set(false);
     }
+    if (['summary', 'finance'].includes(view)) {
+      void this.router.navigate([], {
+        queryParams: { month },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   protected openNewFinanceEntry(): void {
@@ -1419,11 +1494,11 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestVoidFinanceEntry(entry: FinanceEntry): void {
+  protected async requestVoidFinanceEntry(entry: FinanceEntry): Promise<void> {
     if (entry.status !== 'active') {
       return;
     }
-    void Swal.fire({
+    void (await this.getSweetAlert()).fire({
       title: 'Anular movimiento',
       text: 'Escribe el motivo. El registro se conservara para auditoria y dejara de calcularse.',
       input: 'text',
@@ -1553,12 +1628,11 @@ export class App implements OnDestroy {
 
   protected openInboxCaptchaReview(): void {
     this.showCaptchaWorkspace('review');
-    void this.showView('captchas');
+    void this.router.navigate(['/captchas'], { queryParams: { mode: 'review' } });
   }
 
   protected openInboxOrder(order: ServiceOrder): void {
-    void this.showView('orders');
-    this.selectOrder(order.order_id);
+    void this.router.navigate(['/ordenes', order.order_id]);
   }
 
   protected runInboxOrderTask(task: InboxOrderTask): void {
@@ -1585,8 +1659,7 @@ export class App implements OnDestroy {
   }
 
   protected openOrderFromSummary(orderId: string): void {
-    this.activeView.set('orders');
-    this.selectOrder(orderId);
+    void this.router.navigate(['/ordenes', orderId]);
   }
 
   protected openPaymentFromSummary(orderId: string): void {
@@ -1595,11 +1668,11 @@ export class App implements OnDestroy {
       this.openOrderFromSummary(orderId);
       return;
     }
-    this.activeView.set('orders');
+    void this.router.navigate(['/ordenes', orderId]);
     void this.openPayment(order);
   }
 
-  protected selectOrder(orderId: string, loadDetail = true): void {
+  protected selectOrder(orderId: string, loadDetail = true, updateRoute = true): void {
     if (!this.orderPanelOpen()) {
       this.captureFocus();
     }
@@ -1608,6 +1681,9 @@ export class App implements OnDestroy {
     this.selectedOrderDetail.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+    if (updateRoute && this.activeView() === 'orders') {
+      void this.router.navigate(['/ordenes', orderId]);
+    }
     if (loadDetail) {
       void this.loadSelectedOrderDetail(orderId);
     }
@@ -1616,21 +1692,27 @@ export class App implements OnDestroy {
     });
   }
 
-  protected closeOrderPanel(): void {
+  protected closeOrderPanel(updateRoute = true): void {
     if (this.activeModal() || this.actionBusy()) {
       return;
     }
     this.orderPanelOpen.set(false);
     this.selectedOrderDetail.set(null);
     this.formDirty.set(false);
+    if (updateRoute && this.activeView() === 'orders') {
+      void this.router.navigateByUrl('/ordenes');
+    }
     this.restoreFocus();
   }
 
-  protected async selectRun(runId: string): Promise<void> {
+  protected async selectRun(runId: string, updateRoute = true): Promise<void> {
     this.selectedRunId.set(runId);
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
     this.runDetailState.set('loading');
+    if (updateRoute && this.activeView() === 'runs') {
+      void this.router.navigate(['/actividad', runId]);
+    }
     try {
       const run = await this.api.getRun(runId);
       if (this.selectedRunId() !== run.run_id) {
@@ -1647,11 +1729,14 @@ export class App implements OnDestroy {
     }
   }
 
-  protected closeRunDetail(): void {
+  protected closeRunDetail(updateRoute = true): void {
     this.selectedRunId.set('');
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
     this.runDetailState.set('idle');
+    if (updateRoute && this.activeView() === 'runs') {
+      void this.router.navigateByUrl('/actividad');
+    }
   }
 
   protected runResultLabel(run: RunSummary): string {
@@ -1699,8 +1784,8 @@ export class App implements OnDestroy {
   }
 
   protected showPendingPayments(): void {
-    this.activeView.set('orders');
     this.setOrderQuickFilter('payment_pending');
+    void this.router.navigateByUrl('/ordenes');
   }
 
   protected openOrderActions(order: ServiceOrder): void {
@@ -1766,7 +1851,7 @@ export class App implements OnDestroy {
       await this.prepareWhatsAppWebDraft(message);
     } catch {
       if (!allowResend && order.whatsapp_message_status === 'sent') {
-        const result = await Swal.fire({
+        const result = await (await this.getSweetAlert()).fire({
           icon: 'warning',
           title: 'Mensaje ya enviado',
           text: 'Esta orden ya tiene un envio confirmado. ¿Deseas preparar un reenvio?',
@@ -1796,7 +1881,7 @@ export class App implements OnDestroy {
       await this.prepareWhatsAppFollowUpWebDraft(message);
     } catch {
       if (!allowResend && order.whatsapp_followup_status === 'sent') {
-        const result = await Swal.fire({
+        const result = await (await this.getSweetAlert()).fire({
           icon: 'warning',
           title: 'Post-pago ya enviado',
           text: 'Esta orden ya tiene un seguimiento post-pago confirmado. ¿Deseas preparar un reenvio?',
@@ -1925,7 +2010,7 @@ export class App implements OnDestroy {
       this.whatsappWebResult.set(response);
       this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
       if (response.status === 'login_required') {
-        await Swal.fire({
+        await (await this.getSweetAlert()).fire({
           icon: 'info',
           title: 'Vincula WhatsApp Web',
           text: response.message,
@@ -1963,7 +2048,7 @@ export class App implements OnDestroy {
       this.whatsappWebResult.set(response);
       this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
       if (response.status === 'login_required') {
-        await Swal.fire({
+        await (await this.getSweetAlert()).fire({
           icon: 'info',
           title: 'Vincula WhatsApp Web',
           text: response.message,
@@ -1992,7 +2077,7 @@ export class App implements OnDestroy {
     if (!message || message.status === 'sent') {
       return;
     }
-    const result = await Swal.fire({
+    const result = await (await this.getSweetAlert()).fire({
       icon: 'question',
       title: 'Confirmar envio',
       text: 'Confirma solo despues de enviar saludo, constancia y cobro en WhatsApp.',
@@ -2025,7 +2110,7 @@ export class App implements OnDestroy {
     if (!message || message.status === 'sent') {
       return;
     }
-    const result = await Swal.fire({
+    const result = await (await this.getSweetAlert()).fire({
       icon: 'question',
       title: 'Confirmar seguimiento',
       text: 'Confirma solo despues de enviar el paquete post-pago en WhatsApp.',
@@ -2818,7 +2903,7 @@ export class App implements OnDestroy {
     if (!order || !this.isPostPaymentWhatsAppCandidate(order)) {
       return;
     }
-    const result = await Swal.fire({
+    const result = await (await this.getSweetAlert()).fire({
       title: 'Pago registrado',
       text: '¿Deseas preparar ahora las indicaciones y archivos post-pago?',
       icon: 'success',
@@ -2835,7 +2920,7 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     this.captureFocus();
     this.pendingAction.set(action);
-    const result = await Swal.fire({
+    const result = await (await this.getSweetAlert()).fire({
       title: action.title,
       text: action.message,
       icon: action.title.toLowerCase().includes('cerrar') ? 'warning' : 'question',
@@ -2864,7 +2949,11 @@ export class App implements OnDestroy {
     } catch (error) {
       const message = this.readError(error);
       this.errorMessage.set(message);
-      await Swal.fire({ icon: 'error', title: 'No se pudo completar', text: message });
+      await (await this.getSweetAlert()).fire({
+        icon: 'error',
+        title: 'No se pudo completar',
+        text: message,
+      });
     } finally {
       action.onSettled?.();
       this.pendingAction.set(null);
@@ -2874,7 +2963,7 @@ export class App implements OnDestroy {
   }
 
   private async showToast(title: string): Promise<void> {
-    await Swal.fire({
+    await (await this.getSweetAlert()).fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
@@ -2883,6 +2972,11 @@ export class App implements OnDestroy {
       timer: 2200,
       timerProgressBar: true,
     });
+  }
+
+  private getSweetAlert(): Promise<typeof import('sweetalert2').default> {
+    this.sweetAlertPromise ??= import('sweetalert2').then((module) => module.default);
+    return this.sweetAlertPromise;
   }
 
   private async loadWhatsAppPackage(

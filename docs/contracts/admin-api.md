@@ -466,6 +466,23 @@ refresco automático actualiza únicamente esa vista y omite el ciclo si todaví
 hay otra actualización en curso. Cambiar el mes consulta Resumen o Finanzas,
 pero no ambos módulos simultáneamente.
 
+Rutas del dashboard servido por el admin API:
+
+| Ruta | Vista |
+|---|---|
+| `/pendientes` | bandeja de trabajo |
+| `/resumen?month=YYYY-MM` | resumen mensual |
+| `/ordenes` | listado de órdenes |
+| `/ordenes/{order_id}` | orden seleccionada |
+| `/actividad` | runs y comandos |
+| `/actividad/{run_id}` | run seleccionado |
+| `/finanzas?month=YYYY-MM` | control financiero |
+| `/captchas?mode=review|history` | revisión o historial CAPTCHA |
+
+Cada vista se entrega como un chunk Angular diferido. El servidor debe mantener
+el fallback de rutas desconocidas hacia `index.html`; el admin API incorporado
+ya aplica este comportamiento.
+
 ## Cambios requeridos antes de Angular con botones
 
 - Filtrar `owner_token` de `GET /api/v1/worker`. Estado: completado.

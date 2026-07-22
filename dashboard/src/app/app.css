@@ -125,7 +125,6 @@ textarea {
 .sidebar-link,
 .sidebar-collapse {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
   width: 100%;
@@ -135,6 +134,15 @@ textarea {
   color: #c9d6e1;
   padding: 6px 9px;
   text-align: left;
+}
+
+.sidebar-link {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  text-decoration: none;
+}
+
+.sidebar-collapse {
+  grid-template-columns: 34px minmax(0, 1fr);
 }
 
 .sidebar-link:hover,

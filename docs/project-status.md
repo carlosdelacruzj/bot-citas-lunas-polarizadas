@@ -57,6 +57,12 @@ instrumentación no alteraron la regla de confirmación final.
   cobros, seguimiento post-pago y validaciones CAPTCHA. Cada orden muestra un
   único siguiente paso y el menú solo presenta un contador cuando hay trabajo
   accionable.
+- La navegación usa rutas reales con carga diferida por vista. Órdenes y runs
+  aceptan enlaces directos; Resumen/Finanzas conservan el mes en la URL y
+  CAPTCHA conserva el modo de revisión o historial.
+- SweetAlert2 también se carga bajo demanda. La compilación del cambio redujo
+  el bundle inicial de aproximadamente 563 kB a 501 kB, por debajo del límite
+  preventivo configurado en 520 kB.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y
