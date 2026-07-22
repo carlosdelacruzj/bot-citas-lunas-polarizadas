@@ -1,0 +1,661 @@
+<section class="captcha-dashboard" aria-labelledby="captcha-dashboard-title">
+  <div class="captcha-heading">
+    <div>
+      <p class="eyebrow">Comparación en tiempo real</p>
+      <h2 id="captcha-dashboard-title">Control de CAPTCHA</h2>
+      <p>La misma imagen frente a 2Captcha y tus tres modelos locales.</p>
+    </div>
+    <div class="captcha-heading-actions">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="dashboard.captchaState() === 'loading'"
+        (click)="dashboard.loadCaptchaData()"
+      >
+        Actualizar CAPTCHA
+      </button>
+    </div>
+  </div>
+
+  @if (dashboard.captchaSummary(); as summary) {
+    <div class="captcha-summary-strip" aria-label="Resumen de CAPTCHA">
+      <span class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
+        {{ summary.status === 'ok' ? 'Servicio activo' : dashboard.statusLabel(summary.status) }}
+      </span>
+      <strong>{{ summary.stats.events }} total</strong>
+      <span>{{ summary.stats.human_labeled }} validados</span>
+      <span class="{{ dashboard.captchaReviewTotal() ? 'warn' : 'good' }}">
+        {{ dashboard.captchaReviewTotal() }} pendientes
+      </span>
+      <small
+        >{{ summary.models.length }} modelos · {{ summary.outbox.pending }} entregas en
+        cola</small
+      >
+    </div>
+  }
+
+  <nav class="captcha-workspace-switch" aria-label="Modo de trabajo CAPTCHA">
+    <button
+      type="button"
+      [class.active]="dashboard.captchaWorkspaceMode() === 'review'"
+      (click)="dashboard.showCaptchaWorkspace('review')"
+    >
+      Revisar
+      <span>{{ dashboard.captchaReviewTotal() }}</span>
+    </button>
+    <button
+      type="button"
+      [class.active]="dashboard.captchaWorkspaceMode() === 'history'"
+      (click)="dashboard.showCaptchaWorkspace('history')"
+    >
+      Historial
+      <span>{{ dashboard.captchaTotal() }}</span>
+    </button>
+  </nav>
+
+  @if (dashboard.captchaWorkspaceMode() === 'review') {
+    @if (dashboard.captchaState() === 'loading') {
+      <section class="panel captcha-state" role="status">
+        Preparando la cola de revisión...
+      </section>
+    } @else if (dashboard.captchaState() === 'error') {
+      <section class="notice bad captcha-state" role="alert">
+        <strong>No se pudo cargar la cola.</strong>
+        <span>{{ dashboard.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="dashboard.loadCaptchaData()">
+          Reintentar
+        </button>
+      </section>
+    } @else if (dashboard.activeCaptchaReview(); as event) {
+      <div class="captcha-review-progress">
+        <div>
+          <strong>{{ dashboard.captchaReviewPosition() + 1 }} de {{ dashboard.captchaReviewTotal() }}</strong>
+          <span>{{ dashboard.captchaChoiceLabel(event) }} · {{ dashboard.captchaSourceLabel(event) }}</span>
+        </div>
+        <small>Atajos: 1–3 elegir · Enter confirmar consenso · ← → navegar</small>
+      </div>
+
+      @if (dashboard.captchaReviewMessage()) {
+        <div class="notice neutral captcha-review-message" role="status">
+          {{ dashboard.captchaReviewMessage() }}
+        </div>
+      }
+
+      <article class="captcha-event-card captcha-review-focus">
+        <div class="captcha-event-topline">
+          <div>
+            <strong>{{ dashboard.captchaOrderLabel(event) }}</strong>
+            <span>{{
+              dashboard.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+            }}</span>
+          </div>
+          <span class="badge warn">{{ dashboard.captchaChoiceLabel(event) }}</span>
+        </div>
+
+        <div class="captcha-focus-layout">
+          <a
+            class="captcha-image-link captcha-focus-image"
+            [href]="event.image_url"
+            target="_blank"
+            rel="noopener"
+            title="Abrir imagen original"
+          >
+            <img [src]="event.image_url" alt="CAPTCHA original" />
+            <span>Imagen original · abrir</span>
+          </a>
+
+          <section class="captcha-human-review">
+            <div class="captcha-review-intro">
+              <span class="eyebrow">Elige la respuesta válida</span>
+              @if (dashboard.captchaChoiceMode(event) === 'consensus') {
+                <strong>Los tres modelos coinciden</strong>
+                <small>Confirma con un clic o escribe otra respuesta.</small>
+              } @else if (dashboard.captchaChoiceMode(event) === 'majority') {
+                <strong>Dos modelos coinciden y uno difiere</strong>
+                <small>Escoge la lectura correcta.</small>
+              } @else {
+                <strong>Los modelos no llegaron a un acuerdo</strong>
+                <small>Ingresa manualmente los cinco caracteres.</small>
+              }
+            </div>
+
+            @if (dashboard.captchaChoiceMode(event) !== 'manual') {
+              <div class="captcha-suggestion-list">
+                @for (
+                  option of dashboard.captchaPredictionOptions(event);
+                  track option.answer;
+                  let index = $index
+                ) {
+                  <button
+                    type="button"
+                    class="captcha-suggestion {{
+                      dashboard.captchaSuggestionTone(event, option.answer)
+                    }}"
+                    [disabled]="dashboard.captchaSavingEventId() === event.event_id"
+                    (click)="dashboard.chooseCaptchaPrediction(event, option.answer)"
+                  >
+                    <span class="captcha-shortcut">{{ index + 1 }}</span>
+                    <strong>{{ option.answer }}</strong>
+                    <span>
+                      {{ option.modelNames.length }}
+                      {{ option.modelNames.length === 1 ? 'modelo' : 'modelos' }}
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+
+            <form
+              class="captcha-manual-review"
+              (submit)="$event.preventDefault(); dashboard.saveCaptchaHumanLabel(event)"
+            >
+              <label [for]="'reviewAnswer-' + event.event_id">
+                {{
+                  dashboard.captchaChoiceMode(event) === 'manual'
+                    ? 'Respuesta manual'
+                    : 'Otra respuesta'
+                }}
+              </label>
+              <div class="captcha-review-actions">
+                <input
+                  [id]="'reviewAnswer-' + event.event_id"
+                  [name]="'reviewAnswer-' + event.event_id"
+                  type="text"
+                  autocomplete="off"
+                  maxlength="5"
+                  placeholder="ABCDE"
+                  [ngModel]="dashboard.captchaDraft(event)"
+                  (ngModelChange)="dashboard.updateCaptchaDraft(event.event_id, $event)"
+                />
+                <button
+                  type="submit"
+                  class="secondary"
+                  [disabled]="dashboard.captchaSavingEventId() === event.event_id"
+                >
+                  {{
+                    dashboard.captchaSavingEventId() === event.event_id
+                      ? 'Guardando...'
+                      : 'Guardar manual'
+                  }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div class="captcha-comparison-grid compact">
+          @if (!dashboard.isObserverCaptcha(event)) {
+            <article class="captcha-answer external">
+              <span>2Captcha</span>
+              <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
+              <small>{{ dashboard.formatMilliseconds(event.external_solve_ms) }}</small>
+            </article>
+          }
+          @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
+            @if (dashboard.captchaPrediction(event, modelName); as prediction) {
+              <article class="captcha-answer {{ dashboard.captchaPredictionTone(event, prediction) }}">
+                <span>{{ dashboard.captchaModelLabel(modelName) }}</span>
+                <strong>{{ prediction.prediction }}</strong>
+                <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
+              </article>
+            }
+          }
+        </div>
+      </article>
+
+      <nav class="captcha-review-navigation" aria-label="Navegar cola de CAPTCHA">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="dashboard.captchaReviewPosition() === 0"
+          (click)="dashboard.moveCaptchaReview(-1)"
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="dashboard.captchaReviewPosition() + 1 >= dashboard.captchaReviewQueue().length"
+          (click)="dashboard.moveCaptchaReview(1)"
+        >
+          Omitir por ahora
+        </button>
+      </nav>
+    } @else {
+      <section class="panel captcha-empty-review">
+        <span aria-hidden="true">✓</span>
+        <h3>Todo validado</h3>
+        <p>No hay CAPTCHA pendientes. Puedes consultar o corregir etiquetas en Historial.</p>
+        <button type="button" class="secondary" (click)="dashboard.showCaptchaWorkspace('history')">
+          Ver historial
+        </button>
+      </section>
+    }
+  } @else {
+    <section class="panel captcha-controls" aria-label="Filtros de CAPTCHA">
+      <form class="captcha-search" (submit)="$event.preventDefault(); dashboard.applyCaptchaFilters()">
+        <label class="filter captcha-query">
+          Buscar orden, run o respuesta
+          <input
+            name="captchaSearch"
+            type="search"
+            placeholder="Ej. order-09045304 o 9M9FH"
+            [ngModel]="dashboard.captchaSearch()"
+            (ngModelChange)="dashboard.captchaSearch.set($event)"
+          />
+        </label>
+        <button type="submit" class="primary">Buscar</button>
+      </form>
+
+      <div class="captcha-history-toolbar">
+        <div class="captcha-filter-chips" aria-label="Estado de revisión humana">
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="dashboard.captchaReviewStatus() === 'all'"
+            (click)="dashboard.changeCaptchaReviewStatus('all')"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="dashboard.captchaReviewStatus() === 'pending'"
+            (click)="dashboard.changeCaptchaReviewStatus('pending')"
+          >
+            Pendientes
+          </button>
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="dashboard.captchaReviewStatus() === 'validated'"
+            (click)="dashboard.changeCaptchaReviewStatus('validated')"
+          >
+            Validados
+          </button>
+        </div>
+        <button type="button" class="secondary" (click)="dashboard.toggleCaptchaHistoryFilters()">
+          Filtros{{
+            dashboard.captchaActiveFilterCount() ? ' (' + dashboard.captchaActiveFilterCount() + ')' : ''
+          }}
+        </button>
+      </div>
+
+      @if (dashboard.captchaHistoryFiltersOpen()) {
+        <div class="captcha-filter-row">
+          <div class="captcha-filter-chips" aria-label="Coincidencia con 2Captcha">
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="dashboard.captchaAgreement() === 'all'"
+              (click)="dashboard.setCaptchaAgreement('all')"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="dashboard.captchaAgreement() === 'match'"
+              (click)="dashboard.setCaptchaAgreement('match')"
+            >
+              Coinciden
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="dashboard.captchaAgreement() === 'mismatch'"
+              (click)="dashboard.setCaptchaAgreement('mismatch')"
+            >
+              Difieren
+            </button>
+            <button
+              type="button"
+              class="filter-chip"
+              [class.active]="dashboard.captchaAgreement() === 'pending'"
+              (click)="dashboard.setCaptchaAgreement('pending')"
+            >
+              Pendientes
+            </button>
+          </div>
+
+          <label class="filter">
+            Origen
+            <select
+              name="captchaSource"
+              [ngModel]="dashboard.captchaSource()"
+              (ngModelChange)="dashboard.changeCaptchaSource($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="reservation">Reservas con cliente</option>
+              <option value="observer">Observador local</option>
+            </select>
+          </label>
+          <label class="filter">
+            Portal
+            <select
+              name="captchaPortalStatus"
+              [ngModel]="dashboard.captchaPortalStatus()"
+              (ngModelChange)="dashboard.changeCaptchaPortalStatus($event)"
+            >
+              <option value="all">Todos</option>
+              <option value="accepted">Aceptados</option>
+              <option value="rejected">Rechazados</option>
+              <option value="unverified">Sin validar</option>
+            </select>
+          </label>
+        </div>
+      }
+    </section>
+
+    @if (dashboard.captchaState() === 'loading') {
+      <section class="panel captcha-state" role="status">
+        Cargando evidencias CAPTCHA...
+      </section>
+    } @else if (dashboard.captchaState() === 'error') {
+      <section class="notice bad captcha-state" role="alert">
+        <strong>No se pudo cargar esta vista.</strong>
+        <span>{{ dashboard.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="dashboard.loadCaptchaData()">
+          Reintentar
+        </button>
+      </section>
+    } @else {
+      <div class="captcha-results-meta">
+        <strong>{{ dashboard.captchaTotal() }} resultados</strong>
+        <span>Página {{ dashboard.captchaPage() }} de {{ dashboard.captchaTotalPages() }}</span>
+      </div>
+
+      @if (dashboard.captchaReviewMessage()) {
+        <div class="notice neutral captcha-review-message" role="status">
+          {{ dashboard.captchaReviewMessage() }}
+        </div>
+      }
+
+      <div class="captcha-event-list">
+        @for (event of dashboard.captchaEvents(); track event.event_id) {
+          <article class="captcha-event-card captcha-history-card">
+            <div class="captcha-event-topline">
+              <div>
+                <strong>{{ dashboard.captchaOrderLabel(event) }}</strong>
+                <span>
+                  {{
+                    dashboard.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+                  }}
+                  · intento {{ event.metadata.attempt ?? 1 }}
+                </span>
+              </div>
+              <div class="captcha-statuses">
+                <span class="badge {{ dashboard.captchaAgreementTone(event) }}">
+                  {{ dashboard.captchaAgreementLabel(event) }}
+                </span>
+                <span class="badge {{ dashboard.captchaPortalTone(event) }}">
+                  {{ dashboard.captchaPortalLabel(event) }}
+                </span>
+                <span class="badge {{ event.human_label ? 'good' : 'neutral' }}">
+                  {{
+                    event.human_label
+                      ? 'Validado: ' + event.human_label.answer
+                      : 'Sin validar por ti'
+                  }}
+                </span>
+                <span class="badge neutral">
+                  Total local: {{ dashboard.formatMilliseconds(dashboard.captchaLocalTotalMs(event)) }}
+                </span>
+              </div>
+            </div>
+
+            <details class="captcha-history-details">
+              <summary>
+                <img [src]="event.image_url" alt="" loading="lazy" />
+                <div>
+                  <strong>{{ event.human_label?.answer ?? 'Sin validar' }}</strong>
+                  <span
+                    >{{ dashboard.captchaChoiceLabel(event) }} · {{ dashboard.captchaSourceLabel(event) }}</span
+                  >
+                </div>
+                <span>{{ dashboard.formatMilliseconds(dashboard.captchaLocalTotalMs(event)) }}</span>
+                <small>Ver detalles</small>
+              </summary>
+
+              <div class="captcha-event-body">
+                <a
+                  class="captcha-image-link"
+                  [href]="event.image_url"
+                  target="_blank"
+                  rel="noopener"
+                  title="Abrir imagen original"
+                >
+                  <img [src]="event.image_url" alt="CAPTCHA original" loading="lazy" />
+                  <span>Imagen original · abrir</span>
+                </a>
+
+                <div class="captcha-review-column">
+                  <section class="captcha-human-review">
+                    <div class="captcha-review-intro">
+                      <span class="eyebrow">Elige la respuesta válida</span>
+                      @if (dashboard.captchaChoiceMode(event) === 'consensus') {
+                        <strong>Los tres modelos coinciden</strong>
+                        <small>Confirma con un clic o escribe otra respuesta.</small>
+                      } @else if (dashboard.captchaChoiceMode(event) === 'majority') {
+                        <strong>Dos modelos coinciden y uno difiere</strong>
+                        <small
+                          >Escoge la lectura correcta; luego se compararán los tres.</small
+                        >
+                      } @else {
+                        <strong>Los modelos no llegaron a un acuerdo</strong>
+                        <small
+                          >Lee la imagen e ingresa manualmente los cinco caracteres.</small
+                        >
+                      }
+                    </div>
+
+                    @if (dashboard.captchaChoiceMode(event) !== 'manual') {
+                      <div class="captcha-suggestion-list">
+                        @for (
+                          option of dashboard.captchaPredictionOptions(event);
+                          track option.answer
+                        ) {
+                          <button
+                            type="button"
+                            class="captcha-suggestion {{
+                              dashboard.captchaSuggestionTone(event, option.answer)
+                            }}"
+                            [disabled]="dashboard.captchaSavingEventId() === event.event_id"
+                            (click)="dashboard.chooseCaptchaPrediction(event, option.answer)"
+                          >
+                            <strong>{{ option.answer }}</strong>
+                            <span>
+                              {{ option.modelNames.length }}
+                              {{ option.modelNames.length === 1 ? 'modelo' : 'modelos' }}
+                            </span>
+                            <small>{{ option.modelNames.join(' · ') }}</small>
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <form
+                      class="captcha-manual-review"
+                      (submit)="$event.preventDefault(); dashboard.saveCaptchaHumanLabel(event)"
+                    >
+                      <label [for]="'humanAnswer-' + event.event_id">
+                        {{
+                          dashboard.captchaChoiceMode(event) === 'manual'
+                            ? 'Respuesta manual'
+                            : 'Otra respuesta'
+                        }}
+                      </label>
+                      <div class="captcha-review-actions">
+                        <input
+                          [id]="'humanAnswer-' + event.event_id"
+                          [name]="'humanAnswer-' + event.event_id"
+                          type="text"
+                          inputmode="text"
+                          autocomplete="off"
+                          maxlength="5"
+                          placeholder="ABCDE"
+                          aria-label="Respuesta humana del CAPTCHA"
+                          [ngModel]="dashboard.captchaDraft(event)"
+                          (ngModelChange)="dashboard.updateCaptchaDraft(event.event_id, $event)"
+                        />
+                        <button
+                          type="submit"
+                          class="secondary"
+                          [disabled]="dashboard.captchaSavingEventId() === event.event_id"
+                        >
+                          {{
+                            dashboard.captchaSavingEventId() === event.event_id
+                              ? 'Guardando...'
+                              : 'Guardar manual'
+                          }}
+                        </button>
+                      </div>
+                    </form>
+
+                    @if (dashboard.pendingCaptchaCorrection(event.event_id); as correction) {
+                      <div class="notice warn captcha-correction-confirmation" role="alert">
+                        <div>
+                          <strong
+                            >¿Cambiar {{ correction.previousAnswer }} por
+                            {{ correction.nextAnswer }}?</strong
+                          >
+                          <small
+                            >La etiqueta actual seguirá intacta hasta que confirmes.</small
+                          >
+                        </div>
+                        <div class="button-row">
+                          <button
+                            type="button"
+                            class="danger"
+                            [disabled]="dashboard.captchaSavingEventId() === event.event_id"
+                            (click)="dashboard.confirmCaptchaCorrection(event)"
+                          >
+                            Confirmar cambio
+                          </button>
+                          <button
+                            type="button"
+                            class="secondary"
+                            (click)="dashboard.cancelCaptchaCorrection(event)"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </section>
+
+                  <div class="captcha-comparison-grid">
+                    @if (!dashboard.isObserverCaptcha(event)) {
+                      <article class="captcha-answer external">
+                        <span>2Captcha</span>
+                        <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
+                        <small>{{ dashboard.formatMilliseconds(event.external_solve_ms) }}</small>
+                      </article>
+                    }
+
+                    @for (
+                      modelName of ['v1_real', 'v2_scratch', 'v2_selected'];
+                      track modelName
+                    ) {
+                      @if (dashboard.captchaPrediction(event, modelName); as prediction) {
+                        <article
+                          class="captcha-answer {{
+                            dashboard.captchaPredictionTone(event, prediction)
+                          }}"
+                        >
+                          <span>{{ dashboard.captchaModelLabel(modelName) }}</span>
+                          <strong>{{ prediction.prediction }}</strong>
+                          <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
+                          <small>
+                            Confianza {{ dashboard.formatConfidence(prediction.mean_confidence) }} ·
+                            mínima
+                            {{ dashboard.formatConfidence(prediction.min_char_confidence) }}
+                          </small>
+                        </article>
+                      } @else {
+                        <article class="captcha-answer neutral">
+                          <span>{{ modelName }}</span>
+                          <strong>Pendiente</strong>
+                          <small>Sin predicción</small>
+                        </article>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <details class="captcha-details">
+                <summary>Detalles técnicos</summary>
+                <dl>
+                  <div>
+                    <dt>Evento</dt>
+                    <dd>{{ event.event_id }}</dd>
+                  </div>
+                  <div>
+                    <dt>Run</dt>
+                    <dd>{{ event.metadata.run_id ?? 'Sin run' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Origen</dt>
+                    <dd>{{ event.metadata.source_image_kind ?? 'Sin dato' }}</dd>
+                  </div>
+                </dl>
+              </details>
+            </details>
+          </article>
+        } @empty {
+          <section class="panel captcha-state">
+            No hay CAPTCHA que coincidan con los filtros actuales.
+          </section>
+        }
+      </div>
+
+      <div class="captcha-history-footer">
+        <label class="filter">
+          Resultados por página
+          <select
+            name="captchaPageSize"
+            [ngModel]="dashboard.captchaPageSize()"
+            (ngModelChange)="dashboard.changeCaptchaPageSize($event)"
+          >
+            <option [ngValue]="12">12</option>
+            <option [ngValue]="24">24</option>
+            <option [ngValue]="48">48</option>
+          </select>
+        </label>
+      </div>
+
+      @if (dashboard.captchaTotalPages() > 1) {
+        <nav class="captcha-pagination" aria-label="Páginas de CAPTCHA">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="dashboard.captchaPage() === 1"
+            (click)="dashboard.goToCaptchaPage(dashboard.captchaPage() - 1)"
+          >
+            Anterior
+          </button>
+          @for (page of dashboard.captchaPageNumbers(); track page) {
+            <button
+              type="button"
+              class="page-button"
+              [class.active]="page === dashboard.captchaPage()"
+              [attr.aria-current]="page === dashboard.captchaPage() ? 'page' : null"
+              (click)="dashboard.goToCaptchaPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="dashboard.captchaPage() === dashboard.captchaTotalPages()"
+            (click)="dashboard.goToCaptchaPage(dashboard.captchaPage() + 1)"
+          >
+            Siguiente
+          </button>
+        </nav>
+      }
+    }
+  }
+</section>

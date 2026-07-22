@@ -47,6 +47,11 @@ import {
 } from './appointment-api.service';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
+import { CaptchasViewComponent } from './views/captchas-view/captchas-view.component';
+import { FinanceViewComponent } from './views/finance-view/finance-view.component';
+import { OrdersViewComponent } from './views/orders-view/orders-view.component';
+import { RunsViewComponent } from './views/runs-view/runs-view.component';
+import { SummaryViewComponent } from './views/summary-view/summary-view.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
@@ -258,11 +263,20 @@ function paginationWindow(current: number, total: number): number[] {
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ReservationRulesEditorComponent],
+  imports: [
+    FormsModule,
+    ReservationRulesEditorComponent,
+    SummaryViewComponent,
+    FinanceViewComponent,
+    OrdersViewComponent,
+    CaptchasViewComponent,
+    RunsViewComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnDestroy {
+  protected readonly dashboard = this;
   protected readonly formatDate = formatPeruDate;
   protected readonly formatDateTime = formatPeruDateTime;
   protected readonly formatTime = formatPeruTime;

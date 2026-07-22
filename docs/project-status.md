@@ -46,6 +46,9 @@ instrumentación no alteraron la regla de confirmación final.
 - Creación y edición reutilizan el mismo editor de reglas de reserva para fechas,
   días permitidos y rangos excluidos. Las validaciones, textos y comportamiento
   responsive quedan definidos en un solo componente.
+- Las cinco vistas principales del dashboard están separadas en componentes:
+  Resumen, Finanzas, Órdenes, CAPTCHA y Actividad. `App` conserva la navegación,
+  el estado compartido y los modales para evitar duplicar lógica operativa.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

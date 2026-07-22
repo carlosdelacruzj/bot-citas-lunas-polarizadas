@@ -1,0 +1,186 @@
+<section class="panel finance-dashboard" aria-labelledby="finance-dashboard-title">
+  <div class="panel-header monthly-header">
+    <div>
+      <p class="eyebrow">Control financiero</p>
+      <h2 id="finance-dashboard-title">Costos, caja y margen</h2>
+      <p>Las recargas prepagadas afectan caja; el consumo afecta el costo del periodo.</p>
+    </div>
+    <div class="finance-header-actions">
+      <label class="filter month-filter">
+        Mes
+        <input
+          name="financeMonth"
+          type="month"
+          [ngModel]="dashboard.selectedMonth()"
+          [disabled]="dashboard.financeLoading()"
+          (ngModelChange)="dashboard.changeMonth($event)"
+        />
+      </label>
+      <button type="button" class="primary" (click)="dashboard.openNewFinanceEntry()">
+        Nuevo movimiento
+      </button>
+    </div>
+  </div>
+
+  @if (dashboard.financeLoading()) {
+    <p class="monthly-loading">Actualizando finanzas...</p>
+  } @else if (dashboard.financeSummary(); as finance) {
+    <div class="monthly-kpis finance-kpis">
+      <article class="monthly-kpi primary-kpi">
+        <span>Ingresos cobrados</span>
+        <strong>{{ dashboard.formatMoney(finance.revenue_collected) }}</strong>
+        <small>Pagos recibidos en el mes</small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Costos reconocidos</span>
+        <strong>{{ dashboard.formatMoney(finance.recognized_costs) }}</strong>
+        <small>Gastos + consumos − reembolsos</small>
+      </article>
+      <article class="monthly-kpi" [class.warn-kpi]="!finance.is_complete">
+        <span>Margen operativo parcial</span>
+        <strong>{{ dashboard.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
+        <small>
+          {{
+            finance.is_complete
+              ? 'Antes de costos todavía no registrados'
+              : finance.unconverted_entries + ' movimientos sin convertir a PEN'
+          }}
+        </small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Salida neta de caja</span>
+        <strong>{{ dashboard.formatMoney(finance.net_cash_outflow) }}</strong>
+        <small>Incluye recargas, no duplica consumo</small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Recargas prepagadas</span>
+        <strong>{{ dashboard.formatMoney(finance.prepaid_topups) }}</strong>
+        <small>Saldo comprado durante el mes</small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Consumo prepagado</span>
+        <strong>{{ dashboard.formatMoney(finance.prepaid_consumption) }}</strong>
+        <small>{{ finance.active_entries }} movimientos activos</small>
+      </article>
+    </div>
+
+    <div class="finance-grid">
+      <article class="monthly-card">
+        <div class="monthly-card-header">
+          <div>
+            <h3>Costos por categoría</h3>
+            <p>Solo costos reconocidos en el resultado del mes.</p>
+          </div>
+        </div>
+        @if (finance.by_category.length) {
+          <div class="summary-list finance-category-list">
+            @for (category of finance.by_category; track category.category_code) {
+              <div>
+                <dt>{{ category.category_name }}</dt>
+                <dd>{{ dashboard.formatMoney(category.recognized_cost) }}</dd>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty compact-empty">Todavía no hay costos reconocidos este mes.</p>
+        }
+      </article>
+
+      <article class="monthly-card finance-rule-card">
+        <div class="monthly-card-header">
+          <div>
+            <h3>Regla de 2Captcha</h3>
+            <p>Evita duplicar el costo.</p>
+          </div>
+        </div>
+        <dl class="summary-list">
+          <div>
+            <dt>Recarga</dt>
+            <dd>Salida de caja y aumento de saldo</dd>
+          </div>
+          <div>
+            <dt>Consumo</dt>
+            <dd>Costo reconocido del periodo</dd>
+          </div>
+        </dl>
+      </article>
+    </div>
+
+    <article class="monthly-card finance-ledger">
+      <div class="monthly-card-header">
+        <div>
+          <h3>Libro de movimientos</h3>
+          <p>Los anulados quedan visibles, pero no participan en los cálculos.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="responsive-table finance-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Categoría / detalle</th>
+              <th>Importe</th>
+              <th>Valor PEN</th>
+              <th>Calidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of dashboard.financeEntries(); track entry.entry_id) {
+              <tr [class.voided-row]="entry.status === 'voided'">
+                <td data-label="Fecha">{{ dashboard.formatDate(entry.occurred_on) }}</td>
+                <td data-label="Tipo">
+                  <strong>{{ dashboard.financeKindLabel(entry.entry_kind) }}</strong>
+                  <span>{{ entry.status === 'voided' ? 'anulado' : 'activo' }}</span>
+                </td>
+                <td data-label="Detalle">
+                  <strong>{{ entry.category_name ?? entry.category_code }}</strong>
+                  <span>{{ entry.description }}</span>
+                  <span>{{ entry.vendor ?? entry.channel ?? 'sin proveedor/canal' }}</span>
+                </td>
+                <td data-label="Importe">{{ dashboard.formatOriginalMoney(entry) }}</td>
+                <td data-label="Valor PEN">
+                  {{
+                    entry.amount_pen === null
+                      ? 'sin conversión'
+                      : dashboard.formatMoney(entry.amount_pen)
+                  }}
+                </td>
+                <td data-label="Calidad">
+                  <span class="badge {{ dashboard.statusTone(entry.data_quality) }}">
+                    {{ entry.data_quality }}
+                  </span>
+                </td>
+                <td data-label="Acciones" class="finance-actions">
+                  @if (entry.status === 'active') {
+                    <button
+                      type="button"
+                      class="secondary"
+                      (click)="dashboard.openEditFinanceEntry(entry)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="danger"
+                      (click)="dashboard.requestVoidFinanceEntry(entry)"
+                    >
+                      Anular
+                    </button>
+                  } @else {
+                    <small>{{ entry.void_reason }}</small>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">No hay movimientos para este mes.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  }
+</section>
