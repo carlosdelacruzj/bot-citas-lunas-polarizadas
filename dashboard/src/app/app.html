@@ -27,6 +27,22 @@
         <button
           type="button"
           class="sidebar-link"
+          [class.active]="activeView() === 'inbox'"
+          [attr.aria-current]="activeView() === 'inbox' ? 'page' : null"
+          title="Pendientes"
+          (click)="showView('inbox')"
+        >
+          <span class="nav-icon" aria-hidden="true">!</span>
+          <span class="nav-label">Pendientes</span>
+          @if (inboxPendingTotal() > 0) {
+            <span class="nav-alert" [attr.aria-label]="inboxPendingTotal() + ' pendientes'">
+              {{ inboxPendingTotal() > 99 ? '99+' : inboxPendingTotal() }}
+            </span>
+          }
+        </button>
+        <button
+          type="button"
+          class="sidebar-link"
           [class.active]="activeView() === 'summary'"
           [attr.aria-current]="activeView() === 'summary' ? 'page' : null"
           title="Resumen"
@@ -197,6 +213,10 @@
           }
         </div>
       </section>
+    }
+
+    @if (activeView() === 'inbox') {
+      <app-inbox-view [dashboard]="dashboard" />
     }
 
     @if (activeView() === 'summary') {

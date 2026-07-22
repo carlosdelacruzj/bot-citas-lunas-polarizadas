@@ -50,12 +50,13 @@ import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-
 import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
 import { CaptchasViewComponent } from './views/captchas-view/captchas-view.component';
 import { FinanceViewComponent } from './views/finance-view/finance-view.component';
+import { InboxViewComponent } from './views/inbox-view/inbox-view.component';
 import { OrdersViewComponent } from './views/orders-view/orders-view.component';
 import { RunsViewComponent } from './views/runs-view/runs-view.component';
 import { SummaryViewComponent } from './views/summary-view/summary-view.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
+type ViewKey = 'inbox' | 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
@@ -125,6 +126,18 @@ type OrderNextAction = {
   label: string;
   description: string;
   disabled: boolean;
+};
+type InboxTaskKind = 'preflight' | 'contact' | 'whatsapp' | 'payment' | 'followup';
+type InboxOrderTask = {
+  key: string;
+  kind: InboxTaskKind;
+  order: ServiceOrder;
+  title: string;
+  description: string;
+  label: string;
+  actionLabel: string;
+  icon: string;
+  tone: 'bad' | 'warn' | 'neutral';
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
@@ -217,6 +230,7 @@ const INITIAL_DATE = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 }).format(new Date());
 const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
+  inbox: { label: 'Pendientes', group: 'Operación' },
   summary: { label: 'Resumen', group: 'Operación' },
   orders: { label: 'Órdenes', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
@@ -267,6 +281,7 @@ function paginationWindow(current: number, total: number): number[] {
   imports: [
     FormsModule,
     ReservationRulesEditorComponent,
+    InboxViewComponent,
     SummaryViewComponent,
     FinanceViewComponent,
     OrdersViewComponent,
@@ -293,7 +308,7 @@ export class App implements OnDestroy {
   private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
 
-  protected readonly activeView = signal<ViewKey>('orders');
+  protected readonly activeView = signal<ViewKey>('inbox');
   protected readonly sidebarCollapsed = signal(
     window.localStorage.getItem('appointment-dashboard-sidebar-collapsed') === 'true',
   );
@@ -525,6 +540,96 @@ export class App implements OnDestroy {
   );
   protected readonly pendingPaymentOrders = computed(
     () => this.orders().filter((order) => order.payment_status === 'pending').length,
+  );
+  protected readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
+    const tasks: InboxOrderTask[] = [];
+    for (const order of this.orders()) {
+      if (order.preflight_status === 'failed') {
+        tasks.push({
+          key: `preflight-${order.order_id}`,
+          kind: 'preflight',
+          order,
+          title: 'Validación de acceso fallida',
+          description: order.preflight_message ?? 'Vuelve a comprobar el acceso al portal.',
+          label: 'Bloqueo',
+          actionLabel: 'Volver a validar',
+          icon: '!',
+          tone: 'bad',
+        });
+        continue;
+      }
+      const needsInitialWhatsApp =
+        order.status === 'reserved_payment_pending' &&
+        order.reservation_status === 'confirmed' &&
+        order.payment_status === 'pending' &&
+        order.whatsapp_message_status !== 'sent';
+      if (needsInitialWhatsApp) {
+        const hasWhatsapp = Boolean(order.contact_whatsapp_masked);
+        tasks.push({
+          key: `${hasWhatsapp ? 'whatsapp' : 'contact'}-${order.order_id}`,
+          kind: hasWhatsapp ? 'whatsapp' : 'contact',
+          order,
+          title: hasWhatsapp ? 'Enviar constancia y cobro' : 'Completar WhatsApp del cliente',
+          description: hasWhatsapp
+            ? 'La reserva está confirmada y el mensaje inicial todavía no figura enviado.'
+            : 'La reserva está confirmada, pero falta un WhatsApp válido para contactar al cliente.',
+          label: hasWhatsapp ? 'WhatsApp' : 'Contacto',
+          actionLabel: hasWhatsapp ? 'Preparar mensaje' : 'Corregir contacto',
+          icon: hasWhatsapp ? 'WA' : '@',
+          tone: hasWhatsapp ? 'warn' : 'bad',
+        });
+        continue;
+      }
+      if (order.payment_status === 'pending' && order.reservation_status === 'confirmed') {
+        tasks.push({
+          key: `payment-${order.order_id}`,
+          kind: 'payment',
+          order,
+          title: 'Registrar pago pendiente',
+          description: 'El contacto inicial ya fue atendido y la reserva sigue pendiente de cobro.',
+          label: 'Pago',
+          actionLabel: 'Registrar pago',
+          icon: 'S/',
+          tone: 'warn',
+        });
+        continue;
+      }
+      if (
+        this.isPostPaymentWhatsAppCandidate(order) &&
+        order.whatsapp_followup_status !== 'sent'
+      ) {
+        const hasWhatsapp = Boolean(order.contact_whatsapp_masked);
+        tasks.push({
+          key: `${hasWhatsapp ? 'followup' : 'contact'}-${order.order_id}`,
+          kind: hasWhatsapp ? 'followup' : 'contact',
+          order,
+          title: hasWhatsapp ? 'Enviar indicaciones post-pago' : 'Completar WhatsApp del cliente',
+          description: hasWhatsapp
+            ? 'El pago está registrado y todavía falta enviar las indicaciones y documentos.'
+            : 'El pago está registrado, pero falta un WhatsApp válido para el seguimiento.',
+          label: hasWhatsapp ? 'Post-pago' : 'Contacto',
+          actionLabel: hasWhatsapp ? 'Preparar seguimiento' : 'Corregir contacto',
+          icon: hasWhatsapp ? 'PDF' : '@',
+          tone: hasWhatsapp ? 'warn' : 'bad',
+        });
+      }
+    }
+    return tasks;
+  });
+  protected readonly inboxAccessCount = computed(
+    () => this.inboxOrderTasks().filter((task) => task.kind === 'preflight').length,
+  );
+  protected readonly inboxPaymentCount = computed(
+    () => this.inboxOrderTasks().filter((task) => task.kind === 'payment').length,
+  );
+  protected readonly inboxMessageCount = computed(
+    () =>
+      this.inboxOrderTasks().filter((task) =>
+        ['contact', 'whatsapp', 'followup'].includes(task.kind),
+      ).length,
+  );
+  protected readonly inboxPendingTotal = computed(
+    () => this.inboxOrderTasks().length + this.captchaReviewTotal(),
   );
   protected readonly confirmedOrders = computed(
     () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
@@ -779,6 +884,15 @@ export class App implements OnDestroy {
   }
 
   private async refreshViewData(view: ViewKey, showLoading: boolean): Promise<void> {
+    if (view === 'inbox') {
+      const [orders, pendingCaptchas] = await Promise.all([
+        this.api.getServiceOrders(),
+        this.api.getCaptchaEvents(1, 1, '', 'all', 'all', 'all', 'pending', 'review_priority'),
+      ]);
+      this.applyOrders(orders);
+      this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
+      return;
+    }
     if (view === 'summary') {
       const [orders, runs, monthlySummary] = await Promise.all([
         this.api.getServiceOrders(),
@@ -1435,6 +1549,39 @@ export class App implements OnDestroy {
   protected sourceRevenueWidth(summary: MonthlySummary, amount: number): number {
     const maximum = Math.max(...summary.sources.map((item) => item.revenue_collected), 0);
     return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
+  }
+
+  protected openInboxCaptchaReview(): void {
+    this.showCaptchaWorkspace('review');
+    void this.showView('captchas');
+  }
+
+  protected openInboxOrder(order: ServiceOrder): void {
+    void this.showView('orders');
+    this.selectOrder(order.order_id);
+  }
+
+  protected runInboxOrderTask(task: InboxOrderTask): void {
+    if (task.kind === 'preflight') {
+      this.selectOrder(task.order.order_id, false);
+      this.requestOrderValidation(task.order);
+      return;
+    }
+    if (task.kind === 'contact') {
+      void this.openEditOrder(task.order, 'contact');
+      return;
+    }
+    if (task.kind === 'whatsapp') {
+      this.selectOrder(task.order.order_id, false);
+      void this.openOrderWhatsApp(task.order);
+      return;
+    }
+    if (task.kind === 'payment') {
+      void this.openPayment(task.order);
+      return;
+    }
+    this.selectOrder(task.order.order_id, false);
+    void this.openPostPaymentWhatsApp(task.order);
   }
 
   protected openOrderFromSummary(orderId: string): void {

@@ -53,6 +53,10 @@ instrumentación no alteraron la regla de confirmación final.
   los datos de la vista activa, además de salud, worker y sesiones manuales. Se
   evitan ciclos superpuestos y las categorías financieras se reutilizan después
   de su primera carga.
+- La bandeja `Pendientes` concentra bloqueos de acceso, contacto/WhatsApp,
+  cobros, seguimiento post-pago y validaciones CAPTCHA. Cada orden muestra un
+  único siguiente paso y el menú solo presenta un contador cuando hay trabajo
+  accionable.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

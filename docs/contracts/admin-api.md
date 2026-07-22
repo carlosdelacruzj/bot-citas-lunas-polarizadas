@@ -454,6 +454,7 @@ manuales) y agrega solo los recursos requeridos por la vista activa:
 
 | Vista | Recursos específicos |
 |---|---|
+| Pendientes | órdenes y total de CAPTCHA sin etiqueta humana |
 | Resumen | órdenes, actividad y resumen mensual |
 | Finanzas | movimientos, resumen financiero y categorías en la primera carga |
 | Órdenes | órdenes |

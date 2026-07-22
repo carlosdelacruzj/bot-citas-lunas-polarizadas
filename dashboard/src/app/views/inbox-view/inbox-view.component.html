@@ -1,0 +1,105 @@
+<section class="panel inbox-hero" aria-labelledby="inbox-title">
+  <div>
+    <p class="eyebrow">Bandeja de trabajo</p>
+    <h2 id="inbox-title">Lo que requiere tu atención</h2>
+    <p>Solo aparecen tareas pendientes. Cuando completas una, desaparece de esta lista.</p>
+  </div>
+  <div class="inbox-total" [class.clear]="dashboard.inboxPendingTotal() === 0">
+    <strong>{{ dashboard.inboxPendingTotal() }}</strong>
+    <span>{{ dashboard.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
+  </div>
+</section>
+
+<section class="inbox-metrics" aria-label="Resumen de pendientes">
+  <article class="metric-card">
+    <span>Accesos</span>
+    <strong>{{ dashboard.inboxAccessCount() }}</strong>
+    <small>Validaciones fallidas</small>
+  </article>
+  <article class="metric-card">
+    <span>Pagos</span>
+    <strong>{{ dashboard.inboxPaymentCount() }}</strong>
+    <small>Reservas por cobrar</small>
+  </article>
+  <article class="metric-card">
+    <span>Mensajes</span>
+    <strong>{{ dashboard.inboxMessageCount() }}</strong>
+    <small>WhatsApp o contacto</small>
+  </article>
+  <article class="metric-card">
+    <span>CAPTCHA</span>
+    <strong>{{ dashboard.captchaReviewTotal() }}</strong>
+    <small>Etiquetas por validar</small>
+  </article>
+</section>
+
+@if (dashboard.inboxPendingTotal() === 0) {
+  <section class="panel inbox-empty" role="status">
+    <span aria-hidden="true">✓</span>
+    <div>
+      <h3>Todo está al día</h3>
+      <p>No hay pagos, accesos, mensajes ni CAPTCHA esperando intervención.</p>
+    </div>
+  </section>
+} @else {
+  <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
+    <div class="panel-header">
+      <div>
+        <h2 id="inbox-list-title">Siguiente trabajo</h2>
+        <p>Ordenado para resolver primero los bloqueos y después los seguimientos.</p>
+      </div>
+    </div>
+
+    <div class="inbox-list">
+      @if (dashboard.captchaReviewTotal() > 0) {
+        <article class="inbox-row warn">
+          <div class="inbox-row-icon" aria-hidden="true">A9</div>
+          <div class="inbox-row-copy">
+            <div class="inbox-row-heading">
+              <strong>Validar respuestas CAPTCHA</strong>
+              <span class="badge warn">{{ dashboard.captchaReviewTotal() }} pendientes</span>
+            </div>
+            <p>Confirma las respuestas para ampliar el dataset de entrenamiento local.</p>
+          </div>
+          <button type="button" class="primary" (click)="dashboard.openInboxCaptchaReview()">
+            Revisar CAPTCHA
+          </button>
+        </article>
+      }
+
+      @for (task of dashboard.inboxOrderTasks(); track task.key) {
+        <article class="inbox-row {{ task.tone }}">
+          <div class="inbox-row-icon" aria-hidden="true">{{ task.icon }}</div>
+          <div class="inbox-row-copy">
+            <div class="inbox-row-heading">
+              <strong>{{ task.title }}</strong>
+              <span class="badge {{ task.tone }}">{{ task.label }}</span>
+            </div>
+            <p>{{ task.description }}</p>
+            <small>
+              {{ task.order.applicant_name ?? task.order.document_number_masked }} ·
+              {{ task.order.order_id }}
+            </small>
+          </div>
+          <div class="inbox-row-actions">
+            <button
+              type="button"
+              class="secondary"
+              (click)="dashboard.openInboxOrder(task.order)"
+            >
+              Ver orden
+            </button>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="dashboard.actionBusy()"
+              (click)="dashboard.runInboxOrderTask(task)"
+            >
+              {{ task.actionLabel }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+}
