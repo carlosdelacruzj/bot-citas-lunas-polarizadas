@@ -1,5 +1,6 @@
 const PERU_TIME_ZONE = 'America/Lima';
-const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DAY_FIRST_DATE_ONLY_PATTERN = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/;
 const TIME_ONLY_PATTERN = /^(\d{1,2}):(\d{2})(?::\d{2})?/;
 
 const dateTimeFormatter = new Intl.DateTimeFormat('es-PE', {
@@ -17,9 +18,14 @@ export function formatPeruDate(value: string | null | undefined, fallback = ''):
   if (!value) {
     return fallback;
   }
-  const dateOnly = DATE_ONLY_PATTERN.exec(value.trim());
-  if (dateOnly) {
-    return `${dateOnly[3]}-${dateOnly[2]}-${dateOnly[1]}`;
+  const text = value.trim();
+  const isoDate = ISO_DATE_ONLY_PATTERN.exec(text);
+  if (isoDate) {
+    return normalizedDate(isoDate[1], isoDate[2], isoDate[3], fallback || value);
+  }
+  const dayFirstDate = DAY_FIRST_DATE_ONLY_PATTERN.exec(text);
+  if (dayFirstDate) {
+    return normalizedDate(dayFirstDate[3], dayFirstDate[2], dayFirstDate[1], fallback || value);
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -28,10 +34,22 @@ export function formatPeruDate(value: string | null | undefined, fallback = ''):
   return formatParts(date).date;
 }
 
-export function formatPeruTime(
-  value: string | number | null | undefined,
-  fallback = '',
-): string {
+function normalizedDate(year: string, month: string, day: string, fallback: string): string {
+  const numericYear = Number(year);
+  const numericMonth = Number(month);
+  const numericDay = Number(day);
+  const candidate = new Date(Date.UTC(numericYear, numericMonth - 1, numericDay));
+  if (
+    candidate.getUTCFullYear() !== numericYear ||
+    candidate.getUTCMonth() !== numericMonth - 1 ||
+    candidate.getUTCDate() !== numericDay
+  ) {
+    return fallback;
+  }
+  return `${String(numericDay).padStart(2, '0')}-${String(numericMonth).padStart(2, '0')}-${numericYear}`;
+}
+
+export function formatPeruTime(value: string | number | null | undefined, fallback = ''): string {
   if (value === null || value === undefined || value === '') {
     return fallback;
   }
@@ -52,10 +70,7 @@ export function formatPeruTime(
   return formatParts(date).time;
 }
 
-export function formatPeruDateTime(
-  value: string | null | undefined,
-  fallback = '',
-): string {
+export function formatPeruDateTime(value: string | null | undefined, fallback = ''): string {
   if (!value) {
     return fallback;
   }

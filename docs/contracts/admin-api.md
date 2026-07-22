@@ -229,6 +229,13 @@ Los errores de entrada pueden incluir:
 El dashboard traduce esos nombres tecnicos a las etiquetas visibles del
 formulario.
 
+Todas las fechas visibles usan `DD-MM-YYYY`. Las fechas con hora usan
+`DD-MM-YYYY HH:mm:ss` en `America/Lima`. Este estándar es solo de presentación:
+API, PostgreSQL y controles HTML de fecha conservan `YYYY-MM-DD` o ISO 8601 para
+evitar ambigüedades. El formateador común debe normalizar tanto datos históricos
+`DD/MM/YYYY` como fechas ISO antes de mostrarlos; ninguna tabla debe imprimir el
+valor crudo recibido del API.
+
 El alta normal del dashboard solo presenta esos datos y las restricciones de
 fecha opcionales. Los siguientes campos siguen disponibles en el contrato para
 flujos administrativos avanzados, pero no se solicitan al crear un cliente:
