@@ -12,15 +12,17 @@ dashboard deben respetar.
 - `archived`: orden cerrada o excluida de cola.
 
 Solo `ready` puede entrar a una cola operativa. La cola normal del worker
-procesa ordenes `ready` sin restricciones de reserva. Las ordenes `ready` con
-restricciones no entran a la cola rapida normal y solo entran como seguimiento
-cuando una reserva confirmada previa coincide con sus reglas.
+procesa órdenes sin restricciones positivas y también órdenes que únicamente
+tienen `excluded_date_ranges`: una exclusión protege fechas concretas, pero no
+convierte a la orden en espera de una coincidencia. Las órdenes con fecha
+mínima/máxima, hora mínima o días permitidos sí se consideran restringidas y
+entran como seguimiento cuando una reserva confirmada coincide con sus reglas.
 
-El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` ordenes y
-prioriza siempre las que no tienen restricciones. Si hay menos observadores
-libres que ese limite, completa la rotacion con ordenes restringidas. Una orden
-restringida puede detectar disponibilidad, pero antes de resolver CAPTCHA o
-enviar la reserva debe cumplir estrictamente `minimum_hour`, `minimum_date`,
+El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes y
+prioriza siempre las que no tienen restricciones positivas, incluidas las que
+solo poseen exclusiones. Si hay menos observadores libres que ese límite,
+completa la rotación con órdenes restringidas. Antes de resolver CAPTCHA o
+enviar la reserva, cualquier orden debe cumplir `minimum_hour`, `minimum_date`,
 `maximum_date`, `allowed_weekdays` y `excluded_date_ranges`. Los límites de cada
 exclusión son inclusivos. Si el cupo incumple cualquier regla o cae dentro de un
 rango excluido, se registra como bloqueado por regla y no se intenta reservar.
@@ -48,14 +50,16 @@ La cola normal usa:
 priority DESC, created_at ASC
 ```
 
-Las restricciones por orden se usan para decidir si la orden debe esperar un
-cupo compatible y para validar el cupo antes de enviar reserva:
+Las restricciones positivas que deciden si una orden debe esperar un cupo
+compatible son:
 
 - `minimum_hour`
 - `minimum_date`
 - `maximum_date`
 - `allowed_weekdays`
-- `excluded_date_ranges`
+
+`excluded_date_ranges` es una protección negativa: no saca por sí sola a la
+orden de la cola normal, pero siempre se valida antes del CAPTCHA y del envío.
 
 Una cuenta puede tener varios tramites pendientes. En ese caso la orden
 generica puede dividirse en subordenes con:
@@ -70,10 +74,12 @@ el worker debe seleccionar exactamente esa fila del listado de tramites; si no
 la encuentra o no esta `PENDIENTE`, debe fallar claro antes de abrir el panel de
 citas para evitar reservar el tramite equivocado.
 
-Cuando una reserva queda confirmada (`registered`), el worker busca ordenes
-restringidas `ready` que coincidan con la fecha/hora confirmada. Solo esas
-ordenes se agregan como seguimiento a la cola rapida. Si ya no encuentran cupo,
-permanecen `ready` para esperar otra coincidencia.
+Cuando una reserva queda confirmada (`registered`), el worker busca órdenes con
+restricciones positivas en estado `ready` que coincidan con la fecha/hora
+confirmada. Solo esas órdenes se agregan como seguimiento a la cola rápida. Las
+órdenes que únicamente tienen exclusiones ya participan normalmente y no se
+promocionan por coincidencia. Si una orden restringida ya no encuentra cupo,
+permanece `ready` para esperar otra coincidencia.
 Una orden nunca debe promocionarse por una fecha incluida en uno de sus rangos
 excluidos.
 

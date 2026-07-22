@@ -164,6 +164,11 @@ restricción corregida no quede bloqueada por una espera calculada previamente.
 requiere `start_date` y `end_date`. Una fecha dentro de cualquiera de esos
 periodos se rechaza aunque cumpla los demás límites. Los rangos superpuestos se
 ordenan y consolidan antes de persistirlos; una lista vacía quita las exclusiones.
+Una orden que solo tenga `excluded_date_ranges` conserva el tratamiento de cola
+normal. Solo `minimum_reservation_hour`, `minimum_reservation_date`,
+`maximum_reservation_date` o `allowed_weekdays` la clasifican como restringida
+para esperar una coincidencia. La exclusión se valida siempre antes del CAPTCHA
+y del envío de reserva.
 La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.

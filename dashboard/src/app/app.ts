@@ -330,7 +330,7 @@ export class App implements OnDestroy {
     },
     {
       key: 'restricted' as const,
-      label: 'Con restricciones',
+      label: 'Con reglas de fecha',
       count: this.countOrders('restricted'),
     },
   ]);
@@ -1925,8 +1925,8 @@ export class App implements OnDestroy {
       return;
     }
     this.setPendingAction({
-      title: 'Actualizar restricciones',
-      message: `Guardar las restricciones de reserva de ${order.order_id}. Los campos vacíos quitarán esa restricción.`,
+      title: 'Actualizar reglas de reserva',
+      message: `Guardar las reglas de reserva de ${order.order_id}. Los campos vacíos quitarán esa regla.`,
       execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
     });
   }

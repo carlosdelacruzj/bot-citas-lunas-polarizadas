@@ -846,7 +846,7 @@
                   class="secondary"
                   (click)="openEditOrder(order, 'restrictions')"
                 >
-                  Editar restricciones
+                  Editar reglas
                 </button>
                 @if (order.status === 'ready') {
                   <button
@@ -1125,7 +1125,7 @@
                     Pago {{ sortIndicator('payment') }}
                   </button>
                 </th>
-                <th>Restricción</th>
+                <th>Reglas de fecha</th>
                 <th>Acción</th>
               </tr>
             </thead>
@@ -1166,7 +1166,7 @@
                     {{ paymentLabel(order) }}
                     <span>{{ paymentAmountLabel(order) }}</span>
                   </td>
-                  <td data-label="Restricción" class="restriction-cell">
+                  <td data-label="Reglas de fecha" class="restriction-cell">
                     <div
                       class="restriction-summary"
                       [class.unrestricted]="!hasReservationRestrictions(order)"
@@ -1175,7 +1175,7 @@
                         {{
                           hasReservationRestrictions(order)
                             ? restrictionDaysLabel(order)
-                            : 'Sin restricciones'
+                            : 'Sin reglas'
                         }}
                       </strong>
                       <span>{{ restrictionTimingLabel(order) }}</span>
@@ -2506,7 +2506,7 @@
 
               @if (editOrderSection() === 'all' || editOrderSection() === 'restrictions') {
                 <section class="admin-block action-card">
-                  <h3>Restricciones de reserva</h3>
+                  <h3>Reglas de reserva</h3>
                   <div class="form-grid">
                     <label>
                       Buscar desde
@@ -2638,7 +2638,7 @@
                     }
                   </div>
                   <p class="muted">
-                    Deja un campo vacío para quitar esa restricción. Los cambios se aplican en la
+                    Deja un campo vacío para quitar esa regla. Los cambios se aplican en la
                     siguiente selección de la cola.
                   </p>
                   <button
@@ -2647,7 +2647,7 @@
                     [disabled]="isClosedOrder(order)"
                     (click)="requestReservationRestrictionsUpdate()"
                   >
-                    Continuar para guardar restricciones
+                    Continuar para guardar reglas
                   </button>
                 </section>
 
