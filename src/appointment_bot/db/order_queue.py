@@ -93,7 +93,6 @@ def list_active_orders(
             AND so.minimum_date IS NULL
             AND so.maximum_date IS NULL
             AND so.allowed_weekdays IS NULL
-            AND so.excluded_date_ranges = '[]'::jsonb
             """
         )
     if order_ids is not None:
@@ -142,7 +141,6 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                            OR so.minimum_date IS NOT NULL
                            OR so.maximum_date IS NOT NULL
                            OR so.allowed_weekdays IS NOT NULL
-                           OR so.excluded_date_ranges <> '[]'::jsonb
                        ) AS is_constrained
                 FROM service_orders so
                 JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -212,7 +210,6 @@ def promote_orders_matching_reserved_slot(
                   OR minimum_date IS NOT NULL
                   OR maximum_date IS NOT NULL
                   OR allowed_weekdays IS NOT NULL
-                  OR excluded_date_ranges <> '[]'::jsonb
               )
             """,
             (excluded_order_id,),
