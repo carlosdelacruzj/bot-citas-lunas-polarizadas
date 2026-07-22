@@ -8,6 +8,10 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
+from appointment_bot.core.order_priority import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
+    FOCUSED_PRIORITY_THRESHOLD,
+)
 from appointment_bot.core.statuses import OrderStateStatus, ResultStatus
 from appointment_bot.db.common import (
     _connection,
@@ -54,6 +58,21 @@ def update_service_order_priority(
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
+        if priority >= EXCLUSIVE_PRIORITY_THRESHOLD:
+            connection.execute(
+                """
+                UPDATE service_orders
+                SET priority = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE order_id <> %s
+                  AND priority >= %s
+                """,
+                (
+                    FOCUSED_PRIORITY_THRESHOLD,
+                    order_id,
+                    EXCLUSIVE_PRIORITY_THRESHOLD,
+                ),
+            )
         cursor = connection.execute(
             """
             UPDATE service_orders
@@ -65,6 +84,15 @@ def update_service_order_priority(
         )
         if not cursor.rowcount:
             raise ValueError(f"Service order not found: {order_id}")
+        if priority >= EXCLUSIVE_PRIORITY_THRESHOLD:
+            connection.execute(
+                """
+                UPDATE order_state
+                SET next_allowed_at = NULL
+                WHERE order_id = %s
+                """,
+                (order_id,),
+            )
 
 
 def update_service_order_reservation_constraints(

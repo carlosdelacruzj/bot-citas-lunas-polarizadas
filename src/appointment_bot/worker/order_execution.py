@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from appointment_bot.config import Settings
 from appointment_bot.db.orders import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
     FOCUSED_PRIORITY_THRESHOLD,
     clear_order_submission_state,
     get_claimed_service_order_runtime,
@@ -263,6 +264,16 @@ def run_service_order(
         ]
         if not higher_priority_orders:
             return True
+        if any(
+            candidate.priority >= EXCLUSIVE_PRIORITY_THRESHOLD
+            for candidate in higher_priority_orders
+        ):
+            logger.info(
+                "Deferring reservation for order %s because exclusive order %s is ready",
+                order.order_id,
+                higher_priority_orders[0].order_id,
+            )
+            return False
         if any(
             candidate.priority >= FOCUSED_PRIORITY_THRESHOLD for candidate in higher_priority_orders
         ):

@@ -1195,7 +1195,13 @@ def _send_priority_menu(
         telegram.send_message(chat_id, "No pude consultar la prioridad.")
         return
     current = int(order.get("priority") or 0)
-    presets = [("Baja", 0), ("Normal", 10), ("Alta", 50), ("Urgente", 100)]
+    presets = [
+        ("Baja", 0),
+        ("Normal", 10),
+        ("Alta", 50),
+        ("Urgente", 100),
+        ("Exclusivo", 200),
+    ]
     telegram.send_message(
         chat_id,
         f"PRIORIDAD\n\nOrden: {order_id}\nValor actual: {current}\n\nElige un valor:",
@@ -1208,6 +1214,13 @@ def _send_priority_menu(
                 [
                     {"text": label, "callback_data": f"pq:{order_id}:{value}"}
                     for label, value in presets[2:]
+                    if value < 200
+                ],
+                [
+                    {
+                        "text": "Exclusivo 200",
+                        "callback_data": f"pq:{order_id}:200",
+                    }
                 ],
                 [{"text": "Volver", "callback_data": f"om:{order_id}:show"}],
             ]

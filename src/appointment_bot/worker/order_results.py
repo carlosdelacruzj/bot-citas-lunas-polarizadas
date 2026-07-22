@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from appointment_bot.config import Settings
 from appointment_bot.db.orders import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
     list_observer_orders,
     mark_order_done,
     promote_orders_matching_reserved_slot,
@@ -72,14 +73,24 @@ def handle_observer_order_report(
     if outcome is OrderReportOutcome.PAUSED:
         return ObserverOrderDecision()
     if outcome is OrderReportOutcome.BLOCKED:
+        backoff_seconds = (
+            None
+            if order.priority >= EXCLUSIVE_PRIORITY_THRESHOLD
+            else settings.order_rule_cooldown_seconds
+        )
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.order_rule_cooldown_seconds,
+            backoff_seconds=backoff_seconds,
             settings=settings,
         )
+        if backoff_seconds is None:
+            logger.info(
+                "Exclusive order %s remains eligible after a slot was blocked by its rules",
+                order.order_id,
+            )
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.TERMINAL_STAGE:
         mark_order_done(

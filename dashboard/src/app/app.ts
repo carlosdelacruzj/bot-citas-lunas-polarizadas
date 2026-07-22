@@ -2561,9 +2561,13 @@ export class App implements OnDestroy {
   }
 
   protected priorityExplanation(order: ServiceOrder): string {
-    return order.priority >= 100
-      ? 'Enfoque prioritario: se atiende antes que la cola normal.'
-      : 'Cola normal: mayor numero primero; empate por orden de creacion.';
+    if (order.priority >= 200) {
+      return 'Enfoque exclusivo: el worker revisa unicamente esta orden.';
+    }
+    if (order.priority >= 100) {
+      return 'Enfoque prioritario: se atiende antes que la cola normal.';
+    }
+    return 'Cola normal: mayor numero primero; empate por orden de creacion.';
   }
 
   protected isClosedOrder(order: ServiceOrder): boolean {
@@ -2750,13 +2754,21 @@ export class App implements OnDestroy {
       return;
     }
     const payload: PriorityUpdatePayload = { priority };
+    const entersExclusiveMode = order.priority < 200 && priority >= 200;
+    const leavesExclusiveMode = order.priority >= 200 && priority < 200;
     const entersFocusedMode = order.priority < 100 && priority >= 100;
     const leavesFocusedMode = order.priority >= 100 && priority < 100;
-    const effect = entersFocusedMode
-      ? ' Activara enfoque y desplazara una orden de la cola normal.'
-      : leavesFocusedMode
-        ? ' La orden volvera a la cola normal.'
-        : ' Se aplicara en la siguiente seleccion de la cola.';
+    const effect = entersExclusiveMode
+      ? ' Activara el enfoque exclusivo, limpiara su pausa y cualquier exclusivo anterior volvera a prioridad 100.'
+      : leavesExclusiveMode
+        ? priority >= 100
+          ? ' Saldra del modo exclusivo y conservara el enfoque prioritario.'
+          : ' Saldra del modo exclusivo y volvera a la cola normal.'
+        : entersFocusedMode
+          ? ' Activara enfoque y desplazara una orden de la cola normal.'
+          : leavesFocusedMode
+            ? ' La orden volvera a la cola normal.'
+            : ' Se aplicara en la siguiente seleccion de la cola.';
     this.setPendingAction({
       title: 'Actualizar prioridad',
       message: `Cambiar prioridad de ${order.order_id} de ${order.priority} a ${priority}.${effect}`,

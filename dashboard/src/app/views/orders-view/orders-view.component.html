@@ -264,6 +264,14 @@
               >
                 Enfoque 100
               </button>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.priority === 200 || dashboard.isClosedOrder(order)"
+                (click)="dashboard.setQuickPriority(200)"
+              >
+                Exclusivo 200
+              </button>
             </div>
           </article>
           <article>

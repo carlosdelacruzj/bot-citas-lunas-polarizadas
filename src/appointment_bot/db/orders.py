@@ -26,6 +26,7 @@ from appointment_bot.db.order_preflight import (
     mark_order_preflight_validated,
 )
 from appointment_bot.db.order_queue import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
     FOCUSED_PRIORITY_THRESHOLD,
     get_minimum_reservation_hour_for_order,
     get_reservation_constraints_for_order,

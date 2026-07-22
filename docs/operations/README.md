@@ -215,11 +215,14 @@ la Admin API y PostgreSQL.
 1. Abrir **Órdenes** y seleccionar la orden.
 2. Pulsar **Editar**.
 3. En **Prioridad de búsqueda**, ingresar un entero no negativo y confirmar.
-4. Usar `0–99` para cola normal o `100` o más para enfoque.
+4. Usar `0–99` para cola normal, `100–199` para enfoque o `200` para enfoque
+   exclusivo.
 
-Si dos órdenes deben ocupar los dos observadores, asignar `100` a cada una por
-separado. El cambio entra en la siguiente selección y no requiere reiniciar el
-worker.
+El límite de observación representa órdenes que se rotan, no workers paralelos.
+Si dos órdenes deben ocupar los dos espacios de rotación, asignar `100` a cada
+una por separado. Con `200` se selecciona una sola orden, se limpia su pausa por
+reglas y cualquier exclusivo anterior vuelve a `100`. Los siguientes cambios de
+prioridad entran en la siguiente selección y no requieren reiniciar el worker.
 
 ## Consultar contacto operativo
 
@@ -240,7 +243,8 @@ los contactos a la vez.
 - La acción principal cambia según la orden: abrir sesión, activar, registrar
   pago o ver detalle.
 - El panel ofrece accesos directos para editar, pausar/activar y gestionar otros
-  cierres, además de presets **Cola normal** (`0`) y **Enfoque 100**.
+  cierres, además de presets **Cola normal** (`0`), **Enfoque 100** y
+  **Exclusivo 200**.
 - Las confirmaciones y resultados usan SweetAlert2 con mensajes claros; las
   acciones de lectura o navegación no solicitan confirmación innecesaria.
 - La navegación por teclado conserva el foco al abrir y cerrar el panel.

@@ -28,15 +28,24 @@ exclusión son inclusivos. Si el cupo incumple cualquier regla o cae dentro de u
 rango excluido, se registra como bloqueado por regla y no se intenta reservar.
 
 Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
-normal. Una prioridad `100` o superior activa prioridad de enfoque: esas ordenes
-ocupan primero los espacios disponibles del bloque de observadores, incluso si
-tienen restricciones. Con dos ordenes enfocadas y limite `2`, solo se revisan
-esas dos. Cuando una deja de estar `ready`, la enfocada restante conserva el
-primer espacio y el segundo vuelve a completarse con otra orden elegible.
+normal. Las prioridades de `100` a `199` activan prioridad de enfoque: esas
+ordenes ocupan primero los espacios disponibles del bloque, incluso si tienen
+restricciones. Con dos ordenes enfocadas y limite `2`, se rotan esas dos. Cuando
+una deja de estar `ready`, la enfocada restante conserva el primer espacio y el
+segundo vuelve a completarse con otra orden elegible.
 Las promociones automaticas por coincidencia de cupo nunca deben alcanzar `100`;
 ese umbral queda reservado para enfoque asignado de forma intencional.
 
-La prioridad de enfoque controla que ordenes ocupan el bloque de observadores,
+Una prioridad `200` o superior activa el enfoque exclusivo. Mientras esa orden
+este `ready` y sea elegible, `list_observer_orders()` devuelve solo esa orden,
+sin importar `OBSERVER_ACTIVE_ORDER_LIMIT`. Al asignar el modo exclusivo, otro
+exclusivo previo vuelve a prioridad `100` y se limpia la espera pendiente de la
+nueva orden. Si una fecha se descarta por sus reglas, el exclusivo permanece
+elegible y no recibe el cooldown normal de reglas. Esto no crea navegadores ni
+workers paralelos: el worker existente repite sus sesiones de forma secuencial
+sobre la misma orden.
+
+La prioridad de enfoque controla que ordenes ocupan el bloque de observacion,
 pero no transfiere cupos entre sesiones. Si el segundo observador detecta un
 cupo compatible con su propia regla, debe intentar reservarlo inmediatamente
 con su propia cuenta. No debe cambiar a la orden enfocada, porque esa demora

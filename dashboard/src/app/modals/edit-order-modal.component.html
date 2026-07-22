@@ -236,8 +236,9 @@
                 />
               </label>
               <p class="muted">
-                0–99 mantiene la cola normal. 100 o más activa enfoque. Para ocupar dos
-                observadores con dos registros, asigna 100 a cada orden por separado.
+                0–99 mantiene la cola normal. 100–199 activa el enfoque prioritario.
+                200 activa el enfoque exclusivo: solo se revisará esa orden y cualquier
+                exclusivo anterior volverá a prioridad 100.
               </p>
               <button
                 type="button"

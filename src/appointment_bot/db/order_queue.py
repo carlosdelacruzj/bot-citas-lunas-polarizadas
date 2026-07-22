@@ -8,6 +8,10 @@ from appointment_bot.config import Settings
 from appointment_bot.core.models import (
     ServiceOrderCandidate,
 )
+from appointment_bot.core.order_priority import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
+    FOCUSED_PRIORITY_THRESHOLD,
+)
 from appointment_bot.core.rules import ReservationConstraints, appointment_filter_from_constraints
 from appointment_bot.db.common import (
     _connection,
@@ -18,8 +22,6 @@ from appointment_bot.db.common import (
     init_database,
 )
 from appointment_bot.services.detail_helpers import appointment_datetime_details
-
-FOCUSED_PRIORITY_THRESHOLD = 100
 
 
 def get_minimum_reservation_hour_for_order(
@@ -152,18 +154,28 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                 WHERE so.status = 'ready'
                   AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
             ),
+            ranked_orders AS (
+                SELECT *,
+                       MAX(priority) OVER () >= %s AS has_exclusive_order,
+                       ROW_NUMBER() OVER (
+                           ORDER BY
+                               (priority >= %s) DESC,
+                               (priority >= %s) DESC,
+                               CASE
+                                   WHEN priority >= %s THEN false
+                                   ELSE is_constrained
+                               END ASC,
+                               priority DESC,
+                               created_at ASC
+                       ) AS selection_rank
+                FROM eligible_orders
+            ),
             active_block AS (
                 SELECT *
-                FROM eligible_orders
-                ORDER BY
-                    (priority >= %s) DESC,
-                    CASE
-                        WHEN priority >= %s THEN false
-                        ELSE is_constrained
-                    END ASC,
-                    priority DESC,
-                    created_at ASC
-                LIMIT %s
+                FROM ranked_orders
+                WHERE
+                    (has_exclusive_order AND selection_rank = 1)
+                    OR (NOT has_exclusive_order AND selection_rank <= %s)
             )
             SELECT order_id, name, username, document_type,
                    contact_name, contact_phone, contact_source,
@@ -173,6 +185,8 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             ORDER BY last_run_at ASC NULLS FIRST, created_at ASC, priority DESC
             """,
             (
+                EXCLUSIVE_PRIORITY_THRESHOLD,
+                EXCLUSIVE_PRIORITY_THRESHOLD,
                 FOCUSED_PRIORITY_THRESHOLD,
                 FOCUSED_PRIORITY_THRESHOLD,
                 settings.observer_active_order_limit,
