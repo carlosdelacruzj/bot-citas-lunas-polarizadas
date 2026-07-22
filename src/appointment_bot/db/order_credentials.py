@@ -301,6 +301,142 @@ def update_service_order_document_type(
             raise ValueError(f"Service order not found: {order_id}")
 
 
+def update_service_order_credentials(
+    order_id: str,
+    *,
+    document_number: str,
+    password: str,
+    document_type: str,
+    settings: Settings | None = None,
+) -> tuple[str, ...]:
+    """Replace an account login while preserving the order and its history."""
+    settings = _settings(settings)
+    init_database(settings)
+    document_number = document_number.strip()
+    if not document_number:
+        raise ValueError("document_number is required.")
+    if not password:
+        raise ValueError("password is required.")
+    normalized_type = normalize_document_type(document_type)
+    encrypted_password = _credential_cipher(settings).encrypt(password)
+    now = _now()
+
+    with _connection(_database_url(settings)) as connection:
+        identity = connection.execute(
+            """
+            SELECT so.status, so.applicant_id, so.portal_account_id,
+                   a.document_number AS previous_document
+            FROM service_orders so
+            JOIN applicants a ON a.applicant_id = so.applicant_id
+            JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
+            WHERE so.order_id = %s
+            FOR UPDATE OF so, a, pa
+            """,
+            (order_id,),
+        ).fetchone()
+        if identity is None:
+            raise ValueError(f"Service order not found: {order_id}")
+        if identity["status"] not in {"ready", "paused"}:
+            raise ValueError("Solo se pueden cambiar credenciales de una orden activa o pausada.")
+
+        applicant_id = str(identity["applicant_id"])
+        portal_account_id = str(identity["portal_account_id"])
+        previous_document = str(identity["previous_document"])
+        leased = connection.execute(
+            """
+            SELECT order_id
+            FROM service_orders
+            WHERE portal_account_id = %s
+              AND lease_owner IS NOT NULL
+              AND lease_expires_at > %s
+            LIMIT 1
+            """,
+            (portal_account_id, now),
+        ).fetchone()
+        if leased is not None:
+            raise RuntimeError(
+                "La cuenta esta siendo usada por el worker. "
+                "Espera a que termine y vuelve a guardar."
+            )
+
+        duplicate_applicant = connection.execute(
+            """
+            SELECT applicant_id
+            FROM applicants
+            WHERE document_number = %s AND applicant_id <> %s
+            """,
+            (document_number, applicant_id),
+        ).fetchone()
+        duplicate_account = connection.execute(
+            """
+            SELECT portal_account_id
+            FROM portal_accounts
+            WHERE username = %s AND portal_account_id <> %s
+            """,
+            (document_number, portal_account_id),
+        ).fetchone()
+        if duplicate_applicant is not None or duplicate_account is not None:
+            raise ValueError("Ese usuario o documento ya pertenece a otra cuenta.")
+
+        connection.execute(
+            """
+            UPDATE applicants
+            SET document_number = %s,
+                full_name = CASE
+                    WHEN full_name IS NULL OR BTRIM(full_name) = '' OR full_name = %s
+                        THEN %s
+                    ELSE full_name
+                END,
+                updated_at = %s
+            WHERE applicant_id = %s
+            """,
+            (document_number, previous_document, document_number, now, applicant_id),
+        )
+        connection.execute(
+            """
+            UPDATE portal_accounts
+            SET username = %s, document_type = %s, password = %s, updated_at = %s
+            WHERE portal_account_id = %s
+            """,
+            (document_number, normalized_type, encrypted_password, now, portal_account_id),
+        )
+        affected_rows = connection.execute(
+            """
+            UPDATE service_orders
+            SET status = 'paused', updated_at = %s
+            WHERE portal_account_id = %s
+              AND status IN ('ready', 'paused')
+            RETURNING order_id
+            """,
+            (now, portal_account_id),
+        ).fetchall()
+        affected_order_ids = tuple(str(row["order_id"]) for row in affected_rows)
+        for affected_order_id in affected_order_ids:
+            connection.execute(
+                """
+                INSERT INTO order_state (
+                    order_id, preflight_status, preflight_message,
+                    consecutive_errors, credential_failures
+                )
+                VALUES (%s, 'pending', %s, 0, 0)
+                ON CONFLICT(order_id) DO UPDATE SET
+                    preflight_status = 'pending',
+                    preflight_message = excluded.preflight_message,
+                    preflight_started_at = NULL,
+                    preflight_validated_at = NULL,
+                    preflight_details = NULL,
+                    last_status = NULL,
+                    last_message = NULL,
+                    next_allowed_at = NULL,
+                    consecutive_errors = 0,
+                    credential_failures = 0,
+                    program_listing = NULL
+                """,
+                (affected_order_id, "Credenciales actualizadas. Validacion de acceso pendiente."),
+            )
+    return affected_order_ids
+
+
 def record_order_program_listing(
     order_id: str,
     details: dict[str, Any],

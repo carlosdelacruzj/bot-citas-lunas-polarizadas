@@ -58,12 +58,14 @@ from appointment_bot.services.api.service_order_routes import (
     service_order_action,
     service_order_close_path,
     service_order_contact_path,
+    service_order_credentials_path,
     service_order_priority_path,
     service_order_restrictions_path,
     service_order_revalidate_path,
     service_order_split_programs_path,
     split_service_order_programs_payload,
     update_service_order_contact_payload,
+    update_service_order_credentials_payload,
     update_service_order_priority_payload,
     update_service_order_restrictions_payload,
 )
@@ -452,6 +454,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_service_order_contact_payload(
                 contact_order_id,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
+
+        credentials_order_id = service_order_credentials_path(path)
+        if credentials_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_service_order_credentials_payload(
+                credentials_order_id,
                 self._read_json(),
             )
             self._send_json(status, payload)

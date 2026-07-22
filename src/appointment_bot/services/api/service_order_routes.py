@@ -18,6 +18,7 @@ from appointment_bot.db.orders import (
     mark_service_order_no_charge,
     set_order_paused,
     split_service_order_programs,
+    update_service_order_credentials,
     update_service_order_priority,
     update_service_order_reservation_constraints,
 )
@@ -205,6 +206,49 @@ def revalidate_service_order_payload(order_id: str) -> tuple[HTTPStatus, dict[st
     return HTTPStatus.ACCEPTED, {
         "status": "validation_pending" if scheduled else "validation_running",
         "order_id": order_id,
+    }
+
+
+def update_service_order_credentials_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    required = ("document_number", "document_type", "password")
+    missing = [
+        field for field in required if payload.get(field) is None or not str(payload[field]).strip()
+    ]
+    if missing:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            f"Missing fields: {', '.join(missing)}",
+            field_errors={field: "Este campo es obligatorio." for field in missing},
+        )
+    try:
+        affected_order_ids = update_service_order_credentials(
+            order_id,
+            document_number=str(payload["document_number"]),
+            document_type=str(payload["document_type"]),
+            password=str(payload["password"]),
+        )
+    except RuntimeError as exc:
+        return HTTPStatus.CONFLICT, error_payload("conflict", str(exc))
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    scheduled_order_ids = [
+        affected_order_id
+        for affected_order_id in affected_order_ids
+        if schedule_order_preflight(affected_order_id)
+    ]
+    return HTTPStatus.ACCEPTED, {
+        "status": "validation_pending",
+        "order_id": order_id,
+        "affected_order_ids": list(affected_order_ids),
+        "scheduled_order_ids": scheduled_order_ids,
     }
 
 
