@@ -125,7 +125,7 @@ textarea {
 .sidebar-link,
 .sidebar-collapse {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
   width: 100%;
@@ -178,16 +178,6 @@ textarea {
   white-space: nowrap;
 }
 
-.nav-count {
-  min-width: 25px;
-  border-radius: 999px;
-  background: #29455f;
-  color: #dceaf6;
-  padding: 2px 7px;
-  font-size: 0.69rem;
-  text-align: center;
-}
-
 .sidebar-footer {
   display: grid;
   gap: 10px;
@@ -236,7 +226,7 @@ textarea {
 }
 
 .sidebar-collapsed
-  :is(.sidebar-brand-copy, .sidebar-group > p, .nav-label, .nav-count, .sidebar-health > div) {
+  :is(.sidebar-brand-copy, .sidebar-group > p, .nav-label, .sidebar-health > div) {
   display: none;
 }
 
@@ -1789,7 +1779,7 @@ td span {
     display: grid;
   }
 
-  .sidebar-collapsed :is(.sidebar-group > p, .nav-label, .nav-count) {
+  .sidebar-collapsed :is(.sidebar-group > p, .nav-label) {
     display: block;
   }
 
