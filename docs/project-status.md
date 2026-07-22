@@ -126,3 +126,15 @@ El siguiente paso no es cambiar la reserva: es acumular muestras reales con el
 nuevo desglose, regenerar reportes y elegir con el usuario un único experimento.
 El periodo y la fecha de la próxima revisión están definidos en
 [`roadmap/README.md`](roadmap/README.md#próximo-checkpoint).
+
+## Panel de calidad CAPTCHA
+
+El apartado CAPTCHA incorpora el modo `Calidad` sobre las etiquetas humanas vigentes. Presenta
+exactitud, confianza y tiempos promedio/p50/p90 por modelo; tiempos agregados de 2Captcha;
+unanimidad, mayoría y consensos incorrectos; evolución semanal y casos útiles paginados. Una
+advertencia evita interpretar como tendencia una muestra menor de treinta imágenes o dos semanas.
+
+La misma vista permite descargar un ZIP trazable con `labels.csv`, `manifest.csv` e imágenes. La
+API rechaza la exportación completa si alguna imagen está fuera del directorio autorizado, falta o
+no coincide con el SHA-256 registrado. El consenso nunca se exporta como verdad: solo se incluyen
+validaciones humanas.

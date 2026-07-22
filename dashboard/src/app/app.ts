@@ -20,6 +20,12 @@ import {
   CaptchaEvent,
   CaptchaEventsPage,
   CaptchaPrediction,
+  CaptchaQuality,
+  CaptchaQualityCase,
+  CaptchaQualityCaseType,
+  CaptchaQualityCasesPage,
+  CaptchaQualityModel,
+  CaptchaQualityWeek,
   CaptchaSummary,
   CloseServiceOrderPayload,
   ContactUpdatePayload,
@@ -71,13 +77,23 @@ type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
 type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
-type CaptchaWorkspaceMode = 'review' | 'history';
+type CaptchaWorkspaceMode = 'review' | 'history' | 'quality';
 type CaptchaPredictionOption = { answer: string; modelNames: string[] };
 type CaptchaPendingCorrection = {
   eventId: string;
   previousAnswer: string;
   nextAnswer: string;
 };
+const CAPTCHA_QUALITY_CASE_FILTERS: Array<{
+  value: CaptchaQualityCaseType;
+  label: string;
+}> = [
+  { value: 'wrong', label: 'Errores' },
+  { value: 'high_confidence_wrong', label: 'Error con confianza alta' },
+  { value: 'majority_wrong', label: 'Mayoría incorrecta' },
+  { value: 'unanimous_wrong', label: 'Consenso incorrecto' },
+  { value: 'disagreement', label: 'Desacuerdos' },
+];
 type ModalKind =
   | 'edit-order'
   | 'payment'
@@ -319,6 +335,7 @@ export class App implements OnDestroy {
   private refreshingView: ViewKey | null = null;
   private currentRefreshScope: RequestScope | null = null;
   private captchaLoadScope: RequestScope | null = null;
+  private captchaQualityCaseScope: RequestScope | null = null;
   private refreshGeneration = 0;
   private routerSubscription: Subscription | null = null;
   private sweetAlertPromise: Promise<typeof import('sweetalert2').default> | null = null;
@@ -373,6 +390,15 @@ export class App implements OnDestroy {
   protected readonly captchaSavingEventId = signal('');
   protected readonly captchaReviewMessage = signal<string | null>(null);
   protected readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
+  protected readonly captchaQuality = signal<CaptchaQuality | null>(null);
+  protected readonly captchaQualityCases = signal<CaptchaQualityCasesPage | null>(null);
+  protected readonly captchaQualityState = signal<LoadState>('idle');
+  protected readonly captchaQualityError = signal<string | null>(null);
+  protected readonly captchaQualityCaseType = signal<CaptchaQualityCaseType>('wrong');
+  protected readonly captchaQualityCasePage = signal(1);
+  protected readonly captchaQualityCasePageSize = signal(12);
+  protected readonly captchaDatasetExporting = signal(false);
+  protected readonly captchaQualityCaseFilters = CAPTCHA_QUALITY_CASE_FILTERS;
   protected readonly activeCaptchaReview = computed(
     () => this.captchaReviewQueue()[this.captchaReviewPosition()] ?? null,
   );
@@ -555,6 +581,18 @@ export class App implements OnDestroy {
   );
   protected readonly captchaPageNumbers = computed(() => {
     return paginationWindow(this.captchaPage(), this.captchaTotalPages());
+  });
+  protected readonly captchaQualityBestModel = computed<CaptchaQualityModel | null>(() => {
+    return [...(this.captchaQuality()?.models ?? [])]
+      .filter((model) => model.accuracy !== null)
+      .sort(
+        (left, right) =>
+          (right.accuracy ?? 0) - (left.accuracy ?? 0) || right.evaluated - left.evaluated,
+      )[0] ?? null;
+  });
+  protected readonly captchaQualityCasePageNumbers = computed(() => {
+    const pagination = this.captchaQualityCases()?.pagination;
+    return pagination ? paginationWindow(pagination.page, pagination.total_pages) : [];
   });
   protected readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
@@ -809,6 +847,7 @@ export class App implements OnDestroy {
     this.clearRefreshTimer();
     this.currentRefreshScope?.cancel();
     this.captchaLoadScope?.cancel();
+    this.captchaQualityCaseScope?.cancel();
     this.routerSubscription?.unsubscribe();
     if (this.captchaReviewMessageTimer !== null) {
       window.clearTimeout(this.captchaReviewMessageTimer);
@@ -938,8 +977,13 @@ export class App implements OnDestroy {
       queryChanged = true;
     }
     const captchaMode = tree.queryParams['mode'];
-    if (view === 'captchas' && ['review', 'history'].includes(captchaMode)) {
+    if (
+      view === 'captchas' &&
+      ['review', 'history', 'quality'].includes(captchaMode) &&
+      captchaMode !== this.captchaWorkspaceMode()
+    ) {
       this.captchaWorkspaceMode.set(captchaMode as CaptchaWorkspaceMode);
+      queryChanged = true;
     }
     this.activeView.set(view);
     this.mobileMenuOpen.set(false);
@@ -1136,6 +1180,18 @@ export class App implements OnDestroy {
     }
     this.captchaError.set(null);
     try {
+      if (this.captchaWorkspaceMode() === 'quality') {
+        const [summary] = await Promise.all([
+          this.api.getCaptchaSummary(activeScope),
+          this.loadCaptchaQuality(activeScope),
+        ]);
+        this.captchaSummary.set(summary);
+        this.captchaReviewTotal.set(
+          Math.max(0, summary.stats.events - summary.stats.human_labeled),
+        );
+        this.captchaState.set('ready');
+        return;
+      }
       const [summary, page, reviewPage] = await Promise.all([
         this.api.getCaptchaSummary(activeScope),
         this.api.getCaptchaEvents(
@@ -1174,6 +1230,105 @@ export class App implements OnDestroy {
     }
   }
 
+  protected async loadCaptchaQuality(scope?: RequestScope): Promise<void> {
+    if (!this.captchaQuality()) {
+      this.captchaQualityState.set('loading');
+    }
+    this.captchaQualityError.set(null);
+    try {
+      const [quality, cases] = await Promise.all([
+        this.api.getCaptchaQuality(scope),
+        this.api.getCaptchaQualityCases(
+          this.captchaQualityCaseType(),
+          this.captchaQualityCasePage(),
+          this.captchaQualityCasePageSize(),
+          scope,
+        ),
+      ]);
+      this.captchaQuality.set(quality);
+      this.applyCaptchaQualityCases(cases);
+      this.captchaQualityState.set('ready');
+    } catch (error) {
+      if (isRequestCancelled(error)) {
+        return;
+      }
+      this.captchaQualityState.set('error');
+      this.captchaQualityError.set(this.readError(error));
+    }
+  }
+
+  protected async changeCaptchaQualityCaseType(value: CaptchaQualityCaseType): Promise<void> {
+    if (value === this.captchaQualityCaseType()) {
+      return;
+    }
+    this.captchaQualityCaseType.set(value);
+    this.captchaQualityCasePage.set(1);
+    await this.loadCaptchaQualityCases();
+  }
+
+  protected async goToCaptchaQualityCasePage(page: number): Promise<void> {
+    const pagination = this.captchaQualityCases()?.pagination;
+    if (!pagination || page < 1 || page > pagination.total_pages || page === pagination.page) {
+      return;
+    }
+    this.captchaQualityCasePage.set(page);
+    await this.loadCaptchaQualityCases();
+  }
+
+  private async loadCaptchaQualityCases(): Promise<void> {
+    this.captchaQualityCaseScope?.cancel();
+    const scope = new RequestScope();
+    this.captchaQualityCaseScope = scope;
+    this.captchaQualityError.set(null);
+    try {
+      const cases = await this.api.getCaptchaQualityCases(
+        this.captchaQualityCaseType(),
+        this.captchaQualityCasePage(),
+        this.captchaQualityCasePageSize(),
+        scope,
+      );
+      this.applyCaptchaQualityCases(cases);
+    } catch (error) {
+      if (!isRequestCancelled(error)) {
+        this.captchaQualityError.set(this.readError(error));
+      }
+    } finally {
+      if (this.captchaQualityCaseScope === scope) {
+        this.captchaQualityCaseScope = null;
+      }
+    }
+  }
+
+  private applyCaptchaQualityCases(cases: CaptchaQualityCasesPage): void {
+    this.captchaQualityCases.set(cases);
+    this.captchaQualityCasePage.set(cases.pagination.page);
+    this.captchaQualityCasePageSize.set(cases.pagination.page_size);
+  }
+
+  protected async exportCaptchaDataset(): Promise<void> {
+    if (this.captchaDatasetExporting()) {
+      return;
+    }
+    this.captchaDatasetExporting.set(true);
+    this.captchaQualityError.set(null);
+    try {
+      const archive = await this.api.downloadCaptchaDataset();
+      const url = URL.createObjectURL(archive);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'captcha-human-validated-dataset.zip';
+      anchor.hidden = true;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    } catch (error) {
+      this.captchaQualityError.set(this.readError(error));
+    } finally {
+      this.captchaDatasetExporting.set(false);
+    }
+  }
+
   protected async applyCaptchaFilters(): Promise<void> {
     this.captchaPage.set(1);
     await this.loadCaptchaData();
@@ -1209,6 +1364,7 @@ export class App implements OnDestroy {
   }
 
   protected showCaptchaWorkspace(mode: CaptchaWorkspaceMode): void {
+    const changed = this.captchaWorkspaceMode() !== mode;
     this.captchaWorkspaceMode.set(mode);
     this.captchaPendingCorrection.set(null);
     this.clearCaptchaReviewMessage();
@@ -1219,6 +1375,9 @@ export class App implements OnDestroy {
         queryParamsHandling: 'merge',
         replaceUrl: true,
       });
+      if (changed) {
+        void this.loadCaptchaData(mode === 'quality');
+      }
     }
   }
 
@@ -1324,6 +1483,46 @@ export class App implements OnDestroy {
       return 'Sin dato';
     }
     return `${(value * 100).toFixed(1)}%`;
+  }
+
+  protected captchaQualityAccuracy(value: number | null | undefined): string {
+    return this.formatConfidence(value);
+  }
+
+  protected captchaQualityModelTone(model: CaptchaQualityModel): string {
+    if (model.accuracy === null || model.evaluated < 10) {
+      return 'neutral';
+    }
+    if (model.accuracy >= 0.95) {
+      return 'good';
+    }
+    return model.accuracy >= 0.85 ? 'warn' : 'bad';
+  }
+
+  protected captchaQualityCaseLabel(value: CaptchaQualityCaseType): string {
+    return (
+      CAPTCHA_QUALITY_CASE_FILTERS.find((filter) => filter.value === value)?.label ?? value
+    );
+  }
+
+  protected captchaQualityCaseSummary(item: CaptchaQualityCase): string {
+    if (item.case_types.includes('unanimous_wrong')) {
+      return 'Los tres modelos coincidieron en una respuesta incorrecta.';
+    }
+    if (item.case_types.includes('majority_wrong')) {
+      return 'La respuesta apoyada por la mayoría fue incorrecta.';
+    }
+    if (item.case_types.includes('high_confidence_wrong')) {
+      return 'Al menos un modelo falló con confianza alta.';
+    }
+    if (item.case_types.includes('disagreement')) {
+      return 'Los modelos no produjeron la misma respuesta.';
+    }
+    return 'Al menos un modelo difiere de la validación humana.';
+  }
+
+  protected captchaQualityWeeklyModel(week: CaptchaQualityWeek, modelName: string) {
+    return week.models[modelName] ?? null;
   }
 
   protected captchaOrderLabel(event: CaptchaEvent): string {

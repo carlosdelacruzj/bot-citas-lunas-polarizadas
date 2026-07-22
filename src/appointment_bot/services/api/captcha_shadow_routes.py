@@ -11,8 +11,15 @@ from urllib.request import Request, urlopen
 
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.db.captcha_shadow_outbox import (
+    captcha_shadow_external_timing_stats,
     captcha_shadow_external_timings,
     captcha_shadow_outbox_status,
+)
+from appointment_bot.services.api.captcha_shadow_quality import (
+    ALLOWED_CASE_TYPES,
+    build_captcha_dataset_zip,
+    build_captcha_quality,
+    build_captcha_quality_cases,
 )
 from appointment_bot.services.api.http import error_payload
 
@@ -25,6 +32,7 @@ ALLOWED_SOURCES = {"all", "reservation", "observer"}
 ALLOWED_REVIEW_STATUSES = {"all", "validated", "pending"}
 ALLOWED_SORTS = {"newest", "oldest", "review_priority"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+QUALITY_CASE_PAGE_SIZES = {12, 24, 48}
 
 
 def captcha_shadow_summary_payload() -> tuple[HTTPStatus, dict[str, Any]]:
@@ -147,6 +155,106 @@ def captcha_shadow_events_payload(
     }
 
 
+def captcha_shadow_quality_payload() -> tuple[HTTPStatus, dict[str, Any]]:
+    settings = load_settings(require_login=False)
+    try:
+        events = _shadow_all_events(settings)
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        logger.warning("captcha_shadow_quality_failed error=%s", exc)
+        return HTTPStatus.SERVICE_UNAVAILABLE, error_payload(
+            "captcha_shadow_unavailable",
+            "No se pudo calcular la calidad de los modelos CAPTCHA.",
+        )
+    event_ids = [str(event.get("event_id") or "") for event in events]
+    try:
+        external_stats = captcha_shadow_external_timing_stats(
+            [event_id for event_id in event_ids if event_id],
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("captcha_shadow_quality_external_timings_failed")
+        external_stats = {"samples": 0, "average": None, "p50": None, "p90": None}
+    return HTTPStatus.OK, build_captcha_quality(events, external_stats)
+
+
+def captcha_shadow_quality_cases_payload(
+    query: dict[str, list[str]],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    case_type = _query_value(query, "type", "wrong")
+    try:
+        page = max(1, int(_query_value(query, "page", "1")))
+        page_size = int(_query_value(query, "page_size", "12"))
+    except ValueError:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "Página o tamaño de página inválido."
+        )
+    if case_type not in ALLOWED_CASE_TYPES or page_size not in QUALITY_CASE_PAGE_SIZES:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "El tipo de caso o tamaño de página no es válido."
+        )
+    settings = load_settings(require_login=False)
+    try:
+        raw_events = _shadow_all_events(settings)
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        logger.warning("captcha_shadow_quality_cases_failed error=%s", exc)
+        return HTTPStatus.SERVICE_UNAVAILABLE, error_payload(
+            "captcha_shadow_unavailable",
+            "No se pudieron cargar los casos de calidad CAPTCHA.",
+        )
+    cases = [
+        case
+        for case in build_captcha_quality_cases(raw_events)
+        if case_type in case["case_types"]
+    ]
+    total = len(cases)
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * page_size
+    page_cases = cases[offset : offset + page_size]
+    event_ids = [str(case.get("event_id") or "") for case in page_cases]
+    try:
+        external_timings = captcha_shadow_external_timings(event_ids, settings=settings)
+    except Exception:
+        logger.exception("captcha_shadow_quality_case_timings_failed")
+        external_timings = {}
+    for case in page_cases:
+        event_id = str(case.get("event_id") or "")
+        case["external_solve_ms"] = external_timings.get(event_id)
+        case["image_url"] = (
+            f"/api/v1/captcha-shadow/events/{quote(event_id, safe='')}/image"
+        )
+    return HTTPStatus.OK, {
+        "cases": page_cases,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+        },
+        "filters": {"type": case_type},
+    }
+
+
+def captcha_shadow_dataset_export_payload() -> tuple[HTTPStatus, bytes | dict[str, Any]]:
+    settings = load_settings(require_login=False)
+    try:
+        events = _shadow_all_events(settings)
+        archive, _ = build_captcha_dataset_zip(events, settings.screenshots_dir)
+    except ValueError as exc:
+        return HTTPStatus.CONFLICT, error_payload(
+            "captcha_dataset_unavailable",
+            str(exc),
+        )
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        logger.warning("captcha_shadow_dataset_export_failed error=%s", exc)
+        return HTTPStatus.SERVICE_UNAVAILABLE, error_payload(
+            "captcha_shadow_unavailable",
+            "No se pudo preparar el dataset de CAPTCHA.",
+        )
+    return HTTPStatus.OK, archive
+
+
 def captcha_shadow_human_label_event_id(path: str) -> str | None:
     prefix = "/api/v1/captcha-shadow/events/"
     suffix = "/human-label"
@@ -252,6 +360,35 @@ def captcha_shadow_image_event_id(path: str) -> str | None:
         return None
     value = path[len(prefix) : -len(suffix)]
     return unquote(value) if value else None
+
+
+def _shadow_all_events(settings: Settings) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        query = urlencode(
+            {
+                "limit": 100,
+                "offset": offset,
+                "agreement": "all",
+                "portal_status": "all",
+                "source": "all",
+                "review_status": "all",
+                "sort": "oldest",
+            }
+        )
+        response = _shadow_get(settings, f"/v1/events?{query}")
+        page = response.get("events")
+        if not isinstance(page, list):
+            raise ValueError("Invalid CAPTCHA shadow events response")
+        valid_page = [event for event in page if isinstance(event, dict)]
+        events.extend(valid_page)
+        total = max(0, int(response.get("total", len(events))))
+        if not page or len(events) >= total:
+            return events
+        offset += len(page)
+        if offset > 100_000:
+            raise ValueError("CAPTCHA shadow event limit exceeded")
 
 
 def _shadow_get(settings: Settings, path: str) -> dict[str, Any]:

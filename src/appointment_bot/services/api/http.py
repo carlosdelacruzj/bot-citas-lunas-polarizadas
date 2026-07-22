@@ -123,6 +123,23 @@ def send_image(handler: BaseHTTPRequestHandler, path: Path) -> None:
     handler.wfile.write(body)
 
 
+def send_download(
+    handler: BaseHTTPRequestHandler,
+    body: bytes,
+    *,
+    filename: str,
+    content_type: str = "application/octet-stream",
+) -> None:
+    handler.send_response(HTTPStatus.OK)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 def error_payload(status: str, message: str, **extra: Any) -> dict[str, Any]:
     payload = {"status": status, "message": message}
     payload.update(extra)

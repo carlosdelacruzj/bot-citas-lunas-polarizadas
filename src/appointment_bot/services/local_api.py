@@ -8,10 +8,13 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from appointment_bot.services.api.captcha_shadow_routes import (
+    captcha_shadow_dataset_export_payload,
     captcha_shadow_events_payload,
     captcha_shadow_human_label_event_id,
     captcha_shadow_image_event_id,
     captcha_shadow_image_payload,
+    captcha_shadow_quality_cases_payload,
+    captcha_shadow_quality_payload,
     captcha_shadow_summary_payload,
     save_captcha_shadow_human_label_payload,
 )
@@ -29,6 +32,7 @@ from appointment_bot.services.api.http import (
     error_payload,
     read_json,
     require_authorized,
+    send_download,
     send_image,
     send_json,
     send_png,
@@ -140,6 +144,35 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = captcha_shadow_events_payload(query)
             self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/captcha-shadow/quality":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_quality_payload()
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/captcha-shadow/quality/cases":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_quality_cases_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/captcha-shadow/dataset/export":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_shadow_dataset_export_payload()
+            if isinstance(payload, dict):
+                self._send_json(status, payload)
+            else:
+                send_download(
+                    self,
+                    payload,
+                    filename="captcha-human-validated-dataset.zip",
+                    content_type="application/zip",
+                )
             return
 
         captcha_event_id = captcha_shadow_image_event_id(path)

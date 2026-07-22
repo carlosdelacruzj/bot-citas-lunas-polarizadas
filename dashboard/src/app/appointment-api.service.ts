@@ -188,6 +188,93 @@ export interface CaptchaHumanLabelResponse {
   event: CaptchaEvent;
 }
 
+export type CaptchaQualityCaseType =
+  | 'wrong'
+  | 'high_confidence_wrong'
+  | 'unanimous_wrong'
+  | 'majority_wrong'
+  | 'disagreement';
+
+export interface CaptchaMetricDistribution {
+  samples: number;
+  average: number | null;
+  p50: number | null;
+  p90: number | null;
+}
+
+export interface CaptchaQualityModel {
+  model_name: string;
+  predictions: number;
+  evaluated: number;
+  correct: number;
+  accuracy: number | null;
+  confidence: {
+    average: number | null;
+    correct_average: number | null;
+    wrong_average: number | null;
+  };
+  inference_ms: CaptchaMetricDistribution;
+}
+
+export interface CaptchaQualityWeek {
+  week: string;
+  validated: number;
+  models: Record<
+    string,
+    { evaluated: number; correct: number; accuracy: number | null }
+  >;
+}
+
+export interface CaptchaQuality {
+  events: number;
+  validated_images: number;
+  weeks_observed: number;
+  trend_ready: boolean;
+  models: CaptchaQualityModel[];
+  ensemble: {
+    unanimous: number;
+    unanimous_validated: number;
+    unanimous_wrong: number;
+    majority: number;
+    majority_wrong: number;
+    all_different: number;
+  };
+  weekly: CaptchaQualityWeek[];
+  useful_case_counts: Record<CaptchaQualityCaseType, number>;
+  local_total_ms: CaptchaMetricDistribution;
+  external_solver_ms: CaptchaMetricDistribution;
+  definitions: {
+    accuracy_reference: string;
+    percentile_method: string;
+    high_confidence_threshold: number;
+  };
+}
+
+export interface CaptchaQualityCase {
+  event_id: string;
+  image_sha256: string;
+  received_at_utc: string;
+  human_answer: string;
+  case_types: CaptchaQualityCaseType[];
+  agreement_types: Array<'unanimous' | 'majority' | 'all_different'>;
+  consensus_answer: string;
+  vote_count: number;
+  wrong_models: string[];
+  high_confidence_wrong_models: string[];
+  external_answer: string | null;
+  external_solve_ms: number | null;
+  portal_accepted: boolean | null;
+  image_url: string;
+  metadata: CaptchaEvent['metadata'];
+  predictions: CaptchaPrediction[];
+}
+
+export interface CaptchaQualityCasesPage {
+  cases: CaptchaQualityCase[];
+  pagination: { page: number; page_size: number; total: number; total_pages: number };
+  filters: { type: CaptchaQualityCaseType };
+}
+
 interface ServiceOrdersResponse {
   service_orders: ServiceOrder[];
 }
@@ -528,6 +615,34 @@ export class AppointmentApiService {
       `/api/v1/captcha-shadow/events/${encodeURIComponent(eventId)}/human-label`,
       { answer, expected_image_sha256: imageSha256 },
     );
+  }
+
+  async getCaptchaQuality(scope?: RequestScope): Promise<CaptchaQuality> {
+    return this.read<CaptchaQuality>('/api/v1/captcha-shadow/quality', scope);
+  }
+
+  async getCaptchaQualityCases(
+    caseType: CaptchaQualityCaseType,
+    page: number,
+    pageSize: number,
+    scope?: RequestScope,
+  ): Promise<CaptchaQualityCasesPage> {
+    const params = new URLSearchParams({
+      type: caseType,
+      page: String(page),
+      page_size: String(pageSize),
+    });
+    return this.read<CaptchaQualityCasesPage>(
+      `/api/v1/captcha-shadow/quality/cases?${params.toString()}`,
+      scope,
+    );
+  }
+
+  async downloadCaptchaDataset(scope?: RequestScope): Promise<Blob> {
+    const request = this.http.get('/api/v1/captcha-shadow/dataset/export', {
+      responseType: 'blob',
+    });
+    return scope ? scope.read(request) : firstValueFrom(request);
   }
 
   async getWorkerCommands(scope?: RequestScope): Promise<WorkerCommand[]> {

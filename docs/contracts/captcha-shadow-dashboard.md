@@ -235,3 +235,33 @@ Los eventos del observador no muestran un bloque vacío de 2Captcha. Los modelos
 La cabecera se redujo a una línea con servicio, total, validados, pendientes y entregas en cola.
 El 21 de julio de 2026 la activación confirmó 10 eventos, 10 etiquetas humanas y 0 pendientes; el
 historial priorizado colocó primero el evento con desacuerdo entre modelos.
+
+## API de calidad y exportación
+
+La fachada administrativa calcula calidad sin convertir las respuestas de los modelos ni el
+consenso en etiquetas. La referencia de exactitud es siempre la última validación humana asociada
+al SHA-256 de cada imagen. Si una misma imagen aparece en varios eventos, se evalúa una sola vez
+usando su evento más reciente.
+
+```text
+GET /api/v1/captcha-shadow/quality
+GET /api/v1/captcha-shadow/quality/cases?type=wrong&page=1&page_size=12
+GET /api/v1/captcha-shadow/dataset/export
+```
+
+`quality` entrega por modelo muestra evaluada, aciertos, exactitud, confianza promedio —separada
+entre aciertos y errores— y tiempos promedio, p50 y p90. También separa unanimidad, mayoría,
+respuestas totalmente distintas, unanimidad incorrecta y mayoría incorrecta. La evolución usa
+semanas ISO; `trend_ready` solo es verdadero con al menos dos semanas y treinta imágenes validadas.
+Los percentiles usan interpolación lineal. Los tiempos de 2Captcha se deduplican por evento desde
+el outbox PostgreSQL antes de calcular promedio, p50 y p90.
+
+Los tipos de caso permitidos son `wrong`, `high_confidence_wrong`, `unanimous_wrong`,
+`majority_wrong` y `disagreement`. La confianza alta comienza en `0.9`. Estas listas son
+paginadas y no exponen rutas locales ni rutas de modelos.
+
+La exportación produce `captcha-human-validated-dataset.zip` con `labels.csv`, `manifest.csv` e
+`images/<sha256>.png`. Solo incluye etiquetas humanas vigentes. Antes de crear el ZIP, cada imagen
+debe existir dentro de `settings.screenshots_dir` y su contenido debe coincidir con el SHA-256
+registrado. Si una imagen no supera esa verificación, la descarga completa se rechaza para evitar
+un dataset parcial o incorrecto.

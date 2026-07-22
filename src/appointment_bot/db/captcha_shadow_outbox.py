@@ -169,3 +169,52 @@ def captcha_shadow_external_timings(
         for row in rows
         if row["external_solve_ms"] is not None
     }
+
+
+def captcha_shadow_external_timing_stats(
+    event_ids: list[str],
+    *,
+    settings: Settings,
+) -> dict[str, float | int | None]:
+    if not event_ids:
+        return {
+            "samples": 0,
+            "average": None,
+            "p50": None,
+            "p90": None,
+        }
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            WITH event_timings AS (
+                SELECT event_id,
+                       MAX((payload ->> 'external_solve_ms')::double precision)
+                           AS external_solve_ms
+                FROM captcha_shadow_outbox
+                WHERE event_id = ANY(%s)
+                  AND payload ? 'external_solve_ms'
+                GROUP BY event_id
+            )
+            SELECT COUNT(*) AS samples,
+                   AVG(external_solve_ms) AS average,
+                   percentile_cont(0.5) WITHIN GROUP (
+                       ORDER BY external_solve_ms
+                   ) AS p50,
+                   percentile_cont(0.9) WITHIN GROUP (
+                       ORDER BY external_solve_ms
+                   ) AS p90
+            FROM event_timings
+            """,
+            (event_ids,),
+        ).fetchone()
+    return {
+        "samples": int(row["samples"] or 0),
+        "average": _optional_float(row["average"]),
+        "p50": _optional_float(row["p50"]),
+        "p90": _optional_float(row["p90"]),
+    }
+
+
+def _optional_float(value: Any) -> float | None:
+    return float(value) if value is not None else None

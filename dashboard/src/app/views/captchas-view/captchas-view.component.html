@@ -51,6 +51,14 @@
       Historial
       <span>{{ dashboard.captchaTotal() }}</span>
     </button>
+    <button
+      type="button"
+      [class.active]="dashboard.captchaWorkspaceMode() === 'quality'"
+      (click)="dashboard.showCaptchaWorkspace('quality')"
+    >
+      Calidad
+      <span>{{ dashboard.captchaQuality()?.validated_images ?? 0 }}</span>
+    </button>
   </nav>
 
   @if (dashboard.captchaWorkspaceMode() === 'review') {
@@ -231,7 +239,7 @@
         </button>
       </section>
     }
-  } @else {
+  } @else if (dashboard.captchaWorkspaceMode() === 'history') {
     <section class="panel captcha-controls" aria-label="Filtros de CAPTCHA">
       <form class="captcha-search" (submit)="$event.preventDefault(); dashboard.applyCaptchaFilters()">
         <label class="filter captcha-query">
@@ -656,6 +664,277 @@
           </button>
         </nav>
       }
+    }
+  } @else {
+    @if (dashboard.captchaQualityState() === 'loading' && !dashboard.captchaQuality()) {
+      <app-view-state
+        state="loading"
+        title="Calculando calidad"
+        message="Comparando las validaciones humanas con cada modelo…"
+        [skeletonRows]="4"
+      />
+    } @else if (dashboard.captchaQualityState() === 'error' && !dashboard.captchaQuality()) {
+      <app-view-state
+        state="error"
+        title="No se pudo calcular la calidad"
+        [message]="dashboard.captchaQualityError() ?? 'Intenta nuevamente.'"
+        (retry)="dashboard.loadCaptchaQuality()"
+      />
+    } @else if (dashboard.captchaQuality(); as quality) {
+      @if (dashboard.captchaQualityError()) {
+        <app-view-state
+          state="stale"
+          title="Mostrando la última medición disponible"
+          [message]="dashboard.captchaQualityError()"
+          [compact]="true"
+          (retry)="dashboard.loadCaptchaQuality()"
+        />
+      }
+
+      <div class="captcha-quality-actions">
+        <div>
+          <strong>Calidad con referencia humana</strong>
+          <span>Cada imagen cuenta una vez, aunque aparezca en varias corridas.</span>
+        </div>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="dashboard.captchaDatasetExporting() || !quality.validated_images"
+          (click)="dashboard.exportCaptchaDataset()"
+        >
+          {{ dashboard.captchaDatasetExporting() ? 'Preparando ZIP…' : 'Exportar dataset' }}
+        </button>
+      </div>
+
+      <div class="captcha-kpis captcha-quality-kpis" aria-label="Indicadores de calidad CAPTCHA">
+        <article>
+          <span>Validados</span>
+          <strong>{{ quality.validated_images }}</strong>
+          <small>Imágenes con lectura humana</small>
+        </article>
+        <article>
+          <span>Mejor exactitud</span>
+          @if (dashboard.captchaQualityBestModel(); as bestModel) {
+            <strong>{{ dashboard.captchaQualityAccuracy(bestModel.accuracy) }}</strong>
+            <small>{{ dashboard.captchaModelLabel(bestModel.model_name) }} · {{ bestModel.evaluated }} casos</small>
+          } @else {
+            <strong>Sin dato</strong>
+            <small>Faltan validaciones</small>
+          }
+        </article>
+        <article>
+          <span>p90 modelos locales</span>
+          <strong>{{ dashboard.formatMilliseconds(quality.local_total_ms.p90) }}</strong>
+          <small>Total de los tres modelos por imagen</small>
+        </article>
+        <article>
+          <span>p90 de 2Captcha</span>
+          <strong>{{ dashboard.formatMilliseconds(quality.external_solver_ms.p90) }}</strong>
+          <small>{{ quality.external_solver_ms.samples }} respuestas externas</small>
+        </article>
+      </div>
+
+      @if (!quality.trend_ready) {
+        <div class="notice neutral captcha-quality-sample-note" role="status">
+          <strong>Muestra todavía pequeña.</strong>
+          <span>
+            Hay {{ quality.validated_images }} validaciones en {{ quality.weeks_observed }}
+            {{ quality.weeks_observed === 1 ? 'semana' : 'semanas' }}. La tendencia se habilita con
+            al menos 30 imágenes y dos semanas.
+          </span>
+        </div>
+      }
+
+      <section class="panel captcha-quality-panel">
+        <div class="captcha-quality-section-heading">
+          <div>
+            <h3>Rendimiento por modelo</h3>
+            <p>Exactitud humana, confianza y latencia sobre la misma muestra.</p>
+          </div>
+        </div>
+        <div class="captcha-quality-table-wrap">
+          <table class="captcha-quality-table">
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Muestra</th>
+                <th>Exactitud</th>
+                <th>Confianza</th>
+                <th>Promedio</th>
+                <th>p50</th>
+                <th>p90</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (model of quality.models; track model.model_name) {
+                <tr>
+                  <td><strong>{{ dashboard.captchaModelLabel(model.model_name) }}</strong></td>
+                  <td>{{ model.correct }}/{{ model.evaluated }}</td>
+                  <td>
+                    <span class="badge {{ dashboard.captchaQualityModelTone(model) }}">
+                      {{ dashboard.captchaQualityAccuracy(model.accuracy) }}
+                    </span>
+                  </td>
+                  <td>
+                    {{ dashboard.formatConfidence(model.confidence.average) }}
+                    @if (model.confidence.wrong_average !== null) {
+                      <small>Error: {{ dashboard.formatConfidence(model.confidence.wrong_average) }}</small>
+                    }
+                  </td>
+                  <td>{{ dashboard.formatMilliseconds(model.inference_ms.average) }}</td>
+                  <td>{{ dashboard.formatMilliseconds(model.inference_ms.p50) }}</td>
+                  <td>{{ dashboard.formatMilliseconds(model.inference_ms.p90) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="captcha-quality-two-column">
+        <section class="panel captcha-quality-panel">
+          <div class="captcha-quality-section-heading">
+            <div>
+              <h3>Acuerdo entre modelos</h3>
+              <p>Separa unanimidad de mayoría para no ocultar decisiones incorrectas.</p>
+            </div>
+          </div>
+          <div class="captcha-quality-ensemble">
+            <article><span>Unanimidad</span><strong>{{ quality.ensemble.unanimous }}</strong></article>
+            <article class="{{ quality.ensemble.unanimous_wrong ? 'bad' : 'good' }}">
+              <span>Consenso incorrecto</span><strong>{{ quality.ensemble.unanimous_wrong }}</strong>
+            </article>
+            <article><span>Mayoría 2–1</span><strong>{{ quality.ensemble.majority }}</strong></article>
+            <article class="{{ quality.ensemble.majority_wrong ? 'warn' : 'good' }}">
+              <span>Mayoría incorrecta</span><strong>{{ quality.ensemble.majority_wrong }}</strong>
+            </article>
+            <article><span>Todos diferentes</span><strong>{{ quality.ensemble.all_different }}</strong></article>
+          </div>
+        </section>
+
+        <section class="panel captcha-quality-panel">
+          <div class="captcha-quality-section-heading">
+            <div>
+              <h3>Evolución semanal</h3>
+              <p>Exactitud por semana ISO y cantidad realmente validada.</p>
+            </div>
+          </div>
+          @if (quality.weekly.length) {
+            <div class="captcha-quality-week-list">
+              @for (week of quality.weekly; track week.week) {
+                <article>
+                  <div><strong>{{ week.week }}</strong><span>{{ week.validated }} validados</span></div>
+                  <div class="captcha-quality-week-models">
+                    @for (model of quality.models; track model.model_name) {
+                      @if (dashboard.captchaQualityWeeklyModel(week, model.model_name); as weeklyModel) {
+                        <span>
+                          {{ dashboard.captchaModelLabel(model.model_name) }}
+                          <strong>{{ dashboard.captchaQualityAccuracy(weeklyModel.accuracy) }}</strong>
+                        </span>
+                      }
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <app-view-state
+              state="empty"
+              title="Sin evolución disponible"
+              message="Las semanas aparecerán cuando existan validaciones humanas."
+              [compact]="true"
+            />
+          }
+        </section>
+      </div>
+
+      <section class="panel captcha-quality-panel captcha-quality-cases">
+        <div class="captcha-quality-section-heading">
+          <div>
+            <h3>Casos útiles para mejorar</h3>
+            <p>Prioriza errores y desacuerdos sin revisar nuevamente todo el historial.</p>
+          </div>
+          @if (dashboard.captchaQualityCases(); as casesPage) {
+            <span>{{ casesPage.pagination.total }} casos</span>
+          }
+        </div>
+        <div class="captcha-filter-chips captcha-quality-case-filters">
+          @for (filter of dashboard.captchaQualityCaseFilters; track filter.value) {
+            <button
+              type="button"
+              [class.active]="dashboard.captchaQualityCaseType() === filter.value"
+              (click)="dashboard.changeCaptchaQualityCaseType(filter.value)"
+            >
+              {{ filter.label }}
+              <span>{{ quality.useful_case_counts[filter.value] }}</span>
+            </button>
+          }
+        </div>
+
+        @if (dashboard.captchaQualityCases(); as casesPage) {
+          @if (casesPage.cases.length) {
+            <div class="captcha-quality-case-list">
+              @for (item of casesPage.cases; track item.event_id) {
+                <article>
+                  <a [href]="item.image_url" target="_blank" rel="noopener">
+                    <img [src]="item.image_url" alt="CAPTCHA validado {{ item.human_answer }}" loading="lazy" />
+                  </a>
+                  <div class="captcha-quality-case-copy">
+                    <div>
+                      <strong>{{ dashboard.captchaQualityCaseSummary(item) }}</strong>
+                      <span>{{ dashboard.formatDateTime(item.received_at_utc) }}</span>
+                    </div>
+                    <div class="captcha-quality-case-answers">
+                      <span class="good">Humano <strong>{{ item.human_answer }}</strong></span>
+                      <span [class.bad]="item.consensus_answer !== item.human_answer">
+                        Voto {{ item.consensus_answer }} ({{ item.vote_count }})
+                      </span>
+                      @for (prediction of item.predictions; track prediction.model_name) {
+                        <span [class.bad]="prediction.prediction !== item.human_answer">
+                          {{ dashboard.captchaModelLabel(prediction.model_name) }}
+                          <strong>{{ prediction.prediction }}</strong>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <app-view-state
+              state="empty"
+              title="No hay casos en esta categoría"
+              message="Es una buena señal: ninguna validación coincide con este filtro."
+              [compact]="true"
+            />
+          }
+
+          @if (casesPage.pagination.total_pages > 1) {
+            <nav class="captcha-pagination" aria-label="Páginas de casos de calidad">
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="casesPage.pagination.page === 1"
+                (click)="dashboard.goToCaptchaQualityCasePage(casesPage.pagination.page - 1)"
+              >Anterior</button>
+              @for (page of dashboard.captchaQualityCasePageNumbers(); track page) {
+                <button
+                  type="button"
+                  class="page-button"
+                  [class.active]="page === casesPage.pagination.page"
+                  (click)="dashboard.goToCaptchaQualityCasePage(page)"
+                >{{ page }}</button>
+              }
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="casesPage.pagination.page === casesPage.pagination.total_pages"
+                (click)="dashboard.goToCaptchaQualityCasePage(casesPage.pagination.page + 1)"
+              >Siguiente</button>
+            </nav>
+          }
+        }
+      </section>
     }
   }
 </section>
