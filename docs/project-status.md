@@ -43,6 +43,9 @@ instrumentación no alteraron la regla de confirmación final.
 - Edición de restricciones por orden desde el dashboard: fecha mínima, fecha
   máxima, hora mínima, días permitidos y varios rangos de fechas excluidas; los
   límites también se pueden quitar y los rangos aparecen resumidos en la orden.
+- Creación y edición reutilizan el mismo editor de reglas de reserva para fechas,
+  días permitidos y rangos excluidos. Las validaciones, textos y comportamiento
+  responsive quedan definidos en un solo componente.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

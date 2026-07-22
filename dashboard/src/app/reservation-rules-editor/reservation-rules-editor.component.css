@@ -1,0 +1,166 @@
+:host {
+  display: block;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  column-gap: 4px;
+  row-gap: 6px;
+  color: #44525c;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+label > :is(input, select, small) {
+  grid-column: 1 / -1;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #cbd5df;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172026;
+  padding: 8px 10px;
+  outline: none;
+}
+
+select[multiple] {
+  min-height: 150px;
+}
+
+small {
+  color: #65737d;
+  font-weight: 400;
+}
+
+input:focus,
+select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+button {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+:is(button, input, select):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.secondary {
+  border-color: #cbd5df;
+  background: #ffffff;
+  color: #1f2a33;
+}
+
+.date-exclusion-builder {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 14px;
+}
+
+.date-exclusion-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.date-exclusion-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.date-exclusion-heading > span {
+  flex: none;
+  border-radius: 999px;
+  background: #e2e8f0;
+  padding: 3px 9px;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.date-exclusion-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.excluded-range-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.excluded-range-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fff1f2;
+  padding: 5px 6px 5px 10px;
+  color: #9f1239;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.excluded-range-chip button {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 1rem;
+}
+
+.excluded-range-chip button:hover:not(:disabled) {
+  background: #fecdd3;
+}
+
+@media (max-width: 760px) {
+  .form-grid,
+  .date-exclusion-row {
+    grid-template-columns: 1fr;
+  }
+}

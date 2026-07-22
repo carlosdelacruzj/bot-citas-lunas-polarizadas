@@ -439,6 +439,14 @@ GET /api/v1/runs/{run_id}?include_details=1
 
 El dashboard no debe mostrar/copiar JSON crudo por defecto.
 
+## Editor de reglas de reserva
+
+La creación y la edición de órdenes consumen el mismo componente visual para
+`minimum_reservation_date`, `maximum_reservation_date`, `allowed_weekdays` y
+`excluded_date_ranges`. La edición también habilita `minimum_reservation_hour`.
+Esta reutilización no cambia los payloads del API: evita que ambos formularios
+diverjan en etiquetas, validación de rangos o comportamiento responsive.
+
 ## Cambios requeridos antes de Angular con botones
 
 - Filtrar `owner_token` de `GET /api/v1/worker`. Estado: completado.

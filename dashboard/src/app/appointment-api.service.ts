@@ -2,6 +2,10 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { ExcludedDateRange } from './reservation-rules.model';
+
+export type { ExcludedDateRange } from './reservation-rules.model';
+
 export interface HealthPayload {
   status: string;
   message: string;
@@ -69,11 +73,6 @@ export interface ServiceOrder {
   preflight_details: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface ExcludedDateRange {
-  start_date: string;
-  end_date: string;
 }
 
 export interface ServiceOrderDetail extends ServiceOrder {

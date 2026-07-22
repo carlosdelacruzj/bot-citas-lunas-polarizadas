@@ -1,0 +1,128 @@
+<div class="form-grid">
+  <label>
+    Buscar desde
+    <input
+      [name]="controlPrefix + 'MinimumDate'"
+      type="date"
+      [disabled]="disabled"
+      [ngModel]="minimumDate"
+      (ngModelChange)="minimumDateChange.emit($event)"
+    />
+  </label>
+  <label>
+    Buscar hasta
+    <input
+      [name]="controlPrefix + 'MaximumDate'"
+      type="date"
+      [disabled]="disabled"
+      [min]="minimumDate || null"
+      [ngModel]="maximumDate"
+      (ngModelChange)="maximumDateChange.emit($event)"
+    />
+    <small>La fecha final también se incluye.</small>
+  </label>
+  @if (showMinimumHour) {
+    <label>
+      Hora mínima
+      <input
+        [name]="controlPrefix + 'MinimumHour'"
+        type="number"
+        min="0"
+        max="23"
+        step="1"
+        placeholder="Sin límite"
+        [disabled]="disabled"
+        [ngModel]="minimumHour"
+        (ngModelChange)="minimumHourChange.emit($event)"
+      />
+    </label>
+  }
+  <label>
+    Días permitidos
+    <select
+      [name]="controlPrefix + 'AllowedWeekdays'"
+      multiple
+      [disabled]="disabled"
+      [ngModel]="allowedWeekdays"
+      (ngModelChange)="allowedWeekdaysChange.emit($event)"
+    >
+      <option [ngValue]="1">Lunes</option>
+      <option [ngValue]="2">Martes</option>
+      <option [ngValue]="3">Miércoles</option>
+      <option [ngValue]="4">Jueves</option>
+      <option [ngValue]="5">Viernes</option>
+      <option [ngValue]="6">Sábado</option>
+      <option [ngValue]="7">Domingo</option>
+    </select>
+    <small>Puedes seleccionar varios días.</small>
+  </label>
+</div>
+
+<div class="date-exclusion-builder">
+  <div class="date-exclusion-heading">
+    <div>
+      <strong>Fechas excluidas</strong>
+      <small>El bot ignorará todo el rango, incluyendo el primer y último día.</small>
+    </div>
+    @if (excludedDateRanges.length > 0) {
+      <span>{{ excludedDateRanges.length }} rango(s)</span>
+    }
+  </div>
+  <div class="date-exclusion-row">
+    <label>
+      Desde
+      <input
+        [name]="controlPrefix + 'ExcludedDateStart'"
+        type="date"
+        [disabled]="disabled"
+        [ngModel]="excludedDateStart"
+        (ngModelChange)="excludedDateStartChange.emit($event)"
+      />
+    </label>
+    <label>
+      Hasta
+      <input
+        [name]="controlPrefix + 'ExcludedDateEnd'"
+        type="date"
+        [disabled]="disabled"
+        [min]="excludedDateStart || null"
+        [ngModel]="excludedDateEnd"
+        (ngModelChange)="excludedDateEndChange.emit($event)"
+      />
+    </label>
+    <button
+      type="button"
+      class="secondary"
+      [disabled]="disabled || !excludedDateStart || !excludedDateEnd"
+      (click)="addExcludedDateRange.emit()"
+    >
+      Agregar otro rango
+    </button>
+  </div>
+  @if (excludedDateRanges.length > 0) {
+    <div class="excluded-range-list" aria-label="Rangos de fechas excluidos">
+      @for (
+        range of excludedDateRanges;
+        track range.start_date + range.end_date;
+        let index = $index
+      ) {
+        <span class="excluded-range-chip">
+          {{ formatDate(range.start_date) }} – {{ formatDate(range.end_date) }}
+          <button
+            type="button"
+            [disabled]="disabled"
+            [attr.aria-label]="
+              'Eliminar rango ' +
+              formatDate(range.start_date) +
+              ' a ' +
+              formatDate(range.end_date)
+            "
+            (click)="removeExcludedDateRange.emit(index)"
+          >
+            ×
+          </button>
+        </span>
+      }
+    </div>
+  }
+</div>

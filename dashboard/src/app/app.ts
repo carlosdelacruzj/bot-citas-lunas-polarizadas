@@ -46,6 +46,7 @@ import {
   apiErrorMessage,
 } from './appointment-api.service';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
+import { ReservationRulesEditorComponent } from './reservation-rules-editor/reservation-rules-editor.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey = 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
@@ -257,7 +258,7 @@ function paginationWindow(current: number, total: number): number[] {
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule],
+  imports: [FormsModule, ReservationRulesEditorComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
