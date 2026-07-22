@@ -58,6 +58,7 @@ def open_manual_session_for_order(
         settings,
         username=order.username,
         password=order.password,
+        document_type=order.document_type,
     )
     now = datetime.now(UTC).isoformat(timespec="seconds")
     handle = ManualSessionHandle(
@@ -125,7 +126,12 @@ def _run_manual_session(
 ) -> None:
     session_id = handle.session_id
     session_settings = replace(
-        settings_for_order(settings, username=order.username, password=order.password),
+        settings_for_order(
+            settings,
+            username=order.username,
+            password=order.password,
+            document_type=order.document_type,
+        ),
         headless=False,
         auto_reserve=False,
         monitor_window_seconds=0,

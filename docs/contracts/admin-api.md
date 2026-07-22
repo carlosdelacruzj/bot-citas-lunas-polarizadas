@@ -202,6 +202,11 @@ obtenido mediante el endpoint de detalle. Debe conservarlo solo en memoria,
 descartarlo al cambiar la orden o recargar la aplicación y evitar incluirlo en snapshots o
 copias masivas.
 
+La sesión manual debe construir su configuración con `username`, `password` y
+`document_type` de la orden. No puede depender del tipo global ni del valor por
+defecto `dni`; una orden con `foreign_resident_card` debe seleccionar Carné de
+Extranjería antes de enviar el formulario del portal.
+
 ## Crear orden
 
 `POST /api/v1/service-orders` acepta:
