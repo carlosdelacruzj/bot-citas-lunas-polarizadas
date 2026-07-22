@@ -61,6 +61,7 @@ export interface ServiceOrder {
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
+  excluded_date_ranges: ExcludedDateRange[];
   preflight_status: 'not_required' | 'pending' | 'running' | 'validated' | 'failed';
   preflight_message: string | null;
   preflight_started_at: string | null;
@@ -68,6 +69,11 @@ export interface ServiceOrder {
   preflight_details: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ExcludedDateRange {
+  start_date: string;
+  end_date: string;
 }
 
 export interface ServiceOrderDetail extends ServiceOrder {
@@ -359,6 +365,7 @@ export interface ReservationRestrictionsUpdatePayload {
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
+  excluded_date_ranges: ExcludedDateRange[];
 }
 
 export interface PaymentPaidPayload {
@@ -408,7 +415,8 @@ export interface WhatsAppWebDraftResponse {
   manual_send_required: boolean;
   sent: boolean;
   sent_at?: string | null;
-  draft_mode?: 'caption' | 'queued_text' | 'album' | 'documents' | 'image_sequence' | 'document_sequence';
+  draft_mode?:
+    'caption' | 'queued_text' | 'album' | 'documents' | 'image_sequence' | 'document_sequence';
 }
 
 export interface CloseServiceOrderPayload {
@@ -430,6 +438,7 @@ export interface CreateServiceOrderPayload {
   minimum_reservation_date?: string | null;
   maximum_reservation_date?: string | null;
   allowed_weekdays?: number[] | null;
+  excluded_date_ranges?: ExcludedDateRange[];
   parent_order_id?: string | null;
   program_expediente?: string | null;
   program_plate?: string | null;
@@ -459,15 +468,15 @@ export class AppointmentApiService {
   }
 
   async getServiceOrders(): Promise<ServiceOrder[]> {
-    const response = await firstValueFrom(this.http.get<ServiceOrdersResponse>('/api/v1/service-orders'));
+    const response = await firstValueFrom(
+      this.http.get<ServiceOrdersResponse>('/api/v1/service-orders'),
+    );
     return response.service_orders;
   }
 
   async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {
     return firstValueFrom(
-      this.http.get<ServiceOrderDetail>(
-        `/api/v1/service-orders/${encodeURIComponent(orderId)}`,
-      ),
+      this.http.get<ServiceOrderDetail>(`/api/v1/service-orders/${encodeURIComponent(orderId)}`),
     );
   }
 
@@ -477,9 +486,7 @@ export class AppointmentApiService {
   }
 
   async getRun(runId: string): Promise<RunDetail> {
-    return firstValueFrom(
-      this.http.get<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`),
-    );
+    return firstValueFrom(this.http.get<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`));
   }
 
   async getCaptchaSummary(): Promise<CaptchaSummary> {
@@ -538,9 +545,7 @@ export class AppointmentApiService {
 
   async getMonthlySummary(month: string): Promise<MonthlySummary> {
     return firstValueFrom(
-      this.http.get<MonthlySummary>(
-        `/api/v1/monthly-summary?month=${encodeURIComponent(month)}`,
-      ),
+      this.http.get<MonthlySummary>(`/api/v1/monthly-summary?month=${encodeURIComponent(month)}`),
     );
   }
 
@@ -562,9 +567,7 @@ export class AppointmentApiService {
 
   async getFinanceSummary(month: string): Promise<FinanceSummary> {
     return firstValueFrom(
-      this.http.get<FinanceSummary>(
-        `/api/v1/finance/summary?month=${encodeURIComponent(month)}`,
-      ),
+      this.http.get<FinanceSummary>(`/api/v1/finance/summary?month=${encodeURIComponent(month)}`),
     );
   }
 
@@ -639,10 +642,7 @@ export class AppointmentApiService {
     );
   }
 
-  async markPaymentPaid(
-    orderId: string,
-    payload: PaymentPaidPayload,
-  ): Promise<ApiActionResponse> {
+  async markPaymentPaid(orderId: string, payload: PaymentPaidPayload): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/paid`,
       payload,
@@ -695,9 +695,7 @@ export class AppointmentApiService {
     );
   }
 
-  async prepareWhatsAppFollowUpWebDraft(
-    messageId: string,
-  ): Promise<WhatsAppWebDraftResponse> {
+  async prepareWhatsAppFollowUpWebDraft(messageId: string): Promise<WhatsAppWebDraftResponse> {
     return this.post<WhatsAppWebDraftResponse>(
       `/api/v1/whatsapp-followup-messages/${encodeURIComponent(messageId)}/web/prepare`,
       {},

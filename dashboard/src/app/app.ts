@@ -20,6 +20,7 @@ import {
   CloseServiceOrderPayload,
   ContactUpdatePayload,
   CreateServiceOrderPayload,
+  ExcludedDateRange,
   FinanceCategory,
   FinanceDataQuality,
   FinanceEntry,
@@ -241,6 +242,9 @@ export class App implements OnDestroy {
   protected readonly orderMinimumReservationDate = signal('');
   protected readonly orderMaximumReservationDate = signal('');
   protected readonly orderAllowedWeekdays = signal<number[]>([]);
+  protected readonly orderExcludedDateRanges = signal<ExcludedDateRange[]>([]);
+  protected readonly orderExcludedDateStart = signal('');
+  protected readonly orderExcludedDateEnd = signal('');
   protected readonly paymentAmountPaid = signal('');
   protected readonly paymentAmountAgreed = signal('');
   protected readonly editOrderSection = signal<'all' | 'contact' | 'restrictions'>('all');
@@ -253,6 +257,9 @@ export class App implements OnDestroy {
   protected readonly newMinimumReservationDate = signal('');
   protected readonly newMaximumReservationDate = signal('');
   protected readonly newAllowedWeekdays = signal<number[]>([]);
+  protected readonly newExcludedDateRanges = signal<ExcludedDateRange[]>([]);
+  protected readonly newExcludedDateStart = signal('');
+  protected readonly newExcludedDateEnd = signal('');
   protected readonly splitKeepParentActive = signal(false);
   protected readonly closureReason = signal<ClosureReason>('client_withdrew');
   protected readonly closureNote = signal('');
@@ -501,11 +508,11 @@ export class App implements OnDestroy {
   @HostListener('document:keydown', ['$event'])
   protected handleCaptchaReviewKeyboard(event: KeyboardEvent): void {
     if (
-      this.activeView() !== 'captchas'
-      || this.captchaWorkspaceMode() !== 'review'
-      || event.ctrlKey
-      || event.metaKey
-      || event.altKey
+      this.activeView() !== 'captchas' ||
+      this.captchaWorkspaceMode() !== 'review' ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
     ) {
       return;
     }
@@ -554,8 +561,7 @@ export class App implements OnDestroy {
         financeCategories,
         financeEntries,
         financeSummary,
-      ] =
-        await Promise.all([
+      ] = await Promise.all([
         this.api.getWorker(),
         this.api.getServiceOrders(),
         this.api.getRuns(),
@@ -607,10 +613,7 @@ export class App implements OnDestroy {
   protected toggleSidebar(): void {
     const collapsed = !this.sidebarCollapsed();
     this.sidebarCollapsed.set(collapsed);
-    window.localStorage.setItem(
-      'appointment-dashboard-sidebar-collapsed',
-      String(collapsed),
-    );
+    window.localStorage.setItem('appointment-dashboard-sidebar-collapsed', String(collapsed));
   }
 
   protected async loadCaptchaData(showLoading = true): Promise<void> {
@@ -631,16 +634,7 @@ export class App implements OnDestroy {
           this.captchaReviewStatus(),
           'newest',
         ),
-        this.api.getCaptchaEvents(
-          1,
-          48,
-          '',
-          'all',
-          'all',
-          'all',
-          'pending',
-          'review_priority',
-        ),
+        this.api.getCaptchaEvents(1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority'),
       ]);
       this.captchaSummary.set(summary);
       this.applyCaptchaPage(page);
@@ -701,9 +695,11 @@ export class App implements OnDestroy {
   }
 
   protected captchaActiveFilterCount(): number {
-    return Number(this.captchaAgreement() !== 'all')
-      + Number(this.captchaPortalStatus() !== 'all')
-      + Number(this.captchaSource() !== 'all');
+    return (
+      Number(this.captchaAgreement() !== 'all') +
+      Number(this.captchaPortalStatus() !== 'all') +
+      Number(this.captchaSource() !== 'all')
+    );
   }
 
   protected moveCaptchaReview(offset: number): void {
@@ -813,10 +809,7 @@ export class App implements OnDestroy {
     if (!event.predictions.length) {
       return null;
     }
-    return event.predictions.reduce(
-      (total, prediction) => total + prediction.inference_ms,
-      0,
-    );
+    return event.predictions.reduce((total, prediction) => total + prediction.inference_ms, 0);
   }
 
   protected captchaDraft(event: CaptchaEvent): string {
@@ -824,7 +817,10 @@ export class App implements OnDestroy {
   }
 
   protected updateCaptchaDraft(eventId: string, value: string): void {
-    const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+    const normalized = value
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 5);
     this.captchaDrafts.update((drafts) => ({ ...drafts, [eventId]: normalized }));
     this.clearCaptchaReviewMessage();
   }
@@ -839,7 +835,8 @@ export class App implements OnDestroy {
       .map(([answer, modelNames]) => ({ answer, modelNames }))
       .sort(
         (left, right) =>
-          right.modelNames.length - left.modelNames.length || left.answer.localeCompare(right.answer),
+          right.modelNames.length - left.modelNames.length ||
+          left.answer.localeCompare(right.answer),
       );
   }
 
@@ -946,10 +943,7 @@ export class App implements OnDestroy {
         answer,
       );
       this.showCaptchaReviewMessage(`Respuesta ${answer} guardada para entrenamiento.`);
-      if (
-        this.captchaWorkspaceMode() === 'review'
-        || this.captchaReviewStatus() === 'pending'
-      ) {
+      if (this.captchaWorkspaceMode() === 'review' || this.captchaReviewStatus() === 'pending') {
         this.captchaReviewPosition.set(0);
         await this.loadCaptchaData(false);
       } else {
@@ -1155,7 +1149,8 @@ export class App implements OnDestroy {
       order.minimum_reservation_date ||
       order.maximum_reservation_date ||
       order.minimum_reservation_hour !== null ||
-      (order.allowed_weekdays && order.allowed_weekdays.length > 0),
+      (order.allowed_weekdays && order.allowed_weekdays.length > 0) ||
+      (order.excluded_date_ranges?.length ?? 0) > 0,
     );
   }
 
@@ -1173,9 +1168,7 @@ export class App implements OnDestroy {
     if (isContinuous && days.length >= 3) {
       return this.capitalize(`${WEEKDAY_NAMES[days[0] - 1]} a ${WEEKDAY_NAMES[days.at(-1)! - 1]}`);
     }
-    return this.capitalize(
-      SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])),
-    );
+    return this.capitalize(SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])));
   }
 
   protected restrictionTimingLabel(order: ServiceOrder): string {
@@ -1188,6 +1181,12 @@ export class App implements OnDestroy {
     }
     if (order.minimum_reservation_hour !== null) {
       limits.push(`Desde las ${this.formatTime(order.minimum_reservation_hour)}`);
+    }
+    if ((order.excluded_date_ranges?.length ?? 0) > 0) {
+      const ranges = order.excluded_date_ranges.map(
+        (range) => `${this.formatDate(range.start_date)}–${this.formatDate(range.end_date)}`,
+      );
+      limits.push(`Excepto ${ranges.join(', ')}`);
     }
     return limits.length ? limits.join(' · ') : 'Sin límite de fecha u hora';
   }
@@ -1443,13 +1442,12 @@ export class App implements OnDestroy {
   }
 
   protected canPrepareOrderWhatsApp(order: ServiceOrder): boolean {
-    const baseEligible = (
+    const baseEligible =
       order.status === 'reserved_payment_pending' &&
       order.reservation_status === 'confirmed' &&
       order.payment_status === 'pending' &&
       !!order.amount_agreed &&
-      order.charge_required
-    );
+      order.charge_required;
     if (!baseEligible) {
       return false;
     }
@@ -1545,9 +1543,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async prepareWhatsAppWebDraft(
-    preparedMessage?: WhatsAppMessagePackage,
-  ): Promise<void> {
+  protected async prepareWhatsAppWebDraft(preparedMessage?: WhatsAppMessagePackage): Promise<void> {
     const message = preparedMessage ?? this.whatsappPackage();
     if (!message || this.whatsappWebBusy()) {
       return;
@@ -1898,16 +1894,27 @@ export class App implements OnDestroy {
     }
     const minimumHourText = String(this.orderMinimumReservationHour()).trim();
     const minimumHour = minimumHourText === '' ? null : Number(minimumHourText);
-    if (minimumHour !== null && (!Number.isInteger(minimumHour) || minimumHour < 0 || minimumHour > 23)) {
+    if (
+      minimumHour !== null &&
+      (!Number.isInteger(minimumHour) || minimumHour < 0 || minimumHour > 23)
+    ) {
       this.errorMessage.set('La hora mínima debe ser un número entero entre 0 y 23.');
+      return;
+    }
+    const excludedDateRanges = this.prepareExcludedDateRanges(
+      this.orderExcludedDateRanges(),
+      this.orderExcludedDateStart(),
+      this.orderExcludedDateEnd(),
+    );
+    if (excludedDateRanges === null) {
       return;
     }
     const payload: ReservationRestrictionsUpdatePayload = {
       minimum_reservation_hour: minimumHour,
       minimum_reservation_date: this.optionalText(this.orderMinimumReservationDate()),
       maximum_reservation_date: this.optionalText(this.orderMaximumReservationDate()),
-      allowed_weekdays:
-        this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
+      allowed_weekdays: this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
+      excluded_date_ranges: excludedDateRanges,
     };
     if (
       payload.minimum_reservation_date &&
@@ -1922,6 +1929,50 @@ export class App implements OnDestroy {
       message: `Guardar las restricciones de reserva de ${order.order_id}. Los campos vacíos quitarán esa restricción.`,
       execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
     });
+  }
+
+  protected addOrderExcludedDateRange(): void {
+    const ranges = this.prepareExcludedDateRanges(
+      this.orderExcludedDateRanges(),
+      this.orderExcludedDateStart(),
+      this.orderExcludedDateEnd(),
+    );
+    if (ranges === null) {
+      return;
+    }
+    this.orderExcludedDateRanges.set(ranges);
+    this.orderExcludedDateStart.set('');
+    this.orderExcludedDateEnd.set('');
+    this.formDirty.set(true);
+  }
+
+  protected removeOrderExcludedDateRange(index: number): void {
+    this.orderExcludedDateRanges.update((ranges) =>
+      ranges.filter((_, rangeIndex) => rangeIndex !== index),
+    );
+    this.formDirty.set(true);
+  }
+
+  protected addNewExcludedDateRange(): void {
+    const ranges = this.prepareExcludedDateRanges(
+      this.newExcludedDateRanges(),
+      this.newExcludedDateStart(),
+      this.newExcludedDateEnd(),
+    );
+    if (ranges === null) {
+      return;
+    }
+    this.newExcludedDateRanges.set(ranges);
+    this.newExcludedDateStart.set('');
+    this.newExcludedDateEnd.set('');
+    this.formDirty.set(true);
+  }
+
+  protected removeNewExcludedDateRange(index: number): void {
+    this.newExcludedDateRanges.update((ranges) =>
+      ranges.filter((_, rangeIndex) => rangeIndex !== index),
+    );
+    this.formDirty.set(true);
   }
 
   protected requestOrderAction(
@@ -2035,6 +2086,14 @@ export class App implements OnDestroy {
   }
 
   protected requestCreateOrder(): void {
+    const excludedDateRanges = this.prepareExcludedDateRanges(
+      this.newExcludedDateRanges(),
+      this.newExcludedDateStart(),
+      this.newExcludedDateEnd(),
+    );
+    if (excludedDateRanges === null) {
+      return;
+    }
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
       document_type: this.newDocumentType(),
@@ -2045,6 +2104,7 @@ export class App implements OnDestroy {
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
       maximum_reservation_date: this.optionalText(this.newMaximumReservationDate()),
       allowed_weekdays: this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
+      excluded_date_ranges: excludedDateRanges,
     };
     if (
       payload.minimum_reservation_date &&
@@ -2192,9 +2252,7 @@ export class App implements OnDestroy {
   protected generalObserverActive(): boolean {
     const worker = this.worker();
     return Boolean(
-      worker &&
-      !worker.current_order_id &&
-      worker.phase?.startsWith('monitoring_observer'),
+      worker && !worker.current_order_id && worker.phase?.startsWith('monitoring_observer'),
     );
   }
 
@@ -2661,6 +2719,9 @@ export class App implements OnDestroy {
     this.orderMinimumReservationDate.set(order.minimum_reservation_date ?? '');
     this.orderMaximumReservationDate.set(order.maximum_reservation_date ?? '');
     this.orderAllowedWeekdays.set([...(order.allowed_weekdays ?? [])]);
+    this.orderExcludedDateRanges.set([...(order.excluded_date_ranges ?? [])]);
+    this.orderExcludedDateStart.set('');
+    this.orderExcludedDateEnd.set('');
     this.paymentAmountPaid.set(order.amount_paid ?? '');
     this.paymentAmountAgreed.set(order.amount_agreed ?? '');
     this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
@@ -2677,6 +2738,9 @@ export class App implements OnDestroy {
     this.newMinimumReservationDate.set('');
     this.newMaximumReservationDate.set('');
     this.newAllowedWeekdays.set([]);
+    this.newExcludedDateRanges.set([]);
+    this.newExcludedDateStart.set('');
+    this.newExcludedDateEnd.set('');
   }
 
   private financeFormPayload(): FinanceEntryPayload | null {
@@ -2708,8 +2772,7 @@ export class App implements OnDestroy {
       description: this.financeDescription().trim(),
       amount_original: amountOriginal,
       currency: this.financeCurrency().trim().toUpperCase(),
-      exchange_rate_pen:
-        this.financeCurrency() === 'PEN' ? null : this.optionalText(exchangeRate),
+      exchange_rate_pen: this.financeCurrency() === 'PEN' ? null : this.optionalText(exchangeRate),
       quantity: this.optionalText(quantity),
       unit: this.optionalText(this.financeUnit()),
       channel: this.optionalText(this.financeChannel()),
@@ -2754,6 +2817,44 @@ export class App implements OnDestroy {
 
   private capitalize(value: string): string {
     return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
+  }
+
+  private prepareExcludedDateRanges(
+    ranges: ExcludedDateRange[],
+    startDate: string,
+    endDate: string,
+  ): ExcludedDateRange[] | null {
+    const start = startDate.trim();
+    const end = endDate.trim();
+    if (!start && !end) {
+      return this.normalizeExcludedDateRanges(ranges);
+    }
+    if (!start || !end) {
+      this.errorMessage.set('Completa ambas fechas del rango excluido.');
+      return null;
+    }
+    if (end < start) {
+      this.errorMessage.set('El final del rango excluido no puede ser anterior al inicio.');
+      return null;
+    }
+    return this.normalizeExcludedDateRanges([...ranges, { start_date: start, end_date: end }]);
+  }
+
+  private normalizeExcludedDateRanges(ranges: ExcludedDateRange[]): ExcludedDateRange[] {
+    const sorted = [...ranges].sort((left, right) =>
+      left.start_date.localeCompare(right.start_date),
+    );
+    const merged: ExcludedDateRange[] = [];
+    for (const range of sorted) {
+      const previous = merged.at(-1);
+      if (previous && range.start_date <= previous.end_date) {
+        previous.end_date =
+          previous.end_date >= range.end_date ? previous.end_date : range.end_date;
+        continue;
+      }
+      merged.push({ ...range });
+    }
+    return merged;
   }
 
   private optionalText(value: string): string | null {
