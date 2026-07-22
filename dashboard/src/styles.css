@@ -1,8 +1,10 @@
 @import 'sweetalert2/dist/sweetalert2.min.css';
+@import './theme.css';
 
 * {
   box-sizing: border-box;
 }
+
 
 .whatsapp-action { border-color: #128c7e; background: #128c7e; color: #fff; }
 .button-link { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; border: 1px solid #cbd5df; border-radius: 6px; padding: 8px 12px; color: #1f2a33; font-weight: 750; text-decoration: none; }

@@ -19,6 +19,10 @@ instrumentación no alteraron la regla de confirmación final.
 
 ## Qué se realizó
 
+- Se incorporó un sistema visual reutilizable para el dashboard con tokens de
+  color, tipografía, espaciado, radios, sombras, foco y movimiento reducido. La
+  navegación, encabezados, controles, tarjetas, tablas, estados y modales usan
+  una misma base sin fuentes ni librerías visuales externas.
 - Reserva automática con resultado `registered` o evidencia explícita del
   portal; estados ambiguos no autorizan un segundo submit.
 - `reservation_attempts`, submission pendiente y heartbeat de lease.
