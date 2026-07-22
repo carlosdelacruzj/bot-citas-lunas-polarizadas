@@ -33,6 +33,7 @@ GET  /api/v1/monthly-summary?month=YYYY-MM
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/validate
 POST /api/v1/service-orders/{order_id}/contact
+POST /api/v1/service-orders/{order_id}/credentials
 POST /api/v1/service-orders/{order_id}/priority
 POST /api/v1/service-orders/{order_id}/restrictions
 POST /api/v1/service-orders/{order_id}/payment/paid
@@ -141,6 +142,26 @@ consulta este endpoint al abrir la edicion y descarta el detalle al cerrarla.
 
 Los valores `0` a `99` ordenan la cola normal; `100` o más activan enfoque.
 
+`POST /api/v1/service-orders/{order_id}/credentials` reemplaza el acceso de una
+orden activa o pausada:
+
+```json
+{
+  "document_number": "74037811",
+  "document_type": "dni",
+  "password": "nueva-clave"
+}
+```
+
+La respuesta nunca devuelve la contraseña. La operación conserva el
+`order_id`, contacto, pagos e historial; rechaza documentos asociados a otra
+cuenta y no se ejecuta mientras alguna orden de la cuenta tenga un lease vivo.
+Todas las órdenes activas que compartan la cuenta quedan pausadas, sin el error
+operativo anterior y con `preflight_status=pending`. El API programa una nueva
+validación para cada una y solo `mark_order_preflight_validated` las devuelve a
+`ready`. El frontend mantiene la nueva contraseña únicamente en memoria hasta
+enviarla y pide confirmación sin incluirla en mensajes o logs.
+
 `POST /api/v1/service-orders/{order_id}/restrictions` reemplaza el conjunto de
 restricciones de reserva de una orden:
 
@@ -205,8 +226,9 @@ una sesion Playwright exclusiva. La validacion:
 
 Si falla, la orden permanece pausada con `preflight_status=failed`,
 `preflight_message` y evidencia visual en `screenshots/preflight/`. El operador
-puede corregir las credenciales y ejecutar
-`POST /api/v1/service-orders/{order_id}/validate`. Mientras el estado sea
+puede corregir el acceso mediante
+`POST /api/v1/service-orders/{order_id}/credentials`; esa operación inicia la
+nueva validación automáticamente. Mientras el estado sea
 `pending`, `running` o `failed`, el endpoint de activacion rechaza la orden.
 
 `GET /api/v1/service-orders` y el detalle incluyen `preflight_status`,
