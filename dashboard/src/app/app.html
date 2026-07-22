@@ -55,7 +55,7 @@
           (click)="showView('runs')"
         >
           <span class="nav-icon" aria-hidden="true">↻</span>
-          <span class="nav-label">Runs</span>
+          <span class="nav-label">Actividad</span>
         </button>
       </section>
 
@@ -157,10 +157,6 @@
       </section>
     }
 
-    @if (successMessage()) {
-      <section class="notice good" role="status" aria-live="polite">{{ successMessage() }}</section>
-    }
-
     @if (formDirty()) {
       <section class="notice warn" role="status">
         Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y
@@ -185,7 +181,9 @@
                 <strong>{{ manualSessionOrderLabel(session) }}</strong>
                 <span>{{ session.session_id }}</span>
               </div>
-              <span class="badge {{ statusTone(session.status) }}">{{ session.status }}</span>
+              <span class="badge {{ statusTone(session.status) }}">{{
+                statusLabel(session.status)
+              }}</span>
               <small>{{ formatDateTime(session.started_at, 'sin hora') }}</small>
               <button
                 type="button"
@@ -377,7 +375,9 @@
                         <strong>{{ item.name }}</strong>
                         <small>Desde {{ formatDate(item.created_date) }}</small>
                       </span>
-                      <span class="badge {{ statusTone(item.status) }}">{{ item.status }}</span>
+                      <span class="badge {{ statusTone(item.status) }}">{{
+                        statusLabel(item.status)
+                      }}</span>
                     </button>
                   }
                 </div>
@@ -484,7 +484,7 @@
           }
           <div class="panel-actions">
             <button type="button" class="danger" (click)="openWorkerRestart()">
-              Restart worker
+              Reiniciar worker
             </button>
           </div>
         </article>
@@ -964,7 +964,7 @@
                   <dl>
                     <div>
                       <dt>Estado</dt>
-                      <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
+                      <dd>{{ statusLabel(order.reservation_status, 'Pendiente') }}</dd>
                     </div>
                     <div>
                       <dt>Fecha</dt>
@@ -1036,7 +1036,7 @@
                           >
                             {{ child.order_id }}
                           </button>
-                          · {{ child.status }}
+                          · {{ statusLabel(child.status) }}
                         </li>
                       }
                     </ul>
@@ -1149,13 +1149,15 @@
                     </span>
                   </td>
                   <td data-label="Estado">
-                    <span class="badge {{ statusTone(order.status) }}">{{ order.status }}</span>
+                    <span class="badge {{ statusTone(order.status) }}">{{
+                      statusLabel(order.status)
+                    }}</span>
                     <span class="badge {{ statusTone(order.preflight_status) }}">
                       {{ preflightLabel(order) }}
                     </span>
                   </td>
                   <td data-label="Reserva">
-                    {{ order.reservation_status ?? 'pendiente' }}
+                    {{ statusLabel(order.reservation_status, 'Pendiente') }}
                     <span>
                       {{ formatDate(order.reservation_date) }}
                       {{ formatTime(order.reservation_hour) }}
@@ -1277,7 +1279,7 @@
         @if (captchaSummary(); as summary) {
           <div class="captcha-summary-strip" aria-label="Resumen de CAPTCHA">
             <span class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
-              {{ summary.status === 'ok' ? 'Servicio activo' : summary.status }}
+              {{ summary.status === 'ok' ? 'Servicio activo' : statusLabel(summary.status) }}
             </span>
             <strong>{{ summary.stats.events }} total</strong>
             <span>{{ summary.stats.human_labeled }} validados</span>
@@ -1946,7 +1948,9 @@
                     <span>{{ command.command_id }}</span>
                   </td>
                   <td data-label="Estado">
-                    <span class="badge {{ statusTone(command.status) }}">{{ command.status }}</span>
+                    <span class="badge {{ statusTone(command.status) }}">{{
+                      statusLabel(command.status)
+                    }}</span>
                   </td>
                   <td data-label="Solicitado">{{ formatDateTime(command.requested_at) }}</td>
                   <td data-label="Procesado">
@@ -2012,7 +2016,9 @@
                 <div>
                   <dt>Estado</dt>
                   <dd>
-                    <span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span>
+                    <span class="badge {{ statusTone(run.status) }}">{{
+                      statusLabel(run.status)
+                    }}</span>
                   </dd>
                 </div>
                 <div>
@@ -2099,7 +2105,9 @@
                   </td>
                   <td data-label="Orden">{{ run.order_id ?? 'observador' }}</td>
                   <td data-label="Estado">
-                    <span class="badge {{ statusTone(run.status) }}">{{ run.status }}</span>
+                    <span class="badge {{ statusTone(run.status) }}">{{
+                      statusLabel(run.status)
+                    }}</span>
                   </td>
                   <td data-label="Reserva">
                     {{ run.reservation_confirmed ? 'confirmada' : 'no confirmada' }}
@@ -2203,7 +2211,9 @@
               </div>
               <div>
                 <span>Estado</span>
-                <strong class="badge {{ statusTone(message.status) }}">{{ message.status }}</strong>
+                <strong class="badge {{ statusTone(message.status) }}">{{
+                  statusLabel(message.status)
+                }}</strong>
                 <small>{{ formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
               </div>
             </section>
@@ -2258,7 +2268,9 @@
               </div>
               <div>
                 <span>Estado</span>
-                <strong class="badge {{ statusTone(message.status) }}">{{ message.status }}</strong>
+                <strong class="badge {{ statusTone(message.status) }}">{{
+                  statusLabel(message.status)
+                }}</strong>
                 <small>{{ formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
               </div>
             </section>
@@ -2478,8 +2490,8 @@
             <section class="selected-detail" aria-label="Detalle de orden seleccionada">
               <div>
                 <span>Estado</span>
-                <strong>{{ order.status }}</strong>
-                <small>{{ order.reservation_status ?? 'sin reserva' }}</small>
+                <strong>{{ statusLabel(order.status) }}</strong>
+                <small>{{ statusLabel(order.reservation_status, 'Sin reserva') }}</small>
               </div>
               <div>
                 <span>Contacto actual</span>
@@ -2761,11 +2773,11 @@
             <dl class="summary-list">
               <div>
                 <dt>Estado</dt>
-                <dd>{{ order.status }}</dd>
+                <dd>{{ statusLabel(order.status) }}</dd>
               </div>
               <div>
                 <dt>Reserva</dt>
-                <dd>{{ order.reservation_status ?? 'pendiente' }}</dd>
+                <dd>{{ statusLabel(order.reservation_status, 'Pendiente') }}</dd>
               </div>
               <div>
                 <dt>Cierre</dt>
@@ -3346,7 +3358,7 @@
         <div class="modal">
           <div class="modal-header">
             <div>
-              <h2 id="worker-restart-title">Restart worker</h2>
+              <h2 id="worker-restart-title">Reiniciar worker</h2>
               <p>{{ phaseLabel(worker()?.phase ?? health()?.reason) }}</p>
             </div>
             <button
@@ -3375,7 +3387,7 @@
           <div class="modal-actions">
             <button type="button" class="secondary" (click)="closeModal()">Cancelar</button>
             <button type="button" class="danger" (click)="requestRestartWorker()">
-              Restart worker
+              Reiniciar worker
             </button>
           </div>
         </div>

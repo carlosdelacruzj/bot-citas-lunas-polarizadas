@@ -33,6 +33,10 @@ instrumentación no alteraron la regla de confirmación final.
   rápida y confirmaciones SweetAlert2.
 - Menú lateral estable sin contadores dependientes de filtros; los totales y
   estados accionables viven dentro de cada sección.
+- Estados técnicos traducidos mediante un catálogo visual único; colores y
+  etiquetas son consistentes en órdenes, actividad, comandos y WhatsApp. Los
+  éxitos usan avisos temporales y los errores globales se retiran a los ocho
+  segundos.
 - Órdenes paginadas en el navegador con 20 filas por defecto y opciones de
   10/20/50; conserva filtro rápido, orden, dirección, tamaño y página. La
   búsqueda libre se mantiene solo durante la sesión del navegador.

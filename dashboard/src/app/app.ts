@@ -4,6 +4,7 @@ import {
   OnDestroy,
   WritableSignal,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -94,6 +95,8 @@ type ClosureReason =
   | 'duplicate'
   | 'not_serviceable';
 type SortDirection = 'asc' | 'desc';
+type StatusTone = 'good' | 'warn' | 'bad' | 'neutral';
+type StatusPresentation = { label: string; tone: StatusTone };
 type OrderViewState = {
   quickFilter: OrderQuickFilter;
   sortKey: OrderSortKey;
@@ -118,6 +121,7 @@ type OrderNextAction = {
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
+const ERROR_MESSAGE_DURATION_MS = 8_000;
 const ORDER_VIEW_STATE_KEY = 'appointment-dashboard-order-view';
 const ORDER_SEARCH_SESSION_KEY = 'appointment-dashboard-order-search';
 const ORDER_PAGE_SIZES = [10, 20, 50] as const;
@@ -147,6 +151,47 @@ const DEFAULT_ORDER_VIEW_STATE: OrderViewState = {
   sortDirection: 'desc',
   page: 1,
   pageSize: 20,
+};
+const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
+  active: { label: 'Activo', tone: 'good' },
+  actual: { label: 'Real', tone: 'good' },
+  archived: { label: 'Archivada', tone: 'neutral' },
+  available: { label: 'Disponible', tone: 'warn' },
+  cancelled: { label: 'Cancelado', tone: 'neutral' },
+  claimed: { label: 'En proceso', tone: 'warn' },
+  closing: { label: 'Cerrando', tone: 'warn' },
+  closed: { label: 'Cerrado', tone: 'neutral' },
+  completed: { label: 'Completado', tone: 'good' },
+  confirmed: { label: 'Confirmada', tone: 'good' },
+  degraded: { label: 'Degradado', tone: 'bad' },
+  draft_ready: { label: 'Borrador preparado', tone: 'warn' },
+  error: { label: 'Error', tone: 'bad' },
+  estimated: { label: 'Estimado', tone: 'warn' },
+  failed: { label: 'Fallido', tone: 'bad' },
+  family_no_charge: { label: 'Familiar sin cobro', tone: 'warn' },
+  login_required: { label: 'Requiere vinculación', tone: 'warn' },
+  mixed: { label: 'Mixto', tone: 'warn' },
+  not_required: { label: 'No requerido', tone: 'neutral' },
+  ok: { label: 'Correcto', tone: 'good' },
+  opening: { label: 'Abriendo', tone: 'warn' },
+  outside_hot_window: { label: 'Fuera de horario', tone: 'warn' },
+  paid: { label: 'Pagado', tone: 'good' },
+  partial: { label: 'Parcial', tone: 'warn' },
+  paused: { label: 'Pausada', tone: 'warn' },
+  pending: { label: 'Pendiente', tone: 'warn' },
+  prepared: { label: 'Preparado', tone: 'warn' },
+  ready: { label: 'Lista', tone: 'good' },
+  registered: { label: 'Registrada', tone: 'good' },
+  rejected: { label: 'Rechazado', tone: 'bad' },
+  reservation_unconfirmed: { label: 'Reserva sin confirmar', tone: 'bad' },
+  reserved_payment_pending: { label: 'Reservada, pago pendiente', tone: 'warn' },
+  running: { label: 'En ejecución', tone: 'warn' },
+  sent: { label: 'Enviado', tone: 'good' },
+  unknown: { label: 'Desconocido', tone: 'bad' },
+  unavailable: { label: 'Sin disponibilidad', tone: 'neutral' },
+  validated: { label: 'Validado', tone: 'good' },
+  voided: { label: 'Anulado', tone: 'neutral' },
+  web_unavailable: { label: 'WhatsApp Web no disponible', tone: 'bad' },
 };
 const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const SPANISH_LIST_FORMAT = new Intl.ListFormat('es-PE', {
@@ -226,6 +271,7 @@ export class App implements OnDestroy {
   }, AUTO_REFRESH_INTERVAL_MS);
   private readonly activeManualSessionIds = new Set<string>();
   private captchaReviewMessageTimer: number | null = null;
+  private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
 
   protected readonly activeView = signal<ViewKey>('orders');
@@ -309,7 +355,6 @@ export class App implements OnDestroy {
   protected readonly financeDataQuality = signal<FinanceDataQuality>('actual');
   protected readonly loadState = signal<LoadState>('idle');
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly successMessage = signal<string | null>(null);
   protected readonly copiedLabel = signal<string | null>(null);
   protected readonly selectedOrderId = signal('');
   protected readonly orderPanelOpen = signal(false);
@@ -415,7 +460,7 @@ export class App implements OnDestroy {
   );
   protected readonly orderQuickFilters = computed(() => [
     { key: 'all' as const, label: 'Todas', count: this.orders().length },
-    { key: 'ready' as const, label: 'Ready', count: this.countOrders('ready') },
+    { key: 'ready' as const, label: 'Listas', count: this.countOrders('ready') },
     {
       key: 'payment_pending' as const,
       label: 'Pagos pendientes',
@@ -563,6 +608,19 @@ export class App implements OnDestroy {
   protected readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
 
   constructor() {
+    effect(() => {
+      const message = this.errorMessage();
+      if (this.errorMessageTimer !== null) {
+        window.clearTimeout(this.errorMessageTimer);
+        this.errorMessageTimer = null;
+      }
+      if (message) {
+        this.errorMessageTimer = window.setTimeout(() => {
+          this.errorMessage.set(null);
+          this.errorMessageTimer = null;
+        }, ERROR_MESSAGE_DURATION_MS);
+      }
+    });
     void this.refreshAll();
   }
 
@@ -570,6 +628,9 @@ export class App implements OnDestroy {
     window.clearInterval(this.autoRefreshTimer);
     if (this.captchaReviewMessageTimer !== null) {
       window.clearTimeout(this.captchaReviewMessageTimer);
+    }
+    if (this.errorMessageTimer !== null) {
+      window.clearTimeout(this.errorMessageTimer);
     }
     this.closeTrackedManualSessionsWithBeacon();
   }
@@ -1659,14 +1720,14 @@ export class App implements OnDestroy {
           confirmButtonText: 'Entendido',
         });
       } else if (response.status === 'draft_ready') {
-        this.successMessage.set('WhatsApp preparado: revisa el álbum y pulsa Enviar.');
+        await this.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        this.successMessage.set('Constancia y cobro enviados automaticamente por WhatsApp.');
+        await this.showToast('Constancia y cobro enviados por WhatsApp');
       }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -1697,14 +1758,14 @@ export class App implements OnDestroy {
           confirmButtonText: 'Entendido',
         });
       } else if (response.status === 'draft_ready') {
-        this.successMessage.set('Post-pago preparado: revisa WhatsApp y pulsa Enviar.');
+        await this.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappFollowUpPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        this.successMessage.set('Post-pago enviado automaticamente por WhatsApp.');
+        await this.showToast('Post-pago enviado por WhatsApp');
       }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -2143,11 +2204,11 @@ export class App implements OnDestroy {
 
   protected preflightLabel(order: ServiceOrder): string {
     const labels: Record<ServiceOrder['preflight_status'], string> = {
-      not_required: 'Sin validacion previa',
-      pending: 'Validacion pendiente',
+      not_required: 'Sin validación previa',
+      pending: 'Validación pendiente',
       running: 'Validando acceso',
       validated: 'Acceso validado',
-      failed: 'Validacion fallida',
+      failed: 'Validación fallida',
     };
     return labels[order.preflight_status] ?? order.preflight_status;
   }
@@ -2276,7 +2337,7 @@ export class App implements OnDestroy {
 
   protected requestRestartWorker(): void {
     this.setPendingAction({
-      title: 'Restart worker',
+      title: 'Reiniciar worker',
       message: 'Solicitar reinicio controlado del worker.',
       execute: () => this.api.restartWorker(),
       onSuccess: () => this.activeModal.set(null),
@@ -2307,7 +2368,6 @@ export class App implements OnDestroy {
     }
     this.actionBusy.set(true);
     this.errorMessage.set(null);
-    this.successMessage.set(null);
     try {
       const response = await this.api.openManualSession(order.order_id);
       if (response.session_id) {
@@ -2328,7 +2388,6 @@ export class App implements OnDestroy {
     }
     this.actionBusy.set(true);
     this.errorMessage.set(null);
-    this.successMessage.set(null);
     try {
       await this.api.closeManualSession(session.session_id);
       this.activeManualSessionIds.delete(session.session_id);
@@ -2419,9 +2478,9 @@ export class App implements OnDestroy {
 
   protected paymentLabel(order: ServiceOrder): string {
     if (!order.charge_required) {
-      return 'sin cobro';
+      return 'Sin cobro';
     }
-    return order.payment_status ?? 'sin pago';
+    return this.statusLabel(order.payment_status, 'Sin pago');
   }
 
   protected paymentAmountLabel(order: ServiceOrder): string {
@@ -2475,40 +2534,30 @@ export class App implements OnDestroy {
     );
   }
 
-  protected statusTone(value: string | boolean | null | undefined): string {
-    if (
-      value === true ||
-      value === 'ok' ||
-      value === 'confirmed' ||
-      value === 'paid' ||
-      value === 'sent' ||
-      value === 'ready' ||
-      value === 'validated'
-    ) {
-      return 'good';
+  protected statusLabel(
+    value: string | boolean | null | undefined,
+    fallback = 'Sin estado',
+  ): string {
+    if (value === null || value === undefined || value === '') {
+      return fallback;
     }
-    if (
-      value === false ||
-      value === 'degraded' ||
-      value === 'error' ||
-      value === 'rejected' ||
-      value === 'failed'
-    ) {
-      return 'bad';
+    if (typeof value === 'boolean') {
+      return value ? 'Activo' : 'Inactivo';
     }
-    if (
-      value === 'outside_hot_window' ||
-      value === 'paused' ||
-      value === 'pending' ||
-      value === 'prepared' ||
-      value === 'opening' ||
-      value === 'closing' ||
-      value === 'family_no_charge' ||
-      value === 'running'
-    ) {
-      return 'warn';
+    const normalized = value.trim().toLowerCase();
+    return (
+      STATUS_PRESENTATIONS[normalized]?.label ?? this.capitalize(normalized.replaceAll('_', ' '))
+    );
+  }
+
+  protected statusTone(value: string | boolean | null | undefined): StatusTone {
+    if (typeof value === 'boolean') {
+      return value ? 'good' : 'bad';
     }
-    return 'neutral';
+    if (!value) {
+      return 'neutral';
+    }
+    return STATUS_PRESENTATIONS[value.trim().toLowerCase()]?.tone ?? 'neutral';
   }
 
   private sanitizeWorker(worker: WorkerStatus | null): Partial<WorkerStatus> | null {
@@ -2575,7 +2624,6 @@ export class App implements OnDestroy {
 
   private async setPendingAction(action: PendingAction): Promise<void> {
     this.errorMessage.set(null);
-    this.successMessage.set(null);
     this.captureFocus();
     this.pendingAction.set(action);
     const result = await Swal.fire({
@@ -2598,21 +2646,12 @@ export class App implements OnDestroy {
     this.actionBusy.set(true);
     try {
       const response = await action.execute();
-      this.successMessage.set(`${action.title}: completado.`);
       this.pendingAction.set(null);
       this.formDirty.set(false);
       action.onSuccess?.(response);
       await this.refreshAll();
       await action.afterRefresh?.(response);
-      await Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Cambio guardado',
-        showConfirmButton: false,
-        timer: 2200,
-        timerProgressBar: true,
-      });
+      await this.showToast(`${action.title}: completado`);
     } catch (error) {
       const message = this.readError(error);
       this.errorMessage.set(message);

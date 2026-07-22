@@ -241,6 +241,13 @@ resultados localmente con 20 filas por defecto y permite 10, 20 o 50. Conserva
 filtro rápido, orden, dirección, tamaño y página en el navegador; la búsqueda
 libre usa almacenamiento de sesión para no persistir nombres o documentos.
 
+Los valores de estado del API permanecen estables y técnicos. El dashboard los
+traduce con un catálogo central de etiqueta y tono; no debe imprimir estados
+crudos como `ready`, `archived` o `reservation_unconfirmed`. Los cambios
+correctos se notifican con un toast breve, sin dejar un segundo mensaje fijo en
+la pantalla. Los errores globales visibles se cierran automáticamente tras ocho
+segundos y una confirmación crítica puede seguir usando un diálogo explícito.
+
 Todas las fechas visibles usan `DD-MM-YYYY`. Las fechas con hora usan
 `DD-MM-YYYY HH:mm:ss` en `America/Lima`. Este estándar es solo de presentación:
 API, PostgreSQL y controles HTML de fecha conservan `YYYY-MM-DD` o ISO 8601 para
