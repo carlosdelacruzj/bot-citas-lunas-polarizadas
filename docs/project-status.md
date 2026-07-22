@@ -46,6 +46,10 @@ instrumentación no alteraron la regla de confirmación final.
 - Creación y edición reutilizan el mismo editor de reglas de reserva para fechas,
   días permitidos y rangos excluidos. Las validaciones, textos y comportamiento
   responsive quedan definidos en un solo componente.
+- El editor de reglas ofrece presets comprensibles (`Cualquier fecha`, `Solo
+  sábados`, `Desde una fecha`, `Excepto un rango` y `Entre dos fechas`) y siete
+  botones de día con estado visible y accesible. Los presets solo preparan el
+  formulario; la confirmación existente sigue siendo necesaria para guardar.
 - Las cinco vistas principales del dashboard están separadas en componentes:
   Resumen, Finanzas, Órdenes, CAPTCHA y Actividad. `App` conserva la navegación,
   el estado compartido y los modales para evitar duplicar lógica operativa.

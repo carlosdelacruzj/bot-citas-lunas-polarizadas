@@ -308,6 +308,13 @@ En la edición, Angular permite agregar varios rangos como etiquetas removibles.
 Si el operador completa un único rango y guarda sin pulsar `Agregar otro rango`,
 el rango pendiente también forma parte de la actualización.
 
+El editor reutilizable presenta los días ISO como botones de lunes a domingo y
+ofrece presets visuales. Estos presets no crean reglas nuevas en el backend:
+solo traducen la elección del operador a los mismos campos del contrato. En
+particular, `Cualquier fecha` limpia las restricciones de fecha y `Solo sábados`
+envía `allowed_weekdays=[6]`; ninguna selección se persiste antes de confirmar
+el guardado del formulario.
+
 ## Acciones administrativas
 
 - `pause` y `activate` cambian elegibilidad operativa.

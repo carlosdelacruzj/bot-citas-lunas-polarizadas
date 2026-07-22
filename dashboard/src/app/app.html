@@ -702,6 +702,7 @@
                     (excludedDateEndChange)="editField(orderExcludedDateEnd, $event)"
                     (addExcludedDateRange)="addOrderExcludedDateRange()"
                     (removeExcludedDateRange)="removeOrderExcludedDateRange($event)"
+                    (clearExcludedDateRanges)="clearOrderExcludedDateRanges()"
                   />
                   <p class="muted">
                     Deja un campo vacío para quitar esa regla. Los cambios se aplican en la
@@ -1022,6 +1023,7 @@
               (excludedDateEndChange)="editField(newExcludedDateEnd, $event)"
               (addExcludedDateRange)="addNewExcludedDateRange()"
               (removeExcludedDateRange)="removeNewExcludedDateRange($event)"
+              (clearExcludedDateRanges)="clearNewExcludedDateRanges()"
             />
           </fieldset>
 

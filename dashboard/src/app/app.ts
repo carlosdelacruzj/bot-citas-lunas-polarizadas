@@ -2494,6 +2494,11 @@ export class App implements OnDestroy {
     this.formDirty.set(true);
   }
 
+  protected clearOrderExcludedDateRanges(): void {
+    this.orderExcludedDateRanges.set([]);
+    this.formDirty.set(true);
+  }
+
   protected addNewExcludedDateRange(): void {
     const ranges = this.prepareExcludedDateRanges(
       this.newExcludedDateRanges(),
@@ -2513,6 +2518,11 @@ export class App implements OnDestroy {
     this.newExcludedDateRanges.update((ranges) =>
       ranges.filter((_, rangeIndex) => rangeIndex !== index),
     );
+    this.formDirty.set(true);
+  }
+
+  protected clearNewExcludedDateRanges(): void {
+    this.newExcludedDateRanges.set([]);
     this.formDirty.set(true);
   }
 

@@ -1,4 +1,28 @@
-<div class="form-grid">
+<div class="rule-presets" aria-label="Configuraciones rápidas de fecha">
+  <div class="rule-presets-heading">
+    <strong>¿Qué fechas puede reservar?</strong>
+    <small>Elige una base rápida y ajusta los detalles si lo necesitas.</small>
+  </div>
+  <div class="rule-preset-list">
+    <button type="button" [class.active]="presetIsActive('any')" [disabled]="disabled" (click)="applyPreset('any')">
+      Cualquier fecha
+    </button>
+    <button type="button" [class.active]="presetIsActive('saturdays')" [disabled]="disabled" (click)="applyPreset('saturdays')">
+      Solo sábados
+    </button>
+    <button type="button" [class.active]="presetIsActive('from-date')" [disabled]="disabled" (click)="applyPreset('from-date')">
+      Desde una fecha
+    </button>
+    <button type="button" [class.active]="presetIsActive('exclude-range')" [disabled]="disabled" (click)="applyPreset('exclude-range')">
+      Excepto un rango
+    </button>
+    <button type="button" [class.active]="presetIsActive('date-window')" [disabled]="disabled" (click)="applyPreset('date-window')">
+      Entre dos fechas
+    </button>
+  </div>
+</div>
+
+<div class="form-grid date-limits">
   <label>
     Buscar desde
     <input
@@ -37,26 +61,28 @@
       />
     </label>
   }
-  <label>
-    Días permitidos
-    <select
-      [name]="controlPrefix + 'AllowedWeekdays'"
-      multiple
-      [disabled]="disabled"
-      [ngModel]="allowedWeekdays"
-      (ngModelChange)="allowedWeekdaysChange.emit($event)"
-    >
-      <option [ngValue]="1">Lunes</option>
-      <option [ngValue]="2">Martes</option>
-      <option [ngValue]="3">Miércoles</option>
-      <option [ngValue]="4">Jueves</option>
-      <option [ngValue]="5">Viernes</option>
-      <option [ngValue]="6">Sábado</option>
-      <option [ngValue]="7">Domingo</option>
-    </select>
-    <small>Puedes seleccionar varios días.</small>
-  </label>
 </div>
+
+<fieldset class="weekday-picker" [disabled]="disabled">
+  <legend>Días permitidos</legend>
+  <div class="weekday-buttons" aria-label="Días permitidos para reservar">
+    @for (day of weekdays; track day.value) {
+      <button
+        type="button"
+        [class.active]="isWeekdaySelected(day.value)"
+        [attr.aria-pressed]="isWeekdaySelected(day.value)"
+        [attr.aria-label]="day.label"
+        [title]="day.label"
+        (click)="toggleWeekday(day.value)"
+      >
+        {{ day.short }}
+      </button>
+    }
+  </div>
+  <small>
+    {{ allowedWeekdays.length ? allowedWeekdays.length + ' día(s) seleccionados' : 'Todos los días están permitidos' }}
+  </small>
+</fieldset>
 
 <div class="date-exclusion-builder">
   <div class="date-exclusion-heading">
