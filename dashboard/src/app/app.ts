@@ -94,6 +94,13 @@ type ClosureReason =
   | 'duplicate'
   | 'not_serviceable';
 type SortDirection = 'asc' | 'desc';
+type OrderViewState = {
+  quickFilter: OrderQuickFilter;
+  sortKey: OrderSortKey;
+  sortDirection: SortDirection;
+  page: number;
+  pageSize: number;
+};
 type PendingAction = {
   title: string;
   message: string;
@@ -111,6 +118,36 @@ type OrderNextAction = {
 };
 
 const AUTO_REFRESH_INTERVAL_MS = 15_000;
+const ORDER_VIEW_STATE_KEY = 'appointment-dashboard-order-view';
+const ORDER_SEARCH_SESSION_KEY = 'appointment-dashboard-order-search';
+const ORDER_PAGE_SIZES = [10, 20, 50] as const;
+const ORDER_QUICK_FILTERS: readonly OrderQuickFilter[] = [
+  'all',
+  'ready',
+  'payment_pending',
+  'confirmed',
+  'archived',
+  'closed_no_charge',
+  'restricted',
+];
+const ORDER_SORT_KEYS: readonly OrderSortKey[] = [
+  'queue',
+  'priority',
+  'created_at',
+  'updated_at',
+  'status',
+  'reservation',
+  'payment',
+  'closure',
+  'applicant',
+];
+const DEFAULT_ORDER_VIEW_STATE: OrderViewState = {
+  quickFilter: 'all',
+  sortKey: 'queue',
+  sortDirection: 'desc',
+  page: 1,
+  pageSize: 20,
+};
 const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const SPANISH_LIST_FORMAT = new Intl.ListFormat('es-PE', {
   style: 'long',
@@ -134,6 +171,44 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   finance: { label: 'Finanzas', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
 };
+const INITIAL_ORDER_VIEW_STATE = readOrderViewState();
+
+function readOrderViewState(): OrderViewState {
+  try {
+    const stored = JSON.parse(
+      window.localStorage.getItem(ORDER_VIEW_STATE_KEY) ?? '{}',
+    ) as Partial<OrderViewState>;
+    return {
+      quickFilter: ORDER_QUICK_FILTERS.includes(stored.quickFilter as OrderQuickFilter)
+        ? (stored.quickFilter as OrderQuickFilter)
+        : DEFAULT_ORDER_VIEW_STATE.quickFilter,
+      sortKey: ORDER_SORT_KEYS.includes(stored.sortKey as OrderSortKey)
+        ? (stored.sortKey as OrderSortKey)
+        : DEFAULT_ORDER_VIEW_STATE.sortKey,
+      sortDirection: stored.sortDirection === 'asc' ? 'asc' : 'desc',
+      page: Number.isInteger(stored.page) && Number(stored.page) > 0 ? Number(stored.page) : 1,
+      pageSize: ORDER_PAGE_SIZES.includes(stored.pageSize as (typeof ORDER_PAGE_SIZES)[number])
+        ? Number(stored.pageSize)
+        : DEFAULT_ORDER_VIEW_STATE.pageSize,
+    };
+  } catch {
+    return DEFAULT_ORDER_VIEW_STATE;
+  }
+}
+
+function readOrderSearch(): string {
+  try {
+    return window.sessionStorage.getItem(ORDER_SEARCH_SESSION_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function paginationWindow(current: number, total: number): number[] {
+  const start = Math.max(1, Math.min(current - 2, total - 4));
+  const end = Math.min(total, start + 4);
+  return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+}
 
 @Component({
   selector: 'app-root',
@@ -162,10 +237,16 @@ export class App implements OnDestroy {
   protected readonly autoRefreshEnabled = signal(true);
   protected readonly formDirty = signal(false);
   protected readonly lastUpdatedAt = signal<string | null>(null);
-  protected readonly orderFilter = signal('');
-  protected readonly orderQuickFilter = signal<OrderQuickFilter>('all');
-  protected readonly orderSortKey = signal<OrderSortKey>('queue');
-  protected readonly orderSortDirection = signal<SortDirection>('desc');
+  protected readonly orderFilter = signal(readOrderSearch());
+  protected readonly orderQuickFilter = signal<OrderQuickFilter>(
+    INITIAL_ORDER_VIEW_STATE.quickFilter,
+  );
+  protected readonly orderSortKey = signal<OrderSortKey>(INITIAL_ORDER_VIEW_STATE.sortKey);
+  protected readonly orderSortDirection = signal<SortDirection>(
+    INITIAL_ORDER_VIEW_STATE.sortDirection,
+  );
+  protected readonly orderPage = signal(INITIAL_ORDER_VIEW_STATE.page);
+  protected readonly orderPageSize = signal(INITIAL_ORDER_VIEW_STATE.pageSize);
   protected readonly runStatusFilter = signal('');
   protected readonly health = signal<HealthPayload | null>(null);
   protected readonly worker = signal<WorkerStatus | null>(null);
@@ -313,6 +394,25 @@ export class App implements OnDestroy {
     });
     return this.sortOrders(filtered);
   });
+  protected readonly orderTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredOrders().length / this.orderPageSize())),
+  );
+  protected readonly currentOrderPage = computed(() =>
+    Math.min(this.orderPage(), this.orderTotalPages()),
+  );
+  protected readonly paginatedOrders = computed(() => {
+    const start = (this.currentOrderPage() - 1) * this.orderPageSize();
+    return this.filteredOrders().slice(start, start + this.orderPageSize());
+  });
+  protected readonly orderPageStart = computed(() =>
+    this.filteredOrders().length ? (this.currentOrderPage() - 1) * this.orderPageSize() + 1 : 0,
+  );
+  protected readonly orderPageEnd = computed(() =>
+    Math.min(this.currentOrderPage() * this.orderPageSize(), this.filteredOrders().length),
+  );
+  protected readonly orderPageNumbers = computed(() =>
+    paginationWindow(this.currentOrderPage(), this.orderTotalPages()),
+  );
   protected readonly orderQuickFilters = computed(() => [
     { key: 'all' as const, label: 'Todas', count: this.orders().length },
     { key: 'ready' as const, label: 'Ready', count: this.countOrders('ready') },
@@ -354,11 +454,7 @@ export class App implements OnDestroy {
     () => this.captchaSummary()?.stats.models['v2_selected'] ?? null,
   );
   protected readonly captchaPageNumbers = computed(() => {
-    const total = this.captchaTotalPages();
-    const current = this.captchaPage();
-    const start = Math.max(1, Math.min(current - 2, total - 4));
-    const end = Math.min(total, start + 4);
-    return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+    return paginationWindow(this.captchaPage(), this.captchaTotalPages());
   });
   protected readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
@@ -581,6 +677,7 @@ export class App implements OnDestroy {
       this.financeCategories.set(financeCategories);
       this.financeEntries.set(financeEntries);
       this.financeSummary.set(financeSummary);
+      this.keepValidOrderPage();
       this.keepValidSelection(orders);
       this.hydrateSelectedOrderForms();
       if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
@@ -1330,7 +1427,7 @@ export class App implements OnDestroy {
 
   protected showPendingPayments(): void {
     this.activeView.set('orders');
-    this.orderQuickFilter.set('payment_pending');
+    this.setOrderQuickFilter('payment_pending');
   }
 
   protected openOrderActions(order: ServiceOrder): void {
@@ -1787,15 +1884,30 @@ export class App implements OnDestroy {
 
   protected setOrderQuickFilter(filter: OrderQuickFilter): void {
     this.orderQuickFilter.set(filter);
+    this.resetOrderPage();
+    this.persistOrderViewState();
+  }
+
+  protected setOrderFilter(value: string): void {
+    this.orderFilter.set(value);
+    this.resetOrderPage();
+    this.persistOrderViewState();
+    try {
+      window.sessionStorage.setItem(ORDER_SEARCH_SESSION_KEY, value);
+    } catch {
+      // La búsqueda permanece disponible en memoria si el navegador bloquea storage.
+    }
   }
 
   protected setOrderSort(key: OrderSortKey): void {
     if (this.orderSortKey() === key) {
       this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
-      return;
+    } else {
+      this.orderSortKey.set(key);
+      this.orderSortDirection.set(this.defaultOrderSortDirection(key));
     }
-    this.orderSortKey.set(key);
-    this.orderSortDirection.set(this.defaultOrderSortDirection(key));
+    this.resetOrderPage();
+    this.persistOrderViewState();
   }
 
   protected chooseOrderSort(key: OrderSortKey): void {
@@ -1804,10 +1916,35 @@ export class App implements OnDestroy {
     }
     this.orderSortKey.set(key);
     this.orderSortDirection.set(this.defaultOrderSortDirection(key));
+    this.resetOrderPage();
+    this.persistOrderViewState();
   }
 
   protected toggleOrderSortDirection(): void {
     this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
+    this.resetOrderPage();
+    this.persistOrderViewState();
+  }
+
+  protected changeOrderPageSize(value: number | string): void {
+    const pageSize = Number(value);
+    if (!ORDER_PAGE_SIZES.includes(pageSize as (typeof ORDER_PAGE_SIZES)[number])) {
+      return;
+    }
+    this.orderPageSize.set(pageSize);
+    this.resetOrderPage();
+    this.persistOrderViewState();
+  }
+
+  protected goToOrderPage(page: number): void {
+    if (page < 1 || page > this.orderTotalPages() || page === this.currentOrderPage()) {
+      return;
+    }
+    this.orderPage.set(page);
+    this.persistOrderViewState();
+    window.requestAnimationFrame(() => {
+      document.querySelector('.order-controls')?.scrollIntoView({ behavior: 'smooth' });
+    });
   }
 
   protected orderSortLabel(key: OrderSortKey): string {
@@ -2699,6 +2836,34 @@ export class App implements OnDestroy {
 
   private defaultOrderSortDirection(key: OrderSortKey): SortDirection {
     return key === 'applicant' || key === 'status' || key === 'queue' ? 'asc' : 'desc';
+  }
+
+  private resetOrderPage(): void {
+    this.orderPage.set(1);
+  }
+
+  private keepValidOrderPage(): void {
+    const validPage = Math.min(this.orderPage(), this.orderTotalPages());
+    if (validPage === this.orderPage()) {
+      return;
+    }
+    this.orderPage.set(validPage);
+    this.persistOrderViewState();
+  }
+
+  private persistOrderViewState(): void {
+    const state: OrderViewState = {
+      quickFilter: this.orderQuickFilter(),
+      sortKey: this.orderSortKey(),
+      sortDirection: this.orderSortDirection(),
+      page: this.orderPage(),
+      pageSize: this.orderPageSize(),
+    };
+    try {
+      window.localStorage.setItem(ORDER_VIEW_STATE_KEY, JSON.stringify(state));
+    } catch {
+      // El estado sigue funcionando durante la sesión si el navegador bloquea storage.
+    }
   }
 
   private hydrateSelectedOrderForms(detail: ServiceOrderDetail | null = null): void {

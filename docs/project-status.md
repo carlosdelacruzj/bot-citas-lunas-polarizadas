@@ -31,6 +31,11 @@ instrumentación no alteraron la regla de confirmación final.
   sesiones manuales y runs sanitizados.
 - UX simplificada: tabla compacta, acción contextual, panel lateral, prioridad
   rápida y confirmaciones SweetAlert2.
+- Menú lateral estable sin contadores dependientes de filtros; los totales y
+  estados accionables viven dentro de cada sección.
+- Órdenes paginadas en el navegador con 20 filas por defecto y opciones de
+  10/20/50; conserva filtro rápido, orden, dirección, tamaño y página. La
+  búsqueda libre se mantiene solo durante la sesión del navegador.
 - Edición de restricciones por orden desde el dashboard: fecha mínima, fecha
   máxima, hora mínima, días permitidos y varios rangos de fechas excluidas; los
   límites también se pueden quitar y los rangos aparecen resumidos en la orden.

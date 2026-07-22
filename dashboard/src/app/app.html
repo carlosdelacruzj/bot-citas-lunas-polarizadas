@@ -715,7 +715,10 @@
         <div class="panel-header">
           <div>
             <h2>Ordenes</h2>
-            <p>{{ filteredOrders().length }} visibles de {{ orders().length }} cargadas</p>
+            <p>
+              Mostrando {{ orderPageStart() }}–{{ orderPageEnd() }} de
+              {{ filteredOrders().length }} resultados · {{ orders().length }} cargadas
+            </p>
           </div>
           <div class="panel-actions">
             <button type="button" class="secondary" (click)="openWhatsAppEvidenceTest()">
@@ -1066,7 +1069,7 @@
                 name="orderFilter"
                 type="search"
                 [ngModel]="orderFilter()"
-                (ngModelChange)="orderFilter.set($event)"
+                (ngModelChange)="setOrderFilter($event)"
               />
             </label>
             <label class="filter">
@@ -1126,7 +1129,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (order of filteredOrders(); track order.order_id) {
+              @for (order of paginatedOrders(); track order.order_id) {
                 <tr
                   class="selectable-row"
                   tabindex="0"
@@ -1198,6 +1201,56 @@
             </tbody>
           </table>
         </div>
+
+        <div class="order-table-footer">
+          <span>
+            {{ orderPageStart() }}–{{ orderPageEnd() }} de {{ filteredOrders().length }} resultados
+          </span>
+          <label class="filter">
+            Filas por página
+            <select
+              name="orderPageSize"
+              [ngModel]="orderPageSize()"
+              (ngModelChange)="changeOrderPageSize($event)"
+            >
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="20">20</option>
+              <option [ngValue]="50">50</option>
+            </select>
+          </label>
+        </div>
+
+        @if (orderTotalPages() > 1) {
+          <nav class="order-pagination" aria-label="Páginas de órdenes">
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="currentOrderPage() === 1"
+              (click)="goToOrderPage(currentOrderPage() - 1)"
+            >
+              Anterior
+            </button>
+            @for (page of orderPageNumbers(); track page) {
+              <button
+                type="button"
+                class="page-button"
+                [class.active]="page === currentOrderPage()"
+                [attr.aria-current]="page === currentOrderPage() ? 'page' : null"
+                (click)="goToOrderPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="currentOrderPage() === orderTotalPages()"
+              (click)="goToOrderPage(currentOrderPage() + 1)"
+            >
+              Siguiente
+            </button>
+          </nav>
+        }
       </section>
     }
 

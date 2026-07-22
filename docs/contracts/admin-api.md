@@ -234,6 +234,13 @@ Los errores de entrada pueden incluir:
 El dashboard traduce esos nombres tecnicos a las etiquetas visibles del
 formulario.
 
+El menú principal no muestra totales de listados ni resultados filtrados. Los
+conteos pertenecen al contenido de cada sección, evitando que una búsqueda o un
+filtro cambie el significado de la navegación. La tabla de órdenes pagina los
+resultados localmente con 20 filas por defecto y permite 10, 20 o 50. Conserva
+filtro rápido, orden, dirección, tamaño y página en el navegador; la búsqueda
+libre usa almacenamiento de sesión para no persistir nombres o documentos.
+
 Todas las fechas visibles usan `DD-MM-YYYY`. Las fechas con hora usan
 `DD-MM-YYYY HH:mm:ss` en `America/Lima`. Este estándar es solo de presentación:
 API, PostgreSQL y controles HTML de fecha conservan `YYYY-MM-DD` o ISO 8601 para
