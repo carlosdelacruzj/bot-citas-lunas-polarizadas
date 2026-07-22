@@ -2,6 +2,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { RequestScope } from './request-cancellation';
+
 import { ExcludedDateRange } from './reservation-rules.model';
 
 export type { ExcludedDateRange } from './reservation-rules.model';
@@ -458,18 +460,16 @@ export interface WorkerCommand {
 export class AppointmentApiService {
   private readonly http = inject(HttpClient);
 
-  async getHealth(): Promise<HealthPayload> {
-    return firstValueFrom(this.http.get<HealthPayload>('/health'));
+  async getHealth(scope?: RequestScope): Promise<HealthPayload> {
+    return this.read<HealthPayload>('/health', scope);
   }
 
-  async getWorker(): Promise<WorkerStatus> {
-    return firstValueFrom(this.http.get<WorkerStatus>('/api/v1/worker'));
+  async getWorker(scope?: RequestScope): Promise<WorkerStatus> {
+    return this.read<WorkerStatus>('/api/v1/worker', scope);
   }
 
-  async getServiceOrders(): Promise<ServiceOrder[]> {
-    const response = await firstValueFrom(
-      this.http.get<ServiceOrdersResponse>('/api/v1/service-orders'),
-    );
+  async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {
+    const response = await this.read<ServiceOrdersResponse>('/api/v1/service-orders', scope);
     return response.service_orders;
   }
 
@@ -479,8 +479,8 @@ export class AppointmentApiService {
     );
   }
 
-  async getRuns(): Promise<RunSummary[]> {
-    const response = await firstValueFrom(this.http.get<RunsResponse>('/api/v1/runs?limit=50'));
+  async getRuns(scope?: RequestScope): Promise<RunSummary[]> {
+    const response = await this.read<RunsResponse>('/api/v1/runs?limit=50', scope);
     return response.runs;
   }
 
@@ -488,8 +488,8 @@ export class AppointmentApiService {
     return firstValueFrom(this.http.get<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`));
   }
 
-  async getCaptchaSummary(): Promise<CaptchaSummary> {
-    return firstValueFrom(this.http.get<CaptchaSummary>('/api/v1/captcha-shadow/summary'));
+  async getCaptchaSummary(scope?: RequestScope): Promise<CaptchaSummary> {
+    return this.read<CaptchaSummary>('/api/v1/captcha-shadow/summary', scope);
   }
 
   async getCaptchaEvents(
@@ -501,6 +501,7 @@ export class AppointmentApiService {
     source: string,
     reviewStatus: string,
     sort: string,
+    scope?: RequestScope,
   ): Promise<CaptchaEventsPage> {
     const params = new URLSearchParams({
       page: String(page),
@@ -512,8 +513,9 @@ export class AppointmentApiService {
       review_status: reviewStatus,
       sort,
     });
-    return firstValueFrom(
-      this.http.get<CaptchaEventsPage>(`/api/v1/captcha-shadow/events?${params.toString()}`),
+    return this.read<CaptchaEventsPage>(
+      `/api/v1/captcha-shadow/events?${params.toString()}`,
+      scope,
     );
   }
 
@@ -528,45 +530,46 @@ export class AppointmentApiService {
     );
   }
 
-  async getWorkerCommands(): Promise<WorkerCommand[]> {
-    const response = await firstValueFrom(
-      this.http.get<WorkerCommandsResponse>('/api/v1/worker/commands?limit=20'),
+  async getWorkerCommands(scope?: RequestScope): Promise<WorkerCommand[]> {
+    const response = await this.read<WorkerCommandsResponse>(
+      '/api/v1/worker/commands?limit=20',
+      scope,
     );
     return response.commands;
   }
 
-  async getManualSessions(): Promise<ManualSession[]> {
-    const response = await firstValueFrom(
-      this.http.get<ManualSessionsResponse>('/api/v1/manual-sessions'),
-    );
+  async getManualSessions(scope?: RequestScope): Promise<ManualSession[]> {
+    const response = await this.read<ManualSessionsResponse>('/api/v1/manual-sessions', scope);
     return response.manual_sessions;
   }
 
-  async getMonthlySummary(month: string): Promise<MonthlySummary> {
-    return firstValueFrom(
-      this.http.get<MonthlySummary>(`/api/v1/monthly-summary?month=${encodeURIComponent(month)}`),
+  async getMonthlySummary(month: string, scope?: RequestScope): Promise<MonthlySummary> {
+    return this.read<MonthlySummary>(
+      `/api/v1/monthly-summary?month=${encodeURIComponent(month)}`,
+      scope,
     );
   }
 
-  async getFinanceCategories(): Promise<FinanceCategory[]> {
-    const response = await firstValueFrom(
-      this.http.get<{ categories: FinanceCategory[] }>('/api/v1/finance/categories'),
+  async getFinanceCategories(scope?: RequestScope): Promise<FinanceCategory[]> {
+    const response = await this.read<{ categories: FinanceCategory[] }>(
+      '/api/v1/finance/categories',
+      scope,
     );
     return response.categories;
   }
 
-  async getFinanceEntries(month: string): Promise<FinanceEntry[]> {
-    const response = await firstValueFrom(
-      this.http.get<{ entries: FinanceEntry[] }>(
-        `/api/v1/finance/entries?month=${encodeURIComponent(month)}&include_voided=1`,
-      ),
+  async getFinanceEntries(month: string, scope?: RequestScope): Promise<FinanceEntry[]> {
+    const response = await this.read<{ entries: FinanceEntry[] }>(
+      `/api/v1/finance/entries?month=${encodeURIComponent(month)}&include_voided=1`,
+      scope,
     );
     return response.entries;
   }
 
-  async getFinanceSummary(month: string): Promise<FinanceSummary> {
-    return firstValueFrom(
-      this.http.get<FinanceSummary>(`/api/v1/finance/summary?month=${encodeURIComponent(month)}`),
+  async getFinanceSummary(month: string, scope?: RequestScope): Promise<FinanceSummary> {
+    return this.read<FinanceSummary>(
+      `/api/v1/finance/summary?month=${encodeURIComponent(month)}`,
+      scope,
     );
   }
 
@@ -756,6 +759,11 @@ export class AppointmentApiService {
 
   private async post<T>(url: string, payload: unknown): Promise<T> {
     return firstValueFrom(this.http.post<T>(url, payload));
+  }
+
+  private async read<T>(url: string, scope?: RequestScope): Promise<T> {
+    const request = this.http.get<T>(url);
+    return scope ? scope.read(request) : firstValueFrom(request);
   }
 }
 

@@ -317,6 +317,19 @@ el guardado del formulario.
 
 ## Acciones administrativas
 
+### Política de lectura del dashboard
+
+El dashboard consulta los mismos endpoints sin cambiar su contrato, pero usa
+una cadencia acorde al tipo de información. Las lecturas son cancelables: una
+navegación o filtro nuevo desuscribe la solicitud anterior y una cancelación no
+se presenta como error. La pestaña oculta no realiza polling y, al volver, solo
+consulta si la última actualización de esa vista ya venció.
+
+La política mantiene un contexto preparado para incorporar en el futuro
+`updated_since` o cursores. Los endpoints actuales siguen devolviendo snapshots
+completos; no se anuncia todavía una actualización incremental que el backend
+no soporte.
+
 - `pause` y `activate` cambian elegibilidad operativa.
 - `done` archiva/completa una orden.
 - `no-charge` marca una orden sin cobro.

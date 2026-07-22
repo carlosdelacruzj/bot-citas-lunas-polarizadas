@@ -76,6 +76,11 @@ instrumentación no alteraron la regla de confirmación final.
   pago, edición, acciones, alta, finanzas y reinicio) y se cargan bajo demanda
   al abrirse. `App` conserva únicamente la coordinación de efectos, la
   confirmación final y la restauración de foco para no duplicar comportamiento.
+- La actualización automática usa una frecuencia por vista: 10 segundos para
+  Pendientes/Actividad, 20 para Órdenes y revisión CAPTCHA, 60 para Resumen e
+  historial CAPTCHA y 120 para Finanzas. Una pestaña oculta pausa lecturas; al
+  regresar solo refresca si la vista venció. Navegar o filtrar cancela la
+  petición HTTP anterior y aplica siempre la respuesta más reciente.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

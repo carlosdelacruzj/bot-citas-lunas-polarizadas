@@ -156,7 +156,7 @@
 
       <div class="refresh-panel">
         <span>Actualización</span>
-        <strong>{{ autoRefreshPaused() ? 'pausada' : 'automática' }}</strong>
+        <strong>{{ pageHidden() ? 'pausada: pestaña oculta' : autoRefreshPaused() ? 'pausada' : 'automática' }}</strong>
         <small>{{
           lastUpdatedAt() ? 'Última: ' + lastUpdatedAt() : (health()?.status ?? 'sin datos')
         }}</small>

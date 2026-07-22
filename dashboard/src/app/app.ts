@@ -51,6 +51,12 @@ import {
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
+import {
+  CaptchaRefreshMode,
+  dashboardDataExpired,
+  dashboardRefreshInterval,
+} from './dashboard-refresh.policy';
+import { RequestScope, isRequestCancelled } from './request-cancellation';
 import { WhatsappModalComponent } from './modals/whatsapp-modal.component';
 import { PaymentModalComponent } from './modals/payment-modal.component';
 import { EditOrderModalComponent } from './modals/edit-order-modal.component';
@@ -144,7 +150,6 @@ type InboxOrderTask = {
   tone: 'bad' | 'warn' | 'neutral';
 };
 
-const AUTO_REFRESH_INTERVAL_MS = 15_000;
 const ERROR_MESSAGE_DURATION_MS = 8_000;
 const ORDER_VIEW_STATE_KEY = 'appointment-dashboard-order-view';
 const ORDER_SEARCH_SESSION_KEY = 'appointment-dashboard-order-search';
@@ -306,13 +311,15 @@ export class App implements OnDestroy {
   protected readonly formatTime = formatPeruTime;
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
-  private readonly autoRefreshTimer = window.setInterval(() => {
-    void this.refreshFromTimer();
-  }, AUTO_REFRESH_INTERVAL_MS);
+  private autoRefreshTimer: number | null = null;
   private readonly activeManualSessionIds = new Set<string>();
   private readonly loadedViews = new Set<ViewKey>();
+  private readonly lastSuccessfulViewUpdate = new Map<ViewKey, number>();
   private refreshInFlight: Promise<void> | null = null;
   private refreshingView: ViewKey | null = null;
+  private currentRefreshScope: RequestScope | null = null;
+  private captchaLoadScope: RequestScope | null = null;
+  private refreshGeneration = 0;
   private routerSubscription: Subscription | null = null;
   private sweetAlertPromise: Promise<typeof import('sweetalert2').default> | null = null;
   private captchaReviewMessageTimer: number | null = null;
@@ -326,6 +333,7 @@ export class App implements OnDestroy {
   protected readonly mobileMenuOpen = signal(false);
   protected readonly activeModal = signal<ModalKind>(null);
   protected readonly autoRefreshEnabled = signal(true);
+  protected readonly pageHidden = signal(document.visibilityState === 'hidden');
   protected readonly formDirty = signal(false);
   protected readonly lastUpdatedAt = signal<string | null>(null);
   protected readonly orderFilter = signal(readOrderSearch());
@@ -798,7 +806,9 @@ export class App implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    window.clearInterval(this.autoRefreshTimer);
+    this.clearRefreshTimer();
+    this.currentRefreshScope?.cancel();
+    this.captchaLoadScope?.cancel();
     this.routerSubscription?.unsubscribe();
     if (this.captchaReviewMessageTimer !== null) {
       window.clearTimeout(this.captchaReviewMessageTimer);
@@ -812,6 +822,24 @@ export class App implements OnDestroy {
   @HostListener('window:beforeunload')
   protected handleBeforeUnload(): void {
     this.closeTrackedManualSessionsWithBeacon();
+  }
+
+  @HostListener('document:visibilitychange')
+  protected handleVisibilityChange(): void {
+    const hidden = document.visibilityState === 'hidden';
+    this.pageHidden.set(hidden);
+    if (hidden) {
+      this.clearRefreshTimer();
+      this.currentRefreshScope?.cancel();
+      return;
+    }
+    const view = this.activeView();
+    const interval = this.activeRefreshInterval();
+    if (dashboardDataExpired(this.lastSuccessfulViewUpdate.get(view) ?? null, interval)) {
+      void this.refreshView(view, false);
+      return;
+    }
+    this.scheduleNextRefresh();
   }
 
   @HostListener('document:keydown.escape')
@@ -917,10 +945,12 @@ export class App implements OnDestroy {
     this.mobileMenuOpen.set(false);
 
     const needsRefresh = previousView !== view || !this.loadedViews.has(view) || queryChanged;
-    if (this.refreshingView === view && this.refreshInFlight) {
-      await this.refreshInFlight;
-    } else if (needsRefresh) {
+    if (needsRefresh) {
       await this.refreshView(view, !this.loadedViews.has(view));
+    } else if (this.refreshingView === view && this.refreshInFlight) {
+      await this.refreshInFlight;
+    } else {
+      this.scheduleNextRefresh();
     }
 
     if (view === 'orders') {
@@ -951,10 +981,12 @@ export class App implements OnDestroy {
   }
 
   private async refreshView(view: ViewKey, showLoading: boolean): Promise<void> {
-    while (this.refreshInFlight) {
-      await this.refreshInFlight;
-    }
-    const refresh = this.performViewRefresh(view, showLoading);
+    this.clearRefreshTimer();
+    this.currentRefreshScope?.cancel();
+    const scope = new RequestScope();
+    const generation = ++this.refreshGeneration;
+    this.currentRefreshScope = scope;
+    const refresh = this.performViewRefresh(view, showLoading, scope, generation);
     this.refreshInFlight = refresh;
     this.refreshingView = view;
     try {
@@ -963,11 +995,18 @@ export class App implements OnDestroy {
       if (this.refreshInFlight === refresh) {
         this.refreshInFlight = null;
         this.refreshingView = null;
+        this.currentRefreshScope = null;
+        this.scheduleNextRefresh();
       }
     }
   }
 
-  private async performViewRefresh(view: ViewKey, showLoading: boolean): Promise<void> {
+  private async performViewRefresh(
+    view: ViewKey,
+    showLoading: boolean,
+    scope: RequestScope,
+    generation: number,
+  ): Promise<void> {
     this.refreshingViewState.set(view);
     if (showLoading) {
       this.loadState.set('loading');
@@ -975,38 +1014,54 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     this.viewLoadError.set(null);
     try {
-      await Promise.all([this.refreshCommonData(), this.refreshViewData(view, showLoading)]);
+      await Promise.all([
+        this.refreshCommonData(scope),
+        this.refreshViewData(view, showLoading, scope),
+      ]);
+      if (generation !== this.refreshGeneration) {
+        return;
+      }
       this.loadedViews.add(view);
       this.lastUpdatedAt.set(this.formatClock(new Date()));
+      this.lastSuccessfulViewUpdate.set(view, Date.now());
       this.loadState.set('ready');
     } catch (error) {
+      if (isRequestCancelled(error) || generation !== this.refreshGeneration) {
+        return;
+      }
       const message = this.readError(error);
       this.loadState.set('error');
       this.viewLoadError.set(message);
       this.errorMessage.set(message);
     } finally {
-      if (this.refreshingViewState() === view) {
+      if (generation === this.refreshGeneration && this.refreshingViewState() === view) {
         this.refreshingViewState.set(null);
       }
     }
   }
 
-  private async refreshCommonData(): Promise<void> {
+  private async refreshCommonData(scope: RequestScope): Promise<void> {
     const [health, worker, manualSessions] = await Promise.all([
-      this.api.getHealth(),
-      this.api.getWorker(),
-      this.api.getManualSessions(),
+      this.api.getHealth(scope),
+      this.api.getWorker(scope),
+      this.api.getManualSessions(scope),
     ]);
     this.health.set(health);
     this.worker.set(worker);
     this.manualSessions.set(manualSessions);
   }
 
-  private async refreshViewData(view: ViewKey, showLoading: boolean): Promise<void> {
+  private async refreshViewData(
+    view: ViewKey,
+    showLoading: boolean,
+    scope: RequestScope,
+  ): Promise<void> {
     if (view === 'inbox') {
       const [orders, pendingCaptchas] = await Promise.all([
-        this.api.getServiceOrders(),
-        this.api.getCaptchaEvents(1, 1, '', 'all', 'all', 'all', 'pending', 'review_priority'),
+        this.api.getServiceOrders(scope),
+        this.api.getCaptchaEvents(
+          1, 1, '', 'all', 'all', 'all', 'pending', 'review_priority', scope,
+        ),
       ]);
       this.applyOrders(orders);
       this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
@@ -1014,9 +1069,9 @@ export class App implements OnDestroy {
     }
     if (view === 'summary') {
       const [orders, runs, monthlySummary] = await Promise.all([
-        this.api.getServiceOrders(),
-        this.api.getRuns(),
-        this.api.getMonthlySummary(this.selectedMonth()),
+        this.api.getServiceOrders(scope),
+        this.api.getRuns(scope),
+        this.api.getMonthlySummary(this.selectedMonth(), scope),
       ]);
       this.applyOrders(orders);
       this.runs.set(runs);
@@ -1026,11 +1081,11 @@ export class App implements OnDestroy {
     if (view === 'finance') {
       const categoriesRequest = this.financeCategories().length
         ? Promise.resolve(this.financeCategories())
-        : this.api.getFinanceCategories();
+        : this.api.getFinanceCategories(scope);
       const [financeCategories, financeEntries, financeSummary] = await Promise.all([
         categoriesRequest,
-        this.api.getFinanceEntries(this.selectedMonth()),
-        this.api.getFinanceSummary(this.selectedMonth()),
+        this.api.getFinanceEntries(this.selectedMonth(), scope),
+        this.api.getFinanceSummary(this.selectedMonth(), scope),
       ]);
       this.financeCategories.set(financeCategories);
       this.financeEntries.set(financeEntries);
@@ -1038,19 +1093,19 @@ export class App implements OnDestroy {
       return;
     }
     if (view === 'orders') {
-      this.applyOrders(await this.api.getServiceOrders());
+      this.applyOrders(await this.api.getServiceOrders(scope));
       return;
     }
     if (view === 'runs') {
       const [runs, workerCommands] = await Promise.all([
-        this.api.getRuns(),
-        this.api.getWorkerCommands(),
+        this.api.getRuns(scope),
+        this.api.getWorkerCommands(scope),
       ]);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
       return;
     }
-    await this.loadCaptchaData(showLoading || this.captchaState() === 'idle');
+    await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
   }
 
   private applyOrders(orders: ServiceOrder[]): void {
@@ -1069,14 +1124,20 @@ export class App implements OnDestroy {
     window.localStorage.setItem('appointment-dashboard-sidebar-collapsed', String(collapsed));
   }
 
-  protected async loadCaptchaData(showLoading = true): Promise<void> {
+  protected async loadCaptchaData(showLoading = true, scope?: RequestScope): Promise<void> {
+    const ownsScope = !scope;
+    if (ownsScope) {
+      this.captchaLoadScope?.cancel();
+      this.captchaLoadScope = new RequestScope();
+    }
+    const activeScope = scope ?? this.captchaLoadScope!;
     if (showLoading) {
       this.captchaState.set('loading');
     }
     this.captchaError.set(null);
     try {
       const [summary, page, reviewPage] = await Promise.all([
-        this.api.getCaptchaSummary(),
+        this.api.getCaptchaSummary(activeScope),
         this.api.getCaptchaEvents(
           this.captchaPage(),
           this.captchaPageSize(),
@@ -1086,8 +1147,11 @@ export class App implements OnDestroy {
           this.captchaSource(),
           this.captchaReviewStatus(),
           'newest',
+          activeScope,
         ),
-        this.api.getCaptchaEvents(1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority'),
+        this.api.getCaptchaEvents(
+          1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority', activeScope,
+        ),
       ]);
       this.captchaSummary.set(summary);
       this.applyCaptchaPage(page);
@@ -1098,8 +1162,15 @@ export class App implements OnDestroy {
       }
       this.captchaState.set('ready');
     } catch (error) {
+      if (isRequestCancelled(error)) {
+        return;
+      }
       this.captchaState.set('error');
       this.captchaError.set(this.readError(error));
+    } finally {
+      if (ownsScope && this.captchaLoadScope === activeScope) {
+        this.captchaLoadScope = null;
+      }
     }
   }
 
@@ -1141,6 +1212,7 @@ export class App implements OnDestroy {
     this.captchaWorkspaceMode.set(mode);
     this.captchaPendingCorrection.set(null);
     this.clearCaptchaReviewMessage();
+    this.scheduleNextRefresh();
     if (this.activeView() === 'captchas') {
       void this.router.navigate([], {
         queryParams: { mode },
@@ -3141,10 +3213,36 @@ export class App implements OnDestroy {
   }
 
   private async refreshFromTimer(): Promise<void> {
-    if (this.autoRefreshPaused() || this.refreshInFlight) {
+    if (this.pageHidden() || this.autoRefreshPaused() || this.refreshInFlight) {
+      this.scheduleNextRefresh();
       return;
     }
     await this.refreshView(this.activeView(), false);
+  }
+
+  private activeRefreshInterval(): number {
+    return dashboardRefreshInterval(
+      this.activeView(),
+      this.captchaWorkspaceMode() as CaptchaRefreshMode,
+    );
+  }
+
+  private scheduleNextRefresh(): void {
+    this.clearRefreshTimer();
+    if (this.pageHidden() || !this.autoRefreshEnabled()) {
+      return;
+    }
+    this.autoRefreshTimer = window.setTimeout(
+      () => void this.refreshFromTimer(),
+      this.activeRefreshInterval(),
+    );
+  }
+
+  private clearRefreshTimer(): void {
+    if (this.autoRefreshTimer !== null) {
+      window.clearTimeout(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
   }
 
   private keepValidSelection(orders: ServiceOrder[]): void {
