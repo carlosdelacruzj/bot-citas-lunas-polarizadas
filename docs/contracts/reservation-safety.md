@@ -45,6 +45,11 @@ frontera clara entre:
 - etapa `Programado`;
 - conciliacion posterior.
 
+La conciliacion posterior debe iniciar sesion con el `document_type` persistido
+en la orden, igual que la ejecucion principal. No puede volver implicitamente a
+`dni`, porque eso produciria un falso rechazo de credenciales para cuentas con
+Carne de Extranjeria.
+
 ## Evidencia
 
 Guardar evidencia cuando hay:

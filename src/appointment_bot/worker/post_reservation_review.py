@@ -76,7 +76,12 @@ def _review_confirmed_order(settings: Settings, order_id: str) -> dict[str, str]
             "message": "La orden ya no existe.",
         }
     review_settings = replace(
-        settings_for_order(settings, username=order.username, password=order.password),
+        settings_for_order(
+            settings,
+            username=order.username,
+            password=order.password,
+            document_type=order.document_type,
+        ),
         headless=True,
         block_heavy_assets=False,
         monitor_window_seconds=0,
