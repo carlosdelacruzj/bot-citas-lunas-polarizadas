@@ -2,6 +2,7 @@ import {
   Component,
   HostListener,
   OnDestroy,
+  ViewEncapsulation,
   WritableSignal,
   computed,
   effect,
@@ -274,6 +275,7 @@ function paginationWindow(current: number, total: number): number[] {
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  encapsulation: ViewEncapsulation.None,
 })
 export class App implements OnDestroy {
   protected readonly dashboard = this;
@@ -285,6 +287,8 @@ export class App implements OnDestroy {
     void this.refreshFromTimer();
   }, AUTO_REFRESH_INTERVAL_MS);
   private readonly activeManualSessionIds = new Set<string>();
+  private readonly loadedViews = new Set<ViewKey>();
+  private refreshInFlight: Promise<void> | null = null;
   private captchaReviewMessageTimer: number | null = null;
   private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
@@ -718,47 +722,43 @@ export class App implements OnDestroy {
   }
 
   protected async refreshAll(): Promise<void> {
-    await this.refreshHealth();
-    this.loadState.set('loading');
-    this.errorMessage.set(null);
+    await this.refreshView(this.activeView(), true);
+  }
 
+  protected async refreshNow(): Promise<void> {
+    this.formDirty.set(false);
+    await this.refreshAll();
+  }
+
+  protected async showView(view: ViewKey): Promise<void> {
+    this.activeView.set(view);
+    this.mobileMenuOpen.set(false);
+    await this.refreshView(view, !this.loadedViews.has(view));
+  }
+
+  private async refreshView(view: ViewKey, showLoading: boolean): Promise<void> {
+    while (this.refreshInFlight) {
+      await this.refreshInFlight;
+    }
+    const refresh = this.performViewRefresh(view, showLoading);
+    this.refreshInFlight = refresh;
     try {
-      const [
-        worker,
-        orders,
-        runs,
-        workerCommands,
-        manualSessions,
-        monthlySummary,
-        financeCategories,
-        financeEntries,
-        financeSummary,
-      ] = await Promise.all([
-        this.api.getWorker(),
-        this.api.getServiceOrders(),
-        this.api.getRuns(),
-        this.api.getWorkerCommands(),
-        this.api.getManualSessions(),
-        this.api.getMonthlySummary(this.selectedMonth()),
-        this.api.getFinanceCategories(),
-        this.api.getFinanceEntries(this.selectedMonth()),
-        this.api.getFinanceSummary(this.selectedMonth()),
-      ]);
-      this.worker.set(worker);
-      this.orders.set(orders);
-      this.runs.set(runs);
-      this.workerCommands.set(workerCommands);
-      this.manualSessions.set(manualSessions);
-      this.monthlySummary.set(monthlySummary);
-      this.financeCategories.set(financeCategories);
-      this.financeEntries.set(financeEntries);
-      this.financeSummary.set(financeSummary);
-      this.keepValidOrderPage();
-      this.keepValidSelection(orders);
-      this.hydrateSelectedOrderForms();
-      if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
-        void this.loadSelectedOrderDetail(this.selectedOrderId());
+      await refresh;
+    } finally {
+      if (this.refreshInFlight === refresh) {
+        this.refreshInFlight = null;
       }
+    }
+  }
+
+  private async performViewRefresh(view: ViewKey, showLoading: boolean): Promise<void> {
+    if (showLoading) {
+      this.loadState.set('loading');
+    }
+    this.errorMessage.set(null);
+    try {
+      await Promise.all([this.refreshCommonData(), this.refreshViewData(view, showLoading)]);
+      this.loadedViews.add(view);
       this.lastUpdatedAt.set(this.formatClock(new Date()));
       this.loadState.set('ready');
     } catch (error) {
@@ -767,19 +767,66 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async refreshNow(): Promise<void> {
-    this.formDirty.set(false);
-    await this.refreshAll();
-    if (this.activeView() === 'captchas') {
-      await this.loadCaptchaData(false);
-    }
+  private async refreshCommonData(): Promise<void> {
+    const [health, worker, manualSessions] = await Promise.all([
+      this.api.getHealth(),
+      this.api.getWorker(),
+      this.api.getManualSessions(),
+    ]);
+    this.health.set(health);
+    this.worker.set(worker);
+    this.manualSessions.set(manualSessions);
   }
 
-  protected async showView(view: ViewKey): Promise<void> {
-    this.activeView.set(view);
-    this.mobileMenuOpen.set(false);
-    if (view === 'captchas' && this.captchaState() === 'idle') {
-      await this.loadCaptchaData();
+  private async refreshViewData(view: ViewKey, showLoading: boolean): Promise<void> {
+    if (view === 'summary') {
+      const [orders, runs, monthlySummary] = await Promise.all([
+        this.api.getServiceOrders(),
+        this.api.getRuns(),
+        this.api.getMonthlySummary(this.selectedMonth()),
+      ]);
+      this.applyOrders(orders);
+      this.runs.set(runs);
+      this.monthlySummary.set(monthlySummary);
+      return;
+    }
+    if (view === 'finance') {
+      const categoriesRequest = this.financeCategories().length
+        ? Promise.resolve(this.financeCategories())
+        : this.api.getFinanceCategories();
+      const [financeCategories, financeEntries, financeSummary] = await Promise.all([
+        categoriesRequest,
+        this.api.getFinanceEntries(this.selectedMonth()),
+        this.api.getFinanceSummary(this.selectedMonth()),
+      ]);
+      this.financeCategories.set(financeCategories);
+      this.financeEntries.set(financeEntries);
+      this.financeSummary.set(financeSummary);
+      return;
+    }
+    if (view === 'orders') {
+      this.applyOrders(await this.api.getServiceOrders());
+      return;
+    }
+    if (view === 'runs') {
+      const [runs, workerCommands] = await Promise.all([
+        this.api.getRuns(),
+        this.api.getWorkerCommands(),
+      ]);
+      this.runs.set(runs);
+      this.workerCommands.set(workerCommands);
+      return;
+    }
+    await this.loadCaptchaData(showLoading || this.captchaState() === 'idle');
+  }
+
+  private applyOrders(orders: ServiceOrder[]): void {
+    this.orders.set(orders);
+    this.keepValidOrderPage();
+    this.keepValidSelection(orders);
+    this.hydrateSelectedOrderForms();
+    if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
+      void this.loadSelectedOrderDetail(this.selectedOrderId());
     }
   }
 
@@ -1178,22 +1225,25 @@ export class App implements OnDestroy {
   }
 
   protected async changeMonth(month: string): Promise<void> {
-    if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading()) {
+    if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading() || this.financeLoading()) {
       return;
     }
     this.selectedMonth.set(month);
-    this.monthlyLoading.set(true);
-    this.financeLoading.set(true);
+    const view = this.activeView();
+    this.monthlyLoading.set(view === 'summary');
+    this.financeLoading.set(view === 'finance');
     this.errorMessage.set(null);
     try {
-      const [summary, entries, financeSummary] = await Promise.all([
-        this.api.getMonthlySummary(month),
-        this.api.getFinanceEntries(month),
-        this.api.getFinanceSummary(month),
-      ]);
-      this.monthlySummary.set(summary);
-      this.financeEntries.set(entries);
-      this.financeSummary.set(financeSummary);
+      if (view === 'summary') {
+        this.monthlySummary.set(await this.api.getMonthlySummary(month));
+      } else {
+        const [entries, financeSummary] = await Promise.all([
+          this.api.getFinanceEntries(month),
+          this.api.getFinanceSummary(month),
+        ]);
+        this.financeEntries.set(entries);
+        this.financeSummary.set(financeSummary);
+      }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -2431,26 +2481,23 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async refreshHealth(): Promise<void> {
+  protected async copyDashboardSnapshot(): Promise<void> {
     try {
-      this.health.set(await this.api.getHealth());
+      const workerCommands = await this.api.getWorkerCommands();
+      this.workerCommands.set(workerCommands);
+      const snapshot = {
+        health: this.health(),
+        worker: this.sanitizeWorker(this.worker()),
+        current_order: this.currentOrder(),
+        service_orders: this.filteredOrders().map((order) => this.sanitizeOrder(order)),
+        runs: this.filteredRuns().map((run) => this.sanitizeRun(run)),
+        worker_commands: workerCommands.map((command) => this.sanitizeWorkerCommand(command)),
+      };
+      await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2));
+      this.markCopied('snapshot');
     } catch (error) {
-      this.health.set(null);
       this.errorMessage.set(this.readError(error));
     }
-  }
-
-  protected async copyDashboardSnapshot(): Promise<void> {
-    const snapshot = {
-      health: this.health(),
-      worker: this.sanitizeWorker(this.worker()),
-      current_order: this.currentOrder(),
-      service_orders: this.filteredOrders().map((order) => this.sanitizeOrder(order)),
-      runs: this.filteredRuns().map((run) => this.sanitizeRun(run)),
-      worker_commands: this.workerCommands().map((command) => this.sanitizeWorkerCommand(command)),
-    };
-    await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2));
-    this.markCopied('snapshot');
   }
 
   protected phaseLabel(phase: string | null | undefined): string {
@@ -2785,13 +2832,10 @@ export class App implements OnDestroy {
   }
 
   private async refreshFromTimer(): Promise<void> {
-    if (this.autoRefreshPaused()) {
+    if (this.autoRefreshPaused() || this.refreshInFlight) {
       return;
     }
-    await this.refreshAll();
-    if (this.activeView() === 'captchas') {
-      await this.loadCaptchaData(false);
-    }
+    await this.refreshView(this.activeView(), false);
   }
 
   private keepValidSelection(orders: ServiceOrder[]): void {

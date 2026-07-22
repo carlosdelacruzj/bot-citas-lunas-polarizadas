@@ -49,6 +49,10 @@ instrumentación no alteraron la regla de confirmación final.
 - Las cinco vistas principales del dashboard están separadas en componentes:
   Resumen, Finanzas, Órdenes, CAPTCHA y Actividad. `App` conserva la navegación,
   el estado compartido y los modales para evitar duplicar lógica operativa.
+- La carga inicial, la navegación y el refresco automático consultan únicamente
+  los datos de la vista activa, además de salud, worker y sesiones manuales. Se
+  evitan ciclos superpuestos y las categorías financieras se reutilizan después
+  de su primera carga.
 - Resumen mensual de negocio con ingresos cobrados, pendientes separados,
   conversión, comparación, fuentes y alertas accionables.
 - Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y

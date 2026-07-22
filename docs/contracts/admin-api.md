@@ -447,6 +447,24 @@ La creación y la edición de órdenes consumen el mismo componente visual para
 Esta reutilización no cambia los payloads del API: evita que ambos formularios
 diverjan en etiquetas, validación de rangos o comportamiento responsive.
 
+## Política de carga del dashboard
+
+El dashboard consulta siempre el estado común (`/health`, worker y sesiones
+manuales) y agrega solo los recursos requeridos por la vista activa:
+
+| Vista | Recursos específicos |
+|---|---|
+| Resumen | órdenes, actividad y resumen mensual |
+| Finanzas | movimientos, resumen financiero y categorías en la primera carga |
+| Órdenes | órdenes |
+| CAPTCHA | resumen, página visible y cola de revisión CAPTCHA |
+| Actividad | runs y comandos del worker |
+
+Al navegar se hace una primera carga inmediata de la nueva vista. Después, el
+refresco automático actualiza únicamente esa vista y omite el ciclo si todavía
+hay otra actualización en curso. Cambiar el mes consulta Resumen o Finanzas,
+pero no ambos módulos simultáneamente.
+
 ## Cambios requeridos antes de Angular con botones
 
 - Filtrar `owner_token` de `GET /api/v1/worker`. Estado: completado.
