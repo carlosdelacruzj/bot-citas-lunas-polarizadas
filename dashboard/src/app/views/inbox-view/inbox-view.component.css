@@ -3,6 +3,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  overflow: hidden;
+  border-color: rgba(32, 160, 165, 0.28);
+  background:
+    radial-gradient(circle at 92% 10%, rgba(32, 160, 165, 0.16), transparent 13rem),
+    linear-gradient(135deg, #ffffff, #f2fbfb);
+  box-shadow: var(--shadow-sm);
 }
 
 .inbox-hero h2,
@@ -22,11 +28,12 @@
   display: grid;
   min-width: 112px;
   border: 1px solid #f2c94c;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   place-items: center;
   background: #fffbeb;
   padding: 14px 20px;
   color: #854d0e;
+  box-shadow: 0 8px 22px rgba(199, 123, 18, 0.11);
 }
 
 .inbox-total.clear {
@@ -52,7 +59,33 @@
 }
 
 .inbox-metrics .metric-card {
+  position: relative;
+  overflow: hidden;
   min-height: 112px;
+  border-color: var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #ffffff, #f7fafc);
+  box-shadow: var(--shadow-xs);
+}
+
+.inbox-metrics .metric-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--accent-500);
+  content: '';
+}
+
+.inbox-metrics .metric-card:nth-child(2)::before {
+  background: var(--blue-600);
+}
+
+.inbox-metrics .metric-card:nth-child(3)::before {
+  background: var(--warning);
+}
+
+.inbox-metrics .metric-card:nth-child(4)::before {
+  background: var(--danger);
 }
 
 .inbox-metrics .metric-card strong {
@@ -96,11 +129,19 @@
   grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  border: 1px solid #d8e0e8;
+  border: 1px solid var(--line);
   border-left-width: 4px;
-  border-radius: 10px;
-  background: #ffffff;
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
   padding: 14px;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.inbox-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 .inbox-row.bad {
@@ -119,10 +160,10 @@
   display: grid;
   width: 42px;
   height: 42px;
-  border-radius: 9px;
+  border-radius: 11px;
   place-items: center;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: linear-gradient(145deg, #e2f6f5, #e5efff);
+  color: var(--accent-700);
   font-size: 0.82rem;
   font-weight: 900;
 }

@@ -23,6 +23,10 @@ instrumentación no alteraron la regla de confirmación final.
   color, tipografía, espaciado, radios, sombras, foco y movimiento reducido. La
   navegación, encabezados, controles, tarjetas, tablas, estados y modales usan
   una misma base sin fuentes ni librerías visuales externas.
+- Se reforzó la jerarquía de cada área sin añadir pasos al operador: Pendientes
+  prioriza las tareas, Órdenes conserva filtros y contexto al desplazarse,
+  CAPTCHA destaca la imagen y las respuestas, Resumen/Finanzas separan métricas
+  ejecutivas y Actividad diferencia comandos, corridas y evidencias.
 - Reserva automática con resultado `registered` o evidencia explícita del
   portal; estados ambiguos no autorizan un segundo submit.
 - `reservation_attempts`, submission pendiente y heartbeat de lease.

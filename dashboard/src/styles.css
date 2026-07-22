@@ -389,6 +389,108 @@ body {
   font-size: 0.74rem;
 }
 
+/* Resumen y finanzas comparten la misma lectura ejecutiva. */
+.monthly-dashboard,
+.finance-dashboard {
+  border-top: 3px solid var(--accent-500);
+  box-shadow: var(--shadow-sm);
+}
+
+.monthly-kpi,
+.monthly-card {
+  border-color: var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-xs);
+}
+
+.monthly-kpi {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.monthly-kpi::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent-500);
+  content: '';
+}
+
+.monthly-kpi:nth-child(2)::before,
+.monthly-kpi:nth-child(5)::before {
+  background: var(--blue-600);
+}
+
+.monthly-kpi:nth-child(3)::before {
+  background: var(--warning);
+}
+
+.monthly-kpi:nth-child(4)::before,
+.monthly-kpi:nth-child(6)::before {
+  background: #7c6bd6;
+}
+
+.monthly-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.primary-kpi {
+  border-color: rgba(32, 160, 165, 0.34);
+  background: linear-gradient(145deg, #eaf8f7, #edf5ff);
+}
+
+.warn-kpi {
+  border-color: #efd298;
+  background: linear-gradient(145deg, #fffaf0, #fff3d7);
+}
+
+.monthly-card {
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.monthly-card-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.bar-track {
+  height: 11px;
+  background: #e7eef2;
+  box-shadow: inset 0 1px 2px rgba(15, 38, 57, 0.08);
+}
+
+.bar-track > span {
+  background: linear-gradient(90deg, var(--accent-600), #3f7fd5);
+}
+
+.attention-list .attention-action-row > button:first-child {
+  border-color: var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.attention-list .attention-action-row > button:first-child:hover {
+  border-color: rgba(32, 160, 165, 0.45);
+  background: #f2fafa;
+  box-shadow: var(--shadow-sm);
+}
+
+.finance-ledger {
+  border-top: 3px solid var(--blue-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.finance-table :is(th, td):nth-child(4),
+.finance-table :is(th, td):nth-child(5) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+
 .restriction-summary.unrestricted {
   border-left-color: #22c55e;
   background: #f0fdf4;
