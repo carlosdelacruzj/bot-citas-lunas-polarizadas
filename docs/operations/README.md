@@ -217,6 +217,9 @@ base y definir criterios de continuidad y reversión. El ajuste iniciado el
 22-07-2026 aumenta los intentos por sesión de tres a cuatro sin cambiar los
 intervalos de `8–13 s`. Su línea base y seguimiento están documentados en
 [`observer-tuning-2026-07-22.md`](observer-tuning-2026-07-22.md).
+La secuencia completa de optimizaciones, esperas y condiciones de avance se
+mantiene en
+[`performance-roadmap-2026-07-22.md`](performance-roadmap-2026-07-22.md).
 
 ## Cambiar prioridad desde el dashboard
 

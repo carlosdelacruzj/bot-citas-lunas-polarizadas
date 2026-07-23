@@ -99,3 +99,7 @@ condiciones:
 No se debe reducir simultáneamente `OBSERVER_INTERVAL_MIN_SECONDS` ni
 `OBSERVER_INTERVAL_MAX_SECONDS`. Ese sería un segundo experimento y solo debe
 evaluarse después de observar este cambio de forma aislada.
+
+La secuencia completa, las fechas más tempranas y las condiciones para avanzar
+están definidas en
+[`performance-roadmap-2026-07-22.md`](performance-roadmap-2026-07-22.md).
