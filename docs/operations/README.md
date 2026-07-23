@@ -317,8 +317,11 @@ El primer trazado completo iniciado desde el dashboard está en
 [`whatsapp-dashboard-trace-2026-07-22.md`](whatsapp-dashboard-trace-2026-07-22.md).
 
 El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar post-pago`, ingresar
-el numero propio con codigo de pais (por ejemplo, `+51987654321`) y crear el
-paquete ficticio. La prueba usa una cita de demostracion y los PDFs configurados en
+el numero propio con codigo de pais (por ejemplo, `+51987654321`) y pulsar
+`Preparar prueba post-pago`. El sistema muestra el destinatario, los textos y
+los PDF sin abrir WhatsApp ni enviar. Despues de revisarlos, `Enviar prueba por
+WhatsApp` presenta una confirmacion final y realiza un unico intento. La prueba
+usa una cita de demostracion y los PDFs configurados en
 `.runtime/whatsapp-followup/followup-details.json`, sin tocar ordenes reales.
 
 En una orden real, `Enviar por WhatsApp` crea el paquete y prepara inmediatamente el

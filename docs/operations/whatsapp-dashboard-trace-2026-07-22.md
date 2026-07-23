@@ -56,18 +56,29 @@ pruebas controladas antes de considerarlo estable para clientes reales.
 
 ## Hallazgo de UX y seguridad
 
-El botón **Crear prueba post-pago** no crea solamente un borrador. Actualmente
-abre WhatsApp, adjunta los PDF, los envía y después envía el texto sin una
-confirmación adicional. Esto contradice el mensaje del modal que indica que
-WhatsApp no se considera enviado hasta confirmarlo manualmente.
+Durante esta prueba, el botón **Crear prueba post-pago** no creaba solamente un
+borrador: abría WhatsApp, adjuntaba los PDF, los enviaba y después enviaba el
+texto sin una confirmación adicional. Esto contradecía el mensaje del modal que
+indicaba que WhatsApp no se consideraba enviado hasta confirmarlo manualmente.
 
 La corrección recomendada es separar claramente las acciones:
 
 1. **Preparar prueba**: crea el paquete y muestra destinatario, archivos y texto.
 2. **Enviar prueba**: exige confirmación inmediata y realiza un único intento.
 
-Hasta implementar esa separación, el operador debe considerar
-**Crear prueba post-pago** como un botón de envío real.
+## Corrección implementada
+
+Después de este trazado, el simulacro quedó separado en dos acciones:
+
+1. **Preparar prueba post-pago** crea el paquete y muestra el destinatario, los
+   cuatro bloques de texto y los enlaces a los PDF. No abre WhatsApp ni envía.
+2. **Enviar prueba por WhatsApp** muestra una confirmación inmediata con el
+   destinatario y la cantidad de PDF. Solo después de aceptar ejecuta un intento
+   de envío.
+
+Cancelar la confirmación devuelve al paquete preparado sin transmitir archivos
+ni texto. Mientras el envío está en curso, el botón permanece deshabilitado
+para evitar un doble clic.
 
 ## Siguiente evaluación
 

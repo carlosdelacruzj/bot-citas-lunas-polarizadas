@@ -2161,10 +2161,11 @@ export class App implements OnDestroy {
       return;
     }
     if (this.whatsappFollowUpMode()) {
-      const message = await this.loadWhatsAppFollowUpPackage(() =>
+      await this.loadWhatsAppFollowUpPackage(() =>
         this.api.prepareWhatsAppFollowUpTest(recipient),
       );
-      await this.prepareWhatsAppFollowUpWebDraft(message);
+      this.whatsappManualFallbackOpen.set(false);
+      await this.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
       return;
     }
     const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
@@ -2405,6 +2406,33 @@ export class App implements OnDestroy {
     } finally {
       this.whatsappWebBusy.set(false);
     }
+  }
+
+  protected async confirmAndSendWhatsAppFollowUp(): Promise<void> {
+    const message = this.whatsappFollowUpPackage();
+    if (!message || message.status === 'sent' || this.whatsappWebBusy()) {
+      return;
+    }
+    const documentCount = message.steps.reduce(
+      (total, step) => total + step.attachment_urls.length,
+      0,
+    );
+    const result = await (await this.getSweetAlert()).fire({
+      icon: 'question',
+      title: message.test_mode ? 'Enviar prueba post-pago' : 'Enviar post-pago',
+      text:
+        `Se enviarán ${documentCount} PDF y el texto post-pago a ` +
+        `${message.recipient_phone}. WhatsApp realizará un único intento.`,
+      showCancelButton: true,
+      confirmButtonText: message.test_mode ? 'Enviar prueba ahora' : 'Enviar ahora',
+      cancelButtonText: 'Seguir revisando',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+    await this.prepareWhatsAppFollowUpWebDraft(message);
   }
 
   protected async confirmWhatsAppSent(): Promise<void> {

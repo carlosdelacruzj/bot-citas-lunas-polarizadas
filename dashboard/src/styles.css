@@ -20,7 +20,15 @@
 .whatsapp-step textarea { width: 100%; min-height: 84px; resize: vertical; }
 .whatsapp-step img { display: block; width: min(360px, 100%); margin: 12px 0; border: 1px solid #cbd5df; border-radius: 8px; }
 .whatsapp-confirmation { margin-top: 16px; border-color: #f3c969; background: #fff9e8; }
-@media (max-width: 760px) { .whatsapp-package-summary, .whatsapp-step .modal-actions { grid-template-columns: 1fr; } .whatsapp-step { padding: 56px 14px 14px; } }
+.whatsapp-followup-preview { display: grid; gap: 14px; margin: 1rem 0; }
+.whatsapp-followup-preview h3, .whatsapp-followup-preview p { margin: 0; }
+.whatsapp-followup-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.whatsapp-followup-step { display: grid; gap: 10px; min-width: 0; border: 1px solid #d8e0e8; border-radius: 10px; background: #fff; padding: 14px; }
+.whatsapp-followup-step-heading { display: flex; align-items: center; gap: 10px; }
+.whatsapp-followup-step-heading .step-number { position: static; flex: 0 0 auto; }
+.whatsapp-followup-step textarea { width: 100%; min-height: 150px; resize: vertical; }
+.whatsapp-document-list { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 760px) { .whatsapp-package-summary, .whatsapp-step .modal-actions, .whatsapp-followup-steps { grid-template-columns: 1fr; } .whatsapp-step { padding: 56px 14px 14px; } }
 
 html,
 body {

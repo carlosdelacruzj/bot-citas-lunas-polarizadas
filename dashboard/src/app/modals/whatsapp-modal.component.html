@@ -18,7 +18,13 @@
                   : 'Confirmación y cobro'
             }}
           </h2>
-          <p>WhatsApp nunca se considera enviado hasta que lo confirmes manualmente.</p>
+          <p>
+            {{
+              view.whatsappFollowUpMode()
+                ? 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
+                : 'Preparar el borrador no registra un envío hasta que lo confirmes manualmente.'
+            }}
+          </p>
         </div>
         <button
           type="button"
@@ -58,7 +64,7 @@
               view.whatsappFollowUpLoading() || view.whatsappPackageLoading()
                 ? 'Preparando...'
                 : view.whatsappFollowUpMode()
-                  ? 'Crear prueba post-pago'
+                  ? 'Preparar prueba post-pago'
                   : 'Crear prueba de evidencias'
             }}
           </button>
@@ -78,7 +84,7 @@
           <div>
             <span>Destino</span>
             <strong>{{ message.recipient_phone }}</strong>
-            <small>{{ message.order_id }}</small>
+            <small>{{ message.test_mode ? 'prueba ficticia' : message.order_id }}</small>
           </div>
           <div>
             <span>Estado</span>
@@ -89,20 +95,68 @@
           </div>
         </section>
 
+        <section class="admin-block whatsapp-followup-preview">
+          <div>
+            <p class="eyebrow">Contenido preparado</p>
+            <h3>Revisa los textos y documentos antes de enviar</h3>
+          </div>
+          <div class="whatsapp-followup-steps">
+            @for (step of message.steps; track $index; let stepIndex = $index) {
+              <article class="whatsapp-followup-step">
+                <div class="whatsapp-followup-step-heading">
+                  <span class="step-number">{{ stepIndex + 1 }}</span>
+                  <strong>{{ step.title }}</strong>
+                </div>
+                <textarea readonly [value]="step.text"></textarea>
+                @if (step.attachment_urls.length) {
+                  <div class="whatsapp-document-list">
+                    @for (
+                      attachmentUrl of step.attachment_urls;
+                      track attachmentUrl;
+                      let attachmentIndex = $index
+                    ) {
+                      <a
+                        class="button-link secondary"
+                        [href]="attachmentUrl"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Revisar PDF {{ attachmentIndex + 1 }}
+                      </a>
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        </section>
+
         <section class="admin-block whatsapp-web-preparation">
-          <p class="eyebrow">Preparación automática · WhatsApp Web local</p>
-          <h3>PDFs y texto post-pago en un solo envío</h3>
+          <p class="eyebrow">Envío automático · WhatsApp Web local</p>
+          <h3>
+            {{
+              message.test_mode
+                ? 'Confirma la prueba cuando termines de revisar'
+                : 'PDFs y texto post-pago en un solo envío'
+            }}
+          </h3>
           <p>
-            El sistema adjunta los PDFs, consolida las indicaciones, envía el paquete y cierra
-            WhatsApp cuando termina.
+            Al confirmar, el sistema abre WhatsApp, adjunta los PDFs, envía el texto y cierra la
+            ventana cuando termina. No pulses nuevamente mientras aparezca Enviando.
           </p>
           <button
             type="button"
             class="primary whatsapp-action"
             [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
-            (click)="view.prepareWhatsAppFollowUpWebDraft()"
+            (click)="view.confirmAndSendWhatsAppFollowUp()"
           >
-            {{ view.whatsappWebBusy() ? 'Enviando por WhatsApp...' : 'Enviar automáticamente' }}
+            {{
+              view.whatsappWebBusy()
+                ? 'Enviando por WhatsApp...'
+                : message.test_mode
+                  ? 'Enviar prueba por WhatsApp'
+                  : 'Enviar automáticamente'
+            }}
           </button>
           @if (view.whatsappWebResult(); as webResult) {
             <p
