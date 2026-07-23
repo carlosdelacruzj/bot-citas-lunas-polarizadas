@@ -315,8 +315,9 @@ La línea base manual, sus hitos y tiempos están documentados en
 [`whatsapp-manual-trace-2026-07-22.md`](whatsapp-manual-trace-2026-07-22.md).
 El primer trazado completo iniciado desde el dashboard está en
 [`whatsapp-dashboard-trace-2026-07-22.md`](whatsapp-dashboard-trace-2026-07-22.md).
-La serie manual del álbum de evidencias y la separación acordada entre
-evidencia automática, cobro manual y postpago posterior al pago están en
+La serie manual del álbum de evidencias y el flujo acordado —álbum automático
+con evidencia y QR de Yape, validación manual del pago y postpago automático—
+están en
 [`whatsapp-evidence-validation-2026-07-23.md`](whatsapp-evidence-validation-2026-07-23.md).
 
 El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar post-pago`, ingresar
@@ -328,11 +329,12 @@ usa una cita de demostracion y los PDFs configurados en
 `.runtime/whatsapp-followup/followup-details.json`, sin tocar ordenes reales.
 
 En una orden real, `Enviar por WhatsApp` crea el paquete y prepara inmediatamente el
-album: carga constancia e imagen de pago, selecciona cada miniatura y coloca su texto
-individual. Comprobar destinatario, ambas imagenes y sus textos; despues pulsar una
-sola vez `Enviar 2 seleccionados`. No hay un segundo paso en el dashboard. Si la
-ventana local fue cerrada durante la preparacion, se vuelve a abrir y se reintenta
-una vez. En el primer uso se debe escanear el QR y repetir la preparacion.
+album: carga constancia e imagen de pago y coloca el texto combinado en la
+descripcion visible del album. Comprobar destinatario, ambas imagenes y el texto;
+despues pulsar una sola vez `Enviar 2 seleccionados`. No hay un segundo paso en el
+dashboard. Si la ventana local fue cerrada durante la preparacion, se vuelve a
+abrir y se reintenta una vez. En el primer uso se debe escanear el QR y repetir la
+preparacion.
 El perfil queda solo en `.runtime/whatsapp-web-profile/` y no se versiona.
 
 La configuracion privada del cobro se guarda en

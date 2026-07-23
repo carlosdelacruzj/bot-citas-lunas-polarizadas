@@ -393,19 +393,20 @@ El listado de ordenes expone solo `whatsapp_message_status` y
 
 `POST /api/v1/whatsapp-messages/{message_id}/web/prepare` es exclusivamente local
 y acepta `draft_kind` con `confirmation`, `payment` o `album`. Abre o reutiliza un perfil
-Playwright persistente en `.runtime/whatsapp-web-profile/` y prepara dos mensajes
-separados: constancia con saludo y detalle; despues QR con instrucciones y monto.
-Cada imagen lleva su propio pie. Nunca pulsa Enviar ni cambia el paquete a `sent`.
-La primera ejecucion puede devolver `login_required`; `draft_ready` solo significa
-que el borrador solicitado esta visible y pendiente de revision humana.
+Playwright persistente en `.runtime/whatsapp-web-profile/`. El modo `album` carga
+juntas la constancia y la imagen de pago y escribe los textos combinados en la
+descripcion visible. Nunca pulsa Enviar ni cambia el paquete a `sent`. La primera
+ejecucion puede devolver `login_required`; `draft_ready` solo significa que el
+borrador solicitado esta visible y pendiente de revision humana.
 
 El dashboard usa `album`: carga constancia y QR en una sola seleccion multiple,
-elige cada miniatura y escribe su texto individual. `draft_ready` solo se devuelve
-despues de volver a seleccionar ambas miniaturas y verificar sus descripciones. El
-boton `Enviar por WhatsApp` encadena la creacion del paquete y esta preparacion sin
-otro clic en el dashboard. Si la pagina o el contexto fueron cerrados, el backend
-abre una ventana nueva y reintenta una vez. El operador revisa el album y pulsa un
-unico `Enviar 2 seleccionados`.
+comprueba que aparezcan las dos miniaturas e intenta escribir la descripcion
+combinada. Si WhatsApp no permite confirmar el texto, conserva las imagenes y
+devuelve una advertencia para revision manual. El boton `Enviar por WhatsApp`
+encadena la creacion del paquete y esta preparacion sin otro clic en el dashboard.
+Si la pagina o el contexto fueron cerrados, el backend abre una ventana nueva y
+reintenta una vez. El operador revisa el album y pulsa un unico
+`Enviar 2 seleccionados`.
 
 La imagen y los datos de cobro viven exclusivamente en
 `.runtime/whatsapp-payment/`. `payment-details.json` define `phone`,
