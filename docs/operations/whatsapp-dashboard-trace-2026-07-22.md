@@ -109,6 +109,27 @@ La corrección:
 El Admin API se reinició después del cambio. El worker de citas permaneció
 apagado durante toda la validación.
 
+## Resultado después de corregir el selector
+
+Se preparó un paquete nuevo y el operador autorizó un único intento. El flujo
+terminó correctamente:
+
+| Hito | Hora local |
+| --- | --- |
+| Paquete preparado sin abrir WhatsApp | 23:48:15.382 |
+| Dos PDF enviados | 23:49:45.624 |
+| Texto enviado | 23:49:48.436 |
+| Paquete marcado `sent` | 23:49:48.820 |
+| Respuesta HTTP 200 | 23:49:48.830 |
+
+Desde el registro de documentos enviados hasta completar el paquete
+transcurrieron **3,206 s**. El log vigente no registra el instante inicial del
+clic, por lo que no se presenta ese intervalo como una medición exacta.
+
+El operador confirmó que recibió `Formato_Tramite.pdf`, `requisitos.pdf` y el
+texto post-pago. Todos alcanzaron doble check azul. No hubo reintentos ni
+duplicados.
+
 ## Siguiente evaluación
 
 Ejecutar varias pruebas controladas al mismo número personal, espaciadas y sin
