@@ -504,20 +504,31 @@ def _click_attachment_button(page: Page) -> bool:
     return False
 
 
-def _wait_for_attachment_menu(page: Page) -> None:
-    deadline = time.monotonic() + 6
+def _wait_for_attachment_menu(page: Page, *, timeout_seconds: float = 3) -> bool:
+    deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
-        media_option = page.get_by_text(
-            re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
-        ).last
-        if media_option.count() and media_option.is_visible():
-            return
-        document_option = page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).last
-        if document_option.count() and document_option.is_visible():
-            return
-        if page.locator("[role='menuitem']:visible").count():
-            return
+        if _attachment_menu_visible(page):
+            return True
         page.wait_for_timeout(250)
+    return False
+
+
+def _attachment_menu_visible(page: Page) -> bool:
+    media_option = page.get_by_text(
+        re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
+    ).last
+    if media_option.count() and media_option.is_visible():
+        return True
+    document_option = page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).last
+    if document_option.count() and document_option.is_visible():
+        return True
+    document_label = page.locator(
+        "[aria-label='Documento'], [aria-label='Document'], "
+        "[title='Documento'], [title='Document']"
+    ).last
+    if document_label.count() and document_label.is_visible():
+        return True
+    return bool(page.locator("[role='menuitem']:visible").count())
 
 
 def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
@@ -526,7 +537,7 @@ def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
         if isinstance(attachment, list)
         else [str(attachment)]
     )
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 20
     file_input = None
     attachment_opened = False
     while time.monotonic() < deadline and file_input is None:
@@ -536,17 +547,20 @@ def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
             page.wait_for_timeout(1_000)
             return
         if not attachment_opened:
-            attachment_opened = _click_attachment_button(page)
-            if attachment_opened:
-                _wait_for_attachment_menu(page)
+            attachment_clicked = _click_attachment_button(page)
+            if attachment_clicked:
+                attachment_opened = _wait_for_attachment_menu(page)
         elif attachment_opened:
             if _choose_document_files(page, files):
                 return
             logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
             logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
             file_input = _document_file_input(page)
+            if file_input is None and not _attachment_menu_visible(page):
+                attachment_opened = False
         page.wait_for_timeout(400)
     if file_input is None:
+        _save_whatsapp_debug_screenshot(page, "whatsapp-document-input-missing")
         logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
         raise RuntimeError("No se encontro el control para adjuntar documentos en WhatsApp Web.")
     file_input.set_input_files(files)
@@ -555,6 +569,11 @@ def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
 
 def _choose_document_files(page: Page, files: list[str]) -> bool:
     candidates = [
+        page.locator(
+            "[aria-label='Documento'], [aria-label='Document'], "
+            "[title='Documento'], [title='Document']"
+        ).last,
+        page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).last,
         page.locator(
             "[role='menu'] [aria-label='Documento'], "
             "[role='menu'] [aria-label='Document']"
@@ -575,20 +594,20 @@ def _choose_document_files(page: Page, files: list[str]) -> bool:
             continue
         if candidate.get_attribute("title") and candidate.get_attribute("title").startswith("Ver "):
             continue
-        for target in [candidate]:
-            option_input = target.locator("input[type='file']")
-            if option_input.count():
-                option_input.first.set_input_files(files)
-                page.wait_for_timeout(1_000)
-                return True
-            try:
-                with page.expect_file_chooser(timeout=5_000) as chooser_info:
-                    target.click(timeout=2_000, force=True)
-                chooser_info.value.set_files(files)
-                page.wait_for_timeout(1_000)
-                return True
-            except PlaywrightError:
-                logger.info("Documento target did not open a file chooser")
+        target = _attachment_option_container(candidate)
+        option_input = target.locator("input[type='file']")
+        if option_input.count():
+            option_input.first.set_input_files(files)
+            page.wait_for_timeout(1_000)
+            return True
+        try:
+            with page.expect_file_chooser(timeout=5_000) as chooser_info:
+                target.click(timeout=2_000, force=True)
+            chooser_info.value.set_files(files)
+            page.wait_for_timeout(1_000)
+            return True
+        except PlaywrightError:
+            logger.info("Documento target did not open a file chooser")
     return False
 
 

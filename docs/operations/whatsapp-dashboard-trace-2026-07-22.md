@@ -80,6 +80,35 @@ Cancelar la confirmación devuelve al paquete preparado sin transmitir archivos
 ni texto. Mientras el envío está en curso, el botón permanece deshabilitado
 para evitar un doble clic.
 
+## Validación posterior a la corrección
+
+La primera repetición se abrió desde una pestaña que todavía conservaba el
+bundle anterior. El log confirmó que esa pestaña llamó automáticamente a
+`/web/prepare`; el intento terminó HTTP 503 antes de adjuntar documentos. No se
+envió ningún PDF ni texto.
+
+Después de cerrar esa pestaña y cargar el bundle nuevo:
+
+- **Preparar prueba post-pago** mostró la vista previa sin abrir WhatsApp;
+- cancelar **Enviar prueba por WhatsApp** no generó una llamada al backend;
+- aceptar la confirmación generó un único intento;
+- el intento abrió el chat, pero terminó HTTP 503 antes de adjuntar archivos.
+
+El segundo fallo reveló que el selector de documentos asumía que el menú de
+adjuntos se había abierto con el primer clic. Cuando el menú no aparecía, la
+función esperaba hasta agotar el plazo sin volver a pulsar **Adjuntar**.
+
+La corrección:
+
+- comprueba que el menú realmente sea visible;
+- vuelve a pulsar **Adjuntar** si el primer clic no lo abre;
+- reconoce **Documento** por texto, `aria-label` o `title`;
+- amplía el margen total de selección de archivos;
+- guarda `.runtime/whatsapp-document-input-missing.png` si vuelve a fallar.
+
+El Admin API se reinició después del cambio. El worker de citas permaneció
+apagado durante toda la validación.
+
 ## Siguiente evaluación
 
 Ejecutar varias pruebas controladas al mismo número personal, espaciadas y sin
