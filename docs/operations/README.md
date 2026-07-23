@@ -315,6 +315,9 @@ La línea base manual, sus hitos y tiempos están documentados en
 [`whatsapp-manual-trace-2026-07-22.md`](whatsapp-manual-trace-2026-07-22.md).
 El primer trazado completo iniciado desde el dashboard está en
 [`whatsapp-dashboard-trace-2026-07-22.md`](whatsapp-dashboard-trace-2026-07-22.md).
+La serie manual del álbum de evidencias y la separación acordada entre
+evidencia automática, cobro manual y postpago posterior al pago están en
+[`whatsapp-evidence-validation-2026-07-23.md`](whatsapp-evidence-validation-2026-07-23.md).
 
 El dashboard no usa la API de Meta. En `Ordenes`, usar `Probar post-pago`, ingresar
 el numero propio con codigo de pais (por ejemplo, `+51987654321`) y pulsar
