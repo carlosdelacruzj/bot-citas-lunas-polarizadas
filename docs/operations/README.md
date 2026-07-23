@@ -210,6 +210,14 @@ la Admin API y PostgreSQL.
 - Las búsquedas automáticas funcionan de lunes a sábado; domingo no abre
   sesiones ni consulta el portal.
 
+## Ajustes controlados del observer
+
+Cada cambio de frecuencia debe modificar una sola variable, conservar una línea
+base y definir criterios de continuidad y reversión. El ajuste iniciado el
+22-07-2026 aumenta los intentos por sesión de tres a cuatro sin cambiar los
+intervalos de `8–13 s`. Su línea base y seguimiento están documentados en
+[`observer-tuning-2026-07-22.md`](observer-tuning-2026-07-22.md).
+
 ## Cambiar prioridad desde el dashboard
 
 1. Abrir **Órdenes** y seleccionar la orden.
