@@ -20,6 +20,7 @@ reports/operations/weekly-*.csv
 reports/operations/weekly-*.md
 reports/optimization/observation-*.md
 reports/timings/*
+reports/diagnostics/
 !logs/.gitkeep
 !screenshots/.gitkeep
 !videos/.gitkeep
