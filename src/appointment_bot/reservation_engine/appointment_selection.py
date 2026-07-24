@@ -99,7 +99,7 @@ def select_available_appointment(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
         )
 
-    blocked_evidence_result: AvailabilityResult | None = None
+    blocked_evidence_candidate: dict[str, str] | None = None
     for date_option in reversed(date_options):
         previous_date = _selected_option_text(page, DATE_SELECTOR)
         previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
@@ -137,33 +137,11 @@ def select_available_appointment(
                     date_option["text"],
                     hour_option["text"],
                 )
-                if blocked_evidence_result is None:
-                    hour_select = page.locator(HOUR_SELECTOR)
-                    _select_appointment_option(
-                        hour_select,
-                        hour_option["value"],
-                        allow_hidden=allow_hidden,
-                    )
-                    stabilization_started = time.monotonic()
-                    page.wait_for_timeout(500)
-                    snapshot = read_stable_appointment_snapshot(
-                        page,
-                        log_person=include_person,
-                    )
-                    details = snapshot_details(snapshot, include_person=include_person)
-                    observation["hour_stabilization_seconds"].append(
-                        round(time.monotonic() - stabilization_started, 3)
-                    )
-                    details["blocked_by_order_rule"] = True
-                    details["blocked_selected_for_evidence"] = True
-                    blocked_evidence_result = AvailabilityResult(
-                        status="partial",
-                        message=(
-                            "Se encontro un horario disponible, pero no cumple "
-                            "la regla de reserva de la orden."
-                        ),
-                        details=details,
-                    )
+                if blocked_evidence_candidate is None:
+                    blocked_evidence_candidate = {
+                        "date_text": str(date_option["text"]),
+                        "hour_text": str(hour_option["text"]),
+                    }
                 continue
 
             hour_select = page.locator(HOUR_SELECTOR)
@@ -199,7 +177,15 @@ def select_available_appointment(
                 hour_option["text"],
             )
 
-    if blocked_evidence_result is not None:
+    if blocked_evidence_candidate is not None:
+        blocked_evidence_result = _select_blocked_appointment_for_evidence(
+            page,
+            blocked_evidence_candidate,
+            allow_hidden=allow_hidden,
+            include_person=include_person,
+            timeout=timeout,
+            observation=observation,
+        )
         return _with_selection_observation(
             blocked_evidence_result, observation, observation_started
         )
@@ -225,6 +211,165 @@ def select_available_appointment(
         observation,
         observation_started,
     )
+
+
+def _select_blocked_appointment_for_evidence(
+    page: Page,
+    candidate: dict[str, str],
+    *,
+    allow_hidden: bool,
+    include_person: bool,
+    timeout: int,
+    observation: dict[str, Any],
+) -> AvailabilityResult:
+    from appointment_bot.reservation_engine.appointments import (
+        DATE_SELECTOR,
+        HOUR_SELECTOR,
+        _options_signature,
+        _real_options,
+        _same_option,
+        _select_appointment_option,
+        _select_options,
+        _selected_option_text,
+        _wait_for_options_after_selection,
+    )
+
+    date_text = candidate["date_text"]
+    hour_text = candidate["hour_text"]
+    message = (
+        "Se encontro un horario disponible, pero no cumple "
+        "la regla de reserva de la orden."
+    )
+    try:
+        matching_date = next(
+            (
+                option
+                for option in _real_options(_select_options(page, DATE_SELECTOR))
+                if _same_option(str(option["text"]), date_text)
+            ),
+            None,
+        )
+        if matching_date is None:
+            return _blocked_evidence_unavailable_result(
+                page,
+                message=message,
+                date_text=date_text,
+                hour_text=hour_text,
+                reason="La fecha bloqueada dejo de estar disponible al preparar la evidencia.",
+                include_person=include_person,
+            )
+        previous_date = _selected_option_text(page, DATE_SELECTOR)
+        previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
+        logger.info(
+            "Reselecting blocked appointment for evidence: %s %s",
+            date_text,
+            hour_text,
+        )
+        postback_started = time.monotonic()
+        _select_appointment_option(
+            page.locator(DATE_SELECTOR),
+            str(matching_date["value"]),
+            allow_hidden=allow_hidden,
+        )
+        hour_options = _wait_for_options_after_selection(
+            page,
+            HOUR_SELECTOR,
+            previous_signature=previous_hour_signature,
+            require_change=not _same_option(previous_date, date_text),
+            timeout=timeout,
+        )
+        observation["date_postback_seconds"].append(
+            round(time.monotonic() - postback_started, 3)
+        )
+        matching_hour = next(
+            (
+                option
+                for option in _real_options(hour_options)
+                if _same_option(str(option["text"]), hour_text)
+            ),
+            None,
+        )
+        if matching_hour is None:
+            return _blocked_evidence_unavailable_result(
+                page,
+                message=message,
+                date_text=date_text,
+                hour_text=hour_text,
+                reason="El horario bloqueado dejo de estar disponible al preparar la evidencia.",
+                include_person=include_person,
+            )
+
+        _select_appointment_option(
+            page.locator(HOUR_SELECTOR),
+            str(matching_hour["value"]),
+            allow_hidden=allow_hidden,
+        )
+        stabilization_started = time.monotonic()
+        page.wait_for_timeout(500)
+        snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+        observation["hour_stabilization_seconds"].append(
+            round(time.monotonic() - stabilization_started, 3)
+        )
+        if not (
+            _same_option(snapshot.date, date_text)
+            and _same_option(snapshot.hour, hour_text)
+        ):
+            return _blocked_evidence_unavailable_result(
+                page,
+                message=message,
+                date_text=date_text,
+                hour_text=hour_text,
+                reason=(
+                    "La seleccion bloqueada cambio al preparar la evidencia; "
+                    "se conserva el resultado sin iniciar una reserva."
+                ),
+                include_person=include_person,
+            )
+
+        details = snapshot_details(snapshot, include_person=include_person)
+        details["blocked_by_order_rule"] = True
+        details["blocked_selected_for_evidence"] = True
+        details["blocked_evidence_synchronized"] = True
+        return AvailabilityResult(status="partial", message=message, details=details)
+    except Exception as exc:
+        logger.warning(
+            "Could not synchronize blocked appointment evidence; "
+            "preserving blocked result without reservation: %s",
+            exc,
+        )
+        return _blocked_evidence_unavailable_result(
+            page,
+            message=message,
+            date_text=date_text,
+            hour_text=hour_text,
+            reason=str(exc),
+            include_person=include_person,
+        )
+
+
+def _blocked_evidence_unavailable_result(
+    page: Page,
+    *,
+    message: str,
+    date_text: str,
+    hour_text: str,
+    reason: str,
+    include_person: bool,
+) -> AvailabilityResult:
+    details: dict[str, Any] = {
+        "blocked_by_order_rule": True,
+        "blocked_evidence_synchronized": False,
+        "blocked_evidence_date": date_text,
+        "blocked_evidence_hour": hour_text,
+        "blocked_evidence_error": reason,
+    }
+    try:
+        snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+    except Exception as exc:
+        logger.warning("Could not read fallback blocked appointment snapshot: %s", exc)
+    else:
+        details.update(snapshot_details(snapshot, include_person=include_person))
+    return AvailabilityResult(status="partial", message=message, details=details)
 
 
 def _with_selection_observation(

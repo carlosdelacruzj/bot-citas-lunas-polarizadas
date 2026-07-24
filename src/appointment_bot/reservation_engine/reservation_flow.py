@@ -9,6 +9,7 @@ from pathlib import Path
 from appointment_bot.config import Settings
 from appointment_bot.domain import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import (
+    AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
@@ -502,6 +503,7 @@ def capture_blocked_captcha_evidence(
     expected_person_name: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     captcha_audit: dict[str, object] = {}
+    capture_error: str | None = None
     deferred_to_higher_priority = (
         can_solve_captcha is not None and not can_solve_captcha()
     )
@@ -520,6 +522,25 @@ def capture_blocked_captcha_evidence(
         )
     except ReservationDeferredForPriority as exc:
         captcha_audit.update(exc.captcha_audit)
+    except AppointmentWorkflowCancelled as exc:
+        if timing is not None:
+            timing.mark("reservation_finished")
+        return (
+            AvailabilityResult(
+                status="paused",
+                message=str(exc),
+                details=add_reservation_timing_details(result.details, timing),
+            ),
+            screenshot_path,
+            [screenshot_path] if screenshot_path is not None else [],
+        )
+    except Exception as exc:
+        capture_error = str(exc)
+        logger.warning(
+            "Blocked appointment evidence capture failed; "
+            "preserving blocked result without reservation: %s",
+            exc,
+        )
     if timing is not None:
         timing.mark("reservation_finished")
 
@@ -533,7 +554,13 @@ def capture_blocked_captcha_evidence(
     ]
     details = add_reservation_timing_details(result.details, timing)
     details.update(captcha_audit)
-    details["captcha_attempts"] = [dict(captcha_audit)]
+    if captcha_audit:
+        details["captcha_attempts"] = [dict(captcha_audit)]
+    if capture_error:
+        details["blocked_evidence_capture_error"] = capture_error
+        details["blocked_evidence_captured"] = False
+    else:
+        details["blocked_evidence_captured"] = bool(captcha_audit)
     details["submission_outcome"] = (
         "priority_deferred" if deferred_to_higher_priority else "blocked_by_order_rule"
     )

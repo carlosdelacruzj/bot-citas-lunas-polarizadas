@@ -5912,3 +5912,31 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\24-07-2026\cupo-165136-order-***-84a799.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
+## 2026-07-24 17:22:50 - order-009059550 - completed
+
+- Run: 20260724-172238-98f27373
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 12/08/2026 12:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - 2captcha: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\etapas-172238-order-***-cf870e.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.

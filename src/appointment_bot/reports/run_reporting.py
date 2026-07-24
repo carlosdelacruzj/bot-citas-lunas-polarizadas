@@ -27,6 +27,8 @@ from appointment_bot.utils.screenshots import (
 
 logger = logging.getLogger(__name__)
 
+NON_SUBMISSION_OUTCOMES = {"blocked_by_order_rule", "priority_deferred"}
+
 
 def report_from_result(
     result: AvailabilityResult,
@@ -49,6 +51,8 @@ def report_from_result(
     )
     if exit_code is not None:
         effective_exit_code = exit_code
+    details = result.details or {}
+    submission_outcome = str(details.get("submission_outcome") or "").strip()
     return RunReport(
         status=result.status,
         message=result.message,
@@ -60,7 +64,10 @@ def report_from_result(
         duration_seconds=duration_seconds,
         reservation_attempted=(
             result.status in {ResultStatus.REGISTERED, ResultStatus.RESERVATION_UNCONFIRMED}
-            or bool((result.details or {}).get("submission_outcome"))
+            or (
+                bool(submission_outcome)
+                and submission_outcome not in NON_SUBMISSION_OUTCOMES
+            )
         ),
         reservation_confirmed=result.status == ResultStatus.REGISTERED,
         details=result.details,

@@ -19,6 +19,9 @@ necesario recorrer toda la carpeta.
 
 - `architecture/`: runtime vigente e historia de la migracion.
 - `contracts/`: contratos de API, estados y seguridad de reserva.
+- [`incidente-backoff-reglas-fecha-2026-07-24.md`](incidente-backoff-reglas-fecha-2026-07-24.md):
+  diagnostico, mejora acordada y limites de rollback para el backoff causado
+  por varias fechas fuera de rango.
 - `operations/evidence-policy.md`: retencion y sanitizacion de evidencia.
 - `history/`: hitos y fases terminadas.
 - `reports/`: metricas y bitacoras generadas; no son listas de tareas.
