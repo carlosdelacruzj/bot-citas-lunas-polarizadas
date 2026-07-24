@@ -328,12 +328,20 @@ WhatsApp` presenta una confirmacion final y realiza un unico intento. La prueba
 usa una cita de demostracion y los PDFs configurados en
 `.runtime/whatsapp-followup/followup-details.json`, sin tocar ordenes reales.
 
+Para validar el album inicial, usar `Probar evidencias`, ingresar el numero propio
+y pulsar `Crear prueba de evidencias`. El dashboard muestra la constancia, el QR
+de Yape y ambos textos sin abrir WhatsApp. `Enviar prueba por WhatsApp` exige una
+confirmacion final y realiza un unico intento automatico. Playwright carga las dos
+imagenes, coloca el texto combinado, pulsa Enviar, espera el regreso al chat normal
+y cierra la sesion.
+
 En una orden real, `Enviar por WhatsApp` crea el paquete y prepara inmediatamente el
-album: carga constancia e imagen de pago y coloca el texto combinado en la
-descripcion visible del album. Comprobar destinatario, ambas imagenes y el texto;
-despues pulsar una sola vez `Enviar 2 seleccionados`. No hay un segundo paso en el
-dashboard. Si la ventana local fue cerrada durante la preparacion, se vuelve a
-abrir y se reintenta una vez. En el primer uso se debe escanear el QR y repetir la
+album para revision en el dashboard: muestra constancia, imagen de pago y sus
+textos. `Enviar por WhatsApp` presenta una confirmacion final y luego ejecuta el
+mismo intento automatico validado por el simulacro. Solo registra `sent` cuando
+desaparecen las miniaturas y regresa el chat normal; despues cierra la sesion. Si
+el resultado posterior al clic es ambiguo, conserva el paquete sin confirmar y no
+reintenta automaticamente. En el primer uso se debe escanear el QR y repetir la
 preparacion.
 El perfil queda solo en `.runtime/whatsapp-web-profile/` y no se versiona.
 

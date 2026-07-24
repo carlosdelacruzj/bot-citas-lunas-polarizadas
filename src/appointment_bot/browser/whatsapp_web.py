@@ -15,7 +15,7 @@ from playwright.sync_api import Error as PlaywrightError
 logger = logging.getLogger(__name__)
 
 PROFILE_DIR = Path(".runtime/whatsapp-web-profile")
-COMMAND_TIMEOUT_SECONDS = 75
+COMMAND_TIMEOUT_SECONDS = 180
 CHAT_READY_TIMEOUT_SECONDS = 20
 
 
@@ -130,10 +130,15 @@ def prepare_whatsapp_web_draft(draft: dict[str, object]) -> dict[str, object]:
 def prepare_whatsapp_web_album(
     confirmation_draft: dict[str, object],
     payment_draft: dict[str, object],
+    *,
+    auto_send: bool = False,
 ) -> dict[str, object]:
     album_draft = {
         **confirmation_draft,
         "album_items": [confirmation_draft, payment_draft],
+        "auto_send": auto_send,
+        "close_on_error": False,
+        "disable_closed_target_retry": auto_send,
     }
     return _MANAGER.prepare(album_draft)
 
@@ -260,6 +265,28 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
         caption_ready = False
         _save_whatsapp_debug_screenshot(page, "whatsapp-album-caption-not-ready")
         logger.exception("Could not write WhatsApp album caption")
+    if draft.get("auto_send"):
+        if not caption_ready:
+            raise RuntimeError(
+                "WhatsApp no confirmo el texto del album; no se realizo el envio automatico."
+            )
+        _save_whatsapp_debug_screenshot(page, "whatsapp-album-before-send")
+        _send_album(page)
+        _save_whatsapp_debug_screenshot(page, "whatsapp-album-sent")
+        context.close()
+        logger.info(
+            "WhatsApp Web album sent automatically: message_id=%s items=%s",
+            draft["message_id"],
+            len(items),
+        )
+        return _result(
+            "sent",
+            "Constancia y cobro enviados automaticamente.",
+            message_id=str(draft["message_id"]),
+            draft_mode="album",
+            manual_send_required=False,
+            sent=True,
+        )
     ready_screenshot = Path(".runtime/whatsapp-album-ready.png").resolve()
     ready_screenshot.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(ready_screenshot))
@@ -359,6 +386,52 @@ def _album_thumbnails(page: Page) -> list[Any]:
         if box and 48 <= box["width"] <= 96 and 48 <= box["height"] <= 96:
             thumbnails.append(control)
     return thumbnails
+
+
+def _send_album(page: Page) -> None:
+    if len(_album_thumbnails(page)) != 2:
+        raise RuntimeError("WhatsApp no mantuvo las dos miniaturas antes del envio.")
+    viewport = page.viewport_size or {"width": 0, "height": 0}
+    if not viewport["width"] or not viewport["height"]:
+        raise RuntimeError("WhatsApp no informo el tamaño de la ventana para enviar el album.")
+    candidates = page.locator("button, [role='button']")
+    bottom_right_target = None
+    bottom_right_score = -1.0
+    for index in range(candidates.count()):
+        candidate = candidates.nth(index)
+        if not candidate.is_visible():
+            continue
+        box = candidate.bounding_box()
+        if not box:
+            continue
+        center_x = box["x"] + box["width"] / 2
+        center_y = box["y"] + box["height"] / 2
+        if (
+            center_x < viewport["width"] * 0.75
+            or center_y < viewport["height"] * 0.70
+            or not 36 <= box["width"] <= 100
+            or not 36 <= box["height"] <= 100
+        ):
+            continue
+        score = center_x + center_y
+        if score > bottom_right_score:
+            bottom_right_target = candidate
+            bottom_right_score = score
+    if bottom_right_target is not None:
+        bottom_right_target.click(timeout=2_000, force=True)
+    else:
+        page.mouse.click(viewport["width"] - 48, viewport["height"] - 50)
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        if not _album_thumbnails(page) and _normal_chat_composer_visible(page):
+            page.wait_for_timeout(1_000)
+            if not _album_thumbnails(page):
+                return
+        page.wait_for_timeout(500)
+    _save_whatsapp_debug_screenshot(page, "whatsapp-album-send-not-confirmed")
+    raise RuntimeError(
+        "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles."
+    )
 
 
 def _fill_selected_album_caption(page: Page, caption: str) -> None:

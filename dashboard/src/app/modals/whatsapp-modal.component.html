@@ -200,21 +200,60 @@
           </div>
         </section>
 
+        <section class="admin-block whatsapp-followup-preview">
+          <div>
+            <p class="eyebrow">Contenido preparado</p>
+            <h3>Revisa las dos imágenes y el texto antes de enviar</h3>
+          </div>
+          <div class="whatsapp-followup-steps">
+            <article class="whatsapp-followup-step">
+              <div class="whatsapp-followup-step-heading">
+                <span class="step-number">1</span>
+                <strong>Constancia y datos de la cita</strong>
+              </div>
+              <img [src]="message.attachment_url" alt="Constancia preparada para WhatsApp" />
+              <textarea readonly [value]="message.greeting"></textarea>
+            </article>
+            <article class="whatsapp-followup-step">
+              <div class="whatsapp-followup-step-heading">
+                <span class="step-number">2</span>
+                <strong>QR de Yape y cobro</strong>
+              </div>
+              <img [src]="message.payment_attachment_url" alt="QR de pago preparado" />
+              <textarea readonly [value]="message.payment_message"></textarea>
+            </article>
+          </div>
+        </section>
+
         <section class="admin-block whatsapp-web-preparation">
-          <p class="eyebrow">Borrador asistido · WhatsApp Web local</p>
+          <p class="eyebrow">
+            {{
+              message.test_mode
+                ? 'Envío automático de prueba · WhatsApp Web local'
+                : 'Envío automático · WhatsApp Web local'
+            }}
+          </p>
           <h3>Constancia y cobro en un solo álbum</h3>
           <p>
-            El sistema carga las dos imágenes y coloca un texto distinto en cada una. En
-            WhatsApp solo debes revisar el destinatario y pulsar Enviar una vez.
+            Al confirmar, el sistema carga las dos imágenes, coloca el texto combinado, envía una
+            sola vez y cierra WhatsApp.
           </p>
           <button
             type="button"
             class="primary whatsapp-action"
             [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
-            (click)="view.prepareWhatsAppWebDraft()"
+            (click)="view.confirmAndSendWhatsAppEvidence()"
           >
             {{
-              view.whatsappWebBusy() ? 'Preparando WhatsApp Web...' : 'Reintentar borrador asistido'
+              message.status === 'sent'
+                ? 'Envío completado'
+                : view.whatsappWebBusy()
+                  ? message.test_mode
+                    ? 'Enviando prueba por WhatsApp...'
+                    : 'Preparando WhatsApp Web...'
+                  : message.test_mode
+                    ? 'Enviar prueba por WhatsApp'
+                    : 'Enviar por WhatsApp'
             }}
           </button>
           @if (view.whatsappWebResult(); as webResult) {

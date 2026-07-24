@@ -48,9 +48,10 @@ scripts/start-worker.ps1
 
 En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
 ejecuta `scripts/start-worker-hidden.vbs` al iniciar sesion. Ese lanzador inicia
-el bootstrap del worker, `scripts/start-admin-dashboard.ps1` y
-`scripts/start-telegram-control.ps1` en segundo plano. Cada bootstrap supervisa
-y reinicia su proceso sin compartir memoria con los demas.
+el bootstrap del worker, `scripts/start-admin-dashboard.ps1`,
+`scripts/start-telegram-control.ps1` y `scripts/start-captcha-shadow.ps1` en
+segundo plano. Cada bootstrap supervisa y reinicia su proceso sin compartir
+memoria con los demas.
 
 ## Procesos administrativos
 
@@ -65,6 +66,9 @@ scripts/start-admin-dashboard.ps1
 
 # Terminal 3
 scripts/start-telegram-control.ps1
+
+# Terminal 4
+scripts/start-captcha-shadow.ps1
 ```
 
 Abrir `http://127.0.0.1:8766/`. El admin API sirve el build Angular y entrega

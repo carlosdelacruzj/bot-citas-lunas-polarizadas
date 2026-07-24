@@ -13,8 +13,10 @@ compatibilidad, no como lista de trabajo futuro.
 - `scripts/start-admin-dashboard.ps1` construye Angular y levanta el admin API
   que sirve el dashboard.
 - `scripts/start-worker-hidden.vbs` inicia sin ventanas los bootstraps del
-  worker y del admin/dashboard; la tarea programada de Windows lo ejecuta al
-  iniciar sesion.
+  worker, admin/dashboard, control de Telegram y servicio sombra de CAPTCHA; la
+  tarea programada de Windows lo ejecuta al iniciar sesion.
+- `scripts/start-captcha-shadow.ps1` supervisa el servicio de `test-captcha` en
+  `127.0.0.1:8787`, lo inicia con la sesion y lo recupera si deja de responder.
 - El build Angular de produccion conserva la hoja de estilos como recurso
   externo normal (`inlineCritical=false`) para cumplir la politica CSP del admin
   API sin depender de eventos inline bloqueados por el navegador.

@@ -80,8 +80,16 @@ el postpago no debe ejecutarse.
 
 Actualmente:
 
-- el álbum de evidencia y cobro queda listo, pero el operador todavía pulsa
-  **Enviar 2 seleccionados** en WhatsApp;
+- **Probar evidencias** permite revisar las dos imágenes y sus textos antes de
+  autorizar un único intento automático;
+- después de la confirmación, Playwright prepara el álbum, pulsa **Enviar**,
+  espera que desaparezca la vista previa, comprueba el regreso al chat normal,
+  registra el paquete como `sent` y cierra la sesión;
+- si WhatsApp no confirma el texto o el regreso al chat, el paquete no se marca
+  como enviado y no existe un reintento automático;
+- el botón de una orden real permite la misma revisión y confirmación desde el
+  dashboard; después ejecuta el mismo envío automático validado por el
+  simulacro;
 - el postpago funciona, pero el operador todavía inicia **Enviar post-pago**
   después de registrar el pago.
 
@@ -93,9 +101,8 @@ reescribir primero la interacción Playwright que ya superó las pruebas:
 
 Antes de conectar esos disparadores se debe:
 
-- probar el botón de una orden real controlada, todavía con envío humano final;
-- verificar el clic y la confirmación automáticos del álbum con el número
-  personal;
+- completar una serie estable del envío automático mediante
+  **Probar evidencias** y órdenes reales controladas;
 - verificar el disparador de postpago con una orden controlada cuyo pago haya
   sido confirmado por el operador;
 - conservar estados independientes para el álbum inicial, el pago y el
@@ -124,3 +131,51 @@ No se habilitará el disparador automático para clientes hasta completar una
 serie estable con el número personal y una validación real controlada. Un fallo
 de WhatsApp nunca debe retrasar la siguiente reserva ni impedir la notificación
 diferida de Telegram.
+
+El simulacro automático mantiene un margen de hasta tres minutos para que
+WhatsApp complete las esperas visibles. Esto evita que el dashboard declare un
+timeout mientras Playwright todavía está trabajando. Durante ese intervalo no
+se debe iniciar otro envío ni cerrar la ventana.
+
+## Primer intento automático y corrección
+
+La primera validación automática reveló un falso positivo. WhatsApp cargó las
+dos imágenes y el texto, pero Playwright no pulsó el botón negro de envío. Aun
+así, la comprobación genérica interpretó el compositor visible detrás de la
+vista previa como regreso al chat, cerró la sesión y registró `sent`.
+
+Las capturas `whatsapp-album-before-send.png` y `whatsapp-album-sent.png`
+quedaron idénticas: ambas conservaban las dos miniaturas y el botón Enviar. Por
+lo tanto, ese paquete no constituye evidencia de envío exitoso.
+
+La corrección deja de reutilizar el selector genérico de postpago:
+
+- exige dos miniaturas inmediatamente antes del clic;
+- selecciona el control visible situado en la esquina inferior derecha;
+- realiza un solo clic;
+- espera hasta 30 segundos a que desaparezcan las dos miniaturas;
+- exige además que regrese el compositor normal;
+- si las miniaturas continúan visibles, guarda
+  `whatsapp-album-send-not-confirmed.png`, deja la ventana abierta para
+  inspección, conserva el paquete sin confirmar y no reintenta automáticamente.
+
+Esta corrección requiere una nueva prueba con el número personal antes de
+considerar validado el envío automático.
+
+## Validación automática correcta — 24-07-2026
+
+La repetición posterior terminó correctamente:
+
+- el paquete ficticio se creó a las 11:23:10;
+- Playwright abrió el chat y preparó las dos imágenes;
+- el álbum se envió automáticamente a las 11:23:36;
+- `/web/prepare` respondió HTTP 200 y registró `sent`;
+- no hubo una llamada manual posterior a `/sent`;
+- la captura final mostró el chat normal, sin miniaturas, con el texto y las dos
+  imágenes salientes;
+- el operador confirmó que el envío llegó correctamente.
+
+Con esta evidencia, el mismo modo automático quedó habilitado para el botón
+controlado de una orden real. Esto todavía no activa envíos en segundo plano
+después de una reserva: el operador revisa el paquete y confirma **Enviar ahora**
+desde el dashboard.

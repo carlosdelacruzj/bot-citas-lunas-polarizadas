@@ -395,9 +395,19 @@ El listado de ordenes expone solo `whatsapp_message_status` y
 y acepta `draft_kind` con `confirmation`, `payment` o `album`. Abre o reutiliza un perfil
 Playwright persistente en `.runtime/whatsapp-web-profile/`. El modo `album` carga
 juntas la constancia y la imagen de pago y escribe los textos combinados en la
-descripcion visible. Nunca pulsa Enviar ni cambia el paquete a `sent`. La primera
-ejecucion puede devolver `login_required`; `draft_ready` solo significa que el
-borrador solicitado esta visible y pendiente de revision humana.
+descripcion visible. Por defecto no pulsa Enviar ni cambia el paquete a `sent`.
+La primera ejecucion puede devolver `login_required`; `draft_ready` solo significa
+que el borrador solicitado esta visible y pendiente de revision humana.
+
+El mismo endpoint acepta `auto_send=true` cuando `draft_kind=album`, tanto para
+simulacros como para paquetes de órdenes reales. En ese caso exige que las dos
+miniaturas y el texto esten listos, pulsa Enviar una vez mediante el control
+visible situado abajo a la derecha, espera que
+desaparezcan las dos miniaturas y regrese el compositor normal,
+registra `sent` y cierra el contexto Playwright. Un tipo de borrador distinto
+recibe HTTP 400 si intenta usar `auto_send`. Si el resultado posterior al clic
+no es concluyente, conserva el paquete como `prepared` y no realiza un segundo
+intento automatico.
 
 El dashboard usa `album`: carga constancia y QR en una sola seleccion multiple,
 comprueba que aparezcan las dos miniaturas e intenta escribir la descripcion

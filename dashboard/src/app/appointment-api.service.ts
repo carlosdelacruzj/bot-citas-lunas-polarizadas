@@ -838,10 +838,11 @@ export class AppointmentApiService {
   async prepareWhatsAppWebDraft(
     messageId: string,
     draftKind: 'confirmation' | 'payment' | 'album',
+    autoSend = false,
   ): Promise<WhatsAppWebDraftResponse> {
     return this.post<WhatsAppWebDraftResponse>(
       `/api/v1/whatsapp-messages/${encodeURIComponent(messageId)}/web/prepare`,
-      { draft_kind: draftKind },
+      { draft_kind: draftKind, auto_send: autoSend },
     );
   }
 

@@ -343,7 +343,7 @@ export class App implements OnDestroy {
   private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
 
-  protected readonly activeView = signal<ViewKey>('inbox');
+  protected readonly activeView = signal<ViewKey>('summary');
   protected readonly sidebarCollapsed = signal(
     window.localStorage.getItem('appointment-dashboard-sidebar-collapsed') === 'true',
   );
@@ -961,7 +961,7 @@ export class App implements OnDestroy {
   private async activateRoute(url: string): Promise<void> {
     const tree = this.router.parseUrl(url);
     const segments = tree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
-    const section = segments[0] ?? 'pendientes';
+    const section = segments[0] ?? 'resumen';
     const viewBySection: Record<string, ViewKey> = {
       pendientes: 'inbox',
       resumen: 'summary',
@@ -970,7 +970,7 @@ export class App implements OnDestroy {
       finanzas: 'finance',
       captchas: 'captchas',
     };
-    const view = viewBySection[section] ?? 'inbox';
+    const view = viewBySection[section] ?? 'summary';
     const previousView = this.activeView();
     let queryChanged = false;
     const month = tree.queryParams['month'];
@@ -1110,11 +1110,18 @@ export class App implements OnDestroy {
       const [orders, pendingCaptchas] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getCaptchaEvents(
-          1, 1, '', 'all', 'all', 'all', 'pending', 'review_priority', scope,
-        ),
+          1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', scope,
+        ).catch((error: unknown) => {
+          if (isRequestCancelled(error)) {
+            throw error;
+          }
+          return null;
+        }),
       ]);
       this.applyOrders(orders);
-      this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
+      if (pendingCaptchas) {
+        this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
+      }
       return;
     }
     if (view === 'summary') {
@@ -2169,7 +2176,8 @@ export class App implements OnDestroy {
       return;
     }
     const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
-    await this.prepareWhatsAppWebDraft(message);
+    this.whatsappManualFallbackOpen.set(false);
+    await this.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
 
   protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
@@ -2184,7 +2192,8 @@ export class App implements OnDestroy {
       const message = await this.loadWhatsAppPackage(() =>
         this.api.prepareOrderWhatsApp(order.order_id, allowResend),
       );
-      await this.prepareWhatsAppWebDraft(message);
+      this.whatsappManualFallbackOpen.set(false);
+      await this.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
     } catch {
       if (!allowResend && order.whatsapp_message_status === 'sent') {
         const result = await (await this.getSweetAlert()).fire({
@@ -2334,7 +2343,10 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async prepareWhatsAppWebDraft(preparedMessage?: WhatsAppMessagePackage): Promise<void> {
+  protected async prepareWhatsAppWebDraft(
+    preparedMessage?: WhatsAppMessagePackage,
+    autoSend = false,
+  ): Promise<void> {
     const message = preparedMessage ?? this.whatsappPackage();
     if (!message || this.whatsappWebBusy()) {
       return;
@@ -2342,7 +2354,11 @@ export class App implements OnDestroy {
     this.whatsappWebBusy.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.api.prepareWhatsAppWebDraft(message.message_id, 'album');
+      const response = await this.api.prepareWhatsAppWebDraft(
+        message.message_id,
+        'album',
+        autoSend,
+      );
       this.whatsappWebResult.set(response);
       this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
       if (response.status === 'login_required') {
@@ -2368,6 +2384,29 @@ export class App implements OnDestroy {
     } finally {
       this.whatsappWebBusy.set(false);
     }
+  }
+
+  protected async confirmAndSendWhatsAppEvidence(): Promise<void> {
+    const message = this.whatsappPackage();
+    if (!message || message.status === 'sent' || this.whatsappWebBusy()) {
+      return;
+    }
+    const result = await (await this.getSweetAlert()).fire({
+      icon: 'question',
+      title: message.test_mode ? 'Enviar prueba de evidencias' : 'Enviar evidencia y cobro',
+      text:
+        `Se enviarán la constancia, el QR de Yape y el texto combinado a ` +
+        `${message.recipient_phone}. WhatsApp realizará un único intento.`,
+      showCancelButton: true,
+      confirmButtonText: message.test_mode ? 'Enviar prueba ahora' : 'Enviar ahora',
+      cancelButtonText: 'Seguir revisando',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+    await this.prepareWhatsAppWebDraft(message, true);
   }
 
   protected async prepareWhatsAppFollowUpWebDraft(

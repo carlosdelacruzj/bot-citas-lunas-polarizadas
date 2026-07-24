@@ -192,6 +192,20 @@ El arranque quedó registrado en `logs/run-20260721-151049.log`. A partir de est
 fallo de red, timeout, servicio apagado, cola en memoria llena o reinicio del worker ya no elimina
 la muestra: permanece en PostgreSQL hasta poder entregarse al servicio sombra.
 
+## Arranque automatico en Windows
+
+Desde el 24 de julio de 2026, `scripts/start-worker-hidden.vbs` tambien inicia
+`scripts/start-captcha-shadow.ps1` mediante la tarea programada
+`AppointmentBotContinuousWorker`. El supervisor comprueba
+`http://127.0.0.1:8787/health`, inicia el servicio desde el proyecto hermano
+`test-captcha` despues de iniciar sesion en Windows y lo recupera si el proceso
+se detiene o deja de responder.
+
+El registro del supervisor se guarda en
+`logs/captcha-shadow-bootstrap-YYYYMMDD.log`. La integracion continua siendo
+fail-open: una falla del servicio sombra no detiene el worker ni sustituye a
+2Captcha.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;

@@ -150,6 +150,7 @@ def prepare_web_payload(
             "La preparacion de WhatsApp Web solo esta disponible desde esta computadora.",
         )
     draft_kind = str(payload.get("draft_kind") or "confirmation").strip()
+    auto_send = payload.get("auto_send") is True
     try:
         if draft_kind == "album":
             confirmation = get_whatsapp_web_draft(
@@ -158,6 +159,11 @@ def prepare_web_payload(
             )
             payment = get_whatsapp_web_draft(message_id, draft_kind="payment")
         else:
+            if auto_send:
+                return HTTPStatus.BAD_REQUEST, error_payload(
+                    "bad_request",
+                    "El envio automatico solo esta disponible para el album.",
+                )
             draft = get_whatsapp_web_draft(message_id, draft_kind=draft_kind)
     except ValueError as exc:
         message = str(exc)
@@ -168,7 +174,7 @@ def prepare_web_payload(
         )
         return status, error_payload("not_found" if status == 404 else "bad_request", message)
     result = (
-        prepare_whatsapp_web_album(confirmation, payment)
+        prepare_whatsapp_web_album(confirmation, payment, auto_send=auto_send)
         if draft_kind == "album"
         else prepare_whatsapp_web_draft(draft)
     )

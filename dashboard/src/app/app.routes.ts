@@ -28,6 +28,6 @@ export const routes: Routes = [
   { path: 'actividad/:runId', title: 'Detalle de actividad', loadComponent: loadRunsView },
   { path: 'finanzas', title: 'Finanzas', loadComponent: loadFinanceView },
   { path: 'captchas', title: 'Control de CAPTCHA', loadComponent: loadCaptchasView },
-  { path: '', pathMatch: 'full', redirectTo: 'pendientes' },
-  { path: '**', redirectTo: 'pendientes' },
+  { path: '', pathMatch: 'full', redirectTo: 'resumen' },
+  { path: '**', redirectTo: 'resumen' },
 ];

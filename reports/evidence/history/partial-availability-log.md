@@ -1819,3 +1819,139 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
+## 2026-07-22 13:12:56 - order-009059550 - partial
+
+- Run: 20260722-131211-a40ef75b
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/08/2026
+- Hora detectada: 11:00
+- Cupos observados: 17
+- Opciones fecha: 03/08/2026
+- Opciones hora: 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 45.228s
+  - Seleccion fecha/hora: 1.765s
+- Evidencia:
+  - Screenshot principal: screenshots\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
+  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-24 10:49:21 - order-009059550 - partial
+
+- Run: 20260724-104846-c2450d88
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 19/08/2026
+- Hora detectada: 11:00
+- Cupos observados: 5
+- Opciones fecha: 19/08/2026
+- Opciones hora: 08:00, 09:00, 10:00, 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 35.394s
+  - Seleccion fecha/hora: 1.703s
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
+  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-24 11:30:12 - order-009059550 - partial
+
+- Run: 20260724-112934-f7f4b25d
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 21/08/2026
+- Hora detectada: 12:00
+- Cupos observados: 10
+- Opciones fecha: 21/08/2026
+- Opciones hora: 08:00, 09:00, 10:00, 11:00, 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 37.702s
+  - Seleccion fecha/hora: 1.750s
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
+  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-24 12:17:31 - order-009059550 - partial
+
+- Run: 20260724-121721-cfbb9b70
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/08/2026
+- Hora detectada: 12:00
+- Cupos observados: 15
+- Opciones fecha: 03/08/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.461s
+  - Seleccion fecha/hora: 1.718s
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
+  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
