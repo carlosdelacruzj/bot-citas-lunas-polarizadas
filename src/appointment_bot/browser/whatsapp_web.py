@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import queue
 import re
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 PROFILE_DIR = Path(".runtime/whatsapp-web-profile")
 COMMAND_TIMEOUT_SECONDS = 180
 CHAT_READY_TIMEOUT_SECONDS = 20
+_HEADLESS_WHATSAPP_USER_AGENT: str | None = None
 
 
 @dataclass
@@ -57,11 +59,21 @@ class WhatsAppWebDraftManager:
 
     def _run(self) -> None:
         context: BrowserContext | None = None
+        context_headless: bool | None = None
         with sync_playwright() as playwright:
             while True:
                 command = self._commands.get()
+                requested_headless = bool(command.draft.get("headless"))
                 try:
-                    context = _ensure_context(playwright, context)
+                    if context is not None and context_headless != requested_headless:
+                        context = _close_context(context)
+                        context_headless = None
+                    context = _ensure_context(
+                        playwright,
+                        context,
+                        headless=requested_headless,
+                    )
+                    context_headless = requested_headless
                     result = _prepare_draft(context, command.draft)
                 except PlaywrightError as exc:
                     if _is_closed_target_error(exc):
@@ -70,6 +82,7 @@ class WhatsAppWebDraftManager:
                                 "WhatsApp Web window closed while preparing draft; not retrying"
                             )
                             context = _close_context(context)
+                            context_headless = None
                             result = _result(
                                 "web_unavailable",
                                 "WhatsApp Web se cerro durante la preparacion. "
@@ -83,14 +96,21 @@ class WhatsAppWebDraftManager:
                             "WhatsApp Web window closed while preparing draft; reopening once"
                         )
                         context = _close_context(context)
+                        context_headless = None
                         try:
-                            context = _ensure_context(playwright, context)
+                            context = _ensure_context(
+                                playwright,
+                                context,
+                                headless=requested_headless,
+                            )
+                            context_headless = requested_headless
                             result = _prepare_draft(context, command.draft)
                         except PlaywrightError as retry_exc:
                             logger.exception(
                                 "Could not prepare WhatsApp Web draft after reopening"
                             )
                             context = _close_context(context)
+                            context_headless = None
                             result = _result(
                                 "web_unavailable",
                                 f"No se pudo preparar WhatsApp Web: {retry_exc}",
@@ -98,6 +118,7 @@ class WhatsAppWebDraftManager:
                     else:
                         logger.exception("Could not prepare WhatsApp Web draft")
                         context = _close_context(context)
+                        context_headless = None
                         result = _result(
                             "web_unavailable",
                             f"No se pudo preparar WhatsApp Web: {exc}",
@@ -106,6 +127,7 @@ class WhatsAppWebDraftManager:
                     logger.exception("Could not prepare WhatsApp Web draft")
                     if command.draft.get("close_on_error"):
                         context = _close_context(context)
+                        context_headless = None
                     result = _result(
                         "web_unavailable",
                         f"No se pudo preparar WhatsApp Web: {exc}",
@@ -127,6 +149,17 @@ def prepare_whatsapp_web_draft(draft: dict[str, object]) -> dict[str, object]:
     return _MANAGER.prepare(draft)
 
 
+def validate_whatsapp_web_session() -> dict[str, object]:
+    return _MANAGER.prepare(
+        {
+            "action": "validate_session",
+            "headless": True,
+            "close_on_error": False,
+            "disable_closed_target_retry": True,
+        }
+    )
+
+
 def prepare_whatsapp_web_album(
     confirmation_draft: dict[str, object],
     payment_draft: dict[str, object],
@@ -139,6 +172,7 @@ def prepare_whatsapp_web_album(
         "auto_send": auto_send,
         "close_on_error": False,
         "disable_closed_target_retry": auto_send,
+        "headless": auto_send,
     }
     return _MANAGER.prepare(album_draft)
 
@@ -150,11 +184,17 @@ def prepare_whatsapp_web_documents(draft: dict[str, object]) -> dict[str, object
         "disable_closed_target_retry": True,
         "close_on_error": True,
         "auto_send": True,
+        "headless": True,
     }
     return _MANAGER.prepare(document_draft)
 
 
-def _ensure_context(playwright, context: BrowserContext | None) -> BrowserContext:
+def _ensure_context(
+    playwright,
+    context: BrowserContext | None,
+    *,
+    headless: bool = False,
+) -> BrowserContext:
     if context is not None:
         try:
             if context.pages:
@@ -162,15 +202,39 @@ def _ensure_context(playwright, context: BrowserContext | None) -> BrowserContex
         except PlaywrightError:
             context = _close_context(context)
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    context_options: dict[str, object] = {
+        "headless": headless,
+        "viewport": {"width": 1440, "height": 1000} if headless else None,
+        "args": [] if headless else ["--start-maximized"],
+    }
+    if headless:
+        context_options["user_agent"] = _headless_whatsapp_user_agent(playwright)
     return playwright.chromium.launch_persistent_context(
         str(PROFILE_DIR.resolve()),
-        headless=False,
-        viewport=None,
-        args=["--start-maximized"],
+        **context_options,
     )
 
 
+def _headless_whatsapp_user_agent(playwright) -> str:
+    global _HEADLESS_WHATSAPP_USER_AGENT
+    if _HEADLESS_WHATSAPP_USER_AGENT is not None:
+        return _HEADLESS_WHATSAPP_USER_AGENT
+    browser = playwright.chromium.launch(headless=True)
+    try:
+        page = browser.new_page()
+        user_agent = str(page.evaluate("navigator.userAgent"))
+    finally:
+        browser.close()
+    _HEADLESS_WHATSAPP_USER_AGENT = user_agent.replace(
+        "HeadlessChrome/",
+        "Chrome/",
+    )
+    return _HEADLESS_WHATSAPP_USER_AGENT
+
+
 def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
+    if draft.get("action") == "validate_session":
+        return _validate_whatsapp_session(context)
     if draft.get("album_items"):
         return _prepare_album(context, draft)
     if draft.get("document_items"):
@@ -182,10 +246,12 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
 
     if not _wait_for_chat(page):
+        qr_image_data_url = _whatsapp_qr_image_data_url(page)
         return _result(
             "login_required",
-            "Escanea el QR en la ventana de WhatsApp Web y vuelve a pulsar Preparar borrador.",
+            "La sesion necesita vincularse desde Validar WhatsApp.",
             message_id=message_id,
+            qr_image_data_url=qr_image_data_url,
         )
 
     attachment = Path(str(draft["attachment_path"])).resolve()
@@ -242,10 +308,12 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     target = f"https://web.whatsapp.com/send?phone={phone}"
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
     if not _wait_for_chat(page):
+        qr_image_data_url = _whatsapp_qr_image_data_url(page)
         return _result(
             "login_required",
-            "Escanea el QR en la ventana de WhatsApp Web y vuelve a preparar el album.",
+            "La sesion necesita vincularse desde Validar WhatsApp.",
             message_id=str(draft["message_id"]),
+            qr_image_data_url=qr_image_data_url,
         )
     attachments = [Path(str(item["attachment_path"])).resolve() for item in items]
     if not all(path.is_file() for path in attachments):
@@ -320,10 +388,16 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
     target = f"https://web.whatsapp.com/send?phone={phone}"
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
     if not _wait_for_chat(page):
+        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-login-required")
+        qr_image_data_url = _whatsapp_qr_image_data_url(page)
         return _result(
             "login_required",
-            "Escanea el QR en la ventana de WhatsApp Web y vuelve a preparar el post-pago.",
+            (
+                "Escanea este QR desde WhatsApp y luego pulsa "
+                "Ya lo escanee, continuar."
+            ),
             message_id=message_id,
+            qr_image_data_url=qr_image_data_url,
         )
     attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
     if not all(path.is_file() for path in attachments):
@@ -372,6 +446,51 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
         "PDFs y texto post-pago listos. Revisa WhatsApp y pulsa Enviar una sola vez.",
         message_id=message_id,
         draft_mode="documents",
+    )
+
+
+def _validate_whatsapp_session(context: BrowserContext) -> dict[str, object]:
+    page = context.pages[0] if context.pages else context.new_page()
+    page.goto(
+        "https://web.whatsapp.com/",
+        wait_until="domcontentloaded",
+        timeout=45_000,
+    )
+    deadline = time.monotonic() + CHAT_READY_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if _whatsapp_session_ready(page):
+            logger.info("WhatsApp Web headless session validated")
+            return _result(
+                "session_ready",
+                "WhatsApp esta vinculado y listo para envios automaticos.",
+                manual_send_required=False,
+            )
+        qr_image_data_url = _whatsapp_qr_image_data_url(page)
+        if qr_image_data_url is not None:
+            return _result(
+                "login_required",
+                "Escanea el QR y luego pulsa Comprobar vinculacion.",
+                qr_image_data_url=qr_image_data_url,
+            )
+        page.wait_for_timeout(500)
+    _save_whatsapp_debug_screenshot(page, "whatsapp-session-validation-timeout")
+    return _result(
+        "web_unavailable",
+        "WhatsApp no termino de cargar la sesion ni mostro un QR.",
+    )
+
+
+def _whatsapp_session_ready(page: Page) -> bool:
+    if _normal_chat_composer_visible(page):
+        return True
+    return any(
+        _visible(page, selector)
+        for selector in (
+            "#pane-side",
+            "[data-testid='chat-list']",
+            "[aria-label='Chat list']",
+            "[aria-label='Lista de chats']",
+        )
     )
 
 
@@ -1136,6 +1255,24 @@ def _save_whatsapp_debug_screenshot(page: Page, name: str) -> None:
     page.screenshot(path=str(debug_screenshot))
 
 
+def _whatsapp_qr_image_data_url(page: Page) -> str | None:
+    candidates = page.locator("canvas, [data-ref]")
+    for index in range(candidates.count()):
+        candidate = candidates.nth(index)
+        if not candidate.is_visible():
+            continue
+        box = candidate.bounding_box()
+        if not box or not (160 <= box["width"] <= 420 and 160 <= box["height"] <= 420):
+            continue
+        try:
+            image_bytes = candidate.screenshot(type="png")
+        except PlaywrightError:
+            continue
+        encoded = base64.b64encode(image_bytes).decode("ascii")
+        return f"data:image/png;base64,{encoded}"
+    return None
+
+
 def _safe_get_attribute(locator, name: str) -> str | None:
     try:
         return locator.get_attribute(name, timeout=1_000)
@@ -1196,6 +1333,7 @@ def _result(
     draft_mode: str | None = None,
     manual_send_required: bool = True,
     sent: bool = False,
+    qr_image_data_url: str | None = None,
 ) -> dict[str, Any]:
     result = {
         "status": status,
@@ -1206,4 +1344,6 @@ def _result(
     }
     if draft_mode is not None:
         result["draft_mode"] = draft_mode
+    if qr_image_data_url is not None:
+        result["qr_image_data_url"] = qr_image_data_url
     return result

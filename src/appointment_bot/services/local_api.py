@@ -83,6 +83,7 @@ from appointment_bot.services.api.whatsapp_routes import (
     prepare_order_payload,
     prepare_test_payload,
     prepare_web_payload,
+    validate_whatsapp_session_payload,
     whatsapp_followup_message_path,
     whatsapp_message_path,
 )
@@ -362,6 +363,16 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = prepare_followup_test_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/whatsapp-web/session/validate":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = validate_whatsapp_session_payload(
+                server_host=str(self.server.server_address[0]),
+                client_host=str(self.client_address[0]),
+            )
             self._send_json(status, payload)
             return
 

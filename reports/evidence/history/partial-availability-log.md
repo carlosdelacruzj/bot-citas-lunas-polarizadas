@@ -1955,3 +1955,71 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-24 13:45:19 - order-009059550 - partial
+
+- Run: 20260724-134426-412e678a
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 19/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 20
+- Opciones fecha: 19/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 52.893s
+  - Seleccion fecha/hora: 1.718s
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
+  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-24 14:31:52 - order-009059550 - partial
+
+- Run: 20260724-143143-ec0dc07f
+- Orden: order-***
+- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cuenta: 00***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 19/08/2026
+- Hora detectada: 10:00
+- Cupos observados: 10
+- Opciones fecha: 19/08/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.080s
+  - Seleccion fecha/hora: 1.671s
+- Evidencia:
+  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
+  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

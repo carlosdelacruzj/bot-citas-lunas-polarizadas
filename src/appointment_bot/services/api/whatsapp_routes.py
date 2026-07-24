@@ -9,6 +9,7 @@ from appointment_bot.browser.whatsapp_web import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
     prepare_whatsapp_web_draft,
+    validate_whatsapp_web_session,
 )
 from appointment_bot.db.whatsapp_followup_messages import (
     get_followup_attachment,
@@ -234,6 +235,29 @@ def prepare_followup_web_payload(
     return status, result
 
 
+def validate_whatsapp_session_payload(
+    *,
+    server_host: str,
+    client_host: str,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if server_host not in {"127.0.0.1", "localhost", "::1"} or client_host not in {
+        "127.0.0.1",
+        "localhost",
+        "::1",
+    }:
+        return HTTPStatus.FORBIDDEN, error_payload(
+            "forbidden",
+            "La validacion de WhatsApp Web solo esta disponible desde esta computadora.",
+        )
+    result = validate_whatsapp_web_session()
+    status = (
+        HTTPStatus.SERVICE_UNAVAILABLE
+        if result["status"] == "web_unavailable"
+        else HTTPStatus.OK
+    )
+    return status, result
+
+
 def order_prepare_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/whatsapp/prepare"
@@ -280,6 +304,7 @@ __all__ = [
     "prepare_web_payload",
     "prepare_order_payload",
     "prepare_test_payload",
+    "validate_whatsapp_session_payload",
     "whatsapp_followup_message_path",
     "whatsapp_message_path",
 ]

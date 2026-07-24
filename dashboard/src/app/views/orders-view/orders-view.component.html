@@ -8,6 +8,20 @@
       </p>
     </div>
     <div class="panel-actions">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="dashboard.whatsappSessionBusy()"
+        (click)="dashboard.validateWhatsAppSession()"
+      >
+        {{
+          dashboard.whatsappSessionBusy()
+            ? 'Validando WhatsApp...'
+            : dashboard.whatsappSessionState() === 'ready'
+              ? 'WhatsApp listo'
+              : 'Validar WhatsApp'
+        }}
+      </button>
       <button type="button" class="secondary" (click)="dashboard.openWhatsAppEvidenceTest()">
         Probar evidencias
       </button>

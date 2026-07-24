@@ -225,6 +225,7 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   paused: { label: 'Pausada', tone: 'warn' },
   pending: { label: 'Pendiente', tone: 'warn' },
   prepared: { label: 'Preparado', tone: 'warn' },
+  session_ready: { label: 'WhatsApp listo', tone: 'good' },
   ready: { label: 'Lista', tone: 'good' },
   registered: { label: 'Registrada', tone: 'good' },
   rejected: { label: 'Rechazado', tone: 'bad' },
@@ -488,6 +489,10 @@ export class App implements OnDestroy {
   protected readonly whatsappWebBusy = signal(false);
   protected readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
   protected readonly whatsappManualFallbackOpen = signal(false);
+  protected readonly whatsappSessionBusy = signal(false);
+  protected readonly whatsappSessionState = signal<
+    'unknown' | 'ready' | 'login_required' | 'error'
+  >('unknown');
 
   protected readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
@@ -2161,6 +2166,71 @@ export class App implements OnDestroy {
     this.openModal('whatsapp');
   }
 
+  protected async validateWhatsAppSession(): Promise<boolean> {
+    if (this.whatsappSessionBusy()) {
+      return false;
+    }
+    this.whatsappSessionBusy.set(true);
+    this.errorMessage.set(null);
+    try {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const response = await this.api.validateWhatsAppWebSession();
+        if (response.status === 'session_ready') {
+          this.whatsappSessionState.set('ready');
+          await this.showToast('WhatsApp vinculado y listo');
+          return true;
+        }
+        if (response.status !== 'login_required') {
+          this.whatsappSessionState.set('error');
+          await (await this.getSweetAlert()).fire({
+            icon: 'warning',
+            title: 'WhatsApp no está disponible',
+            text: response.message,
+            confirmButtonText: 'Entendido',
+          });
+          return false;
+        }
+        this.whatsappSessionState.set('login_required');
+        const scanResult = await (await this.getSweetAlert()).fire({
+          icon: 'info',
+          title: 'Vincular WhatsApp',
+          text: response.message,
+          imageUrl: response.qr_image_data_url ?? undefined,
+          imageAlt: 'Código QR para vincular WhatsApp Web',
+          imageWidth: 280,
+          imageHeight: 280,
+          showCancelButton: true,
+          confirmButtonText: 'Comprobar vinculación',
+          cancelButtonText: 'Cancelar',
+          allowOutsideClick: false,
+        });
+        if (!scanResult.isConfirmed) {
+          return false;
+        }
+      }
+      this.whatsappSessionState.set('error');
+      await (await this.getSweetAlert()).fire({
+        icon: 'warning',
+        title: 'Vinculación pendiente',
+        text: 'WhatsApp todavía no confirmó el QR. Vuelve a validar la sesión.',
+        confirmButtonText: 'Entendido',
+      });
+      return false;
+    } catch (error) {
+      this.whatsappSessionState.set('error');
+      this.errorMessage.set(this.readError(error));
+      await (await this.getSweetAlert()).fire({
+        icon: 'error',
+        title: 'No se pudo validar WhatsApp',
+        text: this.errorMessage() ?? 'Error desconocido.',
+        confirmButtonText: 'Entendido',
+      });
+      return false;
+    } finally {
+      this.whatsappSessionBusy.set(false);
+    }
+  }
+
   protected async prepareWhatsAppTest(): Promise<void> {
     const recipient = this.whatsappTestRecipient().trim();
     if (!recipient) {
@@ -2354,20 +2424,25 @@ export class App implements OnDestroy {
     this.whatsappWebBusy.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.api.prepareWhatsAppWebDraft(
+      let response = await this.api.prepareWhatsAppWebDraft(
         message.message_id,
         'album',
         autoSend,
       );
+      if (response.status === 'login_required') {
+        const sessionReady = await this.validateWhatsAppSession();
+        if (sessionReady) {
+          response = await this.api.prepareWhatsAppWebDraft(
+            message.message_id,
+            'album',
+            autoSend,
+          );
+        }
+      }
       this.whatsappWebResult.set(response);
       this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
       if (response.status === 'login_required') {
-        await (await this.getSweetAlert()).fire({
-          icon: 'info',
-          title: 'Vincula WhatsApp Web',
-          text: response.message,
-          confirmButtonText: 'Entendido',
-        });
+        this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
         await this.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
       } else if (response.status === 'sent') {
@@ -2411,24 +2486,25 @@ export class App implements OnDestroy {
 
   protected async prepareWhatsAppFollowUpWebDraft(
     preparedMessage?: WhatsAppFollowUpPackage,
-  ): Promise<void> {
+  ): Promise<WhatsAppWebDraftResponse | null> {
     const message = preparedMessage ?? this.whatsappFollowUpPackage();
     if (!message || this.whatsappWebBusy()) {
-      return;
+      return null;
     }
     this.whatsappWebBusy.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+      let response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+      if (response.status === 'login_required') {
+        const sessionReady = await this.validateWhatsAppSession();
+        if (sessionReady) {
+          response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+        }
+      }
       this.whatsappWebResult.set(response);
       this.whatsappManualFallbackOpen.set(response.status === 'web_unavailable');
       if (response.status === 'login_required') {
-        await (await this.getSweetAlert()).fire({
-          icon: 'info',
-          title: 'Vincula WhatsApp Web',
-          text: response.message,
-          confirmButtonText: 'Entendido',
-        });
+        this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
         await this.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
       } else if (response.status === 'sent') {
@@ -2439,9 +2515,11 @@ export class App implements OnDestroy {
         });
         await this.showToast('Post-pago enviado por WhatsApp');
       }
+      return response;
     } catch (error) {
       this.errorMessage.set(this.readError(error));
       this.whatsappManualFallbackOpen.set(true);
+      return null;
     } finally {
       this.whatsappWebBusy.set(false);
     }
@@ -3375,16 +3453,38 @@ export class App implements OnDestroy {
     if (!order || !this.isPostPaymentWhatsAppCandidate(order)) {
       return;
     }
-    const result = await (await this.getSweetAlert()).fire({
-      title: 'Pago registrado',
-      text: '¿Deseas preparar ahora las indicaciones y archivos post-pago?',
-      icon: 'success',
-      showCancelButton: true,
-      confirmButtonText: 'Preparar post-pago',
-      cancelButtonText: 'Cerrar',
-    });
-    if (result.isConfirmed) {
-      await this.openPostPaymentWhatsApp(order);
+    this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
+    this.whatsappTestMode.set(false);
+    this.whatsappFollowUpMode.set(true);
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(false);
+    try {
+      const message = await this.loadWhatsAppFollowUpPackage(() =>
+        this.api.preparePostPaymentWhatsApp(order.order_id),
+      );
+      const response = await this.prepareWhatsAppFollowUpWebDraft(message);
+      if (response?.status === 'sent') {
+        await this.refreshAll();
+        return;
+      }
+      await (await this.getSweetAlert()).fire({
+        icon: 'warning',
+        title: 'Pago registrado; post-pago pendiente',
+        text:
+          response?.message ??
+          'WhatsApp no confirmó el envío. Puedes reintentarlo desde la orden.',
+        confirmButtonText: 'Entendido',
+      });
+    } catch {
+      await (await this.getSweetAlert()).fire({
+        icon: 'warning',
+        title: 'Pago registrado; post-pago pendiente',
+        text:
+          this.errorMessage() ??
+          'No se pudo preparar el post-pago. Puedes reintentarlo desde la orden.',
+        confirmButtonText: 'Entendido',
+      });
     }
   }
 

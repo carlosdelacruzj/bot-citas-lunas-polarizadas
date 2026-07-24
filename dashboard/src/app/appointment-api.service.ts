@@ -497,12 +497,13 @@ export interface WhatsAppFollowUpPackage {
 }
 
 export interface WhatsAppWebDraftResponse {
-  status: 'login_required' | 'draft_ready' | 'web_unavailable' | 'sent';
+  status: 'login_required' | 'session_ready' | 'draft_ready' | 'web_unavailable' | 'sent';
   message: string;
   message_id: string | null;
   manual_send_required: boolean;
   sent: boolean;
   sent_at?: string | null;
+  qr_image_data_url?: string | null;
   draft_mode?:
     'caption' | 'queued_text' | 'album' | 'documents' | 'image_sequence' | 'document_sequence';
 }
@@ -831,6 +832,13 @@ export class AppointmentApiService {
   async prepareWhatsAppFollowUpWebDraft(messageId: string): Promise<WhatsAppWebDraftResponse> {
     return this.post<WhatsAppWebDraftResponse>(
       `/api/v1/whatsapp-followup-messages/${encodeURIComponent(messageId)}/web/prepare`,
+      {},
+    );
+  }
+
+  async validateWhatsAppWebSession(): Promise<WhatsAppWebDraftResponse> {
+    return this.post<WhatsAppWebDraftResponse>(
+      '/api/v1/whatsapp-web/session/validate',
       {},
     );
   }
