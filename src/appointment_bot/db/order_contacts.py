@@ -28,6 +28,7 @@ from appointment_bot.db.common import (
     _timestamp_text,
     init_database,
 )
+from appointment_bot.db.whatsapp_automation import enqueue_whatsapp_automation_job
 
 ORDER_CLOSURE_REASONS = {
     "completed_by_us",
@@ -199,6 +200,12 @@ def mark_payment_paid(
             WHERE order_id = %s
             """,
             (now, now, order_id),
+        )
+        enqueue_whatsapp_automation_job(
+            order_id,
+            "post_payment_followup",
+            settings=settings,
+            _connection_override=connection,
         )
 
 

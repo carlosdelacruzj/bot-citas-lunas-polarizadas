@@ -15,6 +15,7 @@ from appointment_bot.db.orders import (
     release_service_order_claim,
     update_order_state,
 )
+from appointment_bot.db.whatsapp_automation import enqueue_whatsapp_automation_job
 from appointment_bot.domain import RunReport
 from appointment_bot.services.database_models import ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.services.notifier import notify_deferred_queue_summary
@@ -57,13 +58,14 @@ def run_rapid_queue_with_settings(
     follow_up_order_ids: set[str] | None = None,
     stop_on_available_without_reserve: bool = True,
 ) -> RunReport:
+    initial_order_ids = set(initial_confirmed_order_ids or set())
     checked_orders = 0
     confirmed_reservations = initial_confirmed_reservations
     uncertain_reservations = 0
     failed_orders = 0
     results: list[dict[str, str]] = []
     deferred_reports: list[RunReport] = []
-    confirmed_order_ids = list(initial_confirmed_order_ids or set())
+    confirmed_order_ids = list(initial_order_ids)
     completion_reason = "orders_exhausted"
     lease_owner = f"queue-{uuid4().hex}"
     with ExitStack() as claims:
@@ -353,4 +355,16 @@ def run_rapid_queue_with_settings(
             review_results,
         )
     notify_deferred_queue_summary(report, settings, deferred_reports)
+    for review in review_results:
+        order_id = review.get("order_id")
+        if (
+            review.get("status") == "completed"
+            and order_id
+            and order_id not in initial_order_ids
+        ):
+            enqueue_whatsapp_automation_job(
+                order_id,
+                "reservation_album",
+                settings=settings,
+            )
     return report

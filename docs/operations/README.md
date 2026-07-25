@@ -374,6 +374,16 @@ paquete queda registrado como enviado automaticamente y la accion pasa a
 `Reenviar post-pago`. Usar `Confirmar envio post-pago` solo como respaldo si el
 operador tuvo que enviarlo manualmente.
 
+Desde el 25-07-2026, las ordenes nuevas usan disparadores automaticos persistentes.
+Despues de la revision diferida y del intento de Telegram, el sistema encola el
+album inicial sin bloquear el worker. Registrar el pago en `paid` encola el postpago
+dentro de la misma transaccion. Cada flujo tiene un unico intento automatico,
+deduplicacion por orden y recuperacion de trabajos que todavia no comenzaron. Los
+resultados fallidos o inciertos se notifican por Telegram y quedan para revision
+manual; nunca se reintentan solos. La decision, estados y reversion estan descritos
+en
+[`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md).
+
 La automatizacion espera a que el menu de adjuntos muestre una opcion real antes
 de seleccionar archivos. Para el album normal exige un control con capacidad
 multiple cuando hay dos imagenes; para post-pago limita `Documento` al menu de

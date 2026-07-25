@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 35
+SCHEMA_VERSION = 36
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -317,6 +317,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_finance_schema(connection)
     _create_whatsapp_messages_schema(connection)
     _create_whatsapp_followup_messages_schema(connection)
+    _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
 
 
@@ -343,6 +344,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "finance_entries",
         "whatsapp_messages",
         "whatsapp_followup_messages",
+        "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
     }
     tables = {
@@ -415,6 +417,12 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_followup_messages", "status"),
         ("whatsapp_followup_messages", "test_mode"),
         ("whatsapp_followup_messages", "sent_at"),
+        ("whatsapp_automation_jobs", "job_key"),
+        ("whatsapp_automation_jobs", "order_id"),
+        ("whatsapp_automation_jobs", "job_kind"),
+        ("whatsapp_automation_jobs", "status"),
+        ("whatsapp_automation_jobs", "attempt_count"),
+        ("whatsapp_automation_jobs", "lease_expires_at"),
         ("captcha_shadow_outbox", "event_key"),
         ("captcha_shadow_outbox", "event_id"),
         ("captcha_shadow_outbox", "sequence"),
@@ -442,6 +450,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
         "ck_whatsapp_followup_messages_sent",
+        "ck_whatsapp_automation_job_attempt",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -480,6 +489,10 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_whatsapp_messages_order_prepared")
     if "idx_whatsapp_followup_messages_order_prepared" not in indexes:
         missing.append("idx_whatsapp_followup_messages_order_prepared")
+    if "idx_whatsapp_automation_jobs_queued" not in indexes:
+        missing.append("idx_whatsapp_automation_jobs_queued")
+    if "uq_whatsapp_automation_jobs_running" not in indexes:
+        missing.append("uq_whatsapp_automation_jobs_running")
     if "idx_captcha_shadow_outbox_pending" not in indexes:
         missing.append("idx_captcha_shadow_outbox_pending")
     if missing:
@@ -791,6 +804,67 @@ def _create_whatsapp_followup_messages_schema(connection: Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_whatsapp_followup_messages_order_prepared
         ON whatsapp_followup_messages(order_id, prepared_at DESC)
+        """
+    )
+
+
+def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS whatsapp_automation_jobs (
+            job_key text PRIMARY KEY,
+            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
+            job_kind text NOT NULL CHECK (
+                job_kind IN ('reservation_album', 'post_payment_followup')
+            ),
+            status text NOT NULL DEFAULT 'queued' CHECK (
+                status IN ('queued', 'running', 'sent', 'failed', 'uncertain')
+            ),
+            message_id text,
+            attempt_count smallint NOT NULL DEFAULT 0 CHECK (
+                attempt_count BETWEEN 0 AND 1
+            ),
+            lease_owner text,
+            lease_expires_at timestamptz,
+            error_message text,
+            created_at timestamptz NOT NULL,
+            started_at timestamptz,
+            finished_at timestamptz,
+            updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_whatsapp_automation_job_attempt CHECK (
+                (status = 'queued' AND attempt_count = 0 AND started_at IS NULL)
+                OR (
+                    status = 'running'
+                    AND attempt_count = 1
+                    AND started_at IS NOT NULL
+                    AND lease_owner IS NOT NULL
+                    AND lease_expires_at IS NOT NULL
+                    AND finished_at IS NULL
+                )
+                OR (
+                    status IN ('sent', 'failed', 'uncertain')
+                    AND attempt_count = 1
+                    AND started_at IS NOT NULL
+                    AND lease_owner IS NULL
+                    AND lease_expires_at IS NULL
+                    AND finished_at IS NOT NULL
+                )
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_automation_jobs_queued
+        ON whatsapp_automation_jobs(created_at)
+        WHERE status = 'queued'
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_whatsapp_automation_jobs_running
+        ON whatsapp_automation_jobs((true))
+        WHERE status = 'running'
         """
     )
 
@@ -1131,6 +1205,13 @@ def migrate_database(connection: Connection) -> None:
             (35,),
         )
         current_version = 35
+    if current_version == 35:
+        _create_whatsapp_automation_jobs_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (36,),
+        )
+        current_version = 36
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

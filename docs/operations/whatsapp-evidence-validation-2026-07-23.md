@@ -179,3 +179,16 @@ Con esta evidencia, el mismo modo automático quedó habilitado para el botón
 controlado de una orden real. Esto todavía no activa envíos en segundo plano
 después de una reserva: el operador revisa el paquete y confirma **Enviar ahora**
 desde el dashboard.
+
+## Activación de disparadores — 25-07-2026
+
+La limitación anterior quedó superada con una bandeja persistente y dos
+disparadores. El álbum se encola después de la revisión diferida y Telegram; el
+postpago se encola únicamente después de registrar el pago como `paid`. El motor
+Playwright validado no fue reescrito.
+
+Cada orden y tipo de mensaje conserva una clave única y un solo intento
+automático. Un resultado fallido o incierto no se reintenta solo, genera alerta
+por Telegram y queda disponible para recuperación manual. El detalle técnico y
+el motivo de la decisión están en
+[`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md).

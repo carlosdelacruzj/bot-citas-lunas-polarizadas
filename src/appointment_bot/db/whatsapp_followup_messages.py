@@ -50,10 +50,20 @@ def prepare_post_payment_whatsapp_message(
     order_id: str,
     *,
     allow_resend: bool = False,
+    automatic: bool = False,
     settings: Settings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
+    if not automatic:
+        from appointment_bot.db.whatsapp_automation import whatsapp_automation_in_progress
+
+        if whatsapp_automation_in_progress(
+            order_id,
+            "post_payment_followup",
+            settings=effective_settings,
+        ):
+            raise ValueError("El envio automatico post-pago ya esta en curso.")
     with _connection(_database_url(effective_settings)) as connection:
         row = connection.execute(
             """

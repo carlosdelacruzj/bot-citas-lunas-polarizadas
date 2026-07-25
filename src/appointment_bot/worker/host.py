@@ -11,6 +11,7 @@ from appointment_bot.reports.status import generate_daily_report_image
 from appointment_bot.services.captcha_shadow import configure_captcha_shadow
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.whatsapp_automation import WhatsAppAutomationDispatcher
 from appointment_bot.worker.continuous_worker import (
     DAILY_CUTOFF_REASON,
     LEASE_UNAVAILABLE_REASON,
@@ -39,6 +40,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     )
     captcha_shadow_dispatcher = configure_captcha_shadow(settings)
     captcha_shadow_dispatcher.start()
+    whatsapp_dispatcher = WhatsAppAutomationDispatcher(settings)
     worker_failure: list[BaseException] = []
     health_failure = False
     daily_cutoff_report_generated = False
@@ -69,6 +71,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         stop_event.set()
         worker_thread.join(timeout=5)
         captcha_shadow_dispatcher.stop()
+        whatsapp_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker did not become ready before timeout.")
@@ -77,12 +80,15 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         server.server_close()
         worker_thread.join(timeout=5)
         captcha_shadow_dispatcher.stop()
+        whatsapp_dispatcher.stop()
         return LEASE_UNAVAILABLE_EXIT_CODE
     if not worker.is_running and worker.shutdown_reason != DAILY_CUTOFF_REASON:
         captcha_shadow_dispatcher.stop()
+        whatsapp_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker stopped during startup.")
+    whatsapp_dispatcher.start()
     server_thread.start()
     try:
         while not stop_event.wait(1):
@@ -136,6 +142,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         server.server_close()
         server_thread.join(timeout=10)
         captcha_shadow_dispatcher.stop()
+        whatsapp_dispatcher.stop()
         if worker_thread.is_alive():
             raise RuntimeError("Continuous worker did not stop within operation timeouts.")
     if worker_failure:

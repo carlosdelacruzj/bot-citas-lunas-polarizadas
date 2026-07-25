@@ -3,27 +3,27 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 615
-- Reservas registradas: 62
+- Eventos indexados: 623
+- Reservas registradas: 65
 - Reservas no confirmadas: 5
-- Disponibilidades completas: 418
+- Disponibilidades completas: 423
 - Disponibilidades parciales: 47
 - Senales de defensa: 6
 
 ## Origen de deteccion
-- normal: 615
+- normal: 623
 
 ## Ultimos eventos utiles
+- 2026-07-25 08:28:33 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
+- 2026-07-25 08:28:16 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
+- 2026-07-25 08:28:05 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
+- 2026-07-25 08:27:47 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
+- 2026-07-25 08:27:37 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
+- 2026-07-25 08:26:48 | order-*** | registered | normal | 20/08/2026 12:00 | confirmed
+- 2026-07-25 08:26:33 | order-*** | registered | normal | 20/08/2026 12:00 | confirmed
+- 2026-07-25 08:26:12 | order-*** | registered | normal | 20/08/2026 10:00 | confirmed
 - 2026-07-24 17:22:50 | order-*** | completed | normal | 12/08/2026 12:00 | sin outcome
 - 2026-07-24 16:51:55 | order-*** | registered | normal | 19/08/2026 12:00 | confirmed
-- 2026-07-24 16:51:35 | order-*** | registered | normal | 19/08/2026 12:00 | confirmed
-- 2026-07-24 16:51:20 | order-*** | registered | normal | 19/08/2026 11:00 | confirmed
-- 2026-07-24 14:32:44 | order-*** | registered | normal | 19/08/2026 11:00 | confirmed
-- 2026-07-24 14:32:06 | order-*** | unavailable | normal | 19/08/2026 10:00 | slot_lost
-- 2026-07-24 14:31:52 | order-*** | partial | normal | 19/08/2026 10:00 | blocked_by_order_rule
-- 2026-07-24 13:45:19 | order-*** | partial | normal | 19/08/2026 09:00 | blocked_by_order_rule
-- 2026-07-24 13:41:06 | order-*** | unavailable | normal | 19/08/2026 08:00 | slot_lost
-- 2026-07-24 12:17:31 | order-*** | partial | normal | 03/08/2026 12:00 | blocked_by_order_rule
 
 ## Senales de defensa
 - 2026-07-24 11:30:36 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
