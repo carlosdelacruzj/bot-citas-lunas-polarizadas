@@ -246,12 +246,10 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
 
     if not _wait_for_chat(page):
-        qr_image_data_url = _whatsapp_qr_image_data_url(page)
-        return _result(
-            "login_required",
-            "La sesion necesita vincularse desde Validar WhatsApp.",
+        return _chat_not_ready_result(
+            page,
             message_id=message_id,
-            qr_image_data_url=qr_image_data_url,
+            screenshot_name="whatsapp-confirmation-chat-not-ready",
         )
 
     attachment = Path(str(draft["attachment_path"])).resolve()
@@ -308,12 +306,10 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     target = f"https://web.whatsapp.com/send?phone={phone}"
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
     if not _wait_for_chat(page):
-        qr_image_data_url = _whatsapp_qr_image_data_url(page)
-        return _result(
-            "login_required",
-            "La sesion necesita vincularse desde Validar WhatsApp.",
+        return _chat_not_ready_result(
+            page,
             message_id=str(draft["message_id"]),
-            qr_image_data_url=qr_image_data_url,
+            screenshot_name="whatsapp-album-chat-not-ready",
         )
     attachments = [Path(str(item["attachment_path"])).resolve() for item in items]
     if not all(path.is_file() for path in attachments):
@@ -388,16 +384,10 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
     target = f"https://web.whatsapp.com/send?phone={phone}"
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
     if not _wait_for_chat(page):
-        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-login-required")
-        qr_image_data_url = _whatsapp_qr_image_data_url(page)
-        return _result(
-            "login_required",
-            (
-                "Escanea este QR desde WhatsApp y luego pulsa "
-                "Ya lo escanee, continuar."
-            ),
+        return _chat_not_ready_result(
+            page,
             message_id=message_id,
-            qr_image_data_url=qr_image_data_url,
+            screenshot_name="whatsapp-followup-chat-not-ready",
         )
     attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
     if not all(path.is_file() for path in attachments):
@@ -609,10 +599,66 @@ def _wait_for_chat(page: Page) -> bool:
     while time.monotonic() < deadline:
         if _visible(page, "div[data-testid='conversation-compose-box-input']"):
             return True
-        if _visible(page, "canvas") or _visible(page, "div[data-ref]"):
+        if _whatsapp_qr_image_data_url(page) is not None or _invalid_recipient_visible(page):
             return False
         page.wait_for_timeout(500)
     return _visible(page, "div[data-testid='conversation-compose-box-input']")
+
+
+def _chat_not_ready_result(
+    page: Page,
+    *,
+    message_id: str,
+    screenshot_name: str,
+) -> dict[str, object]:
+    _save_whatsapp_debug_screenshot(page, f"{screenshot_name}-{message_id}")
+    qr_image_data_url = _whatsapp_qr_image_data_url(page)
+    if qr_image_data_url is not None:
+        return _result(
+            "login_required",
+            "La sesion de WhatsApp necesita vincularse antes de enviar.",
+            message_id=message_id,
+            qr_image_data_url=qr_image_data_url,
+        )
+    if _invalid_recipient_visible(page):
+        return _result(
+            "invalid_recipient",
+            "WhatsApp rechazo el destinatario; verifica que el numero sea valido y tenga WhatsApp.",
+            message_id=message_id,
+        )
+    return _result(
+        "chat_unavailable",
+        "La sesion esta vinculada, pero el chat del destinatario no quedo listo a tiempo.",
+        message_id=message_id,
+    )
+
+
+def _invalid_recipient_visible(page: Page) -> bool:
+    try:
+        body_text = page.locator("body").inner_text(timeout=1_000)
+    except PlaywrightError:
+        return False
+    normalized = " ".join(body_text.casefold().split())
+    return any(
+        pattern in normalized
+        for pattern in (
+            "phone number shared via url is invalid",
+            "phone number is not valid",
+            "invalid phone number",
+            "isn't on whatsapp",
+            "isn’t on whatsapp",
+            "is not on whatsapp",
+            "not on whatsapp",
+            "numero de telefono compartido a traves de la direccion url no es valido",
+            "número de teléfono compartido a través de la dirección url no es válido",
+            "numero de telefono no valido",
+            "número de teléfono no válido",
+            "el numero no esta en whatsapp",
+            "el número no está en whatsapp",
+            "no esta en whatsapp",
+            "no está en whatsapp",
+        )
+    )
 
 
 def _attach_image(page: Page, attachment: Path | list[Path]) -> None:

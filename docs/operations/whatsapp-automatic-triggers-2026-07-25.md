@@ -94,13 +94,44 @@ sin distinguir entre:
 Por esta razón, el error persistido describe con certeza que el chat no quedó
 listo, pero no prueba por sí solo que se hubiera mostrado un QR.
 
-## Corrección planteada después de esta versión
+La misma condición volvió a aparecer a las 09:09 con el postpago de
+`order-44836574`: el worker tomó el trabajo y solicitó vinculación, aunque el
+Admin API conservaba una sesión válida. Este segundo resultado confirmó que el
+problema pertenecía a la propiedad del perfil entre procesos y no solamente al
+destinatario del primer álbum.
 
-La siguiente versión debe:
+## Corrección aplicada después del primer resultado
 
-- conservar un único proceso emisor y dejar al worker únicamente como productor
-  de trabajos;
-- validar la sesión antes de consumir el intento automático;
-- mantener recuperable un trabajo que no comenzó por falta de sesión;
-- diferenciar sesión desvinculada, destinatario inválido y timeout;
-- guardar una captura cuando el chat no llegue al compositor.
+La corrección posterior conserva al Admin API como único proceso emisor. El
+worker continúa creando trabajos después de las reservas, pero ya no inicia un
+dispatcher ni abre el perfil persistente de WhatsApp.
+
+Antes de cambiar un trabajo a `running`, el emisor valida la sesión desde el
+mismo contexto Playwright que realizará el envío. Si la sesión no está lista:
+
+- el trabajo pasa a `blocked`;
+- `attempt_count` permanece en `0`;
+- se programa otra prevalidación un minuto después;
+- se alerta una sola vez por cada error distinto;
+- no se adjuntan archivos ni se pulsa Enviar.
+
+Una sesión que se pierde entre la prevalidación y la apertura del chat también
+devuelve el trabajo a `blocked` sin consumir el intento.
+
+La apertura del chat ya no interpreta cualquier `canvas` visible como un QR.
+Ahora espera el compositor y clasifica por separado:
+
+- `login_required`: existe un QR real;
+- `invalid_recipient`: WhatsApp rechaza o no reconoce el número;
+- `chat_unavailable`: la sesión está vinculada, pero el chat no termina de
+  cargar.
+
+Los tres casos guardan una captura identificada por `message_id`. Solo
+`login_required` queda recuperable automáticamente; los otros dos terminan como
+fallo para revisión humana y no se reintentan solos.
+
+La validación controlada usó un número deliberadamente imposible y
+`auto_send=false`. WhatsApp dejó una página vacía sin compositor ni mensaje
+explícito de número inválido, por lo que el resultado correcto fue
+`chat_unavailable`, `sent=false`, sin adjuntos ni clic de envío. Después del
+simulacro, la validación del perfil continuó en `session_ready`.

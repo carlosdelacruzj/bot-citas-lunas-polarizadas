@@ -7,15 +7,19 @@ from uuid import uuid4
 from appointment_bot.browser.whatsapp_web import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
+    validate_whatsapp_web_session,
 )
 from appointment_bot.config import Settings
 from appointment_bot.db.whatsapp_automation import (
     WhatsAppAutomationJob,
     WhatsAppAutomationStatus,
-    claim_next_whatsapp_automation_job,
+    block_whatsapp_automation_preflight,
+    claim_whatsapp_automation_job,
     finish_whatsapp_automation_job,
+    next_waiting_whatsapp_automation_job,
     order_has_sent_whatsapp_message,
     recover_expired_whatsapp_automation_jobs,
+    return_running_whatsapp_job_to_blocked,
 )
 from appointment_bot.db.whatsapp_followup_messages import (
     get_followup_web_draft,
@@ -76,7 +80,28 @@ class WhatsAppAutomationDispatcher:
                         "uncertain",
                         "El proceso terminó durante el intento automático.",
                     )
-                job = claim_next_whatsapp_automation_job(
+                waiting_job = next_waiting_whatsapp_automation_job(
+                    settings=self.settings,
+                )
+                if waiting_job is None:
+                    self._stop_event.wait(POLL_SECONDS)
+                    continue
+                session = validate_whatsapp_web_session()
+                if session.get("status") != "session_ready":
+                    message = str(
+                        session.get("message")
+                        or "WhatsApp Web no confirmó una sesión vinculada."
+                    )
+                    should_alert = block_whatsapp_automation_preflight(
+                        waiting_job["job_key"],
+                        error_message=sanitize_text(message),
+                        settings=self.settings,
+                    )
+                    if should_alert:
+                        self._notify_preflight_blocked(waiting_job, message)
+                    continue
+                job = claim_whatsapp_automation_job(
+                    waiting_job["job_key"],
                     self.owner_token,
                     settings=self.settings,
                 )
@@ -146,6 +171,20 @@ class WhatsAppAutomationDispatcher:
 
         result_status = str(result.get("status") or "unknown")
         message = str(result.get("message") or "WhatsApp no confirmó el envío.")
+        if result_status == "login_required":
+            returned = return_running_whatsapp_job_to_blocked(
+                job["job_key"],
+                owner_token=self.owner_token,
+                error_message=sanitize_text(message),
+                settings=self.settings,
+            )
+            if not returned:
+                logger.error(
+                    "Could not return WhatsApp job to blocked preflight: %s",
+                    job["job_key"],
+                )
+            self._notify_preflight_blocked(job, message)
+            return
         final_status = "uncertain" if result_status == "web_unavailable" else "failed"
         self._finish(
             job,
@@ -239,6 +278,29 @@ class WhatsAppAutomationDispatcher:
                     f"Estado: {status}",
                     f"Detalle: {sanitize_text(message)}",
                     "No se realizará otro intento automático. Revisar desde el dashboard.",
+                ]
+            ),
+        )
+
+    def _notify_preflight_blocked(
+        self,
+        job: WhatsAppAutomationJob,
+        message: str,
+    ) -> None:
+        flow = (
+            "evidencia y cobro"
+            if job["job_kind"] == "reservation_album"
+            else "documentos post-pago"
+        )
+        send_telegram_message(
+            self.settings,
+            "\n".join(
+                [
+                    "⚠️ WhatsApp automático quedó esperando una sesión válida.",
+                    f"Orden: {job['order_id']}",
+                    f"Flujo: {flow}",
+                    f"Detalle: {sanitize_text(message)}",
+                    "Todavía no se adjuntaron archivos ni se consumió el intento de envío.",
                 ]
             ),
         )

@@ -18,6 +18,7 @@ from appointment_bot.db.common import (
 WhatsAppAutomationKind = Literal["reservation_album", "post_payment_followup"]
 WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain"]
 LEASE_SECONDS = 10 * 60
+PREFLIGHT_RETRY_SECONDS = 60
 
 
 class WhatsAppAutomationJob(TypedDict):
@@ -42,18 +43,45 @@ def enqueue_whatsapp_automation_job(
             """
             INSERT INTO whatsapp_automation_jobs (
                 job_key, order_id, job_kind, status, attempt_count,
-                created_at, updated_at
+                next_attempt_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, 'queued', 0, %s, %s)
+            VALUES (%s, %s, %s, 'queued', 0, %s, %s, %s)
             ON CONFLICT(job_key) DO NOTHING
             RETURNING job_key
             """,
-            (job_key, order_id, job_kind, now, now),
+            (job_key, order_id, job_kind, now, now, now),
         ).fetchone()
     return row is not None
 
 
-def claim_next_whatsapp_automation_job(
+def next_waiting_whatsapp_automation_job(
+    *,
+    settings: Settings,
+) -> WhatsAppAutomationJob | None:
+    init_database(settings)
+    now = datetime.now(UTC)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT job_key, order_id, job_kind
+            FROM whatsapp_automation_jobs
+            WHERE status IN ('queued', 'blocked') AND next_attempt_at <= %s
+            ORDER BY created_at
+            LIMIT 1
+            """,
+            (now,),
+        ).fetchone()
+    if row is None:
+        return None
+    return {
+        "job_key": str(row["job_key"]),
+        "order_id": str(row["order_id"]),
+        "job_kind": str(row["job_kind"]),
+    }
+
+
+def claim_whatsapp_automation_job(
+    job_key: str,
     owner_token: str,
     *,
     settings: Settings,
@@ -65,26 +93,20 @@ def claim_next_whatsapp_automation_job(
         with _connection(_database_url(settings)) as connection:
             row = connection.execute(
                 """
-                WITH candidate AS (
-                    SELECT job_key
-                    FROM whatsapp_automation_jobs
-                    WHERE status = 'queued'
-                    ORDER BY created_at
-                    FOR UPDATE SKIP LOCKED
-                    LIMIT 1
-                )
-                UPDATE whatsapp_automation_jobs AS job
+                UPDATE whatsapp_automation_jobs
                 SET status = 'running',
                     attempt_count = 1,
                     lease_owner = %s,
                     lease_expires_at = %s,
                     started_at = %s,
+                    preflight_error = NULL,
                     updated_at = %s
-                FROM candidate
-                WHERE job.job_key = candidate.job_key
-                RETURNING job.job_key, job.order_id, job.job_kind
+                WHERE job_key = %s
+                  AND status IN ('queued', 'blocked')
+                  AND next_attempt_at <= %s
+                RETURNING job_key, order_id, job_kind
                 """,
-                (owner_token, lease_expires_at, now, now),
+                (owner_token, lease_expires_at, now, now, job_key, now),
             ).fetchone()
     except UniqueViolation:
         return None
@@ -95,6 +117,87 @@ def claim_next_whatsapp_automation_job(
         "order_id": str(row["order_id"]),
         "job_kind": str(row["job_kind"]),
     }
+
+
+def block_whatsapp_automation_preflight(
+    job_key: str,
+    *,
+    error_message: str,
+    settings: Settings,
+) -> bool:
+    init_database(settings)
+    now = datetime.now(UTC)
+    next_attempt_at = now + timedelta(seconds=PREFLIGHT_RETRY_SECONDS)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE whatsapp_automation_jobs
+            SET status = 'blocked',
+                next_attempt_at = %s,
+                preflight_error = %s,
+                preflight_alerted_at = CASE
+                    WHEN preflight_error IS DISTINCT FROM %s
+                      OR preflight_alerted_at IS NULL
+                    THEN %s
+                    ELSE preflight_alerted_at
+                END,
+                updated_at = %s
+            WHERE job_key = %s
+              AND status IN ('queued', 'blocked')
+              AND attempt_count = 0
+            RETURNING (
+                preflight_alerted_at = %s
+            ) AS should_alert
+            """,
+            (
+                next_attempt_at,
+                error_message,
+                error_message,
+                now,
+                now,
+                job_key,
+                now,
+            ),
+        ).fetchone()
+    return bool(row and row["should_alert"])
+
+
+def return_running_whatsapp_job_to_blocked(
+    job_key: str,
+    *,
+    owner_token: str,
+    error_message: str,
+    settings: Settings,
+) -> bool:
+    init_database(settings)
+    now = datetime.now(UTC)
+    next_attempt_at = now + timedelta(seconds=PREFLIGHT_RETRY_SECONDS)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE whatsapp_automation_jobs
+            SET status = 'blocked',
+                attempt_count = 0,
+                lease_owner = NULL,
+                lease_expires_at = NULL,
+                started_at = NULL,
+                next_attempt_at = %s,
+                preflight_error = %s,
+                preflight_alerted_at = %s,
+                updated_at = %s
+            WHERE job_key = %s AND status = 'running' AND lease_owner = %s
+            RETURNING job_key
+            """,
+            (
+                next_attempt_at,
+                error_message,
+                now,
+                now,
+                job_key,
+                owner_token,
+            ),
+        ).fetchone()
+    return row is not None
 
 
 def recover_expired_whatsapp_automation_jobs(
@@ -208,7 +311,7 @@ def whatsapp_automation_in_progress(
             FROM whatsapp_automation_jobs
             WHERE order_id = %s
               AND job_kind = %s
-              AND status IN ('queued', 'running')
+              AND status IN ('queued', 'blocked', 'running')
             LIMIT 1
             """,
             (order_id, job_kind),
@@ -219,10 +322,13 @@ def whatsapp_automation_in_progress(
 __all__ = [
     "WhatsAppAutomationJob",
     "WhatsAppAutomationKind",
-    "claim_next_whatsapp_automation_job",
+    "block_whatsapp_automation_preflight",
+    "claim_whatsapp_automation_job",
     "enqueue_whatsapp_automation_job",
     "finish_whatsapp_automation_job",
+    "next_waiting_whatsapp_automation_job",
     "order_has_sent_whatsapp_message",
     "recover_expired_whatsapp_automation_jobs",
+    "return_running_whatsapp_job_to_blocked",
     "whatsapp_automation_in_progress",
 ]

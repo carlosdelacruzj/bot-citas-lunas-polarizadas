@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 36
+SCHEMA_VERSION = 37
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -423,6 +423,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "status"),
         ("whatsapp_automation_jobs", "attempt_count"),
         ("whatsapp_automation_jobs", "lease_expires_at"),
+        ("whatsapp_automation_jobs", "next_attempt_at"),
+        ("whatsapp_automation_jobs", "preflight_error"),
+        ("whatsapp_automation_jobs", "preflight_alerted_at"),
         ("captcha_shadow_outbox", "event_key"),
         ("captcha_shadow_outbox", "event_id"),
         ("captcha_shadow_outbox", "sequence"),
@@ -450,6 +453,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
         "ck_whatsapp_followup_messages_sent",
+        "ck_whatsapp_automation_job_status",
         "ck_whatsapp_automation_job_attempt",
     }
     constraint_rows = connection.execute(
@@ -817,9 +821,7 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             job_kind text NOT NULL CHECK (
                 job_kind IN ('reservation_album', 'post_payment_followup')
             ),
-            status text NOT NULL DEFAULT 'queued' CHECK (
-                status IN ('queued', 'running', 'sent', 'failed', 'uncertain')
-            ),
+            status text NOT NULL DEFAULT 'queued',
             message_id text,
             attempt_count smallint NOT NULL DEFAULT 0 CHECK (
                 attempt_count BETWEEN 0 AND 1
@@ -827,12 +829,25 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             lease_owner text,
             lease_expires_at timestamptz,
             error_message text,
+            next_attempt_at timestamptz NOT NULL,
+            preflight_error text,
+            preflight_alerted_at timestamptz,
             created_at timestamptz NOT NULL,
             started_at timestamptz,
             finished_at timestamptz,
             updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_whatsapp_automation_job_status CHECK (
+                status IN ('queued', 'blocked', 'running', 'sent', 'failed', 'uncertain')
+            ),
             CONSTRAINT ck_whatsapp_automation_job_attempt CHECK (
-                (status = 'queued' AND attempt_count = 0 AND started_at IS NULL)
+                (
+                    status IN ('queued', 'blocked')
+                    AND attempt_count = 0
+                    AND started_at IS NULL
+                    AND lease_owner IS NULL
+                    AND lease_expires_at IS NULL
+                    AND finished_at IS NULL
+                )
                 OR (
                     status = 'running'
                     AND attempt_count = 1
@@ -856,8 +871,8 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
     connection.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_whatsapp_automation_jobs_queued
-        ON whatsapp_automation_jobs(created_at)
-        WHERE status = 'queued'
+        ON whatsapp_automation_jobs(next_attempt_at, created_at)
+        WHERE status IN ('queued', 'blocked')
         """
     )
     connection.execute(
@@ -1212,6 +1227,79 @@ def migrate_database(connection: Connection) -> None:
             (36,),
         )
         current_version = 36
+    if current_version == 36:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD COLUMN next_attempt_at timestamptz,
+            ADD COLUMN preflight_error text,
+            ADD COLUMN preflight_alerted_at timestamptz
+            """
+        )
+        connection.execute(
+            """
+            UPDATE whatsapp_automation_jobs
+            SET next_attempt_at = COALESCE(next_attempt_at, created_at)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ALTER COLUMN next_attempt_at SET NOT NULL,
+            DROP CONSTRAINT IF EXISTS whatsapp_automation_jobs_status_check,
+            DROP CONSTRAINT IF EXISTS ck_whatsapp_automation_job_status,
+            DROP CONSTRAINT ck_whatsapp_automation_job_attempt
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_job_status CHECK (
+                status IN ('queued', 'blocked', 'running', 'sent', 'failed', 'uncertain')
+            ),
+            ADD CONSTRAINT ck_whatsapp_automation_job_attempt CHECK (
+                (
+                    status IN ('queued', 'blocked')
+                    AND attempt_count = 0
+                    AND started_at IS NULL
+                    AND lease_owner IS NULL
+                    AND lease_expires_at IS NULL
+                    AND finished_at IS NULL
+                )
+                OR (
+                    status = 'running'
+                    AND attempt_count = 1
+                    AND started_at IS NOT NULL
+                    AND lease_owner IS NOT NULL
+                    AND lease_expires_at IS NOT NULL
+                    AND finished_at IS NULL
+                )
+                OR (
+                    status IN ('sent', 'failed', 'uncertain')
+                    AND attempt_count = 1
+                    AND started_at IS NOT NULL
+                    AND lease_owner IS NULL
+                    AND lease_expires_at IS NULL
+                    AND finished_at IS NOT NULL
+                )
+            )
+            """
+        )
+        connection.execute(
+            "DROP INDEX IF EXISTS idx_whatsapp_automation_jobs_queued"
+        )
+        connection.execute(
+            """
+            CREATE INDEX idx_whatsapp_automation_jobs_queued
+            ON whatsapp_automation_jobs(next_attempt_at, created_at)
+            WHERE status IN ('queued', 'blocked')
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (37,),
+        )
+        current_version = 37
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

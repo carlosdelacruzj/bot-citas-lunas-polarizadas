@@ -3267,7 +3267,6 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\15-07-2026\cupo-141820-order-***-155768.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
-
 ## 2026-07-15 14:20:14 - order-46345678 - unavailable
 
 - Run: 20260715-142002-d267709f
@@ -6061,3 +6060,42 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\25-07-2026\cupo-082634-order-***-640734.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
+## 2026-07-25 09:18:57 - order-09612178 - unavailable
+
+- Run: 20260725-091811-efb3c396
+- Corrida/attempt: 3
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 19/08/2026 08:00
+- Cupos observados: 23
+- Origen deteccion: normal
+- Resultado: Envio final alcanzado, pero el portal respondio slot_lost.
+- Confirmacion posterior: No registrada en esta entrada.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 7.594s
+  - Seleccion fecha/hora: 1.672s
+  - Imagen CAPTCHA: 0.094s
+  - 2captcha: 1.391s
+  - Llenar CAPTCHA -> click: 1.406s
+  - Click -> respuesta portal: 0.047s
+  - Click -> screenshot confirmacion: 1.500s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\25-07-2026\portal-1-091811-order-***-ae5d1b.png
+  - CAPTCHA enviado: GEQJG
+  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
+  - Intento CAPTCHA 1: outcome=slot_lost, valor=GEQJG, duracion=3.172s
+    - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
+    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png, mime=image/jpeg, formato_detectado=png, bytes=10001, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
+  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
+  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-091811-order-***-ae5d1b.png
+  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-091811-order-***-740242.html
+  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
+  - Screenshot adicional: screenshots\25-07-2026\cupo-091811-order-***-4d2cf3.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).

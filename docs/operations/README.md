@@ -384,6 +384,13 @@ manual; nunca se reintentan solos. La decision, estados y reversion estan descri
 en
 [`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md).
 
+El Admin API es el unico proceso que consume estos trabajos y abre WhatsApp Web.
+El worker solo los encola. Antes de consumir el intento, el Admin API valida su
+propia sesion: una sesion sin vincular deja el trabajo en `blocked`, con
+`attempt_count=0`, y vuelve a comprobarla sin adjuntar archivos. Un destinatario
+invalido y un chat que no termina de cargar se registran como fallos distintos con
+captura para revision.
+
 La automatizacion espera a que el menu de adjuntos muestre una opcion real antes
 de seleccionar archivos. Para el album normal exige un control con capacidad
 multiple cuando hay dos imagenes; para post-pago limita `Documento` al menu de
