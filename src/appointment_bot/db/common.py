@@ -81,10 +81,6 @@ def _id_from_value(prefix: str, value: str) -> str:
     return f"{prefix}-{safe[:15]}-{digest}"
 
 
-def _normalize_phone(value: str) -> str:
-    return "".join(character for character in value if character.isdigit() or character == "+")
-
-
 def _mask_phone(value: str | None) -> str | None:
     if not value:
         return None

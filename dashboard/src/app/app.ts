@@ -1376,12 +1376,6 @@ export class App implements OnDestroy {
     await this.applyCaptchaFilters();
   }
 
-  protected async showPendingCaptchaReview(): Promise<void> {
-    this.showCaptchaWorkspace('review');
-    this.captchaReviewPosition.set(0);
-    await this.loadCaptchaData();
-  }
-
   protected showCaptchaWorkspace(mode: CaptchaWorkspaceMode): void {
     const changed = this.captchaWorkspaceMode() !== mode;
     this.captchaWorkspaceMode.set(mode);
@@ -1516,12 +1510,6 @@ export class App implements OnDestroy {
       return 'good';
     }
     return model.accuracy >= 0.85 ? 'warn' : 'bad';
-  }
-
-  protected captchaQualityCaseLabel(value: CaptchaQualityCaseType): string {
-    return (
-      CAPTCHA_QUALITY_CASE_FILTERS.find((filter) => filter.value === value)?.label ?? value
-    );
   }
 
   protected captchaQualityCaseSummary(item: CaptchaQualityCase): string {
@@ -2246,7 +2234,7 @@ export class App implements OnDestroy {
       await this.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
       return;
     }
-    const message = await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
+    await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
     this.whatsappManualFallbackOpen.set(false);
     await this.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
@@ -2260,7 +2248,7 @@ export class App implements OnDestroy {
     this.whatsappManualFallbackOpen.set(false);
     this.openModal('whatsapp');
     try {
-      const message = await this.loadWhatsAppPackage(() =>
+      await this.loadWhatsAppPackage(() =>
         this.api.prepareOrderWhatsApp(order.order_id, allowResend),
       );
       this.whatsappManualFallbackOpen.set(false);
@@ -2790,21 +2778,6 @@ export class App implements OnDestroy {
     });
   }
 
-  protected orderSortLabel(key: OrderSortKey): string {
-    const labels: Record<OrderSortKey, string> = {
-      priority: 'Prioridad',
-      queue: 'Orden real',
-      created_at: 'Creacion',
-      updated_at: 'Actualizacion',
-      status: 'Estado',
-      reservation: 'Reserva',
-      payment: 'Pago',
-      closure: 'Cierre',
-      applicant: 'Solicitante',
-    };
-    return labels[key];
-  }
-
   protected sortIndicator(key: OrderSortKey): string {
     if (this.orderSortKey() !== key) {
       return '';
@@ -3312,13 +3285,6 @@ export class App implements OnDestroy {
       return 'Sin orden seleccionada';
     }
     return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
-  }
-
-  protected formatNullable(value: string | number | boolean | null | undefined): string {
-    if (value === null || value === undefined || value === '') {
-      return 'sin dato';
-    }
-    return String(value);
   }
 
   protected paymentLabel(order: ServiceOrder): string {

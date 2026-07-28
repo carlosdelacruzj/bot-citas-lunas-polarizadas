@@ -52,22 +52,6 @@ APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
     "fieldset:has(#MainContent_idUcitas_cbosede)",
     "table:has(#MainContent_idUcitas_cbosede)",
 ]
-PROCESS_STAGES_SCREENSHOT_SELECTORS = [
-    "table:has-text('Separa Cita Peritaje')",
-    "table:has-text('Ingresa Solicitud')",
-    "xpath=//*[normalize-space()='Etapas Trámite']/following-sibling::*[1]",
-    "xpath=//*[normalize-space()='Etapas Tramite']/following-sibling::*[1]",
-    "xpath=//*[normalize-space()='Etapas Tràmite']/following-sibling::*[1]",
-    (
-        "xpath=//*[contains(normalize-space(), 'Etapas') "
-        "and contains(normalize-space(), 'Trámite')]/following-sibling::*[1]"
-    ),
-    (
-        "xpath=//*[contains(normalize-space(), 'Etapas') "
-        "and contains(normalize-space(), 'Tramite')]/following-sibling::*[1]"
-    ),
-]
-
 AVAILABLE_TEXTS = [
     "cupo disponible",
     "citas disponibles",

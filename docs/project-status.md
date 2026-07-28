@@ -24,7 +24,7 @@ Estado verificado el `2026-07-27`:
 | Telegram remoto | Operativo | Consultas, clientes, reglas, prioridad, credenciales y control del worker. |
 | CAPTCHA sombra | Operativo | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad. |
 | WhatsApp automático | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos. |
-| Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.58 kB`. |
+| Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.07 kB`. |
 | Calidad Python | Atención requerida | Ruff y `compileall` correctos; pytest tiene `42 passed / 11 failed`. |
 
 ## Resultado comercial acumulado
@@ -85,6 +85,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   WhatsApp Web, la caché de Angular y reportes temporales de estado y
   diagnóstico. Se conservaron el perfil activo, `dashboard/node_modules`,
   `dashboard/dist` y toda la evidencia histórica versionada.
+- La limpieza estática del 28 de julio retiró `198` líneas sin consumidores:
+  seis funciones Python, un conjunto de selectores obsoleto, cuatro métodos y
+  dos asignaciones sin uso en Angular, además del proxy JSON reemplazado por
+  `proxy.conf.cjs`. Compilación, lint, TypeScript y build conservaron el mismo
+  comportamiento observable.
 
 ### Control remoto
 

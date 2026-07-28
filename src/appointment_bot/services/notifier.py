@@ -159,16 +159,6 @@ def notify_immediate_availability(result: AvailabilityResult, settings: Settings
     )
 
 
-def notify_deferred_result(
-    result: AvailabilityResult,
-    settings: Settings,
-    screenshot_path: Path | None = None,
-    screenshot_paths: list[Path] | None = None,
-) -> bool:
-    effective_screenshot_paths = normalize_screenshot_paths(screenshot_path, screenshot_paths)
-    return _send_result_notification(result, settings, effective_screenshot_paths)
-
-
 def notify_deferred_queue_summary(
     report,
     settings: Settings,

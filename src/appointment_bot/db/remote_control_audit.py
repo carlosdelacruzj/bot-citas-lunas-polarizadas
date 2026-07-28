@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import uuid4
 
 from appointment_bot.config import Settings
@@ -62,25 +61,3 @@ def record_remote_control_audit(
             ),
         )
     return audit_id
-
-
-def list_remote_control_audit(
-    *,
-    limit: int = 50,
-    settings: Settings | None = None,
-) -> list[dict[str, Any]]:
-    settings = _settings(settings)
-    init_database(settings)
-    bounded_limit = max(1, min(limit, 200))
-    with _connection(_database_url(settings)) as connection:
-        rows = connection.execute(
-            """
-            SELECT audit_id, actor, action, target_type, target_id, status,
-                   operation_id, detail, created_at
-            FROM remote_control_audit
-            ORDER BY created_at DESC, audit_id DESC
-            LIMIT %s
-            """,
-            (bounded_limit,),
-        ).fetchall()
-    return [dict(row) for row in rows]

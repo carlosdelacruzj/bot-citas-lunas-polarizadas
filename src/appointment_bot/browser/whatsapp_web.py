@@ -976,23 +976,6 @@ def _fill_caption(
     raise RuntimeError("La imagen se adjunto, pero no se encontro el campo para el texto.")
 
 
-def _focus_and_replace_text(page: Page, editor, text: str) -> None:
-    editor.evaluate(
-        """
-        element => {
-            element.focus();
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(element);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-        """
-    )
-    page.keyboard.press("Control+A")
-    page.keyboard.insert_text(text)
-
-
 def _click_send_button(page: Page, attachments: list[Path]) -> None:
     if _document_preview_visible(page, [attachment.name for attachment in attachments]):
         for _ in range(2):
