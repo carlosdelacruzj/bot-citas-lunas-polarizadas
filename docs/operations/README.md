@@ -32,8 +32,9 @@ completo de WhatsApp puede copiarse o abrirse desde el detalle protegido.
 ## Arranque recomendado
 
 En Windows, la tarea programada `AppointmentBotContinuousWorker` ejecuta
-`scripts/start-runtime.ps1` directamente al iniciar sesion. El lanzador levanta en
-segundo plano todo el entorno local:
+`scripts/start-runtime.pyw` mediante `pythonw.exe` al iniciar sesion. Ese host
+sin consola ejecuta el supervisor PowerShell y levanta en segundo plano todo el
+entorno local:
 
 - Docker y PostgreSQL;
 - worker y API de salud en `127.0.0.1:8765`;
@@ -46,6 +47,12 @@ La tarea se instala o recupera con:
 ```powershell
 .\scripts\install-startup-task.ps1
 ```
+
+`start-runtime.ps1` permanece activo como supervisor raiz. Cada 15 segundos
+comprueba los supervisores de worker, Admin API, Telegram y CAPTCHA sombra, y
+recupera solamente el que haya terminado. La tarea debe mostrarse como
+`Running`; un estado `Ready` indica que el supervisor raiz no esta activo.
+`pythonw.exe` evita dejar una ventana de consola abierta sin recurrir a VBS.
 
 El admin/dashboard se reinicia si su proceso termina. No hace falta abrir
 `npm start`: el admin API sirve directamente el build Angular.

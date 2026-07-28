@@ -47,16 +47,20 @@ scripts/start-worker.ps1
 ```
 
 En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
-ejecuta `scripts/start-runtime.ps1` directamente al iniciar sesion. Ese lanzador inicia
+ejecuta `scripts/start-runtime.pyw` con `pythonw.exe` al iniciar sesion. Ese host
+sin consola ejecuta `scripts/start-runtime.ps1`, que inicia
 el bootstrap del worker, `scripts/start-admin-dashboard.ps1`,
 `scripts/start-telegram-control.ps1` y `scripts/start-captcha-shadow.ps1` en
 segundo plano. Cada bootstrap supervisa y reinicia su proceso sin compartir
 memoria con los demas.
 
 La tarea se crea o recupera con `scripts/install-startup-task.ps1`. Este diseno
-no usa Windows Script Host ni `ExecutionPolicy Bypass`.
-El lanzador termina despues de crear los cuatro supervisores independientes,
-por lo que ninguna consola de instalacion permanece como propietaria del worker.
+no usa Windows Script Host, VBS ni `ExecutionPolicy Bypass`, y no deja una
+ventana de `cmd` o PowerShell abierta en el escritorio.
+El lanzador permanece como supervisor raiz de los cuatro procesos independientes
+y comprueba su presencia cada 15 segundos. Si un supervisor desaparece, inicia
+solo ese componente. La tarea programada permanece `Running` y sus reglas de
+reinicio vuelven a ser efectivas si el propio supervisor raiz termina.
 
 ## Procesos administrativos
 

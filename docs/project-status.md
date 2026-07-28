@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-25`.
+Última revisión integral: `2026-07-28`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -59,7 +59,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 ### Reserva y cola
 
 - Primera reserva automática efectiva y reconciliación posterior.
-- Confirmación estricta del portal; un estado ambiguo no autoriza otro submit.
+- El mensaje explícito de éxito del portal confirma la reserva sin reabrir el
+  trámite; si ese mensaje falta, la etapa `Programado` conserva la validación
+  secundaria. Esta decisión operativa evita añadir latencia a la ruta exitosa.
 - Registro durable de `reservation_attempts`, submission pendiente y heartbeat.
 - Prioridad, prioridad exclusiva y restricciones por fecha, hora, día y rangos
   excluidos.
@@ -78,8 +80,14 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   sombra.
 - El arranque automático ya no usa VBS ni `ExecutionPolicy Bypass`; una tarea
   programada ejecuta directamente el lanzador PowerShell versionado.
-- Los cuatro supervisores quedan desacoplados del proceso corto de la tarea;
-  cerrar una consola de instalación no termina el worker.
+- Los cuatro supervisores quedan desacoplados y vigilados por un supervisor raíz
+  persistente. La tarea programada permanece activa, revisa su presencia cada
+  15 segundos y recupera individualmente el que desaparezca.
+- La tarea usa `pythonw.exe` y `scripts/start-runtime.pyw` como host sin consola;
+  no depende de VBS, Windows Script Host ni una ventana visible de PowerShell.
+- La recuperación se validó cerrando únicamente el supervisor de Telegram:
+  reapareció con otro PID en el siguiente ciclo, conservó intactos los procesos
+  Python existentes y Admin API/CAPTCHA continuaron saludables.
 - El mantenimiento local del 28 de julio eliminó `447.34 MB` de artefactos
   regenerables u obsoletos: un respaldo antiguo y un perfil de prueba de
   WhatsApp Web, la caché de Angular y reportes temporales de estado y
@@ -118,7 +126,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Los 11 fallos de pytest se clasificaron como contratos de prueba obsoletos:
   preflight, `document_type`, cinco restricciones por orden y muestreo CAPTCHA
   sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni
-  modificar código productivo. La suite completa quedó en `53 passed`.
+  modificar código productivo. La suite completa quedó en `59 passed`.
 
 ### Control remoto
 

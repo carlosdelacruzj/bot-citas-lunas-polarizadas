@@ -22,7 +22,7 @@ Resultado:
    restricciones y la firma vigente del muestreo CAPTCHA sombra.
 4. No se modificó código productivo ni se redujeron protecciones de identidad,
    lease, selección o confirmación.
-5. Suite final: `53 passed`.
+5. Suite final: `59 passed`.
 
 Criterio de cierre: cumplido.
 
@@ -74,7 +74,9 @@ Estado: iniciado.
 4. Mantener Telegram como interfaz remota y Admin API como frontera de
    autorización.
 5. Confirmar en el siguiente reinicio que Kaspersky conserva la tarea
-   `AppointmentBotContinuousWorker` y el lanzador PowerShell.
+   `AppointmentBotContinuousWorker` y el supervisor raíz PowerShell. La
+   recuperación individual de los cuatro supervisores ya quedó implementada;
+   falta observarla después de un reinicio real.
 
 ## Deuda técnica posterior
 

@@ -40,8 +40,11 @@ if (-not (Test-Path $Python)) {
 }
 
 if (Test-AdminApiProcessRunning) {
-    Write-BootstrapLog "Another local admin API process is already running. Nothing to start."
-    exit 0
+    Write-BootstrapLog "An existing admin API process was found. Supervising it until it exits."
+    while (Test-AdminApiProcessRunning) {
+        Start-Sleep -Seconds $RestartDelaySeconds
+    }
+    Write-BootstrapLog "The adopted admin API process exited. Preparing its replacement."
 }
 
 $dashboardReady = $false

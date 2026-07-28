@@ -14,11 +14,17 @@ compatibilidad, no como lista de trabajo futuro.
   que sirve el dashboard.
 - `scripts/start-runtime.ps1` inicia en segundo plano los bootstraps del worker,
   admin/dashboard, control de Telegram y servicio sombra de CAPTCHA; la tarea
-  programada de Windows lo ejecuta directamente al iniciar sesion.
-- Cada bootstrap queda en un proceso independiente y el lanzador termina
-  despues de iniciarlos; cerrar una consola de instalacion no detiene el worker.
+  programada de Windows lo ejecuta al iniciar sesion mediante
+  `scripts/start-runtime.pyw` y `pythonw.exe`, sin crear una ventana de consola.
+- Cada bootstrap queda en un proceso independiente. El supervisor raiz permanece
+  activo y comprueba cada 15 segundos que los cuatro sigan vivos; si uno
+  desaparece, lo vuelve a iniciar sin reiniciar los demas servicios.
+- Admin API y Telegram pueden adoptar un proceso Python que haya sobrevivido a
+  la caida de su supervisor y esperan su salida antes de reemplazarlo.
 - `scripts/install-startup-task.ps1` instala o recupera esa tarea sin usar VBS
-  ni omitir la politica de ejecucion de PowerShell.
+  ni omitir la politica de ejecucion de PowerShell. El lanzador Python solo
+  proporciona un host sin consola; la supervision permanece en el PowerShell
+  versionado.
 - `scripts/start-captcha-shadow.ps1` supervisa el servicio de `test-captcha` en
   `127.0.0.1:8787`, lo inicia con la sesion y lo recupera si deja de responder.
 - El build Angular de produccion conserva la hoja de estilos como recurso

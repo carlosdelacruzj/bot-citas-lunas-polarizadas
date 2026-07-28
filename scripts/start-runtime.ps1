@@ -1,4 +1,7 @@
-param()
+param(
+    [ValidateRange(1, 3600)]
+    [int]$SupervisorCheckIntervalSeconds = 15
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -17,33 +20,34 @@ function Write-BootstrapLog {
     Add-Content -LiteralPath $BootstrapLog -Value $line -Encoding UTF8
 }
 
-function Start-Bootstrap {
-    param(
-        [string]$Name,
-        [string]$ScriptName
-    )
+function Test-BootstrapRunning {
+    param([string]$ScriptPath)
 
-    $scriptPath = Join-Path $PSScriptRoot $ScriptName
-    if (-not (Test-Path -LiteralPath $scriptPath)) {
-        throw "$Name bootstrap was not found at $scriptPath."
-    }
-
+    $currentProcessId = $PID
     $running = Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" |
         Where-Object {
-            $_.ProcessId -ne $PID -and
+            $_.ProcessId -ne $currentProcessId -and
             $_.CommandLine -and
             $_.CommandLine.IndexOf(
-                $scriptPath,
+                $ScriptPath,
                 [System.StringComparison]::OrdinalIgnoreCase
             ) -ge 0
         }
-    if ($running) {
-        Write-BootstrapLog "$Name bootstrap is already running. Nothing to start."
+    return $null -ne $running
+}
+
+function Start-Bootstrap {
+    param(
+        [string]$Name,
+        [string]$ScriptPath
+    )
+
+    if (Test-BootstrapRunning -ScriptPath $ScriptPath) {
         return
     }
 
-    Write-BootstrapLog "Starting $Name bootstrap."
-    Start-Process `
+    Write-BootstrapLog "$Name supervisor is not running. Starting it."
+    $process = Start-Process `
         -FilePath $PowerShellExecutable `
         -ArgumentList @(
             "-NoLogo",
@@ -52,23 +56,62 @@ function Start-Bootstrap {
             "-WindowStyle",
             "Hidden",
             "-File",
-            ('"{0}"' -f $scriptPath)
+            ('"{0}"' -f $ScriptPath)
         ) `
         -WorkingDirectory $ProjectRoot `
-        -WindowStyle Hidden
+        -WindowStyle Hidden `
+        -PassThru
+    Write-BootstrapLog "$Name supervisor started with PID $($process.Id)."
 }
 
+$bootstrapDefinitions = @(
+    @{
+        Name = "admin dashboard"
+        ScriptPath = Join-Path $PSScriptRoot "start-admin-dashboard.ps1"
+    },
+    @{
+        Name = "Telegram control"
+        ScriptPath = Join-Path $PSScriptRoot "start-telegram-control.ps1"
+    },
+    @{
+        Name = "CAPTCHA shadow"
+        ScriptPath = Join-Path $PSScriptRoot "start-captcha-shadow.ps1"
+    },
+    @{
+        Name = "worker"
+        ScriptPath = Join-Path $PSScriptRoot "start-worker.ps1"
+    }
+)
+
 try {
-    Write-BootstrapLog "Runtime bootstrap started."
+    foreach ($definition in $bootstrapDefinitions) {
+        if (-not (Test-Path -LiteralPath $definition.ScriptPath)) {
+            throw "$($definition.Name) supervisor was not found at $($definition.ScriptPath)."
+        }
+    }
 
-    Start-Bootstrap -Name "admin dashboard" -ScriptName "start-admin-dashboard.ps1"
-    Start-Bootstrap -Name "Telegram control" -ScriptName "start-telegram-control.ps1"
-    Start-Bootstrap -Name "CAPTCHA shadow" -ScriptName "start-captcha-shadow.ps1"
-    Start-Bootstrap -Name "worker" -ScriptName "start-worker.ps1"
+    Write-BootstrapLog (
+        "Runtime root supervisor started. Checking child supervisors every {0} seconds." -f
+        $SupervisorCheckIntervalSeconds
+    )
 
-    Write-BootstrapLog "All runtime bootstrap processes were requested."
-    exit 0
+    while ($true) {
+        foreach ($definition in $bootstrapDefinitions) {
+            try {
+                Start-Bootstrap `
+                    -Name $definition.Name `
+                    -ScriptPath $definition.ScriptPath
+            } catch {
+                Write-BootstrapLog (
+                    "Could not supervise {0}: {1}" -f
+                    $definition.Name,
+                    $_.Exception.Message
+                )
+            }
+        }
+        Start-Sleep -Seconds $SupervisorCheckIntervalSeconds
+    }
 } catch {
-    Write-BootstrapLog ("Runtime bootstrap failed: {0}" -f $_.Exception.Message)
+    Write-BootstrapLog ("Runtime root supervisor failed: {0}" -f $_.Exception.Message)
     exit 1
 }

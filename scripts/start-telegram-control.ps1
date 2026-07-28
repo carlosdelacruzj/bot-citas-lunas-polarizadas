@@ -39,8 +39,11 @@ if (-not (Test-Path $Python)) {
 }
 
 if (Test-TelegramControlProcessRunning) {
-    Write-BootstrapLog "Another Telegram control process is already running. Nothing to start."
-    exit 0
+    Write-BootstrapLog "An existing Telegram control process was found. Supervising it until it exits."
+    while (Test-TelegramControlProcessRunning) {
+        Start-Sleep -Seconds $RestartDelaySeconds
+    }
+    Write-BootstrapLog "The adopted Telegram control process exited. Starting its replacement."
 }
 
 while ($true) {

@@ -38,11 +38,13 @@ appointment-bot-worker
 ```
 
 En Windows, `scripts/start-worker.ps1` levanta PostgreSQL, espera su health check y reinicia el
-worker ante errores o solicitudes controladas. `scripts/start-runtime.ps1` inicia en segundo
-plano todo el entorno mediante la tarea programada instalada por
+worker ante errores o solicitudes controladas. `scripts/start-runtime.pyw` inicia sin consola
+el supervisor `scripts/start-runtime.ps1` mediante la tarea programada instalada por
 `scripts/install-startup-task.ps1`. Si otro host ya tiene el lease del worker, el proceso sale con un
 reinicio controlado y el script espera antes de intentar de nuevo. El script tambien evita
 iniciar un segundo `appointment_bot.services.continuous_host` local si ya hay uno corriendo.
+El supervisor raiz permanece activo y recupera por separado worker, Admin API, Telegram o
+CAPTCHA sombra cuando desaparece su supervisor.
 
 Administrar ordenes:
 

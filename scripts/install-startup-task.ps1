@@ -5,17 +5,20 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$RuntimeScript = Join-Path $PSScriptRoot "start-runtime.ps1"
-$PowerShellExecutable = Join-Path $PSHOME "powershell.exe"
+$RuntimeLauncher = Join-Path $PSScriptRoot "start-runtime.pyw"
+$PythonWindowed = Join-Path $ProjectRoot ".venv\Scripts\pythonw.exe"
 $UserId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
-if (-not (Test-Path -LiteralPath $RuntimeScript)) {
-    throw "Runtime bootstrap was not found at $RuntimeScript."
+if (-not (Test-Path -LiteralPath $RuntimeLauncher)) {
+    throw "Windowless runtime launcher was not found at $RuntimeLauncher."
+}
+if (-not (Test-Path -LiteralPath $PythonWindowed)) {
+    throw "Windowed Python executable was not found at $PythonWindowed."
 }
 
 $action = New-ScheduledTaskAction `
-    -Execute $PowerShellExecutable `
-    -Argument ('-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File "{0}"' -f $RuntimeScript) `
+    -Execute $PythonWindowed `
+    -Argument ('"{0}"' -f $RuntimeLauncher) `
     -WorkingDirectory $ProjectRoot
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
 $principal = New-ScheduledTaskPrincipal `
@@ -36,7 +39,7 @@ $task = New-ScheduledTask `
     -Trigger $trigger `
     -Principal $principal `
     -Settings $settings `
-    -Description "Starts the appointment bot runtime after the operator logs on."
+    -Description "Supervises the appointment bot runtime without opening a console window."
 
 Register-ScheduledTask -TaskName $TaskName -InputObject $task -Force | Out-Null
 Write-Output "Scheduled task '$TaskName' registered for $UserId."
