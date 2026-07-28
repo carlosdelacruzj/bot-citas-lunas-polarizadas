@@ -24,6 +24,14 @@ fechados. No copiar el mismo artefacto pesado entre ambos.
 - Eliminar capturas rutinarias sin hallazgo conforme a la retencion configurada.
 - El CAPTCHA original derivado del HTML es canonico; no conservar un recorte
   duplicado salvo que el original no exista.
+- La limpieza configurada recorre subcarpetas de logs, screenshots y videos.
+  Nunca entra en `screenshots/whatsapp/`, `screenshots/whatsapp-outgoing/`,
+  `screenshots/whatsapp-followup-outgoing/` ni `screenshots/preflight/`.
+- Dentro de las carpetas fechadas conserva por nombre confirmaciones, cupos,
+  preenvios, respuestas del portal, resultados parciales, errores, defensas,
+  rechazos, `reservation_unconfirmed`, `slot_lost` y CAPTCHA `original-html`.
+  La retencion automatica elimina solamente artefactos antiguos que no entren
+  en esas categorias.
 
 ## Datos compartibles
 

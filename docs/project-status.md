@@ -94,6 +94,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   incluyendo su generación automática al cierre y el comando `daily-report`.
   El corte de las 18:00, la revisión final de órdenes listas y el reinicio de
   las 07:30 permanecen sin cambios.
+- La retención de 14 días ahora recorre las subcarpetas de logs, capturas y
+  videos, elimina directorios vacíos y conserva explícitamente evidencia de
+  reserva, disponibilidad, fallos, defensas, CAPTCHA originales, preflight y
+  paquetes de WhatsApp. Antes solo inspeccionaba archivos directamente bajo
+  cada raíz y dejaba intactas todas las carpetas fechadas.
 
 ### Control remoto
 

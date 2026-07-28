@@ -13,7 +13,6 @@ logs/*
 screenshots/*
 videos/*
 reports/status/*
-reports/daily/*
 reports/evidence/evidence-events-*.csv
 reports/evidence/evidence-summary-*.md
 reports/operations/weekly-*.csv
