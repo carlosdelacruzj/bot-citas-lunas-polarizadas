@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 from pathlib import Path
 from uuid import uuid4
 
@@ -16,6 +15,7 @@ from appointment_bot.db.common import (
     init_database,
 )
 from appointment_bot.db.whatsapp_messages import _international_phone
+from appointment_bot.utils.file_deduplication import copy_deduplicated_file
 
 MESSAGE_KIND = "post_payment_followup"
 OUTGOING_ROOT = Path("screenshots/whatsapp-followup-outgoing")
@@ -362,8 +362,7 @@ def _copy_followup_documents(message_id: str, values: object) -> list[str]:
         destination = package_dir / source.name
         if destination.exists():
             destination = package_dir / f"{source.stem}-{index}{source.suffix}"
-        shutil.copy2(source, destination)
-        copied.append(str(destination))
+        copied.append(str(copy_deduplicated_file(source, destination)))
     return copied
 
 

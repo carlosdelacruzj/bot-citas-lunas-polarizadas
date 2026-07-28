@@ -25,7 +25,7 @@ Estado verificado el `2026-07-28`:
 | CAPTCHA sombra | Operativo | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad. |
 | WhatsApp automático | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos. |
 | Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.07 kB`. |
-| Calidad Python | Operativa | Ruff y `compileall` correctos; pytest tiene `53 passed`. |
+| Calidad Python | Operativa | Ruff y `compileall` correctos; pytest tiene `59 passed`. |
 
 ## Resultado comercial acumulado
 
@@ -105,6 +105,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   comandos del worker aplicados después de `90` días. No alcanza mensajes
   reales, comandos pendientes o fallidos, trabajos WhatsApp, órdenes, pagos,
   reservas ni intentos.
+- Los `395` archivos de paquetes WhatsApp conservaron sus rutas y hashes, pero
+  ahora comparten `55` contenidos físicos mediante un almacén local inmutable.
+  La migración recuperó `91.04 MB`; las nuevas constancias, imágenes de pago y
+  PDFs se deduplican por SHA-256, con copia normal como fallback si el sistema
+  de archivos no admite enlaces físicos.
 - Los 11 fallos de pytest se clasificaron como contratos de prueba obsoletos:
   preflight, `document_type`, cinco restricciones por orden y muestreo CAPTCHA
   sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni
@@ -176,7 +181,7 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m ruff check src tests`: correcto.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
-- `python -m pytest -q`: `53 passed`.
+- `python -m pytest -q`: `59 passed`.
 - Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
   siguiente arranque diario.
 

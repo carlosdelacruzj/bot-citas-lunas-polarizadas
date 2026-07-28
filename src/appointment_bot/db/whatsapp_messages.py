@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import json
-import shutil
 from pathlib import Path
 from urllib.parse import quote
 from uuid import uuid4
@@ -21,6 +20,7 @@ from appointment_bot.db.common import (
 from appointment_bot.services.reservation_messages import (
     format_confirmed_reservation_message,
 )
+from appointment_bot.utils.file_deduplication import copy_deduplicated_file
 
 MESSAGE_KIND = "reservation_confirmation_payment"
 OUTGOING_ROOT = Path("screenshots/whatsapp-outgoing")
@@ -312,8 +312,7 @@ def archive_whatsapp_evidence(order_id: str, values: list[object]) -> Path | Non
         if character.isalnum() or character == "-"
     )
     destination = OUTGOING_ROOT / f"source-{safe_order}-programado-{uuid4().hex[:8]}.png"
-    shutil.copy2(source, destination)
-    return destination
+    return copy_deduplicated_file(source, destination)
 
 
 def _insert_message(
@@ -410,8 +409,7 @@ def _select_safe_evidence(values: list[object]) -> Path:
 def _copy_attachment(source: Path, message_id: str) -> Path:
     OUTGOING_ROOT.mkdir(parents=True, exist_ok=True)
     destination = OUTGOING_ROOT / f"{message_id}-constancia.png"
-    shutil.copy2(source, destination)
-    return destination
+    return copy_deduplicated_file(source, destination)
 
 
 def _copy_payment_attachment(message_id: str) -> Path:
@@ -430,8 +428,7 @@ def _copy_payment_attachment(message_id: str) -> Path:
         )
     OUTGOING_ROOT.mkdir(parents=True, exist_ok=True)
     destination = OUTGOING_ROOT / f"{message_id}-payment{source.suffix.lower()}"
-    shutil.copy2(source, destination)
-    return destination
+    return copy_deduplicated_file(source, destination)
 
 
 def _payment_message(amount: str) -> str:

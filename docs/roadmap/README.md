@@ -34,7 +34,8 @@ Estado: en observación.
 
 - Medir trabajos `sent`, `failed`, `blocked` y `uncertain`.
 - Confirmar que solo Admin API abre el perfil persistente.
-- Verificar que evidencia y Yape permanezcan en un solo álbum.
+- Verificar que evidencia y Yape permanezcan en un solo álbum y que sus rutas
+  deduplicadas sigan resolviendo en los próximos envíos.
 - Verificar que el postpago solo se cree después de confirmar `paid`.
 - No habilitar reintentos automáticos para resultados ambiguos.
 
