@@ -17,7 +17,6 @@ from appointment_bot.reports.run_reporting import (
 )
 from appointment_bot.reports.status import (
     StatusReportActivity,
-    generate_daily_report_image,
     generate_status_report_images,
 )
 
@@ -29,7 +28,6 @@ __all__ = [
     "append_partial_availability_case",
     "export_evidence_summary",
     "finalize_report",
-    "generate_daily_report_image",
     "generate_status_report_images",
     "report_from_result",
     "reservation_confirmed",

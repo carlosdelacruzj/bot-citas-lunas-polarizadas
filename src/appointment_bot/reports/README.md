@@ -15,7 +15,7 @@ Estas rutas generan o actualizan:
 - historial final de corridas;
 - indice y resumen compacto de evidencia;
 - bitacoras de optimizacion y disponibilidad parcial;
-- fichas de estado y reporte diario.
+- fichas de estado.
 
 El indice compacto aplica un criterio operativo: una disponibilidad parcial
 solo se conserva si incluye fecha y hora seleccionables o explica un bloqueo,
@@ -34,4 +34,3 @@ No cambiar aqui los formatos ni rutas de salida historicas:
 - `reports/evidence/history/reservation-optimization-log.md`
 - `reports/evidence/history/partial-availability-log.md`
 - `reports/status/`
-- `reports/daily/`

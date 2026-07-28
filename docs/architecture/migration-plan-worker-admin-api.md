@@ -639,7 +639,7 @@ Resultado:
 - `reports/evidence.py` contiene indice/resumen compacto de evidencia;
 - `reports/optimization.py` contiene bitacoras de optimizacion y disponibilidad
   parcial;
-- `reports/status.py` contiene fichas de estado y reporte diario;
+- `reports/status.py` contiene fichas de estado;
 - `services/run_reporting.py`, `services/status_reports.py`,
   `services/evidence_summary.py` y `services/optimization_log.py` quedaron como
   wrappers transicionales hasta 9.7;
@@ -653,7 +653,6 @@ Rutas de salida preservadas:
 - `reports/evidence/history/reservation-optimization-log.md`;
 - `reports/evidence/history/partial-availability-log.md`;
 - `reports/status/`;
-- `reports/daily/`.
 
 Validacion minima:
 

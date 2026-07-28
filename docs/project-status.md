@@ -90,6 +90,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   dos asignaciones sin uso en Angular, además del proxy JSON reemplazado por
   `proxy.conf.cjs`. Compilación, lint, TypeScript y build conservaron el mismo
   comportamiento observable.
+- El reporte general PNG de `reports/daily/` se retiró por falta de uso,
+  incluyendo su generación automática al cierre y el comando `daily-report`.
+  El corte de las 18:00, la revisión final de órdenes listas y el reinicio de
+  las 07:30 permanecen sin cambios.
 
 ### Control remoto
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import mimetypes
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, time
 from html import escape
@@ -12,7 +10,6 @@ from playwright.sync_api import sync_playwright
 
 from appointment_bot.db.orders import list_service_order_summaries
 from appointment_bot.db.runs import (
-    get_run,
     list_runs,
     summarize_order_checks,
 )
@@ -85,50 +82,6 @@ def generate_status_report_images(
             browser.close()
 
     return results
-
-
-def generate_daily_report_image(
-    *,
-    output_dir: Path = Path("reports/daily"),
-    generated_at: datetime | None = None,
-) -> Path:
-    effective_generated_at = generated_at or datetime.now(UTC)
-    period_start, period_end = _daily_report_window(effective_generated_at)
-    active_orders = [order for order in list_service_order_summaries() if order.status == "ready"]
-    if not active_orders:
-        raise ValueError("No hay ordenes activas para generar el reporte general.")
-
-    monitoring_activity = _activity_for_order(
-        active_orders[0].order_id,
-        period_start,
-        period_end,
-    )
-    appointments = _appointments_found(period_start, period_end)
-    brand_image = _image_data_uri(Path("screenshots/whatsapp/Perfil.jpeg"))
-    output_dir = _dated_output_dir(output_dir, effective_generated_at)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    report_date = effective_generated_at.astimezone(REPORT_TIMEZONE).strftime("%d-%m-%Y")
-    output_path = output_dir / f"Reporte general - {report_date}.png"
-
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        try:
-            page = browser.new_page(viewport={"width": 1080, "height": 1080})
-            page.set_content(
-                _daily_report_html(
-                    monitoring_activity,
-                    appointments,
-                    effective_generated_at,
-                    brand_image,
-                )
-            )
-            card = page.locator(".report-card")
-            card.wait_for(state="visible")
-            card.screenshot(path=str(output_path))
-        finally:
-            browser.close()
-
-    return output_path
 
 
 def _activity_for_order(
@@ -265,130 +218,6 @@ h1 {{ margin: 13px 0 8px; font-size: 48px; line-height: 1.08; }}
 </main></body></html>"""
 
 
-def _daily_report_html(
-    activity: StatusReportActivity,
-    appointments: list[tuple[str, str, str]],
-    generated_at: datetime,
-    brand_image: str | None,
-) -> str:
-    last_check = (
-        _format_local_datetime(activity.last_finished_at)
-        if activity.last_finished_at is not None
-        else "Sin consultas registradas"
-    )
-    appointment_section = ""
-    if appointments:
-        appointment_rows = "".join(
-            '<div class="appointment">'
-            f"<strong>{escape(date_text)}</strong> · {escape(hour_text)}"
-            f"<span>{escape(site)}</span></div>"
-            for date_text, hour_text, site in appointments
-        )
-        appointment_section = (
-            '<section class="appointments"><h2>Citas encontradas</h2>'
-            f"{appointment_rows}</section>"
-        )
-    brand_section = (
-        f'<img class="brand" src="{brand_image}" alt="Citas Lunas Polarizadas">'
-        if brand_image is not None
-        else '<div class="brand-fallback">Citas Lunas Polarizadas</div>'
-    )
-
-    return f"""<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><style>
-* {{ box-sizing: border-box; }}
-html, body {{ margin: 0; background: transparent; font-family: Arial, sans-serif;
-  color: #172033; }}
-.report-card {{ width: 1000px; min-height: 800px; margin: 40px; padding: 66px;
-  background: #f8fafc; border-radius: 38px; border: 2px solid #dbe4ee;
-  box-shadow: 0 18px 60px rgba(15, 23, 42, .12); display: flex;
-  flex-direction: column; justify-content: center; }}
-.summary {{ display: flex; flex-direction: column; }}
-.header {{ display: flex; justify-content: space-between; align-items: center; gap: 30px; }}
-.heading {{ display: flex; align-items: center; gap: 25px; }}
-.brand {{ display: block; width: 118px; height: 118px; object-fit: cover; border-radius: 24px;
-  border: 2px solid #12caca; box-shadow: 0 10px 28px rgba(15, 23, 42, .16); }}
-.brand-fallback {{ width: 118px; height: 118px; display: flex; align-items: center;
-  justify-content: center; border-radius: 24px; background: #071426; color: #12caca;
-  font-size: 17px; font-weight: 700; text-align: center; }}
-.eyebrow {{ color: #0f8f95; font-weight: 700; font-size: 21px; letter-spacing: 1.5px;
-  text-transform: uppercase; }}
-h1 {{ margin: 10px 0 0; font-size: 42px; line-height: 1.08; }}
-.badge {{ padding: 16px 24px; border-radius: 999px; font-weight: 700; font-size: 21px;
-  white-space: nowrap; color: #075f62; background: #ccfbf1; }}
-.metrics {{ display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
-  margin-top: 50px; }}
-.metric {{ min-height: 175px; padding: 28px; border-radius: 24px; background: white;
-  border: 1px solid #e2e8f0; }}
-.metric:first-child {{ grid-column: 1 / -1; min-height: 150px; border-color: #99f6e4;
-  background: linear-gradient(135deg, #f0fdfa, #ffffff); }}
-.label {{ color: #64748b; font-size: 18px; text-transform: uppercase; letter-spacing: .8px; }}
-.value {{ margin-top: 17px; font-size: 40px; font-weight: 700; line-height: 1.15; }}
-.value.small {{ font-size: 23px; }}
-.metric:first-child .value {{ color: #0f766e; }}
-.appointments {{ margin-top: 28px; padding: 30px 34px; border-radius: 24px; background: white;
-  border: 1px solid #e2e8f0; }}
-h2 {{ margin: 0 0 18px; font-size: 27px; color: #0f8f95; }}
-.appointment {{ display: flex; gap: 12px; align-items: center; padding: 11px 0;
-  font-size: 22px; border-top: 1px solid #e2e8f0; }}
-.appointment:first-of-type {{ border-top: 0; }}
-.appointment span {{ margin-left: auto; color: #64748b; }}
-.footer {{ margin-top: 46px; text-align: right; color: #64748b; font-size: 18px; }}
-</style></head><body><main class="report-card">
-  <section class="summary">
-  <div class="header"><div class="heading">{brand_section}<div>
-  <div class="eyebrow">Resumen del día</div><h1>Monitoreo de disponibilidad</h1></div></div>
-  <div class="badge">ACTIVO</div></div>
-  <section class="metrics">
-    <div class="metric"><div class="label">Consultas realizadas</div>
-      <div class="value">{activity.checks}</div></div>
-    <div class="metric"><div class="label">Último resultado</div>
-      <div class="value small">{escape(_status_text(activity.last_status))}</div></div>
-    <div class="metric"><div class="label">Última revisión</div>
-      <div class="value small">{escape(last_check)}</div></div>
-  </section>
-  {appointment_section}
-  </section>
-  <footer class="footer">Reporte generado: {_format_local_datetime(generated_at)}</footer>
-</main></body></html>"""
-
-
-def _appointments_found(
-    period_start: datetime,
-    period_end: datetime,
-) -> list[tuple[str, str, str]]:
-    found: list[tuple[str, str, str]] = []
-    seen = set()
-    offset = 0
-    while True:
-        page = list_runs(limit=RUN_PAGE_SIZE, offset=offset)
-        if not page:
-            break
-        for run in page:
-            started_at = _parse_timestamp(run.started_at)
-            if not period_start <= started_at <= period_end:
-                continue
-            if run.status not in {"available", "partial", "registered"}:
-                continue
-            detail = get_run(run.run_id)
-            values = detail.details or {} if detail is not None else {}
-            date_text = str(values.get("fecha") or "").strip()
-            hour_text = str(values.get("hora") or "").strip()
-            site = str(values.get("sede") or "").strip()
-            if not date_text or not hour_text:
-                continue
-            if "sin cupos" in f"{date_text} {hour_text}".lower():
-                continue
-            appointment = (date_text, hour_text, site)
-            if appointment not in seen:
-                seen.add(appointment)
-                found.append(appointment)
-        if len(page) < RUN_PAGE_SIZE or _parse_timestamp(page[-1].started_at) < period_start:
-            break
-        offset += RUN_PAGE_SIZE
-    return found
-
-
 def _status_presentation(
     order: ServiceOrderSummary,
     activity: StatusReportActivity,
@@ -471,25 +300,6 @@ def _report_window(generated_at: datetime) -> tuple[datetime, datetime]:
     )
     period_end = min(max(local_now, period_start), scheduled_end)
     return period_start.astimezone(UTC), period_end.astimezone(UTC)
-
-
-def _daily_report_window(generated_at: datetime) -> tuple[datetime, datetime]:
-    local_now = generated_at.astimezone(REPORT_TIMEZONE)
-    period_start = datetime.combine(
-        local_now.date(),
-        time(hour=REPORT_START_HOUR),
-        tzinfo=REPORT_TIMEZONE,
-    )
-    period_end = max(local_now, period_start)
-    return period_start.astimezone(UTC), period_end.astimezone(UTC)
-
-
-def _image_data_uri(path: Path) -> str | None:
-    if not path.is_file():
-        return None
-    content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:{content_type};base64,{encoded}"
 
 
 def _dated_output_dir(output_dir: Path, generated_at: datetime) -> Path:

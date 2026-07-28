@@ -7,7 +7,6 @@ from dataclasses import replace
 from pathlib import Path
 
 from appointment_bot.config import load_settings
-from appointment_bot.reports.status import generate_daily_report_image
 from appointment_bot.services.captcha_shadow import configure_captcha_shadow
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
@@ -41,7 +40,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     captcha_shadow_dispatcher.start()
     worker_failure: list[BaseException] = []
     health_failure = False
-    daily_cutoff_report_generated = False
+    daily_cutoff_review_completed = False
 
     def run_worker() -> None:
         try:
@@ -91,19 +90,17 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
                 break
             worker_status = worker.status()
             if worker_status.get("phase") == DAILY_CUTOFF_REASON:
-                if not daily_cutoff_report_generated:
+                if not daily_cutoff_review_completed:
                     try:
                         if settings.final_ready_review_enabled:
                             _run_final_ready_review(settings)
                         else:
                             logger.info("Final ready-order review skipped by configuration.")
-                        path = generate_daily_report_image()
-                        logger.info("Final daily status report generated: %s", path)
                     except Exception:
-                        logger.exception("Could not generate the final daily status report")
-                    daily_cutoff_report_generated = True
+                        logger.exception("Could not run the final ready-order review")
+                    daily_cutoff_review_completed = True
             else:
-                daily_cutoff_report_generated = False
+                daily_cutoff_review_completed = False
             healthy, reason = worker.health()
             if not healthy:
                 logger.error("Continuous worker health check failed: %s", reason)
@@ -124,14 +121,13 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         )
         if worker.shutdown_reason == DAILY_CUTOFF_REASON:
             try:
-                if not daily_cutoff_report_generated and settings.final_ready_review_enabled:
-                    _run_final_ready_review(settings)
-                elif not settings.final_ready_review_enabled:
-                    logger.info("Final ready-order review skipped by configuration.")
-                path = generate_daily_report_image()
-                logger.info("Final daily status report generated: %s", path)
+                if not daily_cutoff_review_completed:
+                    if settings.final_ready_review_enabled:
+                        _run_final_ready_review(settings)
+                    else:
+                        logger.info("Final ready-order review skipped by configuration.")
             except Exception:
-                logger.exception("Could not generate the final daily status report")
+                logger.exception("Could not run the final ready-order review")
         server.shutdown()
         server.server_close()
         server_thread.join(timeout=10)

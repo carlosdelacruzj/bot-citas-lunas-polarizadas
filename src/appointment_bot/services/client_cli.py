@@ -27,10 +27,7 @@ from appointment_bot.db.orders import (
 from appointment_bot.db.runs import list_run_details_between
 from appointment_bot.reports.evidence import export_evidence_summary
 from appointment_bot.reports.observation import export_optimization_observation
-from appointment_bot.reports.status import (
-    generate_daily_report_image,
-    generate_status_report_images,
-)
+from appointment_bot.reports.status import generate_status_report_images
 from appointment_bot.reports.weekly import LIMA_TZ, export_weekly_report
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.order_preflight import validate_order_preflight
@@ -161,16 +158,6 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("reports/status"),
         help="Directorio donde se guardan las fichas PNG.",
-    )
-    daily_report_parser = subparsers.add_parser(
-        "daily-report",
-        help="Genera el reporte general del dia.",
-    )
-    daily_report_parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("reports/daily"),
-        help="Directorio donde se guarda el reporte general.",
     )
     evidence_summary_parser = subparsers.add_parser(
         "evidence-summary",
@@ -385,11 +372,6 @@ def run(argv: Sequence[str] | None = None) -> int:
         paths = generate_status_report_images(orders, output_dir=args.output_dir)
         for path in paths:
             print(f"Ficha generada: {path}")
-        return 0
-
-    if args.command == "daily-report":
-        path = generate_daily_report_image(output_dir=args.output_dir)
-        print(f"Reporte general generado: {path}")
         return 0
 
     if args.command == "evidence-summary":

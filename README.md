@@ -55,7 +55,6 @@ appointment-bot-client done order-DNI
 appointment-bot-client paid order-DNI --amount-paid 120
 appointment-bot-client status-report order-DNI
 appointment-bot-client status-report
-appointment-bot-client daily-report
 ```
 
 Checkpoint probado: [hitos operativos](docs/history/milestones.md).
@@ -69,10 +68,9 @@ fichas para todas las ordenes activas en `reports/status/`. Las fichas usan el h
 Lima, muestran el documento enmascarado y se nombran con el cliente y la hora de generacion.
 
 Desde las 18:00 el worker no inicia nuevas consultas. Si una consulta comenzo antes del
-corte, permite que termine junto con cualquier cola de reserva derivada de ella. Al
-finalizar genera `reports/daily/Reporte general - DD-MM-AAAA.png`, incluyendo la actividad
-de esa ultima ejecucion, y cierra el worker y su API. `daily-report` permite generar o
-actualizar la muestra manualmente.
+corte, permite que termine junto con cualquier cola de reserva derivada de ella y luego
+cierra el worker y su API. La revision final de ordenes listas se conserva, pero ya no se
+genera una imagen de reporte general.
 
 El worker mantiene una sola sesion observadora y solo hace revisiones densas dentro de
 `OBSERVER_HOT_WINDOWS` (por defecto `08:15-08:50,09:30-10:00,11:40-12:40,15:55-16:30`,
