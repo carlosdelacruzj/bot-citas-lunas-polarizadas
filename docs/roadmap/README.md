@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-07-25`.
+Última priorización: `2026-07-28`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -8,21 +8,23 @@ estado de lo construido, validado y observado vive en
 
 ## Prioridad 0 - Recuperar una validación confiable
 
-Estado: pendiente.
+Estado: completado el `2026-07-28`.
 
 Objetivo: volver a tener una suite que distinga regresiones reales de contratos
 de prueba desactualizados.
 
-1. Clasificar los 11 fallos actuales de pytest.
-2. Actualizar expectativas antiguas de `document_type`, restricciones por orden
-   y firma del muestreo CAPTCHA.
-3. Investigar por separado los fallos de claim y creación de órdenes por API.
-4. Confirmar que ningún ajuste reduzca las protecciones de identidad, lease,
-   selección o confirmación final.
-5. Registrar aquí el resultado final de la suite.
+Resultado:
 
-Criterio de cierre: suite existente en verde o cada fallo restante documentado
-como excepción consciente con causa y alcance.
+1. Los 11 fallos correspondían a contratos de prueba desactualizados.
+2. Claim y creación por API conservan el preflight obligatorio; las pruebas
+   directas que necesitan una orden reclamable lo desactivan explícitamente.
+3. Las expectativas ahora incluyen `document_type`, el contrato completo de
+   restricciones y la firma vigente del muestreo CAPTCHA sombra.
+4. No se modificó código productivo ni se redujeron protecciones de identidad,
+   lease, selección o confirmación.
+5. Suite final: `53 passed`.
+
+Criterio de cierre: cumplido.
 
 ## Prioridad 1 - Consolidar los cambios recientes
 

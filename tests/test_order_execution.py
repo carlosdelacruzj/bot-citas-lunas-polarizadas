@@ -21,6 +21,7 @@ def _order(index: int) -> ServiceOrderRuntime:
         order_id=f"order-{index}",
         name=f"Order {index}",
         username=str(index),
+        document_type="dni",
         password="secret",
         priority=0,
         status="ready",
@@ -37,7 +38,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, minimum_date, None),
+                return_value=(None, minimum_date, None, None, ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
@@ -58,7 +59,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(11, minimum_date, None),
+                return_value=(11, minimum_date, None, None, ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
@@ -78,7 +79,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, None, (allowed_date.isoweekday(),)),
+                return_value=(None, None, None, (allowed_date.isoweekday(),), ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 

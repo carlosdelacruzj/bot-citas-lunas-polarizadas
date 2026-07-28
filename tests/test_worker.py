@@ -4,6 +4,7 @@ import tempfile
 import threading
 import time
 import unittest
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -26,6 +27,7 @@ class ContinuousWorkerTests(unittest.TestCase):
                 order_id="order-1",
                 name="Order 1",
                 username="12345678",
+                document_type="dni",
                 password="secret",
                 priority=1,
                 status="ready",
@@ -80,28 +82,50 @@ class ContinuousWorkerTests(unittest.TestCase):
 
     def test_observer_collects_five_captcha_samples_with_refresh_between_samples(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            settings = make_settings(Path(directory))
+            settings = replace(
+                make_settings(Path(directory)),
+                observer_captcha_sample_limit=5,
+            )
             paths = [Path(directory) / f"captcha-{index}.png" for index in range(5)]
+            next_path = iter(paths)
+
+            def save_captcha(_page, _settings, _label, *, captcha_audit):
+                path = next(next_path)
+                captcha_audit["captcha_original_html_path"] = str(path)
+                captcha_audit["captcha_sent_source"] = "original_html"
+                return path
 
             with (
                 patch(
                     "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
-                    side_effect=paths,
-                ) as save_captcha,
+                    side_effect=save_captcha,
+                ) as save_captcha_mock,
                 patch(
                     "appointment_bot.reservation_engine.observer.refresh_reservation_captcha",
                     return_value=True,
                 ) as refresh_captcha,
+                patch(
+                    "appointment_bot.reservation_engine.observer.enqueue_shadow_prediction",
+                    return_value=True,
+                ) as enqueue_shadow,
             ):
-                captured = observer._collect_observer_captcha_samples(
+                captured_paths, event_ids = observer._collect_observer_captcha_samples(
                     object(),
                     settings,
                     cancel_event=None,
+                    run_id="run-test",
+                    availability_details={"detection_origin": "observer"},
+                    should_continue=None,
                 )
 
-            self.assertEqual(captured, paths)
-            self.assertEqual(save_captcha.call_count, 5)
+            self.assertEqual(captured_paths, paths)
+            self.assertEqual(
+                event_ids,
+                [f"run-test:observer:captcha-{index}" for index in range(1, 6)],
+            )
+            self.assertEqual(save_captcha_mock.call_count, 5)
             self.assertEqual(refresh_captcha.call_count, 4)
+            self.assertEqual(enqueue_shadow.call_count, 5)
 
     def test_observer_keeps_available_result_when_captcha_capture_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -111,13 +135,17 @@ class ContinuousWorkerTests(unittest.TestCase):
                 "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
                 side_effect=RuntimeError("captcha unavailable"),
             ):
-                captured = observer._collect_observer_captcha_samples(
+                captured_paths, event_ids = observer._collect_observer_captcha_samples(
                     object(),
                     settings,
                     cancel_event=None,
+                    run_id="run-test",
+                    availability_details={},
+                    should_continue=None,
                 )
 
-            self.assertEqual(captured, [])
+            self.assertEqual(captured_paths, [])
+            self.assertEqual(event_ids, [])
 
     def test_health_detects_stalled_worker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

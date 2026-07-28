@@ -14,18 +14,18 @@ prioriza órdenes, monitorea el portal, realiza reservas con confirmación
 estricta, conserva evidencia, permite administración local y remota, registra
 pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
 
-Estado verificado el `2026-07-27`:
+Estado verificado el `2026-07-28`:
 
 | Área | Estado | Lectura actual |
 | --- | --- | --- |
-| Worker de reservas | Operativo | `127.0.0.1:8765/health` responde y el worker está activo. |
+| Worker de reservas | En espera nocturna | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado. |
 | PostgreSQL | Operativo | PostgreSQL 16 en Docker, saludable. |
 | Telegram remoto | Operativo | Consultas, clientes, reglas, prioridad, credenciales y control del worker. |
 | CAPTCHA sombra | Operativo | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad. |
 | WhatsApp automático | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos. |
 | Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.07 kB`. |
-| Calidad Python | Atención requerida | Ruff y `compileall` correctos; pytest tiene `42 passed / 11 failed`. |
+| Calidad Python | Operativa | Ruff y `compileall` correctos; pytest tiene `53 passed`. |
 
 ## Resultado comercial acumulado
 
@@ -99,6 +99,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   reserva, disponibilidad, fallos, defensas, CAPTCHA originales, preflight y
   paquetes de WhatsApp. Antes solo inspeccionaba archivos directamente bajo
   cada raíz y dejaba intactas todas las carpetas fechadas.
+- La base depuró `91` mensajes marcados explícitamente como prueba, sin
+  referencias desde la cola automática. La limpieza diaria ahora elimina
+  mensajes de prueba y eventos CAPTCHA ya procesados después de `14` días, y
+  comandos del worker aplicados después de `90` días. No alcanza mensajes
+  reales, comandos pendientes o fallidos, trabajos WhatsApp, órdenes, pagos,
+  reservas ni intentos.
+- Los 11 fallos de pytest se clasificaron como contratos de prueba obsoletos:
+  preflight, `document_type`, cinco restricciones por orden y muestreo CAPTCHA
+  sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni
+  modificar código productivo. La suite completa quedó en `53 passed`.
 
 ### Control remoto
 
@@ -142,9 +152,8 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 
 ## Fallos, límites y riesgos vigentes
 
-1. La suite actual tiene 11 fallos. Varios contratos de pruebas quedaron atrás
-   (`document_type`, restricciones, muestreo CAPTCHA), pero los fallos de claim
-   y creación por API requieren clasificación explícita.
+1. La suite local está en verde, pero no sustituye una validación real del
+   recorrido cupo -> reserva -> confirmación exacta en el portal.
 2. WhatsApp Web depende de una interfaz externa cambiante. Un resultado
    ambiguo nunca debe reintentarse automáticamente.
 3. La corrección del backoff por fechas fuera de rango está validada en
@@ -167,8 +176,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m ruff check src tests`: correcto.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
-- `python -m pytest -q`: `42 passed / 11 failed`.
-- Worker, Admin API, PostgreSQL y CAPTCHA sombra: saludables.
+- `python -m pytest -q`: `53 passed`.
+- Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
+  siguiente arranque diario.
 
 ## Regla de mantenimiento
 

@@ -75,6 +75,7 @@ class DatabaseTests(unittest.TestCase):
             result = create_service_order(
                 document_number="12345678",
                 password="secret",
+                require_preflight=False,
                 settings=settings,
             )
             self.assertTrue(

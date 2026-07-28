@@ -11,6 +11,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from appointment_bot.db.order_preflight import mark_order_preflight_validated
 from appointment_bot.db.orders import create_service_order
 from appointment_bot.services.local_api import create_local_api_server
 from tests.helpers import make_settings
@@ -146,6 +147,7 @@ class LocalApiTests(unittest.TestCase):
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 create_payload = {
                     "document_number": "87654321",
+                    "document_type": "dni",
                     "password": "secret",
                     "contact_name": "  Contacto   de prueba  ",
                     "contact_source": "WhatsApp",
@@ -156,14 +158,26 @@ class LocalApiTests(unittest.TestCase):
                     "minimum_reservation_date": "2026-08-01",
                     "allowed_weekdays": [1, 6],
                 }
-                response = _json_request(
-                    f"{base_url}/api/v1/service-orders",
-                    method="POST",
-                    token="secret",
-                    payload=create_payload,
-                )
-                self.assertEqual(response["status"], "created")
+                with patch(
+                    "appointment_bot.services.api.service_order_routes."
+                    "schedule_order_preflight",
+                    return_value=True,
+                ):
+                    response = _json_request(
+                        f"{base_url}/api/v1/service-orders",
+                        method="POST",
+                        token="secret",
+                        payload=create_payload,
+                    )
+                self.assertEqual(response["status"], "validation_pending")
+                self.assertTrue(response["validation_scheduled"])
                 order_id = response["order_id"]
+                mark_order_preflight_validated(
+                    order_id,
+                    applicant_name="Client Two",
+                    details={"source": "api_test"},
+                    settings=settings,
+                )
 
                 invalid_payload = {**create_payload, "document_number": "11112222"}
                 invalid_payload["contact_source"] = "instagram"

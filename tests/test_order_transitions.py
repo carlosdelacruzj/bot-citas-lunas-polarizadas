@@ -30,6 +30,7 @@ class OrderTransitionTests(unittest.TestCase):
                 password="password",
                 applicant_name="Test",
                 priority=1,
+                require_preflight=False,
                 settings=settings,
             )
             owner = "test-worker"
