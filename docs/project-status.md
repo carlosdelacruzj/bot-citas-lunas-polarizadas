@@ -80,6 +80,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   programada ejecuta directamente el lanzador PowerShell versionado.
 - Los cuatro supervisores quedan desacoplados del proceso corto de la tarea;
   cerrar una consola de instalación no termina el worker.
+- El mantenimiento local del 28 de julio eliminó `447.34 MB` de artefactos
+  regenerables u obsoletos: un respaldo antiguo y un perfil de prueba de
+  WhatsApp Web, la caché de Angular y reportes temporales de estado y
+  diagnóstico. Se conservaron el perfil activo, `dashboard/node_modules`,
+  `dashboard/dist` y toda la evidencia histórica versionada.
 
 ### Control remoto
 
