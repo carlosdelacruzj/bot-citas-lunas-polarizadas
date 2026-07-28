@@ -12,9 +12,13 @@ compatibilidad, no como lista de trabajo futuro.
 - `scripts/start-worker.ps1` levanta Docker/PostgreSQL y ejecuta el host continuo.
 - `scripts/start-admin-dashboard.ps1` construye Angular y levanta el admin API
   que sirve el dashboard.
-- `scripts/start-worker-hidden.vbs` inicia sin ventanas los bootstraps del
-  worker, admin/dashboard, control de Telegram y servicio sombra de CAPTCHA; la
-  tarea programada de Windows lo ejecuta al iniciar sesion.
+- `scripts/start-runtime.ps1` inicia en segundo plano los bootstraps del worker,
+  admin/dashboard, control de Telegram y servicio sombra de CAPTCHA; la tarea
+  programada de Windows lo ejecuta directamente al iniciar sesion.
+- Cada bootstrap queda en un proceso independiente y el lanzador termina
+  despues de iniciarlos; cerrar una consola de instalacion no detiene el worker.
+- `scripts/install-startup-task.ps1` instala o recupera esa tarea sin usar VBS
+  ni omitir la politica de ejecucion de PowerShell.
 - `scripts/start-captcha-shadow.ps1` supervisa el servicio de `test-captcha` en
   `127.0.0.1:8787`, lo inicia con la sesion y lo recupera si deja de responder.
 - El build Angular de produccion conserva la hoja de estilos como recurso

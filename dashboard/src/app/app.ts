@@ -142,6 +142,7 @@ type PendingAction = {
   title: string;
   message: string;
   execute: () => Promise<ApiActionResponse>;
+  successMessage?: string;
   containsSecret?: boolean;
   onSuccess?: (response: ApiActionResponse) => void;
   afterRefresh?: (response: ApiActionResponse) => void | Promise<void>;
@@ -3109,8 +3110,8 @@ export class App implements OnDestroy {
       title: 'Marcar pagado',
       message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
       execute: () => this.api.markPaymentPaid(order.order_id, payload),
+      successMessage: 'Pago registrado; envío automático en proceso',
       onSuccess: () => this.activeModal.set(null),
-      afterRefresh: () => this.offerPostPaymentAfterPayment(order.order_id),
     });
   }
 
@@ -3448,46 +3449,6 @@ export class App implements OnDestroy {
     return apiErrorMessage(error);
   }
 
-  private async offerPostPaymentAfterPayment(orderId: string): Promise<void> {
-    const order = this.orders().find((item) => item.order_id === orderId);
-    if (!order || !this.isPostPaymentWhatsAppCandidate(order)) {
-      return;
-    }
-    this.whatsappPackage.set(null);
-    this.whatsappFollowUpPackage.set(null);
-    this.whatsappTestMode.set(false);
-    this.whatsappFollowUpMode.set(true);
-    this.whatsappWebResult.set(null);
-    this.whatsappManualFallbackOpen.set(false);
-    try {
-      const message = await this.loadWhatsAppFollowUpPackage(() =>
-        this.api.preparePostPaymentWhatsApp(order.order_id),
-      );
-      const response = await this.prepareWhatsAppFollowUpWebDraft(message);
-      if (response?.status === 'sent') {
-        await this.refreshAll();
-        return;
-      }
-      await (await this.getSweetAlert()).fire({
-        icon: 'warning',
-        title: 'Pago registrado; post-pago pendiente',
-        text:
-          response?.message ??
-          'WhatsApp no confirmó el envío. Puedes reintentarlo desde la orden.',
-        confirmButtonText: 'Entendido',
-      });
-    } catch {
-      await (await this.getSweetAlert()).fire({
-        icon: 'warning',
-        title: 'Pago registrado; post-pago pendiente',
-        text:
-          this.errorMessage() ??
-          'No se pudo preparar el post-pago. Puedes reintentarlo desde la orden.',
-        confirmButtonText: 'Entendido',
-      });
-    }
-  }
-
   private async setPendingAction(action: PendingAction): Promise<void> {
     this.errorMessage.set(null);
     this.captureFocus();
@@ -3517,7 +3478,7 @@ export class App implements OnDestroy {
       action.onSuccess?.(response);
       await this.refreshAll();
       await action.afterRefresh?.(response);
-      await this.showToast(`${action.title}: completado`);
+      await this.showToast(action.successMessage ?? `${action.title}: completado`);
     } catch (error) {
       const message = this.readError(error);
       this.errorMessage.set(message);

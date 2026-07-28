@@ -2023,3 +2023,37 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-27 10:05:56 - order-09612178 - partial
+
+- Run: 20260727-100507-c37260da
+- Orden: order-***
+- Cliente: ALEX TOMAS CARNERO REYES | Contacto: Alex Carnero
+- Cuenta: 09***8
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 27/07/2026
+- Hora detectada: 11:00
+- Cupos observados: 20
+- Opciones fecha: 27/07/2026
+- Opciones hora: 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 49.388s
+  - Seleccion fecha/hora: 2.047s
+- Evidencia:
+  - Screenshot principal: screenshots\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
+  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

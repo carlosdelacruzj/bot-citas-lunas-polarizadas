@@ -15,6 +15,15 @@ necesario recorrer toda la carpeta.
 5. [`finance/README.md`](finance/README.md): registro de costos, conciliacion de
    2Captcha y gastos de captacion.
 
+Los dos primeros archivos gobiernan el trabajo:
+
+- `project-status.md` responde **como vamos, que se realizo, que funciona y que
+  riesgos existen**;
+- `roadmap/README.md` responde **que toca hacer ahora y en que orden**.
+
+Antes de implementar un cambio se deben leer ambos. Al cerrar una fase se
+actualizan en el mismo cambio si el estado o la prioridad variaron.
+
 ## Referencias
 
 - `architecture/`: runtime vigente e historia de la migracion.
@@ -28,3 +37,6 @@ necesario recorrer toda la carpeta.
 
 Las cifras variables viven en `reports/`; los documentos manuales solo enlazan
 a ellas para evitar contradicciones.
+
+Los contratos, incidentes, runbooks y reportes son referencias. No deben crear
+colas paralelas de tareas ni reemplazar el estado maestro.

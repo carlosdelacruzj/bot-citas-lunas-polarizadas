@@ -1,153 +1,164 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-14`.
+Última revisión integral: `2026-07-25`.
 
-## Estado ejecutivo
+Este archivo es la fuente principal para entender dónde está el proyecto. Debe
+actualizarse cuando se termina, valida o descarta un cambio relevante. Las
+tareas futuras y su orden viven únicamente en
+[`roadmap/README.md`](roadmap/README.md).
 
-| Área | Estado | Conclusión |
+## Resumen ejecutivo
+
+El sistema ya funciona como una operación comercial completa: recibe y
+prioriza órdenes, monitorea el portal, realiza reservas con confirmación
+estricta, conserva evidencia, permite administración local y remota, registra
+pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
+
+Estado verificado el `2026-07-27`:
+
+| Área | Estado | Lectura actual |
 | --- | --- | --- |
-| Reserva automática | Operativa | Confirmación estricta y reservas `registered` reales. |
-| Cola multi-cliente | Operativa | Sesión, cookies, lease y confirmación independientes por orden. |
-| Backend y PostgreSQL | Operativos | API, persistencia, comandos y módulos separados por responsabilidad. |
-| Dashboard | Operativo | Flujo por tarea, runs sanitizados, accesibilidad y entrega integrada. |
-| Operación | Operativa | Runbook, reportes, alertas y restore temporal verificado. |
-| Optimización | Observación activa | Línea base e instrumentación listas; flujo funcional sin cambios. |
+| Worker de reservas | Operativo | `127.0.0.1:8765/health` responde y el worker está activo. |
+| Admin API y dashboard | Operativos | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado. |
+| PostgreSQL | Operativo | PostgreSQL 16 en Docker, saludable. |
+| Telegram remoto | Operativo | Consultas, clientes, reglas, prioridad, credenciales y control del worker. |
+| CAPTCHA sombra | Operativo | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad. |
+| WhatsApp automático | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos. |
+| Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.58 kB`. |
+| Calidad Python | Atención requerida | Ruff y `compileall` correctos; pytest tiene `42 passed / 11 failed`. |
 
-Baseline estable de reserva: tag `best-performing-2026-07-12`, commit
-`a43c6a1`. Los cambios posteriores de administración, reportes e
-instrumentación no alteraron la regla de confirmación final.
+## Resultado comercial acumulado
 
-## Qué se realizó
+Datos consultados en PostgreSQL al `2026-07-25`:
 
-- Se incorporó un sistema visual reutilizable para el dashboard con tokens de
-  color, tipografía, espaciado, radios, sombras, foco y movimiento reducido. La
-  navegación, encabezados, controles, tarjetas, tablas, estados y modales usan
-  una misma base sin fuentes ni librerías visuales externas.
-- Se reforzó la jerarquía de cada área sin añadir pasos al operador: Pendientes
-  prioriza las tareas, Órdenes conserva filtros y contexto al desplazarse,
-  CAPTCHA destaca la imagen y las respuestas, Resumen/Finanzas separan métricas
-  ejecutivas y Actividad diferencia comandos, corridas y evidencias.
-- Desde `Editar orden > Acceso al portal`, las credenciales de una orden activa
-  o pausada pueden reemplazarse sin crear otra orden ni perder contacto, pagos o
-  historial. El cambio se guarda cifrado, pausa todas las subórdenes de la
-  cuenta, limpia el error operativo anterior y exige una nueva validación del
-  portal antes de reactivarlas.
-- Reserva automática con resultado `registered` o evidencia explícita del
-  portal; estados ambiguos no autorizan un segundo submit.
-- `reservation_attempts`, submission pendiente y heartbeat de lease.
-- Cola rápida, prioridades, restricciones por fecha/hora/día y subórdenes por
-  trámite.
-- Admin API separado mediante `worker_commands` y dashboard Angular en
-  `127.0.0.1:8766`.
-- Listados enmascarados; detalle sensible solicitado solo bajo autenticación.
-- Flujo de operador: orden seleccionada, siguiente acción, pagos, cierres,
-  sesiones manuales y runs sanitizados.
-- UX simplificada: tabla compacta, acción contextual, panel lateral, prioridad
-  rápida y confirmaciones SweetAlert2.
-- Menú lateral estable sin contadores dependientes de filtros; los totales y
-  estados accionables viven dentro de cada sección.
-- Estados técnicos traducidos mediante un catálogo visual único; colores y
-  etiquetas son consistentes en órdenes, actividad, comandos y WhatsApp. Los
-  éxitos usan avisos temporales y los errores globales se retiran a los ocho
-  segundos.
-- Órdenes paginadas en el navegador con 20 filas por defecto y opciones de
-  10/20/50; conserva filtro rápido, orden, dirección, tamaño y página. La
-  búsqueda libre se mantiene solo durante la sesión del navegador.
-- Edición de restricciones por orden desde el dashboard: fecha mínima, fecha
-  máxima, hora mínima, días permitidos y varios rangos de fechas excluidas; los
-  límites también se pueden quitar y los rangos aparecen resumidos en la orden.
-- Creación y edición reutilizan el mismo editor de reglas de reserva para fechas,
-  días permitidos y rangos excluidos. Las validaciones, textos y comportamiento
-  responsive quedan definidos en un solo componente.
-- El editor de reglas ofrece presets comprensibles (`Cualquier fecha`, `Solo
-  sábados`, `Desde una fecha`, `Excepto un rango` y `Entre dos fechas`) y siete
-  botones de día con estado visible y accesible. Los presets solo preparan el
-  formulario; la confirmación existente sigue siendo necesaria para guardar.
-- Las cinco vistas principales del dashboard están separadas en componentes:
-  Resumen, Finanzas, Órdenes, CAPTCHA y Actividad. `App` conserva la navegación,
-  el estado compartido y los modales para evitar duplicar lógica operativa.
-- La carga inicial, la navegación y el refresco automático consultan únicamente
-  los datos de la vista activa, además de salud, worker y sesiones manuales. Se
-  evitan ciclos superpuestos y las categorías financieras se reutilizan después
-  de su primera carga.
-- La bandeja `Pendientes` concentra bloqueos de acceso, contacto/WhatsApp,
-  cobros, seguimiento post-pago y validaciones CAPTCHA. Cada orden muestra un
-  único siguiente paso y el menú solo presenta un contador cuando hay trabajo
-  accionable.
-- La navegación usa rutas reales con carga diferida por vista. Órdenes y runs
-  aceptan enlaces directos; Resumen/Finanzas conservan el mes en la URL y
-  CAPTCHA conserva el modo de revisión o historial.
-- SweetAlert2 también se carga bajo demanda. La compilación del cambio redujo
-  el bundle inicial de aproximadamente 563 kB a 501 kB, por debajo del límite
-  preventivo configurado en 520 kB.
-- Las vistas comparten un único estado visual para carga inicial, ausencia de
-  resultados, errores recuperables y datos posiblemente desactualizados. Las
-  actualizaciones con información existente son silenciosas: conservan el
-  contenido visible, informan en una franja compacta y permiten reintentar sin
-  bloquear el trabajo.
-- Los siete modales operativos están separados por responsabilidad (WhatsApp,
-  pago, edición, acciones, alta, finanzas y reinicio) y se cargan bajo demanda
-  al abrirse. `App` conserva únicamente la coordinación de efectos, la
-  confirmación final y la restauración de foco para no duplicar comportamiento.
-- La actualización automática usa una frecuencia por vista: 10 segundos para
-  Pendientes/Actividad, 20 para Órdenes y revisión CAPTCHA, 60 para Resumen e
-  historial CAPTCHA y 120 para Finanzas. Una pestaña oculta pausa lecturas; al
-  regresar solo refresca si la vista venció. Navegar o filtrar cancela la
-  petición HTTP anterior y aplica siempre la respuesta más reciente.
-- Resumen mensual de negocio con ingresos cobrados, pendientes separados,
-  conversión, comparación, fuentes y alertas accionables.
-- Reporte semanal, alertas CAPTCHA/`slot_lost`, política de evidencia y
-  simulacro de backup/restore.
-- Medición observacional de selección, CAPTCHA, secuencia y `fetch_probe`.
-- Calendario automático de lunes a sábado; domingo permanece en espera.
-- WhatsApp asistido sin API de Meta: un clic prepara constancia y cobro como álbum
-  local con textos individuales; el operador conserva el envío final y su
-  confirmación manual auditable en PostgreSQL.
+| Periodo | Órdenes | Reservas confirmadas | Pagos | Ingreso cobrado |
+| --- | ---: | ---: | ---: | ---: |
+| Junio 2026 | 9 | 4 | 3 | S/ 120 |
+| Julio 2026, días 1-25 | 83 | 81 | 76 | S/ 3,025 |
 
-## Validación vigente
+- Ticket promedio de julio: `S/ 39.80`.
+- Pagos pendientes actuales: `2`, por `S/ 80`.
+- TikTok aporta `S/ 2,240` del ingreso de julio.
+- Estas cifras son ingresos cobrados, no utilidad neta.
 
-- `python -m compileall -q src`.
-- `python -m ruff check src tests`.
-- `python -m pytest -q`: 53 tests.
-- `npm run build` para Angular.
-- `git diff --check`.
-- Worker activo y domingo reportado como `outside_hot_window`.
-- Restore temporal comprobado y limpiado; los conteos variables están en el
-  reporte operacional, no se duplican aquí.
+## Punto de partida técnico
 
-## Riesgos y límites conocidos
+La referencia estable del motor de reserva sigue siendo:
 
-- La sesión del dashboard confía en procesos locales; no exponer loopback.
-- `include_details=1` es una superficie sensible para clientes autorizados.
-- La evidencia versionada sigue siendo telemetría operacional aunque esté
-  sanitizada; revisar antes de compartir.
-- El simulacro de restore no reemplaza un backup durable cifrado.
-- La nueva instrumentación agrega overhead mínimo de medición, no cero.
-- WhatsApp no confirma entregas: `sent` significa que el operador declaró haber
-  completado el envío. El sistema prepara WhatsApp Web, pero nunca pulsa Enviar.
-- Persisten deuda técnica en el ciclo `appointments`/`appointment_selection` y
-  en fachadas que mutan dependencias globales.
+- tag `best-performing-2026-07-12`;
+- commit `a43c6a1`;
+- confirmación estricta, leases, intentos persistidos y reglas por orden;
+- ruta normal observada cercana a 6.5-7.3 segundos cuando CAPTCHA responde
+  rápido.
 
-## Qué leer y qué sigue
+Los cambios posteriores ampliaron administración, observabilidad y
+comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
-1. [`README.md`](README.md): mapa documental.
-2. [`roadmap/README.md`](roadmap/README.md): únicos pendientes activos.
-3. [`operations/README.md`](operations/README.md): operación y recuperación.
-4. [`optimization.md`](optimization.md): medición y decisiones.
+## Qué se realizó en julio
 
-El siguiente paso no es cambiar la reserva: es acumular muestras reales con el
-nuevo desglose, regenerar reportes y elegir con el usuario un único experimento.
-El periodo y la fecha de la próxima revisión están definidos en
-[`roadmap/README.md`](roadmap/README.md#próximo-checkpoint).
+### Reserva y cola
 
-## Panel de calidad CAPTCHA
+- Primera reserva automática efectiva y reconciliación posterior.
+- Confirmación estricta del portal; un estado ambiguo no autoriza otro submit.
+- Registro durable de `reservation_attempts`, submission pendiente y heartbeat.
+- Prioridad, prioridad exclusiva y restricciones por fecha, hora, día y rangos
+  excluidos.
+- Corrección para que fechas fuera de rango no provoquen un backoff general de
+  30 minutos.
 
-El apartado CAPTCHA incorpora el modo `Calidad` sobre las etiquetas humanas vigentes. Presenta
-exactitud, confianza y tiempos promedio/p50/p90 por modelo; tiempos agregados de 2Captcha;
-unanimidad, mayoría y consensos incorrectos; evolución semanal y casos útiles paginados. Una
-advertencia evita interpretar como tendencia una muestra menor de treinta imágenes o dos semanas.
+### Arquitectura y operación
 
-La misma vista permite descargar un ZIP trazable con `labels.csv`, `manifest.csv` e imágenes. La
-API rechaza la exportación completa si alguna imagen está fuera del directorio autorizado, falta o
-no coincide con el SHA-256 registrado. El consenso nunca se exporta como verdad: solo se incluyen
-validaciones humanas.
+- Separación modular de reserva, worker, base de datos, reportes y API.
+- Admin API independiente mediante `worker_commands`.
+- Dashboard Angular con vistas, rutas, carga diferida, estados y modales
+  separados.
+- Resumen mensual, finanzas, bandeja de pendientes y edición segura de
+  credenciales.
+- Arranque supervisado en Windows para worker, dashboard, Telegram y CAPTCHA
+  sombra.
+- El arranque automático ya no usa VBS ni `ExecutionPolicy Bypass`; una tarea
+  programada ejecuta directamente el lanzador PowerShell versionado.
+- Los cuatro supervisores quedan desacoplados del proceso corto de la tarea;
+  cerrar una consola de instalación no termina el worker.
+
+### Control remoto
+
+- Menú de Telegram con búsqueda, recientes, resumen y estado.
+- Alta guiada de clientes y edición de reglas, prioridad y credenciales.
+- Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
+- Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
+  guiado por chat.
+
+### Evidencia y CAPTCHA
+
+- Evidencia organizada por fecha y resumen compacto.
+- CAPTCHA original utilizado para el solver.
+- Servicio local en modo sombra, cola durable y revisión humana desde el
+  dashboard.
+- El modelo local no participa en la decisión de reserva; 2Captcha sigue siendo
+  la respuesta enviada al portal.
+
+### Comunicación y cobro
+
+- Álbum único con evidencia y QR de Yape.
+- Seguimiento postpago separado con PDFs y textos.
+- Cola durable de trabajos WhatsApp con estados recuperables y auditables.
+- Admin API como único propietario del perfil persistente de WhatsApp Web.
+- Fallos de WhatsApp no bloquean reservas ni Telegram.
+
+## Rendimiento observado
+
+| Periodo | Runs conservados | Intentos | `registered` | `slot_lost` | Errores |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 13-19 julio | 5,356 | 61 | 28 | 29 (47.5%) | 14 |
+| 20-25 julio | 4,662 | 43 | 20 | 17 (39.5%) | 3 |
+
+La última semana muestra menos errores y menor proporción de `slot_lost`, pero
+todavía se necesita una muestra mayor antes de atribuir la mejora a un solo
+cambio.
+
+La tabla `runs` conserva actualmente información desde el 11 de julio. Para
+periodos anteriores deben usarse los reportes y documentos versionados; no se
+debe reconstruir una comparación histórica únicamente desde la base viva.
+
+## Fallos, límites y riesgos vigentes
+
+1. La suite actual tiene 11 fallos. Varios contratos de pruebas quedaron atrás
+   (`document_type`, restricciones, muestreo CAPTCHA), pero los fallos de claim
+   y creación por API requieren clasificación explícita.
+2. WhatsApp Web depende de una interfaz externa cambiante. Un resultado
+   ambiguo nunca debe reintentarse automáticamente.
+3. La corrección del backoff por fechas fuera de rango está validada en
+   escenarios controlados, pero falta confirmarla ante otro caso real
+   equivalente.
+4. El ajuste del observer a cuatro intentos necesita comparación de varios días
+   antes de conservarse como nuevo baseline.
+5. La operación depende de una PC Windows, red local, Docker y perfiles
+   persistentes de navegador.
+6. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a
+   2Captcha.
+7. La evidencia versionada está sanitizada, pero sigue siendo telemetría
+   operacional y debe revisarse antes de compartir.
+8. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
+   El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
+   historial del antivirus después de reinicios y actualizaciones de firmas.
+
+## Validación del corte
+
+- `python -m ruff check src tests`: correcto.
+- `python -m compileall -q src`: correcto.
+- `npm run build`: correcto.
+- `python -m pytest -q`: `42 passed / 11 failed`.
+- Worker, Admin API, PostgreSQL y CAPTCHA sombra: saludables.
+
+## Regla de mantenimiento
+
+Después de cada cambio relevante:
+
+1. actualizar este archivo si cambió el estado, una capacidad, un riesgo, una
+   métrica o una validación;
+2. actualizar [`roadmap/README.md`](roadmap/README.md) si una tarea avanzó,
+   terminó, se bloqueó o cambió de prioridad;
+3. mover el detalle largo a `operations/`, `contracts/`, `history/` o un
+   documento de incidente;
+4. no convertir reportes generados ni bitácoras en listas paralelas de tareas.

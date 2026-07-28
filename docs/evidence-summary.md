@@ -3,27 +3,27 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 624
+- Eventos indexados: 630
 - Reservas registradas: 65
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 423
-- Disponibilidades parciales: 47
+- Disponibilidades parciales: 48
 - Senales de defensa: 6
 
 ## Origen de deteccion
-- normal: 624
+- normal: 630
 
 ## Ultimos eventos utiles
+- 2026-07-27 12:41:13 | order-*** | unavailable | normal | 22/08/2026 08:00 | slot_lost
+- 2026-07-27 12:07:34 | order-*** | unavailable | normal | 22/08/2026 08:00 | slot_lost
+- 2026-07-27 12:06:59 | order-*** | unavailable | normal | 21/08/2026 08:00 | slot_lost
+- 2026-07-27 12:06:44 | order-*** | unavailable | normal | 21/08/2026 08:00 | slot_lost
+- 2026-07-27 10:05:56 | order-*** | partial | normal | 27/07/2026 11:00 | blocked_by_order_rule
+- 2026-07-25 09:20:39 | order-*** | unavailable | normal | 19/08/2026 09:00 | slot_lost
 - 2026-07-25 09:18:57 | order-*** | unavailable | normal | 19/08/2026 08:00 | slot_lost
 - 2026-07-25 08:28:33 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
 - 2026-07-25 08:28:16 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
 - 2026-07-25 08:28:05 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
-- 2026-07-25 08:27:47 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
-- 2026-07-25 08:27:37 | sin orden | available | normal | 20/08/2026 12:00 | sin outcome
-- 2026-07-25 08:26:48 | order-*** | registered | normal | 20/08/2026 12:00 | confirmed
-- 2026-07-25 08:26:33 | order-*** | registered | normal | 20/08/2026 12:00 | confirmed
-- 2026-07-25 08:26:12 | order-*** | registered | normal | 20/08/2026 10:00 | confirmed
-- 2026-07-24 17:22:50 | order-*** | completed | normal | 12/08/2026 12:00 | sin outcome
 
 ## Senales de defensa
 - 2026-07-24 11:30:36 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.

@@ -4,6 +4,12 @@ Instrucciones para Codex, agentes de IA y contribuidores.
 
 ## Reglas Del Proyecto
 
+- Antes de implementar cualquier cambio, leer completos
+  `docs/project-status.md` y `docs/roadmap/README.md`.
+- `docs/project-status.md` es la fuente de verdad del estado actual;
+  `docs/roadmap/README.md` es la unica lista de trabajo pendiente.
+- Al cerrar un cambio relevante, actualizar esos archivos en el mismo cambio
+  si vario una capacidad, validacion, riesgo, metrica, tarea o prioridad.
 - No guardar credenciales reales en el repositorio.
 - No modificar `.env` salvo que el usuario lo pida explicitamente.
 - No agregar tests automatizados salvo pedido explicito del usuario.

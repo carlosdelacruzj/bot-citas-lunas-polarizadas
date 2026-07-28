@@ -32,13 +32,20 @@ completo de WhatsApp puede copiarse o abrirse desde el detalle protegido.
 ## Arranque recomendado
 
 En Windows, la tarea programada `AppointmentBotContinuousWorker` ejecuta
-`scripts/start-worker-hidden.vbs` al iniciar sesion. El lanzador levanta en
+`scripts/start-runtime.ps1` directamente al iniciar sesion. El lanzador levanta en
 segundo plano todo el entorno local:
 
 - Docker y PostgreSQL;
 - worker y API de salud en `127.0.0.1:8765`;
 - build Angular, admin API y dashboard en `127.0.0.1:8766`.
 - receptor independiente de control remoto por Telegram.
+- supervisor del servicio sombra de CAPTCHA en `127.0.0.1:8787`.
+
+La tarea se instala o recupera con:
+
+```powershell
+.\scripts\install-startup-task.ps1
+```
 
 El admin/dashboard se reinicia si su proceso termina. No hace falta abrir
 `npm start`: el admin API sirve directamente el build Angular.

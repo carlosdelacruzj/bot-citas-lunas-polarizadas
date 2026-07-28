@@ -194,7 +194,7 @@ la muestra: permanece en PostgreSQL hasta poder entregarse al servicio sombra.
 
 ## Arranque automatico en Windows
 
-Desde el 24 de julio de 2026, `scripts/start-worker-hidden.vbs` tambien inicia
+Desde el 27 de julio de 2026, `scripts/start-runtime.ps1` tambien inicia
 `scripts/start-captcha-shadow.ps1` mediante la tarea programada
 `AppointmentBotContinuousWorker`. El supervisor comprueba
 `http://127.0.0.1:8787/health`, inicia el servicio desde el proyecto hermano
