@@ -6,6 +6,11 @@ from dataclasses import asdict
 from datetime import UTC, date, datetime, timedelta
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import (
+    RunReport,
+    ServiceOrderCandidate,
+    ServiceOrderRuntime,
+)
 from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
@@ -23,13 +28,8 @@ from appointment_bot.db.worker_state import (
     get_worker_state,
     update_worker_state,
 )
-from appointment_bot.domain import RunReport
 from appointment_bot.reservation_engine.observer import run_observer_with_report
 from appointment_bot.services.cleanup import cleanup_old_files
-from appointment_bot.services.database_models import (
-    ServiceOrderCandidate,
-    ServiceOrderRuntime,
-)
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.worker.deferred_reports import DeferredOrderReports

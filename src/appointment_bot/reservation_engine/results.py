@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import AvailabilityResult, RunReport
+from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reports.run_reporting import reservation_confirmed
 from appointment_bot.utils.screenshots import remove_screenshot_paths, report_screenshot_paths
 

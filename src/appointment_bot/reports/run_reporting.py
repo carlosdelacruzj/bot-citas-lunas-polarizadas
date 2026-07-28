@@ -6,19 +6,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import AvailabilityResult, RunRecord, RunReport
+from appointment_bot.core.statuses import ResultStatus, sanitize_details
 from appointment_bot.db.runs import record_run_outcome
-from appointment_bot.domain import (
-    AvailabilityResult,
-    ResultStatus,
-    RunReport,
-    sanitize_details,
-)
 from appointment_bot.reports.evidence import append_evidence_case
 from appointment_bot.reports.optimization import (
     append_optimization_case,
     append_partial_availability_case,
 )
-from appointment_bot.services.database_models import RunRecord
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import (
     archive_unique_slot_screenshot,

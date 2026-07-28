@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import open_appointment_panel
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.reservation_engine.monitor import monitor_appointment_availability

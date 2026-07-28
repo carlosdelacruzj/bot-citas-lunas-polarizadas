@@ -257,8 +257,8 @@ class LocalApiTests(unittest.TestCase):
     def test_runs_endpoints_and_worker_actions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
+            from appointment_bot.core.models import RunRecord
             from appointment_bot.db.runs import create_run_record
-            from appointment_bot.services.database_models import RunRecord
 
             create_run_record(
                 settings,

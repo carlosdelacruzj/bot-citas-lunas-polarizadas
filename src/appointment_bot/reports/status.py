@@ -8,12 +8,12 @@ from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
 
+from appointment_bot.core.models import ServiceOrderSummary
 from appointment_bot.db.orders import list_service_order_summaries
 from appointment_bot.db.runs import (
     list_runs,
     summarize_order_checks,
 )
-from appointment_bot.services.database_models import ServiceOrderSummary
 
 REPORT_TIMEZONE = ZoneInfo("America/Lima")
 REPORT_START_HOUR = 6

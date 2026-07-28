@@ -6,9 +6,8 @@ import threading
 import time
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import RunReport, ServiceOrderRuntime
 from appointment_bot.db.order_state import update_order_state
-from appointment_bot.domain import RunReport
-from appointment_bot.services.database_models import ServiceOrderRuntime
 from appointment_bot.services.order_runtime import OrderReportOutcome, classify_order_report
 
 logger = logging.getLogger(__name__)

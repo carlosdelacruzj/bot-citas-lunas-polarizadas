@@ -110,6 +110,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   La migración recuperó `91.04 MB`; las nuevas constancias, imágenes de pago y
   PDFs se deduplican por SHA-256, con copia normal como fallback si el sistema
   de archivos no admite enlaces físicos.
+- Se retiraron `10` módulos de compatibilidad que solo reexportaban símbolos y
+  las fachadas públicas de cinco paquetes. Código, tests y entrypoints importan
+  ahora desde `core`, `db`, `reports`, `reservation_engine` y `worker` en su
+  módulo propietario. `queue_runtime.py` y los selectores CAPTCHA se conservaron
+  porque todavía contienen lógica activa.
 - Los 11 fallos de pytest se clasificaron como contratos de prueba obsoletos:
   preflight, `document_type`, cinco restricciones por orden y muestreo CAPTCHA
   sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni

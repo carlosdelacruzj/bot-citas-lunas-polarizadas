@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from appointment_bot.core.models import RunRecord
 from appointment_bot.db.common import init_database
 from appointment_bot.db.migrations import SCHEMA_VERSION
 from appointment_bot.db.orders import (
@@ -19,7 +20,6 @@ from appointment_bot.db.orders import (
 )
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
 from appointment_bot.db.worker_state import get_worker_state
-from appointment_bot.services.database_models import RunRecord
 from tests.helpers import database_connection, make_settings
 
 

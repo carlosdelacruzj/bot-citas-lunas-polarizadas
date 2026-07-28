@@ -5,9 +5,8 @@ import threading
 from collections.abc import Callable
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import RunReport, ServiceOrderRuntime
 from appointment_bot.db.orders import update_order_state
-from appointment_bot.domain import RunReport
-from appointment_bot.services.database_models import ServiceOrderRuntime
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.worker.recovery import is_network_error, portal_defense_signal
 

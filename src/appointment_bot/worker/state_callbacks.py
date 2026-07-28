@@ -7,8 +7,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import AvailabilityResult, RunReport
-from appointment_bot.services.database_models import (
+from appointment_bot.core.models import (
+    AvailabilityResult,
+    RunReport,
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )

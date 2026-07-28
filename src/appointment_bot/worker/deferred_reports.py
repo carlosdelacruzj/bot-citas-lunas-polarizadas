@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import RunReport
 from appointment_bot.db.whatsapp_automation import enqueue_whatsapp_automation_job
-from appointment_bot.domain import RunReport
 from appointment_bot.services.notifier import notify_deferred_queue_summary
 from appointment_bot.utils.screenshots import (
     remove_screenshot_paths,

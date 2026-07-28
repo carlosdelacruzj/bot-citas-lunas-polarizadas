@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from appointment_bot.core.models import RunReport
 from appointment_bot.db.orders import (
     claim_service_order,
     create_service_order,
@@ -13,7 +14,6 @@ from appointment_bot.db.orders import (
     order_reservation_pending,
     set_order_paused,
 )
-from appointment_bot.domain import RunReport
 from appointment_bot.services.order_transitions import (
     order_can_submit,
     reconcile_pending_submission,

@@ -12,7 +12,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import RunReport
+from appointment_bot.core.models import RunReport
 
 logger = logging.getLogger(__name__)
 ARTIFACT_TIMEZONE = ZoneInfo("America/Lima")

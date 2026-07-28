@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Page
 
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointment_fetch_probe import (
     read_fetch_probe_appointment_snapshot,
 )

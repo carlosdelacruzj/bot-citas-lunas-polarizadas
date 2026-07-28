@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import (
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,

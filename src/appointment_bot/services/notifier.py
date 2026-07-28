@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.services.detail_helpers import (
     appointment_datetime_details as _appointment_datetime_details,
 )

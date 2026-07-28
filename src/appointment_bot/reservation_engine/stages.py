@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)

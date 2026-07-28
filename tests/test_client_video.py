@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from appointment_bot.domain import RunReport
+from appointment_bot.core.models import RunReport
 from appointment_bot.services.client_video import ClientSessionVideoRecorder, _safe_filename
 from tests.helpers import make_settings
 

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from appointment_bot.domain import AvailabilityResult, RunReport
+from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.services.notifier import (
     notify_deferred_queue_summary,
     notify_immediate_availability,

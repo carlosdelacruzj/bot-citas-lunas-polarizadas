@@ -4,17 +4,17 @@ import logging
 from dataclasses import dataclass
 
 from appointment_bot.config import Settings
+from appointment_bot.core.models import (
+    RunReport,
+    ServiceOrderCandidate,
+    ServiceOrderRuntime,
+)
 from appointment_bot.db.orders import (
     EXCLUSIVE_PRIORITY_THRESHOLD,
     list_observer_orders,
     mark_order_done,
     promote_orders_matching_reserved_slot,
     update_order_state,
-)
-from appointment_bot.domain import RunReport
-from appointment_bot.services.database_models import (
-    ServiceOrderCandidate,
-    ServiceOrderRuntime,
 )
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.order_runtime import (

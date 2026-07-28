@@ -8,9 +8,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from appointment_bot.domain import ResultStatus, RunReport, sanitize_details
+from appointment_bot.core.models import RunDetail, RunReport
+from appointment_bot.core.statuses import ResultStatus, sanitize_details
 from appointment_bot.reservation_engine.timings import TIMING_DETAILS_KEY
-from appointment_bot.services.database_models import RunDetail
 from appointment_bot.services.detail_helpers import (
     LIMA_TZ,
     detail_text,

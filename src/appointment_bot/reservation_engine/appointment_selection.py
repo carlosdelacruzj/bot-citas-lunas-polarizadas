@@ -8,7 +8,7 @@ from typing import Any
 
 from playwright.sync_api import Page
 
-from appointment_bot.domain import AvailabilityResult
+from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointment_reader import (
     read_stable_appointment_snapshot,
     snapshot_details,

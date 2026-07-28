@@ -5,7 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from appointment_bot.domain import ResultStatus, RunReport
+from appointment_bot.core.models import RunReport
+from appointment_bot.core.statuses import ResultStatus
 from appointment_bot.reservation_engine.timings import TIMING_DETAILS_KEY
 from appointment_bot.services.detail_helpers import (
     LIMA_TZ,

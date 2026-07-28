@@ -7,8 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from appointment_bot.domain import RunReport
-from appointment_bot.services.database_models import ServiceOrderRuntime
+from appointment_bot.core.models import RunReport, ServiceOrderRuntime
 from appointment_bot.worker.queue_runtime import (
     _appointment_filter_for_order,
     run_rapid_queue_with_settings,

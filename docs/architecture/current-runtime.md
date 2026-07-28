@@ -51,6 +51,12 @@ Los wrappers historicos de `services/postgres_*`, `services/continuous_*`,
 `services/*_reports` fueron retirados en el paso 9.7. Los consumidores internos
 usan rutas nuevas directas.
 
+El corte de limpieza del `2026-07-28` retiro tambien `domain.py`,
+`services/database_models.py`, `services/order_selection.py` y las fachadas de
+reexportacion de `db`, `reports`, `reservation_engine` y `worker`. Los imports
+apuntan al modulo propietario; `queue_runtime.py` permanece porque aun contiene
+coordinacion activa y se revisara como una fase separada.
+
 También existe el proceso separado `appointment-bot-admin-api`. Reutiliza los
 handlers y servicios PostgreSQL, escucha en `127.0.0.1:8766`, sirve el build
 Angular con sesión local segura y no aloja un `ContinuousWorker` en memoria.

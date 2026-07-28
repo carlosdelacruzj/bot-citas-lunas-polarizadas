@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from appointment_bot.config import Settings
-from appointment_bot.domain import RunReport
+from appointment_bot.core.models import RunReport
 from appointment_bot.reports.run_reporting import reservation_confirmed
 
 logger = logging.getLogger(__name__)

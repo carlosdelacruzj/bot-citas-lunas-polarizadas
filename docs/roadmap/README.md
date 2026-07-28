@@ -81,8 +81,8 @@ Estado: iniciado.
 Estas tareas no deben adelantarse a la estabilización:
 
 1. Romper el ciclo entre `appointments.py` y `appointment_selection.py`.
-2. Sustituir mutaciones globales en fachadas como `queue_runtime.py` por
-   dependencias explícitas.
+2. Sustituir mutaciones globales en módulos transicionales como
+   `queue_runtime.py` por dependencias explícitas.
 3. Dividir módulos grandes en cortes pequeños, sin mezclar refactor con cambios
    de comportamiento.
 4. Revisar retención de `runs` para que las comparaciones históricas no dependan

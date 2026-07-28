@@ -9,10 +9,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from appointment_bot.core.models import RunReport, ServiceOrderRuntime, WorkerState
 from appointment_bot.db.worker_state import update_worker_state
-from appointment_bot.domain import RunReport
 from appointment_bot.reservation_engine import observer
-from appointment_bot.services.database_models import ServiceOrderRuntime, WorkerState
 from appointment_bot.worker.continuous_worker import ContinuousWorker
 from tests.helpers import make_settings
 

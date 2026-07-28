@@ -1,6 +1,7 @@
 from enum import StrEnum
 
-from appointment_bot.domain import ResultStatus, RunReport
+from appointment_bot.core.models import RunReport
+from appointment_bot.core.statuses import ResultStatus
 
 
 class OrderReportOutcome(StrEnum):

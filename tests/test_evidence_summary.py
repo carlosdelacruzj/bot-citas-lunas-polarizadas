@@ -6,7 +6,7 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from appointment_bot.domain import RunReport
+from appointment_bot.core.models import RunDetail, RunReport
 from appointment_bot.reports.evidence import (
     append_evidence_rows,
     detect_defense_signal,
@@ -14,7 +14,6 @@ from appointment_bot.reports.evidence import (
     export_evidence_summary,
     read_evidence_rows,
 )
-from appointment_bot.services.database_models import RunDetail
 
 
 class EvidenceSummaryTests(unittest.TestCase):

@@ -7,9 +7,9 @@ from pathlib import Path
 
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
+from appointment_bot.core.models import RunReport
 from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.db.reservations import replace_confirmed_reservation_evidence
-from appointment_bot.domain import RunReport
 from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.reservation_engine.programs import click_program_action
