@@ -146,6 +146,9 @@ class FileDeduplicationTests(unittest.TestCase):
             with patch(
                 "appointment_bot.db.whatsapp_followup_messages.OUTGOING_ROOT",
                 outgoing,
+            ), patch(
+                "appointment_bot.utils.file_deduplication.DEFAULT_CONTENT_STORE",
+                root / "store",
             ):
                 first = Path(_copy_followup_documents("message-a", [document])[0])
                 second = Path(_copy_followup_documents("message-b", [document])[0])
