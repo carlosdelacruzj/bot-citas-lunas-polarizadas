@@ -188,6 +188,12 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 8. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
+9. La futura incorporación de registros alojados depende de un contrato aún no
+   implementado en `lunas-polarizadas-clientes`. Este repositorio no contiene
+   todavía cliente de invitaciones, conector de solicitudes ni credenciales de
+   servicio, y no debe exponer su Admin API para incorporarlos. La integración
+   futura deberá vincular el WhatsApp desde el dashboard y continuar resultados
+   por ese canal, sin depender de un portal persistente para clientes.
 
 ## Validación del corte
 

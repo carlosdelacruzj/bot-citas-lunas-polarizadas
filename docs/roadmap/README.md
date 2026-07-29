@@ -78,6 +78,48 @@ Estado: iniciado.
    recuperación individual de los cuatro supervisores ya quedó implementada;
    falta observarla después de un reinicio real.
 
+## Integración futura - Invitaciones y registro alojado
+
+Estado: pendiente y bloqueada por el contrato del proyecto
+`lunas-polarizadas-clientes`.
+
+No adelantar esta integración a la estabilización actual ni implementarla
+antes de que el servicio alojado de invitaciones y registro tenga un contrato
+probado.
+
+Cuando se libere esa dependencia:
+
+1. añadir al dashboard local una sección de invitaciones;
+2. permitir crear, copiar, consultar, revocar y reemitir enlaces;
+3. seleccionar o registrar el WhatsApp antes de crear la invitación y enviarlo
+   normalizado a la API alojada;
+4. hacer que el navegador llame solo a la Admin API local;
+5. implementar en la Admin API un cliente HTTPS autenticado hacia la API
+   alojada, con secreto fuera del frontend y de los logs;
+6. implementar un conector saliente que consulte y reclame solicitudes
+   pendientes con lease e idempotencia;
+7. entregar cada solicitud a las fronteras internas existentes para validar el
+   portal y, cuando corresponda, crear una sola orden;
+8. devolver a la nube solo estados mínimos y sanitizados;
+9. conservar PostgreSQL local como registro operativo definitivo;
+10. mantener WhatsApp, Telegram, evidencia y reservas exclusivamente en local;
+11. informar por el WhatsApp existente cuando una validación diferida requiera
+    corrección y permitir emitir una invitación nueva;
+12. probar primero con una cuenta y un número controlados, manteniendo el alta
+    manual como alternativa.
+
+Condiciones obligatorias:
+
+- no abrir puertos ni publicar la Admin API;
+- no conectar la nube directamente a PostgreSQL;
+- no generar en el navegador ni guardar localmente el token de invitación;
+- no volver a pedir el WhatsApp dentro del registro alojado;
+- no depender de una página persistente de estado del cliente;
+- no exponer credenciales del portal o de servicio en logs;
+- no crear órdenes por abrir un enlace;
+- no comenzar este trabajo hasta que `lunas-polarizadas-clientes` complete y
+  valide la parte alojada que consumirá este proyecto.
+
 ## Deuda técnica posterior
 
 Estas tareas no deben adelantarse a la estabilización:
