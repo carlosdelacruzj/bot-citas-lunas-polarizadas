@@ -91,8 +91,9 @@ Cuando se libere esa dependencia:
 
 1. añadir al dashboard local una sección de invitaciones;
 2. permitir crear, copiar, consultar, revocar y reemitir enlaces;
-3. seleccionar o registrar el WhatsApp antes de crear la invitación y enviarlo
-   normalizado a la API alojada;
+3. seleccionar o registrar el WhatsApp antes de crear la invitación, conservar
+   el número completo en local y enviar a la API alojada solo una referencia
+   opaca y una pista parcialmente oculta;
 4. hacer que el navegador llame solo a la Admin API local;
 5. implementar en la Admin API un cliente HTTPS autenticado hacia la API
    alojada, con secreto fuera del frontend y de los logs;
