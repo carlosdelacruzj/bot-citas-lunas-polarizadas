@@ -115,6 +115,7 @@ Condiciones obligatorias:
 - no conectar la nube directamente a PostgreSQL;
 - no generar en el navegador ni guardar localmente el token de invitación;
 - no volver a pedir el WhatsApp dentro del registro alojado;
+- no enviar ni conservar el número completo de WhatsApp en la nube;
 - no depender de una página persistente de estado del cliente;
 - no exponer credenciales del portal o de servicio en logs;
 - no crear órdenes por abrir un enlace;
