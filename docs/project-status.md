@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-29`.
+Última revisión integral: `2026-07-30`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -16,26 +16,26 @@ pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
 
 Estado verificado el `2026-07-28`:
 
-| Área | Estado | Lectura actual |
-| --- | --- | --- |
-| Worker de reservas | En espera nocturna | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
-| Admin API y dashboard | Operativos | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado. |
-| PostgreSQL | Operativo | PostgreSQL 16 en Docker, saludable. |
-| Telegram remoto | Operativo | Consultas, clientes, reglas, prioridad, credenciales y control del worker. |
-| CAPTCHA sombra | Operativo | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad. |
-| WhatsApp automático | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos. |
-| Dashboard | Operativo | Build Angular correcto; bundle inicial de `498.07 kB`. |
-| Calidad Python | Operativa | Ruff y `compileall` correctos; pytest tiene `59 passed`. |
+| Área                  | Estado                   | Lectura actual                                                                                            |
+| --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
+| Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
+| PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
+| Telegram remoto       | Operativo                | Consultas, clientes, reglas, prioridad, credenciales y control del worker.                                |
+| CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
+| WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
+| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `501.24 kB`.                                                    |
+| Calidad Python        | Operativa                | Ruff y `compileall` correctos; pytest tiene `59 passed`.                                                  |
 
 ## Resultado comercial acumulado
 
 Datos consultados en PostgreSQL al `2026-07-28`:
 
-| Periodo | Órdenes | Reservas confirmadas | Pagos | Ingreso cobrado |
-| --- | ---: | ---: | ---: | ---: |
-| Junio 2026 | 9 | 4 | 3 | S/ 120 |
-| Julio 2026, días 1-28 | 85 | 81 | 76 | S/ 3,025 |
-| **Acumulado** | **94** | **85** | **79** | **S/ 3,145** |
+| Periodo               | Órdenes | Reservas confirmadas |  Pagos | Ingreso cobrado |
+| --------------------- | ------: | -------------------: | -----: | --------------: |
+| Junio 2026            |       9 |                    4 |      3 |          S/ 120 |
+| Julio 2026, días 1-28 |      85 |                   81 |     76 |        S/ 3,025 |
+| **Acumulado**         |  **94** |               **85** | **79** |    **S/ 3,145** |
 
 - Ticket promedio de julio: `S/ 39.80`.
 - Pagos pendientes actuales: `2`, por `S/ 80`.
@@ -162,10 +162,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ## Rendimiento observado
 
-| Periodo | Runs conservados | Intentos | `registered` | `slot_lost` | Errores |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 13-19 julio | 5,356 | 61 | 28 | 29 (47.5%) | 14 |
-| 20-25 julio | 4,662 | 43 | 20 | 17 (39.5%) | 3 |
+| Periodo     | Runs conservados | Intentos | `registered` | `slot_lost` | Errores |
+| ----------- | ---------------: | -------: | -----------: | ----------: | ------: |
+| 13-19 julio |            5,356 |       61 |           28 |  29 (47.5%) |      14 |
+| 20-25 julio |            4,662 |       43 |           20 |  17 (39.5%) |       3 |
 
 La última semana muestra menos errores y menor proporción de `slot_lost`, pero
 todavía se necesita una muestra mayor antes de atribuir la mejora a un solo
@@ -211,8 +211,27 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
   siguiente arranque diario.
 - integración alojada: Ruff y compilación Python correctos, dashboard Angular
-  correcto, PostgreSQL `v38`, conector controlado activo y prueba remota
+  correcto, PostgreSQL `v39`, conector controlado activo y prueba remota
   ficticia aceptada sin crear órdenes.
+- flujo local de invitaciones ajustado: WhatsApp obligatorio, nombre opcional y
+  editable, advertencia por número repetido, reemplazo directo y comprobante
+  visible con enlace y mensaje copiable.
+- revisión UX/UI del flujo de invitaciones completada en código: estados
+  diferenciados por una paleta semántica, confirmaciones integradas para
+  reemplazar o revocar, jerarquía móvil conservada y texto del comprobante
+  distinto para primera emisión y reemplazo.
+- reemisión alojada corregida después de reproducir el HTTP `409`: la nueva
+  invitación se inserta antes de enlazar y revocar la anterior, y las
+  correcciones por credenciales incorrectas quedan admitidas explícitamente.
+- segundo HTTP `409` local diagnosticado y corregido: el listado conserva ahora
+  la invitación alojada más reciente por contacto y la reemisión reconcilia
+  PostgreSQL mediante la referencia estable del contacto, después de comprobar
+  que exista localmente y antes de modificar la invitación alojada.
+- falsa desconexión posterior corregida: PostgreSQL no podía inferir el tipo de
+  un parámetro opcional después de crear el reemplazo remoto y cerraba la
+  petición sin respuesta. La consulta selecciona ahora explícitamente su clave;
+  se sincronizó el contacto afectado y se revocaron cuatro accesos activos
+  históricos, dejando una sola invitación vigente.
 
 ## Regla de mantenimiento
 

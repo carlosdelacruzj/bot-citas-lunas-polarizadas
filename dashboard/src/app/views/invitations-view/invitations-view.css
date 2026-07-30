@@ -1,91 +1,455 @@
+:host {
+  display: block;
+}
+
 .invitation-workspace {
   display: grid;
   gap: 1rem;
 }
 
-.invitation-form {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) auto;
-  gap: 0.8rem;
-  align-items: end;
+.invitation-create {
+  border-top: 0.25rem solid var(--accent-700);
 }
 
-.invitation-form label {
+.invitation-form {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1fr) minmax(13rem, 1fr) auto;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.invitation-form label,
+.inline-name-editor,
+.issued-url {
   display: grid;
   gap: 0.35rem;
   font-weight: 700;
 }
 
+.invitation-form small,
+.optional-label {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.optional-label {
+  margin-left: 0.35rem;
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .invitation-form input,
-.issued-link input {
+.issued-url input,
+.inline-name-editor input {
+  width: 100%;
   min-height: 2.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 0.55rem;
   padding: 0.65rem 0.75rem;
   background: var(--surface);
   color: var(--ink);
 }
 
-.issued-link {
-  display: grid;
-  grid-template-columns: minmax(12rem, 0.8fr) minmax(16rem, 2fr) auto;
-  gap: 0.8rem;
-  align-items: center;
-  margin-top: 1rem;
-  border-left: 0.3rem solid var(--good);
-  border-radius: 0.6rem;
-  padding: 0.9rem;
-  background: color-mix(in srgb, var(--good) 8%, var(--surface));
+.invitation-form input:focus-visible,
+.issued-url input:focus-visible,
+.inline-name-editor input:focus-visible {
+  border-color: var(--accent-700);
+  outline: 0.2rem solid color-mix(in srgb, var(--accent-700) 24%, transparent);
+  outline-offset: 0.1rem;
 }
 
-.issued-link p,
-.invitation-contact small {
-  margin: 0.2rem 0 0;
+.invitation-form > button {
+  align-self: center;
+  margin-top: 0.1rem;
 }
 
 .invitation-error {
   margin: 0.9rem 0 0;
-  color: var(--bad);
+  color: var(--danger);
   font-weight: 700;
 }
 
 .invitation-list {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
 .invitation-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(9rem, auto) auto;
+  grid-template-columns: minmax(15rem, 1.15fr) minmax(14rem, 1fr) minmax(11rem, auto);
   gap: 1rem;
   align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 0.65rem;
-  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border-inline-start: 0.25rem solid var(--line-strong);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-xs);
+}
+
+.invitation-row[data-status='issued'],
+.invitation-row[data-status='opened'] {
+  border-inline-start-color: var(--accent-600);
+}
+
+.invitation-row[data-status='submitted'],
+.invitation-row[data-status='leased'],
+.invitation-row[data-status='local_pending'],
+.invitation-row[data-status='retry_wait'] {
+  border-inline-start-color: var(--blue-600);
+}
+
+.invitation-row[data-status='accepted'] {
+  border-inline-start-color: var(--success);
+}
+
+.invitation-row[data-status='awaiting_restrictions'],
+.invitation-row[data-status='credentials_invalid'],
+.invitation-row[data-status='expired'] {
+  border-inline-start-color: var(--warning);
+}
+
+.invitation-row[data-status='revoked'],
+.invitation-row[data-status='cancelled'],
+.invitation-row[data-status='rejected'] {
+  border-inline-start-color: var(--danger);
 }
 
 .invitation-contact,
-.invitation-row > div {
+.invitation-state,
+.invitation-actions,
+.contact-heading,
+.contact-heading > div {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.contact-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.invitation-contact strong,
+.invitation-contact span,
+.invitation-state p,
+.invitation-state small {
+  overflow-wrap: anywhere;
+}
+
+.invitation-contact strong {
+  font-size: 1rem;
+}
+
+.invitation-contact .missing-name {
+  color: var(--ink-muted);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.invitation-state {
+  align-content: start;
+}
+
+.invitation-state p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.invitation-state small {
+  color: var(--ink-muted);
+}
+
+.badge[data-status='issued'],
+.badge[data-status='opened'] {
+  border-color: color-mix(in srgb, var(--accent-600) 34%, white);
+  color: #0d6168;
+  background: #e4f6f5;
+}
+
+.badge[data-status='submitted'],
+.badge[data-status='leased'],
+.badge[data-status='local_pending'],
+.badge[data-status='retry_wait'] {
+  border-color: #b8cef9;
+  color: #174a9f;
+  background: #eaf1ff;
+}
+
+.badge[data-status='accepted'] {
+  border-color: #a9dfc3;
+  color: #166534;
+  background: #dcfce7;
+}
+
+.badge[data-status='awaiting_restrictions'],
+.badge[data-status='credentials_invalid'],
+.badge[data-status='expired'] {
+  border-color: #efd19c;
+  color: #80500d;
+  background: #fff3d9;
+}
+
+.badge[data-status='revoked'],
+.badge[data-status='cancelled'] {
+  border-color: var(--line-strong);
+  color: var(--ink-muted);
+  background: var(--surface-soft);
+}
+
+.badge[data-status='rejected'] {
+  border-color: #efbaba;
+  color: #982f2f;
+  background: #ffeded;
 }
 
 .invitation-actions {
-  justify-items: end;
+  justify-items: stretch;
+}
+
+.text-action {
+  justify-self: end;
+  border: 0;
+  padding: 0.25rem 0;
+  background: transparent;
+  color: var(--accent-700);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+}
+
+.text-action:hover {
+  color: var(--brand-800);
+}
+
+.inline-actions,
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.inline-actions {
+  margin-top: 0.45rem;
 }
 
 .empty-copy {
-  color: var(--muted);
+  color: var(--ink-muted);
+}
+
+.empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.empty-state p {
+  margin: 0.35rem 0 0;
+  color: var(--ink-muted);
+}
+
+.invitation-dialog {
+  position: relative;
+  width: min(42rem, 100%);
+  overscroll-behavior: contain;
+}
+
+.invitation-dialog > p {
+  color: var(--ink-muted);
+}
+
+.action-dialog {
+  border-top: 0.3rem solid var(--accent-600);
+}
+
+.action-dialog-danger {
+  border-top-color: var(--danger);
+}
+
+.action-dialog-danger .eyebrow {
+  color: var(--danger);
+}
+
+.action-contact {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  padding: 0.85rem;
+}
+
+.action-contact > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.action-contact small,
+.action-contact span {
+  color: var(--ink-muted);
+}
+
+.action-contact strong,
+.action-contact span {
+  overflow-wrap: anywhere;
+}
+
+.invitation-dialog > .action-warning {
+  margin-top: 0.9rem;
+  border-left: 0.25rem solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: #fff8e8;
+  padding: 0.75rem 0.85rem;
+  color: #684915;
+}
+
+.action-dialog-danger > .action-warning {
+  border-left-color: var(--danger);
+  background: #fff1f1;
+  color: #7f2929;
+}
+
+.duplicate-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.duplicate-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  padding: 0.75rem;
+}
+
+.duplicate-list span {
+  color: var(--ink-muted);
+}
+
+.issue-receipt {
+  overflow: hidden;
+  padding-left: 1.65rem;
+}
+
+.receipt-rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.55rem;
+  background:
+    linear-gradient(var(--accent-700), var(--accent-700)) top / 100% 55% no-repeat,
+    linear-gradient(var(--warning), var(--warning)) bottom / 100% 45% no-repeat;
+}
+
+.receipt-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0 0 1rem;
+}
+
+.receipt-details div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  padding: 0.75rem;
+}
+
+.receipt-details dt {
+  color: var(--ink-muted);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.receipt-details dd {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.issued-url input {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.single-view-note {
+  border-left: 0.25rem solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  background: #fff8e8;
+  color: #684915;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.copy-feedback {
+  min-height: 1.25rem;
+  margin: 0.65rem 0 0;
+  color: var(--success);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: end;
+}
+
+.compact {
+  min-height: 2.25rem;
+}
+
+@media (max-width: 900px) {
+  .invitation-row {
+    grid-template-columns: minmax(13rem, 1fr) minmax(13rem, 1fr);
+  }
+
+  .invitation-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
   .invitation-form,
-  .issued-link,
-  .invitation-row {
+  .invitation-row,
+  .receipt-details {
     grid-template-columns: 1fr;
   }
 
   .invitation-actions {
-    justify-items: stretch;
+    grid-column: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .contact-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .text-action {
+    justify-self: start;
+  }
+
+  .dialog-actions,
+  .inline-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .duplicate-list > div {
+    display: grid;
+  }
+
+  .action-contact {
+    display: grid;
   }
 }

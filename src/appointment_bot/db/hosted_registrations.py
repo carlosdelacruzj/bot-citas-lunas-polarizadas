@@ -11,15 +11,13 @@ from appointment_bot.db.common import _connection, _database_url, _settings, ini
 def create_registration_contact(
     *,
     whatsapp_phone: str,
-    display_name: str,
+    display_name: str | None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
     phone = _normalize_peru_phone(whatsapp_phone)
-    name = " ".join(display_name.split())
-    if not name:
-        raise ValueError("display_name is required.")
+    name = _normalize_optional_name(display_name)
     contact_ref = str(uuid4())
     now = datetime.now(UTC)
     with _connection(_database_url(settings)) as connection:
@@ -56,13 +54,16 @@ def replace_invitation(
     previous_invitation_id: str,
     invitation_id: str,
     *,
+    contact_ref: str | None = None,
     settings: Settings | None = None,
-) -> None:
+) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
+    lookup_column = "contact_ref" if contact_ref else "invitation_id"
+    lookup_value = contact_ref or previous_invitation_id
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
-            """
+            f"""
             UPDATE hosted_registration_contacts
             SET invitation_id = %s,
                 request_id = NULL,
@@ -71,13 +72,39 @@ def replace_invitation(
                 availability_mode = NULL,
                 last_error_category = NULL,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE invitation_id = %s
-            RETURNING contact_ref
+            WHERE {lookup_column} = %s
+            RETURNING *
             """,
-            (invitation_id, previous_invitation_id),
+            (invitation_id, lookup_value),
         ).fetchone()
     if row is None:
-        raise ValueError("The previous invitation is not available locally.")
+        raise ValueError("La invitación anterior no está vinculada a un contacto local.")
+    return dict(row)
+
+
+def update_registration_contact_name(
+    contact_ref: str,
+    display_name: str | None,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    settings = _settings(settings)
+    init_database(settings)
+    name = _normalize_optional_name(display_name)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE hosted_registration_contacts
+            SET display_name = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE contact_ref = %s
+            RETURNING *
+            """,
+            (name, contact_ref),
+        ).fetchone()
+    if row is None:
+        raise ValueError("The hosted contact reference is not available locally.")
+    return dict(row)
 
 
 def record_claim(
@@ -209,3 +236,10 @@ def _normalize_peru_phone(value: str) -> str:
     if len(digits) != 9 or not digits.startswith("9"):
         raise ValueError("whatsapp_phone must be a valid 9-digit Peru mobile number.")
     return f"+51{digits}"
+
+
+def _normalize_optional_name(value: str | None) -> str | None:
+    name = " ".join((value or "").split())
+    if len(name) > 120:
+        raise ValueError("display_name must not exceed 120 characters.")
+    return name or None

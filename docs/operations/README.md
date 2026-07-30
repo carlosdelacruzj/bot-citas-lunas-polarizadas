@@ -462,6 +462,7 @@ política de backup durable. No versionar `.dump`, `.sql` ni `backups/`.
 Seguir [`evidence-policy.md`](evidence-policy.md). La primera lectura es
 `docs/evidence-summary.md`, luego `docs/evidence-index.csv`; las bitácoras
 extensas viven en `reports/evidence/history/`.
+
 ## Registro alojado opcional
 
 La Admin API inicia el conector junto con los demás servicios, pero permanece
@@ -502,3 +503,23 @@ El despliegue controlado vigente usa:
 La prueba ficticia completa terminó en `accepted` y mantuvo `order_id` vacío.
 No cambiar a `production` ni introducir datos reales hasta completar los
 bloqueadores de seguridad y recibir una autorización nueva.
+
+### Operar invitaciones desde el dashboard
+
+WhatsApp es el único dato obligatorio. El nombre o referencia es opcional, se
+conserva solo en PostgreSQL local y puede agregarse o editarse después.
+
+Después de crear o reemplazar una invitación aparece un comprobante con:
+
+- cliente o estado `Sin nombre todavía`;
+- WhatsApp local;
+- vencimiento;
+- URL completa;
+- copia del enlace;
+- copia de un mensaje listo para WhatsApp.
+
+La URL no se guarda. Si se cierra el comprobante sin copiarla, usar
+`Reemplazar enlace` o `Generar enlace nuevo`; la operación invalida el enlace y
+sesión anteriores y comienza otra vigencia de 24 horas. El dashboard advierte
+si el WhatsApp ya aparece en otro registro, pero permite continuar porque un
+número puede ser compartido.

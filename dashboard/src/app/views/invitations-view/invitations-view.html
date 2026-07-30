@@ -4,13 +4,36 @@
       <div>
         <p class="eyebrow">Enlace privado</p>
         <h2 id="invitation-heading">Crear invitación</h2>
-        <p>El WhatsApp completo permanece en esta PC. La nube solo recibe una referencia opaca.</p>
+        <p>
+          WhatsApp es el único dato obligatorio. Si todavía no te dieron un nombre, podrás agregarlo
+          después.
+        </p>
       </div>
     </div>
 
-    <div class="invitation-form">
+    <form class="invitation-form" (ngSubmit)="createInvitation()">
       <label>
-        Nombre de referencia
+        WhatsApp <span class="required-marker" aria-hidden="true">*</span>
+        <input
+          type="tel"
+          name="whatsappPhone"
+          autocomplete="tel"
+          inputmode="tel"
+          required
+          [ngModel]="whatsappPhone()"
+          (ngModelChange)="whatsappPhone.set($event)"
+          placeholder="Ej. 987 654 321…"
+          [attr.aria-invalid]="error() && !whatsappPhone().trim() ? 'true' : null"
+          [attr.aria-describedby]="
+            error() && !whatsappPhone().trim()
+              ? 'invitation-phone-help invitation-error'
+              : 'invitation-phone-help'
+          "
+        />
+        <small id="invitation-phone-help">Número peruano de 9 dígitos.</small>
+      </label>
+      <label>
+        Nombre o referencia <span class="optional-label">Opcional</span>
         <input
           type="text"
           name="displayName"
@@ -18,41 +41,17 @@
           maxlength="120"
           [ngModel]="displayName()"
           (ngModelChange)="displayName.set($event)"
-          placeholder="Ej. Cliente WhatsApp…"
+          placeholder="Ej. Carlos o usuario de TikTok…"
         />
+        <small>Úsalo solo para reconocer al cliente en esta PC.</small>
       </label>
-      <label>
-        WhatsApp
-        <input
-          type="tel"
-          name="whatsappPhone"
-          autocomplete="tel"
-          inputmode="tel"
-          [ngModel]="whatsappPhone()"
-          (ngModelChange)="whatsappPhone.set($event)"
-          placeholder="Ej. 987 654 321…"
-        />
-      </label>
-      <button type="button" class="primary" [disabled]="busy()" (click)="createInvitation()">
+      <button type="submit" class="primary" [disabled]="busy()">
         {{ busy() ? 'Creando…' : 'Crear enlace privado' }}
       </button>
-    </div>
-
-    @if (issuedInvitation(); as issued) {
-      <div class="issued-link" role="status">
-        <div>
-          <strong>Enlace creado: cópialo ahora</strong>
-          <p>No se guarda localmente y no podrá recuperarse después de cerrar este aviso.</p>
-        </div>
-        <input readonly [value]="issued.url" aria-label="Enlace privado recién creado" />
-        <button type="button" class="primary" (click)="copyIssuedUrl()">
-          {{ copied() ? 'Copiado' : 'Copiar enlace' }}
-        </button>
-      </div>
-    }
+    </form>
 
     @if (error()) {
-      <p class="invitation-error" role="alert">{{ error() }}</p>
+      <p id="invitation-error" class="invitation-error" role="alert">{{ error() }}</p>
     }
   </article>
 
@@ -60,7 +59,9 @@
     <div class="panel-header">
       <div>
         <h2>Invitaciones recientes</h2>
-        <p>La apertura no crea una orden. La orden nace después de enviar y validar el registro.</p>
+        <p>
+          El enlace no se guarda. Si lo pierdes, reemplázalo y copia el nuevo desde el comprobante.
+        </p>
       </div>
       <button type="button" class="secondary" [disabled]="busy()" (click)="refresh()">
         Actualizar
@@ -68,40 +69,99 @@
     </div>
 
     @if (loading()) {
-      <p class="empty-copy">Consultando el servicio alojado…</p>
+      <p class="empty-copy" aria-live="polite">Consultando el servicio alojado…</p>
     } @else if (!invitations().length) {
-      <p class="empty-copy">Todavía no existen invitaciones locales.</p>
+      <div class="empty-state">
+        <strong>Todavía no existen invitaciones</strong>
+        <p>Escribe un WhatsApp arriba para crear la primera.</p>
+      </div>
     } @else {
       <div class="invitation-list">
         @for (invitation of invitations(); track invitation.contact_ref) {
-          <article class="invitation-row">
+          <article class="invitation-row" [attr.data-status]="invitation.status">
             <div class="invitation-contact">
-              <strong>{{ invitation.display_name }}</strong>
-              <span>{{ invitation.whatsapp_phone }}</span>
-              <small>{{ invitation.phone_hint }} en el servicio alojado</small>
+              @if (editingContactRef() === invitation.contact_ref) {
+                <label class="inline-name-editor">
+                  Nombre o referencia
+                  <input
+                    type="text"
+                    name="editedDisplayName"
+                    autocomplete="off"
+                    maxlength="120"
+                    [ngModel]="editingName()"
+                    (ngModelChange)="editingName.set($event)"
+                    placeholder="También puedes dejarlo vacío…"
+                  />
+                </label>
+                <div class="inline-actions">
+                  <button
+                    type="button"
+                    class="primary"
+                    [disabled]="busy()"
+                    (click)="saveName(invitation)"
+                  >
+                    Guardar nombre
+                  </button>
+                  <button type="button" class="secondary" (click)="cancelEditingName()">
+                    Cancelar
+                  </button>
+                </div>
+              } @else {
+                <div class="contact-heading">
+                  <div>
+                    <strong [class.missing-name]="!invitation.display_name">
+                      {{ invitationName(invitation) }}
+                    </strong>
+                    <span>{{ invitation.whatsapp_phone }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="text-action"
+                    [disabled]="busy()"
+                    (click)="startEditingName(invitation)"
+                  >
+                    {{ invitation.display_name ? 'Editar nombre' : 'Agregar nombre' }}
+                  </button>
+                </div>
+              }
             </div>
-            <div>
-              <span class="badge">{{ statusLabel(invitation.status) }}</span>
+
+            <div class="invitation-state">
+              <span class="badge" [attr.data-status]="invitation.status">
+                {{ statusLabel(invitation.status) }}
+              </span>
+              <p>{{ statusDetail(invitation) }}</p>
+              @if (invitation.expires_at && ['issued', 'opened'].includes(invitation.status)) {
+                <small>Vence: {{ formatDateTime(invitation.expires_at) }}</small>
+              }
               @if (invitation.order_id) {
                 <small>Orden: {{ invitation.order_id }}</small>
               }
             </div>
+
             <div class="invitation-actions">
-              @if (canReissue(invitation)) {
+              @if (canReplace(invitation)) {
                 <button
                   type="button"
                   class="primary"
                   [disabled]="busy()"
-                  (click)="reissue(invitation)"
+                  (click)="requestReissue(invitation)"
                 >
-                  Reemitir
+                  {{
+                    invitation.status === 'credentials_invalid'
+                      ? 'Enviar corrección'
+                      : invitation.status === 'issued' || invitation.status === 'opened'
+                        ? 'Reemplazar enlace'
+                        : 'Generar enlace nuevo'
+                  }}
                 </button>
-              } @else if (invitation.status === 'issued' || invitation.status === 'opened') {
+              }
+              @if (canRevoke(invitation)) {
                 <button
                   type="button"
                   class="danger"
                   [disabled]="busy()"
-                  (click)="revoke(invitation)"
+                  (click)="requestRevoke(invitation)"
                 >
                   Revocar
                 </button>
@@ -113,3 +173,187 @@
     }
   </article>
 </section>
+
+@if (duplicateMatches().length) {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="duplicate-invitation-title"
+    (keydown.escape)="duplicateMatches.set([])"
+  >
+    <div class="modal invitation-dialog">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">WhatsApp encontrado</p>
+          <h2 id="duplicate-invitation-title">Ya existen registros con este número</h2>
+        </div>
+      </div>
+      <p>Puede ser el mismo cliente o un número compartido. Revisa antes de crear otro registro.</p>
+      <div class="duplicate-list">
+        @for (match of duplicateMatches(); track match.contact_ref) {
+          <div>
+            <strong>{{ invitationName(match) }}</strong>
+            <span>{{ statusLabel(match.status) }}</span>
+          </div>
+        }
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="primary" [disabled]="busy()" (click)="createInvitation(true)">
+          Crear registro diferente
+        </button>
+        <button type="button" class="secondary" (click)="duplicateMatches.set([])">Cancelar</button>
+      </div>
+    </div>
+  </section>
+}
+
+@if (pendingAction(); as pending) {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="invitation-action-title"
+    aria-describedby="invitation-action-description"
+    (keydown.escape)="closePendingAction()"
+  >
+    <div
+      class="modal invitation-dialog action-dialog"
+      [class.action-dialog-danger]="pending.type === 'revoke'"
+    >
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">
+            {{ pending.type === 'revoke' ? 'Acción irreversible' : 'Confirmar reemplazo' }}
+          </p>
+          <h2 id="invitation-action-title">
+            {{
+              pending.type === 'revoke' ? '¿Revocar este enlace?' : '¿Crear un enlace de reemplazo?'
+            }}
+          </h2>
+        </div>
+      </div>
+
+      <div class="action-contact">
+        <div>
+          <small>Cliente</small>
+          <strong>{{ invitationName(pending.invitation) }}</strong>
+          <span>{{ pending.invitation.whatsapp_phone }}</span>
+        </div>
+        <span class="badge" [attr.data-status]="pending.invitation.status">
+          {{ statusLabel(pending.invitation.status) }}
+        </span>
+      </div>
+
+      @if (pending.type === 'revoke') {
+        <p id="invitation-action-description" class="action-warning">
+          El cliente ya no podrá abrir este enlace. Después podrás generar uno nuevo desde la lista
+          si lo necesitas.
+        </p>
+      } @else {
+        <p id="invitation-action-description" class="action-warning">
+          El enlace actual y cualquier sesión que el cliente tenga abierta dejarán de funcionar.
+          Copia y envía el nuevo enlace cuando aparezca el comprobante.
+        </p>
+      }
+
+      <div class="dialog-actions">
+        <button
+          type="button"
+          [class.danger]="pending.type === 'revoke'"
+          [class.primary]="pending.type === 'replace'"
+          [disabled]="busy()"
+          (click)="confirmPendingAction()"
+        >
+          {{
+            busy()
+              ? 'Procesando…'
+              : pending.type === 'revoke'
+                ? 'Sí, revocar enlace'
+                : 'Sí, reemplazar enlace'
+          }}
+        </button>
+        <button type="button" class="secondary" [disabled]="busy()" (click)="closePendingAction()">
+          Conservar enlace actual
+        </button>
+      </div>
+    </div>
+  </section>
+}
+
+@if (issuedInvitation(); as issued) {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="issued-invitation-title"
+    (keydown.escape)="closeIssuedInvitation()"
+  >
+    <div class="modal invitation-dialog issue-receipt">
+      <div class="receipt-rail" aria-hidden="true"></div>
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Comprobante de emisión</p>
+          <h2 id="issued-invitation-title">Enlace listo para enviar</h2>
+        </div>
+        <button type="button" class="secondary compact" (click)="closeIssuedInvitation()">
+          Cerrar
+        </button>
+      </div>
+
+      <dl class="receipt-details">
+        <div>
+          <dt>Cliente</dt>
+          <dd>{{ issued.display_name || 'Sin nombre todavía' }}</dd>
+        </div>
+        <div>
+          <dt>WhatsApp</dt>
+          <dd>{{ issued.whatsapp_phone }}</dd>
+        </div>
+        <div>
+          <dt>Válido hasta</dt>
+          <dd>{{ formatDateTime(issued.expires_at, issued.expires_at) }}</dd>
+        </div>
+      </dl>
+
+      <label class="issued-url">
+        Enlace privado
+        <input
+          readonly
+          name="issuedUrl"
+          autocomplete="off"
+          [value]="issued.url"
+          (focus)="$any($event.target).select()"
+        />
+      </label>
+
+      @if (issued.replaces_invitation_id) {
+        <p class="single-view-note">
+          El enlace anterior ya dejó de funcionar. Este nuevo enlace solo se muestra ahora: cópialo
+          antes de cerrar.
+        </p>
+      } @else {
+        <p class="single-view-note">
+          Este enlace solo se muestra ahora. Cópialo antes de cerrar; si lo pierdes, tendrás que
+          reemplazarlo desde la lista.
+        </p>
+      }
+
+      <div class="dialog-actions">
+        <button type="button" class="primary" (click)="copyIssuedUrl()">
+          {{ copied() === 'link' ? 'Enlace copiado' : 'Copiar enlace' }}
+        </button>
+        <button type="button" class="secondary" (click)="copyIssuedMessage()">
+          {{ copied() === 'message' ? 'Mensaje copiado' : 'Copiar mensaje para WhatsApp' }}
+        </button>
+      </div>
+      <p class="copy-feedback" aria-live="polite">
+        @if (copied() === 'link') {
+          El enlace está listo para pegar.
+        } @else if (copied() === 'message') {
+          El mensaje está listo para pegar en WhatsApp.
+        }
+      </p>
+    </div>
+  </section>
+}

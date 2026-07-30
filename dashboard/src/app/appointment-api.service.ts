@@ -17,7 +17,7 @@ export interface HealthPayload {
 
 export interface HostedInvitation {
   contact_ref: string;
-  display_name: string;
+  display_name: string | null;
   whatsapp_phone: string;
   phone_hint: string;
   invitation_id: string | null;
@@ -33,9 +33,10 @@ export interface HostedInvitation {
 export interface CreatedHostedInvitation {
   status: 'issued';
   contact_ref: string;
-  display_name: string;
+  display_name: string | null;
   whatsapp_phone: string;
   invitation_id: string;
+  replaces_invitation_id?: string;
   url: string;
   expires_at: string;
 }
@@ -226,11 +227,7 @@ export interface CaptchaHumanLabelResponse {
 }
 
 export type CaptchaQualityCaseType =
-  | 'wrong'
-  | 'high_confidence_wrong'
-  | 'unanimous_wrong'
-  | 'majority_wrong'
-  | 'disagreement';
+  'wrong' | 'high_confidence_wrong' | 'unanimous_wrong' | 'majority_wrong' | 'disagreement';
 
 export interface CaptchaMetricDistribution {
   samples: number;
@@ -256,10 +253,7 @@ export interface CaptchaQualityModel {
 export interface CaptchaQualityWeek {
   week: string;
   validated: number;
-  models: Record<
-    string,
-    { evaluated: number; correct: number; accuracy: number | null }
-  >;
+  models: Record<string, { evaluated: number; correct: number; accuracy: number | null }>;
 }
 
 export interface CaptchaQuality {
@@ -612,12 +606,21 @@ export class AppointmentApiService {
   }
 
   async createHostedInvitation(
-    displayName: string,
+    displayName: string | null,
     whatsappPhone: string,
   ): Promise<CreatedHostedInvitation> {
     return this.post<CreatedHostedInvitation>('/api/v1/hosted-invitations', {
       display_name: displayName,
       whatsapp_phone: whatsappPhone,
+    });
+  }
+
+  async updateHostedInvitationName(
+    contactRef: string,
+    displayName: string | null,
+  ): Promise<{ status: 'updated'; contact_ref: string; display_name: string | null }> {
+    return this.post(`/api/v1/hosted-invitations/contacts/${encodeURIComponent(contactRef)}/name`, {
+      display_name: displayName,
     });
   }
 
@@ -628,9 +631,7 @@ export class AppointmentApiService {
     );
   }
 
-  async reissueHostedInvitation(
-    invitationId: string,
-  ): Promise<CreatedHostedInvitation> {
+  async reissueHostedInvitation(invitationId: string): Promise<CreatedHostedInvitation> {
     return this.post<CreatedHostedInvitation>(
       `/api/v1/hosted-invitations/${encodeURIComponent(invitationId)}/reissue`,
       {},
@@ -907,10 +908,7 @@ export class AppointmentApiService {
   }
 
   async validateWhatsAppWebSession(): Promise<WhatsAppWebDraftResponse> {
-    return this.post<WhatsAppWebDraftResponse>(
-      '/api/v1/whatsapp-web/session/validate',
-      {},
-    );
+    return this.post<WhatsAppWebDraftResponse>('/api/v1/whatsapp-web/session/validate', {});
   }
 
   async prepareWhatsAppWebDraft(

@@ -139,7 +139,7 @@ consulta este endpoint al abrir la edicion y descarta el detalle al cerrarla.
 `POST /api/v1/service-orders/{order_id}/priority` acepta un entero no negativo:
 
 ```json
-{"priority": 100}
+{ "priority": 100 }
 ```
 
 Los valores `0` a `99` ordenan la cola normal; `100` o más activan enfoque.
@@ -174,7 +174,7 @@ restricciones de reserva de una orden:
   "maximum_reservation_date": "2026-08-31",
   "allowed_weekdays": [1, 3, 6],
   "excluded_date_ranges": [
-    {"start_date": "2026-08-10", "end_date": "2026-08-20"}
+    { "start_date": "2026-08-10", "end_date": "2026-08-20" }
   ]
 }
 ```
@@ -514,14 +514,14 @@ diverjan en etiquetas, validación de rangos o comportamiento responsive.
 El dashboard consulta siempre el estado común (`/health`, worker y sesiones
 manuales) y agrega solo los recursos requeridos por la vista activa:
 
-| Vista | Recursos específicos |
-|---|---|
-| Pendientes | órdenes y total de CAPTCHA sin etiqueta humana |
-| Resumen | órdenes, actividad y resumen mensual |
-| Finanzas | movimientos, resumen financiero y categorías en la primera carga |
-| Órdenes | órdenes |
-| CAPTCHA | resumen, página visible y cola de revisión CAPTCHA |
-| Actividad | runs y comandos del worker |
+| Vista      | Recursos específicos                                             |
+| ---------- | ---------------------------------------------------------------- |
+| Pendientes | órdenes y total de CAPTCHA sin etiqueta humana                   |
+| Resumen    | órdenes, actividad y resumen mensual                             |
+| Finanzas   | movimientos, resumen financiero y categorías en la primera carga |
+| Órdenes    | órdenes                                                          |
+| CAPTCHA    | resumen, página visible y cola de revisión CAPTCHA               |
+| Actividad  | runs y comandos del worker                                       |
 
 Al navegar se hace una primera carga inmediata de la nueva vista. Después, el
 refresco automático actualiza únicamente esa vista y omite el ciclo si todavía
@@ -530,16 +530,16 @@ pero no ambos módulos simultáneamente.
 
 Rutas del dashboard servido por el admin API:
 
-| Ruta | Vista |
-|---|---|
-| `/pendientes` | bandeja de trabajo |
-| `/resumen?month=YYYY-MM` | resumen mensual |
-| `/ordenes` | listado de órdenes |
-| `/ordenes/{order_id}` | orden seleccionada |
-| `/actividad` | runs y comandos |
-| `/actividad/{run_id}` | run seleccionado |
+| Ruta                      | Vista              |
+| ------------------------- | ------------------ |
+| `/pendientes`             | bandeja de trabajo |
+| `/resumen?month=YYYY-MM`  | resumen mensual    |
+| `/ordenes`                | listado de órdenes |
+| `/ordenes/{order_id}`     | orden seleccionada |
+| `/actividad`              | runs y comandos    |
+| `/actividad/{run_id}`     | run seleccionado   |
 | `/finanzas?month=YYYY-MM` | control financiero |
-| `/captchas?mode=review|history` | revisión o historial CAPTCHA |
+| `/captchas?mode=review\|history` | revisión o historial CAPTCHA |
 
 Cada vista se entrega como un chunk Angular diferido. El servidor debe mantener
 el fallback de rutas desconocidas hacia `index.html`; el admin API incorporado
@@ -554,6 +554,7 @@ ya aplica este comportamiento.
   completado como allowlist de campos publicos.
 - Definir errores consistentes: `bad_request`, `not_found`, `conflict`,
   `unauthorized`, `configuration_error`.
+
 ## Invitaciones alojadas
 
 Estas rutas solo se exponen en la Admin API local y requieren su sesión
@@ -561,12 +562,16 @@ autorizada. Angular nunca conoce los secretos del servicio alojado.
 
 - `GET /api/v1/hosted-invitations`: combina metadatos alojados sanitizados con
   el nombre y WhatsApp conservados localmente.
-- `POST /api/v1/hosted-invitations`: recibe `display_name` y
-  `whatsapp_phone`, crea la referencia opaca local y devuelve el enlace solo en
-  esa respuesta.
+- `POST /api/v1/hosted-invitations`: recibe `whatsapp_phone` obligatorio y
+  `display_name` opcional, crea la referencia opaca local y devuelve el enlace
+  solo en esa respuesta.
+- `POST /api/v1/hosted-invitations/contacts/{contact_ref}/name`: permite
+  agregar, cambiar o retirar el nombre de referencia sin modificar la
+  invitación ni su solicitud.
 - `POST /api/v1/hosted-invitations/{id}/revoke`: revoca el enlace alojado.
 - `POST /api/v1/hosted-invitations/{id}/reissue`: revoca el enlace anterior y
   devuelve el reemplazo solo en esa respuesta.
 
 La URL portadora no se persiste en PostgreSQL ni puede recuperarse desde el
-listado.
+listado. Crear y reemitir devuelven el WhatsApp y nombre locales junto con la
+URL para construir un comprobante visible y copiable en el dashboard.

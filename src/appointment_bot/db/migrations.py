@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 38
+SCHEMA_VERSION = 39
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -1293,9 +1293,7 @@ def migrate_database(connection: Connection) -> None:
             )
             """
         )
-        connection.execute(
-            "DROP INDEX IF EXISTS idx_whatsapp_automation_jobs_queued"
-        )
+        connection.execute("DROP INDEX IF EXISTS idx_whatsapp_automation_jobs_queued")
         connection.execute(
             """
             CREATE INDEX idx_whatsapp_automation_jobs_queued
@@ -1315,6 +1313,18 @@ def migrate_database(connection: Connection) -> None:
             (38,),
         )
         current_version = 38
+    if current_version == 38:
+        connection.execute(
+            """
+            ALTER TABLE hosted_registration_contacts
+            ALTER COLUMN display_name DROP NOT NULL
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (39,),
+        )
+        current_version = 39
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "
@@ -1329,7 +1339,7 @@ def _create_hosted_registration_schema(connection: Connection) -> None:
         CREATE TABLE IF NOT EXISTS hosted_registration_contacts (
             contact_ref text PRIMARY KEY,
             whatsapp_phone text NOT NULL,
-            display_name text NOT NULL,
+            display_name text,
             invitation_id text UNIQUE,
             request_id text UNIQUE,
             order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,

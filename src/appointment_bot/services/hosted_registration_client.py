@@ -105,6 +105,12 @@ class HostedRegistrationClient:
         response = self.request("GET", "operator/invitations")
         return list(response.get("items") or response.get("invitations") or [])
 
+    def get_invitation(self, invitation_id: str) -> dict[str, Any]:
+        return self.request(
+            "GET",
+            f"operator/invitations/{quote(invitation_id, safe='')}",
+        )
+
     def revoke_invitation(self, invitation_id: str) -> dict[str, Any]:
         return self.request(
             "POST",

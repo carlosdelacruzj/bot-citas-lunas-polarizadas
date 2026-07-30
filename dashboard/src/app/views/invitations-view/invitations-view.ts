@@ -7,6 +7,12 @@ import {
   HostedInvitation,
   apiErrorMessage,
 } from '../../appointment-api.service';
+import { formatPeruDateTime } from '../../peru-date-time';
+
+interface PendingInvitationAction {
+  type: 'replace' | 'revoke';
+  invitation: HostedInvitation;
+}
 
 @Component({
   selector: 'app-invitations-view',
@@ -25,26 +31,43 @@ export class InvitationsView implements OnInit {
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
-  protected readonly copied = signal(false);
+  protected readonly copied = signal<'link' | 'message' | null>(null);
+  protected readonly duplicateMatches = signal<HostedInvitation[]>([]);
+  protected readonly pendingAction = signal<PendingInvitationAction | null>(null);
+  protected readonly editingContactRef = signal<string | null>(null);
+  protected readonly editingName = signal('');
+  protected readonly formatDateTime = formatPeruDateTime;
 
   ngOnInit(): void {
     void this.refresh();
   }
 
-  protected async createInvitation(): Promise<void> {
+  protected async createInvitation(skipDuplicateWarning = false): Promise<void> {
     const name = this.displayName().trim();
     const phone = this.whatsappPhone().trim();
-    if (!name || !phone) {
-      this.error.set('Completa el nombre de referencia y el WhatsApp.');
+    if (!phone) {
+      this.error.set('Escribe el WhatsApp para crear la invitación.');
       return;
+    }
+    if (!skipDuplicateWarning) {
+      const normalizedPhone = this.normalizePhone(phone);
+      const matches = this.invitations().filter(
+        (invitation) => this.normalizePhone(invitation.whatsapp_phone) === normalizedPhone,
+      );
+      if (matches.length) {
+        this.duplicateMatches.set(matches);
+        return;
+      }
     }
     this.busy.set(true);
     this.error.set('');
     this.issuedInvitation.set(null);
+    this.duplicateMatches.set([]);
     try {
-      this.issuedInvitation.set(await this.api.createHostedInvitation(name, phone));
+      this.issuedInvitation.set(await this.api.createHostedInvitation(name || null, phone));
       this.displayName.set('');
       this.whatsappPhone.set('');
+      this.copied.set(null);
       await this.refresh(false);
     } catch (error) {
       this.error.set(apiErrorMessage(error));
@@ -53,22 +76,41 @@ export class InvitationsView implements OnInit {
     }
   }
 
-  protected async revoke(invitation: HostedInvitation): Promise<void> {
-    if (!invitation.invitation_id || !confirm('¿Revocar esta invitación?')) {
+  protected requestRevoke(invitation: HostedInvitation): void {
+    if (!invitation.invitation_id) {
       return;
     }
-    await this.runAction(() => this.api.revokeHostedInvitation(invitation.invitation_id!));
+    this.pendingAction.set({ type: 'revoke', invitation });
   }
 
-  protected async reissue(invitation: HostedInvitation): Promise<void> {
-    if (!invitation.invitation_id || !confirm('¿Revocar el enlace anterior y crear uno nuevo?')) {
+  protected requestReissue(invitation: HostedInvitation): void {
+    if (!invitation.invitation_id) {
+      return;
+    }
+    this.pendingAction.set({ type: 'replace', invitation });
+  }
+
+  protected async confirmPendingAction(): Promise<void> {
+    const pending = this.pendingAction();
+    const invitationId = pending?.invitation.invitation_id;
+    if (!pending || !invitationId) {
+      return;
+    }
+    this.pendingAction.set(null);
+    if (pending.type === 'revoke') {
+      await this.runAction(() => this.api.revokeHostedInvitation(invitationId));
       return;
     }
     await this.runAction(async () => {
-      this.issuedInvitation.set(
-        await this.api.reissueHostedInvitation(invitation.invitation_id!),
-      );
+      this.issuedInvitation.set(await this.api.reissueHostedInvitation(invitationId));
+      this.copied.set(null);
     });
+  }
+
+  protected closePendingAction(): void {
+    if (!this.busy()) {
+      this.pendingAction.set(null);
+    }
   }
 
   protected async copyIssuedUrl(): Promise<void> {
@@ -76,12 +118,46 @@ export class InvitationsView implements OnInit {
     if (!url) {
       return;
     }
-    try {
-      await navigator.clipboard.writeText(url);
-      this.copied.set(true);
-      window.setTimeout(() => this.copied.set(false), 1800);
-    } catch {
-      this.error.set('No se pudo copiar. Selecciona el enlace y cópialo manualmente.');
+    await this.copyText(url, 'link');
+  }
+
+  protected async copyIssuedMessage(): Promise<void> {
+    const invitation = this.issuedInvitation();
+    if (!invitation) {
+      return;
+    }
+    const message = [
+      'Hola, te envío tu enlace privado para completar el registro:',
+      invitation.url,
+      '',
+      `Está disponible hasta ${this.formatDateTime(invitation.expires_at, invitation.expires_at)}.`,
+      'El enlace es personal. No lo compartas con otras personas.',
+    ].join('\n');
+    await this.copyText(message, 'message');
+  }
+
+  protected closeIssuedInvitation(): void {
+    this.issuedInvitation.set(null);
+    this.copied.set(null);
+  }
+
+  protected startEditingName(invitation: HostedInvitation): void {
+    this.editingContactRef.set(invitation.contact_ref);
+    this.editingName.set(invitation.display_name ?? '');
+  }
+
+  protected cancelEditingName(): void {
+    this.editingContactRef.set(null);
+    this.editingName.set('');
+  }
+
+  protected async saveName(invitation: HostedInvitation): Promise<void> {
+    const name = this.editingName().trim();
+    const saved = await this.runAction(() =>
+      this.api.updateHostedInvitationName(invitation.contact_ref, name || null),
+    );
+    if (saved) {
+      this.cancelEditingName();
     }
   }
 
@@ -104,8 +180,37 @@ export class InvitationsView implements OnInit {
     return labels[status] ?? status.replaceAll('_', ' ');
   }
 
-  protected canReissue(invitation: HostedInvitation): boolean {
-    return ['revoked', 'expired', 'credentials_invalid'].includes(invitation.status);
+  protected canReplace(invitation: HostedInvitation): boolean {
+    return ['issued', 'opened', 'revoked', 'expired', 'credentials_invalid'].includes(
+      invitation.status,
+    );
+  }
+
+  protected canRevoke(invitation: HostedInvitation): boolean {
+    return ['issued', 'opened'].includes(invitation.status);
+  }
+
+  protected statusDetail(invitation: HostedInvitation): string {
+    const details: Record<string, string> = {
+      issued: 'Todavía no se ha abierto.',
+      opened: 'El cliente abrió el enlace.',
+      submitted: 'El cliente envió el registro.',
+      leased: 'La PC local está validando el registro.',
+      accepted: 'Validación aceptada.',
+      awaiting_restrictions: 'Debes coordinar las fechas por WhatsApp.',
+      credentials_invalid: 'Necesita un enlace nuevo para corregir el acceso.',
+      retry_wait: 'El sistema intentará validar nuevamente.',
+      revoked: 'El enlace anterior ya no funciona.',
+      expired: 'Terminó su vigencia de 24 horas.',
+      cancelled: 'La solicitud fue cancelada.',
+      rejected: 'La solicitud no fue aceptada.',
+      local_pending: 'Preparando la referencia local.',
+    };
+    return details[invitation.status] ?? 'Consulta el detalle antes de continuar.';
+  }
+
+  protected invitationName(invitation: HostedInvitation): string {
+    return invitation.display_name || 'Sin nombre todavía';
   }
 
   protected async refresh(showLoading = true): Promise<void> {
@@ -122,16 +227,37 @@ export class InvitationsView implements OnInit {
     }
   }
 
-  private async runAction(action: () => Promise<unknown>): Promise<void> {
+  private async runAction(action: () => Promise<unknown>): Promise<boolean> {
     this.busy.set(true);
     this.error.set('');
     try {
       await action();
       await this.refresh(false);
+      return true;
     } catch (error) {
       this.error.set(apiErrorMessage(error));
+      return false;
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private async copyText(value: string, copied: 'link' | 'message'): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(value);
+      this.copied.set(copied);
+      window.setTimeout(() => {
+        if (this.copied() === copied) {
+          this.copied.set(null);
+        }
+      }, 1800);
+    } catch {
+      this.error.set('No se pudo copiar automáticamente. Selecciona el enlace y cópialo.');
+    }
+  }
+
+  private normalizePhone(value: string): string {
+    const digits = value.replaceAll(/\D/gu, '');
+    return digits.startsWith('51') && digits.length === 11 ? digits.slice(2) : digits;
   }
 }

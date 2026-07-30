@@ -29,10 +29,12 @@ from appointment_bot.services.api.finance_routes import (
 )
 from appointment_bot.services.api.hosted_registration_routes import (
     create_hosted_invitation_payload,
+    hosted_contact_action_path,
     hosted_invitation_action_path,
     list_hosted_invitations_payload,
     reissue_hosted_invitation_payload,
     revoke_hosted_invitation_payload,
+    update_hosted_contact_name_payload,
 )
 from appointment_bot.services.api.http import (
     RequestBodyError,
@@ -360,6 +362,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = create_hosted_invitation_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        contact_ref = hosted_contact_action_path(path, "name")
+        if contact_ref is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_hosted_contact_name_payload(
+                contact_ref,
+                self._read_json(),
+            )
             self._send_json(status, payload)
             return
 

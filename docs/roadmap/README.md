@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-07-28`.
+Última priorización: `2026-07-30`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -86,11 +86,12 @@ Estado: iniciado.
 Estado: integración controlada completada el `2026-07-29`; producción y datos
 reales bloqueados.
 
-El contrato alojado v1 ya está implementado localmente en
-`lunas-polarizadas-clientes`. La activación continúa bloqueada hasta crear la
-infraestructura remota, instalar secretos y autorizar una prueba controlada.
+El contrato alojado v1, la infraestructura remota, los secretos y la prueba
+controlada ya están implementados. La activación con datos reales continúa
+bloqueada hasta cerrar las condiciones de seguridad y recibir autorización
+expresa.
 
-Cuando se libere esa dependencia:
+El alcance integrado comprende:
 
 1. añadir al dashboard local una sección de invitaciones;
 2. permitir crear, copiar, consultar, revocar y reemitir enlaces;
@@ -131,7 +132,7 @@ Progreso:
 - Ruff, compilación Python y build Angular correctos;
 - secretos generados bajo `.runtime/hosted-registration/` y cargados por el
   supervisor del dashboard sin modificar `.env`;
-- PostgreSQL operativo migrado a `v38`;
+- PostgreSQL operativo migrado a `v39`;
 - Worker y D1 desplegados bajo
   `https://registro.citaspolarizadasperu.com`;
 - cliente local identificado con un `User-Agent` propio para evitar el bloqueo
@@ -140,6 +141,21 @@ Progreso:
 - prueba ficticia completa terminada en `accepted`, con `order_id` nulo y sin
   variar las `95` órdenes existentes;
 - limpieza terminal del sobre, contacto, pista y lease confirmada en D1;
+- flujo de operación mejorado con nombre opcional y editable, advertencia por
+  WhatsApp repetido, reemplazo directo y comprobante visible para copiar el
+  enlace o el mensaje;
+- interfaz de invitaciones armonizada con los tokens del dashboard: paleta
+  semántica por estado, confirmaciones propias para acciones sensibles y
+  comprobante contextual para primera emisión o reemplazo;
+- HTTP `409` de reemisión corregido en la API alojada mediante una secuencia
+  compatible con la clave foránea y una excepción limitada a
+  `credentials_invalid`;
+- desincronización local posterior corregida: el listado ya no sustituye la
+  invitación más nueva por una histórica del mismo contacto y PostgreSQL se
+  reconcilia por `contact_ref` al reemitir;
+- excepción PostgreSQL que se mostraba como desconexión corregida mediante una
+  clave de búsqueda explícita; el contacto de prueba quedó sincronizado y con
+  una sola invitación activa después de revocar cuatro accesos históricos;
 - pendiente únicamente el trabajo previo al modo `production`: respaldo
   cifrado externo de la clave privada, revisión legal, procedimiento de
   incidente, prueba visual directa y autorización expresa para datos reales.

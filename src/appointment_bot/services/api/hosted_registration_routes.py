@@ -7,8 +7,10 @@ from typing import Any
 from appointment_bot.db.hosted_registrations import (
     attach_invitation,
     create_registration_contact,
+    get_registration_contact,
     list_registration_contacts,
     replace_invitation,
+    update_registration_contact_name,
 )
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.hosted_registration_client import (
@@ -23,11 +25,11 @@ def list_hosted_invitations_payload() -> tuple[HTTPStatus, dict[str, Any]]:
         hosted_rows = HostedRegistrationClient.operator().list_invitations()
     except HostedRegistrationError as exc:
         return HTTPStatus(exc.status), error_payload(exc.code, str(exc))
-    hosted_by_ref = {
-        str(row.get("contact_ref")): row
-        for row in hosted_rows
-        if row.get("contact_ref")
-    }
+    hosted_by_ref: dict[str, dict[str, Any]] = {}
+    for row in hosted_rows:
+        contact_ref = str(row.get("contact_ref") or "")
+        if contact_ref and contact_ref not in hosted_by_ref:
+            hosted_by_ref[contact_ref] = row
     items = []
     for row in local_rows:
         hosted = hosted_by_ref.get(str(row["contact_ref"]), {})
@@ -62,10 +64,10 @@ def create_hosted_invitation_payload(
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     phone = str(payload.get("whatsapp_phone") or "").strip()
     display_name = str(payload.get("display_name") or "").strip()
-    if not phone or not display_name:
+    if not phone:
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
-            "Nombre y WhatsApp son obligatorios.",
+            "El WhatsApp es obligatorio.",
         )
     try:
         local = create_registration_contact(
@@ -107,13 +109,55 @@ def reissue_hosted_invitation_payload(
     invitation_id: str,
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     try:
-        result = HostedRegistrationClient.operator().reissue_invitation(invitation_id)
-        replace_invitation(invitation_id, str(result["invitation_id"]))
+        client = HostedRegistrationClient.operator()
+        hosted = client.get_invitation(invitation_id)
+        contact_ref = str(hosted.get("contact_ref") or "")
+        if not contact_ref or get_registration_contact(contact_ref) is None:
+            raise ValueError("La invitación no está vinculada a un contacto local.")
+        result = client.reissue_invitation(invitation_id)
+        local = replace_invitation(
+            invitation_id,
+            str(result["invitation_id"]),
+            contact_ref=contact_ref,
+        )
     except ValueError as exc:
         return HTTPStatus.CONFLICT, error_payload("local_mapping_error", str(exc))
     except HostedRegistrationError as exc:
         return HTTPStatus(exc.status), error_payload(exc.code, str(exc))
-    return HTTPStatus.CREATED, result
+    return HTTPStatus.CREATED, {
+        **result,
+        "contact_ref": local["contact_ref"],
+        "display_name": local["display_name"],
+        "whatsapp_phone": local["whatsapp_phone"],
+    }
+
+
+def update_hosted_contact_name_payload(
+    contact_ref: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if "display_name" not in payload:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Incluye el nombre o una referencia vacía para retirarlo.",
+        )
+    try:
+        local = update_registration_contact_name(
+            contact_ref,
+            str(payload.get("display_name") or ""),
+        )
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not available" in message else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {
+        "status": "updated",
+        "contact_ref": local["contact_ref"],
+        "display_name": local["display_name"],
+    }
 
 
 def hosted_invitation_action_path(path: str, action: str) -> str | None:
@@ -123,6 +167,15 @@ def hosted_invitation_action_path(path: str, action: str) -> str | None:
         return None
     invitation_id = path[len(prefix) : -len(suffix)]
     return invitation_id or None
+
+
+def hosted_contact_action_path(path: str, action: str) -> str | None:
+    prefix = "/api/v1/hosted-invitations/contacts/"
+    suffix = f"/{action}"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    contact_ref = path[len(prefix) : -len(suffix)]
+    return contact_ref or None
 
 
 def _phone_hint(phone: str) -> str:
