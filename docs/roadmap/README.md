@@ -32,6 +32,9 @@ Estado: en observación.
 
 ### WhatsApp automático
 
+- Completado el `2026-07-28`: la bandeja usa evidencia enviada y jobs durables,
+  excluye `54` seguimientos históricos sin trabajo real y conserva los dos
+  pagos vigentes. No borra paquetes ni reintenta resultados ambiguos.
 - Medir trabajos `sent`, `failed`, `blocked` y `uncertain`.
 - Confirmar que solo Admin API abre el perfil persistente.
 - Verificar que evidencia y Yape permanezcan en un solo álbum y que sus rutas
@@ -78,14 +81,14 @@ Estado: iniciado.
    recuperación individual de los cuatro supervisores ya quedó implementada;
    falta observarla después de un reinicio real.
 
-## Integración futura - Invitaciones y registro alojado
+## Integración - Invitaciones y registro alojado
 
-Estado: pendiente y bloqueada por el contrato del proyecto
-`lunas-polarizadas-clientes`.
+Estado: integración controlada completada el `2026-07-29`; producción y datos
+reales bloqueados.
 
-No adelantar esta integración a la estabilización actual ni implementarla
-antes de que el servicio alojado de invitaciones y registro tenga un contrato
-probado.
+El contrato alojado v1 ya está implementado localmente en
+`lunas-polarizadas-clientes`. La activación continúa bloqueada hasta crear la
+infraestructura remota, instalar secretos y autorizar una prueba controlada.
 
 Cuando se libere esa dependencia:
 
@@ -109,6 +112,38 @@ Cuando se libere esa dependencia:
 12. probar primero con una cuenta y un número controlados, manteniendo el alta
     manual como alternativa.
 
+Progreso:
+
+- sección `Invitaciones` añadida al dashboard;
+- creación, copia inmediata, listado, revocación y reemisión añadidas;
+- WhatsApp completo y nombre de referencia conservados en PostgreSQL local;
+- cliente HTTPS con HMAC-SHA256 implementado, sin secretos en Angular;
+- conector saliente con claim, lease, renovación, liberación y ACK implementado;
+- descifrado RSA-OAEP-256 y AES-256-GCM implementado con reconstrucción de AAD;
+- payload validado nuevamente después del descifrado;
+- registros de fecha quedan pausados hasta coordinación por WhatsApp;
+- registros generales atraviesan la frontera existente de creación y
+  prevalidación de órdenes;
+- resultado alojado limitado a categorías sanitizadas;
+- conector integrado al proceso de la Admin API, desactivado por defecto;
+- modo `controlled` disponible para pruebas ficticias sin crear una orden;
+- migración PostgreSQL v38 preparada;
+- Ruff, compilación Python y build Angular correctos;
+- secretos generados bajo `.runtime/hosted-registration/` y cargados por el
+  supervisor del dashboard sin modificar `.env`;
+- PostgreSQL operativo migrado a `v38`;
+- Worker y D1 desplegados bajo
+  `https://registro.citaspolarizadasperu.com`;
+- cliente local identificado con un `User-Agent` propio para evitar el bloqueo
+  automático de Cloudflare sin relajar HMAC;
+- conector activado en modo `controlled`;
+- prueba ficticia completa terminada en `accepted`, con `order_id` nulo y sin
+  variar las `95` órdenes existentes;
+- limpieza terminal del sobre, contacto, pista y lease confirmada en D1;
+- pendiente únicamente el trabajo previo al modo `production`: respaldo
+  cifrado externo de la clave privada, revisión legal, procedimiento de
+  incidente, prueba visual directa y autorización expresa para datos reales.
+
 Condiciones obligatorias:
 
 - no abrir puertos ni publicar la Admin API;
@@ -119,8 +154,8 @@ Condiciones obligatorias:
 - no depender de una página persistente de estado del cliente;
 - no exponer credenciales del portal o de servicio en logs;
 - no crear órdenes por abrir un enlace;
-- no comenzar este trabajo hasta que `lunas-polarizadas-clientes` complete y
-  valide la parte alojada que consumirá este proyecto.
+- no activar datos reales hasta que `lunas-polarizadas-clientes` despliegue y
+  valide de extremo a extremo la parte alojada que consume este proyecto.
 
 ## Deuda técnica posterior
 

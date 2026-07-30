@@ -72,7 +72,14 @@ import { FinanceEntryModalComponent } from './modals/finance-entry-modal.compone
 import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey = 'inbox' | 'summary' | 'finance' | 'orders' | 'runs' | 'captchas';
+type ViewKey =
+  | 'inbox'
+  | 'summary'
+  | 'finance'
+  | 'orders'
+  | 'runs'
+  | 'invitations'
+  | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
 type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
@@ -154,7 +161,13 @@ type OrderNextAction = {
   description: string;
   disabled: boolean;
 };
-type InboxTaskKind = 'preflight' | 'contact' | 'whatsapp' | 'payment' | 'followup';
+type InboxTaskKind =
+  | 'preflight'
+  | 'contact'
+  | 'whatsapp'
+  | 'payment'
+  | 'followup'
+  | 'review';
 type InboxOrderTask = {
   key: string;
   kind: InboxTaskKind;
@@ -262,6 +275,7 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   orders: { label: 'Órdenes', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
+  invitations: { label: 'Invitaciones', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
 };
 const INITIAL_ORDER_VIEW_STATE = readOrderViewState();
@@ -629,25 +643,62 @@ export class App implements OnDestroy {
         });
         continue;
       }
-      const needsInitialWhatsApp =
+      const hasPendingReservationPayment =
         order.status === 'reserved_payment_pending' &&
         order.reservation_status === 'confirmed' &&
-        order.payment_status === 'pending' &&
-        order.whatsapp_message_status !== 'sent';
-      if (needsInitialWhatsApp) {
-        const hasWhatsapp = Boolean(order.contact_whatsapp_masked);
+        order.payment_status === 'pending';
+      if (hasPendingReservationPayment && !order.contact_whatsapp_masked) {
         tasks.push({
-          key: `${hasWhatsapp ? 'whatsapp' : 'contact'}-${order.order_id}`,
-          kind: hasWhatsapp ? 'whatsapp' : 'contact',
+          key: `contact-${order.order_id}`,
+          kind: 'contact',
           order,
-          title: hasWhatsapp ? 'Enviar constancia y cobro' : 'Completar WhatsApp del cliente',
-          description: hasWhatsapp
-            ? 'La reserva está confirmada y el mensaje inicial todavía no figura enviado.'
-            : 'La reserva está confirmada, pero falta un WhatsApp válido para contactar al cliente.',
-          label: hasWhatsapp ? 'WhatsApp' : 'Contacto',
-          actionLabel: hasWhatsapp ? 'Preparar mensaje' : 'Corregir contacto',
-          icon: hasWhatsapp ? 'WA' : '@',
-          tone: hasWhatsapp ? 'warn' : 'bad',
+          title: 'Completar WhatsApp del cliente',
+          description:
+            'La reserva está confirmada, pero falta un WhatsApp válido para contactar al cliente.',
+          label: 'Contacto',
+          actionLabel: 'Corregir contacto',
+          icon: '@',
+          tone: 'bad',
+        });
+        continue;
+      }
+      if (
+        hasPendingReservationPayment &&
+        order.whatsapp_message_action_state === 'manual_required'
+      ) {
+        tasks.push({
+          key: `whatsapp-${order.order_id}`,
+          kind: 'whatsapp',
+          order,
+          title: 'Enviar constancia y cobro',
+          description: 'La reserva está confirmada y todavía falta preparar el mensaje inicial.',
+          label: 'WhatsApp',
+          actionLabel: 'Preparar mensaje',
+          icon: 'WA',
+          tone: 'warn',
+        });
+        continue;
+      }
+      if (
+        hasPendingReservationPayment &&
+        ['failed', 'uncertain'].includes(order.whatsapp_message_action_state)
+      ) {
+        tasks.push({
+          key: `review-whatsapp-${order.order_id}`,
+          kind: 'review',
+          order,
+          title:
+            order.whatsapp_message_action_state === 'uncertain'
+              ? 'Confirmar resultado de WhatsApp'
+              : 'Revisar fallo de WhatsApp',
+          description:
+            order.whatsapp_message_action_state === 'uncertain'
+              ? 'El envío inicial terminó de forma ambigua y no debe repetirse automáticamente.'
+              : 'El envío automático falló y requiere una decisión del operador.',
+          label: 'WhatsApp',
+          actionLabel: 'Revisar orden',
+          icon: 'WA',
+          tone: 'bad',
         });
         continue;
       }
@@ -667,21 +718,24 @@ export class App implements OnDestroy {
       }
       if (
         this.isPostPaymentWhatsAppCandidate(order) &&
-        order.whatsapp_followup_status !== 'sent'
+        ['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)
       ) {
-        const hasWhatsapp = Boolean(order.contact_whatsapp_masked);
         tasks.push({
-          key: `${hasWhatsapp ? 'followup' : 'contact'}-${order.order_id}`,
-          kind: hasWhatsapp ? 'followup' : 'contact',
+          key: `review-followup-${order.order_id}`,
+          kind: 'review',
           order,
-          title: hasWhatsapp ? 'Enviar indicaciones post-pago' : 'Completar WhatsApp del cliente',
-          description: hasWhatsapp
-            ? 'El pago está registrado y todavía falta enviar las indicaciones y documentos.'
-            : 'El pago está registrado, pero falta un WhatsApp válido para el seguimiento.',
-          label: hasWhatsapp ? 'Post-pago' : 'Contacto',
-          actionLabel: hasWhatsapp ? 'Preparar seguimiento' : 'Corregir contacto',
-          icon: hasWhatsapp ? 'PDF' : '@',
-          tone: hasWhatsapp ? 'warn' : 'bad',
+          title:
+            order.whatsapp_followup_action_state === 'uncertain'
+              ? 'Confirmar resultado post-pago'
+              : 'Revisar fallo post-pago',
+          description:
+            order.whatsapp_followup_action_state === 'uncertain'
+              ? 'El envío terminó de forma ambigua y no debe repetirse automáticamente.'
+              : 'El seguimiento automático falló y requiere una decisión del operador.',
+          label: 'Post-pago',
+          actionLabel: 'Revisar orden',
+          icon: 'PDF',
+          tone: 'bad',
         });
       }
     }
@@ -696,7 +750,7 @@ export class App implements OnDestroy {
   protected readonly inboxMessageCount = computed(
     () =>
       this.inboxOrderTasks().filter((task) =>
-        ['contact', 'whatsapp', 'followup'].includes(task.kind),
+        ['contact', 'whatsapp', 'followup', 'review'].includes(task.kind),
       ).length,
   );
   protected readonly inboxPendingTotal = computed(
@@ -729,7 +783,29 @@ export class App implements OnDestroy {
         disabled: true,
       };
     }
-    if (this.isPostPaymentWhatsAppCandidate(order)) {
+    if (
+      this.isPostPaymentWhatsAppCandidate(order) &&
+      order.whatsapp_followup_action_state !== 'not_applicable'
+    ) {
+      if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
+        return {
+          key: 'none',
+          label: 'Seguimiento automático en proceso',
+          description: 'No requiere intervención mientras el envío automático siga activo.',
+          disabled: true,
+        };
+      }
+      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
+        return {
+          key: 'review',
+          label: 'Revisar seguimiento',
+          description:
+            order.whatsapp_followup_action_state === 'uncertain'
+              ? 'El resultado es ambiguo; comprueba WhatsApp antes de decidir.'
+              : 'El envío falló; revisa la evidencia antes de repetirlo.',
+          disabled: false,
+        };
+      }
       return {
         key: 'post-payment-whatsapp',
         label:
@@ -818,6 +894,9 @@ export class App implements OnDestroy {
     }
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
+    }
+    if (view === 'invitations') {
+      return state === 'ready';
     }
     return this.orders().length > 0 || this.captchaReviewTotal() > 0 || state === 'ready';
   });
@@ -974,6 +1053,7 @@ export class App implements OnDestroy {
       ordenes: 'orders',
       actividad: 'runs',
       finanzas: 'finance',
+      invitaciones: 'invitations',
       captchas: 'captchas',
     };
     const view = viewBySection[section] ?? 'summary';
@@ -1166,6 +1246,9 @@ export class App implements OnDestroy {
       ]);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
+      return;
+    }
+    if (view === 'invitations') {
       return;
     }
     await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
@@ -1990,6 +2073,10 @@ export class App implements OnDestroy {
       void this.openPayment(task.order);
       return;
     }
+    if (task.kind === 'review') {
+      this.openInboxOrder(task.order);
+      return;
+    }
     this.selectOrder(task.order.order_id, false);
     void this.openPostPaymentWhatsApp(task.order);
   }
@@ -2657,7 +2744,16 @@ export class App implements OnDestroy {
     if (order.payment_status === 'pending') {
       return 'Registrar pago';
     }
-    if (this.isPostPaymentWhatsAppCandidate(order)) {
+    if (
+      this.isPostPaymentWhatsAppCandidate(order) &&
+      order.whatsapp_followup_action_state !== 'not_applicable'
+    ) {
+      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
+        return 'Revisar post-pago';
+      }
+      if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
+        return 'Ver seguimiento';
+      }
       return order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago';
     }
     if (order.status === 'paused') {
@@ -2674,9 +2770,14 @@ export class App implements OnDestroy {
       void this.openPayment(order);
       return;
     }
-    if (this.isPostPaymentWhatsAppCandidate(order)) {
+    if (
+      this.isPostPaymentWhatsAppCandidate(order) &&
+      order.whatsapp_followup_action_state !== 'not_applicable'
+    ) {
       this.selectOrder(order.order_id);
-      void this.openPostPaymentWhatsApp(order);
+      if (order.whatsapp_followup_action_state === 'sent') {
+        void this.openPostPaymentWhatsApp(order);
+      }
       return;
     }
     if (order.status === 'paused') {

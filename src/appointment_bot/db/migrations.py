@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 37
+SCHEMA_VERSION = 38
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -319,6 +319,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_followup_messages_schema(connection)
     _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
+    _create_hosted_registration_schema(connection)
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -346,6 +347,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_followup_messages",
         "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
+        "hosted_registration_contacts",
     }
     tables = {
         row["table_name"]
@@ -431,6 +433,12 @@ def _validate_current_schema(connection: Connection) -> None:
         ("captcha_shadow_outbox", "sequence"),
         ("captcha_shadow_outbox", "status"),
         ("captcha_shadow_outbox", "next_attempt_at"),
+        ("hosted_registration_contacts", "contact_ref"),
+        ("hosted_registration_contacts", "whatsapp_phone"),
+        ("hosted_registration_contacts", "invitation_id"),
+        ("hosted_registration_contacts", "request_id"),
+        ("hosted_registration_contacts", "order_id"),
+        ("hosted_registration_contacts", "state"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -1300,9 +1308,52 @@ def migrate_database(connection: Connection) -> None:
             (37,),
         )
         current_version = 37
+    if current_version == 37:
+        _create_hosted_registration_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (38,),
+        )
+        current_version = 38
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "
             f"this installation requires version {SCHEMA_VERSION}."
         )
     _validate_current_schema(connection)
+
+
+def _create_hosted_registration_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS hosted_registration_contacts (
+            contact_ref text PRIMARY KEY,
+            whatsapp_phone text NOT NULL,
+            display_name text NOT NULL,
+            invitation_id text UNIQUE,
+            request_id text UNIQUE,
+            order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            state text NOT NULL DEFAULT 'local_pending' CHECK (
+                state IN (
+                    'local_pending', 'issued', 'opened', 'submitted', 'leased',
+                    'accepted', 'credentials_invalid', 'rejected', 'revoked',
+                    'expired', 'cancelled', 'retry_wait', 'awaiting_restrictions',
+                    'configuration_error'
+                )
+            ),
+            availability_mode text CHECK (
+                availability_mode IS NULL
+                OR availability_mode IN ('any_date', 'date_restrictions')
+            ),
+            last_error_category text,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_hosted_registration_contacts_state
+        ON hosted_registration_contacts(state, updated_at DESC)
+        """
+    )

@@ -181,6 +181,16 @@ Estados internos adicionales:
 - Preparar o abrir el chat deja el mensaje en `prepared`. Solo la confirmacion
   explicita del operador lo cambia a `sent`; ese cambio no marca el pago como
   cobrado. Los paquetes `test_mode=true` no cambian ordenes, reservas ni pagos.
+- La bandeja operativa no considera pendiente a toda orden pagada. El estado
+  accionable combina evidencia real `sent` y el trabajo durable de
+  `whatsapp_automation_jobs`:
+  - cualquier envio real confirmado prevalece sobre un fallo anterior;
+  - `queued`, `blocked` y `running` siguen bajo responsabilidad automatica;
+  - solo `failed` o `uncertain` sin evidencia posterior requieren revision;
+  - una orden historica sin trabajo automatico queda `not_applicable` para la
+    bandeja, sin borrar sus paquetes ni enviar mensajes retroactivos.
+- Un resultado `uncertain` solo abre la orden para revision; nunca ofrece un
+  reintento directo desde la bandeja.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y
   estado pendiente para evitar doble envio.
 - Una orden bloqueada por regla propia puede quedar en espera o cooldown sin

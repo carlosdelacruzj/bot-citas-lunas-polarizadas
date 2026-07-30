@@ -120,7 +120,9 @@ La lista de ordenes debe exponer solo datos publicos o enmascarados:
 - `contact_whatsapp_masked`
 - prioridad, cobro, estado, reserva y pago
 - `whatsapp_message_status`, `whatsapp_message_sent_at`
+- `whatsapp_message_action_state`
 - `whatsapp_followup_status`, `whatsapp_followup_sent_at`
+- `whatsapp_followup_action_state`
 - `parent_order_id`, `program_expediente`, `program_plate`
 - reglas de reserva
 - timestamps
@@ -388,8 +390,10 @@ Los endpoints `attachment` y `payment-attachment` entregan solamente las copias
 preparadas en `screenshots/whatsapp-outgoing/`, requieren autenticacion estricta y
 usan `Cache-Control: no-store`. El endpoint `sent` registra la confirmacion manual;
 abrir `wa.me`, copiar texto o descargar la imagen no cambia el estado ni el pago.
-El listado de ordenes expone solo `whatsapp_message_status` y
-`whatsapp_message_sent_at`; el telefono completo sigue limitado al detalle.
+El listado de ordenes expone el estado del paquete y
+`whatsapp_message_action_state`, que combina evidencia enviada, job durable y
+necesidad manual sin exponer errores crudos. El telefono completo sigue
+limitado al detalle.
 
 `POST /api/v1/whatsapp-messages/{message_id}/web/prepare` es exclusivamente local
 y acepta `draft_kind` con `confirmation`, `payment` o `album`. Abre o reutiliza un perfil
@@ -550,3 +554,19 @@ ya aplica este comportamiento.
   completado como allowlist de campos publicos.
 - Definir errores consistentes: `bad_request`, `not_found`, `conflict`,
   `unauthorized`, `configuration_error`.
+## Invitaciones alojadas
+
+Estas rutas solo se exponen en la Admin API local y requieren su sesión
+autorizada. Angular nunca conoce los secretos del servicio alojado.
+
+- `GET /api/v1/hosted-invitations`: combina metadatos alojados sanitizados con
+  el nombre y WhatsApp conservados localmente.
+- `POST /api/v1/hosted-invitations`: recibe `display_name` y
+  `whatsapp_phone`, crea la referencia opaca local y devuelve el enlace solo en
+  esa respuesta.
+- `POST /api/v1/hosted-invitations/{id}/revoke`: revoca el enlace alojado.
+- `POST /api/v1/hosted-invitations/{id}/reissue`: revoca el enlace anterior y
+  devuelve el reemplazo solo en esa respuesta.
+
+La URL portadora no se persiste en PostgreSQL ni puede recuperarse desde el
+listado.

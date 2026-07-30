@@ -76,6 +76,16 @@
         <p>Administración</p>
         <a
           class="sidebar-link"
+          routerLink="/invitaciones"
+          [class.active]="activeView() === 'invitations'"
+          [attr.aria-current]="activeView() === 'invitations' ? 'page' : null"
+          title="Invitaciones"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">#</span>
+          <span class="nav-label">Invitaciones</span>
+        </a>
+        <a
+          class="sidebar-link"
           routerLink="/finanzas"
           [queryParams]="{ month: selectedMonth() }"
           [class.active]="activeView() === 'finance'"

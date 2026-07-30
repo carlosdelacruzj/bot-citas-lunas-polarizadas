@@ -130,8 +130,10 @@ class ServiceOrderSummary:
     amount_paid: str | None
     whatsapp_message_status: str | None
     whatsapp_message_sent_at: str | None
+    whatsapp_message_action_state: str
     whatsapp_followup_status: str | None
     whatsapp_followup_sent_at: str | None
+    whatsapp_followup_action_state: str
     parent_order_id: str | None
     program_expediente: str | None
     program_plate: str | None

@@ -27,6 +27,13 @@ from appointment_bot.services.api.finance_routes import (
     update_finance_entry_payload,
     void_finance_entry_payload,
 )
+from appointment_bot.services.api.hosted_registration_routes import (
+    create_hosted_invitation_payload,
+    hosted_invitation_action_path,
+    list_hosted_invitations_payload,
+    reissue_hosted_invitation_payload,
+    revoke_hosted_invitation_payload,
+)
 from appointment_bot.services.api.http import (
     RequestBodyError,
     error_payload,
@@ -195,6 +202,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.OK, list_service_orders_payload())
             return
 
+        if path == "/api/v1/hosted-invitations":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = list_hosted_invitations_payload()
+            self._send_json(status, payload)
+            return
+
         if path == "/api/v1/monthly-summary":
             if not self._require_authorized(strict=True):
                 return
@@ -339,6 +353,31 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = create_service_order_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/hosted-invitations":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = create_hosted_invitation_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        invitation_id = hosted_invitation_action_path(path, "revoke")
+        if invitation_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            self._read_json()
+            status, payload = revoke_hosted_invitation_payload(invitation_id)
+            self._send_json(status, payload)
+            return
+
+        invitation_id = hosted_invitation_action_path(path, "reissue")
+        if invitation_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            self._read_json()
+            status, payload = reissue_hosted_invitation_payload(invitation_id)
             self._send_json(status, payload)
             return
 

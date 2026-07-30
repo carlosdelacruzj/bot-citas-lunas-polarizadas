@@ -10,6 +10,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from appointment_bot.config import load_settings
+from appointment_bot.services.hosted_registration_connector import (
+    HostedRegistrationConnector,
+)
 from appointment_bot.services.local_api import DEFAULT_HOST, LocalApiHandler
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.order_preflight import resume_pending_order_preflights
@@ -121,6 +124,13 @@ def run_admin_api() -> int:
     server = create_admin_api_server()
     whatsapp_dispatcher = WhatsAppAutomationDispatcher(settings)
     whatsapp_dispatcher.start()
+    registration_connector = HostedRegistrationConnector(settings)
+    try:
+        registration_connector.start()
+    except Exception:
+        logger.exception(
+            "Hosted registration connector could not start; dashboard remains available."
+        )
     host, port = server.server_address[:2]
     logger.info("Admin API listening on http://%s:%s", host, port)
     if getattr(server, "dashboard_root", None) is not None:
@@ -131,6 +141,7 @@ def run_admin_api() -> int:
         logger.info("Admin API shutdown requested")
     finally:
         server.server_close()
+        registration_connector.stop()
         whatsapp_dispatcher.stop()
     return 0
 

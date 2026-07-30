@@ -1,0 +1,115 @@
+<section class="invitation-workspace" aria-labelledby="invitation-heading">
+  <article class="panel invitation-create">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Enlace privado</p>
+        <h2 id="invitation-heading">Crear invitación</h2>
+        <p>El WhatsApp completo permanece en esta PC. La nube solo recibe una referencia opaca.</p>
+      </div>
+    </div>
+
+    <div class="invitation-form">
+      <label>
+        Nombre de referencia
+        <input
+          type="text"
+          name="displayName"
+          autocomplete="off"
+          maxlength="120"
+          [ngModel]="displayName()"
+          (ngModelChange)="displayName.set($event)"
+          placeholder="Ej. Cliente WhatsApp…"
+        />
+      </label>
+      <label>
+        WhatsApp
+        <input
+          type="tel"
+          name="whatsappPhone"
+          autocomplete="tel"
+          inputmode="tel"
+          [ngModel]="whatsappPhone()"
+          (ngModelChange)="whatsappPhone.set($event)"
+          placeholder="Ej. 987 654 321…"
+        />
+      </label>
+      <button type="button" class="primary" [disabled]="busy()" (click)="createInvitation()">
+        {{ busy() ? 'Creando…' : 'Crear enlace privado' }}
+      </button>
+    </div>
+
+    @if (issuedInvitation(); as issued) {
+      <div class="issued-link" role="status">
+        <div>
+          <strong>Enlace creado: cópialo ahora</strong>
+          <p>No se guarda localmente y no podrá recuperarse después de cerrar este aviso.</p>
+        </div>
+        <input readonly [value]="issued.url" aria-label="Enlace privado recién creado" />
+        <button type="button" class="primary" (click)="copyIssuedUrl()">
+          {{ copied() ? 'Copiado' : 'Copiar enlace' }}
+        </button>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="invitation-error" role="alert">{{ error() }}</p>
+    }
+  </article>
+
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Invitaciones recientes</h2>
+        <p>La apertura no crea una orden. La orden nace después de enviar y validar el registro.</p>
+      </div>
+      <button type="button" class="secondary" [disabled]="busy()" (click)="refresh()">
+        Actualizar
+      </button>
+    </div>
+
+    @if (loading()) {
+      <p class="empty-copy">Consultando el servicio alojado…</p>
+    } @else if (!invitations().length) {
+      <p class="empty-copy">Todavía no existen invitaciones locales.</p>
+    } @else {
+      <div class="invitation-list">
+        @for (invitation of invitations(); track invitation.contact_ref) {
+          <article class="invitation-row">
+            <div class="invitation-contact">
+              <strong>{{ invitation.display_name }}</strong>
+              <span>{{ invitation.whatsapp_phone }}</span>
+              <small>{{ invitation.phone_hint }} en el servicio alojado</small>
+            </div>
+            <div>
+              <span class="badge">{{ statusLabel(invitation.status) }}</span>
+              @if (invitation.order_id) {
+                <small>Orden: {{ invitation.order_id }}</small>
+              }
+            </div>
+            <div class="invitation-actions">
+              @if (canReissue(invitation)) {
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="busy()"
+                  (click)="reissue(invitation)"
+                >
+                  Reemitir
+                </button>
+              } @else if (invitation.status === 'issued' || invitation.status === 'opened') {
+                <button
+                  type="button"
+                  class="danger"
+                  [disabled]="busy()"
+                  (click)="revoke(invitation)"
+                >
+                  Revocar
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </article>
+</section>

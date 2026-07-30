@@ -60,8 +60,34 @@ def list_service_order_summaries(
                    p.status AS payment_status, p.amount_agreed, p.amount_paid,
                    wm.status AS whatsapp_message_status,
                    wm.sent_at AS whatsapp_message_sent_at,
+                   CASE
+                       WHEN EXISTS (
+                           SELECT 1
+                           FROM whatsapp_messages sent_wm
+                           WHERE sent_wm.order_id = so.order_id
+                             AND sent_wm.test_mode = false
+                             AND sent_wm.status = 'sent'
+                       ) THEN 'sent'
+                       WHEN waj.status IS NOT NULL THEN waj.status
+                       WHEN so.status = 'reserved_payment_pending'
+                         AND r.status = 'confirmed'
+                         AND p.status = 'pending'
+                       THEN 'manual_required'
+                       ELSE 'not_applicable'
+                   END AS whatsapp_message_action_state,
                    wfm.status AS whatsapp_followup_status,
                    wfm.sent_at AS whatsapp_followup_sent_at,
+                   CASE
+                       WHEN EXISTS (
+                           SELECT 1
+                           FROM whatsapp_followup_messages sent_wfm
+                           WHERE sent_wfm.order_id = so.order_id
+                             AND sent_wfm.test_mode = false
+                             AND sent_wfm.status = 'sent'
+                       ) THEN 'sent'
+                       WHEN wfaj.status IS NOT NULL THEN wfaj.status
+                       ELSE 'not_applicable'
+                   END AS whatsapp_followup_action_state,
                    so.parent_order_id, so.program_expediente, so.program_plate,
                    so.closure_reason, so.closure_note, so.closed_at,
                    so.minimum_hour AS minimum_reservation_hour,
@@ -107,6 +133,12 @@ def list_service_order_summaries(
                 ORDER BY prepared_at DESC
                 LIMIT 1
             ) wfm ON true
+            LEFT JOIN whatsapp_automation_jobs waj
+                ON waj.order_id = so.order_id
+               AND waj.job_kind = 'reservation_album'
+            LEFT JOIN whatsapp_automation_jobs wfaj
+                ON wfaj.order_id = so.order_id
+               AND wfaj.job_kind = 'post_payment_followup'
             ORDER BY so.priority DESC, so.created_at ASC
             """
         ).fetchall()
@@ -332,8 +364,10 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         amount_paid=_decimal_text(row["amount_paid"]),
         whatsapp_message_status=row["whatsapp_message_status"],
         whatsapp_message_sent_at=_timestamp_text(row["whatsapp_message_sent_at"]),
+        whatsapp_message_action_state=str(row["whatsapp_message_action_state"]),
         whatsapp_followup_status=row["whatsapp_followup_status"],
         whatsapp_followup_sent_at=_timestamp_text(row["whatsapp_followup_sent_at"]),
+        whatsapp_followup_action_state=str(row["whatsapp_followup_action_state"]),
         parent_order_id=row["parent_order_id"],
         program_expediente=row["program_expediente"],
         program_plate=row["program_plate"],

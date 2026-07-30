@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-28`.
+Última revisión integral: `2026-07-29`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -29,12 +29,13 @@ Estado verificado el `2026-07-28`:
 
 ## Resultado comercial acumulado
 
-Datos consultados en PostgreSQL al `2026-07-25`:
+Datos consultados en PostgreSQL al `2026-07-28`:
 
 | Periodo | Órdenes | Reservas confirmadas | Pagos | Ingreso cobrado |
 | --- | ---: | ---: | ---: | ---: |
 | Junio 2026 | 9 | 4 | 3 | S/ 120 |
-| Julio 2026, días 1-25 | 83 | 81 | 76 | S/ 3,025 |
+| Julio 2026, días 1-28 | 85 | 81 | 76 | S/ 3,025 |
+| **Acumulado** | **94** | **85** | **79** | **S/ 3,145** |
 
 - Ticket promedio de julio: `S/ 39.80`.
 - Pagos pendientes actuales: `2`, por `S/ 80`.
@@ -152,6 +153,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Cola durable de trabajos WhatsApp con estados recuperables y auditables.
 - Admin API como único propietario del perfil persistente de WhatsApp Web.
 - Fallos de WhatsApp no bloquean reservas ni Telegram.
+- La bandeja cruza evidencia `sent` y trabajos automáticos durables antes de
+  pedir intervención. Dejó fuera `54` seguimientos históricos sin trabajo
+  automático y reconoció como resueltos `2` fallos con envío posterior. Los
+  `2` pagos actuales permanecen accionables.
+- La clasificación es derivada y no destructiva: no se borraron mensajes, no se
+  alteraron pagos y no se envió WhatsApp retroactivo.
 
 ## Rendimiento observado
 
@@ -188,12 +195,12 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 8. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
-9. La futura incorporación de registros alojados depende de un contrato aún no
-   implementado en `lunas-polarizadas-clientes`. Este repositorio no contiene
-   todavía cliente de invitaciones, conector de solicitudes ni credenciales de
-   servicio, y no debe exponer su Admin API para incorporarlos. La integración
-   futura deberá vincular el WhatsApp desde el dashboard y continuar resultados
-   por ese canal, sin depender de un portal persistente para clientes.
+9. La integración de registros alojados está desplegada y activa en modo
+   `controlled`. La prueba ficticia completa terminó en `accepted`, mantuvo el
+   total de órdenes en `95` y confirmó la limpieza terminal en D1. Continúan
+   bloqueados los datos reales y el modo `production` hasta completar respaldo
+   externo de clave, revisión legal, procedimiento de incidente y autorización
+   expresa. La Admin API sigue limitada a loopback.
 
 ## Validación del corte
 
@@ -203,6 +210,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m pytest -q`: `59 passed`.
 - Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
   siguiente arranque diario.
+- integración alojada: Ruff y compilación Python correctos, dashboard Angular
+  correcto, PostgreSQL `v38`, conector controlado activo y prueba remota
+  ficticia aceptada sin crear órdenes.
 
 ## Regla de mantenimiento
 

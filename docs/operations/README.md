@@ -288,6 +288,24 @@ Las fechas se agrupan en `America/Lima`: `paid_at` para ingresos, `reserved_at`
 para reservas y `created_at` para órdenes nuevas. No sumar el importe pendiente
 al ingreso cobrado.
 
+## Bandeja accionable
+
+La vista **Pendientes** muestra decisiones actuales, no deuda histórica de
+comunicaciones. Para WhatsApp usa el envío real confirmado y el trabajo durable
+creado por la automatización:
+
+- los clientes pagados anteriores a la automatización no aparecen solo por no
+  tener un postpago `sent`;
+- un trabajo `failed` o `uncertain` desaparece si existe evidencia posterior de
+  un envío real exitoso;
+- `queued`, `blocked` y `running` no piden una segunda acción mientras el
+  dispatcher conserva responsabilidad;
+- un resultado ambiguo abre la orden para revisión y nunca reintenta el envío;
+- pagos pendientes y contactos incompletos siguen visibles hasta resolverse.
+
+Los paquetes históricos permanecen consultables. Esta clasificación no borra
+mensajes ni envía seguimientos retroactivos.
+
 ## Formato de fecha y hora
 
 Toda fecha visible del dashboard usa `DD-MM-YYYY`. Las horas usan formato de 24
@@ -444,3 +462,43 @@ política de backup durable. No versionar `.dump`, `.sql` ni `backups/`.
 Seguir [`evidence-policy.md`](evidence-policy.md). La primera lectura es
 `docs/evidence-summary.md`, luego `docs/evidence-index.csv`; las bitácoras
 extensas viven en `reports/evidence/history/`.
+## Registro alojado opcional
+
+La Admin API inicia el conector junto con los demás servicios, pero permanece
+desactivado si no se define:
+
+```text
+HOSTED_REGISTRATION_CONNECTOR_ENABLED=true
+HOSTED_REGISTRATION_BASE_URL=https://registro.citaspolarizadasperu.com/api/v1/
+HOSTED_REGISTRATION_OPERATOR_KEY_ID=<id>
+HOSTED_REGISTRATION_OPERATOR_SECRET=<base64url de 32 bytes o más>
+HOSTED_REGISTRATION_CONNECTOR_KEY_ID=<id distinto>
+HOSTED_REGISTRATION_CONNECTOR_SECRET=<base64url de 32 bytes o más>
+HOSTED_REGISTRATION_PRIVATE_KEY_ID=registration-v1
+HOSTED_REGISTRATION_PRIVATE_KEY_PATH=<ruta absoluta al PEM privado>
+HOSTED_REGISTRATION_CONNECTOR_ID=primary-windows-pc
+HOSTED_REGISTRATION_CONNECTOR_MODE=controlled
+```
+
+No añadir estos valores a `.env` mediante automatización ni versionarlos. El
+primer recorrido debe usar `controlled` y exclusivamente documento, contraseña
+y WhatsApp ficticios. Ese modo valida cifrado, cola y persistencia de recepción,
+pero no crea una orden. Cambiar a `production` solo después de revisar el
+resultado controlado y respaldar la clave privada.
+
+Desde el `2026-07-29`, el supervisor `scripts/start-admin-dashboard.ps1` carga
+la configuración privada desde
+`.runtime/hosted-registration/environment.ps1` cuando existe. El directorio
+está ignorado por Git y restringido al usuario local de Windows. La Admin API
+continúa en loopback y el conector usa únicamente HTTPS saliente.
+
+El despliegue controlado vigente usa:
+
+- `https://registro.citaspolarizadasperu.com/api/v1/`;
+- claves de operador y conector separadas;
+- clave privada RSA local de `3072` bits;
+- modo `controlled`.
+
+La prueba ficticia completa terminó en `accepted` y mantuvo `order_id` vacío.
+No cambiar a `production` ni introducir datos reales hasta completar los
+bloqueadores de seguridad y recibir una autorización nueva.

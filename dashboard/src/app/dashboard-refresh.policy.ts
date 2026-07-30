@@ -4,6 +4,7 @@ export type RefreshableDashboardView =
   | 'finance'
   | 'orders'
   | 'runs'
+  | 'invitations'
   | 'captchas';
 
 export type CaptchaRefreshMode = 'review' | 'history' | 'quality';
@@ -14,6 +15,7 @@ const VIEW_INTERVALS_MS: Record<Exclude<RefreshableDashboardView, 'captchas'>, n
   orders: 20_000,
   summary: 60_000,
   finance: 120_000,
+  invitations: 30_000,
 };
 
 const CAPTCHA_INTERVALS_MS: Record<CaptchaRefreshMode, number> = {
