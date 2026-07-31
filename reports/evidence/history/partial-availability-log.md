@@ -2057,3 +2057,38 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-07-30 13:46:41 - order-73074947 - partial
+
+- Run: 20260730-134632-c125dc80
+- Orden: order-***
+- Cliente: ANDRES GALLEGOS LUQUE | Contacto: Andres Gallegos Luque
+- Cuenta: 73***7
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 22/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 10
+- Opciones fecha: 22/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Reserva diferida porque hay una orden de mayor prioridad lista.
+- Reglas/decision:
+  - Bloqueado por regla: no registrado
+  - Seleccionado solo para evidencia: no registrado
+  - Outcome: priority_deferred
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 8.937s
+  - Seleccion fecha/hora: 1.688s
+- Evidencia:
+  - Screenshot principal: screenshots\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
+  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
+  - Screenshot adicional: screenshots\30-07-2026\cupo-134632-order-***-d7d3d4.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal.
+

@@ -1,5 +1,9 @@
 # ruff: noqa: F401
 
+from appointment_bot.core.order_priority import (
+    EXCLUSIVE_PRIORITY_THRESHOLD,
+    FOCUSED_PRIORITY_THRESHOLD,
+)
 from appointment_bot.db.order_contacts import (
     NO_CHARGE_CLOSURE_REASONS,
     ORDER_CLOSURE_REASONS,
@@ -26,13 +30,10 @@ from appointment_bot.db.order_preflight import (
     mark_order_preflight_validated,
 )
 from appointment_bot.db.order_queue import (
-    EXCLUSIVE_PRIORITY_THRESHOLD,
-    FOCUSED_PRIORITY_THRESHOLD,
     get_minimum_reservation_hour_for_order,
     get_reservation_constraints_for_order,
     list_active_orders,
     list_observer_orders,
-    promote_orders_matching_reserved_slot,
 )
 from appointment_bot.db.order_state import (
     _update_applicant_name_for_order,

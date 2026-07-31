@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 39
+SCHEMA_VERSION = 41
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -428,6 +428,11 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "next_attempt_at"),
         ("whatsapp_automation_jobs", "preflight_error"),
         ("whatsapp_automation_jobs", "preflight_alerted_at"),
+        ("whatsapp_automation_jobs", "report_date"),
+        ("whatsapp_automation_jobs", "recipient_phone"),
+        ("whatsapp_automation_jobs", "message_text"),
+        ("whatsapp_automation_jobs", "publication_text"),
+        ("whatsapp_automation_jobs", "attachment_paths"),
         ("captcha_shadow_outbox", "event_key"),
         ("captcha_shadow_outbox", "event_id"),
         ("captcha_shadow_outbox", "sequence"),
@@ -463,6 +468,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_whatsapp_followup_messages_sent",
         "ck_whatsapp_automation_job_status",
         "ck_whatsapp_automation_job_attempt",
+        "ck_whatsapp_automation_job_kind",
+        "ck_whatsapp_automation_job_target",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -825,10 +832,13 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS whatsapp_automation_jobs (
             job_key text PRIMARY KEY,
-            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
-            job_kind text NOT NULL CHECK (
-                job_kind IN ('reservation_album', 'post_payment_followup')
-            ),
+            order_id text REFERENCES service_orders(order_id) ON DELETE CASCADE,
+            job_kind text NOT NULL,
+            report_date date,
+            recipient_phone text,
+            message_text text,
+            publication_text text,
+            attachment_paths jsonb,
             status text NOT NULL DEFAULT 'queued',
             message_id text,
             attempt_count smallint NOT NULL DEFAULT 0 CHECK (
@@ -844,6 +854,32 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             started_at timestamptz,
             finished_at timestamptz,
             updated_at timestamptz NOT NULL,
+            CONSTRAINT ck_whatsapp_automation_job_kind CHECK (
+                job_kind IN (
+                    'reservation_album',
+                    'post_payment_followup',
+                    'daily_slot_summary'
+                )
+            ),
+            CONSTRAINT ck_whatsapp_automation_job_target CHECK (
+                (
+                    job_kind IN ('reservation_album', 'post_payment_followup')
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NULL
+                    AND message_text IS NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                )
+                OR (
+                    job_kind = 'daily_slot_summary'
+                    AND order_id IS NULL
+                    AND report_date IS NOT NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND jsonb_typeof(attachment_paths) = 'array'
+                )
+            ),
             CONSTRAINT ck_whatsapp_automation_job_status CHECK (
                 status IN ('queued', 'blocked', 'running', 'sent', 'failed', 'uncertain')
             ),
@@ -1325,6 +1361,90 @@ def migrate_database(connection: Connection) -> None:
             (39,),
         )
         current_version = 39
+    if current_version == 39:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ALTER COLUMN order_id DROP NOT NULL,
+            ADD COLUMN report_date date,
+            ADD COLUMN recipient_phone text,
+            ADD COLUMN message_text text,
+            ADD COLUMN attachment_paths jsonb,
+            DROP CONSTRAINT IF EXISTS whatsapp_automation_jobs_job_kind_check
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_job_kind CHECK (
+                job_kind IN (
+                    'reservation_album',
+                    'post_payment_followup',
+                    'daily_slot_summary'
+                )
+            ),
+            ADD CONSTRAINT ck_whatsapp_automation_job_target CHECK (
+                (
+                    job_kind IN ('reservation_album', 'post_payment_followup')
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NULL
+                    AND message_text IS NULL
+                    AND attachment_paths IS NULL
+                )
+                OR (
+                    job_kind = 'daily_slot_summary'
+                    AND order_id IS NULL
+                    AND report_date IS NOT NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND jsonb_typeof(attachment_paths) = 'array'
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (40,),
+        )
+        current_version = 40
+    if current_version == 40:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD COLUMN publication_text text,
+            DROP CONSTRAINT ck_whatsapp_automation_job_target
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_job_target CHECK (
+                (
+                    job_kind IN ('reservation_album', 'post_payment_followup')
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NULL
+                    AND message_text IS NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                )
+                OR (
+                    job_kind = 'daily_slot_summary'
+                    AND order_id IS NULL
+                    AND report_date IS NOT NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND jsonb_typeof(attachment_paths) = 'array'
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (41,),
+        )
+        current_version = 41
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

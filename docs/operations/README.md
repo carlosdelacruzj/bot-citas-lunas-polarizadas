@@ -243,6 +243,13 @@ mantiene en
 4. Usar `0–99` para cola normal, `100–199` para enfoque o `200` para enfoque
    exclusivo.
 
+El valor solo cambia por una acción explícita del operador; una reserva
+confirmada no aumenta automáticamente la prioridad de otras órdenes. Con
+prioridad `0`, las órdenes equivalentes conservan el orden de registro. La
+prioridad elige las próximas sesiones que entran a observación, pero una sesión
+que ya detectó un cupo compatible debe reservarlo inmediatamente para su propio
+cliente.
+
 El límite de observación representa órdenes que se rotan, no workers paralelos.
 Si dos órdenes deben ocupar los dos espacios de rotación, asignar `100` a cada
 una por separado. Con `200` se selecciona una sola orden, se limpia su pausa por
@@ -422,6 +429,12 @@ propia sesion: una sesion sin vincular deja el trabajo en `blocked`, con
 `attempt_count=0`, y vuelve a comprobarla sin adjuntar archivos. Un destinatario
 invalido y un chat que no termina de cargar se registran como fallos distintos con
 captura para revision.
+
+El cierre diario de las 18:00 también encola un resumen idempotente al número
+personal configurado: envía primero un texto con la fecha y después todas las
+imágenes de `cupos-unicos`. Al final añade una publicación variable para TikTok
+generada localmente sin IA ni tokens. El contrato y la primera validación real están en
+[`whatsapp-daily-slot-summary-2026-07-30.md`](whatsapp-daily-slot-summary-2026-07-30.md).
 
 La automatizacion espera a que el menu de adjuntos muestre una opcion real antes
 de seleccionar archivos. Para el album normal exige un control con capacidad

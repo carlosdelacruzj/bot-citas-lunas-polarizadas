@@ -11,9 +11,7 @@ from appointment_bot.core.models import (
 )
 from appointment_bot.db.orders import (
     EXCLUSIVE_PRIORITY_THRESHOLD,
-    list_observer_orders,
     mark_order_done,
-    promote_orders_matching_reserved_slot,
     update_order_state,
 )
 from appointment_bot.services.notifier import send_telegram_message
@@ -47,29 +45,6 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
 
     outcome = classify_order_report(report)
-    if bool((report.details or {}).get("deferred_to_higher_priority")):
-        update_order_state(
-            order.order_id,
-            status=report.status,
-            message=report.message,
-            exit_code=report.exit_code,
-            settings=settings,
-        )
-        logger.info(
-            "Observer %s deferred a detected slot; starting the priority queue",
-            order.order_id,
-        )
-        higher_priority_order_ids = tuple(
-            candidate.order_id
-            for candidate in list_observer_orders(settings)
-            if candidate.priority > order.priority
-        )
-        return ObserverOrderDecision(
-            queue_requested=True,
-            rapid_queue_initial_confirmed=0,
-            follow_up_order_ids=higher_priority_order_ids,
-            reset_errors=True,
-        )
     if outcome is OrderReportOutcome.PAUSED:
         return ObserverOrderDecision()
     if outcome is OrderReportOutcome.BLOCKED:
@@ -101,13 +76,11 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
         mark_order_done(order.order_id, settings=settings)
-        promoted_orders = _promote_orders_matching_report_slot(settings, order, report)
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
             confirmed_reservations=1,
             confirmed_order_ids=(order.order_id,),
-            follow_up_order_ids=tuple(candidate.order_id for candidate in promoted_orders),
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
@@ -176,24 +149,3 @@ def _notify_credential_rejection(
         order.order_id,
         paused,
     )
-
-
-def _promote_orders_matching_report_slot(
-    settings: Settings,
-    order: ServiceOrderCandidate | ServiceOrderRuntime,
-    report: RunReport,
-) -> list[ServiceOrderCandidate]:
-    promoted_orders = promote_orders_matching_reserved_slot(
-        report.details or {},
-        excluded_order_id=order.order_id,
-        settings=settings,
-    )
-    if not promoted_orders:
-        return []
-    logger.info(
-        "Promoted %s constrained order(s) after confirmed reservation %s: %s",
-        len(promoted_orders),
-        order.order_id,
-        ", ".join(candidate.order_id for candidate in promoted_orders),
-    )
-    return promoted_orders

@@ -14,12 +14,9 @@ from appointment_bot.core.rules import (
     appointment_filter_from_constraints,
 )
 from appointment_bot.db.orders import (
-    EXCLUSIVE_PRIORITY_THRESHOLD,
-    FOCUSED_PRIORITY_THRESHOLD,
     clear_order_submission_state,
     get_claimed_service_order_runtime,
     get_reservation_constraints_for_order,
-    list_observer_orders,
     mark_order_submission_intent,
     mark_order_submission_pending,
     order_backoff_seconds,
@@ -253,42 +250,6 @@ def run_service_order(
         mark_reservation_attempt_pending(attempt_id, settings=settings)
         mark_order_submission_pending(order.order_id, settings=settings)
 
-    def can_solve_reservation_captcha() -> bool:
-        if not observer_mode:
-            return True
-        higher_priority_orders = [
-            candidate
-            for candidate in list_observer_orders(settings)
-            if candidate.priority > order.priority
-        ]
-        if not higher_priority_orders:
-            return True
-        if any(
-            candidate.priority >= EXCLUSIVE_PRIORITY_THRESHOLD
-            for candidate in higher_priority_orders
-        ):
-            logger.info(
-                "Deferring reservation for order %s because exclusive order %s is ready",
-                order.order_id,
-                higher_priority_orders[0].order_id,
-            )
-            return False
-        if any(
-            candidate.priority >= FOCUSED_PRIORITY_THRESHOLD for candidate in higher_priority_orders
-        ):
-            logger.info(
-                "Observer %s will reserve its detected slot without switching to focused order %s",
-                order.order_id,
-                higher_priority_orders[0].order_id,
-            )
-            return True
-        logger.info(
-            "Deferring reservation for order %s because higher priority order %s is ready",
-            order.order_id,
-            higher_priority_orders[0].order_id,
-        )
-        return False
-
     with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
         effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
         report = run_with_report(
@@ -304,7 +265,6 @@ def run_service_order(
                 not heartbeat.lost_event.is_set()
                 and order_can_submit(order.order_id, lease_owner, settings)
             ),
-            can_solve_captcha=can_solve_reservation_captcha,
             is_allowed_appointment=_appointment_filter_for_order(
                 order.order_id,
                 settings,

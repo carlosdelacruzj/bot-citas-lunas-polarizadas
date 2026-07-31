@@ -12,7 +12,6 @@ from appointment_bot.db.orders import (
     claim_service_order,
     list_active_orders,
     mark_order_done,
-    promote_orders_matching_reserved_slot,
     release_service_order_claim,
     update_order_state,
 )
@@ -217,26 +216,6 @@ def run_rapid_queue_with_settings(
                 confirmed_reservations += 1
                 confirmed_order_ids.append(order.order_id)
                 mark_order_done(order.order_id, settings=settings)
-                promoted_orders = promote_orders_matching_reserved_slot(
-                    report.details or {},
-                    excluded_order_id=order.order_id,
-                    settings=settings,
-                )
-                if promoted_orders:
-                    logger.info(
-                        "Promoted %s constrained order(s) after confirmed reservation %s: %s",
-                        len(promoted_orders),
-                        order.order_id,
-                        ", ".join(candidate.order_id for candidate in promoted_orders),
-                    )
-                    for promoted_order in promoted_orders:
-                        if (
-                            promoted_order.order_id in skipped_orders
-                            or promoted_order.order_id in queued_order_ids
-                        ):
-                            continue
-                        orders.append(promoted_order)
-                        queued_order_ids.add(promoted_order.order_id)
                 logger.info("Reservation confirmed for order: %s", order.order_id)
                 if has_more_orders and not _reservation_limit_reached(
                     settings, confirmed_reservations

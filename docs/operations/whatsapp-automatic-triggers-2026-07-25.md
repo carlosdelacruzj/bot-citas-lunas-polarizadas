@@ -135,3 +135,39 @@ La validación controlada usó un número deliberadamente imposible y
 explícito de número inválido, por lo que el resultado correcto fue
 `chat_unavailable`, `sent=false`, sin adjuntos ni clic de envío. Después del
 simulacro, la validación del perfil continuó en `session_ready`.
+
+## Confirmación estricta del texto postpago — 30-07-2026
+
+Un envío real mostró que los dos PDF podían salir y que el texto quedaba listo
+en el compositor, mientras el flujo esperaba solamente 1.5 segundos después
+del clic y registraba todo el paquete como `sent`. Esa espera no demostraba que
+WhatsApp hubiera creado la burbuja del mensaje.
+
+El postpago ahora conserva el número de mensajes salientes equivalentes antes
+del clic y solo confirma el texto cuando ocurren ambas condiciones:
+
+- el texto ya no permanece en el compositor;
+- aparece un nuevo mensaje saliente con el contenido completo esperado.
+
+Si no se cumplen dentro del plazo, se guarda la captura
+`.runtime/whatsapp-followup-text-send-uncertain.png`, el trabajo termina
+`uncertain` y el paquete no se marca como enviado. Los PDF pueden haber salido,
+por lo que no existe reintento automático; el operador debe revisar el chat y
+completar solamente el texto cuando corresponda.
+
+El incidente observado en `order-76502677` fue reconciliado en PostgreSQL:
+el trabajo postpago pasó de `sent` a `uncertain` y el paquete volvió a
+`prepared`, sin crear ni encolar otro intento automático.
+
+El siguiente caso real, `order-09612178`, envió correctamente los PDF y el
+texto, pero produjo un falso `uncertain`. La captura posterior mostró la
+burbuja verde y el compositor vacío. La inspección de solo lectura confirmó
+que la interfaz vigente ya no exponía `div.message-out` ni identificadores
+`true_*`: usaba `[data-testid='msg-container']` y marcaba el mensaje saliente
+con `aria-label="Tú:"`.
+
+La confirmación conserva los selectores anteriores como compatibilidad y añade
+la estructura vigente. Para el contenedor genérico exige tanto el contenido
+completo esperado como una marca saliente (`Tú:`, `You:` o el estado de
+envío/lectura). El registro de `order-09612178` se reconcilió a `sent` usando
+la evidencia real; no se realizó otro envío.

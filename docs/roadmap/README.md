@@ -40,6 +40,24 @@ Estado: en observación.
 - Verificar que evidencia y Yape permanezcan en un solo álbum y que sus rutas
   deduplicadas sigan resolviendo en los próximos envíos.
 - Verificar que el postpago solo se cree después de confirmar `paid`.
+- Completado el `2026-07-30`: el texto postpago requiere desaparición del
+  compositor y una nueva burbuja saliente antes de marcar `sent`. El siguiente
+  caso real reveló `msg-container`; el selector vigente y su marca saliente ya
+  quedaron incorporados. Mantener observación ante futuros cambios de WhatsApp.
+- Completado el `2026-07-30`: el corte diario encola un mensaje fechado y todas
+  las imágenes únicas del día al número personal configurado. El primer envío
+  reveló que cerrar al desaparecer la vista previa podía cancelar imágenes aún
+  pendientes: solo una de cuatro llegó y el trabajo se corrigió a `uncertain`.
+  La confirmación ahora espera todas las imágenes salientes sin reloj; el
+  reintento manual autorizado terminó `sent` con cuatro confirmaciones. Validar
+  el siguiente disparo automático directamente desde el cierre de las 18:00.
+- Completado el `2026-07-30`: el resumen diario incorpora después del álbum una
+  publicación variable para TikTok, sin IA ni consumo de tokens. El generador
+  conserva datos comerciales fijos y rota 138,240 combinaciones por fecha. Una
+  prueba controlada terminó con el texto completo y doble check azul después de
+  normalizar los emojis transformados por WhatsApp; la prueba repetida añadió
+  soporte para historial virtualizado e identidad de nuevas burbujas. Validar
+  el recorrido completo desde el siguiente cierre diario.
 - No habilitar reintentos automáticos para resultados ambiguos.
 
 ### Reglas y backoff
@@ -51,6 +69,10 @@ Estado: en observación.
 
 ### Observer
 
+- Completado el `2026-07-30`: eliminadas las promociones automáticas de
+  prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
+  que la orden que lo detecta reserva inmediatamente, que las demás conservan
+  su prioridad y que los empates respetan el orden de registro.
 - Comparar al menos dos o tres días con `OBSERVER_MAX_ATTEMPTS=4`.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales
   `403`, `429` o `recovery_backoff`.

@@ -66,6 +66,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Registro durable de `reservation_attempts`, submission pendiente y heartbeat.
 - Prioridad, prioridad exclusiva y restricciones por fecha, hora, día y rangos
   excluidos.
+- Corregido el `2026-07-30`: se eliminaron las promociones automáticas de
+  prioridad y el diferimiento de un cupo compatible hacia otra orden. Las
+  prioridades `100/200` son controles manuales de las próximas sesiones; una
+  sesión que ya detectó un cupo válido reserva para su propio cliente. A igual
+  prioridad, el bloque de observación vuelve a respetar el orden de registro
+  sin adelantar órdenes por tener o no restricciones.
 - Corrección para que fechas fuera de rango no provoquen un backoff general de
   30 minutos.
 
@@ -153,6 +159,32 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Cola durable de trabajos WhatsApp con estados recuperables y auditables.
 - Admin API como único propietario del perfil persistente de WhatsApp Web.
 - Fallos de WhatsApp no bloquean reservas ni Telegram.
+- Al corte de las 18:00 se encola un resumen diario idempotente al número
+  personal configurado fuera del repositorio: primero envía el texto fechado y
+  luego todas las imágenes de `cupos-unicos`. El primer caso real del 30 de
+  julio cargó cuatro miniaturas, pero cerró el navegador con tres imágenes aún
+  pendientes y solo una llegó al teléfono. El trabajo quedó reconciliado a
+  `uncertain`; ahora se exige confirmar cada imagen saliente antes de cerrar.
+  El reintento manual autorizado terminó `sent` con las cuatro imágenes
+  confirmadas.
+- Después de las imágenes, el mismo trabajo diario enviará una publicación para
+  TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
+  combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen
+  fijos, y PostgreSQL conserva el texto exacto antes de enviarlo. La prueba real
+  confirmó el texto completo con doble check azul después de normalizar la
+  representación interna de emojis del compositor y la burbuja saliente. La
+  confirmación también tolera la virtualización del historial sin confundir una
+  nueva burbuja con otra publicación idéntica anterior.
+- El texto postpago ya no se considera enviado por una espera fija después del
+  clic: debe desaparecer del compositor y aparecer como un nuevo mensaje
+  saliente. Si los PDF salieron pero el texto no se confirma, el trabajo queda
+  `uncertain`, sin marcar el paquete completo como `sent` ni reintentarlo.
+- El caso parcial del 30 de julio quedó reconciliado en PostgreSQL como
+  `uncertain`/`prepared`; no se creó ni encoló un reenvío automático.
+- El siguiente postpago real llegó completo pero reveló un falso `uncertain`:
+  WhatsApp cambió las burbujas a `msg-container`. La confirmación reconoce esa
+  estructura solo cuando contiene el texto completo y una marca saliente; el
+  caso comprobado se reconcilió a `sent` sin reenviar.
 - La bandeja cruza evidencia `sent` y trabajos automáticos durables antes de
   pedir intervención. Dejó fuera `54` seguimientos históricos sin trabajo
   automático y reconoció como resueltos `2` fallos con envío posterior. Los
@@ -181,6 +213,8 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    recorrido cupo -> reserva -> confirmación exacta en el portal.
 2. WhatsApp Web depende de una interfaz externa cambiante. Un resultado
    ambiguo nunca debe reintentarse automáticamente.
+   La confirmación estricta del texto postpago ya incorporó la estructura DOM
+   observada en un envío real, pero requiere vigilancia ante cambios futuros.
 3. La corrección del backoff por fechas fuera de rango está validada en
    escenarios controlados, pero falta confirmarla ante otro caso real
    equivalente.

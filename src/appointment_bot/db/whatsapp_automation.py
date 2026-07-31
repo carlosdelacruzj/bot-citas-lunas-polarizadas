@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from typing import Literal, TypedDict
 
 from psycopg.errors import UniqueViolation
+from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
 from appointment_bot.db.common import (
@@ -15,7 +17,11 @@ from appointment_bot.db.common import (
     init_database,
 )
 
-WhatsAppAutomationKind = Literal["reservation_album", "post_payment_followup"]
+WhatsAppAutomationKind = Literal[
+    "reservation_album",
+    "post_payment_followup",
+    "daily_slot_summary",
+]
 WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain"]
 LEASE_SECONDS = 10 * 60
 PREFLIGHT_RETRY_SECONDS = 60
@@ -23,8 +29,13 @@ PREFLIGHT_RETRY_SECONDS = 60
 
 class WhatsAppAutomationJob(TypedDict):
     job_key: str
-    order_id: str
+    order_id: str | None
     job_kind: WhatsAppAutomationKind
+    report_date: str | None
+    recipient_phone: str | None
+    message_text: str | None
+    publication_text: str | None
+    attachment_paths: list[str]
 
 
 def enqueue_whatsapp_automation_job(
@@ -54,6 +65,57 @@ def enqueue_whatsapp_automation_job(
     return row is not None
 
 
+def enqueue_daily_slot_summary_job(
+    *,
+    report_date: date,
+    recipient_phone: str,
+    message_text: str,
+    publication_text: str,
+    attachment_paths: list[Path],
+    retry_sequence: int | None = None,
+    settings: Settings | None = None,
+    _connection_override=None,
+) -> bool:
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    now = datetime.now(UTC)
+    job_key = f"daily_slot_summary:{report_date.isoformat()}"
+    if retry_sequence is not None:
+        if retry_sequence < 1:
+            raise ValueError("retry_sequence must be greater than or equal to 1.")
+        job_key = f"{job_key}:retry-{retry_sequence}"
+    phone = _international_phone(recipient_phone)
+    paths = [str(path.resolve()) for path in attachment_paths]
+    with _operation_connection(effective_settings, _connection_override) as connection:
+        row = connection.execute(
+            """
+            INSERT INTO whatsapp_automation_jobs (
+                job_key, order_id, job_kind, report_date, recipient_phone,
+                message_text, publication_text, attachment_paths, status, attempt_count,
+                next_attempt_at, created_at, updated_at
+            )
+            VALUES (
+                %s, NULL, 'daily_slot_summary', %s, %s,
+                %s, %s, %s, 'queued', 0, %s, %s, %s
+            )
+            ON CONFLICT(job_key) DO NOTHING
+            RETURNING job_key
+            """,
+            (
+                job_key,
+                report_date,
+                phone,
+                message_text,
+                publication_text,
+                Jsonb(paths),
+                now,
+                now,
+                now,
+            ),
+        ).fetchone()
+    return row is not None
+
+
 def next_waiting_whatsapp_automation_job(
     *,
     settings: Settings,
@@ -63,7 +125,8 @@ def next_waiting_whatsapp_automation_job(
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT job_key, order_id, job_kind
+            SELECT job_key, order_id, job_kind, report_date, recipient_phone,
+                   message_text, publication_text, attachment_paths
             FROM whatsapp_automation_jobs
             WHERE status IN ('queued', 'blocked') AND next_attempt_at <= %s
             ORDER BY created_at
@@ -73,11 +136,7 @@ def next_waiting_whatsapp_automation_job(
         ).fetchone()
     if row is None:
         return None
-    return {
-        "job_key": str(row["job_key"]),
-        "order_id": str(row["order_id"]),
-        "job_kind": str(row["job_kind"]),
-    }
+    return _job_from_row(row)
 
 
 def claim_whatsapp_automation_job(
@@ -104,7 +163,8 @@ def claim_whatsapp_automation_job(
                 WHERE job_key = %s
                   AND status IN ('queued', 'blocked')
                   AND next_attempt_at <= %s
-                RETURNING job_key, order_id, job_kind
+                RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+                          message_text, publication_text, attachment_paths
                 """,
                 (owner_token, lease_expires_at, now, now, job_key, now),
             ).fetchone()
@@ -112,11 +172,7 @@ def claim_whatsapp_automation_job(
         return None
     if row is None:
         return None
-    return {
-        "job_key": str(row["job_key"]),
-        "order_id": str(row["order_id"]),
-        "job_kind": str(row["job_kind"]),
-    }
+    return _job_from_row(row)
 
 
 def block_whatsapp_automation_preflight(
@@ -220,18 +276,12 @@ def recover_expired_whatsapp_automation_jobs(
                 finished_at = %s,
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
-            RETURNING job_key, order_id, job_kind
+            RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+                      message_text, publication_text, attachment_paths
             """,
             (now, now, now),
         ).fetchall()
-    return [
-        {
-            "job_key": str(row["job_key"]),
-            "order_id": str(row["order_id"]),
-            "job_kind": str(row["job_kind"]),
-        }
-        for row in rows
-    ]
+    return [_job_from_row(row) for row in rows]
 
 
 def finish_whatsapp_automation_job(
@@ -319,11 +369,45 @@ def whatsapp_automation_in_progress(
     return row is not None
 
 
+def _job_from_row(row) -> WhatsAppAutomationJob:
+    raw_paths = row["attachment_paths"]
+    return {
+        "job_key": str(row["job_key"]),
+        "order_id": str(row["order_id"]) if row["order_id"] is not None else None,
+        "job_kind": str(row["job_kind"]),
+        "report_date": (
+            str(row["report_date"]) if row["report_date"] is not None else None
+        ),
+        "recipient_phone": (
+            str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
+        ),
+        "message_text": (
+            str(row["message_text"]) if row["message_text"] is not None else None
+        ),
+        "publication_text": (
+            str(row["publication_text"])
+            if row["publication_text"] is not None
+            else None
+        ),
+        "attachment_paths": (
+            [str(path) for path in raw_paths] if isinstance(raw_paths, list) else []
+        ),
+    }
+
+
+def _international_phone(value: str) -> str:
+    digits = "".join(character for character in value if character.isdigit())
+    if len(digits) < 10 or len(digits) > 15:
+        raise ValueError("El WhatsApp debe incluir codigo de pais y entre 10 y 15 digitos.")
+    return f"+{digits}"
+
+
 __all__ = [
     "WhatsAppAutomationJob",
     "WhatsAppAutomationKind",
     "block_whatsapp_automation_preflight",
     "claim_whatsapp_automation_job",
+    "enqueue_daily_slot_summary_job",
     "enqueue_whatsapp_automation_job",
     "finish_whatsapp_automation_job",
     "next_waiting_whatsapp_automation_job",

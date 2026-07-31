@@ -8,6 +8,7 @@ from pathlib import Path
 
 from appointment_bot.config import load_settings
 from appointment_bot.services.captcha_shadow import configure_captcha_shadow
+from appointment_bot.services.daily_slot_summary import enqueue_daily_slot_summary
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.worker.continuous_worker import (
@@ -128,6 +129,10 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
                         logger.info("Final ready-order review skipped by configuration.")
             except Exception:
                 logger.exception("Could not run the final ready-order review")
+            try:
+                enqueue_daily_slot_summary(settings)
+            except Exception:
+                logger.exception("Could not queue the daily WhatsApp slot summary")
         server.shutdown()
         server.server_close()
         server_thread.join(timeout=10)

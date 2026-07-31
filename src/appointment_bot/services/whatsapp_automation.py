@@ -7,6 +7,7 @@ from uuid import uuid4
 from appointment_bot.browser.whatsapp_web import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
+    send_whatsapp_web_daily_slot_summary,
     validate_whatsapp_web_session,
 )
 from appointment_bot.config import Settings
@@ -124,15 +125,19 @@ class WhatsAppAutomationDispatcher:
         order_id = job["order_id"]
         job_kind = job["job_kind"]
         logger.info(
-            "Starting automatic WhatsApp attempt: order_id=%s kind=%s",
-            order_id,
+            "Starting automatic WhatsApp attempt: target=%s kind=%s",
+            order_id or job["report_date"],
             job_kind,
         )
         try:
-            if order_has_sent_whatsapp_message(
-                order_id,
-                job_kind,
-                settings=self.settings,
+            if (
+                order_id is not None
+                and job_kind != "daily_slot_summary"
+                and order_has_sent_whatsapp_message(
+                    order_id,
+                    job_kind,
+                    settings=self.settings,
+                )
             ):
                 self._finish(job, status="sent")
                 logger.info(
@@ -142,9 +147,15 @@ class WhatsAppAutomationDispatcher:
                 )
                 return
             if job_kind == "reservation_album":
+                if order_id is None:
+                    raise ValueError("El trabajo de evidencia no contiene order_id.")
                 message_id, result = self._send_reservation_album(order_id)
-            else:
+            elif job_kind == "post_payment_followup":
+                if order_id is None:
+                    raise ValueError("El trabajo post-pago no contiene order_id.")
                 message_id, result = self._send_post_payment_followup(order_id)
+            else:
+                message_id, result = self._send_daily_slot_summary(job)
         except Exception as exc:
             logger.exception(
                 "Automatic WhatsApp preparation failed: order_id=%s kind=%s",
@@ -185,7 +196,11 @@ class WhatsAppAutomationDispatcher:
                 )
             self._notify_preflight_blocked(job, message)
             return
-        final_status = "uncertain" if result_status == "web_unavailable" else "failed"
+        final_status = (
+            "uncertain"
+            if result_status in {"web_unavailable", "send_uncertain"}
+            else "failed"
+        )
         self._finish(
             job,
             status=final_status,
@@ -235,6 +250,27 @@ class WhatsAppAutomationDispatcher:
             mark_followup_message_sent(message_id, settings=self.settings)
         return message_id, result
 
+    def _send_daily_slot_summary(
+        self,
+        job: WhatsAppAutomationJob,
+    ) -> tuple[str, dict[str, object]]:
+        recipient_phone = job["recipient_phone"]
+        message_text = job["message_text"]
+        publication_text = job["publication_text"]
+        if not recipient_phone or message_text is None or not publication_text:
+            raise ValueError(
+                "El trabajo del resumen diario no contiene destinatario o textos."
+            )
+        message_id = job["job_key"]
+        result = send_whatsapp_web_daily_slot_summary(
+            message_id=message_id,
+            recipient_phone=recipient_phone,
+            message_text=message_text,
+            publication_text=publication_text,
+            attachment_paths=job["attachment_paths"],
+        )
+        return message_id, result
+
     def _finish(
         self,
         job: WhatsAppAutomationJob,
@@ -266,14 +302,23 @@ class WhatsAppAutomationDispatcher:
         flow = (
             "evidencia y cobro"
             if job["job_kind"] == "reservation_album"
-            else "documentos post-pago"
+            else (
+                "documentos post-pago"
+                if job["job_kind"] == "post_payment_followup"
+                else "resumen diario de cupos"
+            )
+        )
+        target = (
+            f"Orden: {job['order_id']}"
+            if job["order_id"] is not None
+            else f"Fecha: {job['report_date']}"
         )
         send_telegram_message(
             self.settings,
             "\n".join(
                 [
                     "⚠️ Envío automático de WhatsApp no confirmado.",
-                    f"Orden: {job['order_id']}",
+                    target,
                     f"Flujo: {flow}",
                     f"Estado: {status}",
                     f"Detalle: {sanitize_text(message)}",
@@ -290,14 +335,23 @@ class WhatsAppAutomationDispatcher:
         flow = (
             "evidencia y cobro"
             if job["job_kind"] == "reservation_album"
-            else "documentos post-pago"
+            else (
+                "documentos post-pago"
+                if job["job_kind"] == "post_payment_followup"
+                else "resumen diario de cupos"
+            )
+        )
+        target = (
+            f"Orden: {job['order_id']}"
+            if job["order_id"] is not None
+            else f"Fecha: {job['report_date']}"
         )
         send_telegram_message(
             self.settings,
             "\n".join(
                 [
                     "⚠️ WhatsApp automático quedó esperando una sesión válida.",
-                    f"Orden: {job['order_id']}",
+                    target,
                     f"Flujo: {flow}",
                     f"Detalle: {sanitize_text(message)}",
                     "Todavía no se adjuntaron archivos ni se consumió el intento de envío.",

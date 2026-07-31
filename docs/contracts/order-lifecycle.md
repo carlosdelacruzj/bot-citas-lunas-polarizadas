@@ -16,16 +16,16 @@ procesa órdenes sin restricciones positivas y también órdenes que únicamente
 tienen `excluded_date_ranges`: una exclusión protege fechas concretas, pero no
 convierte a la orden en espera de una coincidencia. Las órdenes con fecha
 mínima/máxima, hora mínima o días permitidos sí se consideran restringidas y
-entran como seguimiento cuando una reserva confirmada coincide con sus reglas.
+su propia sesión solo intenta reservar cuando el cupo cumple esas reglas.
 
-El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes y
-prioriza siempre las que no tienen restricciones positivas, incluidas las que
-solo poseen exclusiones. Si hay menos observadores libres que ese límite,
-completa la rotación con órdenes restringidas. Antes de resolver CAPTCHA o
-enviar la reserva, cualquier orden debe cumplir `minimum_hour`, `minimum_date`,
-`maximum_date`, `allowed_weekdays` y `excluded_date_ranges`. Los límites de cada
-exclusión son inclusivos. Si el cupo incumple cualquier regla o cae dentro de un
-rango excluido, se registra como bloqueado por regla y no se intenta reservar.
+El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes. La
+selección respeta `priority DESC, created_at ASC`; por lo tanto, a igual
+prioridad entra primero la orden registrada antes, tenga o no restricciones.
+Antes de resolver CAPTCHA o enviar la reserva, cualquier orden debe cumplir
+`minimum_hour`, `minimum_date`, `maximum_date`, `allowed_weekdays` y
+`excluded_date_ranges`. Los límites de cada exclusión son inclusivos. Si el
+cupo incumple cualquier regla o cae dentro de un rango excluido, se registra
+como bloqueado por regla y no se intenta reservar.
 
 Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
 normal. Las prioridades de `100` a `199` activan prioridad de enfoque: esas
@@ -33,8 +33,9 @@ ordenes ocupan primero los espacios disponibles del bloque, incluso si tienen
 restricciones. Con dos ordenes enfocadas y limite `2`, se rotan esas dos. Cuando
 una deja de estar `ready`, la enfocada restante conserva el primer espacio y el
 segundo vuelve a completarse con otra orden elegible.
-Las promociones automaticas por coincidencia de cupo nunca deben alcanzar `100`;
-ese umbral queda reservado para enfoque asignado de forma intencional.
+La prioridad solo cambia por una accion explicita del operador desde dashboard,
+API o Telegram. El worker no aumenta automaticamente la prioridad despues de
+una reserva ni por coincidencia de fecha u hora.
 
 Una prioridad `200` o superior activa el enfoque exclusivo. Mientras esa orden
 este `ready` y sea elegible, `list_observer_orders()` devuelve solo esa orden,
@@ -49,7 +50,10 @@ La prioridad de enfoque controla que ordenes ocupan el bloque de observacion,
 pero no transfiere cupos entre sesiones. Si el segundo observador detecta un
 cupo compatible con su propia regla, debe intentar reservarlo inmediatamente
 con su propia cuenta. No debe cambiar a la orden enfocada, porque esa demora
-puede hacer que ambos usuarios pierdan el cupo.
+puede hacer que ambos usuarios pierdan el cupo. Esto tambien aplica si durante
+la sesion aparece una orden con prioridad `200`: el enfoque exclusivo modifica
+la siguiente seleccion de observadores, pero no cancela ni difiere una reserva
+compatible que ya fue detectada por otra sesion.
 
 ## Ordenamiento
 
@@ -83,14 +87,11 @@ el worker debe seleccionar exactamente esa fila del listado de tramites; si no
 la encuentra o no esta `PENDIENTE`, debe fallar claro antes de abrir el panel de
 citas para evitar reservar el tramite equivocado.
 
-Cuando una reserva queda confirmada (`registered`), el worker busca órdenes con
-restricciones positivas en estado `ready` que coincidan con la fecha/hora
-confirmada. Solo esas órdenes se agregan como seguimiento a la cola rápida. Las
-órdenes que únicamente tienen exclusiones ya participan normalmente y no se
-promocionan por coincidencia. Si una orden restringida ya no encuentra cupo,
-permanece `ready` para esperar otra coincidencia.
-Una orden nunca debe promocionarse por una fecha incluida en uno de sus rangos
-excluidos.
+Cuando una reserva queda confirmada (`registered`), las demas ordenes conservan
+su prioridad y su lugar en la cola. Una orden restringida permanece `ready`
+hasta que su propia sesion encuentre un cupo compatible; no se promociona ni se
+agrega como seguimiento por coincidir con la fecha u hora reservada para otro
+cliente.
 
 La espera entre ordenes dentro de la cola rapida se controla con:
 

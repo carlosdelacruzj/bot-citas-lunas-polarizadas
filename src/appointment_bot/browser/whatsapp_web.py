@@ -6,6 +6,7 @@ import queue
 import re
 import threading
 import time
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -189,6 +190,29 @@ def prepare_whatsapp_web_documents(draft: dict[str, object]) -> dict[str, object
     return _MANAGER.prepare(document_draft)
 
 
+def send_whatsapp_web_daily_slot_summary(
+    *,
+    message_id: str,
+    recipient_phone: str,
+    message_text: str,
+    publication_text: str,
+    attachment_paths: list[str],
+) -> dict[str, object]:
+    return _MANAGER.prepare(
+        {
+            "action": "daily_slot_summary",
+            "message_id": message_id,
+            "recipient_phone": recipient_phone,
+            "message_text": message_text,
+            "publication_text": publication_text,
+            "attachment_paths": attachment_paths,
+            "disable_closed_target_retry": True,
+            "close_on_error": True,
+            "headless": True,
+        }
+    )
+
+
 def _ensure_context(
     playwright,
     context: BrowserContext | None,
@@ -235,6 +259,8 @@ def _headless_whatsapp_user_agent(playwright) -> str:
 def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
     if draft.get("action") == "validate_session":
         return _validate_whatsapp_session(context)
+    if draft.get("action") == "daily_slot_summary":
+        return _send_daily_slot_summary(context, draft)
     if draft.get("album_items"):
         return _prepare_album(context, draft)
     if draft.get("document_items"):
@@ -395,8 +421,25 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
     _attach_document(page, attachments)
     if draft.get("auto_send"):
         _click_send_button(page, attachments)
-        _send_plain_text_message(page, str(draft["caption"]))
+        text_sent = _send_plain_text_message(page, str(draft["caption"]))
         context.close()
+        if not text_sent:
+            logger.warning(
+                "WhatsApp Web follow-up documents were sent but the text message "
+                "was not confirmed: message_id=%s",
+                message_id,
+            )
+            return _result(
+                "send_uncertain",
+                (
+                    "Los PDFs salieron, pero WhatsApp no confirmo el texto post-pago. "
+                    "No se marcara el paquete completo como enviado ni se reintentara "
+                    "automaticamente."
+                ),
+                message_id=message_id,
+                draft_mode="documents",
+                manual_send_required=True,
+            )
         logger.info(
             "WhatsApp Web follow-up sent automatically: message_id=%s documents=%s",
             message_id,
@@ -497,9 +540,21 @@ def _album_thumbnails(page: Page) -> list[Any]:
     return thumbnails
 
 
-def _send_album(page: Page) -> None:
-    if len(_album_thumbnails(page)) != 2:
-        raise RuntimeError("WhatsApp no mantuvo las dos miniaturas antes del envio.")
+def _send_album(
+    page: Page,
+    *,
+    expected_count: int = 2,
+    verify_uploaded_images: bool = False,
+) -> None:
+    if len(_album_thumbnails(page)) != expected_count:
+        raise RuntimeError(
+            "WhatsApp no mantuvo todas las miniaturas antes del envio."
+        )
+    outgoing_image_count = (
+        len(_outgoing_image_message_states(page))
+        if verify_uploaded_images
+        else 0
+    )
     viewport = page.viewport_size or {"width": 0, "height": 0}
     if not viewport["width"] or not viewport["height"]:
         raise RuntimeError("WhatsApp no informo el tamaño de la ventana para enviar el album.")
@@ -535,11 +590,169 @@ def _send_album(page: Page) -> None:
         if not _album_thumbnails(page) and _normal_chat_composer_visible(page):
             page.wait_for_timeout(1_000)
             if not _album_thumbnails(page):
+                if verify_uploaded_images and not _wait_until_outgoing_images_uploaded(
+                    page,
+                    initial_count=outgoing_image_count,
+                    expected_count=expected_count,
+                ):
+                    _save_whatsapp_debug_screenshot(
+                        page,
+                        "whatsapp-daily-summary-upload-uncertain",
+                    )
+                    raise RuntimeError(
+                        "WhatsApp cerro la vista previa, pero no confirmo "
+                        "la carga de todas las imagenes."
+                    )
                 return
         page.wait_for_timeout(500)
     _save_whatsapp_debug_screenshot(page, "whatsapp-album-send-not-confirmed")
     raise RuntimeError(
         "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles."
+    )
+
+
+def _wait_until_outgoing_images_uploaded(
+    page: Page,
+    *,
+    initial_count: int,
+    expected_count: int,
+) -> bool:
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        states = _outgoing_image_message_states(page)
+        if len(states) >= initial_count + expected_count:
+            batch_states = states[initial_count:]
+        else:
+            batch_states = states[-expected_count:]
+        if len(batch_states) >= expected_count and all(
+            state == "confirmed" for state in batch_states[-expected_count:]
+        ):
+            page.wait_for_timeout(1_000)
+            return True
+        page.wait_for_timeout(500)
+    return False
+
+
+def _outgoing_image_message_states(page: Page) -> list[str]:
+    messages = page.locator("div.message-out")
+    require_marker = False
+    if not messages.count():
+        messages = page.locator("[data-testid='msg-container']")
+        require_marker = True
+
+    states: list[str] = []
+    for index in range(messages.count()):
+        message = messages.nth(index)
+        if require_marker and not _message_container_is_outgoing(message):
+            continue
+        if not _message_container_has_large_image(message):
+            continue
+        if message.locator(
+            "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
+            "[aria-label*='Enviado' i], [aria-label*='Entregado' i], "
+            "[aria-label*='Leído' i], [aria-label*='Sent' i], "
+            "[aria-label*='Delivered' i], [aria-label*='Read' i]"
+        ).count():
+            states.append("confirmed")
+        elif message.locator("[data-icon='msg-time']").count():
+            states.append("pending")
+        else:
+            states.append("unknown")
+    return states
+
+
+def _message_container_has_large_image(message) -> bool:
+    images = message.locator("img")
+    for index in range(images.count()):
+        image = images.nth(index)
+        if not image.is_visible():
+            continue
+        box = image.bounding_box()
+        if box and box["width"] >= 100 and box["height"] >= 100:
+            return True
+    return False
+
+
+def _send_daily_slot_summary(
+    context: BrowserContext,
+    draft: dict[str, object],
+) -> dict[str, object]:
+    page = _fresh_whatsapp_page(context)
+    phone = "".join(
+        character
+        for character in str(draft["recipient_phone"])
+        if character.isdigit()
+    )
+    message_id = str(draft["message_id"])
+    target = f"https://web.whatsapp.com/send?phone={phone}"
+    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
+    if not _wait_for_chat(page):
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name="whatsapp-daily-summary-chat-not-ready",
+        )
+
+    message_text = str(draft["message_text"])
+    if message_text:
+        text_sent = _send_plain_text_message(page, message_text)
+        if not text_sent:
+            context.close()
+            return _result(
+                "send_uncertain",
+                "WhatsApp no confirmo el mensaje del resumen diario.",
+                message_id=message_id,
+            )
+
+    attachments = [
+        Path(str(path)).resolve()
+        for path in list(draft.get("attachment_paths") or [])
+    ]
+    if attachments:
+        if not all(path.is_file() for path in attachments):
+            raise FileNotFoundError(
+                "Una de las imagenes del resumen diario ya no esta disponible."
+            )
+
+        _attach_image(page, attachments)
+        page.wait_for_timeout(1_000)
+        if len(_album_thumbnails(page)) != len(attachments):
+            _save_whatsapp_debug_screenshot(
+                page,
+                "whatsapp-daily-summary-images-not-ready",
+            )
+            raise RuntimeError(
+                "WhatsApp no mostro todas las imagenes del resumen diario."
+            )
+        _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-before-send")
+        _send_album(
+            page,
+            expected_count=len(attachments),
+            verify_uploaded_images=True,
+        )
+        _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-images-sent")
+
+    publication_sent = _send_plain_text_message(
+        page,
+        str(draft["publication_text"]),
+    )
+    if not publication_sent:
+        context.close()
+        return _result(
+            "send_uncertain",
+            "WhatsApp no confirmo la publicacion diaria para TikTok.",
+            message_id=message_id,
+        )
+    _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-sent")
+    context.close()
+    return _result(
+        "sent",
+        (
+            "Resumen diario, imagenes y publicacion de TikTok "
+            "enviados automaticamente."
+        ),
+        message_id=message_id,
+        sent=True,
     )
 
 
@@ -1030,7 +1243,7 @@ def _click_bottom_right_send_button(page: Page) -> bool:
     return True
 
 
-def _send_plain_text_message(page: Page, text: str) -> None:
+def _send_plain_text_message(page: Page, text: str) -> bool:
     deadline = time.monotonic() + 15
     composer = None
     while time.monotonic() < deadline:
@@ -1046,7 +1259,7 @@ def _send_plain_text_message(page: Page, text: str) -> None:
     if composer is None:
         _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-composer-missing")
         raise RuntimeError("No se encontro el campo para enviar el texto post-pago.")
-    logger.info("WhatsApp Web follow-up documents sent; preparing text message")
+    logger.info("WhatsApp Web chat ready; preparing text message")
     _click_and_replace_text(page, composer, text)
     page.wait_for_timeout(500)
     if not _plain_text_ready(page, text):
@@ -1055,11 +1268,118 @@ def _send_plain_text_message(page: Page, text: str) -> None:
     if not _plain_text_ready(page, text):
         _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-not-ready")
         raise RuntimeError("WhatsApp no dejo listo el texto post-pago.")
+    outgoing_signatures = _matching_confirmed_outgoing_text_signatures(page, text)
     _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-text-send")
     if not _click_visible_send_button(page):
         page.keyboard.press("Enter")
-    page.wait_for_timeout(1_500)
+    if not _wait_until_plain_text_send_finishes(page, text, outgoing_signatures):
+        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-send-uncertain")
+        return False
+    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-sent")
     logger.info("WhatsApp Web follow-up text message sent")
+    return True
+
+
+def _wait_until_plain_text_send_finishes(
+    page: Page,
+    expected: str,
+    outgoing_signatures: set[str],
+) -> bool:
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        current_signatures = _matching_confirmed_outgoing_text_signatures(
+            page,
+            expected,
+        )
+        if (
+            not _plain_text_ready(page, expected)
+            and bool(current_signatures - outgoing_signatures)
+        ):
+            page.wait_for_timeout(750)
+            return True
+        page.wait_for_timeout(500)
+    return False
+
+
+def _matching_confirmed_outgoing_text_signatures(
+    page: Page,
+    expected: str,
+) -> set[str]:
+    selectors = (
+        ("div.message-out", False),
+        ("div[data-id^='true_']", False),
+        ("[data-testid='msg-container']", True),
+    )
+    for selector, requires_outgoing_marker in selectors:
+        messages = page.locator(selector)
+        if not messages.count():
+            continue
+        matches: set[str] = set()
+        for index in range(messages.count()):
+            message = messages.nth(index)
+            if requires_outgoing_marker and not _message_container_is_outgoing(message):
+                continue
+            actual = _safe_text_content(message)
+            if (
+                _message_contains_expected_text(actual, expected)
+                and _message_container_has_confirmed_status(message)
+            ):
+                matches.add(_message_container_signature(message))
+        return matches
+    return set()
+
+
+def _message_container_has_confirmed_status(message) -> bool:
+    return bool(
+        message.locator(
+            "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
+            "[aria-label*='Enviado' i], [aria-label*='Entregado' i], "
+            "[aria-label*='Leído' i], [aria-label*='Sent' i], "
+            "[aria-label*='Delivered' i], [aria-label*='Read' i]"
+        ).count()
+    )
+
+
+def _message_container_signature(message) -> str:
+    data_id = _safe_get_attribute(message, "data-id")
+    if data_id:
+        return f"data-id:{data_id}"
+    ancestor = message.locator("xpath=ancestor::*[@data-id][1]")
+    if ancestor.count():
+        ancestor_data_id = _safe_get_attribute(ancestor.first, "data-id")
+        if ancestor_data_id:
+            return f"data-id:{ancestor_data_id}"
+    try:
+        return f"html:{message.evaluate('element => element.outerHTML')}"
+    except PlaywrightError:
+        return f"text:{_safe_text_content(message)}"
+
+
+def _message_container_is_outgoing(message) -> bool:
+    labels = message.locator("[aria-label]")
+    for index in range(labels.count()):
+        label = (_safe_get_attribute(labels.nth(index), "aria-label") or "").strip()
+        if label.casefold() in {"tú:", "tu:", "you:"}:
+            return True
+    metadata = _safe_text_content(message).casefold()
+    return any(
+        marker in metadata
+        for marker in ("wds-ic-read", "wds-ic-delivered", "wds-ic-sent")
+    )
+
+
+def _message_contains_expected_text(actual: str, expected: str) -> bool:
+    def normalize(value: str) -> str:
+        comparable = re.sub(r"[^\w]+", " ", value.replace("\u200b", " "))
+        return " ".join(comparable.casefold().split())
+
+    actual_normalized = normalize(actual)
+    expected_normalized = normalize(expected)
+    if expected_normalized and expected_normalized in actual_normalized:
+        return True
+    actual_compact = _compact_alphanumeric_text(actual)
+    expected_compact = _compact_alphanumeric_text(expected)
+    return bool(expected_compact and expected_compact in actual_compact)
 
 
 def _click_and_replace_text(page: Page, editor, text: str) -> None:
@@ -1097,7 +1417,7 @@ def _plain_text_ready(page: Page, expected: str) -> bool:
     )
     for index in range(editors.count() - 1, -1, -1):
         text = _safe_text_content(editors.nth(index))
-        if _same_editor_text(text, expected) or (
+        if _same_editor_text(text, expected, require_full_match=True) or (
             "TikTok" in text and "citaspolarizadasperu" in text
         ):
             return True
@@ -1243,10 +1563,21 @@ def _same_editor_text(
                     "Gracias por confiar",
                 )
             )
+        ) or _compact_alphanumeric_text(actual or "") == _compact_alphanumeric_text(
+            expected
         )
     return actual_normalized == expected_normalized or len(actual_normalized) >= max(
         20,
         len(expected_normalized) // 2,
+    )
+
+
+def _compact_alphanumeric_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value)
+    return "".join(
+        character.casefold()
+        for character in decomposed
+        if character.isalnum()
     )
 
 
