@@ -69,6 +69,7 @@ def monitor_appointment_availability(
     screenshot_paths = (
         [process_stages_screenshot_path] if process_stages_screenshot_path is not None else []
     )
+    site_refresh_history: list[dict] = []
 
     while True:
         if cancel_event is not None and cancel_event.is_set():
@@ -89,6 +90,7 @@ def monitor_appointment_availability(
                 required_site=settings.observer_required_site,
                 reset_first=site_toggle_probe,
                 timeout=settings.postback_timeout_seconds * 1_000,
+                telemetry_attempt=attempt,
             )
         except AppointmentOptionsNotRefreshed as exc:
             result = AvailabilityResult(status="unknown", message=str(exc))
@@ -98,6 +100,10 @@ def monitor_appointment_availability(
         result = read_appointment_availability(
             page,
             timeout=settings.read_timeout_seconds * 1_000,
+        )
+        result, site_refresh_history = _with_accumulated_site_refresh_history(
+            result,
+            site_refresh_history,
         )
         result = with_monitor_diagnostics(
             result,
@@ -119,6 +125,7 @@ def monitor_appointment_availability(
                 settings,
                 program_expediente=program_expediente,
                 program_plate=program_plate,
+                telemetry_attempt=attempt,
             )
             if reload_result is None:
                 if settings.monitor_site_toggle_enabled:
@@ -130,6 +137,10 @@ def monitor_appointment_availability(
                         on_check(result, attempt, None)
                     return result, screenshot_path, screenshot_paths
             else:
+                reload_result, site_refresh_history = _with_accumulated_site_refresh_history(
+                    reload_result,
+                    site_refresh_history,
+                )
                 result = with_monitor_diagnostics(
                     reload_result,
                     settings=settings,
@@ -368,6 +379,7 @@ def reload_and_recheck_appointment_availability(
     *,
     program_expediente: str | None = None,
     program_plate: str | None = None,
+    telemetry_attempt: int | None = None,
 ) -> AvailabilityResult | None:
     logger.info("No slots detected; reloading page before confirming unavailable result")
     try:
@@ -385,6 +397,8 @@ def reload_and_recheck_appointment_availability(
             page,
             required_site=settings.observer_required_site,
             timeout=settings.postback_timeout_seconds * 1_000,
+            telemetry_attempt=telemetry_attempt,
+            telemetry_phase="reload_required_site",
         )
         result = read_appointment_availability(
             page,
@@ -403,6 +417,31 @@ def reload_and_recheck_appointment_availability(
             "La disponibilidad fue detectada despues de recargar la pagina."
         )
     return AvailabilityResult(status=result.status, message=message, details=details)
+
+
+def _with_accumulated_site_refresh_history(
+    result: AvailabilityResult,
+    accumulated: list[dict],
+) -> tuple[AvailabilityResult, list[dict]]:
+    details = dict(result.details or {})
+    merged = list(accumulated)
+    known_event_ids = {
+        str(item.get("event_id"))
+        for item in merged
+        if isinstance(item, dict) and item.get("event_id")
+    }
+    for item in details.get("site_refresh_history") or []:
+        if not isinstance(item, dict):
+            continue
+        event_id = str(item.get("event_id") or "")
+        if event_id and event_id in known_event_ids:
+            continue
+        merged.append(dict(item))
+        if event_id:
+            known_event_ids.add(event_id)
+    details["site_refresh_history"] = merged
+    details["site_refresh_event_count"] = len(merged)
+    return AvailabilityResult(result.status, result.message, details), merged
 
 
 def with_monitor_diagnostics(
@@ -437,7 +476,8 @@ def with_monitor_diagnostics(
     logger.info(
         "Observer check: account=%s mode=%s attempt=%s status=%s site=%s "
         "date_options=%s hour_options=%s origin=%s refresh_confirmed=%s "
-        "refresh_changed=%s duration=%.3fs session_age=%.3fs",
+        "refresh_changed=%s post=%s http=%s refresh_events=%s "
+        "duration=%.3fs session_age=%.3fs",
         settings.safe_username,
         monitoring_mode,
         attempt,
@@ -448,6 +488,9 @@ def with_monitor_diagnostics(
         detection_origin,
         details.get("site_refresh_confirmed"),
         details.get("site_refresh_changed"),
+        details.get("site_refresh_post_detected"),
+        details.get("site_refresh_post_status"),
+        details.get("site_refresh_event_count"),
         check_duration_seconds,
         session_age_seconds,
     )

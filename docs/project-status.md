@@ -99,6 +99,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   liberando su lease. Se conservaron dos MP4 mediante una anulación temporal de
   diagnóstico; el flujo normal de `RECORD_CLIENT_SESSIONS` elimina videos si no
   existe una reserva confirmada.
+- Implementada y validada en portal real el `2026-08-01` la telemetría durable
+  por selección de sede. Cada evento conserva intento, fase, POST detectado,
+  URL sin query string, estado HTTP, latencia, tamaño declarado cuando existe,
+  fallo de red, finalización ASP.NET y firmas de fecha/hora antes y después. El
+  historial sobrevive al `reload_probe` y queda dentro de `runs.details_json`.
+  Una sesión real produjo los `30` eventos esperados: `15` selecciones de La
+  Victoria, `14` vaciados y `1` selección posterior al reload; todos fueron
+  POST HTTP `200`, completaron `endRequest`, quedaron confirmados y no tuvieron
+  fallos. Los headers llegaron en `32-282 ms` y la actualización estable en
+  `297-313 ms`.
 
 ### Arquitectura y operación
 
@@ -246,9 +256,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 4. El cooldown corto por rechazo explícito de CAPTCHA está validado en código;
    falta observar el próximo rechazo real para confirmar que la cola continúa
    sin una espera global.
-5. El ciclo ligero de sede está validado de forma sintética con `15` consultas,
-   un `reload_probe` y esperas posteriores de `2` segundos. Falta observarlo en
-   el portal real y vigilar latencia, cierres de sesión y señales `403/429`.
+5. El ciclo ligero de sede ya se validó en portal real con dos usuarios y su
+   telemetría HTTP/ASP.NET se comprobó en una sesión adicional con `30/30`
+   respuestas HTTP `200`. Falta reunir varios días de operación productiva para
+   vigilar latencia sostenida, cierres de sesión y señales `403/429`.
 6. La operación depende de una PC Windows, red local, Docker y perfiles
    persistentes de navegador.
 7. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a

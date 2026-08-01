@@ -265,10 +265,19 @@ def _read_site_refresh_evidence(page: Page) -> dict[str, Any]:
     from playwright.sync_api import Error as PlaywrightError
 
     try:
-        data = page.evaluate("() => window.__appointmentBotLastSiteRefresh || null")
+        data = page.evaluate(
+            """() => ({
+                latest: window.__appointmentBotLastSiteRefresh || null,
+                history: window.__appointmentBotSiteRefreshHistory || [],
+            })"""
+        )
     except PlaywrightError:
         return {}
-    return dict(data or {})
+    payload = dict(data or {})
+    latest = dict(payload.get("latest") or {})
+    latest["site_refresh_history"] = list(payload.get("history") or [])
+    latest["site_refresh_event_count"] = len(latest["site_refresh_history"])
+    return latest
 
 
 def _only_no_slots(options: list[str]) -> bool:

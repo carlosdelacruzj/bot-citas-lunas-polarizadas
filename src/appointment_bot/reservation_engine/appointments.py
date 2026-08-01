@@ -3,6 +3,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -118,6 +119,9 @@ class AppointmentSnapshot:
 
 @dataclass(frozen=True)
 class SiteRefreshEvidence:
+    event_id: str
+    attempt: int | None
+    phase: str
     selected_site: str
     confirmed: bool
     changed: bool
@@ -128,10 +132,20 @@ class SiteRefreshEvidence:
     date_signature_after: str
     hour_signature_before: str
     hour_signature_after: str
+    post_detected: bool
+    post_count: int
+    post_url: str | None
+    post_status: int | None
+    post_elapsed_ms: int | None
+    post_content_length: int | None
+    post_resource_type: str | None
+    post_failure: str | None
 
     def details(self) -> dict[str, Any]:
         return {
             "site_refresh_selected_site": self.selected_site,
+            "site_refresh_attempt": self.attempt,
+            "site_refresh_phase": self.phase,
             "site_refresh_confirmed": self.confirmed,
             "site_refresh_changed": self.changed,
             "site_refresh_marker_cleared": self.marker_cleared,
@@ -141,7 +155,85 @@ class SiteRefreshEvidence:
             "site_refresh_date_signature_after": self.date_signature_after,
             "site_refresh_hour_signature_before": self.hour_signature_before,
             "site_refresh_hour_signature_after": self.hour_signature_after,
+            "site_refresh_post_detected": self.post_detected,
+            "site_refresh_post_count": self.post_count,
+            "site_refresh_post_url": self.post_url,
+            "site_refresh_post_status": self.post_status,
+            "site_refresh_post_elapsed_ms": self.post_elapsed_ms,
+            "site_refresh_post_content_length": self.post_content_length,
+            "site_refresh_post_resource_type": self.post_resource_type,
+            "site_refresh_post_failure": self.post_failure,
         }
+
+    def history_item(self) -> dict[str, Any]:
+        return {
+            "event_id": self.event_id,
+            "attempt": self.attempt,
+            "phase": self.phase,
+            "selected_site": self.selected_site,
+            "post_detected": self.post_detected,
+            "post_count": self.post_count,
+            "post_url": self.post_url,
+            "http_status": self.post_status,
+            "post_elapsed_ms": self.post_elapsed_ms,
+            "post_content_length": self.post_content_length,
+            "post_resource_type": self.post_resource_type,
+            "post_failure": self.post_failure,
+            "refresh_confirmed": self.confirmed,
+            "async_completed": self.async_completed,
+            "marker_cleared": self.marker_cleared,
+            "options_changed": self.changed,
+            "refresh_elapsed_ms": self.elapsed_ms,
+            "date_before": self.date_signature_before,
+            "date_after": self.date_signature_after,
+            "hour_before": self.hour_signature_before,
+            "hour_after": self.hour_signature_after,
+        }
+
+
+@dataclass
+class _PostbackCapture:
+    page_origin: str
+    started_at: float
+    post_detected: bool = False
+    post_count: int = 0
+    post_url: str | None = None
+    post_status: int | None = None
+    post_elapsed_ms: int | None = None
+    post_content_length: int | None = None
+    post_resource_type: str | None = None
+    post_failure: str | None = None
+
+    def accepts(self, url: str) -> bool:
+        return _url_origin(url) == self.page_origin
+
+    def observe_request(self, request) -> None:
+        if request.method.upper() != "POST" or not self.accepts(request.url):
+            return
+        self.post_detected = True
+        self.post_count += 1
+        self.post_url = _sanitize_telemetry_url(request.url)
+        self.post_resource_type = request.resource_type
+
+    def observe_response(self, response) -> None:
+        request = response.request
+        if request.method.upper() != "POST" or not self.accepts(response.url):
+            return
+        self.post_detected = True
+        self.post_url = _sanitize_telemetry_url(response.url)
+        self.post_status = response.status
+        self.post_elapsed_ms = round((time.monotonic() - self.started_at) * 1_000)
+        self.post_content_length = _content_length(response.headers.get("content-length"))
+        self.post_resource_type = request.resource_type
+
+    def observe_failure(self, request) -> None:
+        if request.method.upper() != "POST" or not self.accepts(request.url):
+            return
+        self.post_detected = True
+        self.post_url = _sanitize_telemetry_url(request.url)
+        self.post_elapsed_ms = round((time.monotonic() - self.started_at) * 1_000)
+        self.post_resource_type = request.resource_type
+        self.post_failure = str(request.failure or "request_failed")
 
 
 def open_appointment_panel(page: Page) -> Page:
@@ -257,6 +349,8 @@ def select_available_site(
     required_site: str | None = None,
     reset_first: bool = False,
     timeout: int = 15_000,
+    telemetry_attempt: int | None = None,
+    telemetry_phase: str = "required_site",
 ) -> Page:
     return _select_available_site(
         page,
@@ -264,6 +358,8 @@ def select_available_site(
         allow_hidden=False,
         required_site=required_site,
         reset_first=reset_first,
+        telemetry_attempt=telemetry_attempt,
+        telemetry_phase=telemetry_phase,
     )
 
 
@@ -272,6 +368,7 @@ def select_available_site_for_observer(
     *,
     required_site: str | None = None,
     timeout: int = 15_000,
+    telemetry_attempt: int | None = None,
 ) -> Page:
     return _select_available_site(
         page,
@@ -279,6 +376,8 @@ def select_available_site_for_observer(
         allow_hidden=True,
         required_site=required_site,
         reset_first=False,
+        telemetry_attempt=telemetry_attempt,
+        telemetry_phase="observer_required_site",
     )
 
 
@@ -289,6 +388,8 @@ def _select_available_site(
     allow_hidden: bool,
     required_site: str | None,
     reset_first: bool,
+    telemetry_attempt: int | None,
+    telemetry_phase: str,
 ) -> Page:
     logger.info("Selecting available site")
     site_select = page.locator(SITE_SELECTOR)
@@ -309,6 +410,7 @@ def _select_available_site(
             options,
             allow_hidden=allow_hidden,
             timeout=timeout,
+            telemetry_attempt=telemetry_attempt,
         )
         options = _select_options(page, SITE_SELECTOR)
         selected = _select_site_option(options, required_site=required_site)
@@ -322,31 +424,44 @@ def _select_available_site(
     async_refresh_token = _mark_aspnet_async_refresh(page)
     previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
     previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
-    if allow_hidden:
-        # El cambio del select oculto reproduce solo el postback de consulta.
-        site_select.evaluate(
-            """(element, value) => {
-                element.value = value;
-                element.dispatchEvent(new Event("change", { bubbles: true }));
-            }""",
-            selected["value"],
+    postback_capture = _start_postback_capture(page)
+    try:
+        if allow_hidden:
+            # El cambio del select oculto reproduce solo el postback de consulta.
+            site_select.evaluate(
+                """(element, value) => {
+                    element.value = value;
+                    element.dispatchEvent(new Event("change", { bubbles: true }));
+                }""",
+                selected["value"],
+            )
+        else:
+            site_select.select_option(value=selected["value"], timeout=timeout)
+        evidence = _wait_for_appointment_options(
+            page,
+            selected_site=selected["text"],
+            refresh_token=refresh_token,
+            async_refresh_token=async_refresh_token,
+            previous_date_signature=previous_date,
+            previous_hour_signature=previous_hour,
+            postback_capture=postback_capture,
+            telemetry_attempt=telemetry_attempt,
+            telemetry_phase=telemetry_phase,
+            timeout=timeout,
         )
-    else:
-        site_select.select_option(value=selected["value"], timeout=timeout)
-    evidence = _wait_for_appointment_options(
-        page,
-        selected_site=selected["text"],
-        refresh_token=refresh_token,
-        async_refresh_token=async_refresh_token,
-        previous_date_signature=previous_date,
-        previous_hour_signature=previous_hour,
-        timeout=timeout,
-    )
+    finally:
+        _stop_postback_capture(page, postback_capture)
     _store_site_refresh_evidence(page, evidence)
     logger.info(
-        "Site refresh evidence: site=%s confirmed=%s changed=%s async=%s "
-        "elapsed_ms=%s date_before=%s date_after=%s hour_before=%s hour_after=%s",
+        "Site refresh evidence: attempt=%s phase=%s site=%s post=%s status=%s "
+        "post_ms=%s confirmed=%s changed=%s async=%s elapsed_ms=%s "
+        "date_before=%s date_after=%s hour_before=%s hour_after=%s",
+        evidence.attempt,
+        evidence.phase,
         evidence.selected_site,
+        evidence.post_detected,
+        evidence.post_status,
+        evidence.post_elapsed_ms,
         evidence.confirmed,
         evidence.changed,
         evidence.async_completed,
@@ -367,6 +482,7 @@ def _reset_site_selection(
     *,
     allow_hidden: bool,
     timeout: int,
+    telemetry_attempt: int | None,
 ) -> None:
     placeholder = next(
         (
@@ -393,22 +509,33 @@ def _reset_site_selection(
     async_refresh_token = _mark_aspnet_async_refresh(page)
     previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
     previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
-    _select_appointment_option(
-        site_select,
-        str(placeholder["value"]),
-        allow_hidden=allow_hidden,
-    )
-    evidence = _wait_for_appointment_options(
-        page,
-        selected_site=str(placeholder.get("text") or ""),
-        refresh_token=refresh_token,
-        async_refresh_token=async_refresh_token,
-        previous_date_signature=previous_date,
-        previous_hour_signature=previous_hour,
-        timeout=timeout,
-    )
+    postback_capture = _start_postback_capture(page)
+    try:
+        _select_appointment_option(
+            site_select,
+            str(placeholder["value"]),
+            allow_hidden=allow_hidden,
+        )
+        evidence = _wait_for_appointment_options(
+            page,
+            selected_site=str(placeholder.get("text") or ""),
+            refresh_token=refresh_token,
+            async_refresh_token=async_refresh_token,
+            previous_date_signature=previous_date,
+            previous_hour_signature=previous_hour,
+            postback_capture=postback_capture,
+            telemetry_attempt=telemetry_attempt,
+            telemetry_phase="empty_site",
+            timeout=timeout,
+        )
+    finally:
+        _stop_postback_capture(page, postback_capture)
+    _store_site_refresh_evidence(page, evidence)
     logger.info(
-        "Empty site refresh confirmed=%s async=%s elapsed_ms=%s",
+        "Empty site refresh attempt=%s post=%s status=%s confirmed=%s async=%s elapsed_ms=%s",
+        evidence.attempt,
+        evidence.post_detected,
+        evidence.post_status,
         evidence.confirmed,
         evidence.async_completed,
         evidence.elapsed_ms,
@@ -462,12 +589,58 @@ def _format_options_signature(signature: tuple[tuple[str, str], ...]) -> str:
     return "|".join(f"{value}:{text}" for value, text in signature)
 
 
+def _url_origin(url: str) -> str:
+    parsed = urlsplit(url)
+    return urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), "", "", ""))
+
+
+def _sanitize_telemetry_url(url: str) -> str:
+    parsed = urlsplit(url)
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+
+
+def _content_length(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        return max(0, int(value))
+    except ValueError:
+        return None
+
+
+def _start_postback_capture(page: Page) -> _PostbackCapture:
+    capture = _PostbackCapture(
+        page_origin=_url_origin(page.url),
+        started_at=time.monotonic(),
+    )
+    page.on("request", capture.observe_request)
+    page.on("response", capture.observe_response)
+    page.on("requestfailed", capture.observe_failure)
+    return capture
+
+
+def _stop_postback_capture(page: Page, capture: _PostbackCapture) -> None:
+    page.remove_listener("request", capture.observe_request)
+    page.remove_listener("response", capture.observe_response)
+    page.remove_listener("requestfailed", capture.observe_failure)
+
+
 def _store_site_refresh_evidence(page: Page, evidence: SiteRefreshEvidence) -> None:
     page.evaluate(
-        """evidence => {
-            window.__appointmentBotLastSiteRefresh = evidence;
+        """payload => {
+            window.__appointmentBotLastSiteRefresh = payload.latest;
+            window.__appointmentBotSiteRefreshHistory =
+                window.__appointmentBotSiteRefreshHistory || [];
+            window.__appointmentBotSiteRefreshHistory.push(payload.historyItem);
+            if (window.__appointmentBotSiteRefreshHistory.length > 100) {
+                window.__appointmentBotSiteRefreshHistory =
+                    window.__appointmentBotSiteRefreshHistory.slice(-100);
+            }
         }""",
-        evidence.details(),
+        {
+            "latest": evidence.details(),
+            "historyItem": evidence.history_item(),
+        },
     )
 
 
@@ -666,6 +839,9 @@ def _wait_for_appointment_options(
     async_refresh_token: str | None,
     previous_date_signature: tuple[tuple[str, str], ...],
     previous_hour_signature: tuple[tuple[str, str], ...],
+    postback_capture: _PostbackCapture,
+    telemetry_attempt: int | None,
+    telemetry_phase: str,
     timeout: int = 15_000,
 ) -> SiteRefreshEvidence:
     started = time.monotonic()
@@ -708,6 +884,9 @@ def _wait_for_appointment_options(
         last_pair = pair
         if refreshed and stable_reads >= 2 and (current_date or current_hour):
             return SiteRefreshEvidence(
+                event_id=refresh_token,
+                attempt=telemetry_attempt,
+                phase=telemetry_phase,
                 selected_site=selected_site,
                 confirmed=True,
                 changed=(
@@ -721,6 +900,14 @@ def _wait_for_appointment_options(
                 date_signature_after=_format_options_signature(current_date),
                 hour_signature_before=_format_options_signature(previous_hour_signature),
                 hour_signature_after=_format_options_signature(current_hour),
+                post_detected=postback_capture.post_detected,
+                post_count=postback_capture.post_count,
+                post_url=postback_capture.post_url,
+                post_status=postback_capture.post_status,
+                post_elapsed_ms=postback_capture.post_elapsed_ms,
+                post_content_length=postback_capture.post_content_length,
+                post_resource_type=postback_capture.post_resource_type,
+                post_failure=postback_capture.post_failure,
             )
         page.wait_for_timeout(250)
     raise AppointmentOptionsNotRefreshed(

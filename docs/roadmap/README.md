@@ -88,6 +88,10 @@ Estado: en observación.
   CAPTCHA, errores ni reservas. Mantener observación en la ventana productiva
   para comparar duración, disponibilidad, `403/429` y cierres de sesión antes
   de reducir nuevamente el intervalo.
+- Completado y validado el `2026-08-01`: cada selección conserva telemetría
+  durable en `runs.details_json`. La prueba real registró `30/30` POST HTTP
+  `200`, `30/30` finalizaciones ASP.NET y ninguna falla, diferenciando `15`
+  selecciones de sede, `14` vaciados y la selección posterior al reload.
 - Completado el `2026-07-30`: eliminadas las promociones automáticas de
   prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
   que la orden que lo detecta reserva inmediatamente, que las demás conservan
