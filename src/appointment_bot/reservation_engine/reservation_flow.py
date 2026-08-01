@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 
 from appointment_bot.config import Settings
@@ -30,7 +31,10 @@ from appointment_bot.reservation_engine.timings import (
     ReservationTiming,
     add_reservation_timing_details,
 )
-from appointment_bot.services.captcha_shadow import enqueue_shadow_external_result
+from appointment_bot.services.captcha_shadow import (
+    enqueue_shadow_external_result,
+    enqueue_shadow_prediction,
+)
 from appointment_bot.utils.diagnostics import (
     read_visible_page_text,
     save_sanitized_page_html,
@@ -501,6 +505,9 @@ def capture_blocked_captcha_evidence(
     can_submit: Callable[[], bool] | None = None,
     can_solve_captcha: Callable[[], bool] | None = None,
     expected_person_name: str | None = None,
+    *,
+    run_id: str | None = None,
+    order_id: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     captcha_audit: dict[str, object] = {}
     capture_error: str | None = None
@@ -519,6 +526,8 @@ def capture_blocked_captcha_evidence(
             captcha_audit=captcha_audit,
             attempt_number=1,
             timing=timing,
+            run_id=run_id,
+            order_id=order_id,
         )
     except ReservationDeferredForPriority as exc:
         captcha_audit.update(exc.captcha_audit)
@@ -549,6 +558,24 @@ def capture_blocked_captcha_evidence(
         if captcha_audit.get("captcha_image_path")
         else None
     )
+    if run_id and captcha_path is not None:
+        shadow_event_id = f"{run_id}:{order_id or 'observer'}:captcha-1"
+        shadow_enqueued = enqueue_shadow_prediction(
+            event_id=shadow_event_id,
+            image_path=str(captcha_path.resolve()),
+            metadata={
+                "run_id": run_id,
+                "order_id": order_id,
+                "observer": int(order_id is None),
+                "attempt": 1,
+                "captured_at_utc": datetime.now(UTC).isoformat(),
+                "source_image_kind": captcha_audit.get("captcha_sent_source"),
+                "detection_origin": (result.details or {}).get("detection_origin"),
+                "portal_stage": "blocked_reservation_captcha_evidence",
+            },
+        )
+        captcha_audit["captcha_shadow_event_id"] = shadow_event_id
+        captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_enqueued
     screenshot_paths = [
         path for path in [captcha_path, screenshot_path] if path is not None
     ]

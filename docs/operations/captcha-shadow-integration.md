@@ -229,14 +229,25 @@ Cada intento conserva en `captcha_attempts`:
 
 Sobre 46 refrescos consecutivos del observador, cada muestra adicional tomó `0.390 s` de
 mediana y `0.406 s` de p90. La estimación es `(límite - 1) * 0.4 s`: límite `3` agrega unos
-`0.8 s`, límite `5` unos `1.6 s` y la prueba en `10` unos `3.6 s`. La medición de reserva real
-queda pendiente del próximo cupo; no se fuerza un submit ni se consume 2Captcha para fabricar
-la prueba.
+`0.8 s`, límite `5` unos `1.6 s` y la prueba en `10` unos `3.6 s`.
+
+La primera medición productiva ocurrió el `2026-08-01` en dos cupos incompatibles. En ambos se
+capturaron diez originales HTML y nueve refrescos antes de terminar
+`partial / blocked_by_order_rule`: el primer lote agregó `3.609 s` y el segundo `3.625 s`.
+Los 18 ciclos adicionales promediaron aproximadamente `0.402 s`. Como la restricción impidió
+continuar, no hubo submit, llamada a 2Captcha ni reserva; todavía falta medir un cupo compatible
+de extremo a extremo.
 
 Cada CAPTCHA capturado se encola de forma durable para los tres modelos. Con límite `10` se
 esperan 30 predicciones, pero las nueve muestras previas no reciben respuesta externa ni
 validación del portal. Sus predicciones no son etiquetas correctas y requieren revisión humana
 antes de usarse como ground truth de entrenamiento.
+
+Los primeros dos lotes revelaron que la ruta especial de evidencia bloqueada no propagaba
+`run_id` y `order_id`; por eso sus capturas se guardaron en disco pero no aparecieron en el
+dashboard. La ruta ahora propaga ese contexto y encola también el CAPTCHA final, sin habilitar
+2Captcha ni el submit. Se reprocesaron los 20 archivos originales existentes: quedaron 20
+eventos pendientes de revisión humana y 60 predicciones, tres por evento.
 
 La futura resolución híbrida permanece documentada, no implementada. Antes de otorgar
 autoridad local se deben evaluar prospectivamente al menos 500 CAPTCHA frescos y sostener más

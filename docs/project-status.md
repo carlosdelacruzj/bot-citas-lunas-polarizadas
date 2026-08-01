@@ -226,13 +226,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Los 46 intervalos consecutivos medidos en el muestreo del observador tuvieron
   `0.390 s` de mediana y `0.406 s` de p90 por CAPTCHA adicional. Un límite de
   `5` agrega aproximadamente `1.6 s` antes de iniciar 2Captcha. La opción queda
-  desactivada por defecto y falta validarla en una reserva real controlada.
-- Configurado localmente el `2026-08-01` en `10` para la primera medición real:
-  nueve muestras previas y la décima enviada a 2Captcha, con una proyección de
-  `3.6 s` adicionales. Cada intento registrará tiempos individuales de captura
-  y refresco, duración total del muestreo, tiempo de 2Captcha y duración total
-  del intento. El worker estaba fuera de horario al configurarlo; todavía no
-  existe un resultado de reserva real con esta opción.
+  desactivada por defecto.
+- Primera medición productiva del `2026-08-01`, con el límite local en `10`:
+  dos cupos incompatibles capturaron diez CAPTCHA cada uno antes de terminar
+  como `partial / blocked_by_order_rule`. Las nueve muestras adicionales
+  agregaron `3.609 s` y `3.625 s`; cada ciclo de captura y refresco promedió
+  aproximadamente `0.402 s`. No hubo submit, consumo de 2Captcha ni reserva,
+  por lo que todavía falta medir el impacto completo sobre una reserva real.
+- Corregido el mismo día: la ruta de evidencia bloqueada ahora conserva
+  `run_id` y `order_id`, y registra tanto las nueve muestras previas como la
+  final en CAPTCHA sombra. Los 20 originales ya capturados fueron recuperados
+  y quedaron pendientes de revisión humana, cada uno con tres predicciones.
 
 ### Comunicación y cobro
 

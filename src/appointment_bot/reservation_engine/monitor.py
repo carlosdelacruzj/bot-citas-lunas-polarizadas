@@ -300,6 +300,8 @@ def _try_reservation_from_availability(
             can_submit,
             can_solve_captcha,
             expected_person_name,
+            run_id=run_id,
+            order_id=order_id,
         )
         if on_check is not None:
             on_check(captured_result, attempt, None)

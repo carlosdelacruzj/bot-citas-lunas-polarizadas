@@ -86,15 +86,17 @@ Estado: en observación.
   conserva el recorrido real vigente. Un valor mayor captura y refresca
   muestras adicionales, registra cada una en sombra y manda solamente el
   último CAPTCHA a 2Captcha.
-- La demora observada es cercana a `0.4 s` por muestra adicional: límite `3`
-  agrega unos `0.8 s`, límite `5` unos `1.6 s` y límite `15` unos `5.6 s` antes
-  de llamar al proveedor. Validar primero con `2` o `3` en un caso real
-  controlado y comparar selección conservada, CAPTCHA, submit y resultado.
-- Prueba activa solicitada el `2026-08-01`: `.env` local configurado en `10`.
-  Esperar el próximo cupo real y registrar muestras obtenidas, tiempos por
-  captura/refresco, demora total previa a 2Captcha, tiempo del proveedor,
-  resultado del portal y posible `slot_lost`. No declarar validada la opción
-  usando solamente la proyección de `3.6 s`.
+- Medido el `2026-08-01` con `.env` local en `10`: dos cupos incompatibles
+  capturaron diez CAPTCHA originales cada uno. Las nueve muestras adicionales
+  agregaron `3.609 s` y `3.625 s`, cerca de `0.402 s` por ciclo. No hubo submit
+  ni llamada a 2Captcha porque ambas órdenes terminaron
+  `partial / blocked_by_order_rule`.
+- Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
+  20 eventos tienen tres predicciones y quedaron pendientes de revisión humana
+  en el dashboard.
+- Pendiente: medir un cupo compatible de extremo a extremo y comparar selección
+  conservada, demora previa, tiempo de 2Captcha, submit, resultado del portal y
+  posible `slot_lost`. No declarar validada la opción con casos bloqueados.
 - Mejora futura documentada: resolución híbrida local con fallback a 2Captcha.
   No activarla hasta evaluar prospectivamente al menos 500 CAPTCHA frescos y
   sostener más de 99% con una regla fijada antes del corte. El desacuerdo, baja
