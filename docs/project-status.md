@@ -92,6 +92,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   local y `.env.example` quedaron organizados y comentados por función; las
   constantes que permanecen en código son detalles técnicos de protocolo,
   estabilidad de UI, leases y lotes internos, no políticas operativas.
+- Validado en portal real el `2026-08-01` con dos usuarios y contextos
+  Playwright independientes: cada sesión completó `15` consultas, la primera
+  atravesó el `reload_probe` y luego se produjo la rotación esperada. Ambas
+  terminaron `unavailable`, sin CAPTCHA, errores ni reservas, y el worker cerró
+  liberando su lease. Se conservaron dos MP4 mediante una anulación temporal de
+  diagnóstico; el flujo normal de `RECORD_CLIENT_SESSIONS` elimina videos si no
+  existe una reserva confirmada.
 
 ### Arquitectura y operación
 

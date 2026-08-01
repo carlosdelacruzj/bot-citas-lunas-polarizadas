@@ -83,9 +83,11 @@ Estado: en observación.
   `15/2/8`, sede, clientes activos, cooldown e intentos CAPTCHA y corte diario
   están expuestos en el `.env` comentado y en `.env.example`; los literales que
   quedan corresponden a invariantes técnicos internos.
-- Validar el primer ciclo real completo y comparar duración por usuario,
-  cantidad de postbacks, disponibilidad detectada, `403/429` y cierres de
-  sesión antes de reducir nuevamente el intervalo.
+- Validado de forma controlada el `2026-08-01`: dos usuarios completaron `15`
+  consultas cada uno, con `reload_probe`, rotación, cierre limpio y sin
+  CAPTCHA, errores ni reservas. Mantener observación en la ventana productiva
+  para comparar duración, disponibilidad, `403/429` y cierres de sesión antes
+  de reducir nuevamente el intervalo.
 - Completado el `2026-07-30`: eliminadas las promociones automáticas de
   prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
   que la orden que lo detecta reserva inmediatamente, que las demás conservan
