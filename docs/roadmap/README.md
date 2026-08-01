@@ -76,11 +76,12 @@ Estado: en observación.
 ### Observer
 
 - Completado en código el `2026-08-01`: las órdenes usan `15` consultas de sede
-  por sesión, `vacío -> LIMA-LA VICTORIA` desde el segundo intento, espera de
-  `2` segundos después de cada postback y un solo `reload_probe` tras el intento
-  `8`. Después se rota al siguiente cliente con una sesión Playwright nueva.
+  por sesión, `vacío -> LIMA-LA VICTORIA` desde el segundo intento, espera
+  aleatoria nueva de `2-4` segundos después de cada consulta completa y un solo
+  `reload_probe` tras el intento `8`. Después se rota al siguiente cliente con
+  una sesión Playwright nueva.
 - Completado el `2026-08-01`: auditoría de configuración operativa. El ciclo
-  `15/2/8`, sede, clientes activos, cooldown e intentos CAPTCHA y corte diario
+  `15/2-4/8`, sede, clientes activos, cooldown e intentos CAPTCHA y corte diario
   están expuestos en el `.env` comentado y en `.env.example`; los literales que
   quedan corresponden a invariantes técnicos internos.
 - Validado de forma controlada el `2026-08-01`: dos usuarios completaron `15`
@@ -92,11 +93,14 @@ Estado: en observación.
   durable en `runs.details_json`. La prueba real registró `30/30` POST HTTP
   `200`, `30/30` finalizaciones ASP.NET y ninguna falla, diferenciando `15`
   selecciones de sede, `14` vaciados y la selección posterior al reload.
+- Completado el `2026-08-01`: el intervalo fijo se reemplazó por límites
+  configurables `2-4`; cada espera hace un sorteo independiente y la variable
+  singular anterior queda como fallback compatible.
 - Completado el `2026-07-30`: eliminadas las promociones automáticas de
   prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
   que la orden que lo detecta reserva inmediatamente, que las demás conservan
   su prioridad y que los empates respetan el orden de registro.
-- Comparar al menos dos o tres días con el ciclo ligero `15/2/8` antes de
+- Comparar al menos dos o tres días con el ciclo ligero `15/2-4/8` antes de
   conservarlo como nuevo baseline.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales
   `403`, `429` o `recovery_backoff`.

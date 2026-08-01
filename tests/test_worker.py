@@ -69,11 +69,11 @@ class ContinuousWorkerTests(unittest.TestCase):
             )
             self.assertEqual(
                 effective_settings.monitor_interval_min_seconds,
-                settings.observer_site_toggle_interval_seconds,
+                settings.observer_site_toggle_interval_min_seconds,
             )
             self.assertEqual(
                 effective_settings.monitor_interval_max_seconds,
-                settings.observer_site_toggle_interval_seconds,
+                settings.observer_site_toggle_interval_max_seconds,
             )
             self.assertTrue(effective_settings.monitor_site_toggle_enabled)
             self.assertEqual(

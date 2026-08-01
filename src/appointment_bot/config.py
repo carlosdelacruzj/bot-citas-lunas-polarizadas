@@ -150,7 +150,8 @@ class Settings:
     observer_interval_max_seconds: int
     observer_site_toggle_enabled: bool
     observer_site_toggle_attempts: int
-    observer_site_toggle_interval_seconds: int
+    observer_site_toggle_interval_min_seconds: int
+    observer_site_toggle_interval_max_seconds: int
     observer_reload_probe_after_attempt: int
     observer_active_order_limit: int
     observer_required_site: str
@@ -188,6 +189,12 @@ class Settings:
 
 def load_settings(*, require_login: bool = True) -> Settings:
     load_dotenv()
+
+    legacy_site_toggle_interval_seconds = _parse_int(
+        os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS"),
+        default=2,
+        minimum=1,
+    )
 
     evidence_profile = _parse_evidence_profile(os.getenv("EVIDENCE_PROFILE"))
     screenshot_on_error = _parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True)
@@ -373,9 +380,14 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=15,
             minimum=1,
         ),
-        observer_site_toggle_interval_seconds=_parse_int(
-            os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS"),
-            default=2,
+        observer_site_toggle_interval_min_seconds=_parse_int(
+            os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS"),
+            default=legacy_site_toggle_interval_seconds,
+            minimum=1,
+        ),
+        observer_site_toggle_interval_max_seconds=_parse_int(
+            os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS"),
+            default=legacy_site_toggle_interval_seconds,
             minimum=1,
         ),
         observer_reload_probe_after_attempt=_parse_int(
@@ -500,6 +512,15 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "OBSERVER_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "OBSERVER_INTERVAL_MIN_SECONDS"
+        )
+
+    if (
+        settings.observer_site_toggle_interval_max_seconds
+        < settings.observer_site_toggle_interval_min_seconds
+    ):
+        raise ValueError(
+            "OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS must be greater than or equal to "
+            "OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS"
         )
 
     if (

@@ -23,8 +23,8 @@ def continuous_order_settings(
     return replace(
         effective,
         monitor_max_attempts=base_settings.observer_site_toggle_attempts,
-        monitor_interval_min_seconds=base_settings.observer_site_toggle_interval_seconds,
-        monitor_interval_max_seconds=base_settings.observer_site_toggle_interval_seconds,
+        monitor_interval_min_seconds=base_settings.observer_site_toggle_interval_min_seconds,
+        monitor_interval_max_seconds=base_settings.observer_site_toggle_interval_max_seconds,
         monitor_site_toggle_enabled=True,
         monitor_reload_probe_after_attempt=base_settings.observer_reload_probe_after_attempt,
     )

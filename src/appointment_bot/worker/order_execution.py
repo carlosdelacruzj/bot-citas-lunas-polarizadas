@@ -206,12 +206,12 @@ def run_service_order(
                 else settings.observer_max_attempts
             ),
             monitor_interval_min_seconds=(
-                settings.observer_site_toggle_interval_seconds
+                settings.observer_site_toggle_interval_min_seconds
                 if site_toggle_enabled
                 else settings.observer_interval_min_seconds
             ),
             monitor_interval_max_seconds=(
-                settings.observer_site_toggle_interval_seconds
+                settings.observer_site_toggle_interval_max_seconds
                 if site_toggle_enabled
                 else settings.observer_interval_max_seconds
             ),
