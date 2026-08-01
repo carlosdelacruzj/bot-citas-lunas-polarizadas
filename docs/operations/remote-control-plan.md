@@ -156,6 +156,7 @@ Criterio de cierre:
 | `/reglas_editar ORDEN` | `POST /api/v1/service-orders/{order_id}/restrictions` | HTTP `200` y restricciones normalizadas | Verificar valores; si falta preflight, programarlo y esperar resultado |
 | `/pendientes` | `GET /api/v1/hosted-invitations` | Estados sanitizados y órdenes vinculadas | Abrir cliente o editor de restricciones mediante botones |
 | `/invitacion` | `POST /api/v1/hosted-invitations` | HTTP `201`, URL privada y referencia local | Confirmar una sola creación y devolver el enlace sin credenciales |
+| `/cliente_nuevo` | `POST /api/v1/service-orders` | HTTP `201`, orden en validación | Esperar preflight y comunicar su estado real |
 | `/ultimos_errores` | `GET /api/v1/runs?limit=N` y estado publico del worker | Resumen corto y saneado | No solicitar `include_details=1` ni enviar evidencia cruda |
 
 Todos los endpoints bajo `/api/v1/` requieren
@@ -177,9 +178,12 @@ restricciones son campos administrativos opcionales. La orden nace pausada y
 entra a preflight; no se debe anunciar como activa hasta comprobar el resultado
 de esa validacion.
 
-La contrasena obligatoria impide habilitar `/cliente_nuevo` de produccion hasta
-definir un mecanismo de ingreso aceptable. Telegram no debe guardar la
-contrasena en estado persistente, logs ni mensajes de confirmacion.
+El flujo recomendado sigue siendo `/invitacion`, donde el cliente escribe el
+acceso en el formulario privado. `/cliente_nuevo` queda disponible como
+alternativa manual deliberada para el chat autorizado: el mensaje de entrada
+permanece en el historial de Telegram, pero el receptor solo conserva la
+contrasena en memoria durante la conversacion, no la registra en auditoria o
+logs y no la repite en el mensaje de confirmacion.
 
 #### Contrato de restricciones congelado
 

@@ -223,8 +223,9 @@ Progreso:
 - excepción PostgreSQL que se mostraba como desconexión corregida mediante una
   clave de búsqueda explícita; el contacto de prueba quedó sincronizado y con
   una sola invitación activa después de revocar cuatro accesos históricos;
-- Telegram integrado con el contrato alojado: crea invitaciones sin recibir
-  credenciales, lista estados pendientes, abre directamente las restricciones,
+- Telegram integrado con el contrato alojado: `/invitacion` crea enlaces sin
+  recibir credenciales y `/cliente_nuevo` conserva el alta manual como
+  alternativa; lista estados pendientes, abre directamente las restricciones,
   admite los cinco campos y enlaza guardado, preflight y estado final;
 - pendiente únicamente el trabajo previo al modo `production`: respaldo
   cifrado externo de la clave privada, revisión legal, procedimiento de

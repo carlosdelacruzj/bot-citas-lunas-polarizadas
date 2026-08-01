@@ -103,6 +103,7 @@ memoria con el worker. En la primera version admite:
 - `/prioridad ORDER_ID VALOR`;
 - `/reglas_editar ORDER_ID`;
 - `/invitacion`;
+- `/cliente_nuevo`;
 - `/pausar`;
 - `/reanudar`;
 - `/reiniciar`;
@@ -144,8 +145,11 @@ Las consultas operativas separan indice y detalle deliberado:
 Las credenciales no aparecen en el menu ni en los paneles de clientes. El
 comando historico `/credenciales ORDER_ID` se conserva temporalmente para
 compatibilidad, pero el flujo principal usa invitaciones privadas para que el
-cliente escriba el acceso. Tokens, cookies, datos de cifrado, leases y detalles
-crudos de runs nunca se muestran.
+cliente escriba el acceso. `/cliente_nuevo` es la alternativa manual explicita:
+la contrasena se recibe en el chat autorizado, permanece temporalmente en
+memoria hasta confirmar y no se repite en el comprobante ni en la auditoria.
+Tokens, cookies, datos de cifrado, leases y detalles crudos de runs nunca se
+muestran.
 
 El receptor registra acciones en `remote_control_audit` con actor hasheado,
 accion, objetivo, resultado y fecha, sin guardar el texto escrito ni datos
@@ -153,7 +157,8 @@ sensibles. Aplica limites por chat y avisa `CONTROL REMOTO DISPONIBLE` despues
 de iniciar o recuperarse.
 
 `/menu` abre la interfaz principal con botones. Prioriza registros pendientes,
-clientes, nueva invitacion, busqueda guiada, estado, resumen y sistema. Al pulsar
+clientes, nueva invitacion, alta manual, busqueda guiada, estado, resumen y
+sistema. Al pulsar
 `Buscar cliente`, el receptor espera el nombre, contacto, documento, WhatsApp u
 orden y devuelve botones; no es necesario recordar `/buscar TEXTO`.
 
@@ -162,6 +167,13 @@ confirmar, crea el enlace privado que recoge credenciales y declara si existen
 restricciones. Si vence, los valores temporales se eliminan sin guardar nada.
 `/pendientes` separa enlaces abiertos, validaciones, accesos incorrectos y
 registros que esperan restricciones.
+
+`/cliente_nuevo` solicita tipo y numero de documento, contrasena, nombre de
+contacto, fuente y WhatsApp opcional. Luego permite crear sin restricciones o
+configurar fecha minima, fecha maxima, hora minima, dias permitidos y rangos
+excluidos. Solo el boton final crea la orden; esta nace en validacion y Telegram
+espera el preflight antes de indicar acceso correcto, revision necesaria o
+validacion todavia en curso.
 
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento

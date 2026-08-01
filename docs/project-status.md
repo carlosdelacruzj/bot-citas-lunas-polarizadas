@@ -21,7 +21,7 @@ Estado verificado el `2026-07-28`:
 | Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Invitaciones, pendientes, clientes, cinco reglas y control del worker.                                     |
+| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cinco reglas y control del worker.                         |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `501.24 kB`.                                                    |
@@ -179,10 +179,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ### Control remoto
 
-- Menú de Telegram con pendientes, clientes, invitaciones, búsqueda, resumen y
-  estado.
-- Alta mediante enlace privado y edición guiada de cinco restricciones y
-  prioridad; las credenciales dejaron de ser una acción visible.
+- Menú de Telegram con pendientes, clientes, invitaciones, alta manual,
+  búsqueda, resumen y estado.
+- Alta principal mediante enlace privado, alternativa manual y edición guiada
+  de cinco restricciones y prioridad; consultar credenciales existentes dejó
+  de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
@@ -195,6 +196,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   configuración desde `Faltan restricciones`. El editor incluye rangos de fechas
   excluidos y, al confirmar una orden aún no validada, ejecuta el preflight y
   actualiza el estado alojado según su resultado.
+- Restaurado el `2026-08-01`: `/cliente_nuevo` vuelve a crear una orden de forma
+  manual sin sustituir `/invitacion`. Solicita tipo y número de documento,
+  contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
+  las cinco restricciones. La confirmación no repite la contraseña y el alta
+  informa el resultado real del preflight cuando termina dentro de la espera.
 
 ### Evidencia y CAPTCHA
 
