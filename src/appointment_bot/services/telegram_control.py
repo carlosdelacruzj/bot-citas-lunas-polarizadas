@@ -4,13 +4,11 @@ import argparse
 import hashlib
 import json
 import logging
-import mimetypes
 import os
 import re
 import secrets
 import signal
 import time
-import uuid
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -25,7 +23,6 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
-from appointment_bot.services.captcha_labeling import CaptchaLabelStore
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -39,7 +36,6 @@ CONFIRMATION_TTL_SECONDS = 120
 CONVERSATION_TTL_SECONDS = 300
 NEW_CLIENT_CONVERSATION_TTL_SECONDS = 60
 NEW_CLIENT_CONFIRMATION_TTL_SECONDS = 60
-CAPTCHA_CONVERSATION_TTL_SECONDS = 30
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 CLIENTS_PAGE_SIZE = 8
@@ -71,7 +67,6 @@ HELP_TEXT = """Control remoto disponible:
 /prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
 /reglas_editar ORDER_ID - Editar restricciones paso a paso
 /cliente_nuevo - Registrar un cliente paso a paso
-/credenciales ORDER_ID - Ver usuario y contrasena de una orden
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
@@ -79,9 +74,7 @@ HELP_TEXT = """Control remoto disponible:
 /cancelar - Cancelar la operacion guiada actual
 /menu - Abrir el menu principal con botones
 /buscar TEXTO - Buscar cliente u orden
-/recientes - Ultimos clientes consultados
 /resumen - Resumen operativo del dia
-/captchas - Etiquetar CAPTCHA originales y ver progreso
 """
 
 
@@ -146,12 +139,8 @@ class PendingClientCreation:
 
 
 @dataclass
-class CaptchaLabelConversation:
-    chat_id: str
-    session_id: str
+class SearchConversation:
     expires_at: float
-    current_path: Path | None = None
-    last_path: Path | None = None
 
 
 class TelegramRateLimiter:
@@ -346,45 +335,6 @@ class TelegramBotApi:
             {"chat_id": chat_id, "message_id": str(message_id)},
         )
 
-    def send_photo(
-        self,
-        chat_id: str,
-        image_path: Path,
-        caption: str,
-        *,
-        reply_markup: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        if not image_path.is_file():
-            raise TelegramControlError(f"Telegram photo does not exist: {image_path}")
-        boundary = f"----appointment-bot-{uuid.uuid4().hex}"
-        fields = {"chat_id": chat_id, "caption": caption}
-        if reply_markup is not None:
-            fields["reply_markup"] = json.dumps(reply_markup)
-        content_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
-        body = _multipart_form_data(
-            boundary,
-            fields=fields,
-            files={"photo": (image_path.name, content_type, image_path.read_bytes())},
-        )
-        request = Request(
-            f"{self.base_url}/sendPhoto",
-            data=body,
-            headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
-            method="POST",
-        )
-        try:
-            with urlopen(request, timeout=15) as response:
-                data = _read_json_response(response)
-        except HTTPError as exc:
-            raise TelegramControlError(
-                f"Telegram sendPhoto failed with HTTP {exc.code}."
-            ) from exc
-        except (URLError, TimeoutError, OSError) as exc:
-            raise TelegramControlError("Telegram sendPhoto is not reachable.") from exc
-        if not data.get("ok"):
-            raise TelegramControlError("Telegram rejected sendPhoto.")
-        return data
-
     def answer_callback_query(self, callback_query_id: str, text: str) -> None:
         self._request(
             "answerCallbackQuery",
@@ -473,8 +423,7 @@ def run_control(*, check_only: bool = False) -> int:
     rules_conversations: dict[str, RulesConversation] = {}
     new_client_conversations: dict[str, NewClientConversation] = {}
     pending_client_creations: dict[str, PendingClientCreation] = {}
-    captcha_label_store = CaptchaLabelStore.from_environment()
-    captcha_conversations: dict[str, CaptchaLabelConversation] = {}
+    search_conversations: dict[str, SearchConversation] = {}
     recent_orders: dict[str, deque[str]] = defaultdict(lambda: deque(maxlen=8))
     rate_limiter = TelegramRateLimiter()
     confirmation_lock = Lock()
@@ -509,8 +458,7 @@ def run_control(*, check_only: bool = False) -> int:
                         rules_conversations=rules_conversations,
                         new_client_conversations=new_client_conversations,
                         pending_client_creations=pending_client_creations,
-                        captcha_label_store=captcha_label_store,
-                        captcha_conversations=captcha_conversations,
+                        search_conversations=search_conversations,
                         recent_orders=recent_orders,
                         rate_limiter=rate_limiter,
                         confirmation_lock=confirmation_lock,
@@ -524,7 +472,6 @@ def run_control(*, check_only: bool = False) -> int:
                     telegram,
                     confirmation_lock,
                 )
-                _remove_expired_captcha_state(captcha_conversations, telegram)
             except TelegramControlError as exc:
                 logger.warning("Telegram control polling failed: %s", exc)
                 stop_event.wait(RETRY_DELAY_SECONDS)
@@ -548,8 +495,7 @@ def _process_update(
     rules_conversations: dict[str, RulesConversation],
     new_client_conversations: dict[str, NewClientConversation],
     pending_client_creations: dict[str, PendingClientCreation],
-    captcha_label_store: CaptchaLabelStore,
-    captcha_conversations: dict[str, CaptchaLabelConversation],
+    search_conversations: dict[str, SearchConversation],
     recent_orders: dict[str, deque[str]],
     rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
@@ -567,8 +513,7 @@ def _process_update(
             pending_client_creations,
             new_client_conversations,
             rules_conversations,
-            captcha_label_store,
-            captcha_conversations,
+            search_conversations,
             recent_orders,
             rate_limiter,
             confirmation_lock,
@@ -592,8 +537,7 @@ def _process_update(
     if not isinstance(text, str):
         return
     if not text.strip().startswith("/"):
-        is_captcha_reply = chat_id in captcha_conversations
-        if not rate_limiter.allow(chat_id, mutation=not is_captcha_reply):
+        if not rate_limiter.allow(chat_id, mutation=True):
             _record_audit_safe(
                 actor=_telegram_actor(chat_id),
                 action="conversation_reply",
@@ -604,13 +548,15 @@ def _process_update(
                 "Estas respondiendo demasiado rapido. Espera un minuto para continuar.",
             )
             return
-        if _process_captcha_answer(
-            chat_id,
-            text,
-            telegram,
-            captcha_label_store,
-            captcha_conversations,
-        ):
+        search = search_conversations.pop(chat_id, None)
+        if search is not None:
+            if search.expires_at <= time.monotonic():
+                telegram.send_message(
+                    chat_id,
+                    "La busqueda vencio. Pulsa Buscar para intentar otra vez.",
+                )
+                return
+            _send_search_results(chat_id, text, telegram, admin_api)
             return
         if _process_new_client_message(
             chat_id,
@@ -675,10 +621,10 @@ def _process_update(
             client_removed = _cancel_pending_client_creation_unlocked(
                 chat_id, pending_client_creations
             ) or client_removed
-            captcha_removed = captcha_conversations.pop(chat_id, None) is not None
+            search_removed = search_conversations.pop(chat_id, None) is not None
         response = (
             "Operacion pendiente cancelada."
-            if removed or order_removed or client_removed or captcha_removed
+            if removed or order_removed or client_removed or search_removed
             else "No hay una operacion guiada activa."
         )
         telegram.send_message(chat_id, response)
@@ -698,26 +644,6 @@ def _process_update(
     if command == "resumen":
         _send_daily_summary(chat_id, telegram, admin_api)
         return
-    if command == "captchas":
-        _cancel_chat_client_state(
-            chat_id,
-            new_client_conversations,
-            pending_client_creations,
-            confirmation_lock,
-        )
-        _cancel_chat_order_state(
-            chat_id,
-            pending_order_changes,
-            rules_conversations,
-            confirmation_lock,
-        )
-        _start_captcha_labeling(
-            chat_id,
-            telegram,
-            captcha_label_store,
-            captcha_conversations,
-        )
-        return
     if command in {"cliente", "reglas"}:
         _send_order_query(chat_id, command, arguments, telegram, admin_api)
         return
@@ -725,7 +651,7 @@ def _process_update(
         _send_credentials(chat_id, arguments, telegram, admin_api)
         return
     if command == "cliente_nuevo":
-        captcha_conversations.pop(chat_id, None)
+        search_conversations.pop(chat_id, None)
         _cancel_chat_order_state(
             chat_id,
             pending_order_changes,
@@ -752,7 +678,7 @@ def _process_update(
         )
         return
     if command == "reglas_editar":
-        captcha_conversations.pop(chat_id, None)
+        search_conversations.pop(chat_id, None)
         _cancel_chat_client_state(
             chat_id,
             new_client_conversations,
@@ -801,18 +727,11 @@ def _main_menu_markup() -> dict[str, Any]:
             ],
             [
                 {"text": "Nuevo cliente", "callback_data": "ui:new:start"},
-                {"text": "Buscar", "callback_data": "ui:search:help"},
+                {"text": "Buscar cliente", "callback_data": "ui:search:start"},
             ],
             [
                 {"text": "Resumen de hoy", "callback_data": "ui:summary:show"},
-                {"text": "Recientes", "callback_data": "ui:recent:show"},
-            ],
-            [
-                {"text": "Worker", "callback_data": "ui:worker:show"},
-                {"text": "Errores", "callback_data": "ui:errors:show"},
-            ],
-            [
-                {"text": "Etiquetar CAPTCHA", "callback_data": "cl:start:new"},
+                {"text": "Sistema y errores", "callback_data": "ui:worker:show"},
             ],
         ]
     }
@@ -824,240 +743,6 @@ def _send_main_menu(chat_id: str, telegram: TelegramBotApi) -> None:
         "MENU PRINCIPAL\n\nElige una accion. No necesitas recordar comandos.",
         reply_markup=_main_menu_markup(),
     )
-
-
-def _start_captcha_labeling(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    store: CaptchaLabelStore,
-    conversations: dict[str, CaptchaLabelConversation],
-) -> None:
-    try:
-        store.validate()
-    except (FileNotFoundError, OSError) as exc:
-        logger.warning("Captcha labeling is not available: %s", exc)
-        telegram.send_message(chat_id, "No encuentro la coleccion de CAPTCHA configurada.")
-        return
-    conversations[chat_id] = CaptchaLabelConversation(
-        chat_id=chat_id,
-        session_id=secrets.token_hex(4),
-        expires_at=time.monotonic() + CAPTCHA_CONVERSATION_TTL_SECONDS,
-    )
-    _send_next_captcha(chat_id, telegram, store, conversations)
-
-
-def _send_next_captcha(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    store: CaptchaLabelStore,
-    conversations: dict[str, CaptchaLabelConversation],
-) -> None:
-    conversation = conversations.get(chat_id)
-    if conversation is None or conversation.expires_at <= time.monotonic():
-        conversations.pop(chat_id, None)
-        telegram.send_message(
-            chat_id,
-            "La sesion de CAPTCHA vencio. Inicia nuevamente con /captchas.",
-            reply_markup=_main_menu_markup(),
-        )
-        return
-    try:
-        store.validate()
-        image_path = conversation.current_path or store.next_pending()
-        progress = store.progress()
-    except (FileNotFoundError, OSError, ValueError) as exc:
-        logger.warning("Could not prepare the next captcha: %s", exc)
-        telegram.send_message(chat_id, "No pude abrir la coleccion de CAPTCHA.")
-        return
-    if image_path is None:
-        conversations.pop(chat_id, None)
-        telegram.send_message(
-            chat_id,
-            _format_captcha_progress(progress, heading="ETIQUETADO COMPLETO"),
-            reply_markup=_main_menu_markup(),
-        )
-        return
-    conversation.current_path = image_path
-    conversation.expires_at = time.monotonic() + CAPTCHA_CONVERSATION_TTL_SECONDS
-    _send_captcha_image(
-        chat_id,
-        telegram,
-        image_path,
-        progress,
-        session_id=conversation.session_id,
-    )
-
-
-def _send_captcha_image(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    image_path: Path,
-    progress: Any,
-    *,
-    session_id: str,
-) -> None:
-    caption = (
-        f"CAPTCHA {image_path.stem}\n\n"
-        "Responde solamente los 5 caracteres. Tienes 30 segundos.\n"
-        f"Resueltos: {progress.completed}/{progress.total} | "
-        f"Faltan: {progress.pending} | {progress.percentage:.1f}%"
-    )
-    telegram.send_photo(
-        chat_id,
-        image_path,
-        caption,
-        reply_markup={
-            "inline_keyboard": [[
-                {"text": "Ver progreso", "callback_data": f"cl:{session_id}:progress"},
-                {"text": "Salir", "callback_data": f"cl:{session_id}:exit"},
-            ]]
-        },
-    )
-
-
-def _process_captcha_answer(
-    chat_id: str,
-    text: str,
-    telegram: TelegramBotApi,
-    store: CaptchaLabelStore,
-    conversations: dict[str, CaptchaLabelConversation],
-) -> bool:
-    conversation = conversations.get(chat_id)
-    if conversation is None:
-        return False
-    if conversation.expires_at <= time.monotonic():
-        conversations.pop(chat_id, None)
-        telegram.send_message(
-            chat_id,
-            "La sesion de CAPTCHA vencio. La imagen actual no fue guardada.",
-            reply_markup=_main_menu_markup(),
-        )
-        return True
-    if conversation.current_path is None:
-        telegram.send_message(
-            chat_id,
-            "Ya guarde la respuesta anterior. Pulsa Siguiente para continuar.",
-            reply_markup=_captcha_continue_markup(conversation.session_id),
-        )
-        return True
-    answer = text.strip().upper()
-    if re.fullmatch(r"[A-Z0-9]{5}", answer) is None:
-        telegram.send_message(
-            chat_id,
-            "Respuesta invalida. Envia exactamente 5 letras o numeros, sin espacios.",
-        )
-        return True
-    image_path = conversation.current_path
-    try:
-        progress = store.save_answer(image_path, answer)
-    except (OSError, ValueError) as exc:
-        logger.warning("Could not save captcha answer for %s: %s", image_path.name, exc)
-        telegram.send_message(
-            chat_id,
-            "No pude guardar la respuesta. No avances todavia; vuelve a enviarla.",
-        )
-        return True
-    conversation.last_path = image_path
-    conversation.current_path = None
-    conversation.expires_at = time.monotonic() + CAPTCHA_CONVERSATION_TTL_SECONDS
-    _record_audit_safe(
-        actor=_telegram_actor(chat_id),
-        action="captcha_label",
-        status="applied",
-        target_type="captcha",
-        target_id=image_path.stem,
-    )
-    telegram.send_message(
-        chat_id,
-        f"Guardado: CAPTCHA {image_path.stem} = {answer}\n\n"
-        + _format_captcha_progress(progress),
-        reply_markup=_captcha_continue_markup(conversation.session_id),
-    )
-    return True
-
-
-def _captcha_continue_markup(session_id: str) -> dict[str, Any]:
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "Siguiente", "callback_data": f"cl:{session_id}:next"},
-                {"text": "Corregir", "callback_data": f"cl:{session_id}:redo"},
-            ],
-            [
-                {"text": "Ver progreso", "callback_data": f"cl:{session_id}:progress"},
-                {"text": "Salir", "callback_data": f"cl:{session_id}:exit"},
-            ],
-        ]
-    }
-
-
-def _resend_last_captcha(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    store: CaptchaLabelStore,
-    conversations: dict[str, CaptchaLabelConversation],
-) -> None:
-    conversation = conversations.get(chat_id)
-    if (
-        conversation is None
-        or conversation.expires_at <= time.monotonic()
-        or conversation.last_path is None
-    ):
-        conversations.pop(chat_id, None)
-        telegram.send_message(chat_id, "No hay una respuesta reciente para corregir.")
-        return
-    conversation.current_path = conversation.last_path
-    conversation.expires_at = time.monotonic() + CAPTCHA_CONVERSATION_TTL_SECONDS
-    try:
-        progress = store.progress()
-        _send_captcha_image(
-            chat_id,
-            telegram,
-            conversation.current_path,
-            progress,
-            session_id=conversation.session_id,
-        )
-    except (OSError, ValueError, TelegramControlError) as exc:
-        logger.warning("Could not resend captcha for correction: %s", exc)
-        telegram.send_message(chat_id, "No pude volver a enviar ese CAPTCHA.")
-
-
-def _send_captcha_progress(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    store: CaptchaLabelStore,
-    session_id: str,
-) -> None:
-    try:
-        progress = store.progress()
-    except OSError as exc:
-        logger.warning("Could not read captcha progress: %s", exc)
-        telegram.send_message(chat_id, "No pude consultar el avance del etiquetado.")
-        return
-    telegram.send_message(
-        chat_id,
-        _format_captcha_progress(progress, heading="PROGRESO CAPTCHA"),
-        reply_markup={
-            "inline_keyboard": [[
-                {"text": "Continuar", "callback_data": f"cl:{session_id}:next"},
-                {"text": "Salir", "callback_data": f"cl:{session_id}:exit"},
-            ]]
-        },
-    )
-
-
-def _format_captcha_progress(progress: Any, *, heading: str | None = None) -> str:
-    lines = []
-    if heading:
-        lines.extend((heading, ""))
-    lines.extend(
-        (
-            f"Resueltos: {progress.completed}/{progress.total}",
-            f"Faltan: {progress.pending}",
-            f"Avance: {progress.percentage:.1f}%",
-        )
-    )
-    return "\n".join(lines)
 
 
 def _send_clients(
@@ -1252,6 +937,7 @@ def _send_worker_panel(
         reply_markup={
             "inline_keyboard": [
                 action_row,
+                [{"text": "Ver errores recientes", "callback_data": "ui:errors:show"}],
                 [
                     {"text": "Actualizar", "callback_data": "ui:worker:show"},
                     {"text": "Menu", "callback_data": "ui:menu:main"},
@@ -1284,11 +970,10 @@ def _send_order_panel(
         reply_markup={
             "inline_keyboard": [
                 [
-                    {"text": "Credenciales", "callback_data": f"om:{order_id}:credentials"},
                     {"text": "Reglas", "callback_data": f"om:{order_id}:rules"},
+                    {"text": "Prioridad", "callback_data": f"om:{order_id}:priority"},
                 ],
                 [
-                    {"text": "Prioridad", "callback_data": f"om:{order_id}:priority"},
                     {"text": "Actualizar", "callback_data": f"om:{order_id}:show"},
                 ],
                 [
@@ -2224,13 +1909,12 @@ def _process_interface_callback(
     pending_client_creations: dict[str, PendingClientCreation],
     new_client_conversations: dict[str, NewClientConversation],
     rules_conversations: dict[str, RulesConversation],
-    captcha_label_store: CaptchaLabelStore,
-    captcha_conversations: dict[str, CaptchaLabelConversation],
+    search_conversations: dict[str, SearchConversation],
     recent_orders: dict[str, deque[str]],
     confirmation_lock: Lock,
 ) -> bool:
     parts = data.split(":")
-    if len(parts) != 3 or parts[0] not in {"ui", "om", "pq", "wk", "nf", "rf", "cl"}:
+    if len(parts) != 3 or parts[0] not in {"ui", "om", "pq", "wk", "nf", "rf"}:
         return False
     prefix, subject, action = parts
     telegram.answer_callback_query(callback_id, "Procesando...")
@@ -2242,7 +1926,7 @@ def _process_interface_callback(
         elif subject == "clients":
             _send_clients(chat_id, action, telegram, admin_api)
         elif subject == "new":
-            captcha_conversations.pop(chat_id, None)
+            search_conversations.pop(chat_id, None)
             _cancel_chat_order_state(
                 chat_id,
                 pending_order_changes,
@@ -2258,7 +1942,26 @@ def _process_interface_callback(
                 confirmation_lock,
             )
         elif subject == "search":
-            _send_search_results(chat_id, "", telegram, admin_api)
+            _cancel_chat_client_state(
+                chat_id,
+                new_client_conversations,
+                pending_client_creations,
+                confirmation_lock,
+            )
+            _cancel_chat_order_state(
+                chat_id,
+                pending_order_changes,
+                rules_conversations,
+                confirmation_lock,
+            )
+            search_conversations[chat_id] = SearchConversation(
+                expires_at=time.monotonic() + CONVERSATION_TTL_SECONDS
+            )
+            telegram.send_message(
+                chat_id,
+                "BUSCAR CLIENTE\n\nEscribe el nombre, documento, WhatsApp u orden. "
+                "Puedes cancelar con /cancelar.",
+            )
         elif subject == "summary":
             _send_daily_summary(chat_id, telegram, admin_api)
         elif subject == "recent":
@@ -2281,7 +1984,7 @@ def _process_interface_callback(
                     chat_id, pending_client_creations
                 ) or removed
                 removed = rules_conversations.pop(chat_id, None) is not None or removed
-                removed = captcha_conversations.pop(chat_id, None) is not None or removed
+                removed = search_conversations.pop(chat_id, None) is not None or removed
             telegram.send_message(
                 chat_id,
                 "Alta cancelada." if removed else "No habia un alta activa.",
@@ -2289,74 +1992,6 @@ def _process_interface_callback(
             )
         else:
             telegram.send_message(chat_id, "Accion de menu no reconocida.")
-        return True
-    if prefix == "cl":
-        if subject == "start" and action == "new":
-            _cancel_chat_client_state(
-                chat_id,
-                new_client_conversations,
-                pending_client_creations,
-                confirmation_lock,
-            )
-            _cancel_chat_order_state(
-                chat_id,
-                pending_order_changes,
-                rules_conversations,
-                confirmation_lock,
-            )
-            _start_captcha_labeling(
-                chat_id,
-                telegram,
-                captcha_label_store,
-                captcha_conversations,
-            )
-            return True
-        conversation = captcha_conversations.get(chat_id)
-        if conversation is None or conversation.expires_at <= time.monotonic():
-            captcha_conversations.pop(chat_id, None)
-            telegram.send_message(
-                chat_id,
-                "Ese boton de CAPTCHA ya vencio. Inicia nuevamente con /captchas.",
-                reply_markup=_main_menu_markup(),
-            )
-            return True
-        if conversation.session_id != subject:
-            telegram.send_message(
-                chat_id,
-                "Ese boton pertenece a otra sesion de CAPTCHA y ya no es valido.",
-            )
-            return True
-        conversation.expires_at = time.monotonic() + CAPTCHA_CONVERSATION_TTL_SECONDS
-        if action == "next":
-            _send_next_captcha(
-                chat_id,
-                telegram,
-                captcha_label_store,
-                captcha_conversations,
-            )
-        elif action == "progress":
-            _send_captcha_progress(
-                chat_id,
-                telegram,
-                captcha_label_store,
-                conversation.session_id,
-            )
-        elif action == "redo":
-            _resend_last_captcha(
-                chat_id,
-                telegram,
-                captcha_label_store,
-                captcha_conversations,
-            )
-        elif action == "exit":
-            captcha_conversations.pop(chat_id, None)
-            telegram.send_message(
-                chat_id,
-                "Etiquetado pausado. Tu avance quedo guardado.",
-                reply_markup=_main_menu_markup(),
-            )
-        else:
-            telegram.send_message(chat_id, "Accion de CAPTCHA no reconocida.")
         return True
     if prefix == "om":
         order_id = subject
@@ -2371,7 +2006,7 @@ def _process_interface_callback(
         elif action == "priority":
             _send_priority_menu(chat_id, order_id, telegram, admin_api)
         elif action == "editrules":
-            captcha_conversations.pop(chat_id, None)
+            search_conversations.pop(chat_id, None)
             _cancel_chat_client_state(
                 chat_id,
                 new_client_conversations,
@@ -2492,8 +2127,7 @@ def _process_callback_query(
     pending_client_creations: dict[str, PendingClientCreation],
     new_client_conversations: dict[str, NewClientConversation],
     rules_conversations: dict[str, RulesConversation],
-    captcha_label_store: CaptchaLabelStore,
-    captcha_conversations: dict[str, CaptchaLabelConversation],
+    search_conversations: dict[str, SearchConversation],
     recent_orders: dict[str, deque[str]],
     rate_limiter: TelegramRateLimiter,
     confirmation_lock: Lock,
@@ -2514,7 +2148,7 @@ def _process_callback_query(
             actor=_telegram_actor(chat_id), action="callback", status="denied"
         )
         return
-    if not rate_limiter.allow(chat_id, mutation=not data.startswith("cl:")):
+    if not rate_limiter.allow(chat_id, mutation=True):
         _record_audit_safe(
             actor=_telegram_actor(chat_id), action="callback", status="rate_limited"
         )
@@ -2532,8 +2166,7 @@ def _process_callback_query(
         pending_client_creations,
         new_client_conversations,
         rules_conversations,
-        captcha_label_store,
-        captcha_conversations,
+        search_conversations,
         recent_orders,
         confirmation_lock,
     ):
@@ -3105,25 +2738,6 @@ def _remove_expired_client_state(
         )
 
 
-def _remove_expired_captcha_state(
-    conversations: dict[str, CaptchaLabelConversation],
-    telegram: TelegramBotApi,
-) -> None:
-    now = time.monotonic()
-    expired_chats = [
-        chat_id
-        for chat_id, conversation in conversations.items()
-        if conversation.expires_at <= now
-    ]
-    for chat_id in expired_chats:
-        conversations.pop(chat_id, None)
-        telegram.send_message(
-            chat_id,
-            "La sesion de CAPTCHA vencio. La imagen pendiente no fue guardada.",
-            reply_markup=_main_menu_markup(),
-        )
-
-
 def format_worker_status(payload: dict[str, Any]) -> str:
     worker_running = bool(payload.get("worker_running"))
     phase = str(payload.get("phase") or "desconocida")
@@ -3202,39 +2816,6 @@ def _store_next_offset(path: Path, next_offset: int) -> None:
     temporary = path.with_suffix(f"{path.suffix}.tmp")
     temporary.write_text(json.dumps({"next_offset": next_offset}) + "\n", encoding="utf-8")
     temporary.replace(path)
-
-
-def _multipart_form_data(
-    boundary: str,
-    *,
-    fields: dict[str, str],
-    files: dict[str, tuple[str, str, bytes]],
-) -> bytes:
-    chunks = []
-    for name, value in fields.items():
-        chunks.extend(
-            [
-                f"--{boundary}\r\n".encode(),
-                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
-                str(value).encode(),
-                b"\r\n",
-            ]
-        )
-    for name, (filename, content_type, content) in files.items():
-        chunks.extend(
-            [
-                f"--{boundary}\r\n".encode(),
-                (
-                    f'Content-Disposition: form-data; name="{name}"; '
-                    f'filename="{filename}"\r\n'
-                ).encode(),
-                f"Content-Type: {content_type}\r\n\r\n".encode(),
-                content,
-                b"\r\n",
-            ]
-        )
-    chunks.append(f"--{boundary}--\r\n".encode())
-    return b"".join(chunks)
 
 
 def _read_json_response(response: Any) -> dict[str, Any]:

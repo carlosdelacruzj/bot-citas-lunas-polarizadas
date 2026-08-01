@@ -104,42 +104,12 @@ memoria con el worker. En la primera version admite:
 - `/pausar`;
 - `/reanudar`;
 - `/reiniciar`;
-- `/captchas`;
 - `/ayuda`;
 - `/cancelar`.
 
 Solo responde al `TELEGRAM_CHAT_ID` configurado. Opcionalmente,
 `TELEGRAM_CONTROL_CHAT_IDS` permite una lista separada por comas. Un chat fuera
 de esa lista se ignora sin revelar informacion.
-
-### Etiquetado manual de CAPTCHA
-
-El boton `Etiquetar CAPTCHA` del menu y el comando `/captchas` abren un flujo
-independiente para resolver las imagenes originales desde Telegram. El receptor
-envia una imagen pendiente, acepta exactamente cinco letras o numeros, guarda
-la respuesta inmediatamente y ofrece `Siguiente`, `Corregir`, `Ver progreso`
-y `Salir`. El avance muestra resueltos, total, faltantes y porcentaje, y se
-recupera desde el CSV despues de reiniciar el proceso.
-
-Cada imagen espera como maximo 30 segundos. Si no llega una respuesta valida,
-la sesion se cierra y esa imagen no se marca como resuelta. Los botones incluyen
-un identificador de sesion: un boton antiguo no puede reabrir ni alterar otro
-flujo. Iniciar `/cliente_nuevo`, `/captchas` o `/reglas_editar` cierra los otros
-asistentes activos del mismo chat.
-
-Por defecto usa estas rutas hermanas del repositorio:
-
-```text
-../test-captcha/captchas_reales_sin_etiquetar
-../test-captcha/outputs/captcha_labels_telegram.csv
-```
-
-Se pueden reemplazar sin modificar codigo mediante
-`TELEGRAM_CAPTCHA_IMAGES_DIR` y `TELEGRAM_CAPTCHA_LABELS_PATH`. Las imagenes
-originales nunca se mueven ni se modifican. El CSV se reemplaza atomicamente en
-cada respuesta y conserva una sola respuesta vigente por archivo; `Corregir`
-actualiza la ultima sin incrementar el total completado. El contenido escrito
-no se guarda en logs ni en la auditoria remota.
 
 El receptor usa long polling y guarda el siguiente `update_id` en
 `.runtime/telegram-control-offset.json`. Antes de iniciarlo se puede comprobar

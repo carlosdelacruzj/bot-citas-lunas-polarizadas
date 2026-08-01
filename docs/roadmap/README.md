@@ -140,7 +140,10 @@ Estado: iniciado.
 3. Medir dependencia de intervención humana en WhatsApp y pagos.
 4. Mantener Telegram como interfaz remota y Admin API como frontera de
    autorización.
-5. Confirmar en el siguiente reinicio que Kaspersky conserva la tarea
+5. Completado el `2026-08-01`: simplificado el menú remoto, retirada la función
+   antigua de etiquetado CAPTCHA y convertida la búsqueda por botón en un flujo
+   guiado que no requiere recordar comandos.
+6. Confirmar en el siguiente reinicio que Kaspersky conserva la tarea
    `AppointmentBotContinuousWorker` y el supervisor raíz PowerShell. La
    recuperación individual de los cuatro supervisores ya quedó implementada;
    falta observarla después de un reinicio real.

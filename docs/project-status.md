@@ -184,6 +184,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
+- Simplificado el `2026-08-01`: se retiró por completo el etiquetado manual de
+  CAPTCHA desde Telegram, junto con sus variables y scripts exclusivos. El menú
+  dejó de mostrar recientes y credenciales, agrupó sistema con errores y la
+  búsqueda ahora solicita el término como una conversación guiada.
 
 ### Evidencia y CAPTCHA
 
