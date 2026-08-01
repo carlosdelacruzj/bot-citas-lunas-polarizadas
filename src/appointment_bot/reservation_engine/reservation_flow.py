@@ -142,7 +142,7 @@ def complete_available_reservation(
     }
     portal_response: dict[str, object] = {}
     additional_screenshot_paths: list[Path] = []
-    max_captcha_attempts = 2
+    max_captcha_attempts = settings.reservation_captcha_max_attempts
 
     def collected_screenshots(*paths: Path | None) -> list[Path]:
         return _collect_screenshots(additional_screenshot_paths, screenshot_path, *paths)

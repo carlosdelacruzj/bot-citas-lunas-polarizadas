@@ -688,7 +688,7 @@ class ContinuousWorker:
         self._last_cleanup_date = today
 
     def _daily_cutoff_reached(self) -> bool:
-        return daily_cutoff_reached()
+        return daily_cutoff_reached(self.settings.worker_daily_cutoff_time)
 
     def _wait_for_hot_window_if_needed(self) -> bool:
         decision = hot_window_wait_decision(

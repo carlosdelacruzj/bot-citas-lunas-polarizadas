@@ -171,7 +171,8 @@ sin `ContinuousWorker` en memoria. El worker activo reclama el siguiente comando
 
 ## Corte diario
 
-El worker no inicia nuevas consultas despues de las 18:00 Lima. Si ya habia una
+El worker no inicia nuevas consultas después de `WORKER_DAILY_CUTOFF_TIME`
+(`18:00` Lima por defecto). Si ya había una
 ejecucion en curso, la deja terminar. Luego genera reporte diario y el bootstrap
 puede esperar hasta la hora de resume configurada antes de relanzar.
 

@@ -85,6 +85,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   descansa `2` segundos. Solo se hace un `reload_probe` completo después del
   intento `8`; al terminar el intento `15` se cierra esa sesión y se rota al
   siguiente cliente con un contexto Playwright nuevo.
+- Auditado el `2026-08-01`: los valores operativos del ciclo `15/2/8`, la sede,
+  el límite de clientes activos, el cooldown por CAPTCHA, los intentos de
+  CAPTCHA por reserva y el corte diario se pueden modificar desde `.env`. Los
+  dos últimos dejaron de ser literales fijos en el flujo productivo. El `.env`
+  local y `.env.example` quedaron organizados y comentados por función; las
+  constantes que permanecen en código son detalles técnicos de protocolo,
+  estabilidad de UI, leases y lotes internos, no políticas operativas.
 
 ### Arquitectura y operación
 
@@ -118,8 +125,8 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   comportamiento observable.
 - El reporte general PNG de `reports/daily/` se retiró por falta de uso,
   incluyendo su generación automática al cierre y el comando `daily-report`.
-  El corte de las 18:00, la revisión final de órdenes listas y el reinicio de
-  las 07:30 permanecen sin cambios.
+  El corte diario conserva `18:00` como valor configurado, la revisión final de
+  órdenes listas permanece habilitada y el reinicio de las 07:30 no cambia.
 - La retención de 14 días ahora recorre las subcarpetas de logs, capturas y
   videos, elimina directorios vacíos y conserva explícitamente evidencia de
   reserva, disponibilidad, fallos, defensas, CAPTCHA originales, preflight y

@@ -79,6 +79,10 @@ Estado: en observación.
   por sesión, `vacío -> LIMA-LA VICTORIA` desde el segundo intento, espera de
   `2` segundos después de cada postback y un solo `reload_probe` tras el intento
   `8`. Después se rota al siguiente cliente con una sesión Playwright nueva.
+- Completado el `2026-08-01`: auditoría de configuración operativa. El ciclo
+  `15/2/8`, sede, clientes activos, cooldown e intentos CAPTCHA y corte diario
+  están expuestos en el `.env` comentado y en `.env.example`; los literales que
+  quedan corresponden a invariantes técnicos internos.
 - Validar el primer ciclo real completo y comparar duración por usuario,
   cantidad de postbacks, disponibilidad detectada, `403/429` y cierres de
   sesión antes de reducir nuevamente el intervalo.

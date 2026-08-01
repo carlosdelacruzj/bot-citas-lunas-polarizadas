@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 from appointment_bot.config import Settings
 
 WORKER_TIMEZONE = ZoneInfo("America/Lima")
-DAILY_CUTOFF_TIME = datetime_time(hour=18)
 DAILY_CUTOFF_REASON = "daily_cutoff"
 SEARCH_WEEKDAYS = frozenset(range(6))
 
@@ -22,8 +21,8 @@ class HotWindowDecision:
     using_extension: bool = False
 
 
-def daily_cutoff_reached() -> bool:
-    return datetime.now(WORKER_TIMEZONE).time() >= DAILY_CUTOFF_TIME
+def daily_cutoff_reached(cutoff_time: datetime_time) -> bool:
+    return datetime.now(WORKER_TIMEZONE).time() >= cutoff_time
 
 
 def hot_window_wait_decision(

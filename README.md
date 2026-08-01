@@ -69,7 +69,7 @@ las 20:00 del dia actual. Al indicar una orden crea una sola ficha; sin argument
 fichas para todas las ordenes activas en `reports/status/`. Las fichas usan el horario de
 Lima, muestran el documento enmascarado y se nombran con el cliente y la hora de generacion.
 
-Desde las 18:00 el worker no inicia nuevas consultas. Si una consulta comenzo antes del
+Desde `WORKER_DAILY_CUTOFF_TIME` (18:00 por defecto) el worker no inicia nuevas consultas. Si una consulta comenzo antes del
 corte, permite que termine junto con cualquier cola de reserva derivada de ella y luego
 cierra el worker y su API. La revision final de ordenes listas se conserva, pero ya no se
 genera una imagen de reporte general.

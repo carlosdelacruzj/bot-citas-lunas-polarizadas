@@ -83,6 +83,15 @@ def _parse_time_windows(
     return tuple(windows)
 
 
+def _parse_time(value: str | None, *, default: datetime_time) -> datetime_time:
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return datetime_time.fromisoformat(value.strip())
+    except ValueError as exc:
+        raise ValueError(f"Invalid time. Use HH:MM: {value!r}") from exc
+
+
 DEFAULT_OBSERVER_HOT_WINDOWS = (
     (datetime_time(hour=8, minute=15), datetime_time(hour=8, minute=50)),
     (datetime_time(hour=9, minute=30), datetime_time(hour=10, minute=0)),
@@ -117,6 +126,7 @@ class Settings:
     cleanup_retention_days: int
     error_backoff_seconds: int
     captcha_rejection_cooldown_seconds: int
+    reservation_captcha_max_attempts: int
     order_rule_cooldown_seconds: int
     monitor_window_seconds: int
     monitor_max_attempts: int
@@ -131,6 +141,7 @@ class Settings:
     continuous_interval_min_seconds: int
     continuous_interval_max_seconds: int
     final_ready_review_enabled: bool
+    worker_daily_cutoff_time: datetime_time
     session_rotation_seconds: int
     observer_session_seconds: int
     observer_max_attempts: int
@@ -254,6 +265,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=120,
             minimum=0,
         ),
+        reservation_captcha_max_attempts=_parse_int(
+            os.getenv("RESERVATION_CAPTCHA_MAX_ATTEMPTS"),
+            default=2,
+            minimum=1,
+        ),
         order_rule_cooldown_seconds=_parse_int(
             os.getenv("ORDER_RULE_COOLDOWN_SECONDS"),
             default=900,
@@ -313,6 +329,10 @@ def load_settings(*, require_login: bool = True) -> Settings:
         final_ready_review_enabled=_parse_bool(
             os.getenv("FINAL_READY_REVIEW_ENABLED"),
             default=True,
+        ),
+        worker_daily_cutoff_time=_parse_time(
+            os.getenv("WORKER_DAILY_CUTOFF_TIME"),
+            default=datetime_time(hour=18),
         ),
         session_rotation_seconds=_parse_int(
             os.getenv("SESSION_ROTATION_SECONDS"),
