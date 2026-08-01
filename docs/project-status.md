@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-31`.
+Última revisión integral: `2026-08-01`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -79,6 +79,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `120` segundos y el worker continúa con los demás clientes elegibles; los
   backoffs largos se conservan para resultados ambiguos o defensas reales del
   portal.
+- Implementado el `2026-08-01`: cada orden observada conserva el modal abierto y
+  ejecuta hasta `15` consultas ligeras de sede. Después de la primera consulta,
+  cada intento fuerza `vacío -> LIMA-LA VICTORIA`, espera el postback completo y
+  descansa `2` segundos. Solo se hace un `reload_probe` completo después del
+  intento `8`; al terminar el intento `15` se cierra esa sesión y se rota al
+  siguiente cliente con un contexto Playwright nuevo.
 
 ### Arquitectura y operación
 
@@ -226,8 +232,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 4. El cooldown corto por rechazo explícito de CAPTCHA está validado en código;
    falta observar el próximo rechazo real para confirmar que la cola continúa
    sin una espera global.
-5. El ajuste del observer a cuatro intentos necesita comparación de varios días
-   antes de conservarse como nuevo baseline.
+5. El ciclo ligero de sede está validado de forma sintética con `15` consultas,
+   un `reload_probe` y esperas posteriores de `2` segundos. Falta observarlo en
+   el portal real y vigilar latencia, cierres de sesión y señales `403/429`.
 6. La operación depende de una PC Windows, red local, Docker y perfiles
    persistentes de navegador.
 7. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a

@@ -255,6 +255,7 @@ def select_available_site(
     page: Page,
     *,
     required_site: str | None = None,
+    reset_first: bool = False,
     timeout: int = 15_000,
 ) -> Page:
     return _select_available_site(
@@ -262,6 +263,7 @@ def select_available_site(
         timeout=timeout,
         allow_hidden=False,
         required_site=required_site,
+        reset_first=reset_first,
     )
 
 
@@ -276,6 +278,7 @@ def select_available_site_for_observer(
         timeout=timeout,
         allow_hidden=True,
         required_site=required_site,
+        reset_first=False,
     )
 
 
@@ -285,6 +288,7 @@ def _select_available_site(
     timeout: int,
     allow_hidden: bool,
     required_site: str | None,
+    reset_first: bool,
 ) -> Page:
     logger.info("Selecting available site")
     site_select = page.locator(SITE_SELECTOR)
@@ -297,6 +301,21 @@ def _select_available_site(
             options, allow_hidden=allow_hidden, required_site=required_site
         )
         raise AppointmentWorkflowUnavailable(message)
+
+    if reset_first:
+        _reset_site_selection(
+            page,
+            site_select,
+            options,
+            allow_hidden=allow_hidden,
+            timeout=timeout,
+        )
+        options = _select_options(page, SITE_SELECTOR)
+        selected = _select_site_option(options, required_site=required_site)
+        if selected is None:
+            raise AppointmentWorkflowUnavailable(
+                "La sede requerida dejo de estar disponible despues de vaciar el selector."
+            )
 
     logger.info("Selecting site: %s", selected["text"])
     refresh_token = _mark_select_for_refresh(page, SITE_SELECTOR)
@@ -339,6 +358,61 @@ def _select_available_site(
     )
     logger.debug("Current page after site selection: %s", page.url)
     return page
+
+
+def _reset_site_selection(
+    page: Page,
+    site_select,
+    options: list[dict[str, Any]],
+    *,
+    allow_hidden: bool,
+    timeout: int,
+) -> None:
+    placeholder = next(
+        (
+            option
+            for option in options
+            if not option.get("disabled")
+            and not option.get("hidden")
+            and (
+                not str(option.get("value") or "").strip()
+                or normalize_option(str(option.get("text") or "")).startswith("seleccione")
+            )
+        ),
+        None,
+    )
+    if placeholder is None:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontro la opcion vacia necesaria para refrescar la sede."
+        )
+    if site_select.input_value() == str(placeholder["value"]):
+        return
+
+    logger.info("Resetting site selection to the empty option before selecting it again")
+    refresh_token = _mark_select_for_refresh(page, SITE_SELECTOR)
+    async_refresh_token = _mark_aspnet_async_refresh(page)
+    previous_date = _options_signature(_select_options(page, DATE_SELECTOR))
+    previous_hour = _options_signature(_select_options(page, HOUR_SELECTOR))
+    _select_appointment_option(
+        site_select,
+        str(placeholder["value"]),
+        allow_hidden=allow_hidden,
+    )
+    evidence = _wait_for_appointment_options(
+        page,
+        selected_site=str(placeholder.get("text") or ""),
+        refresh_token=refresh_token,
+        async_refresh_token=async_refresh_token,
+        previous_date_signature=previous_date,
+        previous_hour_signature=previous_hour,
+        timeout=timeout,
+    )
+    logger.info(
+        "Empty site refresh confirmed=%s async=%s elapsed_ms=%s",
+        evidence.confirmed,
+        evidence.async_completed,
+        evidence.elapsed_ms,
+    )
 
 
 def _select_options_text(page: Page, selector: str) -> list[str]:

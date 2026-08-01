@@ -195,13 +195,28 @@ def run_service_order(
             monitor_max_attempts=1,
         )
     elif observer_mode:
+        site_toggle_enabled = settings.observer_site_toggle_enabled
         order_settings = replace(
             order_settings,
             auto_reserve=settings.auto_reserve,
             monitor_window_seconds=settings.observer_session_seconds,
-            monitor_max_attempts=settings.observer_max_attempts,
-            monitor_interval_min_seconds=settings.observer_interval_min_seconds,
-            monitor_interval_max_seconds=settings.observer_interval_max_seconds,
+            monitor_max_attempts=(
+                settings.observer_site_toggle_attempts
+                if site_toggle_enabled
+                else settings.observer_max_attempts
+            ),
+            monitor_interval_min_seconds=(
+                settings.observer_site_toggle_interval_seconds
+                if site_toggle_enabled
+                else settings.observer_interval_min_seconds
+            ),
+            monitor_interval_max_seconds=(
+                settings.observer_site_toggle_interval_seconds
+                if site_toggle_enabled
+                else settings.observer_interval_max_seconds
+            ),
+            monitor_site_toggle_enabled=site_toggle_enabled,
+            monitor_reload_probe_after_attempt=settings.observer_reload_probe_after_attempt,
         )
 
     attempt_id = f"attempt-{uuid4().hex}"

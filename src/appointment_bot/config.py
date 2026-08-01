@@ -122,6 +122,8 @@ class Settings:
     monitor_max_attempts: int
     monitor_interval_min_seconds: int
     monitor_interval_max_seconds: int
+    monitor_site_toggle_enabled: bool
+    monitor_reload_probe_after_attempt: int
     queue_max_reservations_per_run: int
     queue_delay_min_seconds: int
     queue_delay_max_seconds: int
@@ -135,6 +137,10 @@ class Settings:
     observer_captcha_sample_limit: int
     observer_interval_min_seconds: int
     observer_interval_max_seconds: int
+    observer_site_toggle_enabled: bool
+    observer_site_toggle_attempts: int
+    observer_site_toggle_interval_seconds: int
+    observer_reload_probe_after_attempt: int
     observer_active_order_limit: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
@@ -273,6 +279,8 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=35,
             minimum=1,
         ),
+        monitor_site_toggle_enabled=False,
+        monitor_reload_probe_after_attempt=1,
         queue_max_reservations_per_run=_parse_int(
             os.getenv("QUEUE_MAX_RESERVATIONS_PER_RUN"),
             default=1,
@@ -334,6 +342,25 @@ def load_settings(*, require_login: bool = True) -> Settings:
         observer_interval_max_seconds=_parse_int(
             os.getenv("OBSERVER_INTERVAL_MAX_SECONDS"),
             default=35,
+            minimum=1,
+        ),
+        observer_site_toggle_enabled=_parse_bool(
+            os.getenv("OBSERVER_SITE_TOGGLE_ENABLED"),
+            default=True,
+        ),
+        observer_site_toggle_attempts=_parse_int(
+            os.getenv("OBSERVER_SITE_TOGGLE_ATTEMPTS"),
+            default=15,
+            minimum=1,
+        ),
+        observer_site_toggle_interval_seconds=_parse_int(
+            os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS"),
+            default=2,
+            minimum=1,
+        ),
+        observer_reload_probe_after_attempt=_parse_int(
+            os.getenv("OBSERVER_RELOAD_PROBE_AFTER_ATTEMPT"),
+            default=8,
             minimum=1,
         ),
         observer_active_order_limit=_parse_int(
@@ -453,6 +480,16 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "OBSERVER_INTERVAL_MAX_SECONDS must be greater than or equal to "
             "OBSERVER_INTERVAL_MIN_SECONDS"
+        )
+
+    if (
+        settings.observer_site_toggle_enabled
+        and settings.observer_reload_probe_after_attempt
+        > settings.observer_site_toggle_attempts
+    ):
+        raise ValueError(
+            "OBSERVER_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal to "
+            "OBSERVER_SITE_TOGGLE_ATTEMPTS"
         )
 
     if settings.observer_captcha_sample_limit > 50:

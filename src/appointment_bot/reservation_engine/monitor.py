@@ -82,10 +82,12 @@ def monitor_appointment_availability(
             )
         check_started = time.monotonic()
         logger.info("Appointment availability check attempt %s", attempt)
+        site_toggle_probe = settings.monitor_site_toggle_enabled and attempt > 1
         try:
             page = select_available_site(
                 page,
                 required_site=settings.observer_required_site,
+                reset_first=site_toggle_probe,
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
         except AppointmentOptionsNotRefreshed as exc:
@@ -103,9 +105,14 @@ def monitor_appointment_availability(
             attempt=attempt,
             session_age_seconds=time.monotonic() - session_started,
             check_duration_seconds=time.monotonic() - check_started,
+            monitoring_mode="site_toggle" if site_toggle_probe else "normal",
         )
 
-        if result.status == "unavailable":
+        should_reload_probe = (
+            not settings.monitor_site_toggle_enabled
+            or attempt == settings.monitor_reload_probe_after_attempt
+        )
+        if result.status == "unavailable" and should_reload_probe:
             reload_started = time.monotonic()
             reload_result = reload_and_recheck_appointment_availability(
                 page,
@@ -114,17 +121,23 @@ def monitor_appointment_availability(
                 program_plate=program_plate,
             )
             if reload_result is None:
-                if on_check is not None:
-                    on_check(result, attempt, None)
-                return result, screenshot_path, screenshot_paths
-            result = with_monitor_diagnostics(
-                reload_result,
-                settings=settings,
-                attempt=attempt,
-                session_age_seconds=time.monotonic() - session_started,
-                check_duration_seconds=time.monotonic() - reload_started,
-                monitoring_mode="reload_probe",
-            )
+                if settings.monitor_site_toggle_enabled:
+                    logger.warning(
+                        "Scheduled reload probe failed; continuing the light site probes"
+                    )
+                else:
+                    if on_check is not None:
+                        on_check(result, attempt, None)
+                    return result, screenshot_path, screenshot_paths
+            else:
+                result = with_monitor_diagnostics(
+                    reload_result,
+                    settings=settings,
+                    attempt=attempt,
+                    session_age_seconds=time.monotonic() - session_started,
+                    check_duration_seconds=time.monotonic() - reload_started,
+                    monitoring_mode="reload_probe",
+                )
 
         if result.status == "unknown":
             if on_check is not None:
@@ -405,7 +418,11 @@ def with_monitor_diagnostics(
     detection_origin = (
         "fetch_probe"
         if details.get("fetch_probe")
-        else ("reload_probe" if monitoring_mode == "reload_probe" else "normal")
+        else (
+            monitoring_mode
+            if monitoring_mode in {"reload_probe", "site_toggle"}
+            else "normal"
+        )
     )
     details.update(
         {

@@ -17,7 +17,17 @@ def continuous_order_settings(
         password=getattr(order, "password", ""),
         document_type=order.document_type,
     )
-    return continuous_settings(order_settings)
+    effective = continuous_settings(order_settings)
+    if not base_settings.observer_site_toggle_enabled:
+        return effective
+    return replace(
+        effective,
+        monitor_max_attempts=base_settings.observer_site_toggle_attempts,
+        monitor_interval_min_seconds=base_settings.observer_site_toggle_interval_seconds,
+        monitor_interval_max_seconds=base_settings.observer_site_toggle_interval_seconds,
+        monitor_site_toggle_enabled=True,
+        monitor_reload_probe_after_attempt=base_settings.observer_reload_probe_after_attempt,
+    )
 
 
 def continuous_settings(settings: Settings) -> Settings:

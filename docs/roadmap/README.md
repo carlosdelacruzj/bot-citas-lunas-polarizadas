@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-07-31`.
+Última priorización: `2026-08-01`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -75,11 +75,19 @@ Estado: en observación.
 
 ### Observer
 
+- Completado en código el `2026-08-01`: las órdenes usan `15` consultas de sede
+  por sesión, `vacío -> LIMA-LA VICTORIA` desde el segundo intento, espera de
+  `2` segundos después de cada postback y un solo `reload_probe` tras el intento
+  `8`. Después se rota al siguiente cliente con una sesión Playwright nueva.
+- Validar el primer ciclo real completo y comparar duración por usuario,
+  cantidad de postbacks, disponibilidad detectada, `403/429` y cierres de
+  sesión antes de reducir nuevamente el intervalo.
 - Completado el `2026-07-30`: eliminadas las promociones automáticas de
   prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
   que la orden que lo detecta reserva inmediatamente, que las demás conservan
   su prioridad y que los empates respetan el orden de registro.
-- Comparar al menos dos o tres días con `OBSERVER_MAX_ATTEMPTS=4`.
+- Comparar al menos dos o tres días con el ciclo ligero `15/2/8` antes de
+  conservarlo como nuevo baseline.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales
   `403`, `429` o `recovery_backoff`.
 - Cambiar una sola variable por experimento.

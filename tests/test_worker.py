@@ -65,15 +65,20 @@ class ContinuousWorkerTests(unittest.TestCase):
             )
             self.assertEqual(
                 effective_settings.monitor_max_attempts,
-                settings.observer_max_attempts,
+                settings.observer_site_toggle_attempts,
             )
             self.assertEqual(
                 effective_settings.monitor_interval_min_seconds,
-                settings.observer_interval_min_seconds,
+                settings.observer_site_toggle_interval_seconds,
             )
             self.assertEqual(
                 effective_settings.monitor_interval_max_seconds,
-                settings.observer_interval_max_seconds,
+                settings.observer_site_toggle_interval_seconds,
+            )
+            self.assertTrue(effective_settings.monitor_site_toggle_enabled)
+            self.assertEqual(
+                effective_settings.monitor_reload_probe_after_attempt,
+                settings.observer_reload_probe_after_attempt,
             )
             self.assertTrue(run_order.call_args.kwargs["observer_mode"])
             self.assertFalse(queue_requested)
