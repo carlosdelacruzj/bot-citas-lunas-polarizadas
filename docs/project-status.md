@@ -21,7 +21,7 @@ Estado verificado el `2026-07-28`:
 | Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Consultas, clientes, reglas, prioridad, credenciales y control del worker.                                |
+| Telegram remoto       | Operativo                | Invitaciones, pendientes, clientes, cinco reglas y control del worker.                                     |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `501.24 kB`.                                                    |
@@ -179,8 +179,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ### Control remoto
 
-- Menú de Telegram con búsqueda, recientes, resumen y estado.
-- Alta guiada de clientes y edición de reglas, prioridad y credenciales.
+- Menú de Telegram con pendientes, clientes, invitaciones, búsqueda, resumen y
+  estado.
+- Alta mediante enlace privado y edición guiada de cinco restricciones y
+  prioridad; las credenciales dejaron de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
@@ -188,6 +190,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   CAPTCHA desde Telegram, junto con sus variables y scripts exclusivos. El menú
   dejó de mostrar recientes y credenciales, agrupó sistema con errores y la
   búsqueda ahora solicita el término como una conversación guiada.
+- Integrado el `2026-08-01`: Telegram crea invitaciones pidiendo solo nombre
+  opcional y WhatsApp, muestra los registros que requieren atención y abre la
+  configuración desde `Faltan restricciones`. El editor incluye rangos de fechas
+  excluidos y, al confirmar una orden aún no validada, ejecuta el preflight y
+  actualiza el estado alojado según su resultado.
 
 ### Evidencia y CAPTCHA
 

@@ -95,12 +95,14 @@ El proceso `appointment-bot-telegram-control` recibe comandos sin compartir
 memoria con el worker. En la primera version admite:
 
 - `/estado`;
+- `/pendientes`;
 - `/clientes [pagina]`;
 - `/cliente ORDER_ID`;
 - `/reglas ORDER_ID`;
 - `/ultimos_errores`;
 - `/prioridad ORDER_ID VALOR`;
 - `/reglas_editar ORDER_ID`;
+- `/invitacion`;
 - `/pausar`;
 - `/reanudar`;
 - `/reiniciar`;
@@ -135,34 +137,31 @@ Las consultas operativas separan indice y detalle deliberado:
 - `/cliente` trata al titular identificado por el portal como cliente y muestra
   por separado a la persona de contacto; incluye documento y WhatsApp
   completos, ademas de estado, prioridad, reserva y pago;
-- `/reglas` muestra fechas, hora minima y dias permitidos;
+- `/reglas` muestra fechas, hora minima, dias permitidos y rangos excluidos;
 - `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
   cinco incidentes saneados.
 
-El detalle completo se entrega solamente cuando el chat autorizado consulta un
-`ORDER_ID` especifico. `/credenciales ORDER_ID` muestra deliberadamente usuario
-y contrasena completos porque existe un unico operador autorizado; el mensaje
-advierte que Telegram conserva historial. Las credenciales no aparecen en
-`/clientes`, `/cliente`, logs ni auditoria. Tokens, cookies, datos de cifrado,
-leases y detalles crudos de runs nunca se muestran.
+Las credenciales no aparecen en el menu ni en los paneles de clientes. El
+comando historico `/credenciales ORDER_ID` se conserva temporalmente para
+compatibilidad, pero el flujo principal usa invitaciones privadas para que el
+cliente escriba el acceso. Tokens, cookies, datos de cifrado, leases y detalles
+crudos de runs nunca se muestran.
 
 El receptor registra acciones en `remote_control_audit` con actor hasheado,
 accion, objetivo, resultado y fecha, sin guardar el texto escrito ni datos
 sensibles. Aplica limites por chat y avisa `CONTROL REMOTO DISPONIBLE` despues
 de iniciar o recuperarse.
 
-`/menu` abre la interfaz principal con botones. Desde ella se puede navegar por
-clientes paginados, abrir un cliente sin copiar su `ORDER_ID`, consultar o
-eliminar el mensaje de credenciales, elegir prioridades comunes, editar reglas,
-controlar el worker y volver al menu. `/buscar TEXTO` admite titular, contacto,
-documento completo, WhatsApp completo u orden mediante una consulta
-administrativa protegida. `/recientes` y `/resumen` reducen las consultas
-repetitivas desde el celular.
+`/menu` abre la interfaz principal con botones. Prioriza registros pendientes,
+clientes, nueva invitacion, busqueda guiada, estado, resumen y sistema. Al pulsar
+`Buscar cliente`, el receptor espera el nombre, contacto, documento, WhatsApp u
+orden y devuelve botones; no es necesario recordar `/buscar TEXTO`.
 
-`/cliente_nuevo` concede 60 segundos para completar cada uno de sus seis pasos
-y 60 segundos para confirmar el resumen final. Si vence, todos los valores
-temporales se eliminan y no se crea ni persiste ningun cliente. Los botones de
-una alta anterior quedan invalidados por su identificador de sesion.
+`/invitacion` pide solamente un nombre opcional y el WhatsApp obligatorio. Tras
+confirmar, crea el enlace privado que recoge credenciales y declara si existen
+restricciones. Si vence, los valores temporales se eliminan sin guardar nada.
+`/pendientes` separa enlaces abiertos, validaciones, accesos incorrectos y
+registros que esperan restricciones.
 
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento
@@ -170,17 +169,21 @@ como si fuera un nombre. El contacto conserva su nombre independiente porque no
 necesariamente es el titular.
 
 `/prioridad` muestra el valor anterior y nuevo antes de guardar. El editor
-`/reglas_editar` pregunta en cuatro pasos:
+`/reglas_editar` pregunta en cinco pasos:
 
 1. fecha minima: `DD-MM-YYYY`, `igual` o `quitar`;
 2. fecha maxima: `DD-MM-YYYY`, `igual` o `quitar`;
 3. hora minima: `0` a `23`, `igual` o `quitar`;
-4. dias ISO: por ejemplo `1,3,6`, `igual` o `todos`.
+4. dias permitidos mediante botones o dias ISO, por ejemplo `1,3,6`;
+5. fechas excluidas como `10-08-2026 al 12-08-2026`, separando varios rangos
+   con `;`.
 
 La conversacion vence en cinco minutos por inactividad. Ningun paso modifica la
 orden; solo el boton final `Confirmar` envia el conjunto completo. Despues de
 guardar, el receptor vuelve a consultar la orden y solo anuncia exito si los
-valores persistidos coinciden.
+valores persistidos coinciden. Si la orden esperaba restricciones, programa el
+preflight, espera su resultado y actualiza el registro alojado a aceptado,
+credenciales incorrectas o reintento pendiente.
 
 Todas las fechas visibles o ingresadas por el operador usan `DD-MM-YYYY`. El
 receptor convierte internamente a ISO `YYYY-MM-DD` solamente al comunicarse con

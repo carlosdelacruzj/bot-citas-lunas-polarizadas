@@ -44,6 +44,7 @@ MUTATION_RATE_LIMIT = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 MUTATING_COMMANDS = {
     "cliente_nuevo",
+    "invitacion",
     "pausar",
     "prioridad",
     "reanudar",
@@ -60,13 +61,14 @@ ORDER_TARGET_COMMANDS = {
 HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
+/pendientes - Registros que requieren atencion
 /clientes [pagina] - Resumen paginado de la cola
 /cliente ORDER_ID - Detalle operativo enmascarado
 /reglas ORDER_ID - Restricciones de una orden
 /ultimos_errores - Incidentes operativos recientes
 /prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
 /reglas_editar ORDER_ID - Editar restricciones paso a paso
-/cliente_nuevo - Registrar un cliente paso a paso
+/invitacion - Crear un enlace privado para un cliente
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
@@ -193,9 +195,24 @@ class AdminApiClient:
             "GET", f"/api/v1/service-orders/{quote(order_id, safe='')}/credentials"
         )
 
-    def create_service_order(self, values: dict[str, Any], *, actor: str) -> dict[str, Any]:
+    def get_hosted_invitations(self) -> list[dict[str, Any]]:
+        payload = self._request("GET", "/api/v1/hosted-invitations")
+        invitations = payload.get("invitations", [])
+        if not isinstance(invitations, list):
+            raise TelegramControlError("Admin API returned an invalid invitation list.")
+        return [item for item in invitations if isinstance(item, dict)]
+
+    def create_hosted_invitation(
+        self,
+        values: dict[str, Any],
+        *,
+        actor: str,
+    ) -> dict[str, Any]:
         return self._request(
-            "POST", "/api/v1/service-orders", payload=values, actor=actor
+            "POST",
+            "/api/v1/hosted-invitations",
+            payload=values,
+            actor=actor,
         )
 
     def get_runs(self, *, limit: int = 50) -> list[dict[str, Any]]:
@@ -230,6 +247,14 @@ class AdminApiClient:
             "POST",
             f"/api/v1/service-orders/{quote(order_id, safe='')}/restrictions",
             payload=rules,
+            actor=actor,
+        )
+
+    def revalidate_service_order(self, order_id: str, *, actor: str) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/validate",
+            payload={},
             actor=actor,
         )
 
@@ -632,6 +657,9 @@ def _process_update(
     if command == "estado":
         _send_worker_panel(chat_id, telegram, admin_api)
         return
+    if command == "pendientes":
+        _send_pending_registrations(chat_id, telegram, admin_api)
+        return
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
         return
@@ -650,7 +678,7 @@ def _process_update(
     if command == "credenciales":
         _send_credentials(chat_id, arguments, telegram, admin_api)
         return
-    if command == "cliente_nuevo":
+    if command in {"cliente_nuevo", "invitacion"}:
         search_conversations.pop(chat_id, None)
         _cancel_chat_order_state(
             chat_id,
@@ -722,15 +750,18 @@ def _main_menu_markup() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [
-                {"text": "Estado", "callback_data": "ui:status:show"},
+                {"text": "Pendientes", "callback_data": "ui:pending:show"},
                 {"text": "Clientes", "callback_data": "ui:clients:1"},
             ],
             [
-                {"text": "Nuevo cliente", "callback_data": "ui:new:start"},
+                {"text": "Nueva invitacion", "callback_data": "ui:new:start"},
                 {"text": "Buscar cliente", "callback_data": "ui:search:start"},
             ],
             [
+                {"text": "Estado del bot", "callback_data": "ui:status:show"},
                 {"text": "Resumen de hoy", "callback_data": "ui:summary:show"},
+            ],
+            [
                 {"text": "Sistema y errores", "callback_data": "ui:worker:show"},
             ],
         ]
@@ -743,6 +774,83 @@ def _send_main_menu(chat_id: str, telegram: TelegramBotApi) -> None:
         "MENU PRINCIPAL\n\nElige una accion. No necesitas recordar comandos.",
         reply_markup=_main_menu_markup(),
     )
+
+
+def _send_pending_registrations(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        invitations = admin_api.get_hosted_invitations()
+    except TelegramControlError as exc:
+        logger.warning("Could not list pending registrations: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar los registros pendientes.")
+        return
+    pending_statuses = {
+        "local_pending",
+        "issued",
+        "opened",
+        "submitted",
+        "leased",
+        "awaiting_restrictions",
+        "credentials_invalid",
+        "retry_wait",
+    }
+    pending = [
+        invitation
+        for invitation in invitations
+        if str(invitation.get("status") or "") in pending_statuses
+    ]
+    lines = ["REGISTROS PENDIENTES", ""]
+    keyboard: list[list[dict[str, str]]] = []
+    for invitation in pending[:20]:
+        status = str(invitation.get("status") or "local_pending")
+        name = _display_text(invitation.get("display_name") or "Sin nombre", 40)
+        phone = _display_text(invitation.get("whatsapp_phone") or "Sin WhatsApp", 20)
+        lines.extend([f"{name} | {phone}", _hosted_status_label(status), ""])
+        order_id = str(invitation.get("order_id") or "")
+        if not _valid_order_id(order_id):
+            continue
+        action = {
+            "awaiting_restrictions": "editrules",
+            "retry_wait": "validate",
+        }.get(status, "show")
+        button_text = (
+            f"Configurar: {name}" if status == "awaiting_restrictions" else f"Ver: {name}"
+        )
+        if status == "retry_wait":
+            button_text = f"Reintentar: {name}"
+        keyboard.append([{
+            "text": _display_text(button_text, 45),
+            "callback_data": f"om:{order_id}:{action}",
+        }])
+    if not pending:
+        lines.append("No hay registros que requieran atencion.")
+    elif len(pending) > 20:
+        lines.append(f"Mostrando 20 de {len(pending)} pendientes.")
+    keyboard.append([
+        {"text": "Actualizar", "callback_data": "ui:pending:show"},
+        {"text": "Menu", "callback_data": "ui:menu:main"},
+    ])
+    telegram.send_message(
+        chat_id,
+        "\n".join(lines).strip(),
+        reply_markup={"inline_keyboard": keyboard},
+    )
+
+
+def _hosted_status_label(status: str) -> str:
+    return {
+        "local_pending": "Preparando invitacion",
+        "issued": "Enlace enviado; todavia no fue abierto",
+        "opened": "El cliente abrio el enlace",
+        "submitted": "Registro enviado",
+        "leased": "Validando datos",
+        "awaiting_restrictions": "Faltan coordinar restricciones",
+        "credentials_invalid": "Acceso incorrecto; requiere correccion",
+        "retry_wait": "Validacion pendiente de reintento",
+    }.get(status, status.replace("_", " "))
 
 
 def _send_clients(
@@ -787,7 +895,7 @@ def _send_clients(
             f"{order.get('order_id', 'sin-id')}\n"
             f"Titular: {applicant_name}\n"
             f"Contacto: {contact_name}\n"
-            f"Estado: {order.get('status') or 'desconocido'} | "
+            f"Estado: {_order_status_label(order.get('status'))} | "
             f"Prioridad: {order.get('priority', 0)}"
         )
     if not visible:
@@ -885,7 +993,6 @@ def _send_priority_menu(
         ("Normal", 10),
         ("Alta", 50),
         ("Urgente", 100),
-        ("Exclusivo", 200),
     ]
     telegram.send_message(
         chat_id,
@@ -899,13 +1006,6 @@ def _send_priority_menu(
                 [
                     {"text": label, "callback_data": f"pq:{order_id}:{value}"}
                     for label, value in presets[2:]
-                    if value < 200
-                ],
-                [
-                    {
-                        "text": "Exclusivo 200",
-                        "callback_data": f"pq:{order_id}:200",
-                    }
                 ],
                 [{"text": "Volver", "callback_data": f"om:{order_id}:show"}],
             ]
@@ -964,24 +1064,30 @@ def _send_order_panel(
     if order_id in history:
         history.remove(order_id)
     history.appendleft(order_id)
+    keyboard = [
+        [
+            {"text": "Reglas", "callback_data": f"om:{order_id}:rules"},
+            {"text": "Prioridad", "callback_data": f"om:{order_id}:priority"},
+        ],
+    ]
+    if str(order.get("preflight_status") or "") == "failed":
+        keyboard.append([{
+            "text": "Reintentar validacion",
+            "callback_data": f"om:{order_id}:validate",
+        }])
+    keyboard.extend(
+        [
+            [{"text": "Actualizar", "callback_data": f"om:{order_id}:show"}],
+            [
+                {"text": "Clientes", "callback_data": "ui:clients:1"},
+                {"text": "Menu", "callback_data": "ui:menu:main"},
+            ],
+        ]
+    )
     telegram.send_message(
         chat_id,
         format_order_detail(order),
-        reply_markup={
-            "inline_keyboard": [
-                [
-                    {"text": "Reglas", "callback_data": f"om:{order_id}:rules"},
-                    {"text": "Prioridad", "callback_data": f"om:{order_id}:priority"},
-                ],
-                [
-                    {"text": "Actualizar", "callback_data": f"om:{order_id}:show"},
-                ],
-                [
-                    {"text": "Clientes", "callback_data": "ui:clients:1"},
-                    {"text": "Menu", "callback_data": "ui:menu:main"},
-                ],
-            ]
-        },
+        reply_markup={"inline_keyboard": keyboard},
     )
 
 
@@ -1148,7 +1254,7 @@ def _start_new_client_conversation(
     confirmation_lock: Lock,
 ) -> None:
     if arguments:
-        telegram.send_message(chat_id, "Uso: /cliente_nuevo")
+        telegram.send_message(chat_id, "Uso: /invitacion")
         return
     with confirmation_lock:
         _cancel_pending_client_creation_unlocked(chat_id, pending_creations)
@@ -1161,7 +1267,8 @@ def _start_new_client_conversation(
         )
     telegram.send_message(
         chat_id,
-        "ALTA DE CLIENTE\n\nPaso 1 de 6: elige el tipo de documento.\n"
+        "NUEVA INVITACION\n\nPaso 1 de 2: escribe un nombre de referencia.\n"
+        "Puedes omitirlo y el cliente completara sus credenciales en el enlace privado.\n"
         "Tienes 60 segundos por paso. Puedes cancelar con /cancelar.",
         reply_markup=_new_client_prompt_markup(0, conversations[chat_id].session_id),
     )
@@ -1182,7 +1289,7 @@ def _process_new_client_message(
     if conversation.expires_at <= time.monotonic():
         with confirmation_lock:
             conversations.pop(chat_id, None)
-        telegram.send_message(chat_id, "El alta vencio. Inicia nuevamente con /cliente_nuevo.")
+        telegram.send_message(chat_id, "La invitacion vencio. Inicia nuevamente con /invitacion.")
         return True
     return _continue_new_client_conversation(
         conversation,
@@ -1234,7 +1341,7 @@ def _continue_new_client_conversation(
         _format_new_client_confirmation(creation.values),
         reply_markup={
             "inline_keyboard": [[
-                {"text": "Crear cliente", "callback_data": f"nc:{creation.operation_id}:yes"},
+                {"text": "Crear invitacion", "callback_data": f"nc:{creation.operation_id}:yes"},
                 {"text": "Cancelar", "callback_data": f"nc:{creation.operation_id}:no"},
             ]]
         },
@@ -1244,26 +1351,13 @@ def _continue_new_client_conversation(
 
 def _new_client_prompt_markup(step: int, session_id: str) -> dict[str, Any] | None:
     if step == 0:
-        keyboard = [[
-            {"text": "DNI", "callback_data": f"nf:{session_id}:type_dni"},
-            {"text": "CE", "callback_data": f"nf:{session_id}:type_ce"},
-        ]]
-    elif step == 4:
-        keyboard = [
-            [
-                {"text": "TikTok", "callback_data": f"nf:{session_id}:source_tiktok"},
-                {"text": "Facebook", "callback_data": f"nf:{session_id}:source_facebook"},
-            ],
-            [{"text": "WhatsApp", "callback_data": f"nf:{session_id}:source_whatsapp"}],
-        ]
-    elif step == 5:
         keyboard = [[{
-            "text": "Omitir WhatsApp",
-            "callback_data": f"nf:{session_id}:phone_omit",
+            "text": "Omitir nombre",
+            "callback_data": f"nf:{session_id}:name_omit",
         }]]
     else:
-        return None
-    keyboard.append([{"text": "Cancelar alta", "callback_data": "ui:cancel:guided"}])
+        keyboard = []
+    keyboard.append([{"text": "Cancelar", "callback_data": "ui:cancel:guided"}])
     return {"inline_keyboard": keyboard}
 
 
@@ -1271,60 +1365,29 @@ def _apply_new_client_value(
     conversation: NewClientConversation, value: str
 ) -> str | None:
     if conversation.step == 0:
-        normalized = value.lower().replace(" ", "_")
-        aliases = {
-            "dni": "dni",
-            "ce": "foreign_resident_card",
-            "carnet_extranjeria": "foreign_resident_card",
-        }
-        if normalized not in aliases:
-            raise ValueError("Tipo invalido. Escribe DNI o CE.")
-        conversation.values["document_type"] = aliases[normalized]
-        prompt = "Paso 2 de 6: escribe el numero de documento completo."
-    elif conversation.step == 1:
-        if not re.fullmatch(r"[A-Za-z0-9]{6,20}", value):
-            raise ValueError("Documento invalido. Usa entre 6 y 20 letras o numeros.")
-        conversation.values["document_number"] = value
-        prompt = "Paso 3 de 6: escribe la contrasena del portal."
-    elif conversation.step == 2:
-        if not value:
-            raise ValueError("La contrasena no puede estar vacia.")
-        conversation.values["password"] = value
-        prompt = "Paso 4 de 6: escribe el nombre de la persona que te contacto."
-    elif conversation.step == 3:
-        if not value:
-            raise ValueError("El nombre de contacto no puede estar vacio.")
-        conversation.values["contact_name"] = value
-        prompt = "Paso 5 de 6: escribe la fuente: TikTok, Facebook o WhatsApp."
-    elif conversation.step == 4:
-        source = value.lower()
-        if source not in {"tiktok", "facebook", "whatsapp"}:
-            raise ValueError("Fuente invalida. Escribe TikTok, Facebook o WhatsApp.")
-        conversation.values["contact_source"] = source
-        prompt = "Paso 6 de 6: escribe el WhatsApp completo o escribe OMITIR."
+        if value.lower() not in {"omitir", "sin nombre"}:
+            name = " ".join(value.split())
+            if not 2 <= len(name) <= 100:
+                raise ValueError("El nombre debe tener entre 2 y 100 caracteres.")
+            conversation.values["display_name"] = name
+        prompt = "Paso 2 de 2: escribe el WhatsApp completo."
     else:
-        if value.lower() != "omitir":
-            phone = re.sub(r"[\s()+-]", "", value)
-            if not re.fullmatch(r"\d{7,15}", phone):
-                raise ValueError("WhatsApp invalido. Escribe solo un numero valido u OMITIR.")
-            conversation.values["contact_whatsapp"] = phone
+        phone = re.sub(r"[\s()+-]", "", value)
+        if not re.fullmatch(r"(?:51)?9\d{8}", phone):
+            raise ValueError("WhatsApp invalido. Usa un celular peruano de 9 digitos.")
+        conversation.values["whatsapp_phone"] = phone
         prompt = None
     conversation.step += 1
     return prompt
 
 
 def _format_new_client_confirmation(values: dict[str, Any]) -> str:
-    document_type = "DNI" if values.get("document_type") == "dni" else "CE"
     return (
-        "CONFIRMAR ALTA\n\n"
-        f"Tipo: {document_type}\n"
-        f"Usuario / documento: {values.get('document_number')}\n"
-        f"Contrasena: {values.get('password')}\n"
-        f"Contacto: {values.get('contact_name')}\n"
-        f"Fuente: {values.get('contact_source')}\n"
-        f"WhatsApp: {values.get('contact_whatsapp') or 'no registrado'}\n\n"
-        "Los datos sensibles se muestran completos por decision del unico operador. "
-        "La confirmacion vence en 60 segundos."
+        "CONFIRMAR INVITACION\n\n"
+        f"Nombre: {values.get('display_name') or 'sin nombre'}\n"
+        f"WhatsApp: {values.get('whatsapp_phone')}\n\n"
+        "El cliente escribira sus credenciales y declarara sus restricciones "
+        "en el enlace privado. La confirmacion vence en 60 segundos."
     )
 
 
@@ -1382,8 +1445,8 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"WhatsApp: {order.get('contact_whatsapp') or 'no registrado'}",
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
         "",
-        f"Estado: {order.get('status') or 'desconocido'}",
-        f"Preflight: {order.get('preflight_status') or 'desconocido'}",
+        f"Estado: {_order_status_label(order.get('status'))}",
+        f"Validacion: {_preflight_status_label(order.get('preflight_status'))}",
         f"Prioridad: {order.get('priority', 0)}",
         f"Reserva: {order.get('reservation_status') or 'sin reserva'}",
         f"Pago: {order.get('payment_status') or 'sin pago'}",
@@ -1414,6 +1477,8 @@ def format_order_rules(order: dict[str, Any]) -> str:
             + _format_operator_date(order.get("maximum_reservation_date")),
             f"Hora minima: {_format_minimum_hour(order.get('minimum_reservation_hour'))}",
             f"Dias permitidos: {weekday_text}",
+            "Fechas excluidas: "
+            + _format_excluded_date_ranges(order.get("excluded_date_ranges")),
         ]
     )
 
@@ -1431,6 +1496,31 @@ def _order_status_counts(orders: list[dict[str, Any]]) -> dict[str, int]:
         else:
             counts["active"] += 1
     return counts
+
+
+def _order_status_label(value: Any) -> str:
+    status = str(value or "")
+    return {
+        "ready": "Buscando cupo",
+        "validation_pending": "Validando acceso",
+        "paused": "Pausado",
+        "reserved_payment_pending": "Reservado; pago pendiente",
+        "paid": "Pagado",
+        "completed": "Completado",
+        "archived": "Archivado",
+        "no_charge": "Cerrado sin cobro",
+    }.get(status, status.replace("_", " ") or "Desconocido")
+
+
+def _preflight_status_label(value: Any) -> str:
+    status = str(value or "")
+    return {
+        "not_required": "No requerida",
+        "pending": "Pendiente",
+        "running": "En curso",
+        "validated": "Acceso correcto",
+        "failed": "Requiere revision",
+    }.get(status, status.replace("_", " ") or "Desconocida")
 
 
 def _is_failed_run(run: dict[str, Any]) -> bool:
@@ -1462,6 +1552,11 @@ def _short_text(value: Any, limit: int) -> str:
 def _display_text(value: Any, limit: int) -> str:
     text = " ".join(str(value).split())
     return text if len(text) <= limit else f"{text[: limit - 1]}…"
+
+
+def _phone_digits(value: Any) -> str:
+    digits = "".join(character for character in str(value or "") if character.isdigit())
+    return digits[-9:] if len(digits) >= 9 else digits
 
 
 def _applicant_display_name(order: dict[str, Any]) -> str:
@@ -1647,7 +1742,7 @@ def _continue_rules_conversation(
     conversation.updated[field] = value
     conversation.step += 1
     conversation.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
-    if conversation.step < 4:
+    if conversation.step < 5:
         telegram.send_message(
             chat_id,
             _rules_step_prompt(conversation.step),
@@ -1694,12 +1789,13 @@ def _parse_rules_step(
         "maximum_reservation_date",
         "minimum_reservation_hour",
         "allowed_weekdays",
+        "excluded_date_ranges",
     )
     field = fields[step]
     if value in {"igual", "mantener"}:
         return field, current.get(field)
     if value in {"quitar", "ninguno", "todos"}:
-        return field, None
+        return field, [] if field == "excluded_date_ranges" else None
     if step in {0, 1}:
         try:
             parsed = datetime.strptime(value, "%d-%m-%Y").date()
@@ -1714,6 +1810,31 @@ def _parse_rules_step(
         if hour < 0 or hour > 23:
             raise ValueError("La hora debe estar entre 0 y 23.")
         return field, hour
+    if step == 4:
+        ranges = []
+        for item in value.split(";"):
+            item = item.strip()
+            match = re.fullmatch(
+                r"(\d{2}-\d{2}-\d{4})(?:\s+(?:a|al|hasta)\s+"
+                r"(\d{2}-\d{2}-\d{4}))?",
+                item,
+            )
+            if match is None:
+                raise ValueError(
+                    "Usa DD-MM-YYYY o DD-MM-YYYY al DD-MM-YYYY; separa varios con ;"
+                )
+            try:
+                start = datetime.strptime(match.group(1), "%d-%m-%Y").date()
+                end = datetime.strptime(
+                    match.group(2) or match.group(1),
+                    "%d-%m-%Y",
+                ).date()
+            except ValueError as exc:
+                raise ValueError("Una de las fechas excluidas no es valida.") from exc
+            if end < start:
+                raise ValueError("Una fecha excluida no puede terminar antes de comenzar.")
+            ranges.append({"start_date": start.isoformat(), "end_date": end.isoformat()})
+        return field, ranges
     try:
         weekdays = sorted({int(item.strip()) for item in value.split(",") if item.strip()})
     except ValueError as exc:
@@ -1725,10 +1846,12 @@ def _parse_rules_step(
 
 def _rules_step_prompt(step: int) -> str:
     return (
-        "Paso 1/4 - Fecha minima. Responde DD-MM-YYYY, igual o quitar.",
-        "Paso 2/4 - Fecha maxima. Responde DD-MM-YYYY, igual o quitar.",
-        "Paso 3/4 - Hora minima. Responde 0 a 23, igual o quitar.",
-        "Paso 4/4 - Dias permitidos. Responde 1,2,...7; igual o todos.",
+        "Paso 1/5 - Fecha minima. Responde DD-MM-YYYY, mantener o sin limite.",
+        "Paso 2/5 - Fecha maxima. Responde DD-MM-YYYY, mantener o sin limite.",
+        "Paso 3/5 - Hora minima. Responde 0 a 23, mantener o sin limite.",
+        "Paso 4/5 - Dias permitidos. Usa los botones o responde 1,2,...7.",
+        "Paso 5/5 - Fechas excluidas. Usa DD-MM-YYYY al DD-MM-YYYY; "
+        "separa varios rangos con ; o elige Sin exclusiones.",
     )[step]
 
 
@@ -1746,21 +1869,31 @@ def _rules_prompt_markup(step: int) -> dict[str, Any]:
                 {"text": "10:00", "callback_data": "rf:hour:10"},
             ],
             [
+                {"text": "11:00", "callback_data": "rf:hour:11"},
+                {"text": "12:00", "callback_data": "rf:hour:12"},
+            ],
+            [
                 {"text": "Mantener", "callback_data": "rf:value:keep"},
                 {"text": "Sin limite", "callback_data": "rf:value:clear"},
             ],
         ]
-    else:
+    elif step == 3:
         rows = [
             [
+                {"text": "Lun-Vie", "callback_data": "rf:days:mon_fri"},
                 {"text": "Lun-Sab", "callback_data": "rf:days:mon_sat"},
-                {"text": "Solo sabado", "callback_data": "rf:days:sat"},
             ],
+            [{"text": "Solo sabado", "callback_data": "rf:days:sat"}],
             [
                 {"text": "Todos", "callback_data": "rf:value:clear"},
                 {"text": "Mantener", "callback_data": "rf:value:keep"},
             ],
         ]
+    else:
+        rows = [[
+            {"text": "Sin exclusiones", "callback_data": "rf:value:clear"},
+            {"text": "Mantener", "callback_data": "rf:value:keep"},
+        ]]
     rows.append([{"text": "Cancelar", "callback_data": "ui:cancel:guided"}])
     return {"inline_keyboard": rows}
 
@@ -1779,6 +1912,7 @@ def _rules_payload(order: dict[str, Any]) -> dict[str, Any]:
         "maximum_reservation_date": order.get("maximum_reservation_date"),
         "minimum_reservation_hour": order.get("minimum_reservation_hour"),
         "allowed_weekdays": list(weekdays) if isinstance(weekdays, list) else None,
+        "excluded_date_ranges": list(order.get("excluded_date_ranges") or []),
     }
 
 
@@ -1835,6 +1969,8 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
             "Hora minima: "
             + _change_value(change.original, change.updated, "minimum_reservation_hour"),
             f"Dias: {_change_value(change.original, change.updated, 'allowed_weekdays')}",
+            "Fechas excluidas: "
+            + _change_value(change.original, change.updated, "excluded_date_ranges"),
         ]
     )
 
@@ -1844,6 +1980,12 @@ def _change_value(original: dict[str, Any], updated: dict[str, Any], field: str)
     new = updated.get(field)
     if field in {"minimum_reservation_date", "maximum_reservation_date"}:
         return f"{_format_operator_date(old)} -> {_format_operator_date(new)}"
+    if field == "excluded_date_ranges":
+        return f"{_format_excluded_date_ranges(old)} -> {_format_excluded_date_ranges(new)}"
+    if field == "allowed_weekdays":
+        old_days = ", ".join(_weekday_name(day) for day in (old or [])) or "todos"
+        new_days = ", ".join(_weekday_name(day) for day in (new or [])) or "todos"
+        return f"{old_days} -> {new_days}"
     old_text = old if old is not None else "sin limite"
     new_text = new if new is not None else "sin limite"
     return f"{old_text} -> {new_text}"
@@ -1857,6 +1999,19 @@ def _format_operator_date(value: Any) -> str:
     except ValueError:
         return "fecha invalida"
     return parsed.strftime("%d-%m-%Y")
+
+
+def _format_excluded_date_ranges(value: Any) -> str:
+    if not isinstance(value, list) or not value:
+        return "ninguna"
+    labels = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        start = _format_operator_date(item.get("start_date"))
+        end = _format_operator_date(item.get("end_date"))
+        labels.append(start if start == end else f"{start} al {end}")
+    return "; ".join(labels) if labels else "ninguna"
 
 
 def _request_worker_confirmation(
@@ -1921,6 +2076,8 @@ def _process_interface_callback(
     if prefix == "ui":
         if subject == "menu":
             _send_main_menu(chat_id, telegram)
+        elif subject == "pending":
+            _send_pending_registrations(chat_id, telegram, admin_api)
         elif subject == "status":
             _send_worker_panel(chat_id, telegram, admin_api)
         elif subject == "clients":
@@ -1987,7 +2144,7 @@ def _process_interface_callback(
                 removed = search_conversations.pop(chat_id, None) is not None or removed
             telegram.send_message(
                 chat_id,
-                "Alta cancelada." if removed else "No habia un alta activa.",
+                "Operacion cancelada." if removed else "No habia una operacion activa.",
                 reply_markup=_main_menu_markup(),
             )
         else:
@@ -2005,6 +2162,33 @@ def _process_interface_callback(
             _send_order_query(chat_id, "reglas", order_id, telegram, admin_api)
         elif action == "priority":
             _send_priority_menu(chat_id, order_id, telegram, admin_api)
+        elif action == "validate":
+            try:
+                admin_api.revalidate_service_order(
+                    order_id,
+                    actor=_telegram_actor(chat_id),
+                )
+            except TelegramControlError as exc:
+                logger.warning("Could not revalidate order from Telegram: %s", exc)
+                telegram.send_message(chat_id, "No pude iniciar la validacion.")
+            else:
+                _record_audit_safe(
+                    actor=_telegram_actor(chat_id),
+                    action="order_revalidate",
+                    status="accepted",
+                    target_type="service_order",
+                    target_id=order_id,
+                )
+                telegram.send_message(
+                    chat_id,
+                    "Validacion iniciada. Consulta Pendientes en unos segundos.",
+                    reply_markup={
+                        "inline_keyboard": [[
+                            {"text": "Pendientes", "callback_data": "ui:pending:show"},
+                            {"text": "Menu", "callback_data": "ui:menu:main"},
+                        ]]
+                    },
+                )
         elif action == "editrules":
             search_conversations.pop(chat_id, None)
             _cancel_chat_client_state(
@@ -2058,6 +2242,9 @@ def _process_interface_callback(
             ("hour", "8"): "8",
             ("hour", "9"): "9",
             ("hour", "10"): "10",
+            ("hour", "11"): "11",
+            ("hour", "12"): "12",
+            ("days", "mon_fri"): "1,2,3,4,5",
             ("days", "mon_sat"): "1,2,3,4,5,6",
             ("days", "sat"): "6",
         }
@@ -2084,27 +2271,20 @@ def _process_interface_callback(
         )
         telegram.send_message(
             chat_id,
-            "Ese boton de alta ya vencio. Usa /cliente_nuevo para comenzar nuevamente.",
+            "Ese boton ya vencio. Usa /invitacion para comenzar nuevamente.",
             reply_markup=_main_menu_markup(),
         )
         return True
     if conversation.session_id != subject:
         telegram.send_message(
             chat_id,
-            "Ese boton pertenece a otra alta y ya no es valido.",
+            "Ese boton pertenece a otra invitacion y ya no es valido.",
         )
         return True
-    values = {
-        "type_dni": "DNI",
-        "type_ce": "CE",
-        "source_tiktok": "TikTok",
-        "source_facebook": "Facebook",
-        "source_whatsapp": "WhatsApp",
-        "phone_omit": "OMITIR",
-    }
+    values = {"name_omit": "OMITIR"}
     value = values.get(action)
     if value is None:
-        telegram.send_message(chat_id, "Opcion de alta no reconocida.")
+        telegram.send_message(chat_id, "Opcion de invitacion no reconocida.")
         return True
     _continue_new_client_conversation(
         conversation,
@@ -2188,15 +2368,15 @@ def _process_callback_query(
             return
         if parts[2] == "no":
             _record_audit_safe(
-                actor=_telegram_actor(chat_id), action="client_create",
+                actor=_telegram_actor(chat_id), action="invitation_create",
                 status="cancelled", operation_id=operation_id,
             )
             telegram.answer_callback_query(callback_id, "Operacion cancelada.")
-            telegram.send_message(chat_id, "Alta cancelada. No se creo ningun cliente.")
+            telegram.send_message(chat_id, "Invitacion cancelada. No se guardo nada.")
             return
-        telegram.answer_callback_query(callback_id, "Alta confirmada.")
+        telegram.answer_callback_query(callback_id, "Invitacion confirmada.")
         _record_audit_safe(
-            actor=_telegram_actor(chat_id), action="client_create",
+            actor=_telegram_actor(chat_id), action="invitation_create",
             status="accepted", operation_id=operation_id,
         )
         executor.submit(_execute_client_creation, creation, telegram, admin_api)
@@ -2277,16 +2457,34 @@ def _execute_order_change(
         verified = admin_api.get_service_order(change.order_id)
         if not _order_change_matches(change, verified):
             raise TelegramControlError("Saved order values do not match the requested change.")
+        validation_text = ""
+        if change.action == "rules" and str(verified.get("preflight_status") or "") != "validated":
+            telegram.send_message(
+                change.chat_id,
+                "Restricciones guardadas. Validando ahora el acceso del cliente...",
+            )
+            admin_api.revalidate_service_order(change.order_id, actor=actor)
+            verified = _wait_for_order_preflight(admin_api, change.order_id)
+            preflight = str(verified.get("preflight_status") or "pendiente")
+            if preflight == "validated":
+                validation_text = "\nAcceso validado y orden activada."
+            else:
+                detail = verified.get("preflight_message") or "revisa Pendientes"
+                validation_text = f"\nValidacion: {preflight}. Detalle: {detail}"
         telegram.send_message(
             change.chat_id,
             "Cambio aplicado y verificado.\n"
             f"Solicitud: {operation_short}\n"
-            f"Orden: {change.order_id}",
+            f"Orden: {change.order_id}"
+            f"{validation_text}",
             reply_markup={
-                "inline_keyboard": [[
-                    {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
-                    {"text": "Menu", "callback_data": "ui:menu:main"},
-                ]]
+                "inline_keyboard": [
+                    [{"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"}],
+                    [
+                        {"text": "Pendientes", "callback_data": "ui:pending:show"},
+                        {"text": "Menu", "callback_data": "ui:menu:main"},
+                    ],
+                ]
             },
         )
         logger.info(
@@ -2329,56 +2527,80 @@ def _execute_client_creation(
 ) -> None:
     actor = _telegram_actor(creation.chat_id)
     try:
-        created = admin_api.create_service_order(creation.values, actor=actor)
-        order_id = str(created.get("order_id") or "")
-        if not order_id:
-            raise TelegramControlError("Admin API did not return an order_id.")
-        telegram.send_message(
-            creation.chat_id,
-            "Cliente creado una sola vez. Validando credenciales en el portal...\n"
-            f"Orden: {order_id}\nEstado inicial: {created.get('status') or 'validation_pending'}",
+        requested_phone = _phone_digits(creation.values.get("whatsapp_phone"))
+        duplicate = next(
+            (
+                invitation
+                for invitation in admin_api.get_hosted_invitations()
+                if _phone_digits(invitation.get("whatsapp_phone")) == requested_phone
+            ),
+            None,
         )
-        validated = _wait_for_order_preflight(admin_api, order_id)
+        if duplicate is not None:
+            telegram.send_message(
+                creation.chat_id,
+                "Ese WhatsApp ya tiene un registro local. No cree otra invitacion.\n"
+                f"Estado: {_hosted_status_label(str(duplicate.get('status') or ''))}",
+                reply_markup={
+                    "inline_keyboard": [[
+                        {"text": "Ver pendientes", "callback_data": "ui:pending:show"},
+                        {"text": "Menu", "callback_data": "ui:menu:main"},
+                    ]]
+                },
+            )
+            _record_audit_safe(
+                actor=actor,
+                action="invitation_create",
+                status="rejected",
+                operation_id=creation.operation_id,
+                detail="Existing local WhatsApp contact.",
+            )
+            return
+        created = admin_api.create_hosted_invitation(creation.values, actor=actor)
+        invitation_url = str(created.get("url") or "")
+        if not invitation_url:
+            raise TelegramControlError("Admin API did not return an invitation URL.")
         telegram.send_message(
             creation.chat_id,
-            "RESULTADO DEL ALTA\n\n"
-            f"Orden: {order_id}\n"
-            f"Estado: {validated.get('status') or 'desconocido'}\n"
-            f"Preflight: {validated.get('preflight_status') or 'pendiente'}\n"
-            f"Detalle: {validated.get('preflight_message') or 'sin detalle'}",
+            "INVITACION CREADA\n\n"
+            f"Nombre: {created.get('display_name') or 'sin nombre'}\n"
+            "WhatsApp: "
+            f"{created.get('whatsapp_phone') or creation.values.get('whatsapp_phone')}\n\n"
+            "Envia este enlace privado al cliente:\n"
+            f"{invitation_url}\n\n"
+            "El cliente completara sus credenciales e indicara si tiene restricciones.",
             reply_markup={
                 "inline_keyboard": [[
-                    {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"},
+                    {"text": "Ver pendientes", "callback_data": "ui:pending:show"},
                     {"text": "Menu", "callback_data": "ui:menu:main"},
                 ]]
             },
         )
-        logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
+        contact_ref = str(created.get("contact_ref") or "")
+        logger.info("Created hosted invitation from Telegram actor=%s", actor)
         _record_audit_safe(
             actor=actor,
-            action="client_create",
+            action="invitation_create",
             status="applied",
-            target_type="service_order",
-            target_id=order_id,
+            target_type="hosted_registration",
+            target_id=contact_ref or None,
             operation_id=creation.operation_id,
-            detail=f"preflight={validated.get('preflight_status') or 'pending'}",
         )
     except TelegramControlError as exc:
-        logger.warning("Telegram client creation failed: %s", exc)
+        logger.warning("Telegram invitation creation failed: %s", exc)
         telegram.send_message(
             creation.chat_id,
-            "No pude completar el alta. No vuelvas a confirmar el mismo boton; "
-            "consulta /clientes antes de intentar nuevamente.",
+            "No pude crear la invitacion. Revisa Pendientes antes de volver a intentarlo.",
         )
         _record_audit_safe(
             actor=actor,
-            action="client_create",
+            action="invitation_create",
             status="failed",
             operation_id=creation.operation_id,
-            detail="Admin API creation could not be confirmed.",
+            detail="Admin API invitation creation could not be confirmed.",
         )
     except Exception:
-        logger.exception("Unexpected Telegram client creation failure")
+        logger.exception("Unexpected Telegram invitation creation failure")
 
 
 def _wait_for_order_preflight(
@@ -2727,13 +2949,13 @@ def _remove_expired_client_state(
     for chat_id in expired_chats:
         telegram.send_message(
             chat_id,
-            "El alta vencio por inactividad. No se creo ni guardo ningun cliente.",
+            "La invitacion vencio por inactividad. No se creo ni guardo nada.",
             reply_markup=_main_menu_markup(),
         )
     for chat_id in expired_confirmation_chats:
         telegram.send_message(
             chat_id,
-            "La confirmacion del alta vencio. No se creo ni guardo ningun cliente.",
+            "La confirmacion vencio. No se creo ni guardo ninguna invitacion.",
             reply_markup=_main_menu_markup(),
         )
 

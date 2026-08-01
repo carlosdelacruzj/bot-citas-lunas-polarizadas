@@ -7,6 +7,7 @@ from pathlib import Path
 
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.db.hosted_registrations import update_registration_after_preflight
 from appointment_bot.db.orders import (
     get_service_order_runtime,
     list_service_order_summaries,
@@ -112,6 +113,11 @@ def validate_order_preflight(
                 details=details,
                 settings=settings,
             )
+            _sync_hosted_preflight_state(
+                order_id,
+                state="accepted",
+                settings=settings,
+            )
             logger.info(
                 "Order preflight validated: order=%s programs=%s pending=%s",
                 order_id,
@@ -178,8 +184,32 @@ def _fail_preflight(
         details=details,
         settings=settings,
     )
+    _sync_hosted_preflight_state(
+        order_id,
+        state="credentials_invalid" if error_type == "invalid_credentials" else "retry_wait",
+        error_category=error_type,
+        settings=settings,
+    )
     logger.warning("Order preflight failed: order=%s error=%s", order_id, safe_message)
     return {"status": "failed", "message": safe_message, **details}
+
+
+def _sync_hosted_preflight_state(
+    order_id: str,
+    *,
+    state: str,
+    settings: Settings,
+    error_category: str | None = None,
+) -> None:
+    try:
+        update_registration_after_preflight(
+            order_id,
+            state=state,
+            error_category=error_category,
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("Could not synchronize hosted registration for %s", order_id)
 
 
 def _save_failure_screenshot(page, order_id: str, screenshots_dir: Path) -> None:

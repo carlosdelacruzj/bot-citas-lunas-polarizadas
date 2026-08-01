@@ -192,6 +192,33 @@ def get_registration_contact(
     return dict(row) if row else None
 
 
+def update_registration_after_preflight(
+    order_id: str,
+    *,
+    state: str,
+    error_category: str | None = None,
+    settings: Settings | None = None,
+) -> bool:
+    if state not in {"accepted", "credentials_invalid", "retry_wait"}:
+        raise ValueError(f"Unsupported hosted registration state: {state}")
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE hosted_registration_contacts
+            SET state = %s,
+                last_error_category = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_id = %s
+              AND state IN ('awaiting_restrictions', 'retry_wait', 'credentials_invalid')
+            RETURNING contact_ref
+            """,
+            (state, error_category, order_id),
+        ).fetchone()
+    return row is not None
+
+
 def _update_contact(
     contact_ref: str,
     *,

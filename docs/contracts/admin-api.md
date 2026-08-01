@@ -196,6 +196,12 @@ La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.
 
+Cuando una orden proviene de un registro alojado que espera restricciones,
+`POST /api/v1/service-orders/{order_id}/validate` programa el preflight. Su
+resultado actualiza también el contacto alojado vinculado: `accepted` si valida,
+`credentials_invalid` si el portal rechaza el acceso o `retry_wait` ante una
+falla recuperable. Así el operador no necesita cerrar el pendiente manualmente.
+
 Snapshots, filtros, tablas y copiado general deben trabajar exclusivamente con
 el DTO enmascarado del listado.
 

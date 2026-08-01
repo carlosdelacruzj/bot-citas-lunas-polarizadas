@@ -2,6 +2,13 @@
 
 Estado general: Fase 4 completada y validada en operacion real.
 
+Revisión vigente `2026-08-01`: la interfaz dejó de usar Telegram para etiquetar
+CAPTCHA o recibir contraseñas durante el alta. El flujo principal crea una
+invitación con nombre opcional y WhatsApp, muestra registros pendientes y cubre
+las cinco restricciones. Para registros `awaiting_restrictions`, la confirmación
+guarda reglas, ejecuta preflight y actualiza el estado alojado. Las secciones de
+fases anteriores se conservan como historial y no describen la interfaz vigente.
+
 Ultima actualizacion: `2026-07-18`.
 
 Este es el documento principal para implementar, probar y registrar el control
@@ -107,7 +114,8 @@ Comandos previstos:
 | `/prioridad ORDEN VALOR` | Actualizar prioridad | Si | Si |
 | `/reglas ORDEN` | Consultar restricciones | No | No |
 | `/reglas_editar ORDEN` | Flujo guiado para restricciones | Si | Si |
-| `/cliente_nuevo` | Flujo guiado para crear una orden | Si | Si |
+| `/pendientes` | Registros que requieren atención | No | No |
+| `/invitacion` | Crear un enlace privado con nombre y WhatsApp | Si | Si |
 | `/cancelar` | Cancelar el flujo conversacional actual | No | No |
 | `/ultimos_errores` | Resumen saneado de incidentes recientes | No | No |
 
@@ -144,9 +152,10 @@ Criterio de cierre:
 | `/reanudar` | `POST /api/v1/worker/resume` | HTTP `202`, `status=queued`, `command_id` | Igual que pausa y confirmar `paused=false` |
 | `/reiniciar` | `POST /api/v1/worker/restart` | HTTP `202`, `status=queued`, `command_id` | Confirmar `applied`, salida controlada y actividad posterior del worker |
 | `/prioridad ORDEN VALOR` | `POST /api/v1/service-orders/{order_id}/priority` con `{"priority": N}` | HTTP `200`, prioridad y orden actualizadas | Volver a consultar el detalle de la orden |
-| `/reglas ORDEN` | `GET /api/v1/service-orders/{order_id}` | Restricciones actuales | Extraer solo los cuatro campos de restricciones |
-| `/reglas_editar ORDEN` | `POST /api/v1/service-orders/{order_id}/restrictions` | HTTP `200` y restricciones normalizadas | Volver a consultar el detalle de la orden |
-| `/cliente_nuevo` | `POST /api/v1/service-orders` | HTTP `201`, `status=validation_pending`, `order_id` | Consultar la orden hasta que preflight quede validado o fallido |
+| `/reglas ORDEN` | `GET /api/v1/service-orders/{order_id}` | Cinco restricciones actuales | Mostrar límites, días y rangos excluidos |
+| `/reglas_editar ORDEN` | `POST /api/v1/service-orders/{order_id}/restrictions` | HTTP `200` y restricciones normalizadas | Verificar valores; si falta preflight, programarlo y esperar resultado |
+| `/pendientes` | `GET /api/v1/hosted-invitations` | Estados sanitizados y órdenes vinculadas | Abrir cliente o editor de restricciones mediante botones |
+| `/invitacion` | `POST /api/v1/hosted-invitations` | HTTP `201`, URL privada y referencia local | Confirmar una sola creación y devolver el enlace sin credenciales |
 | `/ultimos_errores` | `GET /api/v1/runs?limit=N` y estado publico del worker | Resumen corto y saneado | No solicitar `include_details=1` ni enviar evidencia cruda |
 
 Todos los endpoints bajo `/api/v1/` requieren
