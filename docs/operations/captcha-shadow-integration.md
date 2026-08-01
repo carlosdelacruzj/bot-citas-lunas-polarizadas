@@ -206,6 +206,44 @@ El registro del supervisor se guarda en
 fail-open: una falla del servicio sombra no detiene el worker ni sustituye a
 2Captcha.
 
+## Muestreo durante una reserva real
+
+Desde el `2026-08-01`, `RESERVATION_CAPTCHA_SAMPLE_LIMIT` controla la cantidad total de
+CAPTCHA capturados por cada intento real. `1` conserva el flujo normal. Con un valor mayor, el
+bot guarda y refresca las muestras anteriores, registra cada una en sombra y envía únicamente
+la última a 2Captcha. El límite permitido es `1-50` y se aplica nuevamente si existe un segundo
+intento por rechazo explícito.
+
+La prueba local solicitada quedó configurada en `10`: nueve imágenes para entrenamiento y la
+décima para 2Captcha. Las muestras usan el original extraído del `data:` HTML; solo recurren al
+screenshot aislado si ese original no está disponible. Los 95 eventos históricos revisados
+usaron `original_html`, por lo que el fallback todavía no fue necesario. Las muestras extra no
+generan screenshots completos de página.
+
+Cada intento conserva en `captcha_attempts`:
+
+- `captcha_training_sample_timings`: captura, refresco y total por muestra;
+- `captcha_training_duration_ms`: demora real añadida antes de 2Captcha;
+- `captcha_solver_duration_ms`: tiempo consumido por el proveedor;
+- `duration_seconds`: duración completa del intento hasta clasificar el portal.
+
+Sobre 46 refrescos consecutivos del observador, cada muestra adicional tomó `0.390 s` de
+mediana y `0.406 s` de p90. La estimación es `(límite - 1) * 0.4 s`: límite `3` agrega unos
+`0.8 s`, límite `5` unos `1.6 s` y la prueba en `10` unos `3.6 s`. La medición de reserva real
+queda pendiente del próximo cupo; no se fuerza un submit ni se consume 2Captcha para fabricar
+la prueba.
+
+Cada CAPTCHA capturado se encola de forma durable para los tres modelos. Con límite `10` se
+esperan 30 predicciones, pero las nueve muestras previas no reciben respuesta externa ni
+validación del portal. Sus predicciones no son etiquetas correctas y requieren revisión humana
+antes de usarse como ground truth de entrenamiento.
+
+La futura resolución híbrida permanece documentada, no implementada. Antes de otorgar
+autoridad local se deben evaluar prospectivamente al menos 500 CAPTCHA frescos y sostener más
+de 99% con una regla fijada previamente. El diseño candidato exige formato válido, unanimidad,
+confianza aprobada y timeout local de `300-500 ms`; cualquier desacuerdo, baja confianza, caída
+o timeout deriva a 2Captcha. No se añadirá una espera fija de tres segundos.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;

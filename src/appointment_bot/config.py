@@ -177,6 +177,7 @@ class Settings:
     captcha_shadow_url: str = "http://127.0.0.1:8787"
     captcha_shadow_queue_size: int = 100
     captcha_shadow_timeout_seconds: int = 2
+    reservation_captcha_sample_limit: int = 1
 
     @property
     def safe_username(self) -> str:
@@ -275,6 +276,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
         reservation_captcha_max_attempts=_parse_int(
             os.getenv("RESERVATION_CAPTCHA_MAX_ATTEMPTS"),
             default=2,
+            minimum=1,
+        ),
+        reservation_captcha_sample_limit=_parse_int(
+            os.getenv("RESERVATION_CAPTCHA_SAMPLE_LIMIT"),
+            default=1,
             minimum=1,
         ),
         order_rule_cooldown_seconds=_parse_int(
@@ -535,6 +541,11 @@ def load_settings(*, require_login: bool = True) -> Settings:
 
     if settings.observer_captcha_sample_limit > 50:
         raise ValueError("OBSERVER_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50")
+
+    if settings.reservation_captcha_sample_limit > 50:
+        raise ValueError(
+            "RESERVATION_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50"
+        )
 
     if settings.outside_hot_window_max_seconds < settings.outside_hot_window_min_seconds:
         raise ValueError(

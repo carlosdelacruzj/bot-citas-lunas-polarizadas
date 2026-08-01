@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
-    logger.info("Refreshing reservation captcha after invalid captcha response")
+    logger.info("Refreshing reservation captcha")
     try:
         page.locator(RESERVATION_FIELD_SELECTOR).first.fill("", timeout=5_000)
     except PlaywrightError as exc:

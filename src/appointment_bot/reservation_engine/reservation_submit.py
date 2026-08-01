@@ -22,6 +22,9 @@ from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
     save_reservation_captcha_image,
 )
+from appointment_bot.reservation_engine.reservation_captcha_sampling import (
+    collect_reservation_captcha_training_samples,
+)
 from appointment_bot.reservation_engine.reservation_controls import (
     RESERVATION_BUTTON_SELECTOR,
     RESERVATION_FIELD_SELECTOR,
@@ -60,6 +63,22 @@ def solve_reservation_captcha_and_click_reserve(
     if timing is not None:
         timing.mark("captcha_image_started")
     effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
+    collect_reservation_captcha_training_samples(
+        page,
+        settings,
+        cancel_event=cancel_event,
+        can_submit=can_submit,
+        validate_selection=lambda: validate_selected_appointment(
+            page,
+            expected_details,
+            expected_person_name=expected_person_name,
+        ),
+        detection_origin=(expected_details or {}).get("detection_origin"),
+        captcha_audit=effective_captcha_audit,
+        attempt_number=attempt_number,
+        run_id=run_id,
+        order_id=order_id,
+    )
     captcha_path = save_reservation_captcha_image(
         page,
         settings,

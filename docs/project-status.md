@@ -217,6 +217,22 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   dashboard.
 - El modelo local no participa en la decisión de reserva; 2Captcha sigue siendo
   la respuesta enviada al portal.
+- Implementado el `2026-08-01`: el flujo real admite muestreo CAPTCHA opcional
+  mediante `RESERVATION_CAPTCHA_SAMPLE_LIMIT`. El valor `1` conserva el
+  comportamiento anterior; un valor mayor guarda y refresca las muestras
+  previas y envía únicamente la última a 2Captcha. Las imágenes adicionales
+  quedan registradas en sombra como datos de entrenamiento y nunca se envían
+  al portal.
+- Los 46 intervalos consecutivos medidos en el muestreo del observador tuvieron
+  `0.390 s` de mediana y `0.406 s` de p90 por CAPTCHA adicional. Un límite de
+  `5` agrega aproximadamente `1.6 s` antes de iniciar 2Captcha. La opción queda
+  desactivada por defecto y falta validarla en una reserva real controlada.
+- Configurado localmente el `2026-08-01` en `10` para la primera medición real:
+  nueve muestras previas y la décima enviada a 2Captcha, con una proyección de
+  `3.6 s` adicionales. Cada intento registrará tiempos individuales de captura
+  y refresco, duración total del muestreo, tiempo de 2Captcha y duración total
+  del intento. El worker estaba fuera de horario al configurarlo; todavía no
+  existe un resultado de reserva real con esta opción.
 
 ### Comunicación y cobro
 
@@ -301,6 +317,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    persistentes de navegador.
 7. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a
    2Captcha.
+   El muestreo opcional de reservas reales aumenta los datos disponibles, pero
+   también retrasa el submit unos `0.4 s` por muestra adicional y puede elevar
+   el riesgo de perder el cupo.
 8. La evidencia versionada está sanitizada, pero sigue siendo telemetría
    operacional y debe revisarse antes de compartir.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.

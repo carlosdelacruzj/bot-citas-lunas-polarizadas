@@ -80,6 +80,29 @@ Estado: en observación.
   backoff general.
 - Confirmar que una opción compatible posterior todavía se selecciona.
 
+### CAPTCHA y datos de entrenamiento
+
+- Completado en código el `2026-08-01`: `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`
+  conserva el recorrido real vigente. Un valor mayor captura y refresca
+  muestras adicionales, registra cada una en sombra y manda solamente el
+  último CAPTCHA a 2Captcha.
+- La demora observada es cercana a `0.4 s` por muestra adicional: límite `3`
+  agrega unos `0.8 s`, límite `5` unos `1.6 s` y límite `15` unos `5.6 s` antes
+  de llamar al proveedor. Validar primero con `2` o `3` en un caso real
+  controlado y comparar selección conservada, CAPTCHA, submit y resultado.
+- Prueba activa solicitada el `2026-08-01`: `.env` local configurado en `10`.
+  Esperar el próximo cupo real y registrar muestras obtenidas, tiempos por
+  captura/refresco, demora total previa a 2Captcha, tiempo del proveedor,
+  resultado del portal y posible `slot_lost`. No declarar validada la opción
+  usando solamente la proyección de `3.6 s`.
+- Mejora futura documentada: resolución híbrida local con fallback a 2Captcha.
+  No activarla hasta evaluar prospectivamente al menos 500 CAPTCHA frescos y
+  sostener más de 99% con una regla fijada antes del corte. El desacuerdo, baja
+  confianza, timeout o servicio local no saludable siempre deben derivar a
+  2Captcha.
+- Detalle operativo, tiempos y guardas en
+  [`../operations/captcha-shadow-integration.md`](../operations/captcha-shadow-integration.md#muestreo-durante-una-reserva-real).
+
 ### Observer
 
 - Completado en código el `2026-08-01`: las órdenes usan `15` consultas de sede
