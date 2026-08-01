@@ -199,8 +199,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Restaurado el `2026-08-01`: `/cliente_nuevo` vuelve a crear una orden de forma
   manual sin sustituir `/invitacion`. Solicita tipo y número de documento,
   contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
-  las cinco restricciones. La confirmación no repite la contraseña y el alta
-  informa el resultado real del preflight cuando termina dentro de la espera.
+  las cinco restricciones. Por decisión del único operador autorizado, la
+  confirmación y el comprobante posterior muestran todos los datos, incluida la
+  contraseña, para poder detectar errores; el alta también informa el resultado
+  real del preflight cuando termina dentro de la espera.
 
 ### Evidencia y CAPTCHA
 

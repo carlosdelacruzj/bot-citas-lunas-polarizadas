@@ -1499,8 +1499,8 @@ def _apply_manual_client_value(
             raise ValueError("El CE debe tener entre 6 y 20 letras o numeros.")
         conversation.values["document_number"] = document_number
     elif step == 2:
-        if not normalized:
-            raise ValueError("La contrasena no puede estar vacia.")
+        if not normalized or len(value) > 200:
+            raise ValueError("La contrasena debe tener entre 1 y 200 caracteres.")
         conversation.values["password"] = value
     elif step == 3:
         contact_name = " ".join(normalized.split())
@@ -1567,33 +1567,10 @@ def _manual_client_step_prompt(step: int) -> str | None:
 
 def _format_new_client_confirmation(values: dict[str, Any], mode: str) -> str:
     if mode == "manual":
-        weekdays = values.get("allowed_weekdays")
-        weekday_text = (
-            ", ".join(_weekday_name(day) for day in weekdays)
-            if isinstance(weekdays, list) and weekdays
-            else "todos"
-        )
-        document_type = "DNI" if values.get("document_type") == "dni" else "CE"
-        return "\n".join(
-            [
-                "CONFIRMAR ALTA MANUAL",
-                "",
-                f"Tipo: {document_type}",
-                f"Documento: {values.get('document_number')}",
-                "Contrasena: registrada (no se repite)",
-                f"Contacto: {values.get('contact_name')}",
-                f"Fuente: {values.get('contact_source')}",
-                f"WhatsApp: {values.get('contact_whatsapp') or 'no registrado'}",
-                "",
-                "Fecha minima: " + _format_operator_date(values.get("minimum_reservation_date")),
-                "Fecha maxima: " + _format_operator_date(values.get("maximum_reservation_date")),
-                f"Hora minima: {_format_minimum_hour(values.get('minimum_reservation_hour'))}",
-                f"Dias permitidos: {weekday_text}",
-                "Fechas excluidas: "
-                + _format_excluded_date_ranges(values.get("excluded_date_ranges")),
-                "",
-                "La confirmacion vence en 60 segundos.",
-            ]
+        return (
+            _format_manual_client_details(values, title="CONFIRMAR ALTA MANUAL")
+            + "\n\nRevisa todos los datos antes de crear el cliente. "
+            "La confirmacion vence en 60 segundos."
         )
     return (
         "CONFIRMAR INVITACION\n\n"
@@ -1601,6 +1578,37 @@ def _format_new_client_confirmation(values: dict[str, Any], mode: str) -> str:
         f"WhatsApp: {values.get('whatsapp_phone')}\n\n"
         "El cliente escribira sus credenciales y declarara sus restricciones "
         "en el enlace privado. La confirmacion vence en 60 segundos."
+    )
+
+
+def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
+    weekdays = values.get("allowed_weekdays")
+    weekday_text = (
+        ", ".join(_weekday_name(day) for day in weekdays)
+        if isinstance(weekdays, (list, tuple)) and weekdays
+        else "todos"
+    )
+    document_type = "DNI" if values.get("document_type") == "dni" else "CE"
+    return "\n".join(
+        [
+            title,
+            "",
+            f"Tipo: {document_type}",
+            f"Documento: {values.get('document_number') or 'no disponible'}",
+            f"Contrasena: {values.get('password') or 'no disponible'}",
+            f"Contacto: {values.get('contact_name') or 'no disponible'}",
+            f"Fuente: {values.get('contact_source') or 'no disponible'}",
+            f"WhatsApp: {values.get('contact_whatsapp') or 'no registrado'}",
+            "",
+            "Fecha minima: "
+            + _format_operator_date(values.get("minimum_reservation_date")),
+            "Fecha maxima: "
+            + _format_operator_date(values.get("maximum_reservation_date")),
+            f"Hora minima: {_format_minimum_hour(values.get('minimum_reservation_hour'))}",
+            f"Dias permitidos: {weekday_text}",
+            "Fechas excluidas: "
+            + _format_excluded_date_ranges(values.get("excluded_date_ranges")),
+        ]
     )
 
 
@@ -2875,6 +2883,46 @@ def _execute_manual_client_creation(
         )
         order = _wait_for_order_preflight(admin_api, order_id)
         preflight = str(order.get("preflight_status") or "pending")
+        credentials_note = ""
+        try:
+            credentials = admin_api.get_service_order_credentials(order_id)
+        except TelegramControlError as exc:
+            logger.warning("Could not reread credentials after manual creation: %s", exc)
+            credentials = {}
+            credentials_note = (
+                "\nNota: no pude releer las credenciales desde la API; "
+                "muestro los valores enviados."
+            )
+        persisted_values = {
+            "document_type": credentials.get("document_type")
+            or order.get("document_type")
+            or creation.values.get("document_type"),
+            "document_number": credentials.get("username")
+            or order.get("document_number")
+            or creation.values.get("document_number"),
+            "password": credentials.get("password") or creation.values.get("password"),
+            "contact_name": order.get("contact_name")
+            or creation.values.get("contact_name"),
+            "contact_source": order.get("contact_source")
+            or creation.values.get("contact_source"),
+            "contact_whatsapp": order.get("contact_whatsapp")
+            or creation.values.get("contact_whatsapp"),
+            "minimum_reservation_date": order.get("minimum_reservation_date")
+            if "minimum_reservation_date" in order
+            else creation.values.get("minimum_reservation_date"),
+            "maximum_reservation_date": order.get("maximum_reservation_date")
+            if "maximum_reservation_date" in order
+            else creation.values.get("maximum_reservation_date"),
+            "minimum_reservation_hour": order.get("minimum_reservation_hour")
+            if "minimum_reservation_hour" in order
+            else creation.values.get("minimum_reservation_hour"),
+            "allowed_weekdays": order.get("allowed_weekdays")
+            if "allowed_weekdays" in order
+            else creation.values.get("allowed_weekdays"),
+            "excluded_date_ranges": order.get("excluded_date_ranges")
+            if "excluded_date_ranges" in order
+            else creation.values.get("excluded_date_ranges"),
+        }
         if preflight == "validated":
             result = "Acceso correcto. La orden ya puede buscar cupos."
         elif preflight == "failed":
@@ -2883,7 +2931,17 @@ def _execute_manual_client_creation(
             result = "La validacion sigue en curso. Revisa Pendientes en unos segundos."
         telegram.send_message(
             creation.chat_id,
-            f"ALTA MANUAL COMPLETADA\n\nOrden: {order_id}\n{result}",
+            _format_manual_client_details(
+                persisted_values,
+                title="ALTA MANUAL REGISTRADA",
+            )
+            + "\n\n"
+            + f"Orden: {order_id}\n"
+            + f"Titular del portal: {order.get('applicant_name') or 'aun no identificado'}\n"
+            + f"Estado: {_order_status_label(order.get('status') or created.get('status'))}\n"
+            + f"Preflight: {_preflight_status_label(preflight)}\n"
+            + f"Detalle: {order.get('preflight_message') or result}"
+            + credentials_note,
             reply_markup={
                 "inline_keyboard": [
                     [{"text": "Ver cliente", "callback_data": f"om:{order_id}:show"}],

@@ -182,8 +182,9 @@ El flujo recomendado sigue siendo `/invitacion`, donde el cliente escribe el
 acceso en el formulario privado. `/cliente_nuevo` queda disponible como
 alternativa manual deliberada para el chat autorizado: el mensaje de entrada
 permanece en el historial de Telegram, pero el receptor solo conserva la
-contrasena en memoria durante la conversacion, no la registra en auditoria o
-logs y no la repite en el mensaje de confirmacion.
+contrasena en memoria durante la conversacion y no la registra en auditoria o
+logs. Por solicitud del unico operador, la muestra completa en la confirmacion
+y en el comprobante posterior para permitir verificar el alta.
 
 #### Contrato de restricciones congelado
 

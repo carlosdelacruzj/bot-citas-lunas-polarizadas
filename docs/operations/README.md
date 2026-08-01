@@ -147,7 +147,8 @@ comando historico `/credenciales ORDER_ID` se conserva temporalmente para
 compatibilidad, pero el flujo principal usa invitaciones privadas para que el
 cliente escriba el acceso. `/cliente_nuevo` es la alternativa manual explicita:
 la contrasena se recibe en el chat autorizado, permanece temporalmente en
-memoria hasta confirmar y no se repite en el comprobante ni en la auditoria.
+memoria hasta confirmar y se muestra completa en el resumen y comprobante para
+que el unico operador pueda verificarla. No se incluye en logs ni auditoria.
 Tokens, cookies, datos de cifrado, leases y detalles crudos de runs nunca se
 muestran.
 
@@ -173,7 +174,8 @@ contacto, fuente y WhatsApp opcional. Luego permite crear sin restricciones o
 configurar fecha minima, fecha maxima, hora minima, dias permitidos y rangos
 excluidos. Solo el boton final crea la orden; esta nace en validacion y Telegram
 espera el preflight antes de indicar acceso correcto, revision necesaria o
-validacion todavia en curso.
+validacion todavia en curso. Tanto antes como despues del alta muestra documento,
+contrasena, contacto, WhatsApp y las cinco restricciones completas.
 
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento
