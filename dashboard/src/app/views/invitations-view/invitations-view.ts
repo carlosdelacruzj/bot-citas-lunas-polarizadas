@@ -8,10 +8,20 @@ import {
   apiErrorMessage,
 } from '../../appointment-api.service';
 import { formatPeruDateTime } from '../../peru-date-time';
+import {
+  RegistrationContinuityPreview,
+  buildRegistrationContinuityPreview,
+  canPrepareRegistrationContinuity,
+} from '../../registration-continuity';
 
 interface PendingInvitationAction {
   type: 'replace' | 'revoke';
   invitation: HostedInvitation;
+}
+
+interface ContinuityDialog {
+  invitation: HostedInvitation;
+  preview: RegistrationContinuityPreview;
 }
 
 @Component({
@@ -31,11 +41,12 @@ export class InvitationsView implements OnInit {
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
-  protected readonly copied = signal<'link' | 'message' | null>(null);
+  protected readonly copied = signal<'link' | 'message' | 'continuity' | null>(null);
   protected readonly duplicateMatches = signal<HostedInvitation[]>([]);
   protected readonly pendingAction = signal<PendingInvitationAction | null>(null);
   protected readonly editingContactRef = signal<string | null>(null);
   protected readonly editingName = signal('');
+  protected readonly continuityDialog = signal<ContinuityDialog | null>(null);
   protected readonly formatDateTime = formatPeruDateTime;
 
   ngOnInit(): void {
@@ -132,6 +143,7 @@ export class InvitationsView implements OnInit {
       '',
       `Está disponible hasta ${this.formatDateTime(invitation.expires_at, invitation.expires_at)}.`,
       'El enlace es personal. No lo compartas con otras personas.',
+      'Cuando termines, continuaremos por este mismo WhatsApp.',
     ].join('\n');
     await this.copyText(message, 'message');
   }
@@ -190,6 +202,32 @@ export class InvitationsView implements OnInit {
     return ['issued', 'opened'].includes(invitation.status);
   }
 
+  protected canPrepareContinuity(invitation: HostedInvitation): boolean {
+    return canPrepareRegistrationContinuity(invitation.status);
+  }
+
+  protected prepareContinuity(invitation: HostedInvitation): void {
+    const preview = buildRegistrationContinuityPreview(invitation);
+    if (!preview) {
+      return;
+    }
+    this.copied.set(null);
+    this.continuityDialog.set({ invitation, preview });
+  }
+
+  protected closeContinuity(): void {
+    this.continuityDialog.set(null);
+    this.copied.set(null);
+  }
+
+  protected async copyContinuityMessage(): Promise<void> {
+    const dialog = this.continuityDialog();
+    if (!dialog) {
+      return;
+    }
+    await this.copyText(dialog.preview.message, 'continuity');
+  }
+
   protected statusDetail(invitation: HostedInvitation): string {
     const details: Record<string, string> = {
       issued: 'Todavía no se ha abierto.',
@@ -242,7 +280,7 @@ export class InvitationsView implements OnInit {
     }
   }
 
-  private async copyText(value: string, copied: 'link' | 'message'): Promise<void> {
+  private async copyText(value: string, copied: 'link' | 'message' | 'continuity'): Promise<void> {
     try {
       await navigator.clipboard.writeText(value);
       this.copied.set(copied);

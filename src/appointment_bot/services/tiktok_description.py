@@ -156,7 +156,7 @@ def generate_tiktok_publication(
                 "🚗 Monitoreo de disponibilidad\n"
                 "📅 Intento de reserva de citas\n"
                 "✅ Atención rápida por WhatsApp\n"
-                "💰 Servicio: S/40 por trámite\n"
+                "💰 Servicio: S/50 por trámite\n"
                 "💳 Pagas solo cuando la cita ya fue obtenida."
             ),
             f"📲 {call_to_action}\n\nEscríbenos por WhatsApp:\n{phone}",

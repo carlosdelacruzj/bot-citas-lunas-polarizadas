@@ -36,6 +36,9 @@ Precio, condición de pago, WhatsApp público y límites de disponibilidad
 permanecen fijos. La combinación se deriva de la fecha y el texto completo se
 guarda dentro del trabajo durable antes del envío.
 
+Desde el `2026-08-01`, el precio fijo usado por las nuevas publicaciones es
+`S/50 por trámite`.
+
 El texto debe quedar confirmado como mensaje saliente antes de adjuntar las
 imágenes. Después se exige que todas las miniaturas estén presentes y que la
 vista previa desaparezca tras enviar el álbum. Un resultado ambiguo queda
@@ -81,3 +84,11 @@ aunque exista un envío nuevo confirmado. Para imágenes se validan las últimas
 `N` burbujas del lote cuando el historial fue reciclado. Para textos se compara
 la identidad de la nueva burbuja confirmada, no solo el número de coincidencias.
 Las evidencias con doble check se reconciliaron sin repetir contenido.
+
+## Uso futuro en la landing
+
+Las capturas originales de `cupos-unicos` quedaron aprobadas como fuente de la
+futura sección pública `Cupos encontrados recientemente`. Se mostrarán como
+detecciones históricas, no como reservas ni disponibilidad vigente. El plan de
+Cloudinary, idempotencia y aislamiento se documenta en
+[`public-slot-evidence-cloudinary-plan-2026-08-01.md`](public-slot-evidence-cloudinary-plan-2026-08-01.md).

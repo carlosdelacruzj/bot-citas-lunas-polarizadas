@@ -58,6 +58,13 @@ Estado: en observación.
   normalizar los emojis transformados por WhatsApp; la prueba repetida añadió
   soporte para historial virtualizado e identidad de nuevas burbujas. Validar
   el recorrido completo desde el siguiente cierre diario.
+- Completado localmente el `2026-08-01`: precio de nuevas publicaciones y
+  seguimiento del registro alineado a `S/50 por trámite`.
+- Planificada la reutilización de `cupos-unicos` en la landing bajo el título
+  `Cupos encontrados recientemente`. Primero validar tres imágenes locales;
+  después implementar subida firmada e idempotente a Cloudinary, desactivada
+  por defecto y con secretos en `.runtime`. Detalle en
+  [`../operations/public-slot-evidence-cloudinary-plan-2026-08-01.md`](../operations/public-slot-evidence-cloudinary-plan-2026-08-01.md).
 - No habilitar reintentos automáticos para resultados ambiguos.
 
 ### Reglas y backoff
@@ -243,6 +250,35 @@ Condiciones obligatorias:
 - no crear órdenes por abrir un enlace;
 - no activar datos reales hasta que `lunas-polarizadas-clientes` despliegue y
   valide de extremo a extremo la parte alojada que consume este proyecto.
+
+## Continuidad por WhatsApp del registro alojado
+
+Estado: iniciada el `2026-08-01` en modo manual, sin envíos externos.
+
+Completado:
+
+1. El mensaje inicial aclara que la atención continuará en el mismo WhatsApp.
+2. El dashboard prepara textos específicos para recepción pendiente, acceso
+   validado, restricciones y credenciales incorrectas.
+3. La revisión muestra destinatario, estado y contenido completo antes de
+   copiar.
+4. Copiar no abre WhatsApp, no envía y no registra una entrega inexistente.
+5. El procedimiento y sus límites están documentados en
+   [`../operations/hosted-registration-whatsapp-continuity-2026-08-01.md`](../operations/hosted-registration-whatsapp-continuity-2026-08-01.md).
+
+Pendiente para cerrar esta etapa:
+
+1. Revisión visual directa del dashboard y del registro privado.
+2. Prueba manual con una cuenta y un número controlados.
+3. Confirmar que el mensaje llega una sola vez a la conversación correcta.
+4. Conservar evidencia sanitizada y clasificar cualquier resultado ambiguo sin
+   reintento automático.
+5. Decidir con esa evidencia si conviene automatizar únicamente el acuse de
+   recepción mediante la cola durable existente.
+
+No activar el modo `production` ni usar datos reales por completar esta
+interfaz. Permanecen vigentes los bloqueadores de seguridad y la autorización
+expresa independiente.
 
 ## Deuda técnica posterior
 

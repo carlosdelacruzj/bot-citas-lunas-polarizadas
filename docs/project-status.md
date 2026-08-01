@@ -21,7 +21,7 @@ Estado verificado el `2026-07-28`:
 | Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cinco reglas y control del worker.                         |
+| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cinco reglas y control del worker.                       |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `501.24 kB`.                                                    |
@@ -203,6 +203,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   confirmación y el comprobante posterior muestran todos los datos, incluida la
   contraseña, para poder detectar errores; el alta también informa el resultado
   real del preflight cuando termina dentro de la espera.
+- Iniciada el `2026-08-01` la continuidad manual del registro alojado por
+  WhatsApp: `Invitaciones` prepara textos distintos para recepción pendiente,
+  acceso validado, restricciones y credenciales incorrectas. El operador
+  revisa destinatario, estado y contenido antes de copiar; la acción no abre
+  WhatsApp ni afirma que el mensaje fue enviado.
 
 ### Evidencia y CAPTCHA
 
@@ -236,6 +241,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   representación interna de emojis del compositor y la burbuja saliente. La
   confirmación también tolera la virtualización del historial sin confundir una
   nueva burbuja con otra publicación idéntica anterior.
+- Precio comercial vigente alineado a `S/50 por trámite` en la publicación
+  diaria para TikTok y en el seguimiento manual del registro alojado.
+- Las capturas originales de `cupos-unicos` quedaron aprobadas como fuente de
+  la futura sección pública `Cupos encontrados recientemente`. La integración
+  con Cloudinary y la selección máxima de tres imágenes están documentadas,
+  pero todavía no se implementaron ni se subieron recursos externos.
 - El texto postpago ya no se considera enviado por una espera fija después del
   clic: debe desaparecer del compositor y aparecer como un nuevo mensaje
   saliente. Si los PDF salieron pero el texto no se confirma, el trabajo queda
@@ -296,11 +307,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
 10. La integración de registros alojados está desplegada y activa en modo
-   `controlled`. La prueba ficticia completa terminó en `accepted`, mantuvo el
-   total de órdenes en `95` y confirmó la limpieza terminal en D1. Continúan
-   bloqueados los datos reales y el modo `production` hasta completar respaldo
-   externo de clave, revisión legal, procedimiento de incidente y autorización
-   expresa. La Admin API sigue limitada a loopback.
+    `controlled`. La prueba ficticia completa terminó en `accepted`, mantuvo el
+    total de órdenes en `95` y confirmó la limpieza terminal en D1. Continúan
+    bloqueados los datos reales y el modo `production` hasta completar respaldo
+    externo de clave, revisión legal, procedimiento de incidente y autorización
+    expresa. La Admin API sigue limitada a loopback.
 11. La ráfaga multicliente `OBS-006` está documentada únicamente como mejora
     futura en evaluación. La concurrencia productiva sigue desactivada. Antes
     de implementarla debe aislar sesiones, claims, heartbeats e intentos por
@@ -321,6 +332,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - flujo local de invitaciones ajustado: WhatsApp obligatorio, nombre opcional y
   editable, advertencia por número repetido, reemplazo directo y comprobante
   visible con enlace y mensaje copiable.
+- preparación manual de continuidad compilada en el dashboard: estados
+  sensibles separados, mensaje completo seleccionable y aviso visible de que
+  copiar no equivale a enviar; no se realizó una transmisión externa.
 - revisión UX/UI del flujo de invitaciones completada en código: estados
   diferenciados por una paleta semántica, confirmaciones integradas para
   reemplazar o revocar, jerarquía móvil conservada y texto del comprobante

@@ -140,6 +140,16 @@
             </div>
 
             <div class="invitation-actions">
+              @if (canPrepareContinuity(invitation)) {
+                <button
+                  type="button"
+                  class="secondary"
+                  [disabled]="busy()"
+                  (click)="prepareContinuity(invitation)"
+                >
+                  Preparar seguimiento
+                </button>
+              }
               @if (canReplace(invitation)) {
                 <button
                   type="button"
@@ -204,6 +214,65 @@
         </button>
         <button type="button" class="secondary" (click)="duplicateMatches.set([])">Cancelar</button>
       </div>
+    </div>
+  </section>
+}
+
+@if (continuityDialog(); as continuity) {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="continuity-title"
+    aria-describedby="continuity-safety-note"
+    (keydown.escape)="closeContinuity()"
+  >
+    <div class="modal invitation-dialog continuity-dialog">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">{{ continuity.preview.eyebrow }}</p>
+          <h2 id="continuity-title">{{ continuity.preview.title }}</h2>
+        </div>
+        <button type="button" class="secondary compact" (click)="closeContinuity()">Cerrar</button>
+      </div>
+
+      <div class="action-contact">
+        <div>
+          <small>Revisar destinatario</small>
+          <strong>{{ invitationName(continuity.invitation) }}</strong>
+          <span>{{ continuity.invitation.whatsapp_phone }}</span>
+        </div>
+        <span class="badge" [attr.data-status]="continuity.invitation.status">
+          {{ statusLabel(continuity.invitation.status) }}
+        </span>
+      </div>
+
+      <label class="continuity-message">
+        Mensaje preparado
+        <textarea
+          readonly
+          name="continuityMessage"
+          [value]="continuity.preview.message"
+          (focus)="$any($event.target).select()"
+        ></textarea>
+      </label>
+
+      <p id="continuity-safety-note" class="continuity-safety-note">
+        No se ha enviado nada. Comprueba el destinatario y el estado antes de copiar el mensaje y
+        pegarlo en la conversación existente.
+      </p>
+
+      <div class="dialog-actions">
+        <button type="button" class="primary" (click)="copyContinuityMessage()">
+          {{ copied() === 'continuity' ? 'Mensaje copiado' : 'Copiar mensaje' }}
+        </button>
+        <button type="button" class="secondary" (click)="closeContinuity()">Cancelar</button>
+      </div>
+      <p class="copy-feedback" aria-live="polite">
+        @if (copied() === 'continuity') {
+          El mensaje está listo para pegar. Todavía no se ha enviado.
+        }
+      </p>
     </div>
   </section>
 }

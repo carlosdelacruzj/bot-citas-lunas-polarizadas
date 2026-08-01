@@ -50,7 +50,7 @@ convertirlo todavía en un portal completo de clientes.
 Carlos explica:
 
 - qué servicio ofrece;
-- precio de `S/40 por trámite`;
+- precio vigente de `S/50 por trámite`;
 - pago únicamente después de confirmar la reserva;
 - rango aproximado de fechas que está apareciendo;
 - tiempo estimado de `2 a 7 días hábiles`;

@@ -20,7 +20,8 @@
 
 .invitation-form label,
 .inline-name-editor,
-.issued-url {
+.issued-url,
+.continuity-message {
   display: grid;
   gap: 0.35rem;
   font-weight: 700;
@@ -42,7 +43,8 @@
 
 .invitation-form input,
 .issued-url input,
-.inline-name-editor input {
+.inline-name-editor input,
+.continuity-message textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--line);
@@ -54,7 +56,8 @@
 
 .invitation-form input:focus-visible,
 .issued-url input:focus-visible,
-.inline-name-editor input:focus-visible {
+.inline-name-editor input:focus-visible,
+.continuity-message textarea:focus-visible {
   border-color: var(--accent-700);
   outline: 0.2rem solid color-mix(in srgb, var(--accent-700) 24%, transparent);
   outline-offset: 0.1rem;
@@ -406,6 +409,31 @@
 
 .compact {
   min-height: 2.25rem;
+}
+
+.continuity-dialog {
+  border-top: 0.3rem solid var(--accent-600);
+}
+
+.continuity-message {
+  margin-top: 1rem;
+}
+
+.continuity-message textarea {
+  min-height: 15rem;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.continuity-safety-note {
+  margin-top: 0.9rem;
+  border-left: 0.25rem solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: #fff8e8;
+  padding: 0.75rem 0.85rem;
+  color: #684915;
+  font-weight: 700;
 }
 
 @media (max-width: 900px) {
