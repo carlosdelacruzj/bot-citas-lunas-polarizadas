@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-07-30`.
+Última priorización: `2026-07-31`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -62,6 +62,12 @@ Estado: en observación.
 
 ### Reglas y backoff
 
+- Completado el `2026-07-31`: `captcha_invalid` después del segundo intento
+  aplica `120` segundos solo a la orden afectada y no detiene la rotación de
+  clientes. Los fallos ambiguos y las defensas del portal conservan su política
+  protectora independiente.
+- Confirmar en el próximo rechazo real de CAPTCHA que el worker procesa la
+  siguiente orden elegible sin entrar en backoff global.
 - Esperar una nueva aparición real de varias fechas fuera de rango.
 - Confirmar `partial / blocked_by_order_rule`, sin CAPTCHA resuelto, submit ni
   backoff general.
@@ -77,6 +83,20 @@ Estado: en observación.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales
   `403`, `429` o `recovery_backoff`.
 - Cambiar una sola variable por experimento.
+- Mejora futura `OBS-006`, en evaluación y todavía no aprobada: conservar una
+  sola sesión durante la operación normal y, ante disponibilidad completa real,
+  iniciar un pool deslizante de hasta tres clientes. El detector reserva sin
+  esperar; hasta dos sesiones nuevas se abren en paralelo y cada posición
+  liberada por una reserva confirmada puede tomar el siguiente cliente
+  compatible. La ráfaga termina al agotarse clientes, desaparecer los cupos o
+  alcanzar sus guardas.
+- Antes de implementar `OBS-006`, diseñar el controlador separado, el estado
+  multisesión, claims/heartbeats independientes, cancelación conjunta, límites
+  de duración/clientes y telemetría. Preparar primero detrás de una bandera
+  desactivada y validar apertura/cierre sin enviar reservas.
+- No activar `OBS-006` mientras se evalúe otra variable operativa. Los criterios,
+  tiempos medidos, riesgos, métricas y pasos están en
+  [`../optimization.md`](../optimization.md#hipótesis-futura-ráfaga-multicliente).
 
 ## Prioridad 2 - Cerrar el corte documental
 

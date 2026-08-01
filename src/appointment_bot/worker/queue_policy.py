@@ -20,9 +20,12 @@ def update_state_from_report(
 ) -> None:
     if report.status in {"skipped", "unknown", "reservation_unconfirmed"}:
         return
+    outcome = classify_order_report(report)
+    if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
+        return
     backoff_seconds = (
         settings.order_rule_cooldown_seconds
-        if classify_order_report(report) is OrderReportOutcome.BLOCKED
+        if outcome is OrderReportOutcome.BLOCKED
         else None
     )
 

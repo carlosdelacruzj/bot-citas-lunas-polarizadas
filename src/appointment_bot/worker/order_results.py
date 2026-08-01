@@ -100,6 +100,23 @@ def handle_observer_order_report(
             "ordenes elegibles.",
         )
         return ObserverOrderDecision(reset_errors=True)
+    if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
+        cooldown = settings.captcha_rejection_cooldown_seconds
+        update_order_state(
+            order.order_id,
+            status=report.status,
+            message=report.message,
+            exit_code=report.exit_code,
+            backoff_seconds=cooldown,
+            settings=settings,
+        )
+        send_telegram_message(
+            settings,
+            f"La orden {order.order_id} tuvo dos rechazos explicitos de CAPTCHA. "
+            f"Se reintentara esa orden en {cooldown} segundos; el worker "
+            "continuara de inmediato con los demas clientes elegibles.",
+        )
+        return ObserverOrderDecision(reset_errors=True)
     if report.status == "available":
         update_order_state(
             order.order_id,

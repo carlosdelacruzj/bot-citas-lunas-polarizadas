@@ -2092,3 +2092,105 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
+## 2026-07-31 11:47:58 - order-47553469 - partial
+
+- Run: 20260731-114737-49cc9fe6
+- Orden: order-***
+- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cuenta: 47***9
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/08/2026
+- Hora detectada: 11:00
+- Cupos observados: 25
+- Opciones fecha: 03/08/2026
+- Opciones hora: 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 21.621s
+  - Seleccion fecha/hora: 2.218s
+- Evidencia:
+  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
+  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-31 13:20:25 - order-47553469 - partial
+
+- Run: 20260731-131946-b10145d4
+- Orden: order-***
+- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cuenta: 47***9
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 24/08/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 24/08/2026
+- Opciones hora: 09:00, 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 38.871s
+  - Seleccion fecha/hora: 2.031s
+- Evidencia:
+  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
+  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-07-31 14:58:10 - order-47553469 - partial
+
+- Run: 20260731-145801-8abeb768
+- Orden: order-***
+- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cuenta: 47***9
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 03/08/2026
+- Hora detectada: 12:00
+- Cupos observados: 25
+- Opciones fecha: 03/08/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 9.342s
+  - Seleccion fecha/hora: 2.063s
+- Evidencia:
+  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
+  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

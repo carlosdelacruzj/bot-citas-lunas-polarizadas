@@ -187,6 +187,26 @@ def run_rapid_queue_with_settings(
                 if has_more_orders:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
+            if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
+                cooldown = settings.captcha_rejection_cooldown_seconds
+                failed_orders += 1
+                update_order_state(
+                    order.order_id,
+                    status=report.status,
+                    message=report.message,
+                    exit_code=report.exit_code,
+                    backoff_seconds=cooldown,
+                    settings=settings,
+                )
+                logger.warning(
+                    "Order %s had an explicit CAPTCHA rejection; applying a %s-second "
+                    "order cooldown and continuing the queue",
+                    order.order_id,
+                    cooldown,
+                )
+                if has_more_orders:
+                    _delay_between_orders(settings, cancel_event=cancel_event)
+                continue
             if report.exit_code != 0 or report.status == "error":
                 failed_orders += 1
 

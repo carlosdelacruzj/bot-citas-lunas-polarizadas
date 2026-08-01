@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-07-30`.
+Última revisión integral: `2026-07-31`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -74,6 +74,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   sin adelantar órdenes por tener o no restricciones.
 - Corrección para que fechas fuera de rango no provoquen un backoff general de
   30 minutos.
+- Corregido el `2026-07-31`: dos rechazos explícitos de CAPTCHA ya no se tratan
+  como un fallo técnico general. La orden afectada recibe un cooldown propio de
+  `120` segundos y el worker continúa con los demás clientes elegibles; los
+  backoffs largos se conservan para resultados ambiguos o defensas reales del
+  portal.
 
 ### Arquitectura y operación
 
@@ -218,23 +223,31 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 3. La corrección del backoff por fechas fuera de rango está validada en
    escenarios controlados, pero falta confirmarla ante otro caso real
    equivalente.
-4. El ajuste del observer a cuatro intentos necesita comparación de varios días
+4. El cooldown corto por rechazo explícito de CAPTCHA está validado en código;
+   falta observar el próximo rechazo real para confirmar que la cola continúa
+   sin una espera global.
+5. El ajuste del observer a cuatro intentos necesita comparación de varios días
    antes de conservarse como nuevo baseline.
-5. La operación depende de una PC Windows, red local, Docker y perfiles
+6. La operación depende de una PC Windows, red local, Docker y perfiles
    persistentes de navegador.
-6. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a
+7. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a
    2Captcha.
-7. La evidencia versionada está sanitizada, pero sigue siendo telemetría
+8. La evidencia versionada está sanitizada, pero sigue siendo telemetría
    operacional y debe revisarse antes de compartir.
-8. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
+9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
-9. La integración de registros alojados está desplegada y activa en modo
+10. La integración de registros alojados está desplegada y activa en modo
    `controlled`. La prueba ficticia completa terminó en `accepted`, mantuvo el
    total de órdenes en `95` y confirmó la limpieza terminal en D1. Continúan
    bloqueados los datos reales y el modo `production` hasta completar respaldo
    externo de clave, revisión legal, procedimiento de incidente y autorización
    expresa. La Admin API sigue limitada a loopback.
+11. La ráfaga multicliente `OBS-006` está documentada únicamente como mejora
+    futura en evaluación. La concurrencia productiva sigue desactivada. Antes
+    de implementarla debe aislar sesiones, claims, heartbeats e intentos por
+    orden, definir guardas globales y demostrar que obtiene reservas adicionales
+    sin aumentar defensas, resultados inciertos ni errores operativos.
 
 ## Validación del corte
 
