@@ -86,7 +86,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `reload_probe` completo después del
   intento `8`; al terminar el intento `15` se cierra esa sesión y se rota al
   siguiente cliente con un contexto Playwright nuevo.
-- Auditado el `2026-08-01`: los valores operativos del ciclo `15/2-4/8`, la sede,
+- Auditado el `2026-08-01`: los valores operativos del ciclo `15/1-2/8`, la sede,
   el límite de clientes activos, el cooldown por CAPTCHA, los intentos de
   CAPTCHA por reserva y el corte diario se pueden modificar desde `.env`. Los
   dos últimos dejaron de ser literales fijos en el flujo productivo. El `.env`
@@ -110,10 +110,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   POST HTTP `200`, completaron `endRequest`, quedaron confirmados y no tuvieron
   fallos. Los headers llegaron en `32-282 ms` y la actualización estable en
   `297-313 ms`.
-- Ajustado el `2026-08-01`: la espera del toggle dejó de ser un patrón fijo de
-  `2` segundos. Cada pausa sortea nuevamente un entero entre
-  `OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS=2` y
-  `OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS=4`. La variable antigua singular
+- Ajustado el `2026-08-01`: la espera del toggle es aleatoria y el rango
+  operativo se redujo a `1-2` segundos. Cada pausa sortea nuevamente un entero
+  entre
+  `OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS=1` y
+  `OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS=2`. La variable antigua singular
   sigue aceptada como fallback para instalaciones que todavía no migraron.
 
 ### Arquitectura y operación
