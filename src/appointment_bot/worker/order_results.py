@@ -10,7 +10,7 @@ from appointment_bot.core.models import (
     ServiceOrderRuntime,
 )
 from appointment_bot.db.orders import (
-    list_compatible_orders_for_slot,
+    list_compatible_orders_for_opportunities,
     mark_order_done,
     update_order_state,
 )
@@ -79,11 +79,17 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
         mark_order_done(order.order_id, settings=settings)
+        compatible_order_ids = _compatible_handoff_order_ids(
+            settings,
+            order,
+            report,
+        )
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
             confirmed_reservations=1,
             confirmed_order_ids=(order.order_id,),
+            compatible_handoff_order_ids=compatible_order_ids,
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
@@ -152,44 +158,79 @@ def _compatible_handoff_order_ids(
     report: RunReport,
 ) -> tuple[str, ...]:
     details = report.details or {}
-    appointment_date = str(
-        details.get("fecha") or details.get("appointment_date") or ""
-    ).strip()
-    appointment_hour = str(
-        details.get("hora") or details.get("appointment_hour") or ""
-    ).strip()
-    if not appointment_date or not appointment_hour:
+    opportunities = _observed_opportunities(details)
+    if not opportunities:
         return ()
     try:
-        compatible_orders = list_compatible_orders_for_slot(
-            appointment_date,
-            appointment_hour,
+        compatible_orders = list_compatible_orders_for_opportunities(
+            opportunities,
             exclude_order_ids={order.order_id},
-            limit=settings.observer_active_order_limit,
+            limit=settings.opportunity_handoff_max_candidates,
             settings=settings,
         )
     except Exception:
         logger.exception(
-            "Could not find compatible handoff orders for slot %s %s",
-            appointment_date,
-            appointment_hour,
+            "Could not find compatible handoff orders for %s observed opportunities",
+            len(opportunities),
         )
         return ()
     order_ids = tuple(candidate.order_id for candidate in compatible_orders)
     if order_ids:
         logger.info(
-            "Blocked slot %s %s will be handed off immediately to compatible orders: %s",
-            appointment_date,
-            appointment_hour,
+            "%s observed opportunities will be handed off immediately to compatible "
+            "orders: %s",
+            len(opportunities),
             ", ".join(order_ids),
         )
     else:
         logger.info(
-            "Blocked slot %s %s has no compatible active orders",
-            appointment_date,
-            appointment_hour,
+            "%s observed opportunities have no compatible active orders",
+            len(opportunities),
         )
     return order_ids
+
+
+def _observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str], ...]:
+    observation = details.get("selection_observation")
+    raw_appointments = (
+        observation.get("observed_appointments")
+        if isinstance(observation, dict)
+        else None
+    )
+    opportunities: list[tuple[str, str]] = []
+    observed_dates: set[str] = set()
+    if isinstance(raw_appointments, list):
+        for item in raw_appointments:
+            if not isinstance(item, dict):
+                continue
+            date_text = str(item.get("date") or "").strip()
+            hour_text = str(item.get("hour") or "").strip()
+            if date_text:
+                opportunities.append((date_text, hour_text))
+                observed_dates.add(date_text)
+
+    visible_dates = observation.get("visible_dates") if isinstance(observation, dict) else None
+    if isinstance(visible_dates, list):
+        for value in visible_dates:
+            date_text = str(value or "").strip()
+            if date_text and date_text not in observed_dates:
+                opportunities.append((date_text, ""))
+
+    fallback_date = str(
+        details.get("fecha")
+        or details.get("appointment_date")
+        or details.get("blocked_evidence_date")
+        or ""
+    ).strip()
+    fallback_hour = str(
+        details.get("hora")
+        or details.get("appointment_hour")
+        or details.get("blocked_evidence_hour")
+        or ""
+    ).strip()
+    if fallback_date:
+        opportunities.append((fallback_date, fallback_hour))
+    return tuple(dict.fromkeys(opportunities))
 
 
 def _notify_credential_rejection(

@@ -4,7 +4,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from playwright.sync_api import Page
@@ -88,8 +88,10 @@ def select_available_appointment(
 
     observation_started = time.monotonic()
     observation: dict[str, Any] = {
+        "observed_at": datetime.now(UTC).isoformat(timespec="milliseconds"),
         "date_postback_seconds": [],
         "hour_stabilization_seconds": [],
+        "observed_appointments": [],
     }
     logger.info("Selecting available appointment date and hour")
     options_started = time.monotonic()
@@ -99,6 +101,7 @@ def select_available_appointment(
     )
     observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
     observation["date_candidate_count"] = len(date_options)
+    observation["visible_dates"] = [str(option["text"]) for option in date_options]
     if not date_options:
         raise AppointmentWorkflowUnavailable(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
@@ -125,6 +128,12 @@ def select_available_appointment(
         )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
         real_hour_options = _real_options(hour_options)
+        for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
+            _remember_observed_appointment(
+                observation,
+                date_text=str(date_option["text"]),
+                hour_text=str(hour_option["text"]),
+            )
         observation["hour_candidate_count"] = observation.get("hour_candidate_count", 0) + len(
             real_hour_options
         )
@@ -388,6 +397,18 @@ def _with_selection_observation(
         "total_seconds": round(time.monotonic() - started, 3),
     }
     return replace(result, details=details)
+
+
+def _remember_observed_appointment(
+    observation: dict[str, Any],
+    *,
+    date_text: str,
+    hour_text: str,
+) -> None:
+    appointments = observation.setdefault("observed_appointments", [])
+    candidate = {"date": date_text, "hour": hour_text}
+    if candidate not in appointments:
+        appointments.append(candidate)
 
 
 def _date_option_sort_key(option: dict[str, Any]) -> tuple[bool, date]:

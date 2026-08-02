@@ -24,7 +24,8 @@ mínima/máxima o días permitidos sí se consideran restringidas y
 su propia sesión solo intenta reservar cuando el cupo cumple esas reglas.
 
 El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes. La
-selección respeta prioridad, menor penalización por restricciones y antigüedad;
+selección respeta prioridad, segundos trámites, menor penalización por
+restricciones y antigüedad;
 dentro del bloque se ejecuta primero quien lleva más tiempo sin revisión.
 Antes de resolver CAPTCHA o enviar la reserva, cualquier orden debe cumplir
 `minimum_date`, `maximum_date`, `allowed_weekdays` y
@@ -94,11 +95,33 @@ el worker debe seleccionar exactamente esa fila del listado de tramites; si no
 la encuentra o no esta `PENDIENTE`, debe fallar claro antes de abrir el panel de
 citas para evitar reservar el tramite equivocado.
 
-Cuando una reserva queda confirmada (`registered`), las demas ordenes conservan
-su prioridad y su lugar en la cola. Una orden restringida permanece `ready`
-hasta que su propia sesion encuentre un cupo compatible; no se promociona ni se
-agrega como seguimiento por coincidir con la fecha u hora reservada para otro
-cliente.
+Cada selección conserva en `selection_observation` las combinaciones fecha/hora
+realmente leídas. Si la sesión actual encuentra una opción compatible, reserva
+de inmediato y no recorre fechas adicionales solo para completar el inventario.
+Si queda bloqueada por reglas, conserva todas las combinaciones encontradas en
+el recorrido ya necesario.
+
+Después de una detección, la cadena de oportunidades evalúa tanto órdenes
+abiertas como restringidas. Solo excluye a quien no sea compatible con ninguna
+fecha observada. El orden es:
+
+1. prioridad manual exclusiva (`>=200`);
+2. segundos trámites (`parent_order_id` presente);
+3. mayor cantidad de combinaciones compatibles;
+4. menor complejidad de restricciones;
+5. prioridad manual restante y antigüedad.
+
+La cadena es secuencial y conserva contexto, cookies y lease independientes por
+orden. Intenta como máximo `OPPORTUNITY_HANDOFF_MAX_CANDIDATES` clientes durante
+`OPPORTUNITY_HANDOFF_MAX_SECONDS`; los valores por defecto son `10` y `300`.
+Continúa después de cada reserva confirmada y termina si un cliente confirma que
+los cupos desaparecieron, vence la ventana, se agotan candidatos o surge un
+resultado ambiguo. Cada nueva sesión vuelve a leer el portal: las oportunidades
+son evidencia temporal, no inventario garantizado ni transferencia directa.
+
+El muestreo CAPTCHA adicional solo corresponde a la sesión detectora. Toda
+sesión posterior de la cadena fuerza una sola muestra antes de 2Captcha para no
+multiplicar la demora de entrenamiento en el camino crítico.
 
 La espera entre ordenes dentro de la cola rapida se controla con:
 

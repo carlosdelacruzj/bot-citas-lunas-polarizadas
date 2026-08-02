@@ -77,17 +77,29 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   mueve naturalmente la orden detrás de las demás revisadas, pero no establece
   `next_allowed_at`. Los cooldowns largos permanecen reservados para errores
   técnicos, CAPTCHA rechazado o resultados ambiguos.
+- Implementado el `2026-08-02`: cada selección conserva en
+  `selection_observation` las combinaciones fecha/hora realmente leídas y todas
+  las fechas visibles al comenzar. Si el detector puede reservar, envía de
+  inmediato sin recorrer fechas adicionales; si sus reglas lo bloquean, el
+  recorrido ya necesario conserva todas las combinaciones encontradas.
+- Implementado el `2026-08-02`: una detección arma una cadena secuencial de
+  hasta `10` clientes compatibles y `300` segundos. La orden detectora reserva
+  primero si puede; después se priorizan la prioridad manual exclusiva, los
+  segundos trámites y la mayor cobertura de oportunidades. La cadena continúa
+  tras cada reserva y termina al confirmarse que ya no hay cupos, vencer la
+  ventana, agotarse los candidatos o aparecer un resultado técnico ambiguo.
+- Los clientes de la cadena posterior fuerzan
+  `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: el muestreo adicional solo puede ocurrir
+  en la sesión detectora y no multiplica su demora por cada cuenta siguiente.
 - Corregido el `2026-07-30`: se eliminaron las promociones automáticas de
   prioridad. Las prioridades `100/200` siguen siendo controles manuales de las
   próximas sesiones y una sesión que detecta un cupo válido para su propio
   cliente reserva inmediatamente.
-- Implementado el `2026-08-01`: si la orden detectora no puede usar el cupo por
-  sus reglas, el worker busca hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes
-  compatibles, las recorre inmediatamente y sin la pausa normal entre clientes,
-  y mantiene un contexto Playwright nuevo por orden. La prioridad explícita se
-  conserva; a igual prioridad, el bloque observador favorece primero las
-  órdenes con mayor cobertura de fechas para aumentar la probabilidad
-  de que el cliente detector pueda reservar.
+- Implementado el `2026-08-01` y ampliado el `2026-08-02`: si la orden detectora
+  no puede usar el cupo por sus reglas, el worker busca hasta diez órdenes
+  compatibles con cualquiera de las oportunidades observadas, las recorre sin
+  la pausa normal y mantiene un contexto Playwright nuevo por orden. La misma
+  cadena se inicia después de una reserva del detector si quedan candidatos.
 - Corrección para que fechas fuera de rango no provoquen un backoff general de
   30 minutos.
 - Corregido el `2026-07-31`: dos rechazos explícitos de CAPTCHA ya no se tratan
@@ -361,9 +373,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     bloqueados los datos reales y el modo `production` hasta completar respaldo
     externo de clave, revisión legal, procedimiento de incidente y autorización
     expresa. La Admin API sigue limitada a loopback.
-11. El traspaso dirigido de un cupo bloqueado ya funciona de forma secuencial,
-    con sesiones aisladas y sin pausa artificial entre candidatos, pero falta
-    validarlo ante el próximo caso real y medir cuántos milisegundos transcurren
+11. La cadena dirigida por oportunidades ya funciona de forma secuencial,
+    con sesiones aisladas, sin pausa artificial, hasta diez candidatos y cinco
+    minutos. Conserva combinaciones y telemetría de duración, pero falta
+    validarla ante el próximo caso real y medir cuántos milisegundos transcurren
     hasta cada submit. La ráfaga concurrente `OBS-006` sigue siendo solo una
     mejora futura: antes de activarla debe aislar claims, heartbeats e intentos,
     definir guardas globales y demostrar que añade reservas sin aumentar

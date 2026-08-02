@@ -86,12 +86,16 @@ Estado: en observación.
 - Completado en código el `2026-08-02`: una incompatibilidad de reglas ya no
   aplica el cooldown de `900` segundos. La orden conserva el resultado y rota
   por `last_run_at`; validar este comportamiento ante el próximo cupo real.
-- Pendiente de decisión: reemplazar la cola posterior que excluye órdenes con
-  restricciones por una evaluación de compatibilidad contra oportunidades
-  concretas. No se implementó en este corte.
-- Pendiente de decisión: conservar todas las combinaciones fecha/hora visibles
-  para el intento indirecto. El traspaso actual utiliza una combinación y hasta
-  dos candidatos; no se amplió en este corte.
+- Completado en código el `2026-08-02`: la cola posterior ya no descarta en
+  bloque a los clientes restringidos. Evalúa cada orden contra todas las
+  oportunidades observadas y solo excluye a quien no admite ninguna.
+- Completado en código el `2026-08-02`: la selección conserva las combinaciones
+  fecha/hora realmente recorridas. El detector compatible reserva de inmediato;
+  el bloqueado conserva el inventario completo que pudo leer. La cadena admite
+  hasta `10` candidatos o `300` segundos y continúa después de cada reserva.
+- Validar en el próximo caso real el orden prioridad exclusiva -> segundo
+  trámite -> mayor cobertura, la detención por cupos desaparecidos y la
+  telemetría `opportunity_elapsed_seconds`.
 
 - Completado el `2026-07-31`: `captcha_invalid` después del segundo intento
   aplica `120` segundos solo a la orden afectada y no detiene la rotación de
@@ -155,11 +159,12 @@ Estado: en observación.
   configurables, reducidos luego a `1-2`; cada espera hace un sorteo independiente
   y la variable singular anterior queda como fallback compatible.
 - Completado el `2026-08-01`: la orden que detecta un cupo compatible conserva
-  la reserva inmediata. Si sus reglas bloquean ese cupo, se eligen hasta dos
-  órdenes compatibles según el límite activo, respetando prioridad, y se
-  recorren sin la pausa normal; cada una abre una sesión Playwright nueva.
-  Dentro de la misma prioridad, el observador favorece las órdenes con mayor
-  cobertura para elevar la probabilidad de conversión del detector.
+  la reserva inmediata. Ampliado el `2026-08-02`: luego se eligen hasta diez
+  órdenes compatibles con alguna oportunidad observada y se recorren
+  secuencialmente, sin pausa normal y con una sesión Playwright nueva. Tras una
+  prioridad manual exclusiva, los segundos trámites van primero y la mayor
+  cobertura favorece a los clientes más disponibles; una restricción simple no
+  excluye si admite alguna fecha.
 - Validar el traspaso ante el siguiente cupo real: medir tiempo desde la
   detección bloqueada hasta cada submit, resultado por candidato, leases,
   cierres de sesión y señales `403/429`. Confirmar también que el detector

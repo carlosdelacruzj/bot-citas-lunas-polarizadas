@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from contextlib import ExitStack
 from uuid import uuid4
@@ -54,7 +55,7 @@ def run_rapid_queue_with_settings(
     on_post_review_start: Callable[[], None] | None = None,
     skip_order_ids: set[str] | None = None,
     follow_up_order_ids: set[str] | None = None,
-    target_order_ids: set[str] | None = None,
+    target_order_ids: tuple[str, ...] | None = None,
     inter_order_delay_enabled: bool = True,
     stop_on_available_without_reserve: bool = True,
 ) -> RunReport:
@@ -67,6 +68,13 @@ def run_rapid_queue_with_settings(
     deferred_reports: list[RunReport] = []
     confirmed_order_ids = list(initial_order_ids)
     completion_reason = "orders_exhausted"
+    opportunity_queue = target_order_ids is not None
+    opportunity_started = time.monotonic()
+    opportunity_deadline = (
+        time.monotonic() + settings.opportunity_handoff_max_seconds
+        if opportunity_queue
+        else None
+    )
     lease_owner = f"queue-{uuid4().hex}"
     with ExitStack() as claims:
         # La consulta ya excluye ordenes terminadas; por eso la cola
@@ -81,6 +89,17 @@ def run_rapid_queue_with_settings(
             )
             if order.order_id not in skipped_orders
         ]
+        if target_order_ids is not None:
+            order_positions = {
+                order_id: index for index, order_id in enumerate(target_order_ids)
+            }
+            orders.sort(
+                key=lambda candidate: order_positions.get(
+                    candidate.order_id,
+                    len(order_positions),
+                )
+            )
+            orders = orders[: settings.opportunity_handoff_max_candidates]
         queued_order_ids = {order.order_id for order in orders}
         for order in list_active_orders(settings, order_ids=follow_up_order_ids or set()):
             if order.order_id in skipped_orders or order.order_id in queued_order_ids:
@@ -95,6 +114,11 @@ def run_rapid_queue_with_settings(
                 "failed_orders": 0,
                 "results": [],
                 "completion_reason": completion_reason,
+                "opportunity_queue": opportunity_queue,
+                "opportunity_elapsed_seconds": round(
+                    time.monotonic() - opportunity_started,
+                    3,
+                ),
             }
             if confirmed_order_ids:
                 if on_post_review_start is not None:
@@ -129,6 +153,16 @@ def run_rapid_queue_with_settings(
                         "results": results,
                     },
                 )
+            if (
+                opportunity_deadline is not None
+                and time.monotonic() >= opportunity_deadline
+            ):
+                completion_reason = "opportunity_window_expired"
+                logger.info(
+                    "Stopping opportunity queue after %s seconds",
+                    settings.opportunity_handoff_max_seconds,
+                )
+                break
             # El valor 0 significa todos los pendientes; un valor positivo
             # conserva un limite opcional de reservas confirmadas por ejecucion.
             if _reservation_limit_reached(settings, confirmed_reservations):
@@ -309,6 +343,14 @@ def run_rapid_queue_with_settings(
                 break
 
             if report.status in {"unavailable", "partial", "available", "completed"}:
+                if opportunity_queue and report.status == "unavailable":
+                    completion_reason = "opportunity_disappeared"
+                    logger.info(
+                        "Stopping opportunity queue because order %s confirmed no "
+                        "remaining availability",
+                        order.order_id,
+                    )
+                    break
                 logger.info(
                     "Continuing queue after routine result for order %s",
                     order.order_id,
@@ -343,12 +385,30 @@ def run_rapid_queue_with_settings(
             "failed_orders": failed_orders,
             "results": results,
             "completion_reason": completion_reason,
+            "opportunity_queue": opportunity_queue,
+            "opportunity_candidate_limit": (
+                settings.opportunity_handoff_max_candidates
+                if opportunity_queue
+                else None
+            ),
+            "opportunity_window_seconds": (
+                settings.opportunity_handoff_max_seconds if opportunity_queue else None
+            ),
+            "opportunity_elapsed_seconds": round(
+                time.monotonic() - opportunity_started,
+                3,
+            ),
         },
     )
     review_results: list[dict[str, str]] = []
     if (
         report.status == "completed"
-        and completion_reason == "orders_exhausted"
+        and completion_reason
+        in {
+            "orders_exhausted",
+            "opportunity_disappeared",
+            "opportunity_window_expired",
+        }
         and confirmed_order_ids
     ):
         if on_post_review_start is not None:

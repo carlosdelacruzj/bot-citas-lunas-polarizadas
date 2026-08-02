@@ -153,6 +153,8 @@ class Settings:
     observer_site_toggle_interval_max_seconds: int
     observer_reload_probe_after_attempt: int
     observer_active_order_limit: int
+    opportunity_handoff_max_candidates: int
+    opportunity_handoff_max_seconds: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
     observer_hot_window_extension_seconds: int
@@ -398,6 +400,16 @@ def load_settings(*, require_login: bool = True) -> Settings:
         observer_active_order_limit=_parse_int(
             os.getenv("OBSERVER_ACTIVE_ORDER_LIMIT"),
             default=2,
+            minimum=1,
+        ),
+        opportunity_handoff_max_candidates=_parse_int(
+            os.getenv("OPPORTUNITY_HANDOFF_MAX_CANDIDATES"),
+            default=10,
+            minimum=1,
+        ),
+        opportunity_handoff_max_seconds=_parse_int(
+            os.getenv("OPPORTUNITY_HANDOFF_MAX_SECONDS"),
+            default=300,
             minimum=1,
         ),
         observer_required_site=os.getenv("OBSERVER_REQUIRED_SITE", "LIMA-LA VICTORIA").strip(),

@@ -147,6 +147,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        ROW_NUMBER() OVER (
                            ORDER BY
                                priority DESC,
+                               parent_order_id IS NULL,
                                constraint_penalty ASC,
                                created_at ASC
                        ) AS selection_rank
@@ -164,7 +165,8 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                    priority, status, created_at, updated_at, parent_order_id,
                    program_expediente, program_plate
             FROM active_block
-            ORDER BY last_run_at ASC NULLS FIRST, created_at ASC, priority DESC
+            ORDER BY parent_order_id IS NULL, last_run_at ASC NULLS FIRST,
+                     created_at ASC, priority DESC
             """,
             (
                 EXCLUSIVE_PRIORITY_THRESHOLD,
@@ -182,7 +184,31 @@ def list_compatible_orders_for_slot(
     limit: int | None = None,
     settings: Settings | None = None,
 ) -> list[ServiceOrderCandidate]:
+    return list_compatible_orders_for_opportunities(
+        ((appointment_date, appointment_hour),),
+        exclude_order_ids=exclude_order_ids,
+        limit=limit,
+        settings=settings,
+    )
+
+
+def list_compatible_orders_for_opportunities(
+    opportunities: Iterable[tuple[str, str]],
+    *,
+    exclude_order_ids: Iterable[str] = (),
+    limit: int | None = None,
+    settings: Settings | None = None,
+) -> list[ServiceOrderCandidate]:
     if limit is not None and limit <= 0:
+        return []
+    unique_opportunities = tuple(
+        dict.fromkeys(
+            (str(date_text).strip(), str(hour_text).strip())
+            for date_text, hour_text in opportunities
+            if str(date_text).strip()
+        )
+    )
+    if not unique_opportunities:
         return []
     settings = _settings(settings)
     init_database(settings)
@@ -216,7 +242,7 @@ def list_compatible_orders_for_slot(
             """
         ).fetchall()
 
-    compatible: list[ServiceOrderCandidate] = []
+    ranked: list[tuple[tuple[object, ...], ServiceOrderCandidate]] = []
     for row in rows:
         order_id = str(row["order_id"])
         if order_id in excluded:
@@ -243,12 +269,40 @@ def list_compatible_orders_for_slot(
                 ),
             )
         )
-        if not is_allowed(appointment_date, appointment_hour):
+        compatibility_count = sum(
+            is_allowed(appointment_date, appointment_hour)
+            for appointment_date, appointment_hour in unique_opportunities
+        )
+        if compatibility_count == 0:
             continue
-        compatible.append(_candidate_from_row(row))
-        if limit is not None and len(compatible) >= limit:
-            break
-    return compatible
+        constraint_penalty = _constraint_penalty(row)
+        priority = int(row["priority"])
+        ranked.append(
+            (
+                (
+                    priority < EXCLUSIVE_PRIORITY_THRESHOLD,
+                    row.get("parent_order_id") is None,
+                    -compatibility_count,
+                    constraint_penalty,
+                    -priority,
+                    str(row["created_at"]),
+                ),
+                _candidate_from_row(row),
+            )
+        )
+    ranked.sort(key=lambda item: item[0])
+    compatible = [candidate for _, candidate in ranked]
+    return compatible[:limit] if limit is not None else compatible
+
+
+def _constraint_penalty(row: dict[str, Any]) -> int:
+    allowed_weekdays = row.get("allowed_weekdays") or ()
+    return (
+        int(row.get("minimum_date") is not None)
+        + int(row.get("maximum_date") is not None)
+        + (7 - len(allowed_weekdays) if allowed_weekdays else 0)
+        + len(_parse_excluded_date_ranges(row.get("excluded_date_ranges")))
+    )
 
 
 def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
