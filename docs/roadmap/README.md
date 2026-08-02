@@ -30,6 +30,12 @@ Criterio de cierre: cumplido.
 
 Estado: en observación.
 
+### Dashboard
+
+- Completado el `2026-08-01`: el auto-refresh continúa funcionando en segundo
+  plano sin insertar una franja temporal encima de la vista. El estado breve
+  aparece en el encabezado y no provoca saltos verticales del contenido.
+
 ### WhatsApp automático
 
 - Completado el `2026-07-28`: la bandeja usa evidencia enviada y jobs durables,

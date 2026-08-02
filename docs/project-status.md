@@ -123,6 +123,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Admin API independiente mediante `worker_commands`.
 - Dashboard Angular con vistas, rutas, carga diferida, estados y modales
   separados.
+- Corregido el `2026-08-01`: la actualización automática del dashboard conserva
+  la vista en su posición. El indicador de refresco vive dentro del encabezado
+  y ya no inserta ni retira una franja que desplazaba el contenido en cada
+  consulta periódica.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
 - Arranque supervisado en Windows para worker, dashboard, Telegram y CAPTCHA

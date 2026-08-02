@@ -909,9 +909,6 @@ export class App implements OnDestroy {
     if (state === 'error') {
       return hasData ? 'stale' : 'error';
     }
-    if (this.refreshingViewState() === this.activeView() && hasData) {
-      return 'refreshing';
-    }
     return null;
   });
 
