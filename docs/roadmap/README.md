@@ -97,6 +97,8 @@ Estado: en observación.
   agregaron `3.609 s` y `3.625 s`, cerca de `0.402 s` por ciclo. No hubo submit
   ni llamada a 2Captcha porque ambas órdenes terminaron
   `partial / blocked_by_order_rule`.
+- Cerrado el experimento con el `.env` productivo nuevamente en `1`; las nueve
+  capturas adicionales ya no retrasan una reserva real.
 - Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
   20 eventos tienen tres predicciones y quedaron pendientes de revisión humana
   en el dashboard.
@@ -134,10 +136,16 @@ Estado: en observación.
 - Completado el `2026-08-01`: el intervalo fijo se reemplazó por límites
   configurables, reducidos luego a `1-2`; cada espera hace un sorteo independiente
   y la variable singular anterior queda como fallback compatible.
-- Completado el `2026-07-30`: eliminadas las promociones automáticas de
-  prioridad y el diferimiento entre clientes. Validar en el siguiente cupo real
-  que la orden que lo detecta reserva inmediatamente, que las demás conservan
-  su prioridad y que los empates respetan el orden de registro.
+- Completado el `2026-08-01`: la orden que detecta un cupo compatible conserva
+  la reserva inmediata. Si sus reglas bloquean ese cupo, se eligen hasta dos
+  órdenes compatibles según el límite activo, respetando prioridad, y se
+  recorren sin la pausa normal; cada una abre una sesión Playwright nueva.
+  Dentro de la misma prioridad, el observador favorece las órdenes con mayor
+  cobertura para elevar la probabilidad de conversión del detector.
+- Validar el traspaso ante el siguiente cupo real: medir tiempo desde la
+  detección bloqueada hasta cada submit, resultado por candidato, leases,
+  cierres de sesión y señales `403/429`. Confirmar también que el detector
+  compatible continúa reservando primero para sí mismo.
 - Comparar al menos dos o tres días con el ciclo ligero `15/1-2/8` antes de
   conservarlo como nuevo baseline.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales

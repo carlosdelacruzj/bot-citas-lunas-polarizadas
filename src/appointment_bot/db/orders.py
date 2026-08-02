@@ -33,6 +33,7 @@ from appointment_bot.db.order_queue import (
     get_minimum_reservation_hour_for_order,
     get_reservation_constraints_for_order,
     list_active_orders,
+    list_compatible_orders_for_slot,
     list_observer_orders,
 )
 from appointment_bot.db.order_state import (

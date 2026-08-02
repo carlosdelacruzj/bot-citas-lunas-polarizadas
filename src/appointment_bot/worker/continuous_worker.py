@@ -85,6 +85,7 @@ class ContinuousWorker:
         self._rapid_queue_initial_confirmed = 0
         self._rapid_queue_initial_confirmed_order_ids: set[str] = set()
         self._rapid_queue_follow_up_order_ids: set[str] = set()
+        self._compatible_handoff_order_ids: set[str] = set()
         self._deferred_order_reports = DeferredOrderReports(settings)
         self._state_callbacks = WorkerStateCallbacks(
             settings,
@@ -258,10 +259,16 @@ class ContinuousWorker:
             self._rapid_queue_initial_confirmed = 0
             self._rapid_queue_initial_confirmed_order_ids = set()
             self._rapid_queue_follow_up_order_ids = set()
+            self._compatible_handoff_order_ids = set()
             queue_requested = self._monitor_order(order)
         finally:
             self._release_order(order.order_id)
-        if queue_requested and self.settings.auto_reserve:
+        if self._compatible_handoff_order_ids and self.settings.auto_reserve:
+            self._run_rapid_queue(
+                target_order_ids=self._compatible_handoff_order_ids,
+                inter_order_delay_enabled=False,
+            )
+        elif queue_requested and self.settings.auto_reserve:
             self._run_rapid_queue(
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
                 initial_confirmed_order_ids=self._rapid_queue_initial_confirmed_order_ids,
@@ -344,6 +351,7 @@ class ContinuousWorker:
         self._rapid_queue_initial_confirmed = decision.rapid_queue_initial_confirmed
         self._rapid_queue_initial_confirmed_order_ids = set(decision.confirmed_order_ids)
         self._rapid_queue_follow_up_order_ids = set(decision.follow_up_order_ids)
+        self._compatible_handoff_order_ids = set(decision.compatible_handoff_order_ids)
         if decision.requires_error_handling:
             self._handle_order_error(order, report)
             return False
@@ -384,6 +392,8 @@ class ContinuousWorker:
         initial_confirmed_order_ids: set[str] | None = None,
         skip_order_ids: set[str] | None = None,
         follow_up_order_ids: set[str] | None = None,
+        target_order_ids: set[str] | None = None,
+        inter_order_delay_enabled: bool = True,
     ) -> None:
         self._update_state(
             phase="rapid_queue",
@@ -406,6 +416,8 @@ class ContinuousWorker:
             ),
             skip_order_ids=skip_order_ids,
             follow_up_order_ids=follow_up_order_ids,
+            target_order_ids=target_order_ids,
+            inter_order_delay_enabled=inter_order_delay_enabled,
         )
         confirmed = int((report.details or {}).get("confirmed_reservations", 0))
         review_results = (report.details or {}).get("post_reservation_reviews")

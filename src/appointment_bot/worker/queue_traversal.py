@@ -54,6 +54,8 @@ def run_rapid_queue_with_settings(
     on_post_review_start: Callable[[], None] | None = None,
     skip_order_ids: set[str] | None = None,
     follow_up_order_ids: set[str] | None = None,
+    target_order_ids: set[str] | None = None,
+    inter_order_delay_enabled: bool = True,
     stop_on_available_without_reserve: bool = True,
 ) -> RunReport:
     initial_order_ids = set(initial_confirmed_order_ids or set())
@@ -72,7 +74,11 @@ def run_rapid_queue_with_settings(
         skipped_orders = skip_order_ids or set()
         orders = [
             order
-            for order in list_active_orders(settings, include_constrained=False)
+            for order in (
+                list_active_orders(settings, order_ids=target_order_ids)
+                if target_order_ids is not None
+                else list_active_orders(settings, include_constrained=False)
+            )
             if order.order_id not in skipped_orders
         ]
         queued_order_ids = {order.order_id for order in orders}
@@ -184,7 +190,7 @@ def run_rapid_queue_with_settings(
                     "does not match order rules.",
                     order.order_id,
                 )
-                if has_more_orders:
+                if has_more_orders and inter_order_delay_enabled:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
             if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
@@ -204,7 +210,7 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                     cooldown,
                 )
-                if has_more_orders:
+                if has_more_orders and inter_order_delay_enabled:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
             if report.exit_code != 0 or report.status == "error":
@@ -215,7 +221,7 @@ def run_rapid_queue_with_settings(
                     "Order %s was paused because its credential could not be decrypted",
                     order.order_id,
                 )
-                if has_more_orders:
+                if has_more_orders and inter_order_delay_enabled:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
@@ -228,7 +234,7 @@ def run_rapid_queue_with_settings(
                     settings=settings,
                 )
                 logger.info("Order marked as done: %s", order.order_id)
-                if has_more_orders:
+                if has_more_orders and inter_order_delay_enabled:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
@@ -237,8 +243,13 @@ def run_rapid_queue_with_settings(
                 confirmed_order_ids.append(order.order_id)
                 mark_order_done(order.order_id, settings=settings)
                 logger.info("Reservation confirmed for order: %s", order.order_id)
-                if has_more_orders and not _reservation_limit_reached(
-                    settings, confirmed_reservations
+                if (
+                    has_more_orders
+                    and inter_order_delay_enabled
+                    and not _reservation_limit_reached(
+                        settings,
+                        confirmed_reservations,
+                    )
                 ):
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
@@ -302,7 +313,7 @@ def run_rapid_queue_with_settings(
                     "Continuing queue after routine result for order %s",
                     order.order_id,
                 )
-                if has_more_orders:
+                if has_more_orders and inter_order_delay_enabled:
                     _delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 

@@ -11,6 +11,10 @@ from appointment_bot.core.models import (
 from appointment_bot.core.order_priority import (
     EXCLUSIVE_PRIORITY_THRESHOLD,
 )
+from appointment_bot.core.rules import (
+    ReservationConstraints,
+    appointment_filter_from_constraints,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -133,7 +137,22 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        wc.phone AS contact_phone, wc.contact_source,
                        so.priority, so.status, so.created_at, so.updated_at,
                        so.parent_order_id, so.program_expediente, so.program_plate,
-                       os.last_run_at
+                       os.last_run_at,
+                       (
+                           CASE WHEN so.minimum_hour IS NULL THEN 0 ELSE 1 END
+                           + CASE WHEN so.minimum_date IS NULL THEN 0 ELSE 1 END
+                           + CASE WHEN so.maximum_date IS NULL THEN 0 ELSE 1 END
+                           + CASE
+                               WHEN so.allowed_weekdays IS NULL
+                                   OR cardinality(so.allowed_weekdays) = 0
+                               THEN 0
+                               ELSE 7 - cardinality(so.allowed_weekdays)
+                             END
+                           + COALESCE(
+                               jsonb_array_length(so.excluded_date_ranges),
+                               0
+                             )
+                       ) AS constraint_penalty
                 FROM service_orders so
                 JOIN applicants a ON a.applicant_id = so.applicant_id
                 JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -150,6 +169,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        ROW_NUMBER() OVER (
                            ORDER BY
                                priority DESC,
+                               constraint_penalty ASC,
                                created_at ASC
                        ) AS selection_rank
                 FROM eligible_orders
@@ -174,6 +194,88 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             ),
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]
+
+
+def list_compatible_orders_for_slot(
+    appointment_date: str,
+    appointment_hour: str,
+    *,
+    exclude_order_ids: Iterable[str] = (),
+    limit: int | None = None,
+    settings: Settings | None = None,
+) -> list[ServiceOrderCandidate]:
+    if limit is not None and limit <= 0:
+        return []
+    settings = _settings(settings)
+    init_database(settings)
+    excluded = {str(order_id) for order_id in exclude_order_ids}
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
+                   pa.username, pa.document_type, wc.display_name AS contact_name,
+                   wc.phone AS contact_phone, wc.contact_source,
+                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.parent_order_id, so.program_expediente, so.program_plate,
+                   so.minimum_hour, so.minimum_date, so.maximum_date,
+                   so.allowed_weekdays, so.excluded_date_ranges
+            FROM service_orders so
+            JOIN applicants a ON a.applicant_id = so.applicant_id
+            JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
+            LEFT JOIN applicant_contacts ac
+                ON ac.applicant_id = a.applicant_id AND ac.is_primary = true
+            LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            LEFT JOIN order_state os ON os.order_id = so.order_id
+            WHERE so.status = 'ready'
+              AND (os.next_allowed_at IS NULL OR os.next_allowed_at <= CURRENT_TIMESTAMP)
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM reservation_attempts ra
+                  WHERE ra.order_id = so.order_id
+                    AND ra.status IN ('intent', 'pending', 'unknown')
+              )
+            ORDER BY so.priority DESC, so.created_at ASC
+            """
+        ).fetchall()
+
+    compatible: list[ServiceOrderCandidate] = []
+    for row in rows:
+        order_id = str(row["order_id"])
+        if order_id in excluded:
+            continue
+        is_allowed = appointment_filter_from_constraints(
+            ReservationConstraints(
+                minimum_hour=(
+                    int(row["minimum_hour"])
+                    if row["minimum_hour"] is not None
+                    else None
+                ),
+                minimum_date=(
+                    row["minimum_date"]
+                    if isinstance(row["minimum_date"], date)
+                    else None
+                ),
+                maximum_date=(
+                    row["maximum_date"]
+                    if isinstance(row["maximum_date"], date)
+                    else None
+                ),
+                allowed_weekdays=(
+                    tuple(int(day) for day in row["allowed_weekdays"])
+                    if row["allowed_weekdays"]
+                    else None
+                ),
+                excluded_date_ranges=_parse_excluded_date_ranges(
+                    row["excluded_date_ranges"]
+                ),
+            )
+        )
+        if not is_allowed(appointment_date, appointment_hour):
+            continue
+        compatible.append(_candidate_from_row(row))
+        if limit is not None and len(compatible) >= limit:
+            break
+    return compatible
 
 
 def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:

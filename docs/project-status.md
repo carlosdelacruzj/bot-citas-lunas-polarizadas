@@ -67,11 +67,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Prioridad, prioridad exclusiva y restricciones por fecha, hora, día y rangos
   excluidos.
 - Corregido el `2026-07-30`: se eliminaron las promociones automáticas de
-  prioridad y el diferimiento de un cupo compatible hacia otra orden. Las
-  prioridades `100/200` son controles manuales de las próximas sesiones; una
-  sesión que ya detectó un cupo válido reserva para su propio cliente. A igual
-  prioridad, el bloque de observación vuelve a respetar el orden de registro
-  sin adelantar órdenes por tener o no restricciones.
+  prioridad. Las prioridades `100/200` siguen siendo controles manuales de las
+  próximas sesiones y una sesión que detecta un cupo válido para su propio
+  cliente reserva inmediatamente.
+- Implementado el `2026-08-01`: si la orden detectora no puede usar el cupo por
+  sus reglas, el worker busca hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes
+  compatibles, las recorre inmediatamente y sin la pausa normal entre clientes,
+  y mantiene un contexto Playwright nuevo por orden. La prioridad explícita se
+  conserva; a igual prioridad, el bloque observador favorece primero las
+  órdenes con mayor cobertura de fechas y horas para aumentar la probabilidad
+  de que el cliente detector pueda reservar.
 - Corrección para que fechas fuera de rango no provoquen un backoff general de
   30 minutos.
 - Corregido el `2026-07-31`: dos rechazos explícitos de CAPTCHA ya no se tratan
@@ -237,6 +242,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   agregaron `3.609 s` y `3.625 s`; cada ciclo de captura y refresco promedió
   aproximadamente `0.402 s`. No hubo submit, consumo de 2Captcha ni reserva,
   por lo que todavía falta medir el impacto completo sobre una reserva real.
+- Terminado el experimento, el `.env` productivo volvió a
+  `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: cada intento conserva el CAPTCHA que
+  realmente usa, pero ya no añade los `3.6 s` observados por las nueve muestras
+  extra antes de competir por el cupo.
 - Corregido el mismo día: la ruta de evidencia bloqueada ahora conserva
   `run_id` y `order_id`, y registra tanto las nueve muestras previas como la
   final en CAPTCHA sombra. Los 20 originales ya capturados fueron recuperados
@@ -339,11 +348,13 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     bloqueados los datos reales y el modo `production` hasta completar respaldo
     externo de clave, revisión legal, procedimiento de incidente y autorización
     expresa. La Admin API sigue limitada a loopback.
-11. La ráfaga multicliente `OBS-006` está documentada únicamente como mejora
-    futura en evaluación. La concurrencia productiva sigue desactivada. Antes
-    de implementarla debe aislar sesiones, claims, heartbeats e intentos por
-    orden, definir guardas globales y demostrar que obtiene reservas adicionales
-    sin aumentar defensas, resultados inciertos ni errores operativos.
+11. El traspaso dirigido de un cupo bloqueado ya funciona de forma secuencial,
+    con sesiones aisladas y sin pausa artificial entre candidatos, pero falta
+    validarlo ante el próximo caso real y medir cuántos milisegundos transcurren
+    hasta cada submit. La ráfaga concurrente `OBS-006` sigue siendo solo una
+    mejora futura: antes de activarla debe aislar claims, heartbeats e intentos,
+    definir guardas globales y demostrar que añade reservas sin aumentar
+    defensas, resultados inciertos ni errores operativos.
 
 ## Validación del corte
 
