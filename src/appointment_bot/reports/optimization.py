@@ -91,10 +91,10 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
     timing = timing if isinstance(timing, dict) else {}
     slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
     lines = [
-        f"## {title_time} - {report.order_id} - {report.status.value}\n\n",
+        f"## {title_time} - {_masked_order_id(report.order_id)} - {report.status.value}\n\n",
         f"- Run: {report.run_id}\n",
-        f"- Orden: {_text(details.get('orden') or report.order_id)}\n",
-        f"- Cliente: {_text(details.get('cliente')) or 'no registrado'}\n",
+        f"- Orden: {_masked_order_id(details.get('orden') or report.order_id)}\n",
+        f"- Cliente: {_masked_presence(details.get('cliente'))}\n",
         f"- Cuenta: {_text(details.get('cuenta')) or 'no registrada'}\n",
         f"- Sede: {_text(details.get('sede') or details.get('site'))}\n",
         f"- Fecha detectada: {_text(details.get('fecha') or details.get('appointment_date'))}\n",
@@ -198,7 +198,10 @@ def _entry_for_report(
     timing = timing if isinstance(timing, dict) else {}
     slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
     title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
-    heading = f"## {title_time} - {report.order_id} - {report.status.value}\n\n"
+    heading = (
+        f"## {title_time} - {_masked_order_id(report.order_id)} - "
+        f"{report.status.value}\n\n"
+    )
     lines = [
         heading,
         f"- Run: {report.run_id}\n",
@@ -236,7 +239,7 @@ def _entry_for_report(
         ]
     )
     if details.get("captcha_solution_sent"):
-        lines.append(f"  - CAPTCHA enviado: {_text(details.get('captcha_solution_sent'))}\n")
+        lines.append("  - CAPTCHA enviado: registrado y oculto\n")
     if details.get("captcha_image_path"):
         lines.append(f"  - Imagen enviada a 2captcha: {_text(details.get('captcha_image_path'))}\n")
     captcha_attempts = details.get("captcha_attempts")
@@ -248,7 +251,7 @@ def _entry_for_report(
                 "  - Intento CAPTCHA "
                 f"{_text(item.get('attempt'))}: "
                 f"outcome={_text(item.get('submission_outcome'))}, "
-                f"valor={_text(item.get('captcha_solution_sent'))}, "
+                "valor=oculto, "
                 f"duracion={_text(item.get('duration_seconds'))}s\n"
             )
             captcha_size = _dimensions(
@@ -411,9 +414,12 @@ def _switch_context(
         return None
     started_at = _parse_datetime(report.started_at)
     if started_at is None:
-        return f"{previous_order_id} -> {report.order_id}"
+        return f"{_masked_order_id(previous_order_id)} -> {_masked_order_id(report.order_id)}"
     delta = max((started_at - previous_finished_at).total_seconds(), 0.0)
-    return f"{previous_order_id} -> {report.order_id} en {delta:.3f}s"
+    return (
+        f"{_masked_order_id(previous_order_id)} -> "
+        f"{_masked_order_id(report.order_id)} en {delta:.3f}s"
+    )
 
 
 def _appointment_text(details: dict[str, Any]) -> str:
@@ -489,6 +495,14 @@ def _float(value: Any) -> float | None:
 
 def _text(value: Any) -> str:
     return detail_text(value, collapse_newlines=True)
+
+
+def _masked_order_id(value: Any) -> str:
+    return sanitize_text(_text(value)) or "order-***"
+
+
+def _masked_presence(value: Any) -> str:
+    return "registrado y oculto" if _text(value) else "no registrado"
 
 
 def _list_text(value: Any) -> str:

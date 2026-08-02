@@ -110,6 +110,9 @@ Estado: en observación.
 
 ### CAPTCHA y datos de entrenamiento
 
+- Completado el `2026-08-02`: las bitácoras versionadas ocultan nombres,
+  identificadores de orden y respuestas CAPTCHA; se sanitizó el lote pendiente
+  antes de publicarlo.
 - Completado en código el `2026-08-01`: `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`
   conserva el recorrido real vigente. Un valor mayor captura y refresca
   muestras adicionales, registra cada una en sombra y manda solamente el

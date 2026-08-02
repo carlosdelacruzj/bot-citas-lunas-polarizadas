@@ -244,6 +244,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 ### Evidencia y CAPTCHA
 
 - Evidencia organizada por fecha y resumen compacto.
+- Corregido el `2026-08-02`: las bitácoras Markdown ya no escriben nombres de
+  clientes, `order_id` completos ni respuestas CAPTCHA. Las entradas nuevas del
+  1 de agosto se sanitizaron antes de versionarlas.
 - CAPTCHA original utilizado para el solver.
 - Servicio local en modo sombra, cola durable y revisión humana desde el
   dashboard.
