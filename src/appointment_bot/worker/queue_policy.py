@@ -23,18 +23,12 @@ def update_state_from_report(
     outcome = classify_order_report(report)
     if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
         return
-    backoff_seconds = (
-        settings.order_rule_cooldown_seconds
-        if outcome is OrderReportOutcome.BLOCKED
-        else None
-    )
-
     update_order_state(
         order.order_id,
         status=report.status,
         message=report.message,
         exit_code=report.exit_code,
-        backoff_seconds=backoff_seconds,
+        backoff_seconds=None,
         settings=settings,
     )
 

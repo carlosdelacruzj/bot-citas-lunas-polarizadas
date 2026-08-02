@@ -169,7 +169,6 @@ restricciones de reserva de una orden:
 
 ```json
 {
-  "minimum_reservation_hour": 11,
   "minimum_reservation_date": "2026-08-01",
   "maximum_reservation_date": "2026-08-31",
   "allowed_weekdays": [1, 3, 6],
@@ -188,10 +187,13 @@ requiere `start_date` y `end_date`. Una fecha dentro de cualquiera de esos
 periodos se rechaza aunque cumpla los demás límites. Los rangos superpuestos se
 ordenan y consolidan antes de persistirlos; una lista vacía quita las exclusiones.
 Una orden que solo tenga `excluded_date_ranges` conserva el tratamiento de cola
-normal. Solo `minimum_reservation_hour`, `minimum_reservation_date`,
-`maximum_reservation_date` o `allowed_weekdays` la clasifican como restringida
+normal. Solo `minimum_reservation_date`, `maximum_reservation_date` o
+`allowed_weekdays` la clasifican como restringida
 para esperar una coincidencia. La exclusión se valida siempre antes del CAPTCHA
 y del envío de reserva.
+`minimum_reservation_hour` permanece únicamente como campo histórico de salida;
+en creación o edición cualquier valor no vacío devuelve HTTP `400`. El horario
+visible nunca bloquea una fecha autorizada.
 La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.
@@ -297,7 +299,6 @@ flujos administrativos avanzados, pero no se solicitan al crear un cliente:
 - `priority`
 - `applicant_name`
 - `charge_required`
-- `minimum_reservation_hour`
 - `minimum_reservation_date`
 - `maximum_reservation_date`
 - `allowed_weekdays`
@@ -325,7 +326,6 @@ forman parte del contrato:
 - `closure_note`: nota corta de cierre, por ejemplo la orden valida de un
   duplicado.
 - `closed_at`: timestamp en que la orden dejo de estar activa.
-- `minimum_reservation_hour`: hora minima aceptable.
 - `minimum_reservation_date`: fecha minima aceptable.
 - `maximum_reservation_date`: fecha maxima aceptable, inclusive; no puede ser
   anterior a `minimum_reservation_date`.
@@ -511,7 +511,7 @@ El dashboard no debe mostrar/copiar JSON crudo por defecto.
 
 La creación y la edición de órdenes consumen el mismo componente visual para
 `minimum_reservation_date`, `maximum_reservation_date`, `allowed_weekdays` y
-`excluded_date_ranges`. La edición también habilita `minimum_reservation_hour`.
+`excluded_date_ranges`. Ningún formulario acepta restricciones horarias.
 Esta reutilización no cambia los payloads del API: evita que ambos formularios
 diverjan en etiquetas, validación de rangos o comportamiento responsive.
 

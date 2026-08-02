@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 41
+SCHEMA_VERSION = 42
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -84,6 +84,9 @@ def create_current_schema(connection: Connection) -> None:
                 ON DELETE CASCADE,
             priority integer NOT NULL DEFAULT 0 CHECK (priority >= 0),
             charge_required boolean NOT NULL DEFAULT true,
+            reservation_price numeric(12, 2) NOT NULL DEFAULT 50.00 CHECK (
+                reservation_price > 0
+            ),
             minimum_hour integer CHECK (
                 minimum_hour IS NULL OR (minimum_hour >= 0 AND minimum_hour <= 23)
             ),
@@ -362,6 +365,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("portal_accounts", "password"),
         ("portal_accounts", "document_type"),
         ("service_orders", "status"),
+        ("service_orders", "reservation_price"),
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
         ("service_orders", "maximum_date"),
@@ -1445,6 +1449,25 @@ def migrate_database(connection: Connection) -> None:
             (41,),
         )
         current_version = 41
+    if current_version == 41:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN reservation_price numeric(12, 2) NOT NULL DEFAULT 40.00
+                CHECK (reservation_price > 0)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ALTER COLUMN reservation_price SET DEFAULT 50.00
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (42,),
+        )
+        current_version = 42
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

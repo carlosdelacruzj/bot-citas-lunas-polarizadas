@@ -30,7 +30,6 @@ from appointment_bot.db.order_preflight import (
     mark_order_preflight_validated,
 )
 from appointment_bot.db.order_queue import (
-    get_minimum_reservation_hour_for_order,
     get_reservation_constraints_for_order,
     list_active_orders,
     list_compatible_orders_for_slot,

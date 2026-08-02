@@ -50,7 +50,6 @@ PREFERRED_ORDER_FIELDS = (
     "parent_order_id",
     "program_expediente",
     "program_plate",
-    "minimum_reservation_hour",
     "minimum_reservation_date",
     "maximum_reservation_date",
     "allowed_weekdays",
@@ -99,11 +98,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-charge",
         action="store_true",
         help="Crea el trabajo sin cobro.",
-    )
-    order_add_parser.add_argument(
-        "--minimum-reservation-hour",
-        type=int,
-        help="Hora minima permitida para reservar, por ejemplo 11.",
     )
     order_add_parser.add_argument(
         "--minimum-reservation-date",
@@ -312,7 +306,6 @@ def run(argv: Sequence[str] | None = None) -> int:
                 contact_source=args.contact_source,
                 applicant_name=args.applicant_name,
                 charge_required=not args.no_charge,
-                minimum_reservation_hour=args.minimum_reservation_hour,
                 minimum_reservation_date=args.minimum_reservation_date,
                 maximum_reservation_date=args.maximum_reservation_date,
                 allowed_weekdays=_parse_allowed_weekdays(args.allowed_weekdays),

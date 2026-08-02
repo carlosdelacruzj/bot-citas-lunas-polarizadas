@@ -154,7 +154,6 @@ class LocalApiTests(unittest.TestCase):
                     "contact_whatsapp": "+51 999-111-222",
                     "applicant_name": "Client Two",
                     "priority": 5,
-                    "minimum_reservation_hour": 11,
                     "minimum_reservation_date": "2026-08-01",
                     "allowed_weekdays": [1, 6],
                 }
@@ -217,7 +216,7 @@ class LocalApiTests(unittest.TestCase):
             self.assertEqual(detail["contact_name"], "Contacto de prueba")
             self.assertEqual(detail["contact_source"], "whatsapp")
             self.assertEqual(detail["contact_whatsapp"], "+51999111222")
-            self.assertEqual(detail["minimum_reservation_hour"], 11)
+            self.assertIsNone(detail["minimum_reservation_hour"])
             self.assertEqual(detail["minimum_reservation_date"], "2026-08-01")
             self.assertEqual(detail["allowed_weekdays"], [1, 6])
 

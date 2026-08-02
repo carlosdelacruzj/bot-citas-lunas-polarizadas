@@ -15,7 +15,7 @@ from appointment_bot.db.migrations import migrate_database
 from appointment_bot.db.pool import pooled_connection
 from appointment_bot.services.credential_cipher import CredentialCipher
 
-DEFAULT_RESERVATION_AMOUNT = Decimal("40.00")
+DEFAULT_RESERVATION_AMOUNT = Decimal("50.00")
 _INITIALIZED_URLS: set[str] = set()
 _INITIALIZATION_LOCK = threading.Lock()
 

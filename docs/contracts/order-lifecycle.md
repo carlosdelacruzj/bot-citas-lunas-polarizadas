@@ -11,21 +11,28 @@ dashboard deben respetar.
 - `paid`: cobro registrado.
 - `archived`: orden cerrada o excluida de cola.
 
+Cada orden conserva `reservation_price` desde su alta. Las órdenes existentes
+al migrar a PostgreSQL v42 permanecen en `S/40`; las nuevas nacen en `S/50`.
+La reserva confirmada copia ese valor al pago pendiente, por lo que cambiar el
+precio general no modifica retroactivamente clientes ya registrados.
+
 Solo `ready` puede entrar a una cola operativa. La cola normal del worker
 procesa órdenes sin restricciones positivas y también órdenes que únicamente
 tienen `excluded_date_ranges`: una exclusión protege fechas concretas, pero no
 convierte a la orden en espera de una coincidencia. Las órdenes con fecha
-mínima/máxima, hora mínima o días permitidos sí se consideran restringidas y
+mínima/máxima o días permitidos sí se consideran restringidas y
 su propia sesión solo intenta reservar cuando el cupo cumple esas reglas.
 
 El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes. La
-selección respeta `priority DESC, created_at ASC`; por lo tanto, a igual
-prioridad entra primero la orden registrada antes, tenga o no restricciones.
+selección respeta prioridad, menor penalización por restricciones y antigüedad;
+dentro del bloque se ejecuta primero quien lleva más tiempo sin revisión.
 Antes de resolver CAPTCHA o enviar la reserva, cualquier orden debe cumplir
-`minimum_hour`, `minimum_date`, `maximum_date`, `allowed_weekdays` y
+`minimum_date`, `maximum_date`, `allowed_weekdays` y
 `excluded_date_ranges`. Los límites de cada exclusión son inclusivos. Si el
 cupo incumple cualquier regla o cae dentro de un rango excluido, se registra
 como bloqueado por regla y no se intenta reservar.
+El horario no participa en compatibilidad: para la fecha permitida más próxima
+se usa el horario visible más temprano.
 
 Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
 normal. Las prioridades de `100` a `199` activan prioridad de enfoque: esas
@@ -41,8 +48,9 @@ Una prioridad `200` o superior activa el enfoque exclusivo. Mientras esa orden
 este `ready` y sea elegible, `list_observer_orders()` devuelve solo esa orden,
 sin importar `OBSERVER_ACTIVE_ORDER_LIMIT`. Al asignar el modo exclusivo, otro
 exclusivo previo vuelve a prioridad `100` y se limpia la espera pendiente de la
-nueva orden. Si una fecha se descarta por sus reglas, el exclusivo permanece
-elegible y no recibe el cooldown normal de reglas. Esto no crea navegadores ni
+nueva orden. Si una fecha se descarta por sus reglas, la orden permanece
+elegible sin un cooldown temporal, sea normal, enfocada o exclusiva. Esto no
+crea navegadores ni
 workers paralelos: el worker existente repite sus sesiones de forma secuencial
 sobre la misma orden.
 
@@ -66,7 +74,6 @@ priority DESC, created_at ASC
 Las restricciones positivas que deciden si una orden debe esperar un cupo
 compatible son:
 
-- `minimum_hour`
 - `minimum_date`
 - `maximum_date`
 - `allowed_weekdays`

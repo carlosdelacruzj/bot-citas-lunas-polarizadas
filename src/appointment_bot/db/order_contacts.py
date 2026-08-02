@@ -57,7 +57,13 @@ def list_service_order_summaries(
                    so.created_at, so.updated_at,
                    r.status AS reservation_status, r.site AS reservation_site,
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
-                   p.status AS payment_status, p.amount_agreed, p.amount_paid,
+                   p.status AS payment_status,
+                   CASE
+                       WHEN so.charge_required
+                       THEN COALESCE(p.amount_agreed, so.reservation_price)
+                       ELSE NULL
+                   END AS amount_agreed,
+                   p.amount_paid,
                    wm.status AS whatsapp_message_status,
                    wm.sent_at AS whatsapp_message_sent_at,
                    CASE

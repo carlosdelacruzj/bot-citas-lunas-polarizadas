@@ -1420,19 +1420,6 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
     elif conversation.mode == "manual" and step == 9:
         keyboard = [
             [
-                {"text": "08:00", "callback_data": f"nf:{session_id}:hour_8"},
-                {"text": "09:00", "callback_data": f"nf:{session_id}:hour_9"},
-                {"text": "10:00", "callback_data": f"nf:{session_id}:hour_10"},
-            ],
-            [
-                {"text": "11:00", "callback_data": f"nf:{session_id}:hour_11"},
-                {"text": "12:00", "callback_data": f"nf:{session_id}:hour_12"},
-            ],
-            [{"text": "Sin limite", "callback_data": f"nf:{session_id}:value_clear"}],
-        ]
-    elif conversation.mode == "manual" and step == 10:
-        keyboard = [
-            [
                 {"text": "Lun-Vie", "callback_data": f"nf:{session_id}:days_mon_fri"},
                 {"text": "Lun-Sab", "callback_data": f"nf:{session_id}:days_mon_sat"},
             ],
@@ -1441,7 +1428,7 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
                 {"text": "Todos", "callback_data": f"nf:{session_id}:value_clear"},
             ],
         ]
-    elif conversation.mode == "manual" and step == 11:
+    elif conversation.mode == "manual" and step == 10:
         keyboard = [[{
             "text": "Sin exclusiones",
             "callback_data": f"nf:{session_id}:value_clear",
@@ -1529,7 +1516,6 @@ def _apply_manual_client_value(
             {
                 "minimum_reservation_date": None,
                 "maximum_reservation_date": None,
-                "minimum_reservation_hour": None,
                 "allowed_weekdays": None,
                 "excluded_date_ranges": [],
             }
@@ -1539,7 +1525,7 @@ def _apply_manual_client_value(
         conversation.values[field] = parsed_value
         if step == 8:
             _validate_rules_payload(conversation.values)
-        if step == 11:
+        if step == 10:
             _validate_rules_payload(conversation.values)
     conversation.step += 1
     return _manual_client_step_prompt(conversation.step)
@@ -1553,12 +1539,11 @@ def _manual_client_step_prompt(step: int) -> str | None:
         4: "Paso 5: elige de donde llego el cliente.",
         5: "Paso 6: escribe el WhatsApp o elige Omitir.",
         6: "Paso 7: indica si deseas configurar restricciones ahora.",
-        7: "Restriccion 1 de 5: fecha minima en DD-MM-YYYY o Sin limite.",
-        8: "Restriccion 2 de 5: fecha maxima en DD-MM-YYYY o Sin limite.",
-        9: "Restriccion 3 de 5: hora minima de 0 a 23 o Sin limite.",
-        10: "Restriccion 4 de 5: elige los dias permitidos o escribe 1,2,...7.",
-        11: (
-            "Restriccion 5 de 5: fechas excluidas en DD-MM-YYYY al DD-MM-YYYY; "
+        7: "Restriccion 1 de 4: fecha minima en DD-MM-YYYY o Sin limite.",
+        8: "Restriccion 2 de 4: fecha maxima en DD-MM-YYYY o Sin limite.",
+        9: "Restriccion 3 de 4: elige los dias permitidos o escribe 1,2,...7.",
+        10: (
+            "Restriccion 4 de 4: fechas excluidas en DD-MM-YYYY al DD-MM-YYYY; "
             "separa varios rangos con ; o elige Sin exclusiones."
         ),
     }
@@ -1604,7 +1589,6 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
             + _format_operator_date(values.get("minimum_reservation_date")),
             "Fecha maxima: "
             + _format_operator_date(values.get("maximum_reservation_date")),
-            f"Hora minima: {_format_minimum_hour(values.get('minimum_reservation_hour'))}",
             f"Dias permitidos: {weekday_text}",
             "Fechas excluidas: "
             + _format_excluded_date_ranges(values.get("excluded_date_ranges")),
@@ -1696,7 +1680,6 @@ def format_order_rules(order: dict[str, Any]) -> str:
             + _format_operator_date(order.get("minimum_reservation_date")),
             "Fecha maxima: "
             + _format_operator_date(order.get("maximum_reservation_date")),
-            f"Hora minima: {_format_minimum_hour(order.get('minimum_reservation_hour'))}",
             f"Dias permitidos: {weekday_text}",
             "Fechas excluidas: "
             + _format_excluded_date_ranges(order.get("excluded_date_ranges")),
@@ -1814,15 +1797,6 @@ def _weekday_name(value: Any) -> str:
         return names.get(int(value), str(value))
     except (TypeError, ValueError):
         return "desconocido"
-
-
-def _format_minimum_hour(value: Any) -> str:
-    if value in {None, ""}:
-        return "sin limite"
-    try:
-        return f"{int(value):02d}:00"
-    except (TypeError, ValueError):
-        return "desconocida"
 
 
 def _request_priority_change(
@@ -1963,7 +1937,7 @@ def _continue_rules_conversation(
     conversation.updated[field] = value
     conversation.step += 1
     conversation.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
-    if conversation.step < 5:
+    if conversation.step < 4:
         telegram.send_message(
             chat_id,
             _rules_step_prompt(conversation.step),
@@ -2008,7 +1982,6 @@ def _parse_rules_step(
     fields = (
         "minimum_reservation_date",
         "maximum_reservation_date",
-        "minimum_reservation_hour",
         "allowed_weekdays",
         "excluded_date_ranges",
     )
@@ -2023,15 +1996,7 @@ def _parse_rules_step(
         except ValueError as exc:
             raise ValueError("Usa DD-MM-YYYY, igual o quitar.") from exc
         return field, parsed.isoformat()
-    if step == 2:
-        try:
-            hour = int(value)
-        except ValueError as exc:
-            raise ValueError("Usa una hora de 0 a 23, igual o quitar.") from exc
-        if hour < 0 or hour > 23:
-            raise ValueError("La hora debe estar entre 0 y 23.")
-        return field, hour
-    if step == 4:
+    if step == 3:
         ranges = []
         for item in value.split(";"):
             item = item.strip()
@@ -2067,11 +2032,10 @@ def _parse_rules_step(
 
 def _rules_step_prompt(step: int) -> str:
     return (
-        "Paso 1/5 - Fecha minima. Responde DD-MM-YYYY, mantener o sin limite.",
-        "Paso 2/5 - Fecha maxima. Responde DD-MM-YYYY, mantener o sin limite.",
-        "Paso 3/5 - Hora minima. Responde 0 a 23, mantener o sin limite.",
-        "Paso 4/5 - Dias permitidos. Usa los botones o responde 1,2,...7.",
-        "Paso 5/5 - Fechas excluidas. Usa DD-MM-YYYY al DD-MM-YYYY; "
+        "Paso 1/4 - Fecha minima. Responde DD-MM-YYYY, mantener o sin limite.",
+        "Paso 2/4 - Fecha maxima. Responde DD-MM-YYYY, mantener o sin limite.",
+        "Paso 3/4 - Dias permitidos. Usa los botones o responde 1,2,...7.",
+        "Paso 4/4 - Fechas excluidas. Usa DD-MM-YYYY al DD-MM-YYYY; "
         "separa varios rangos con ; o elige Sin exclusiones.",
     )[step]
 
@@ -2083,22 +2047,6 @@ def _rules_prompt_markup(step: int) -> dict[str, Any]:
             {"text": "Quitar limite", "callback_data": "rf:value:clear"},
         ]]
     elif step == 2:
-        rows = [
-            [
-                {"text": "08:00", "callback_data": "rf:hour:8"},
-                {"text": "09:00", "callback_data": "rf:hour:9"},
-                {"text": "10:00", "callback_data": "rf:hour:10"},
-            ],
-            [
-                {"text": "11:00", "callback_data": "rf:hour:11"},
-                {"text": "12:00", "callback_data": "rf:hour:12"},
-            ],
-            [
-                {"text": "Mantener", "callback_data": "rf:value:keep"},
-                {"text": "Sin limite", "callback_data": "rf:value:clear"},
-            ],
-        ]
-    elif step == 3:
         rows = [
             [
                 {"text": "Lun-Vie", "callback_data": "rf:days:mon_fri"},
@@ -2131,7 +2079,6 @@ def _rules_payload(order: dict[str, Any]) -> dict[str, Any]:
     return {
         "minimum_reservation_date": order.get("minimum_reservation_date"),
         "maximum_reservation_date": order.get("maximum_reservation_date"),
-        "minimum_reservation_hour": order.get("minimum_reservation_hour"),
         "allowed_weekdays": list(weekdays) if isinstance(weekdays, list) else None,
         "excluded_date_ranges": list(order.get("excluded_date_ranges") or []),
     }
@@ -2187,8 +2134,6 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
             + _change_value(change.original, change.updated, "minimum_reservation_date"),
             "Fecha maxima: "
             + _change_value(change.original, change.updated, "maximum_reservation_date"),
-            "Hora minima: "
-            + _change_value(change.original, change.updated, "minimum_reservation_hour"),
             f"Dias: {_change_value(change.original, change.updated, 'allowed_weekdays')}",
             "Fechas excluidas: "
             + _change_value(change.original, change.updated, "excluded_date_ranges"),
@@ -2478,11 +2423,6 @@ def _process_interface_callback(
         values = {
             ("value", "keep"): "igual",
             ("value", "clear"): "quitar",
-            ("hour", "8"): "8",
-            ("hour", "9"): "9",
-            ("hour", "10"): "10",
-            ("hour", "11"): "11",
-            ("hour", "12"): "12",
             ("days", "mon_fri"): "1,2,3,4,5",
             ("days", "mon_sat"): "1,2,3,4,5,6",
             ("days", "sat"): "6",
@@ -2531,11 +2471,6 @@ def _process_interface_callback(
         "rules_none": "SIN_RESTRICCIONES",
         "rules_yes": "CON_RESTRICCIONES",
         "value_clear": "quitar",
-        "hour_8": "8",
-        "hour_9": "9",
-        "hour_10": "10",
-        "hour_11": "11",
-        "hour_12": "12",
         "days_mon_fri": "1,2,3,4,5",
         "days_mon_sat": "1,2,3,4,5,6",
         "days_sat": "6",
@@ -2913,9 +2848,6 @@ def _execute_manual_client_creation(
             "maximum_reservation_date": order.get("maximum_reservation_date")
             if "maximum_reservation_date" in order
             else creation.values.get("maximum_reservation_date"),
-            "minimum_reservation_hour": order.get("minimum_reservation_hour")
-            if "minimum_reservation_hour" in order
-            else creation.values.get("minimum_reservation_hour"),
             "allowed_weekdays": order.get("allowed_weekdays")
             if "allowed_weekdays" in order
             else creation.values.get("allowed_weekdays"),

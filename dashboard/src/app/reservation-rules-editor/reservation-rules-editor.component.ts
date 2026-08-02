@@ -25,10 +25,8 @@ const WEEKDAYS = [
 export class ReservationRulesEditorComponent {
   @Input({ required: true }) controlPrefix = 'reservationRules';
   @Input() disabled = false;
-  @Input() showMinimumHour = true;
   @Input() minimumDate = '';
   @Input() maximumDate = '';
-  @Input() minimumHour = '';
   @Input() allowedWeekdays: number[] = [];
   @Input() excludedDateRanges: readonly ExcludedDateRange[] = [];
   @Input() excludedDateStart = '';
@@ -36,7 +34,6 @@ export class ReservationRulesEditorComponent {
 
   @Output() readonly minimumDateChange = new EventEmitter<string>();
   @Output() readonly maximumDateChange = new EventEmitter<string>();
-  @Output() readonly minimumHourChange = new EventEmitter<string>();
   @Output() readonly allowedWeekdaysChange = new EventEmitter<number[]>();
   @Output() readonly excludedDateStartChange = new EventEmitter<string>();
   @Output() readonly excludedDateEndChange = new EventEmitter<string>();

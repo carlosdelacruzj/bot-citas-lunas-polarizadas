@@ -159,6 +159,16 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             f"Missing fields: {', '.join(missing)}",
             field_errors={field: "Este campo es obligatorio." for field in missing},
         )
+    if payload.get("minimum_reservation_hour") is not None and payload.get(
+        "minimum_reservation_hour"
+    ) != "":
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Las restricciones horarias ya no se aceptan.",
+            field_errors={
+                "minimum_reservation_hour": "Autoriza cualquier horario disponible."
+            },
+        )
     try:
         result = create_service_order(
             document_number=str(payload["document_number"]).strip(),
@@ -170,11 +180,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             contact_source=_optional_text(payload, "contact_source"),
             applicant_name=_optional_text(payload, "applicant_name"),
             charge_required=_optional_bool(payload, "charge_required", default=True),
-            minimum_reservation_hour=(
-                int(payload["minimum_reservation_hour"])
-                if payload.get("minimum_reservation_hour") not in {None, ""}
-                else None
-            ),
+            minimum_reservation_hour=None,
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
             maximum_reservation_date=_optional_text(payload, "maximum_reservation_date"),
             allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
@@ -315,12 +321,18 @@ def update_service_order_restrictions_payload(
     order_id: str,
     payload: dict[str, Any],
 ) -> tuple[HTTPStatus, dict[str, Any]]:
-    try:
-        minimum_hour = (
-            int(payload["minimum_reservation_hour"])
-            if payload.get("minimum_reservation_hour") not in {None, ""}
-            else None
+    if payload.get("minimum_reservation_hour") is not None and payload.get(
+        "minimum_reservation_hour"
+    ) != "":
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Las restricciones horarias ya no se aceptan.",
+            field_errors={
+                "minimum_reservation_hour": "Autoriza cualquier horario disponible."
+            },
         )
+    try:
+        minimum_hour = None
         minimum_date = _optional_text(payload, "minimum_reservation_date")
         maximum_date = _optional_text(payload, "maximum_reservation_date")
         allowed_weekdays = _optional_weekdays(payload.get("allowed_weekdays"))

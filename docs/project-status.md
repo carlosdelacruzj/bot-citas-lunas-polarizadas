@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-08-01`.
+Última revisión integral: `2026-08-02`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -21,10 +21,10 @@ Estado verificado el `2026-07-28`:
 | Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cinco reglas y control del worker.                       |
+| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cuatro reglas de fecha y control del worker.             |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `501.24 kB`.                                                    |
+| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `499.88 kB`.                                                    |
 | Calidad Python        | Operativa                | Ruff y `compileall` correctos; pytest tiene `59 passed`.                                                  |
 
 ## Resultado comercial acumulado
@@ -64,8 +64,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   trámite; si ese mensaje falta, la etapa `Programado` conserva la validación
   secundaria. Esta decisión operativa evita añadir latencia a la ruta exitosa.
 - Registro durable de `reservation_attempts`, submission pendiente y heartbeat.
-- Prioridad, prioridad exclusiva y restricciones por fecha, hora, día y rangos
+- Prioridad, prioridad exclusiva y restricciones por fecha, día y rangos
   excluidos.
+- Implementado el `2026-08-02`: el horario dejó de ser una restricción
+  comercial. Dashboard, Telegram y CLI ya no lo solicitan; la API rechaza un
+  valor horario nuevo y el motor ignora cualquier valor histórico. Las reglas
+  vigentes son fecha mínima, fecha máxima, días permitidos y rangos excluidos.
+- Implementado el `2026-08-02`: las fechas visibles se ordenan de menor a mayor
+  y, dentro de la fecha compatible más próxima, se intenta primero el horario
+  más temprano. El flujo dejó de depender del orden accidental del portal.
+- Implementado el `2026-08-02`: `blocked_by_order_rule` actualiza el resultado y
+  mueve naturalmente la orden detrás de las demás revisadas, pero no establece
+  `next_allowed_at`. Los cooldowns largos permanecen reservados para errores
+  técnicos, CAPTCHA rechazado o resultados ambiguos.
 - Corregido el `2026-07-30`: se eliminaron las promociones automáticas de
   prioridad. Las prioridades `100/200` siguen siendo controles manuales de las
   próximas sesiones y una sesión que detecta un cupo válido para su propio
@@ -75,7 +86,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   compatibles, las recorre inmediatamente y sin la pausa normal entre clientes,
   y mantiene un contexto Playwright nuevo por orden. La prioridad explícita se
   conserva; a igual prioridad, el bloque observador favorece primero las
-  órdenes con mayor cobertura de fechas y horas para aumentar la probabilidad
+  órdenes con mayor cobertura de fechas para aumentar la probabilidad
   de que el cliente detector pueda reservar.
 - Corrección para que fechas fuera de rango no provoquen un backoff general de
   30 minutos.
@@ -182,7 +193,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   módulo propietario. `queue_runtime.py` y los selectores CAPTCHA se conservaron
   porque todavía contienen lógica activa.
 - Los 11 fallos de pytest se clasificaron como contratos de prueba obsoletos:
-  preflight, `document_type`, cinco restricciones por orden y muestreo CAPTCHA
+  preflight, `document_type`, el contrato de restricciones vigente entonces y muestreo CAPTCHA
   sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni
   modificar código productivo. La suite completa quedó en `59 passed`.
 
@@ -191,7 +202,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Menú de Telegram con pendientes, clientes, invitaciones, alta manual,
   búsqueda, resumen y estado.
 - Alta principal mediante enlace privado, alternativa manual y edición guiada
-  de cinco restricciones y prioridad; consultar credenciales existentes dejó
+  de cuatro restricciones de fecha y prioridad; consultar credenciales existentes dejó
   de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
@@ -208,7 +219,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Restaurado el `2026-08-01`: `/cliente_nuevo` vuelve a crear una orden de forma
   manual sin sustituir `/invitacion`. Solicita tipo y número de documento,
   contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
-  las cinco restricciones. Por decisión del único operador autorizado, la
+  las cuatro restricciones de fecha. Por decisión del único operador autorizado, la
   confirmación y el comprobante posterior muestran todos los datos, incluida la
   contraseña, para poder detectar errores; el alta también informa el resultado
   real del preflight cuando termina dentro de la espera.
@@ -274,8 +285,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   representación interna de emojis del compositor y la burbuja saliente. La
   confirmación también tolera la virtualización del historial sin confundir una
   nueva burbuja con otra publicación idéntica anterior.
-- Precio comercial vigente alineado a `S/50 por trámite` en la publicación
-  diaria para TikTok y en el seguimiento manual del registro alojado.
+- Precio comercial vigente alineado a `S/50 por trámite` en publicaciones,
+  seguimiento y órdenes registradas desde el `2026-08-02`. PostgreSQL v42
+  fijó `S/40` en las `99` órdenes preexistentes y dejó `S/50` como precio por
+  defecto para nuevas altas; los dos pagos pendientes conservaron `S/40`.
 - Las capturas originales de `cupos-unicos` quedaron aprobadas como fuente de
   la futura sección pública `Cupos encontrados recientemente`. La integración
   con Cloudinary y la selección máxima de tres imágenes están documentadas,
@@ -365,7 +378,7 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
   siguiente arranque diario.
 - integración alojada: Ruff y compilación Python correctos, dashboard Angular
-  correcto, PostgreSQL `v39`, conector controlado activo y prueba remota
+  correcto, PostgreSQL `v42`, conector controlado activo y prueba remota
   ficticia aceptada sin crear órdenes.
 - flujo local de invitaciones ajustado: WhatsApp obligatorio, nombre opcional y
   editable, advertencia por número repetido, reemplazo directo y comprobante

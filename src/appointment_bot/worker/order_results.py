@@ -10,7 +10,6 @@ from appointment_bot.core.models import (
     ServiceOrderRuntime,
 )
 from appointment_bot.db.orders import (
-    EXCLUSIVE_PRIORITY_THRESHOLD,
     list_compatible_orders_for_slot,
     mark_order_done,
     update_order_state,
@@ -50,24 +49,18 @@ def handle_observer_order_report(
     if outcome is OrderReportOutcome.PAUSED:
         return ObserverOrderDecision()
     if outcome is OrderReportOutcome.BLOCKED:
-        backoff_seconds = (
-            None
-            if order.priority >= EXCLUSIVE_PRIORITY_THRESHOLD
-            else settings.order_rule_cooldown_seconds
-        )
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=backoff_seconds,
+            backoff_seconds=None,
             settings=settings,
         )
-        if backoff_seconds is None:
-            logger.info(
-                "Exclusive order %s remains eligible after a slot was blocked by its rules",
-                order.order_id,
-            )
+        logger.info(
+            "Order %s remains eligible after a slot was blocked by its rules",
+            order.order_id,
+        )
         compatible_order_ids = _compatible_handoff_order_ids(
             settings,
             order,

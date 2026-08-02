@@ -9,7 +9,6 @@ from psycopg.types.json import Jsonb
 from appointment_bot.config import Settings
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
-    DEFAULT_RESERVATION_AMOUNT,
     _connection,
     _database_url,
     _detail_text,
@@ -81,7 +80,7 @@ def _record_reservation_for_order(
     with _operation_connection(settings, _connection_override) as connection:
         order = connection.execute(
             """
-            SELECT order_id, charge_required
+            SELECT order_id, charge_required, reservation_price
             FROM service_orders
             WHERE order_id = %s
             """,
@@ -143,7 +142,7 @@ def _record_reservation_for_order(
                         _id_from_value("payment", order_id),
                         order_id,
                         reservation_id,
-                        DEFAULT_RESERVATION_AMOUNT,
+                        order["reservation_price"],
                         now,
                         now,
                     ),

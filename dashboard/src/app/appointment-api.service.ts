@@ -480,7 +480,6 @@ export interface PriorityUpdatePayload {
 }
 
 export interface ReservationRestrictionsUpdatePayload {
-  minimum_reservation_hour: number | null;
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
@@ -554,7 +553,6 @@ export interface CreateServiceOrderPayload {
   contact_whatsapp?: string | null;
   applicant_name?: string | null;
   charge_required?: boolean;
-  minimum_reservation_hour?: number | null;
   minimum_reservation_date?: string | null;
   maximum_reservation_date?: string | null;
   allowed_weekdays?: number[] | null;

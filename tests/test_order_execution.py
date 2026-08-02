@@ -37,7 +37,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, minimum_date, None, None, ()),
+                return_value=(minimum_date, None, None, ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
@@ -51,24 +51,21 @@ class OrderExecutionTests(unittest.TestCase):
                 allowed((minimum_date + timedelta(days=1)).strftime("%d/%m/%Y"), "09:00")
             )
 
-    def test_appointment_filter_combines_minimum_date_and_hour(self) -> None:
+    def test_appointment_filter_accepts_any_hour_for_an_allowed_date(self) -> None:
         today = datetime.now(ZoneInfo("America/Lima")).date()
         minimum_date = today + timedelta(days=2)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(11, minimum_date, None, None, ()),
+                return_value=(minimum_date, None, None, ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
-            self.assertFalse(
-                allowed((minimum_date - timedelta(days=1)).strftime("%d/%m/%Y"), "12:00")
-            )
-            self.assertFalse(allowed(minimum_date.strftime("%d/%m/%Y"), "10:00"))
-            self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "11:00"))
+            self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "06:00"))
+            self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "18:00"))
 
     def test_appointment_filter_blocks_non_allowed_weekdays(self) -> None:
         today = datetime.now(ZoneInfo("America/Lima")).date()
@@ -78,7 +75,7 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             with patch(
                 "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, None, None, (allowed_date.isoweekday(),), ()),
+                return_value=(None, None, (allowed_date.isoweekday(),), ()),
             ):
                 allowed = _appointment_filter_for_order("order-1", settings)
 

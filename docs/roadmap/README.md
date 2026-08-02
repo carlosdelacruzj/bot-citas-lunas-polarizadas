@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-08-01`.
+Última priorización: `2026-08-02`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -64,8 +64,10 @@ Estado: en observación.
   normalizar los emojis transformados por WhatsApp; la prueba repetida añadió
   soporte para historial virtualizado e identidad de nuevas burbujas. Validar
   el recorrido completo desde el siguiente cierre diario.
-- Completado localmente el `2026-08-01`: precio de nuevas publicaciones y
-  seguimiento del registro alineado a `S/50 por trámite`.
+- Completado el `2026-08-02`: publicaciones, seguimiento y órdenes nuevas
+  quedan alineados a `S/50 por trámite`. PostgreSQL v42 asignó `S/40` a las
+  `99` órdenes anteriores y usa `S/50` como valor por defecto para futuras
+  altas; los dos pagos pendientes de `S/40` no se modificaron.
 - Planificada la reutilización de `cupos-unicos` en la landing bajo el título
   `Cupos encontrados recientemente`. Primero validar tres imágenes locales;
   después implementar subida firmada e idempotente a Cloudinary, desactivada
@@ -74,6 +76,22 @@ Estado: en observación.
 - No habilitar reintentos automáticos para resultados ambiguos.
 
 ### Reglas y backoff
+
+- Completado en código el `2026-08-02`: se retiró la restricción horaria de
+  dashboard, Telegram, CLI y del filtro de reserva. La API rechaza nuevos
+  valores horarios y el campo histórico de PostgreSQL queda sin autoridad.
+- Completado en código el `2026-08-02`: la selección ordena fechas permitidas
+  de menor a mayor y horarios de menor a mayor, priorizando la combinación
+  cronológicamente más próxima.
+- Completado en código el `2026-08-02`: una incompatibilidad de reglas ya no
+  aplica el cooldown de `900` segundos. La orden conserva el resultado y rota
+  por `last_run_at`; validar este comportamiento ante el próximo cupo real.
+- Pendiente de decisión: reemplazar la cola posterior que excluye órdenes con
+  restricciones por una evaluación de compatibilidad contra oportunidades
+  concretas. No se implementó en este corte.
+- Pendiente de decisión: conservar todas las combinaciones fecha/hora visibles
+  para el intento indirecto. El traspaso actual utiliza una combinación y hasta
+  dos candidatos; no se amplió en este corte.
 
 - Completado el `2026-07-31`: `captcha_invalid` después del segundo intento
   aplica `120` segundos solo a la orden afectada y no detiene la rotación de
@@ -245,7 +263,7 @@ Progreso:
 - Ruff, compilación Python y build Angular correctos;
 - secretos generados bajo `.runtime/hosted-registration/` y cargados por el
   supervisor del dashboard sin modificar `.env`;
-- PostgreSQL operativo migrado a `v39`;
+- PostgreSQL operativo migrado a `v42`;
 - Worker y D1 desplegados bajo
   `https://registro.citaspolarizadasperu.com`;
 - cliente local identificado con un `User-Agent` propio para evitar el bloqueo
@@ -272,7 +290,7 @@ Progreso:
 - Telegram integrado con el contrato alojado: `/invitacion` crea enlaces sin
   recibir credenciales y `/cliente_nuevo` conserva el alta manual como
   alternativa; lista estados pendientes, abre directamente las restricciones,
-  admite los cinco campos y enlaza guardado, preflight y estado final;
+  admite los cuatro campos de fecha y enlaza guardado, preflight y estado final;
 - pendiente únicamente el trabajo previo al modo `production`: respaldo
   cifrado externo de la clave privada, revisión legal, procedimiento de
   incidente, prueba visual directa y autorización expresa para datos reales.

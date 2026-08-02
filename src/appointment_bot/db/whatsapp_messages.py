@@ -41,7 +41,7 @@ def prepare_test_whatsapp_message(
         hour="10:00",
         site="LIMA-LA VICTORIA",
     )
-    payment = _payment_message("40.00")
+    payment = _payment_message("50.00")
     attachment = _render_demo_constancia(message_id)
     payment_attachment = _copy_payment_attachment(message_id)
     return _insert_message(

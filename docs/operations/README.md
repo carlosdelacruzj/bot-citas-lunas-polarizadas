@@ -138,7 +138,7 @@ Las consultas operativas separan indice y detalle deliberado:
 - `/cliente` trata al titular identificado por el portal como cliente y muestra
   por separado a la persona de contacto; incluye documento y WhatsApp
   completos, ademas de estado, prioridad, reserva y pago;
-- `/reglas` muestra fechas, hora minima, dias permitidos y rangos excluidos;
+- `/reglas` muestra fechas, dias permitidos y rangos excluidos;
 - `/ultimos_errores` revisa las ultimas 50 ejecuciones y muestra como maximo
   cinco incidentes saneados.
 
@@ -171,11 +171,11 @@ registros que esperan restricciones.
 
 `/cliente_nuevo` solicita tipo y numero de documento, contrasena, nombre de
 contacto, fuente y WhatsApp opcional. Luego permite crear sin restricciones o
-configurar fecha minima, fecha maxima, hora minima, dias permitidos y rangos
-excluidos. Solo el boton final crea la orden; esta nace en validacion y Telegram
+configurar fecha minima, fecha maxima, dias permitidos y rangos excluidos. Solo
+el boton final crea la orden; esta nace en validacion y Telegram
 espera el preflight antes de indicar acceso correcto, revision necesaria o
 validacion todavia en curso. Tanto antes como despues del alta muestra documento,
-contrasena, contacto, WhatsApp y las cinco restricciones completas.
+contrasena, contacto, WhatsApp y las cuatro restricciones completas.
 
 Si `applicant_name` esta vacio o contiene solamente el numero de documento, se
 muestra `Titular no identificado por el portal`; no se presenta el documento
@@ -183,13 +183,12 @@ como si fuera un nombre. El contacto conserva su nombre independiente porque no
 necesariamente es el titular.
 
 `/prioridad` muestra el valor anterior y nuevo antes de guardar. El editor
-`/reglas_editar` pregunta en cinco pasos:
+`/reglas_editar` pregunta en cuatro pasos:
 
 1. fecha minima: `DD-MM-YYYY`, `igual` o `quitar`;
 2. fecha maxima: `DD-MM-YYYY`, `igual` o `quitar`;
-3. hora minima: `0` a `23`, `igual` o `quitar`;
-4. dias permitidos mediante botones o dias ISO, por ejemplo `1,3,6`;
-5. fechas excluidas como `10-08-2026 al 12-08-2026`, separando varios rangos
+3. dias permitidos mediante botones o dias ISO, por ejemplo `1,3,6`;
+4. fechas excluidas como `10-08-2026 al 12-08-2026`, separando varios rangos
    con `;`.
 
 La conversacion vence en cinco minutos por inactividad. Ningun paso modifica la

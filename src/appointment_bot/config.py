@@ -127,7 +127,6 @@ class Settings:
     error_backoff_seconds: int
     captcha_rejection_cooldown_seconds: int
     reservation_captcha_max_attempts: int
-    order_rule_cooldown_seconds: int
     monitor_window_seconds: int
     monitor_max_attempts: int
     monitor_interval_min_seconds: int
@@ -282,11 +281,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("RESERVATION_CAPTCHA_SAMPLE_LIMIT"),
             default=1,
             minimum=1,
-        ),
-        order_rule_cooldown_seconds=_parse_int(
-            os.getenv("ORDER_RULE_COOLDOWN_SECONDS"),
-            default=900,
-            minimum=0,
         ),
         monitor_window_seconds=_parse_int(
             os.getenv("MONITOR_WINDOW_SECONDS"),

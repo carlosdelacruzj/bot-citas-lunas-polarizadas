@@ -465,7 +465,6 @@ export class App implements OnDestroy {
   protected readonly orderPassword = signal('');
   protected readonly orderPasswordVisible = signal(false);
   protected readonly orderPriority = signal(0);
-  protected readonly orderMinimumReservationHour = signal('');
   protected readonly orderMinimumReservationDate = signal('');
   protected readonly orderMaximumReservationDate = signal('');
   protected readonly orderAllowedWeekdays = signal<number[]>([]);
@@ -1976,7 +1975,6 @@ export class App implements OnDestroy {
     return Boolean(
       order.minimum_reservation_date ||
       order.maximum_reservation_date ||
-      order.minimum_reservation_hour !== null ||
       (order.allowed_weekdays && order.allowed_weekdays.length > 0) ||
       (order.excluded_date_ranges?.length ?? 0) > 0,
     );
@@ -2007,16 +2005,13 @@ export class App implements OnDestroy {
     if (order.maximum_reservation_date) {
       limits.push(`Hasta el ${this.formatDate(order.maximum_reservation_date)}`);
     }
-    if (order.minimum_reservation_hour !== null) {
-      limits.push(`Desde las ${this.formatTime(order.minimum_reservation_hour)}`);
-    }
     if ((order.excluded_date_ranges?.length ?? 0) > 0) {
       const ranges = order.excluded_date_ranges.map(
         (range) => `${this.formatDate(range.start_date)}–${this.formatDate(range.end_date)}`,
       );
       limits.push(`Excepto ${ranges.join(', ')}`);
     }
-    return limits.length ? limits.join(' · ') : 'Sin límite de fecha u hora';
+    return limits.length ? limits.join(' · ') : 'Sin restricciones de fecha';
   }
 
   protected revenueComparison(summary: MonthlySummary): string {
@@ -2188,14 +2183,14 @@ export class App implements OnDestroy {
 
   protected async openPayment(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id, false);
-    this.paymentAmountAgreed.set(order.amount_agreed ?? '40.00');
-    this.paymentAmountPaid.set(order.amount_agreed ?? '40.00');
+    this.paymentAmountAgreed.set(order.amount_agreed ?? '50.00');
+    this.paymentAmountPaid.set(order.amount_agreed ?? '50.00');
     this.openModal('payment');
     await this.loadSelectedOrderDetail(order.order_id);
     const refreshed = this.selectedOrderDetail();
     if (refreshed?.order_id === order.order_id) {
-      this.paymentAmountAgreed.set(refreshed.amount_agreed ?? '40.00');
-      this.paymentAmountPaid.set(refreshed.amount_agreed ?? '40.00');
+      this.paymentAmountAgreed.set(refreshed.amount_agreed ?? '50.00');
+      this.paymentAmountPaid.set(refreshed.amount_agreed ?? '50.00');
     }
   }
 
@@ -2999,15 +2994,6 @@ export class App implements OnDestroy {
     if (!order) {
       return;
     }
-    const minimumHourText = String(this.orderMinimumReservationHour()).trim();
-    const minimumHour = minimumHourText === '' ? null : Number(minimumHourText);
-    if (
-      minimumHour !== null &&
-      (!Number.isInteger(minimumHour) || minimumHour < 0 || minimumHour > 23)
-    ) {
-      this.errorMessage.set('La hora mínima debe ser un número entero entre 0 y 23.');
-      return;
-    }
     const excludedDateRanges = this.prepareExcludedDateRanges(
       this.orderExcludedDateRanges(),
       this.orderExcludedDateStart(),
@@ -3017,7 +3003,6 @@ export class App implements OnDestroy {
       return;
     }
     const payload: ReservationRestrictionsUpdatePayload = {
-      minimum_reservation_hour: minimumHour,
       minimum_reservation_date: this.optionalText(this.orderMinimumReservationDate()),
       maximum_reservation_date: this.optionalText(this.orderMaximumReservationDate()),
       allowed_weekdays: this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
@@ -3844,9 +3829,6 @@ export class App implements OnDestroy {
     this.orderPassword.set('');
     this.orderPasswordVisible.set(false);
     this.orderPriority.set(order.priority);
-    this.orderMinimumReservationHour.set(
-      order.minimum_reservation_hour === null ? '' : String(order.minimum_reservation_hour),
-    );
     this.orderMinimumReservationDate.set(order.minimum_reservation_date ?? '');
     this.orderMaximumReservationDate.set(order.maximum_reservation_date ?? '');
     this.orderAllowedWeekdays.set([...(order.allowed_weekdays ?? [])]);

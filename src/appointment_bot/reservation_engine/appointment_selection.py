@@ -4,11 +4,13 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import replace
+from datetime import date
 from typing import Any
 
 from playwright.sync_api import Page
 
 from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.core.rules import parse_appointment_date, parse_appointment_time
 from appointment_bot.reservation_engine.appointment_reader import (
     read_stable_appointment_snapshot,
     snapshot_details,
@@ -91,7 +93,10 @@ def select_available_appointment(
     }
     logger.info("Selecting available appointment date and hour")
     options_started = time.monotonic()
-    date_options = _real_options(_select_options(page, DATE_SELECTOR))
+    date_options = sorted(
+        _real_options(_select_options(page, DATE_SELECTOR)),
+        key=_date_option_sort_key,
+    )
     observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
     observation["date_candidate_count"] = len(date_options)
     if not date_options:
@@ -100,7 +105,7 @@ def select_available_appointment(
         )
 
     blocked_evidence_candidate: dict[str, str] | None = None
-    for date_option in reversed(date_options):
+    for date_option in date_options:
         previous_date = _selected_option_text(page, DATE_SELECTOR)
         previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
@@ -127,7 +132,7 @@ def select_available_appointment(
             logger.info("No selectable hours found for date %s", date_option["text"])
             continue
 
-        for hour_option in reversed(real_hour_options):
+        for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
             if is_allowed_appointment is not None and not is_allowed_appointment(
                 str(date_option["text"]),
                 str(hour_option["text"]),
@@ -383,6 +388,16 @@ def _with_selection_observation(
         "total_seconds": round(time.monotonic() - started, 3),
     }
     return replace(result, details=details)
+
+
+def _date_option_sort_key(option: dict[str, Any]) -> tuple[bool, date]:
+    parsed = parse_appointment_date(str(option.get("text") or ""))
+    return parsed is None, parsed or date.max
+
+
+def _hour_option_sort_key(option: dict[str, Any]) -> tuple[bool, tuple[int, int]]:
+    parsed = parse_appointment_time(str(option.get("text") or ""))
+    return parsed is None, parsed or (24, 0)
 
 
 def has_available_date_options(page: Page) -> bool:

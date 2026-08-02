@@ -24,28 +24,10 @@ from appointment_bot.db.common import (
 )
 
 
-def get_minimum_reservation_hour_for_order(
-    order_id: str,
-    *,
-    settings: Settings | None = None,
-) -> int | None:
-    settings = _settings(settings)
-    init_database(settings)
-    with _connection(_database_url(settings)) as connection:
-        row = connection.execute(
-            "SELECT minimum_hour FROM service_orders WHERE order_id = %s",
-            (order_id,),
-        ).fetchone()
-    if row is None or row["minimum_hour"] is None:
-        return None
-    return int(row["minimum_hour"])
-
-
 def get_reservation_constraints_for_order(
     order_id: str,
     settings: Settings | None = None,
 ) -> tuple[
-    int | None,
     date | None,
     date | None,
     tuple[int, ...] | None,
@@ -56,7 +38,7 @@ def get_reservation_constraints_for_order(
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT minimum_hour, minimum_date, maximum_date, allowed_weekdays,
+            SELECT minimum_date, maximum_date, allowed_weekdays,
                    excluded_date_ranges
             FROM service_orders
             WHERE order_id = %s
@@ -64,13 +46,11 @@ def get_reservation_constraints_for_order(
             (order_id,),
         ).fetchone()
     if row is None:
-        return None, None, None, None, ()
-    minimum_hour = row["minimum_hour"]
+        return None, None, None, ()
     minimum_date = row["minimum_date"]
     maximum_date = row["maximum_date"]
     allowed_weekdays = row["allowed_weekdays"]
     return (
-        int(minimum_hour) if minimum_hour is not None else None,
         minimum_date if isinstance(minimum_date, date) else None,
         maximum_date if isinstance(maximum_date, date) else None,
         tuple(int(day) for day in allowed_weekdays) if allowed_weekdays else None,
@@ -91,8 +71,7 @@ def list_active_orders(
     if not include_constrained:
         filters.append(
             """
-            so.minimum_hour IS NULL
-            AND so.minimum_date IS NULL
+            so.minimum_date IS NULL
             AND so.maximum_date IS NULL
             AND so.allowed_weekdays IS NULL
             """
@@ -139,8 +118,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                        so.parent_order_id, so.program_expediente, so.program_plate,
                        os.last_run_at,
                        (
-                           CASE WHEN so.minimum_hour IS NULL THEN 0 ELSE 1 END
-                           + CASE WHEN so.minimum_date IS NULL THEN 0 ELSE 1 END
+                           CASE WHEN so.minimum_date IS NULL THEN 0 ELSE 1 END
                            + CASE WHEN so.maximum_date IS NULL THEN 0 ELSE 1 END
                            + CASE
                                WHEN so.allowed_weekdays IS NULL
@@ -217,7 +195,7 @@ def list_compatible_orders_for_slot(
                    wc.phone AS contact_phone, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate,
-                   so.minimum_hour, so.minimum_date, so.maximum_date,
+                   so.minimum_date, so.maximum_date,
                    so.allowed_weekdays, so.excluded_date_ranges
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -245,11 +223,6 @@ def list_compatible_orders_for_slot(
             continue
         is_allowed = appointment_filter_from_constraints(
             ReservationConstraints(
-                minimum_hour=(
-                    int(row["minimum_hour"])
-                    if row["minimum_hour"] is not None
-                    else None
-                ),
                 minimum_date=(
                     row["minimum_date"]
                     if isinstance(row["minimum_date"], date)

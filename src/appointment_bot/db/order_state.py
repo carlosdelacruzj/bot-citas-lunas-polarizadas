@@ -105,8 +105,8 @@ def update_service_order_reservation_constraints(
     excluded_date_ranges: Iterable[dict[str, object] | Iterable[object]] | None,
     settings: Settings | None = None,
 ) -> None:
-    if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
-        raise ValueError("minimum_reservation_hour must be between 0 and 23.")
+    if minimum_reservation_hour is not None:
+        raise ValueError("Las restricciones horarias ya no se aceptan.")
     minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
     maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
     if minimum_date is not None and maximum_date is not None and maximum_date < minimum_date:
@@ -129,7 +129,7 @@ def update_service_order_reservation_constraints(
             WHERE order_id = %s
             """,
             (
-                minimum_reservation_hour,
+                None,
                 minimum_date,
                 maximum_date,
                 weekdays,

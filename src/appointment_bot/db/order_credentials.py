@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from psycopg.types.json import Jsonb
@@ -15,6 +16,7 @@ from appointment_bot.core.models import (
 )
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
+    DEFAULT_RESERVATION_AMOUNT,
     _connection,
     _credential_cipher,
     _database_url,
@@ -42,6 +44,7 @@ def create_service_order(
     contact_source: str | None = None,
     applicant_name: str | None = None,
     charge_required: bool = True,
+    reservation_price: Decimal | None = None,
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
     maximum_reservation_date: str | date | None = None,
@@ -63,8 +66,13 @@ def create_service_order(
     document_type = normalize_document_type(document_type)
     if priority < 0:
         raise ValueError("priority must be non-negative.")
-    if minimum_reservation_hour is not None and not 0 <= minimum_reservation_hour <= 23:
-        raise ValueError("minimum_reservation_hour must be between 0 and 23.")
+    effective_reservation_price = (
+        DEFAULT_RESERVATION_AMOUNT if reservation_price is None else reservation_price
+    )
+    if effective_reservation_price <= 0:
+        raise ValueError("reservation_price must be greater than zero.")
+    if minimum_reservation_hour is not None:
+        raise ValueError("Las restricciones horarias ya no se aceptan.")
     parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
     parsed_maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
     if (
@@ -180,6 +188,7 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
+                reservation_price,
                 minimum_hour, minimum_date, maximum_date, allowed_weekdays,
                 excluded_date_ranges,
                 parent_order_id, program_expediente, program_plate,
@@ -187,14 +196,14 @@ def create_service_order(
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s
             )
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
                 priority = excluded.priority,
                 charge_required = excluded.charge_required,
-                minimum_hour = COALESCE(excluded.minimum_hour, service_orders.minimum_hour),
+                minimum_hour = NULL,
                 minimum_date = COALESCE(excluded.minimum_date, service_orders.minimum_date),
                 maximum_date = COALESCE(excluded.maximum_date, service_orders.maximum_date),
                 allowed_weekdays = COALESCE(
@@ -228,7 +237,8 @@ def create_service_order(
                 portal_account_id,
                 priority,
                 charge_required,
-                minimum_reservation_hour,
+                effective_reservation_price,
+                None,
                 parsed_minimum_date,
                 parsed_maximum_date,
                 parsed_allowed_weekdays,
@@ -513,7 +523,8 @@ def split_service_order_programs(
     with _connection(_database_url(settings)) as connection:
         parent = connection.execute(
             """
-            SELECT priority, charge_required, minimum_hour, minimum_date, maximum_date,
+            SELECT priority, charge_required, reservation_price,
+                   minimum_hour, minimum_date, maximum_date,
                    allowed_weekdays, excluded_date_ranges
             FROM service_orders
             WHERE order_id = %s
@@ -541,7 +552,8 @@ def split_service_order_programs(
                 priority=int(parent["priority"]),
                 applicant_name=runtime.name,
                 charge_required=bool(parent["charge_required"]),
-                minimum_reservation_hour=parent["minimum_hour"],
+                reservation_price=parent["reservation_price"],
+                minimum_reservation_hour=None,
                 minimum_reservation_date=parent["minimum_date"],
                 maximum_reservation_date=parent["maximum_date"],
                 allowed_weekdays=(

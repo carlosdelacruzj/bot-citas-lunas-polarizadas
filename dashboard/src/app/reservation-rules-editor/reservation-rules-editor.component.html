@@ -45,22 +45,6 @@
     />
     <small>La fecha final también se incluye.</small>
   </label>
-  @if (showMinimumHour) {
-    <label>
-      Hora mínima
-      <input
-        [name]="controlPrefix + 'MinimumHour'"
-        type="number"
-        min="0"
-        max="23"
-        step="1"
-        placeholder="Sin límite"
-        [disabled]="disabled"
-        [ngModel]="minimumHour"
-        (ngModelChange)="minimumHourChange.emit($event)"
-      />
-    </label>
-  }
 </div>
 
 <fieldset class="weekday-picker" [disabled]="disabled">

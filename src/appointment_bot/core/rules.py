@@ -11,7 +11,6 @@ RESERVATION_RULE_TIMEZONE = ZoneInfo("America/Lima")
 
 @dataclass(frozen=True)
 class ReservationConstraints:
-    minimum_hour: int | None = None
     minimum_date: date | None = None
     maximum_date: date | None = None
     allowed_weekdays: tuple[int, ...] | None = None
@@ -64,10 +63,6 @@ def appointment_matches_constraints(
         and parsed_date.isoweekday() not in constraints.allowed_weekdays
     ):
         return False
-    if constraints.minimum_hour is not None:
-        parsed_hour = parse_appointment_hour(hour_text)
-        if parsed_hour is None or parsed_hour < constraints.minimum_hour:
-            return False
     return True
 
 
@@ -82,9 +77,11 @@ def parse_appointment_date(date_text: str) -> date | None:
         return None
 
 
-def parse_appointment_hour(hour_text: str) -> int | None:
-    match = re.search(r"\b([01]?\d|2[0-3])(?::\d{2})?\b", hour_text)
-    return int(match.group(1)) if match is not None else None
+def parse_appointment_time(hour_text: str) -> tuple[int, int] | None:
+    match = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d))?\b", hour_text)
+    if match is None:
+        return None
+    return int(match.group(1)), int(match.group(2) or 0)
 
 
 __all__ = [
@@ -93,5 +90,5 @@ __all__ = [
     "appointment_filter_from_constraints",
     "appointment_matches_constraints",
     "parse_appointment_date",
-    "parse_appointment_hour",
+    "parse_appointment_time",
 ]
