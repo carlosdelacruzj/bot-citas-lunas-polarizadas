@@ -95,14 +95,12 @@ El proceso `appointment-bot-telegram-control` recibe comandos sin compartir
 memoria con el worker. En la primera version admite:
 
 - `/estado`;
-- `/pendientes`;
 - `/clientes [pagina]`;
 - `/cliente ORDER_ID`;
 - `/reglas ORDER_ID`;
 - `/ultimos_errores`;
 - `/prioridad ORDER_ID VALOR`;
 - `/reglas_editar ORDER_ID`;
-- `/invitacion`;
 - `/cliente_nuevo`;
 - `/pausar`;
 - `/reanudar`;
@@ -144,8 +142,7 @@ Las consultas operativas separan indice y detalle deliberado:
 
 Las credenciales no aparecen en el menu ni en los paneles de clientes. El
 comando historico `/credenciales ORDER_ID` se conserva temporalmente para
-compatibilidad, pero el flujo principal usa invitaciones privadas para que el
-cliente escriba el acceso. `/cliente_nuevo` es la alternativa manual explicita:
+compatibilidad. `/cliente_nuevo` es el flujo de alta manual explicito:
 la contrasena se recibe en el chat autorizado, permanece temporalmente en
 memoria hasta confirmar y se muestra completa en el resumen y comprobante para
 que el unico operador pueda verificarla. No se incluye en logs ni auditoria.
@@ -157,17 +154,10 @@ accion, objetivo, resultado y fecha, sin guardar el texto escrito ni datos
 sensibles. Aplica limites por chat y avisa `CONTROL REMOTO DISPONIBLE` despues
 de iniciar o recuperarse.
 
-`/menu` abre la interfaz principal con botones. Prioriza registros pendientes,
-clientes, nueva invitacion, alta manual, busqueda guiada, estado, resumen y
-sistema. Al pulsar
+`/menu` abre la interfaz principal con botones. Prioriza clientes, alta manual,
+busqueda guiada, estado, resumen y sistema. Al pulsar
 `Buscar cliente`, el receptor espera el nombre, contacto, documento, WhatsApp u
 orden y devuelve botones; no es necesario recordar `/buscar TEXTO`.
-
-`/invitacion` pide solamente un nombre opcional y el WhatsApp obligatorio. Tras
-confirmar, crea el enlace privado que recoge credenciales y declara si existen
-restricciones. Si vence, los valores temporales se eliminan sin guardar nada.
-`/pendientes` separa enlaces abiertos, validaciones, accesos incorrectos y
-registros que esperan restricciones.
 
 `/cliente_nuevo` solicita tipo y numero de documento, contrasena, nombre de
 contacto, fuente y WhatsApp opcional. Luego permite crear sin restricciones o
@@ -194,9 +184,8 @@ necesariamente es el titular.
 La conversacion vence en cinco minutos por inactividad. Ningun paso modifica la
 orden; solo el boton final `Confirmar` envia el conjunto completo. Despues de
 guardar, el receptor vuelve a consultar la orden y solo anuncia exito si los
-valores persistidos coinciden. Si la orden esperaba restricciones, programa el
-preflight, espera su resultado y actualiza el registro alojado a aceptado,
-credenciales incorrectas o reintento pendiente.
+valores persistidos coinciden. Si la orden todavía no fue validada, programa el
+preflight y espera su resultado.
 
 Todas las fechas visibles o ingresadas por el operador usan `DD-MM-YYYY`. El
 receptor convierte internamente a ISO `YYYY-MM-DD` solamente al comunicarse con
@@ -461,64 +450,3 @@ política de backup durable. No versionar `.dump`, `.sql` ni `backups/`.
 Seguir [`evidence-policy.md`](evidence-policy.md). La primera lectura es
 `docs/evidence-summary.md`, luego `docs/evidence-index.csv`; las bitácoras
 extensas viven en `reports/evidence/history/`.
-
-## Registro alojado opcional
-
-La Admin API inicia el conector junto con los demás servicios, pero permanece
-desactivado si no se define:
-
-```text
-HOSTED_REGISTRATION_CONNECTOR_ENABLED=true
-HOSTED_REGISTRATION_BASE_URL=https://registro.citaspolarizadasperu.com/api/v1/
-HOSTED_REGISTRATION_OPERATOR_KEY_ID=<id>
-HOSTED_REGISTRATION_OPERATOR_SECRET=<base64url de 32 bytes o más>
-HOSTED_REGISTRATION_CONNECTOR_KEY_ID=<id distinto>
-HOSTED_REGISTRATION_CONNECTOR_SECRET=<base64url de 32 bytes o más>
-HOSTED_REGISTRATION_PRIVATE_KEY_ID=registration-v1
-HOSTED_REGISTRATION_PRIVATE_KEY_PATH=<ruta absoluta al PEM privado>
-HOSTED_REGISTRATION_CONNECTOR_ID=primary-windows-pc
-HOSTED_REGISTRATION_CONNECTOR_MODE=controlled
-```
-
-No añadir estos valores a `.env` mediante automatización ni versionarlos. El
-primer recorrido debe usar `controlled` y exclusivamente documento, contraseña
-y WhatsApp ficticios. Ese modo valida cifrado, cola y persistencia de recepción,
-pero no crea una orden. Cambiar a `production` solo después de revisar el
-resultado controlado y respaldar la clave privada.
-
-Desde el `2026-07-29`, el supervisor `scripts/start-admin-dashboard.ps1` carga
-la configuración privada desde
-`.runtime/hosted-registration/environment.ps1` cuando existe. El directorio
-está ignorado por Git y restringido al usuario local de Windows. La Admin API
-continúa en loopback y el conector usa únicamente HTTPS saliente.
-
-El despliegue controlado vigente usa:
-
-- `https://registro.citaspolarizadasperu.com/api/v1/`;
-- claves de operador y conector separadas;
-- clave privada RSA local de `3072` bits;
-- modo `controlled`.
-
-La prueba ficticia completa terminó en `accepted` y mantuvo `order_id` vacío.
-No cambiar a `production` ni introducir datos reales hasta completar los
-bloqueadores de seguridad y recibir una autorización nueva.
-
-### Operar invitaciones desde el dashboard
-
-WhatsApp es el único dato obligatorio. El nombre o referencia es opcional, se
-conserva solo en PostgreSQL local y puede agregarse o editarse después.
-
-Después de crear o reemplazar una invitación aparece un comprobante con:
-
-- cliente o estado `Sin nombre todavía`;
-- WhatsApp local;
-- vencimiento;
-- URL completa;
-- copia del enlace;
-- copia de un mensaje listo para WhatsApp.
-
-La URL no se guarda. Si se cierra el comprobante sin copiarla, usar
-`Reemplazar enlace` o `Generar enlace nuevo`; la operación invalida el enlace y
-sesión anteriores y comienza otra vigencia de 24 horas. El dashboard advierte
-si el WhatsApp ya aparece en otro registro, pero permite continuar porque un
-número puede ser compartido.

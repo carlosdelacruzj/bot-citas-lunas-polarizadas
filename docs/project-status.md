@@ -21,7 +21,7 @@ Estado verificado el `2026-07-28`:
 | Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Invitaciones, alta manual, pendientes, clientes, cuatro reglas de fecha y control del worker.             |
+| Telegram remoto       | Operativo                | Alta manual, clientes, cuatro reglas de fecha y control del worker.                                       |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `499.88 kB`.                                                    |
@@ -157,6 +157,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   consulta periódica.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
+- Retirado el `2026-08-07`: el registro por invitaciones dejó de formar parte
+  del dashboard, Admin API, Telegram y arranque. PostgreSQL v43 elimina su tabla
+  local; el alta manual de clientes permanece disponible.
 - Arranque supervisado en Windows para worker, dashboard, Telegram y CAPTCHA
   sombra.
 - El arranque automático ya no usa VBS ni `ExecutionPolicy Bypass`; una tarea
@@ -211,11 +214,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ### Control remoto
 
-- Menú de Telegram con pendientes, clientes, invitaciones, alta manual,
-  búsqueda, resumen y estado.
-- Alta principal mediante enlace privado, alternativa manual y edición guiada
-  de cuatro restricciones de fecha y prioridad; consultar credenciales existentes dejó
-  de ser una acción visible.
+- Menú de Telegram con clientes, alta manual, búsqueda, resumen y estado.
+- Alta manual y edición guiada de cuatro restricciones de fecha y prioridad;
+  consultar credenciales existentes dejó de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
@@ -223,23 +224,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   CAPTCHA desde Telegram, junto con sus variables y scripts exclusivos. El menú
   dejó de mostrar recientes y credenciales, agrupó sistema con errores y la
   búsqueda ahora solicita el término como una conversación guiada.
-- Integrado el `2026-08-01`: Telegram crea invitaciones pidiendo solo nombre
-  opcional y WhatsApp, muestra los registros que requieren atención y abre la
-  configuración desde `Faltan restricciones`. El editor incluye rangos de fechas
-  excluidos y, al confirmar una orden aún no validada, ejecuta el preflight y
-  actualiza el estado alojado según su resultado.
-- Restaurado el `2026-08-01`: `/cliente_nuevo` vuelve a crear una orden de forma
-  manual sin sustituir `/invitacion`. Solicita tipo y número de documento,
+- `/cliente_nuevo` crea una orden de forma manual. Solicita tipo y número de documento,
   contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
   las cuatro restricciones de fecha. Por decisión del único operador autorizado, la
   confirmación y el comprobante posterior muestran todos los datos, incluida la
   contraseña, para poder detectar errores; el alta también informa el resultado
   real del preflight cuando termina dentro de la espera.
-- Iniciada el `2026-08-01` la continuidad manual del registro alojado por
-  WhatsApp: `Invitaciones` prepara textos distintos para recepción pendiente,
-  acceso validado, restricciones y credenciales incorrectas. El operador
-  revisa destinatario, estado y contenido antes de copiar; la acción no abre
-  WhatsApp ni afirma que el mensaje fue enviado.
 
 ### Evidencia y CAPTCHA
 
@@ -370,13 +360,7 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
-10. La integración de registros alojados está desplegada y activa en modo
-    `controlled`. La prueba ficticia completa terminó en `accepted`, mantuvo el
-    total de órdenes en `95` y confirmó la limpieza terminal en D1. Continúan
-    bloqueados los datos reales y el modo `production` hasta completar respaldo
-    externo de clave, revisión legal, procedimiento de incidente y autorización
-    expresa. La Admin API sigue limitada a loopback.
-11. La cadena dirigida por oportunidades ya funciona de forma secuencial,
+10. La cadena dirigida por oportunidades ya funciona de forma secuencial,
     con sesiones aisladas, sin pausa artificial, hasta diez candidatos y cinco
     minutos. Conserva combinaciones y telemetría de duración, pero falta
     validarla ante el próximo caso real y medir cuántos milisegundos transcurren
@@ -391,33 +375,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
 - `python -m pytest -q`: `59 passed`.
+- Retiro de invitaciones: dashboard activo, ruta anterior responde `404`,
+  Telegram valida correctamente y PostgreSQL quedó en esquema v43 sin la tabla
+  `hosted_registration_contacts`.
 - Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
   siguiente arranque diario.
-- integración alojada: Ruff y compilación Python correctos, dashboard Angular
-  correcto, PostgreSQL `v42`, conector controlado activo y prueba remota
-  ficticia aceptada sin crear órdenes.
-- flujo local de invitaciones ajustado: WhatsApp obligatorio, nombre opcional y
-  editable, advertencia por número repetido, reemplazo directo y comprobante
-  visible con enlace y mensaje copiable.
-- preparación manual de continuidad compilada en el dashboard: estados
-  sensibles separados, mensaje completo seleccionable y aviso visible de que
-  copiar no equivale a enviar; no se realizó una transmisión externa.
-- revisión UX/UI del flujo de invitaciones completada en código: estados
-  diferenciados por una paleta semántica, confirmaciones integradas para
-  reemplazar o revocar, jerarquía móvil conservada y texto del comprobante
-  distinto para primera emisión y reemplazo.
-- reemisión alojada corregida después de reproducir el HTTP `409`: la nueva
-  invitación se inserta antes de enlazar y revocar la anterior, y las
-  correcciones por credenciales incorrectas quedan admitidas explícitamente.
-- segundo HTTP `409` local diagnosticado y corregido: el listado conserva ahora
-  la invitación alojada más reciente por contacto y la reemisión reconcilia
-  PostgreSQL mediante la referencia estable del contacto, después de comprobar
-  que exista localmente y antes de modificar la invitación alojada.
-- falsa desconexión posterior corregida: PostgreSQL no podía inferir el tipo de
-  un parámetro opcional después de crear el reemplazo remoto y cerraba la
-  petición sin respuesta. La consulta selecciona ahora explícitamente su clave;
-  se sincronizó el contacto afectado y se revocaron cuatro accesos activos
-  históricos, dejando una sola invitación vigente.
 
 ## Regla de mantenimiento
 

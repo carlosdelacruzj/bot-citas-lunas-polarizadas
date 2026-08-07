@@ -78,7 +78,6 @@ type ViewKey =
   | 'finance'
   | 'orders'
   | 'runs'
-  | 'invitations'
   | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
 type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
@@ -275,7 +274,6 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   orders: { label: 'Órdenes', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
-  invitations: { label: 'Invitaciones', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
 };
 const INITIAL_ORDER_VIEW_STATE = readOrderViewState();
@@ -894,9 +892,6 @@ export class App implements OnDestroy {
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
     }
-    if (view === 'invitations') {
-      return state === 'ready';
-    }
     return this.orders().length > 0 || this.captchaReviewTotal() > 0 || state === 'ready';
   });
   protected readonly activeViewState = computed<ViewStateKind | null>(() => {
@@ -1049,7 +1044,6 @@ export class App implements OnDestroy {
       ordenes: 'orders',
       actividad: 'runs',
       finanzas: 'finance',
-      invitaciones: 'invitations',
       captchas: 'captchas',
     };
     const view = viewBySection[section] ?? 'summary';
@@ -1242,9 +1236,6 @@ export class App implements OnDestroy {
       ]);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
-      return;
-    }
-    if (view === 'invitations') {
       return;
     }
     await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);

@@ -198,12 +198,6 @@ La actualización se usa en la siguiente selección de la cola y no interrumpe
 una sesión que ya está ejecutándose. Cada orden se actualiza por separado,
 aunque varias compartan el mismo contacto.
 
-Cuando una orden proviene de un registro alojado que espera restricciones,
-`POST /api/v1/service-orders/{order_id}/validate` programa el preflight. Su
-resultado actualiza también el contacto alojado vinculado: `accepted` si valida,
-`credentials_invalid` si el portal rechaza el acceso o `retry_wait` ante una
-falla recuperable. Así el operador no necesita cerrar el pendiente manualmente.
-
 Snapshots, filtros, tablas y copiado general deben trabajar exclusivamente con
 el DTO enmascarado del listado.
 
@@ -560,24 +554,3 @@ ya aplica este comportamiento.
   completado como allowlist de campos publicos.
 - Definir errores consistentes: `bad_request`, `not_found`, `conflict`,
   `unauthorized`, `configuration_error`.
-
-## Invitaciones alojadas
-
-Estas rutas solo se exponen en la Admin API local y requieren su sesión
-autorizada. Angular nunca conoce los secretos del servicio alojado.
-
-- `GET /api/v1/hosted-invitations`: combina metadatos alojados sanitizados con
-  el nombre y WhatsApp conservados localmente.
-- `POST /api/v1/hosted-invitations`: recibe `whatsapp_phone` obligatorio y
-  `display_name` opcional, crea la referencia opaca local y devuelve el enlace
-  solo en esa respuesta.
-- `POST /api/v1/hosted-invitations/contacts/{contact_ref}/name`: permite
-  agregar, cambiar o retirar el nombre de referencia sin modificar la
-  invitación ni su solicitud.
-- `POST /api/v1/hosted-invitations/{id}/revoke`: revoca el enlace alojado.
-- `POST /api/v1/hosted-invitations/{id}/reissue`: revoca el enlace anterior y
-  devuelve el reemplazo solo en esa respuesta.
-
-La URL portadora no se persiste en PostgreSQL ni puede recuperarse desde el
-listado. Crear y reemitir devuelven el WhatsApp y nombre locales junto con la
-URL para construir un comprobante visible y copiable en el dashboard.

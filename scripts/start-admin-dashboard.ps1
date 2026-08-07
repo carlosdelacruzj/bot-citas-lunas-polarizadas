@@ -11,14 +11,9 @@ $DashboardIndex = Join-Path $DashboardRoot "dist\dashboard\browser\index.html"
 $LogDir = Join-Path $ProjectRoot "logs"
 $BootstrapLog = Join-Path $LogDir ("admin-dashboard-bootstrap-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
 $Python = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-$HostedRegistrationEnvironment = Join-Path $ProjectRoot ".runtime\hosted-registration\environment.ps1"
 
 Set-Location $ProjectRoot
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
-
-if (Test-Path -LiteralPath $HostedRegistrationEnvironment) {
-    . $HostedRegistrationEnvironment
-}
 
 function Write-BootstrapLog {
     param([string]$Message)

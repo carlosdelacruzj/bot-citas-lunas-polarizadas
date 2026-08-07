@@ -2,12 +2,9 @@
 
 Estado general: Fase 4 completada y validada en operacion real.
 
-Revisión vigente `2026-08-01`: la interfaz dejó de usar Telegram para etiquetar
-CAPTCHA o recibir contraseñas durante el alta. El flujo principal crea una
-invitación con nombre opcional y WhatsApp, muestra registros pendientes y cubre
-las cinco restricciones. Para registros `awaiting_restrictions`, la confirmación
-guarda reglas, ejecuta preflight y actualiza el estado alojado. Las secciones de
-fases anteriores se conservan como historial y no describen la interfaz vigente.
+Revisión vigente `2026-08-07`: la interfaz conserva el alta manual autorizada,
+la consulta de clientes, las restricciones y el control del worker. El registro
+alojado fue retirado por falta de aporte operativo.
 
 Ultima actualizacion: `2026-07-18`.
 
@@ -114,8 +111,6 @@ Comandos previstos:
 | `/prioridad ORDEN VALOR` | Actualizar prioridad | Si | Si |
 | `/reglas ORDEN` | Consultar restricciones | No | No |
 | `/reglas_editar ORDEN` | Flujo guiado para restricciones | Si | Si |
-| `/pendientes` | Registros que requieren atención | No | No |
-| `/invitacion` | Crear un enlace privado con nombre y WhatsApp | Si | Si |
 | `/cancelar` | Cancelar el flujo conversacional actual | No | No |
 | `/ultimos_errores` | Resumen saneado de incidentes recientes | No | No |
 
@@ -154,8 +149,6 @@ Criterio de cierre:
 | `/prioridad ORDEN VALOR` | `POST /api/v1/service-orders/{order_id}/priority` con `{"priority": N}` | HTTP `200`, prioridad y orden actualizadas | Volver a consultar el detalle de la orden |
 | `/reglas ORDEN` | `GET /api/v1/service-orders/{order_id}` | Cinco restricciones actuales | Mostrar límites, días y rangos excluidos |
 | `/reglas_editar ORDEN` | `POST /api/v1/service-orders/{order_id}/restrictions` | HTTP `200` y restricciones normalizadas | Verificar valores; si falta preflight, programarlo y esperar resultado |
-| `/pendientes` | `GET /api/v1/hosted-invitations` | Estados sanitizados y órdenes vinculadas | Abrir cliente o editor de restricciones mediante botones |
-| `/invitacion` | `POST /api/v1/hosted-invitations` | HTTP `201`, URL privada y referencia local | Confirmar una sola creación y devolver el enlace sin credenciales |
 | `/cliente_nuevo` | `POST /api/v1/service-orders` | HTTP `201`, orden en validación | Esperar preflight y comunicar su estado real |
 | `/ultimos_errores` | `GET /api/v1/runs?limit=N` y estado publico del worker | Resumen corto y saneado | No solicitar `include_details=1` ni enviar evidencia cruda |
 
@@ -178,9 +171,8 @@ restricciones son campos administrativos opcionales. La orden nace pausada y
 entra a preflight; no se debe anunciar como activa hasta comprobar el resultado
 de esa validacion.
 
-El flujo recomendado sigue siendo `/invitacion`, donde el cliente escribe el
-acceso en el formulario privado. `/cliente_nuevo` queda disponible como
-alternativa manual deliberada para el chat autorizado: el mensaje de entrada
+El flujo de alta vigente es `/cliente_nuevo`, deliberado para el chat
+autorizado: el mensaje de entrada
 permanece en el historial de Telegram, pero el receptor solo conserva la
 contrasena en memoria durante la conversacion y no la registra en auditoria o
 logs. Por solicitud del unico operador, la muestra completa en la confirmacion

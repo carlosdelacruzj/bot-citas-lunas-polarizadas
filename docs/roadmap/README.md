@@ -220,130 +220,18 @@ Estado: iniciado.
    recuperación individual de los cuatro supervisores ya quedó implementada;
    falta observarla después de un reinicio real.
 
-## Integración - Invitaciones y registro alojado
+## Retiro - Registro por invitaciones
 
-Estado: integración controlada completada el `2026-07-29`; producción y datos
-reales bloqueados.
+Estado: capacidad local retirada el `2026-08-07`.
 
-El contrato alojado v1, la infraestructura remota, los secretos y la prueba
-controlada ya están implementados. La activación con datos reales continúa
-bloqueada hasta cerrar las condiciones de seguridad y recibir autorización
-expresa.
-
-El alcance integrado comprende:
-
-1. añadir al dashboard local una sección de invitaciones;
-2. permitir crear, copiar, consultar, revocar y reemitir enlaces;
-3. seleccionar o registrar el WhatsApp antes de crear la invitación, conservar
-   el número completo en local y enviar a la API alojada solo una referencia
-   opaca y una pista parcialmente oculta;
-4. hacer que el navegador llame solo a la Admin API local;
-5. implementar en la Admin API un cliente HTTPS autenticado hacia la API
-   alojada, con secreto fuera del frontend y de los logs;
-6. implementar un conector saliente que consulte y reclame solicitudes
-   pendientes con lease e idempotencia;
-7. entregar cada solicitud a las fronteras internas existentes para validar el
-   portal y, cuando corresponda, crear una sola orden;
-8. devolver a la nube solo estados mínimos y sanitizados;
-9. conservar PostgreSQL local como registro operativo definitivo;
-10. mantener WhatsApp, Telegram, evidencia y reservas exclusivamente en local;
-11. informar por el WhatsApp existente cuando una validación diferida requiera
-    corrección y permitir emitir una invitación nueva;
-12. probar primero con una cuenta y un número controlados, manteniendo el alta
-    manual como alternativa.
-
-Progreso:
-
-- sección `Invitaciones` añadida al dashboard;
-- creación, copia inmediata, listado, revocación y reemisión añadidas;
-- WhatsApp completo y nombre de referencia conservados en PostgreSQL local;
-- cliente HTTPS con HMAC-SHA256 implementado, sin secretos en Angular;
-- conector saliente con claim, lease, renovación, liberación y ACK implementado;
-- descifrado RSA-OAEP-256 y AES-256-GCM implementado con reconstrucción de AAD;
-- payload validado nuevamente después del descifrado;
-- registros de fecha quedan pausados hasta coordinación por WhatsApp;
-- registros generales atraviesan la frontera existente de creación y
-  prevalidación de órdenes;
-- resultado alojado limitado a categorías sanitizadas;
-- conector integrado al proceso de la Admin API, desactivado por defecto;
-- modo `controlled` disponible para pruebas ficticias sin crear una orden;
-- migración PostgreSQL v38 preparada;
-- Ruff, compilación Python y build Angular correctos;
-- secretos generados bajo `.runtime/hosted-registration/` y cargados por el
-  supervisor del dashboard sin modificar `.env`;
-- PostgreSQL operativo migrado a `v42`;
-- Worker y D1 desplegados bajo
-  `https://registro.citaspolarizadasperu.com`;
-- cliente local identificado con un `User-Agent` propio para evitar el bloqueo
-  automático de Cloudflare sin relajar HMAC;
-- conector activado en modo `controlled`;
-- prueba ficticia completa terminada en `accepted`, con `order_id` nulo y sin
-  variar las `95` órdenes existentes;
-- limpieza terminal del sobre, contacto, pista y lease confirmada en D1;
-- flujo de operación mejorado con nombre opcional y editable, advertencia por
-  WhatsApp repetido, reemplazo directo y comprobante visible para copiar el
-  enlace o el mensaje;
-- interfaz de invitaciones armonizada con los tokens del dashboard: paleta
-  semántica por estado, confirmaciones propias para acciones sensibles y
-  comprobante contextual para primera emisión o reemplazo;
-- HTTP `409` de reemisión corregido en la API alojada mediante una secuencia
-  compatible con la clave foránea y una excepción limitada a
-  `credentials_invalid`;
-- desincronización local posterior corregida: el listado ya no sustituye la
-  invitación más nueva por una histórica del mismo contacto y PostgreSQL se
-  reconcilia por `contact_ref` al reemitir;
-- excepción PostgreSQL que se mostraba como desconexión corregida mediante una
-  clave de búsqueda explícita; el contacto de prueba quedó sincronizado y con
-  una sola invitación activa después de revocar cuatro accesos históricos;
-- Telegram integrado con el contrato alojado: `/invitacion` crea enlaces sin
-  recibir credenciales y `/cliente_nuevo` conserva el alta manual como
-  alternativa; lista estados pendientes, abre directamente las restricciones,
-  admite los cuatro campos de fecha y enlaza guardado, preflight y estado final;
-- pendiente únicamente el trabajo previo al modo `production`: respaldo
-  cifrado externo de la clave privada, revisión legal, procedimiento de
-  incidente, prueba visual directa y autorización expresa para datos reales.
-
-Condiciones obligatorias:
-
-- no abrir puertos ni publicar la Admin API;
-- no conectar la nube directamente a PostgreSQL;
-- no generar en el navegador ni guardar localmente el token de invitación;
-- no volver a pedir el WhatsApp dentro del registro alojado;
-- no enviar ni conservar el número completo de WhatsApp en la nube;
-- no depender de una página persistente de estado del cliente;
-- no exponer credenciales del portal o de servicio en logs;
-- no crear órdenes por abrir un enlace;
-- no activar datos reales hasta que `lunas-polarizadas-clientes` despliegue y
-  valide de extremo a extremo la parte alojada que consume este proyecto.
-
-## Continuidad por WhatsApp del registro alojado
-
-Estado: iniciada el `2026-08-01` en modo manual, sin envíos externos.
-
-Completado:
-
-1. El mensaje inicial aclara que la atención continuará en el mismo WhatsApp.
-2. El dashboard prepara textos específicos para recepción pendiente, acceso
-   validado, restricciones y credenciales incorrectas.
-3. La revisión muestra destinatario, estado y contenido completo antes de
-   copiar.
-4. Copiar no abre WhatsApp, no envía y no registra una entrega inexistente.
-5. El procedimiento y sus límites están documentados en
-   [`../operations/hosted-registration-whatsapp-continuity-2026-08-01.md`](../operations/hosted-registration-whatsapp-continuity-2026-08-01.md).
-
-Pendiente para cerrar esta etapa:
-
-1. Revisión visual directa del dashboard y del registro privado.
-2. Prueba manual con una cuenta y un número controlados.
-3. Confirmar que el mensaje llega una sola vez a la conversación correcta.
-4. Conservar evidencia sanitizada y clasificar cualquier resultado ambiguo sin
-   reintento automático.
-5. Decidir con esa evidencia si conviene automatizar únicamente el acuse de
-   recepción mediante la cola durable existente.
-
-No activar el modo `production` ni usar datos reales por completar esta
-interfaz. Permanecen vigentes los bloqueadores de seguridad y la autorización
-expresa independiente.
+- El dashboard ya no muestra la sección ni carga su código.
+- La Admin API ya no expone rutas ni inicia el conector alojado.
+- Telegram conserva `/cliente_nuevo` y elimina el comando, botones y estados
+  exclusivos del registro por enlace.
+- PostgreSQL v43 elimina la tabla local de contactos alojados.
+- El arranque y `.env.example` ya no declaran configuración del conector.
+- Pendiente externo: despublicar el servicio alojado y revocar sus claves en la
+  infraestructura que lo desplegó; no forma parte de este repositorio.
 
 ## Deuda técnica posterior
 

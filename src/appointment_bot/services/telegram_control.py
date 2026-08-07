@@ -44,7 +44,6 @@ MUTATION_RATE_LIMIT = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 MUTATING_COMMANDS = {
     "cliente_nuevo",
-    "invitacion",
     "pausar",
     "prioridad",
     "reanudar",
@@ -61,14 +60,12 @@ ORDER_TARGET_COMMANDS = {
 HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
-/pendientes - Registros que requieren atencion
 /clientes [pagina] - Resumen paginado de la cola
 /cliente ORDER_ID - Detalle operativo enmascarado
 /reglas ORDER_ID - Restricciones de una orden
 /ultimos_errores - Incidentes operativos recientes
 /prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
 /reglas_editar ORDER_ID - Editar restricciones paso a paso
-/invitacion - Crear un enlace privado para un cliente
 /cliente_nuevo - Registrar manualmente un cliente
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
@@ -128,7 +125,6 @@ class RulesConversation:
 class NewClientConversation:
     chat_id: str
     session_id: str
-    mode: str
     values: dict[str, Any]
     step: int
     expires_at: float
@@ -138,7 +134,6 @@ class NewClientConversation:
 class PendingClientCreation:
     operation_id: str
     chat_id: str
-    mode: str
     values: dict[str, Any]
     expires_at: float
 
@@ -196,26 +191,6 @@ class AdminApiClient:
     def get_service_order_credentials(self, order_id: str) -> dict[str, Any]:
         return self._request(
             "GET", f"/api/v1/service-orders/{quote(order_id, safe='')}/credentials"
-        )
-
-    def get_hosted_invitations(self) -> list[dict[str, Any]]:
-        payload = self._request("GET", "/api/v1/hosted-invitations")
-        invitations = payload.get("invitations", [])
-        if not isinstance(invitations, list):
-            raise TelegramControlError("Admin API returned an invalid invitation list.")
-        return [item for item in invitations if isinstance(item, dict)]
-
-    def create_hosted_invitation(
-        self,
-        values: dict[str, Any],
-        *,
-        actor: str,
-    ) -> dict[str, Any]:
-        return self._request(
-            "POST",
-            "/api/v1/hosted-invitations",
-            payload=values,
-            actor=actor,
         )
 
     def create_service_order(self, values: dict[str, Any], *, actor: str) -> dict[str, Any]:
@@ -668,9 +643,6 @@ def _process_update(
     if command == "estado":
         _send_worker_panel(chat_id, telegram, admin_api)
         return
-    if command == "pendientes":
-        _send_pending_registrations(chat_id, telegram, admin_api)
-        return
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
         return
@@ -689,7 +661,7 @@ def _process_update(
     if command == "credenciales":
         _send_credentials(chat_id, arguments, telegram, admin_api)
         return
-    if command in {"cliente_nuevo", "invitacion"}:
+    if command == "cliente_nuevo":
         search_conversations.pop(chat_id, None)
         _cancel_chat_order_state(
             chat_id,
@@ -704,7 +676,6 @@ def _process_update(
             new_client_conversations,
             pending_client_creations,
             confirmation_lock,
-            mode="manual" if command == "cliente_nuevo" else "invitation",
         )
         return
     if command == "prioridad":
@@ -762,11 +733,7 @@ def _main_menu_markup() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [
-                {"text": "Pendientes", "callback_data": "ui:pending:show"},
                 {"text": "Clientes", "callback_data": "ui:clients:1"},
-            ],
-            [
-                {"text": "Nueva invitacion", "callback_data": "ui:new:start"},
                 {"text": "Alta manual", "callback_data": "ui:manual:start"},
             ],
             [{"text": "Buscar cliente", "callback_data": "ui:search:start"}],
@@ -787,83 +754,6 @@ def _send_main_menu(chat_id: str, telegram: TelegramBotApi) -> None:
         "MENU PRINCIPAL\n\nElige una accion. No necesitas recordar comandos.",
         reply_markup=_main_menu_markup(),
     )
-
-
-def _send_pending_registrations(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    admin_api: AdminApiClient,
-) -> None:
-    try:
-        invitations = admin_api.get_hosted_invitations()
-    except TelegramControlError as exc:
-        logger.warning("Could not list pending registrations: %s", exc)
-        telegram.send_message(chat_id, "No pude consultar los registros pendientes.")
-        return
-    pending_statuses = {
-        "local_pending",
-        "issued",
-        "opened",
-        "submitted",
-        "leased",
-        "awaiting_restrictions",
-        "credentials_invalid",
-        "retry_wait",
-    }
-    pending = [
-        invitation
-        for invitation in invitations
-        if str(invitation.get("status") or "") in pending_statuses
-    ]
-    lines = ["REGISTROS PENDIENTES", ""]
-    keyboard: list[list[dict[str, str]]] = []
-    for invitation in pending[:20]:
-        status = str(invitation.get("status") or "local_pending")
-        name = _display_text(invitation.get("display_name") or "Sin nombre", 40)
-        phone = _display_text(invitation.get("whatsapp_phone") or "Sin WhatsApp", 20)
-        lines.extend([f"{name} | {phone}", _hosted_status_label(status), ""])
-        order_id = str(invitation.get("order_id") or "")
-        if not _valid_order_id(order_id):
-            continue
-        action = {
-            "awaiting_restrictions": "editrules",
-            "retry_wait": "validate",
-        }.get(status, "show")
-        button_text = (
-            f"Configurar: {name}" if status == "awaiting_restrictions" else f"Ver: {name}"
-        )
-        if status == "retry_wait":
-            button_text = f"Reintentar: {name}"
-        keyboard.append([{
-            "text": _display_text(button_text, 45),
-            "callback_data": f"om:{order_id}:{action}",
-        }])
-    if not pending:
-        lines.append("No hay registros que requieran atencion.")
-    elif len(pending) > 20:
-        lines.append(f"Mostrando 20 de {len(pending)} pendientes.")
-    keyboard.append([
-        {"text": "Actualizar", "callback_data": "ui:pending:show"},
-        {"text": "Menu", "callback_data": "ui:menu:main"},
-    ])
-    telegram.send_message(
-        chat_id,
-        "\n".join(lines).strip(),
-        reply_markup={"inline_keyboard": keyboard},
-    )
-
-
-def _hosted_status_label(status: str) -> str:
-    return {
-        "local_pending": "Preparando invitacion",
-        "issued": "Enlace enviado; todavia no fue abierto",
-        "opened": "El cliente abrio el enlace",
-        "submitted": "Registro enviado",
-        "leased": "Validando datos",
-        "awaiting_restrictions": "Faltan coordinar restricciones",
-        "credentials_invalid": "Acceso incorrecto; requiere correccion",
-        "retry_wait": "Validacion pendiente de reintento",
-    }.get(status, status.replace("_", " "))
 
 
 def _send_clients(
@@ -1265,38 +1155,25 @@ def _start_new_client_conversation(
     conversations: dict[str, NewClientConversation],
     pending_creations: dict[str, PendingClientCreation],
     confirmation_lock: Lock,
-    *,
-    mode: str,
 ) -> None:
     if arguments:
-        command = "cliente_nuevo" if mode == "manual" else "invitacion"
-        telegram.send_message(chat_id, f"Uso: /{command}")
+        telegram.send_message(chat_id, "Uso: /cliente_nuevo")
         return
-    if mode not in {"invitation", "manual"}:
-        raise ValueError(f"Unsupported new-client mode: {mode}")
     with confirmation_lock:
         _cancel_pending_client_creation_unlocked(chat_id, pending_creations)
         conversations[chat_id] = NewClientConversation(
             chat_id=chat_id,
             session_id=secrets.token_hex(4),
-            mode=mode,
             values={},
             step=0,
             expires_at=time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS,
         )
     conversation = conversations[chat_id]
-    if mode == "manual":
-        message = (
-            "ALTA MANUAL\n\nPaso 1: elige el tipo de documento.\n"
-            "Las credenciales quedaran en el historial de este chat. "
-            "Puedes cancelar con /cancelar."
-        )
-    else:
-        message = (
-            "NUEVA INVITACION\n\nPaso 1 de 2: escribe un nombre de referencia.\n"
-            "Puedes omitirlo y el cliente completara sus credenciales en el enlace privado.\n"
-            "Tienes 60 segundos por paso. Puedes cancelar con /cancelar."
-        )
+    message = (
+        "ALTA MANUAL\n\nPaso 1: elige el tipo de documento.\n"
+        "Las credenciales quedaran en el historial de este chat. "
+        "Puedes cancelar con /cancelar."
+    )
     telegram.send_message(
         chat_id,
         message,
@@ -1319,8 +1196,10 @@ def _process_new_client_message(
     if conversation.expires_at <= time.monotonic():
         with confirmation_lock:
             conversations.pop(chat_id, None)
-        command = "/cliente_nuevo" if conversation.mode == "manual" else "/invitacion"
-        telegram.send_message(chat_id, f"El registro vencio. Inicia nuevamente con {command}.")
+        telegram.send_message(
+            chat_id,
+            "El registro vencio. Inicia nuevamente con /cliente_nuevo.",
+        )
         return True
     return _continue_new_client_conversation(
         conversation,
@@ -1360,18 +1239,17 @@ def _continue_new_client_conversation(
         creation = PendingClientCreation(
             operation_id=secrets.token_hex(6),
             chat_id=chat_id,
-            mode=conversation.mode,
             values=dict(conversation.values),
             expires_at=time.monotonic() + NEW_CLIENT_CONFIRMATION_TTL_SECONDS,
         )
         pending_creations[creation.operation_id] = creation
     telegram.send_message(
         chat_id,
-        _format_new_client_confirmation(creation.values, creation.mode),
+        _format_new_client_confirmation(creation.values),
         reply_markup={
             "inline_keyboard": [[
                 {
-                    "text": "Crear cliente" if creation.mode == "manual" else "Crear invitacion",
+                    "text": "Crear cliente",
                     "callback_data": f"nc:{creation.operation_id}:yes",
                 },
                 {"text": "Cancelar", "callback_data": f"nc:{creation.operation_id}:no"},
@@ -1384,17 +1262,12 @@ def _continue_new_client_conversation(
 def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, Any]:
     step = conversation.step
     session_id = conversation.session_id
-    if conversation.mode == "invitation" and step == 0:
-        keyboard = [[{
-            "text": "Omitir nombre",
-            "callback_data": f"nf:{session_id}:name_omit",
-        }]]
-    elif conversation.mode == "manual" and step == 0:
+    if step == 0:
         keyboard = [[
             {"text": "DNI", "callback_data": f"nf:{session_id}:type_dni"},
             {"text": "CE", "callback_data": f"nf:{session_id}:type_ce"},
         ]]
-    elif conversation.mode == "manual" and step == 4:
+    elif step == 4:
         keyboard = [
             [
                 {"text": "TikTok", "callback_data": f"nf:{session_id}:source_tiktok"},
@@ -1402,22 +1275,22 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
             ],
             [{"text": "WhatsApp", "callback_data": f"nf:{session_id}:source_whatsapp"}],
         ]
-    elif conversation.mode == "manual" and step == 5:
+    elif step == 5:
         keyboard = [[{
             "text": "Omitir WhatsApp",
             "callback_data": f"nf:{session_id}:phone_omit",
         }]]
-    elif conversation.mode == "manual" and step == 6:
+    elif step == 6:
         keyboard = [[
             {"text": "Sin restricciones", "callback_data": f"nf:{session_id}:rules_none"},
             {"text": "Configurar", "callback_data": f"nf:{session_id}:rules_yes"},
         ]]
-    elif conversation.mode == "manual" and step in {7, 8}:
+    elif step in {7, 8}:
         keyboard = [[{
             "text": "Sin limite",
             "callback_data": f"nf:{session_id}:value_clear",
         }]]
-    elif conversation.mode == "manual" and step == 9:
+    elif step == 9:
         keyboard = [
             [
                 {"text": "Lun-Vie", "callback_data": f"nf:{session_id}:days_mon_fri"},
@@ -1428,7 +1301,7 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
                 {"text": "Todos", "callback_data": f"nf:{session_id}:value_clear"},
             ],
         ]
-    elif conversation.mode == "manual" and step == 10:
+    elif step == 10:
         keyboard = [[{
             "text": "Sin exclusiones",
             "callback_data": f"nf:{session_id}:value_clear",
@@ -1442,23 +1315,7 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
 def _apply_new_client_value(
     conversation: NewClientConversation, value: str
 ) -> str | None:
-    if conversation.mode == "manual":
-        return _apply_manual_client_value(conversation, value)
-    if conversation.step == 0:
-        if value.lower() not in {"omitir", "sin nombre"}:
-            name = " ".join(value.split())
-            if not 2 <= len(name) <= 100:
-                raise ValueError("El nombre debe tener entre 2 y 100 caracteres.")
-            conversation.values["display_name"] = name
-        prompt = "Paso 2 de 2: escribe el WhatsApp completo."
-    else:
-        phone = re.sub(r"[\s()+-]", "", value)
-        if not re.fullmatch(r"(?:51)?9\d{8}", phone):
-            raise ValueError("WhatsApp invalido. Usa un celular peruano de 9 digitos.")
-        conversation.values["whatsapp_phone"] = phone
-        prompt = None
-    conversation.step += 1
-    return prompt
+    return _apply_manual_client_value(conversation, value)
 
 
 def _apply_manual_client_value(
@@ -1550,19 +1407,11 @@ def _manual_client_step_prompt(step: int) -> str | None:
     return prompts.get(step)
 
 
-def _format_new_client_confirmation(values: dict[str, Any], mode: str) -> str:
-    if mode == "manual":
-        return (
-            _format_manual_client_details(values, title="CONFIRMAR ALTA MANUAL")
-            + "\n\nRevisa todos los datos antes de crear el cliente. "
-            "La confirmacion vence en 60 segundos."
-        )
+def _format_new_client_confirmation(values: dict[str, Any]) -> str:
     return (
-        "CONFIRMAR INVITACION\n\n"
-        f"Nombre: {values.get('display_name') or 'sin nombre'}\n"
-        f"WhatsApp: {values.get('whatsapp_phone')}\n\n"
-        "El cliente escribira sus credenciales y declarara sus restricciones "
-        "en el enlace privado. La confirmacion vence en 60 segundos."
+        _format_manual_client_details(values, title="CONFIRMAR ALTA MANUAL")
+        + "\n\nRevisa todos los datos antes de crear el cliente. "
+        "La confirmacion vence en 60 segundos."
     )
 
 
@@ -2242,29 +2091,10 @@ def _process_interface_callback(
     if prefix == "ui":
         if subject == "menu":
             _send_main_menu(chat_id, telegram)
-        elif subject == "pending":
-            _send_pending_registrations(chat_id, telegram, admin_api)
         elif subject == "status":
             _send_worker_panel(chat_id, telegram, admin_api)
         elif subject == "clients":
             _send_clients(chat_id, action, telegram, admin_api)
-        elif subject == "new":
-            search_conversations.pop(chat_id, None)
-            _cancel_chat_order_state(
-                chat_id,
-                pending_order_changes,
-                rules_conversations,
-                confirmation_lock,
-            )
-            _start_new_client_conversation(
-                chat_id,
-                "",
-                telegram,
-                new_client_conversations,
-                pending_client_creations,
-                confirmation_lock,
-                mode="invitation",
-            )
         elif subject == "manual":
             search_conversations.pop(chat_id, None)
             _cancel_chat_order_state(
@@ -2280,7 +2110,6 @@ def _process_interface_callback(
                 new_client_conversations,
                 pending_client_creations,
                 confirmation_lock,
-                mode="manual",
             )
         elif subject == "search":
             _cancel_chat_client_state(
@@ -2365,10 +2194,10 @@ def _process_interface_callback(
                 )
                 telegram.send_message(
                     chat_id,
-                    "Validacion iniciada. Consulta Pendientes en unos segundos.",
+                    "Validacion iniciada. Consulta el cliente en unos segundos.",
                     reply_markup={
                         "inline_keyboard": [[
-                            {"text": "Pendientes", "callback_data": "ui:pending:show"},
+                            {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"},
                             {"text": "Menu", "callback_data": "ui:menu:main"},
                         ]]
                     },
@@ -2461,7 +2290,6 @@ def _process_interface_callback(
         )
         return True
     values = {
-        "name_omit": "OMITIR",
         "type_dni": "dni",
         "type_ce": "ce",
         "source_tiktok": "tiktok",
@@ -2560,18 +2388,16 @@ def _process_callback_query(
             telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
             return
         if parts[2] == "no":
-            action = "client_create" if creation.mode == "manual" else "invitation_create"
             _record_audit_safe(
-                actor=_telegram_actor(chat_id), action=action,
+                actor=_telegram_actor(chat_id), action="client_create",
                 status="cancelled", operation_id=operation_id,
             )
             telegram.answer_callback_query(callback_id, "Operacion cancelada.")
             telegram.send_message(chat_id, "Registro cancelado. No se guardo nada.")
             return
-        action = "client_create" if creation.mode == "manual" else "invitation_create"
         telegram.answer_callback_query(callback_id, "Registro confirmado.")
         _record_audit_safe(
-            actor=_telegram_actor(chat_id), action=action,
+            actor=_telegram_actor(chat_id), action="client_create",
             status="accepted", operation_id=operation_id,
         )
         executor.submit(_execute_client_creation, creation, telegram, admin_api)
@@ -2664,7 +2490,7 @@ def _execute_order_change(
             if preflight == "validated":
                 validation_text = "\nAcceso validado y orden activada."
             else:
-                detail = verified.get("preflight_message") or "revisa Pendientes"
+                detail = verified.get("preflight_message") or "revisa el cliente"
                 validation_text = f"\nValidacion: {preflight}. Detalle: {detail}"
         telegram.send_message(
             change.chat_id,
@@ -2676,7 +2502,7 @@ def _execute_order_change(
                 "inline_keyboard": [
                     [{"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"}],
                     [
-                        {"text": "Pendientes", "callback_data": "ui:pending:show"},
+                        {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
                         {"text": "Menu", "callback_data": "ui:menu:main"},
                     ],
                 ]
@@ -2716,92 +2542,6 @@ def _execute_order_change(
 
 
 def _execute_client_creation(
-    creation: PendingClientCreation,
-    telegram: TelegramBotApi,
-    admin_api: AdminApiClient,
-) -> None:
-    if creation.mode == "manual":
-        _execute_manual_client_creation(creation, telegram, admin_api)
-        return
-    actor = _telegram_actor(creation.chat_id)
-    try:
-        requested_phone = _phone_digits(creation.values.get("whatsapp_phone"))
-        duplicate = next(
-            (
-                invitation
-                for invitation in admin_api.get_hosted_invitations()
-                if _phone_digits(invitation.get("whatsapp_phone")) == requested_phone
-            ),
-            None,
-        )
-        if duplicate is not None:
-            telegram.send_message(
-                creation.chat_id,
-                "Ese WhatsApp ya tiene un registro local. No cree otra invitacion.\n"
-                f"Estado: {_hosted_status_label(str(duplicate.get('status') or ''))}",
-                reply_markup={
-                    "inline_keyboard": [[
-                        {"text": "Ver pendientes", "callback_data": "ui:pending:show"},
-                        {"text": "Menu", "callback_data": "ui:menu:main"},
-                    ]]
-                },
-            )
-            _record_audit_safe(
-                actor=actor,
-                action="invitation_create",
-                status="rejected",
-                operation_id=creation.operation_id,
-                detail="Existing local WhatsApp contact.",
-            )
-            return
-        created = admin_api.create_hosted_invitation(creation.values, actor=actor)
-        invitation_url = str(created.get("url") or "")
-        if not invitation_url:
-            raise TelegramControlError("Admin API did not return an invitation URL.")
-        telegram.send_message(
-            creation.chat_id,
-            "INVITACION CREADA\n\n"
-            f"Nombre: {created.get('display_name') or 'sin nombre'}\n"
-            "WhatsApp: "
-            f"{created.get('whatsapp_phone') or creation.values.get('whatsapp_phone')}\n\n"
-            "Envia este enlace privado al cliente:\n"
-            f"{invitation_url}\n\n"
-            "El cliente completara sus credenciales e indicara si tiene restricciones.",
-            reply_markup={
-                "inline_keyboard": [[
-                    {"text": "Ver pendientes", "callback_data": "ui:pending:show"},
-                    {"text": "Menu", "callback_data": "ui:menu:main"},
-                ]]
-            },
-        )
-        contact_ref = str(created.get("contact_ref") or "")
-        logger.info("Created hosted invitation from Telegram actor=%s", actor)
-        _record_audit_safe(
-            actor=actor,
-            action="invitation_create",
-            status="applied",
-            target_type="hosted_registration",
-            target_id=contact_ref or None,
-            operation_id=creation.operation_id,
-        )
-    except TelegramControlError as exc:
-        logger.warning("Telegram invitation creation failed: %s", exc)
-        telegram.send_message(
-            creation.chat_id,
-            "No pude crear la invitacion. Revisa Pendientes antes de volver a intentarlo.",
-        )
-        _record_audit_safe(
-            actor=actor,
-            action="invitation_create",
-            status="failed",
-            operation_id=creation.operation_id,
-            detail="Admin API invitation creation could not be confirmed.",
-        )
-    except Exception:
-        logger.exception("Unexpected Telegram invitation creation failure")
-
-
-def _execute_manual_client_creation(
     creation: PendingClientCreation,
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
@@ -2858,9 +2598,9 @@ def _execute_manual_client_creation(
         if preflight == "validated":
             result = "Acceso correcto. La orden ya puede buscar cupos."
         elif preflight == "failed":
-            result = "El acceso requiere revision. La orden quedo pausada en Pendientes."
+            result = "El acceso requiere revision. La orden quedo pausada."
         else:
-            result = "La validacion sigue en curso. Revisa Pendientes en unos segundos."
+            result = "La validacion sigue en curso. Consulta el cliente en unos segundos."
         telegram.send_message(
             creation.chat_id,
             _format_manual_client_details(
@@ -2877,10 +2617,7 @@ def _execute_manual_client_creation(
             reply_markup={
                 "inline_keyboard": [
                     [{"text": "Ver cliente", "callback_data": f"om:{order_id}:show"}],
-                    [
-                        {"text": "Pendientes", "callback_data": "ui:pending:show"},
-                        {"text": "Menu", "callback_data": "ui:menu:main"},
-                    ],
+                    [{"text": "Menu", "callback_data": "ui:menu:main"}],
                 ]
             },
         )
@@ -2898,7 +2635,7 @@ def _execute_manual_client_creation(
         logger.warning("Telegram manual client creation failed: %s", exc)
         telegram.send_message(
             creation.chat_id,
-            "No pude confirmar el alta. Revisa Pendientes antes de volver a intentarlo.",
+            "No pude confirmar el alta. Consulta Clientes antes de volver a intentarlo.",
         )
         _record_audit_safe(
             actor=actor,
@@ -3257,13 +2994,13 @@ def _remove_expired_client_state(
     for chat_id in expired_chats:
         telegram.send_message(
             chat_id,
-            "La invitacion vencio por inactividad. No se creo ni guardo nada.",
+            "El alta manual vencio por inactividad. No se creo ni guardo nada.",
             reply_markup=_main_menu_markup(),
         )
     for chat_id in expired_confirmation_chats:
         telegram.send_message(
             chat_id,
-            "La confirmacion vencio. No se creo ni guardo ninguna invitacion.",
+            "La confirmacion vencio. No se creo ni guardo ningun cliente.",
             reply_markup=_main_menu_markup(),
         )
 

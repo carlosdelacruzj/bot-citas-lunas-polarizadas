@@ -15,32 +15,6 @@ export interface HealthPayload {
   reason: string;
 }
 
-export interface HostedInvitation {
-  contact_ref: string;
-  display_name: string | null;
-  whatsapp_phone: string;
-  phone_hint: string;
-  invitation_id: string | null;
-  request_id: string | null;
-  order_id: string | null;
-  status: string;
-  availability_mode: 'any_date' | 'date_restrictions' | null;
-  expires_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreatedHostedInvitation {
-  status: 'issued';
-  contact_ref: string;
-  display_name: string | null;
-  whatsapp_phone: string;
-  invitation_id: string;
-  replaces_invitation_id?: string;
-  url: string;
-  expires_at: string;
-}
-
 export interface WorkerStatus {
   phase?: string;
   paused?: boolean;
@@ -594,46 +568,6 @@ export class AppointmentApiService {
   async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {
     const response = await this.read<ServiceOrdersResponse>('/api/v1/service-orders', scope);
     return response.service_orders;
-  }
-
-  async getHostedInvitations(): Promise<HostedInvitation[]> {
-    const response = await firstValueFrom(
-      this.http.get<{ invitations: HostedInvitation[] }>('/api/v1/hosted-invitations'),
-    );
-    return response.invitations;
-  }
-
-  async createHostedInvitation(
-    displayName: string | null,
-    whatsappPhone: string,
-  ): Promise<CreatedHostedInvitation> {
-    return this.post<CreatedHostedInvitation>('/api/v1/hosted-invitations', {
-      display_name: displayName,
-      whatsapp_phone: whatsappPhone,
-    });
-  }
-
-  async updateHostedInvitationName(
-    contactRef: string,
-    displayName: string | null,
-  ): Promise<{ status: 'updated'; contact_ref: string; display_name: string | null }> {
-    return this.post(`/api/v1/hosted-invitations/contacts/${encodeURIComponent(contactRef)}/name`, {
-      display_name: displayName,
-    });
-  }
-
-  async revokeHostedInvitation(invitationId: string): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>(
-      `/api/v1/hosted-invitations/${encodeURIComponent(invitationId)}/revoke`,
-      {},
-    );
-  }
-
-  async reissueHostedInvitation(invitationId: string): Promise<CreatedHostedInvitation> {
-    return this.post<CreatedHostedInvitation>(
-      `/api/v1/hosted-invitations/${encodeURIComponent(invitationId)}/reissue`,
-      {},
-    );
   }
 
   async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {
