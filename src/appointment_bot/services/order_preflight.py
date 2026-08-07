@@ -20,6 +20,8 @@ from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.appointments import read_person_name
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
 from appointment_bot.reservation_engine.programs import read_program_action_rows
+from appointment_bot.services.notifier import send_telegram_message
+from appointment_bot.services.registration_notices import enqueue_registration_notice
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
@@ -30,42 +32,66 @@ _ACTIVE_ORDERS: set[str] = set()
 
 def resume_pending_order_preflights(*, settings: Settings | None = None) -> int:
     settings = settings or load_settings(require_login=False)
-    order_ids = [
-        order.order_id
-        for order in list_service_order_summaries(settings)
-        if order.preflight_status in {"pending", "running"}
-    ]
-    return sum(schedule_order_preflight(order_id, settings=settings) for order_id in order_ids)
+    orders = list_service_order_summaries(settings)
+    for order in orders:
+        if order.preflight_status != "running":
+            continue
+        _fail_preflight(
+            order.order_id,
+            "La validacion fue interrumpida por un reinicio. Revalidar manualmente.",
+            "validation_interrupted",
+            settings,
+        )
+    return sum(
+        schedule_order_preflight(order.order_id, settings=settings, new_cycle=False)
+        for order in orders
+        if order.preflight_status == "pending"
+    )
 
 
 def schedule_order_preflight(
     order_id: str,
     *,
     settings: Settings | None = None,
+    new_cycle: bool = True,
 ) -> bool:
     settings = settings or load_settings(require_login=False)
     with _ACTIVE_LOCK:
         if order_id in _ACTIVE_ORDERS:
             return False
         _ACTIVE_ORDERS.add(order_id)
-    mark_order_preflight_pending(order_id, settings=settings)
-    thread = threading.Thread(
-        target=_run_scheduled_preflight,
-        args=(order_id, settings),
-        name=f"order-preflight-{order_id}",
-        daemon=True,
-    )
-    thread.start()
+    try:
+        preflight_cycle = mark_order_preflight_pending(
+            order_id,
+            new_cycle=new_cycle,
+            settings=settings,
+        )
+        thread = threading.Thread(
+            target=_run_scheduled_preflight,
+            args=(order_id, preflight_cycle, settings),
+            name=f"order-preflight-{order_id}",
+            daemon=True,
+        )
+        thread.start()
+    except Exception:
+        with _ACTIVE_LOCK:
+            _ACTIVE_ORDERS.discard(order_id)
+        raise
     return True
 
 
 def validate_order_preflight(
     order_id: str,
     *,
+    preflight_cycle: int | None = None,
     settings: Settings | None = None,
 ) -> dict[str, object]:
     settings = settings or load_settings(require_login=False)
-    mark_order_preflight_running(order_id, settings=settings)
+    current_cycle = mark_order_preflight_running(order_id, settings=settings)
+    if preflight_cycle is None:
+        preflight_cycle = current_cycle
+    elif preflight_cycle != current_cycle:
+        raise RuntimeError("El ciclo de validacion cambio antes de iniciar.")
     order = get_service_order_runtime(order_id, settings=settings)
     if order is None:
         raise ValueError(f"Service order not found: {order_id}")
@@ -95,10 +121,21 @@ def validate_order_preflight(
             }
             record_order_program_listing(order_id, listing, settings=settings)
             if not pending_rows:
-                raise RuntimeError(
+                result = _fail_preflight(
+                    order_id,
                     "El acceso funciona, pero no se encontro ningun tramite "
-                    "PENDIENTE para reservar."
+                    "PENDIENTE para reservar.",
+                    "no_pending_request",
+                    settings,
                 )
+                _queue_notice(
+                    order=order,
+                    preflight_cycle=preflight_cycle,
+                    notice_type="no_pending_request",
+                    display_name=applicant_name or order.contact_name or order.name,
+                    settings=settings,
+                )
+                return result
             details = {
                 "applicant_name": applicant_name,
                 "document_type": order.document_type,
@@ -112,6 +149,13 @@ def validate_order_preflight(
                 details=details,
                 settings=settings,
             )
+            _queue_notice(
+                order=order,
+                preflight_cycle=preflight_cycle,
+                notice_type="monitoring_started",
+                display_name=applicant_name,
+                settings=settings,
+            )
             logger.info(
                 "Order preflight validated: order=%s programs=%s pending=%s",
                 order_id,
@@ -121,15 +165,36 @@ def validate_order_preflight(
             return {"status": "validated", **details}
         except InvalidPortalCredentials as exc:
             _save_failure_screenshot(page, order_id, order_settings.screenshots_dir)
-            return _fail_preflight(order_id, str(exc), "invalid_credentials", settings)
+            result = _fail_preflight(
+                order_id,
+                str(exc),
+                "invalid_credentials",
+                settings,
+            )
+            _queue_notice(
+                order=order,
+                preflight_cycle=preflight_cycle,
+                notice_type="invalid_credentials",
+                display_name=order.contact_name or order.name,
+                settings=settings,
+            )
+            return result
         except Exception as exc:
             _save_failure_screenshot(page, order_id, order_settings.screenshots_dir)
             return _fail_preflight(order_id, str(exc), exc.__class__.__name__, settings)
 
 
-def _run_scheduled_preflight(order_id: str, settings: Settings) -> None:
+def _run_scheduled_preflight(
+    order_id: str,
+    preflight_cycle: int,
+    settings: Settings,
+) -> None:
     try:
-        validate_order_preflight(order_id, settings=settings)
+        validate_order_preflight(
+            order_id,
+            preflight_cycle=preflight_cycle,
+            settings=settings,
+        )
     except Exception as exc:
         logger.exception("Unexpected order preflight failure for %s", order_id)
         try:
@@ -179,7 +244,70 @@ def _fail_preflight(
         settings=settings,
     )
     logger.warning("Order preflight failed: order=%s error=%s", order_id, safe_message)
+    if error_type not in {"invalid_credentials", "no_pending_request"}:
+        send_telegram_message(
+            settings,
+            "\n".join(
+                [
+                    "⚠️ Validación inicial interrumpida por un error técnico.",
+                    f"Orden: {order_id}",
+                    f"Tipo: {error_type}",
+                    f"Detalle: {safe_message}",
+                    "No se envió ningún mensaje automático al cliente.",
+                ]
+            ),
+        )
     return {"status": "failed", "message": safe_message, **details}
+
+
+def _queue_notice(
+    *,
+    order,
+    preflight_cycle: int,
+    notice_type: str,
+    display_name: str | None,
+    settings: Settings,
+) -> None:
+    try:
+        queued = enqueue_registration_notice(
+            order_id=order.order_id,
+            preflight_cycle=preflight_cycle,
+            notice_type=notice_type,
+            recipient_phone=order.contact_whatsapp,
+            display_name=display_name,
+            settings=settings,
+        )
+    except Exception as exc:
+        logger.exception("Could not enqueue registration notice for %s", order.order_id)
+        send_telegram_message(
+            settings,
+            "\n".join(
+                [
+                    "⚠️ No se pudo encolar el aviso de registro por WhatsApp.",
+                    f"Orden: {order.order_id}",
+                    f"Ciclo: {preflight_cycle}",
+                    f"Detalle: {sanitize_text(str(exc))}",
+                    "La validación del portal se conservó; revisar manualmente.",
+                ]
+            ),
+        )
+        return
+    if not queued and not order.contact_whatsapp:
+        logger.warning(
+            "Registration notice skipped because the order has no WhatsApp: order=%s",
+            order.order_id,
+        )
+        send_telegram_message(
+            settings,
+            "\n".join(
+                [
+                    "⚠️ El aviso de registro no pudo encolarse: falta WhatsApp.",
+                    f"Orden: {order.order_id}",
+                    f"Ciclo: {preflight_cycle}",
+                    "La validación del portal se conservó; contactar manualmente.",
+                ]
+            ),
+        )
 
 
 def _save_failure_screenshot(page, order_id: str, screenshots_dir: Path) -> None:

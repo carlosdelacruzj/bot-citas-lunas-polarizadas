@@ -103,7 +103,11 @@ def list_service_order_summaries(
                    so.excluded_date_ranges,
                    COALESCE(os.preflight_status, 'not_required') AS preflight_status,
                    os.preflight_message, os.preflight_started_at,
-                   os.preflight_validated_at, os.preflight_details
+                   os.preflight_validated_at, os.preflight_details,
+                   COALESCE(os.preflight_cycle, 0) AS preflight_cycle,
+                   rnaj.registration_notice_type,
+                   rnaj.status AS registration_notice_status,
+                   rnaj.updated_at AS registration_notice_updated_at
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -145,6 +149,14 @@ def list_service_order_summaries(
             LEFT JOIN whatsapp_automation_jobs wfaj
                 ON wfaj.order_id = so.order_id
                AND wfaj.job_kind = 'post_payment_followup'
+            LEFT JOIN LATERAL (
+                SELECT registration_notice_type, status, updated_at
+                FROM whatsapp_automation_jobs
+                WHERE order_id = so.order_id
+                  AND job_kind = 'registration_notice'
+                ORDER BY preflight_cycle DESC, created_at DESC
+                LIMIT 1
+            ) rnaj ON true
             ORDER BY so.priority DESC, so.created_at ASC
             """
         ).fetchall()
@@ -420,6 +432,12 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         preflight_validated_at=_timestamp_text(row["preflight_validated_at"]),
         preflight_details=(
             row["preflight_details"] if isinstance(row["preflight_details"], dict) else None
+        ),
+        preflight_cycle=int(row["preflight_cycle"]),
+        registration_notice_type=row["registration_notice_type"],
+        registration_notice_status=row["registration_notice_status"],
+        registration_notice_updated_at=_timestamp_text(
+            row["registration_notice_updated_at"]
         ),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),

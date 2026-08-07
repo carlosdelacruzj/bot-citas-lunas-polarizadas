@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 43
+SCHEMA_VERSION = 44
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -170,7 +170,8 @@ def create_current_schema(connection: Connection) -> None:
             preflight_message text,
             preflight_started_at timestamptz,
             preflight_validated_at timestamptz,
-            preflight_details jsonb
+            preflight_details jsonb,
+            preflight_cycle integer NOT NULL DEFAULT 0 CHECK (preflight_cycle >= 0)
         )
         """
     )
@@ -387,6 +388,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("order_state", "preflight_started_at"),
         ("order_state", "preflight_validated_at"),
         ("order_state", "preflight_details"),
+        ("order_state", "preflight_cycle"),
         ("reservation_attempts", "idempotency_key"),
         ("reservation_attempts", "status"),
         ("reservations", "run_id"),
@@ -435,6 +437,8 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "message_text"),
         ("whatsapp_automation_jobs", "publication_text"),
         ("whatsapp_automation_jobs", "attachment_paths"),
+        ("whatsapp_automation_jobs", "registration_notice_type"),
+        ("whatsapp_automation_jobs", "preflight_cycle"),
         ("captcha_shadow_outbox", "event_key"),
         ("captcha_shadow_outbox", "event_id"),
         ("captcha_shadow_outbox", "sequence"),
@@ -835,6 +839,8 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             message_text text,
             publication_text text,
             attachment_paths jsonb,
+            registration_notice_type text,
+            preflight_cycle integer,
             status text NOT NULL DEFAULT 'queued',
             message_id text,
             attempt_count smallint NOT NULL DEFAULT 0 CHECK (
@@ -854,7 +860,8 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
                 job_kind IN (
                     'reservation_album',
                     'post_payment_followup',
-                    'daily_slot_summary'
+                    'daily_slot_summary',
+                    'registration_notice'
                 )
             ),
             CONSTRAINT ck_whatsapp_automation_job_target CHECK (
@@ -874,6 +881,22 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
                     AND recipient_phone IS NOT NULL
                     AND message_text IS NOT NULL
                     AND jsonb_typeof(attachment_paths) = 'array'
+                )
+                OR (
+                    job_kind = 'registration_notice'
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                    AND registration_notice_type IN (
+                        'monitoring_started',
+                        'no_pending_request',
+                        'invalid_credentials'
+                    )
+                    AND preflight_cycle IS NOT NULL
+                    AND preflight_cycle > 0
                 )
             ),
             CONSTRAINT ck_whatsapp_automation_job_status CHECK (
@@ -1460,6 +1483,81 @@ def migrate_database(connection: Connection) -> None:
             (43,),
         )
         current_version = 43
+    if current_version == 43:
+        connection.execute(
+            """
+            ALTER TABLE order_state
+            ADD COLUMN preflight_cycle integer NOT NULL DEFAULT 0
+                CHECK (preflight_cycle >= 0)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD COLUMN registration_notice_type text,
+            ADD COLUMN preflight_cycle integer,
+            DROP CONSTRAINT IF EXISTS whatsapp_automation_jobs_job_kind_check,
+            DROP CONSTRAINT IF EXISTS ck_whatsapp_automation_job_kind,
+            DROP CONSTRAINT IF EXISTS ck_whatsapp_automation_job_target
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_job_kind CHECK (
+                job_kind IN (
+                    'reservation_album',
+                    'post_payment_followup',
+                    'daily_slot_summary',
+                    'registration_notice'
+                )
+            ),
+            ADD CONSTRAINT ck_whatsapp_automation_job_target CHECK (
+                (
+                    job_kind IN ('reservation_album', 'post_payment_followup')
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NULL
+                    AND message_text IS NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
+                )
+                OR (
+                    job_kind = 'daily_slot_summary'
+                    AND order_id IS NULL
+                    AND report_date IS NOT NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND jsonb_typeof(attachment_paths) = 'array'
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
+                )
+                OR (
+                    job_kind = 'registration_notice'
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NOT NULL
+                    AND message_text IS NOT NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                    AND registration_notice_type IN (
+                        'monitoring_started',
+                        'no_pending_request',
+                        'invalid_credentials'
+                    )
+                    AND preflight_cycle IS NOT NULL
+                    AND preflight_cycle > 0
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (44,),
+        )
+        current_version = 44
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

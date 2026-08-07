@@ -63,6 +63,13 @@ Estado: en observación.
   `uncertain`, guarda evidencia específica y no genera un reintento automático.
   Observar el próximo envío real antes de considerar cerrada la validación
   externa de WhatsApp Web.
+- Completado el `2026-08-07`: el preflight inicial encola avisos automáticos
+  distintos para solicitud validada, ausencia de trámite pendiente y
+  credenciales rechazadas. Cada ciclo permite un solo intento de portal, la
+  cola deduplica por orden/ciclo/resultado y los fallos técnicos no escriben al
+  cliente. El dashboard muestra el estado del aviso y una entrega ambigua queda
+  `uncertain` sin reintento. Validar externamente los tres textos en las
+  próximas altas reales, sin realizar envíos retroactivos.
 - Completado el `2026-07-30`: el resumen diario incorpora después del álbum una
   publicación variable para TikTok, sin IA ni consumo de tokens. El generador
   conserva datos comerciales fijos y rota 138,240 combinaciones por fecha. Una

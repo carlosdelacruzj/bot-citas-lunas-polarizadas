@@ -66,6 +66,12 @@
           @if (order.preflight_message) {
             <small>{{ order.preflight_message }}</small>
           }
+          @if (order.registration_notice_status) {
+            <small>
+              Aviso de registro: {{ dashboard.statusLabel(order.registration_notice_type) }} ·
+              {{ dashboard.statusLabel(order.registration_notice_status) }}
+            </small>
+          }
         </div>
         <div class="next-action-card">
           <span>Siguiente accion valida</span>

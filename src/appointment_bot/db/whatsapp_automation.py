@@ -21,6 +21,12 @@ WhatsAppAutomationKind = Literal[
     "reservation_album",
     "post_payment_followup",
     "daily_slot_summary",
+    "registration_notice",
+]
+RegistrationNoticeType = Literal[
+    "monitoring_started",
+    "no_pending_request",
+    "invalid_credentials",
 ]
 WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain"]
 LEASE_SECONDS = 10 * 60
@@ -36,6 +42,8 @@ class WhatsAppAutomationJob(TypedDict):
     message_text: str | None
     publication_text: str | None
     attachment_paths: list[str]
+    registration_notice_type: RegistrationNoticeType | None
+    preflight_cycle: int | None
 
 
 def enqueue_whatsapp_automation_job(
@@ -116,6 +124,53 @@ def enqueue_daily_slot_summary_job(
     return row is not None
 
 
+def enqueue_registration_notice_job(
+    *,
+    order_id: str,
+    preflight_cycle: int,
+    notice_type: RegistrationNoticeType,
+    recipient_phone: str,
+    message_text: str,
+    settings: Settings | None = None,
+    _connection_override=None,
+) -> bool:
+    if preflight_cycle < 1:
+        raise ValueError("preflight_cycle must be greater than or equal to 1.")
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    now = datetime.now(UTC)
+    job_key = f"registration_notice:{order_id}:cycle-{preflight_cycle}:{notice_type}"
+    phone = _international_phone(recipient_phone)
+    with _operation_connection(effective_settings, _connection_override) as connection:
+        row = connection.execute(
+            """
+            INSERT INTO whatsapp_automation_jobs (
+                job_key, order_id, job_kind, recipient_phone, message_text,
+                registration_notice_type, preflight_cycle, status, attempt_count,
+                next_attempt_at, created_at, updated_at
+            )
+            VALUES (
+                %s, %s, 'registration_notice', %s, %s,
+                %s, %s, 'queued', 0, %s, %s, %s
+            )
+            ON CONFLICT(job_key) DO NOTHING
+            RETURNING job_key
+            """,
+            (
+                job_key,
+                order_id,
+                phone,
+                message_text,
+                notice_type,
+                preflight_cycle,
+                now,
+                now,
+                now,
+            ),
+        ).fetchone()
+    return row is not None
+
+
 def next_waiting_whatsapp_automation_job(
     *,
     settings: Settings,
@@ -126,7 +181,8 @@ def next_waiting_whatsapp_automation_job(
         row = connection.execute(
             """
             SELECT job_key, order_id, job_kind, report_date, recipient_phone,
-                   message_text, publication_text, attachment_paths
+                   message_text, publication_text, attachment_paths,
+                   registration_notice_type, preflight_cycle
             FROM whatsapp_automation_jobs
             WHERE status IN ('queued', 'blocked') AND next_attempt_at <= %s
             ORDER BY created_at
@@ -164,7 +220,8 @@ def claim_whatsapp_automation_job(
                   AND status IN ('queued', 'blocked')
                   AND next_attempt_at <= %s
                 RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
-                          message_text, publication_text, attachment_paths
+                          message_text, publication_text, attachment_paths,
+                          registration_notice_type, preflight_cycle
                 """,
                 (owner_token, lease_expires_at, now, now, job_key, now),
             ).fetchone()
@@ -277,7 +334,8 @@ def recover_expired_whatsapp_automation_jobs(
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
             RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
-                      message_text, publication_text, attachment_paths
+                      message_text, publication_text, attachment_paths,
+                      registration_notice_type, preflight_cycle
             """,
             (now, now, now),
         ).fetchall()
@@ -392,6 +450,16 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
         "attachment_paths": (
             [str(path) for path in raw_paths] if isinstance(raw_paths, list) else []
         ),
+        "registration_notice_type": (
+            str(row["registration_notice_type"])
+            if row["registration_notice_type"] is not None
+            else None
+        ),
+        "preflight_cycle": (
+            int(row["preflight_cycle"])
+            if row["preflight_cycle"] is not None
+            else None
+        ),
     }
 
 
@@ -408,6 +476,7 @@ __all__ = [
     "block_whatsapp_automation_preflight",
     "claim_whatsapp_automation_job",
     "enqueue_daily_slot_summary_job",
+    "enqueue_registration_notice_job",
     "enqueue_whatsapp_automation_job",
     "finish_whatsapp_automation_job",
     "next_waiting_whatsapp_automation_job",

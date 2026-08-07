@@ -75,6 +75,10 @@ export interface ServiceOrder {
   preflight_started_at: string | null;
   preflight_validated_at: string | null;
   preflight_details: Record<string, unknown> | null;
+  preflight_cycle: number;
+  registration_notice_type: string | null;
+  registration_notice_status: WhatsAppActionState | null;
+  registration_notice_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }

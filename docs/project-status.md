@@ -288,6 +288,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   aparecen, conserva una captura propia del mensaje, termina `uncertain` y no
   se reintenta. El ajuste responde a un caso real que figuró `sent` aunque el
   cliente no recibió el primer álbum y necesitó un envío manual.
+- Implementado el `2026-08-07`: cada alta, corrección de credenciales o
+  revalidación manual abre un ciclo de preflight con un solo envío del
+  formulario. Los resultados `validated`, `no_pending_request` e
+  `invalid_credentials` encolan un aviso de registro idempotente al WhatsApp
+  del contacto. Los errores técnicos, timeouts y monitoreos posteriores no
+  generan mensajes al cliente.
+- Los avisos de registro comparten el emisor durable de Admin API y exigen una
+  nueva burbuja saliente confirmada. El dashboard expone tipo, ciclo y estado;
+  `uncertain` es terminal y nunca produce un reintento automático. Un preflight
+  que quedó `running` al reiniciar pasa a fallo técnico y requiere revalidación
+  manual, evitando un segundo intento de acceso dentro del mismo ciclo.
 - Después de las imágenes, el mismo trabajo diario enviará una publicación para
   TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
   combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen

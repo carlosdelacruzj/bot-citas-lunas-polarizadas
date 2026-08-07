@@ -150,6 +150,10 @@ class ServiceOrderSummary:
     preflight_started_at: str | None
     preflight_validated_at: str | None
     preflight_details: dict[str, Any] | None
+    preflight_cycle: int
+    registration_notice_type: str | None
+    registration_notice_status: str | None
+    registration_notice_updated_at: str | None
     created_at: str
     updated_at: str
 

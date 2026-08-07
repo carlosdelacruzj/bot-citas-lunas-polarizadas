@@ -217,6 +217,25 @@ def send_whatsapp_web_daily_slot_summary(
     )
 
 
+def send_whatsapp_web_registration_notice(
+    *,
+    message_id: str,
+    recipient_phone: str,
+    message_text: str,
+) -> dict[str, object]:
+    return _MANAGER.prepare(
+        {
+            "action": "registration_notice",
+            "message_id": message_id,
+            "recipient_phone": recipient_phone,
+            "message_text": message_text,
+            "disable_closed_target_retry": True,
+            "close_on_error": True,
+            "headless": True,
+        }
+    )
+
+
 def _ensure_context(
     playwright,
     context: BrowserContext | None,
@@ -265,6 +284,8 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
         return _validate_whatsapp_session(context)
     if draft.get("action") == "daily_slot_summary":
         return _send_daily_slot_summary(context, draft)
+    if draft.get("action") == "registration_notice":
+        return _send_registration_notice(context, draft)
     if draft.get("album_items"):
         return _prepare_album(context, draft)
     if draft.get("document_items"):
@@ -788,6 +809,46 @@ def _send_daily_slot_summary(
     )
 
 
+def _send_registration_notice(
+    context: BrowserContext,
+    draft: dict[str, object],
+) -> dict[str, object]:
+    page = _fresh_whatsapp_page(context)
+    phone = "".join(
+        character
+        for character in str(draft["recipient_phone"])
+        if character.isdigit()
+    )
+    message_id = str(draft["message_id"])
+    evidence_id = _safe_whatsapp_artifact_name(message_id)
+    target = f"https://web.whatsapp.com/send?phone={phone}"
+    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
+    if not _wait_for_chat(page):
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name="whatsapp-registration-notice-chat-not-ready",
+        )
+    if not _send_plain_text_message(page, str(draft["message_text"])):
+        context.close()
+        return _result(
+            "send_uncertain",
+            "WhatsApp no confirmo el aviso automatico de registro.",
+            message_id=message_id,
+        )
+    _save_whatsapp_debug_screenshot(
+        page,
+        f"whatsapp-registration-notice-sent-{evidence_id}",
+    )
+    context.close()
+    return _result(
+        "sent",
+        "Aviso automatico de registro enviado.",
+        message_id=message_id,
+        sent=True,
+    )
+
+
 def _fill_selected_album_caption(page: Page, caption: str) -> None:
     deadline = time.monotonic() + 8
     while time.monotonic() < deadline:
@@ -1290,7 +1351,7 @@ def _send_plain_text_message(page: Page, text: str) -> bool:
         page.wait_for_timeout(500)
     if composer is None:
         _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-composer-missing")
-        raise RuntimeError("No se encontro el campo para enviar el texto post-pago.")
+        raise RuntimeError("No se encontro el campo para enviar el mensaje de texto.")
     logger.info("WhatsApp Web chat ready; preparing text message")
     _click_and_replace_text(page, composer, text)
     page.wait_for_timeout(500)
@@ -1299,7 +1360,7 @@ def _send_plain_text_message(page: Page, text: str) -> bool:
         page.wait_for_timeout(500)
     if not _plain_text_ready(page, text):
         _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-not-ready")
-        raise RuntimeError("WhatsApp no dejo listo el texto post-pago.")
+        raise RuntimeError("WhatsApp no dejo listo el mensaje de texto.")
     outgoing_signatures = _matching_confirmed_outgoing_text_signatures(page, text)
     _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-text-send")
     if not _click_visible_send_button(page):

@@ -8,6 +8,7 @@ from appointment_bot.browser.whatsapp_web import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
     send_whatsapp_web_daily_slot_summary,
+    send_whatsapp_web_registration_notice,
     validate_whatsapp_web_session,
 )
 from appointment_bot.config import Settings
@@ -132,7 +133,7 @@ class WhatsAppAutomationDispatcher:
         try:
             if (
                 order_id is not None
-                and job_kind != "daily_slot_summary"
+                and job_kind in {"reservation_album", "post_payment_followup"}
                 and order_has_sent_whatsapp_message(
                     order_id,
                     job_kind,
@@ -154,8 +155,12 @@ class WhatsAppAutomationDispatcher:
                 if order_id is None:
                     raise ValueError("El trabajo post-pago no contiene order_id.")
                 message_id, result = self._send_post_payment_followup(order_id)
-            else:
+            elif job_kind == "daily_slot_summary":
                 message_id, result = self._send_daily_slot_summary(job)
+            elif job_kind == "registration_notice":
+                message_id, result = self._send_registration_notice(job)
+            else:
+                raise ValueError(f"Tipo de trabajo WhatsApp no soportado: {job_kind}")
         except Exception as exc:
             logger.exception(
                 "Automatic WhatsApp preparation failed: order_id=%s kind=%s",
@@ -271,6 +276,24 @@ class WhatsAppAutomationDispatcher:
         )
         return message_id, result
 
+    def _send_registration_notice(
+        self,
+        job: WhatsAppAutomationJob,
+    ) -> tuple[str, dict[str, object]]:
+        recipient_phone = job["recipient_phone"]
+        message_text = job["message_text"]
+        if job["order_id"] is None or not recipient_phone or not message_text:
+            raise ValueError(
+                "El trabajo del aviso de registro no contiene orden, destinatario o texto."
+            )
+        message_id = job["job_key"]
+        result = send_whatsapp_web_registration_notice(
+            message_id=message_id,
+            recipient_phone=recipient_phone,
+            message_text=message_text,
+        )
+        return message_id, result
+
     def _finish(
         self,
         job: WhatsAppAutomationJob,
@@ -305,7 +328,11 @@ class WhatsAppAutomationDispatcher:
             else (
                 "documentos post-pago"
                 if job["job_kind"] == "post_payment_followup"
-                else "resumen diario de cupos"
+                else (
+                    "aviso de registro"
+                    if job["job_kind"] == "registration_notice"
+                    else "resumen diario de cupos"
+                )
             )
         )
         target = (
@@ -338,7 +365,11 @@ class WhatsAppAutomationDispatcher:
             else (
                 "documentos post-pago"
                 if job["job_kind"] == "post_payment_followup"
-                else "resumen diario de cupos"
+                else (
+                    "aviso de registro"
+                    if job["job_kind"] == "registration_notice"
+                    else "resumen diario de cupos"
+                )
             )
         )
         target = (

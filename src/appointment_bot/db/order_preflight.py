@@ -17,12 +17,14 @@ from appointment_bot.db.common import (
 def mark_order_preflight_pending(
     order_id: str,
     *,
+    new_cycle: bool = True,
     settings: Settings | None = None,
-) -> None:
-    _set_preflight(
+) -> int:
+    return _set_preflight(
         order_id,
         status="pending",
         message="Validacion de acceso pendiente.",
+        cycle_increment=1 if new_cycle else 0,
         settings=settings,
     )
 
@@ -31,8 +33,8 @@ def mark_order_preflight_running(
     order_id: str,
     *,
     settings: Settings | None = None,
-) -> None:
-    _set_preflight(
+) -> int:
+    return _set_preflight(
         order_id,
         status="running",
         message="Validando acceso, identidad y tramites en el portal.",
@@ -101,8 +103,8 @@ def mark_order_preflight_failed(
     *,
     details: dict[str, Any] | None = None,
     settings: Settings | None = None,
-) -> None:
-    _set_preflight(
+) -> int:
+    return _set_preflight(
         order_id,
         status="failed",
         message=message,
@@ -118,8 +120,9 @@ def _set_preflight(
     message: str,
     details: dict[str, Any] | None = None,
     started: bool = False,
+    cycle_increment: int = 0,
     settings: Settings | None = None,
-) -> None:
+) -> int:
     settings = _settings(settings)
     init_database(settings)
     now = _now()
@@ -135,13 +138,14 @@ def _set_preflight(
         )
         if cursor.rowcount != 1:
             raise ValueError(f"Service order not found: {order_id}")
-        connection.execute(
+        row = connection.execute(
             """
             INSERT INTO order_state (
                 order_id, preflight_status, preflight_message,
-                preflight_started_at, preflight_validated_at, preflight_details
+                preflight_started_at, preflight_validated_at, preflight_details,
+                preflight_cycle
             )
-            VALUES (%s, %s, %s, %s, NULL, %s)
+            VALUES (%s, %s, %s, %s, NULL, %s, %s)
             ON CONFLICT(order_id) DO UPDATE SET
                 preflight_status = excluded.preflight_status,
                 preflight_message = excluded.preflight_message,
@@ -150,7 +154,18 @@ def _set_preflight(
                     ELSE order_state.preflight_started_at
                 END,
                 preflight_validated_at = NULL,
-                preflight_details = excluded.preflight_details
+                preflight_details = excluded.preflight_details,
+                preflight_cycle = order_state.preflight_cycle + excluded.preflight_cycle
+            RETURNING preflight_cycle
             """,
-            (order_id, status, message, now if started else None, Jsonb(details), started),
-        )
+            (
+                order_id,
+                status,
+                message,
+                now if started else None,
+                Jsonb(details),
+                cycle_increment,
+                started,
+            ),
+        ).fetchone()
+    return int(row["preflight_cycle"])

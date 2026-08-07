@@ -66,6 +66,10 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "preflight_started_at",
     "preflight_validated_at",
     "preflight_details",
+    "preflight_cycle",
+    "registration_notice_type",
+    "registration_notice_status",
+    "registration_notice_updated_at",
     "created_at",
     "updated_at",
 )
