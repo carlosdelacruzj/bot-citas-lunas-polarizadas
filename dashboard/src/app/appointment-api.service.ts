@@ -42,6 +42,7 @@ export interface ServiceOrder {
   document_type: 'dni' | 'foreign_resident_card';
   contact_name: string | null;
   contact_whatsapp_masked: string | null;
+  contact_whatsapp_username_masked: string | null;
   contact_source: string | null;
   priority: number;
   charge_required: boolean;
@@ -96,6 +97,7 @@ export type WhatsAppActionState =
 export interface ServiceOrderDetail extends ServiceOrder {
   document_number: string;
   contact_whatsapp: string | null;
+  contact_whatsapp_username: string | null;
 }
 
 export interface RunSummary {
@@ -449,6 +451,7 @@ export interface ApiActionResponse {
 
 export interface ContactUpdatePayload {
   contact_whatsapp?: string | null;
+  contact_whatsapp_username?: string | null;
   contact_name?: string | null;
   contact_source?: string | null;
 }
@@ -474,12 +477,14 @@ export interface WhatsAppMessagePackage {
   order_id: string | null;
   test_mode: boolean;
   status: 'prepared' | 'sent';
-  recipient_phone: string;
+  recipient_phone: string | null;
   recipient_phone_masked: string | null;
+  recipient_username: string | null;
+  recipient_label: string;
   greeting: string;
   evidence_caption: string;
   payment_message: string;
-  whatsapp_url: string;
+  whatsapp_url: string | null;
   attachment_url: string;
   payment_attachment_url: string;
   prepared_at: string;
@@ -497,8 +502,10 @@ export interface WhatsAppFollowUpPackage {
   order_id: string | null;
   test_mode: boolean;
   status: 'prepared' | 'sent';
-  recipient_phone: string;
+  recipient_phone: string | null;
   recipient_phone_masked: string | null;
+  recipient_username: string | null;
+  recipient_label: string;
   steps: WhatsAppFollowUpStep[];
   prepared_at: string;
   sent_at: string | null;
@@ -529,6 +536,7 @@ export interface CreateServiceOrderPayload {
   contact_source: string;
   priority?: number;
   contact_whatsapp?: string | null;
+  contact_whatsapp_username?: string | null;
   applicant_name?: string | null;
   charge_required?: boolean;
   minimum_reservation_date?: string | null;

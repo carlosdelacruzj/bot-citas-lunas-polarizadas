@@ -11,6 +11,7 @@ from appointment_bot.core.contacts import (
     normalize_contact_name,
     normalize_contact_source,
     normalize_contact_whatsapp,
+    normalize_contact_whatsapp_username,
 )
 from appointment_bot.core.models import (
     ServiceOrderSummary,
@@ -52,6 +53,7 @@ def list_service_order_summaries(
             SELECT so.order_id, so.applicant_id, a.full_name, a.document_number,
                    pa.document_type,
                    wc.display_name AS contact_name, wc.phone AS contact_phone,
+                   wc.username AS contact_username,
                    wc.contact_source,
                    so.priority, so.charge_required, so.status,
                    so.created_at, so.updated_at,
@@ -167,6 +169,7 @@ def add_or_update_service_order_contact(
     order_id: str,
     *,
     contact_whatsapp: str | None = None,
+    contact_whatsapp_username: str | None = None,
     contact_name: str | None = None,
     contact_source: str | None = None,
     settings: Settings | None = None,
@@ -180,7 +183,7 @@ def add_or_update_service_order_contact(
             raise ValueError(f"Service order not found: {order_id}")
         current_contact = connection.execute(
             """
-            SELECT wc.phone, wc.display_name, wc.contact_source
+            SELECT wc.phone, wc.username, wc.display_name, wc.contact_source
             FROM applicant_contacts ac
             JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
             WHERE ac.applicant_id = %s AND ac.is_primary = true
@@ -194,6 +197,9 @@ def add_or_update_service_order_contact(
             phone=contact_whatsapp
             if contact_whatsapp is not None
             else (current_contact["phone"] if current_contact is not None else None),
+            username=contact_whatsapp_username
+            if contact_whatsapp_username is not None
+            else (current_contact["username"] if current_contact is not None else None),
             display_name=contact_name
             if contact_name is not None
             else (current_contact["display_name"] if current_contact is not None else None),
@@ -369,6 +375,8 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         contact_name=row["contact_name"],
         contact_whatsapp=row["contact_phone"],
         contact_whatsapp_masked=_mask_phone(row["contact_phone"]),
+        contact_whatsapp_username=row["contact_username"],
+        contact_whatsapp_username_masked=_mask_whatsapp_username(row["contact_username"]),
         contact_source=row["contact_source"],
         priority=int(row["priority"]),
         charge_required=bool(row["charge_required"]),
@@ -456,11 +464,13 @@ def _upsert_contact(
     *,
     applicant_id: str,
     phone: str | None,
+    username: str | None,
     display_name: str | None,
     source: str | None,
     now: str,
 ) -> str:
     normalized_phone = normalize_contact_whatsapp(phone)
+    normalized_username = normalize_contact_whatsapp_username(username)
     normalized_display_name = normalize_contact_name(display_name)
     normalized_source = normalize_contact_source(source)
     if not normalized_source:
@@ -468,9 +478,13 @@ def _upsert_contact(
             "contact_source",
             "La fuente de contacto es obligatoria.",
         )
-    if not normalized_phone and not normalized_display_name:
-        raise ValueError("contact_whatsapp or contact_name is required.")
-    contact_key = normalized_phone or f"{normalized_source}:{normalized_display_name}"
+    if not normalized_phone and not normalized_username and not normalized_display_name:
+        raise ValueError("contact_whatsapp, contact_whatsapp_username or contact_name is required.")
+    contact_key = normalized_phone
+    if contact_key is None and normalized_username is not None:
+        contact_key = normalized_username.casefold()
+    if contact_key is None:
+        contact_key = f"{normalized_source}:{normalized_display_name}"
     contact_id = _id_from_value("contact", contact_key)
     if normalized_phone:
         existing_contact = connection.execute(
@@ -479,14 +493,22 @@ def _upsert_contact(
         ).fetchone()
         if existing_contact is not None:
             contact_id = str(existing_contact["contact_id"])
+    elif normalized_username:
+        existing_contact = connection.execute(
+            "SELECT contact_id FROM whatsapp_contacts WHERE lower(username) = lower(%s)",
+            (normalized_username,),
+        ).fetchone()
+        if existing_contact is not None:
+            contact_id = str(existing_contact["contact_id"])
     connection.execute(
         """
         INSERT INTO whatsapp_contacts (
-            contact_id, phone, display_name, contact_source, created_at, updated_at
+            contact_id, phone, username, display_name, contact_source, created_at, updated_at
         )
-        VALUES (%s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT(contact_id) DO UPDATE SET
             phone = COALESCE(excluded.phone, whatsapp_contacts.phone),
+            username = COALESCE(excluded.username, whatsapp_contacts.username),
             display_name = COALESCE(
                 NULLIF(excluded.display_name, ''),
                 whatsapp_contacts.display_name
@@ -500,6 +522,7 @@ def _upsert_contact(
         (
             contact_id,
             normalized_phone,
+            normalized_username,
             normalized_display_name,
             normalized_source,
             now,
@@ -535,3 +558,12 @@ def _upsert_contact(
         (now, applicant_id, contact_id),
     )
     return contact_id
+
+
+def _mask_whatsapp_username(value: object) -> str | None:
+    if value is None:
+        return None
+    username = str(value)
+    if len(username) <= 4:
+        return username[0] + "***"
+    return f"{username[:3]}***{username[-2:]}"

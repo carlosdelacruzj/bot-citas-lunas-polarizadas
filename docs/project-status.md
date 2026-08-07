@@ -302,6 +302,24 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Después de las imágenes, el mismo trabajo diario enviará una publicación para
   TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
   combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen
+
+### Destinatarios de WhatsApp por usuario
+
+- Desde el `2026-08-07`, cada contacto puede guardar un numero y un nombre de
+  usuario de WhatsApp. Si existen ambos, todos los envios usan el numero; el
+  `@usuario` solo actua como alternativa cuando falta el numero.
+- La busqueda por usuario exige un unico resultado dentro de la seccion
+  `Chats`. Conserva el nombre que WhatsApp muestra en esa fila y confirma el
+  mismo valor en el encabezado antes de escribir texto o adjuntar archivos. De
+  esta forma funciona tanto con alias visibles como con contactos guardados
+  bajo un nombre local; un resultado ausente, ambiguo o distinto falla sin
+  enviar y no se reintenta automaticamente.
+- La capacidad cubre avisos de validacion inicial, evidencia y cobro de reserva,
+  seguimiento postpago y preparaciones manuales. El resumen diario conserva su
+  destinatario telefonico configurado.
+- Dashboard, Admin API y `/cliente_nuevo` aceptan `@usuario`; el esquema v45
+  conserva ambos identificadores sin interpretar los digitos de un alias como
+  telefono.
   fijos, y PostgreSQL conserva el texto exacto antes de enviarlo. La prueba real
   confirmó el texto completo con doble check azul después de normalizar la
   representación interna de emojis del compositor y la burbuja saliente. La
@@ -392,6 +410,12 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
 - `python -m pytest -q`: `59 passed`.
+- Destinatario por usuario: esquema v45 aplicado; resolucion local comprobo
+  usuario solo, prioridad del numero y rechazo de alias como telefono. La prueba
+  de solo lectura abrio dos veces `@diego.durand` con el alias visible y dos
+  veces `@CARBENBOPA` presentado como el contacto guardado `CARLOS BORASINO`.
+  En los cuatro casos confirmo la misma fila en el encabezado y no escribio ni
+  envio mensajes.
 - Retiro de invitaciones: dashboard activo, ruta anterior responde `404`,
   Telegram valida correctamente y PostgreSQL quedó en esquema v43 sin la tabla
   `hosted_registration_contacts`.

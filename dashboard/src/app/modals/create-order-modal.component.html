@@ -82,6 +82,17 @@
           />
         </label>
         <label>
+          Usuario de WhatsApp (opcional)
+          <input
+            name="newContactWhatsappUsername"
+            type="text"
+            placeholder="@usuario"
+            [ngModel]="view.newContactWhatsappUsername()"
+            (ngModelChange)="view.editField(view.newContactWhatsappUsername, $event)"
+          />
+          <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
+        </label>
+        <label>
           Fuente <span class="required-marker" aria-hidden="true">*</span>
           <select
             name="newContactSource"

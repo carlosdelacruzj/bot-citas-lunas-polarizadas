@@ -463,6 +463,7 @@ export class App implements OnDestroy {
   protected readonly orderDetailLoading = signal(false);
   protected readonly contactName = signal('');
   protected readonly contactWhatsapp = signal('');
+  protected readonly contactWhatsappUsername = signal('');
   protected readonly contactSource = signal('whatsapp');
   protected readonly orderDocumentNumber = signal('');
   protected readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
@@ -485,6 +486,7 @@ export class App implements OnDestroy {
   protected readonly newPassword = signal('');
   protected readonly newContactName = signal('');
   protected readonly newContactWhatsapp = signal('');
+  protected readonly newContactWhatsappUsername = signal('');
   protected readonly newContactSource = signal('');
   protected readonly newMinimumReservationDate = signal('');
   protected readonly newMaximumReservationDate = signal('');
@@ -864,15 +866,15 @@ export class App implements OnDestroy {
   });
   protected readonly selectedRun = computed(() => this.selectedRunDetail());
   protected readonly selectedOrderWhatsappPlaceholder = computed(
-    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin WhatsApp registrado',
+    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin numero registrado',
   );
   protected readonly selectedOrderWhatsapp = computed(() => {
     const order = this.selectedOrder();
     const detail = this.selectedOrderDetail();
     if (order && detail?.order_id === order.order_id) {
-      return detail.contact_whatsapp ?? 'sin WhatsApp';
+      return detail.contact_whatsapp ?? detail.contact_whatsapp_username ?? 'sin WhatsApp';
     }
-    return order?.contact_whatsapp_masked ?? 'sin WhatsApp';
+    return order?.contact_whatsapp_masked ?? order?.contact_whatsapp_username_masked ?? 'sin WhatsApp';
   });
   protected readonly autoRefreshPaused = computed(
     () =>
@@ -2390,7 +2392,7 @@ export class App implements OnDestroy {
     if (!detail || detail.order_id !== order.order_id) {
       return false;
     }
-    return /^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '');
+    return this.hasWhatsAppRecipient(detail);
   }
 
   protected whatsappPreparationHint(order: ServiceOrder): string {
@@ -2407,8 +2409,8 @@ export class App implements OnDestroy {
     if (!detail || detail.order_id !== order.order_id) {
       return 'Cargando contacto protegido...';
     }
-    if (!/^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')) {
-      return 'Corrige el WhatsApp al formato internacional, por ejemplo +51987654321.';
+    if (!this.hasWhatsAppRecipient(detail)) {
+      return 'Registra un numero internacional o un @usuario de WhatsApp valido.';
     }
     return order.whatsapp_message_status === 'sent'
       ? 'Ya fue enviado; la siguiente accion preparara un reenvio explicito.'
@@ -2423,7 +2425,7 @@ export class App implements OnDestroy {
     if (!detail || detail.order_id !== order.order_id) {
       return false;
     }
-    return /^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '');
+    return this.hasWhatsAppRecipient(detail);
   }
 
   protected postPaymentWhatsAppHint(order: ServiceOrder): string {
@@ -2434,8 +2436,8 @@ export class App implements OnDestroy {
     if (!detail || detail.order_id !== order.order_id) {
       return 'Cargando contacto protegido...';
     }
-    if (!/^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')) {
-      return 'Corrige el WhatsApp al formato internacional, por ejemplo +51987654321.';
+    if (!this.hasWhatsAppRecipient(detail)) {
+      return 'Registra un numero internacional o un @usuario de WhatsApp valido.';
     }
     return order.whatsapp_followup_status === 'sent'
       ? 'Ya fue enviado; la siguiente accion preparara un reenvio explicito.'
@@ -2448,6 +2450,11 @@ export class App implements OnDestroy {
       order.reservation_status === 'confirmed' &&
       order.payment_status === 'paid'
     );
+  }
+
+  private hasWhatsAppRecipient(detail: ServiceOrderDetail): boolean {
+    return /^\+\d{8,15}$/.test(detail.contact_whatsapp ?? '')
+      || /^@\S{1,99}$/.test(detail.contact_whatsapp_username ?? '');
   }
 
   protected async copyWhatsAppText(text: string, label: string): Promise<void> {
@@ -2536,7 +2543,7 @@ export class App implements OnDestroy {
       title: message.test_mode ? 'Enviar prueba de evidencias' : 'Enviar evidencia y cobro',
       text:
         `Se enviarán la constancia, el QR de Yape y el texto combinado a ` +
-        `${message.recipient_phone}. WhatsApp realizará un único intento.`,
+        `${message.recipient_label}. WhatsApp realizará un único intento.`,
       showCancelButton: true,
       confirmButtonText: message.test_mode ? 'Enviar prueba ahora' : 'Enviar ahora',
       cancelButtonText: 'Seguir revisando',
@@ -2604,7 +2611,7 @@ export class App implements OnDestroy {
       title: message.test_mode ? 'Enviar prueba post-pago' : 'Enviar post-pago',
       text:
         `Se enviarán ${documentCount} PDF y el texto post-pago a ` +
-        `${message.recipient_phone}. WhatsApp realizará un único intento.`,
+        `${message.recipient_label}. WhatsApp realizará un único intento.`,
       showCancelButton: true,
       confirmButtonText: message.test_mode ? 'Enviar prueba ahora' : 'Enviar ahora',
       cancelButtonText: 'Seguir revisando',
@@ -2887,9 +2894,10 @@ export class App implements OnDestroy {
     const payload: ContactUpdatePayload = {
       contact_name: this.optionalText(this.contactName()),
       contact_whatsapp: this.optionalText(this.contactWhatsapp()),
+      contact_whatsapp_username: this.optionalText(this.contactWhatsappUsername()),
       contact_source: this.optionalText(this.contactSource()),
     };
-    if (!payload.contact_name && !payload.contact_whatsapp) {
+    if (!payload.contact_name && !payload.contact_whatsapp && !payload.contact_whatsapp_username) {
       this.errorMessage.set('Ingresa nombre o WhatsApp para actualizar contacto.');
       return;
     }
@@ -3169,11 +3177,12 @@ export class App implements OnDestroy {
   }
 
   protected async copySelectedOrderWhatsapp(): Promise<void> {
-    const phone = this.selectedOrderDetail()?.contact_whatsapp;
-    if (!phone) {
+    const recipient = this.selectedOrderDetail()?.contact_whatsapp
+      ?? this.selectedOrderDetail()?.contact_whatsapp_username;
+    if (!recipient) {
       return;
     }
-    await navigator.clipboard.writeText(phone);
+    await navigator.clipboard.writeText(recipient);
     this.markCopied('whatsapp-number');
   }
 
@@ -3198,6 +3207,7 @@ export class App implements OnDestroy {
       document_type: this.newDocumentType(),
       password: this.newPassword(),
       contact_whatsapp: this.optionalText(this.newContactWhatsapp()),
+      contact_whatsapp_username: this.optionalText(this.newContactWhatsappUsername()),
       contact_name: this.newContactName().trim(),
       contact_source: this.newContactSource(),
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
@@ -3820,6 +3830,7 @@ export class App implements OnDestroy {
     }
     this.contactName.set(order.contact_name ?? '');
     this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
+    this.contactWhatsappUsername.set(detail?.contact_whatsapp_username ?? '');
     this.contactSource.set(order.contact_source ?? 'whatsapp');
     this.orderDocumentNumber.set(detail?.document_number ?? '');
     this.orderDocumentType.set(order.document_type);

@@ -32,7 +32,7 @@
             <span>Contacto actual</span>
             <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
             <small
-              >{{ order.contact_whatsapp_masked ?? 'sin WhatsApp' }} |
+              >{{ order.contact_whatsapp_masked ?? order.contact_whatsapp_username_masked ?? 'sin WhatsApp' }} |
               {{ order.contact_source ?? 'sin fuente' }}</small
             >
           </div>
@@ -77,6 +77,18 @@
                     [ngModel]="view.contactWhatsapp()"
                     (ngModelChange)="view.editField(view.contactWhatsapp, $event)"
                   />
+                </label>
+                <label>
+                  Usuario de WhatsApp
+                  <input
+                    name="modalContactWhatsappUsername"
+                    type="text"
+                    placeholder="@usuario"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactWhatsappUsername()"
+                    (ngModelChange)="view.editField(view.contactWhatsappUsername, $event)"
+                  />
+                  <small>El numero tiene prioridad cuando ambos estan registrados.</small>
                 </label>
                 <label>
                   Fuente

@@ -13,16 +13,18 @@ def enqueue_registration_notice(
     preflight_cycle: int,
     notice_type: RegistrationNoticeType,
     recipient_phone: str | None,
+    recipient_username: str | None,
     display_name: str | None,
     settings: Settings,
 ) -> bool:
-    if not recipient_phone:
+    if not recipient_phone and not recipient_username:
         return False
     return enqueue_registration_notice_job(
         order_id=order_id,
         preflight_cycle=preflight_cycle,
         notice_type=notice_type,
         recipient_phone=recipient_phone,
+        recipient_username=recipient_username,
         message_text=registration_notice_text(notice_type, display_name),
         settings=settings,
     )

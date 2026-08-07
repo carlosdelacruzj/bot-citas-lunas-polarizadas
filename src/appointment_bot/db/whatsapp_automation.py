@@ -8,6 +8,7 @@ from psycopg.errors import UniqueViolation
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
+from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -39,6 +40,7 @@ class WhatsAppAutomationJob(TypedDict):
     job_kind: WhatsAppAutomationKind
     report_date: str | None
     recipient_phone: str | None
+    recipient_username: str | None
     message_text: str | None
     publication_text: str | None
     attachment_paths: list[str]
@@ -129,7 +131,8 @@ def enqueue_registration_notice_job(
     order_id: str,
     preflight_cycle: int,
     notice_type: RegistrationNoticeType,
-    recipient_phone: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
     message_text: str,
     settings: Settings | None = None,
     _connection_override=None,
@@ -140,17 +143,19 @@ def enqueue_registration_notice_job(
     init_database(effective_settings)
     now = datetime.now(UTC)
     job_key = f"registration_notice:{order_id}:cycle-{preflight_cycle}:{notice_type}"
-    phone = _international_phone(recipient_phone)
+    phone, username = resolve_whatsapp_recipient(recipient_phone, recipient_username)
+    if phone is not None:
+        phone = _international_phone(phone)
     with _operation_connection(effective_settings, _connection_override) as connection:
         row = connection.execute(
             """
             INSERT INTO whatsapp_automation_jobs (
-                job_key, order_id, job_kind, recipient_phone, message_text,
+                job_key, order_id, job_kind, recipient_phone, recipient_username, message_text,
                 registration_notice_type, preflight_cycle, status, attempt_count,
                 next_attempt_at, created_at, updated_at
             )
             VALUES (
-                %s, %s, 'registration_notice', %s, %s,
+                %s, %s, 'registration_notice', %s, %s, %s,
                 %s, %s, 'queued', 0, %s, %s, %s
             )
             ON CONFLICT(job_key) DO NOTHING
@@ -160,6 +165,7 @@ def enqueue_registration_notice_job(
                 job_key,
                 order_id,
                 phone,
+                username,
                 message_text,
                 notice_type,
                 preflight_cycle,
@@ -181,6 +187,7 @@ def next_waiting_whatsapp_automation_job(
         row = connection.execute(
             """
             SELECT job_key, order_id, job_kind, report_date, recipient_phone,
+                   recipient_username,
                    message_text, publication_text, attachment_paths,
                    registration_notice_type, preflight_cycle
             FROM whatsapp_automation_jobs
@@ -220,6 +227,7 @@ def claim_whatsapp_automation_job(
                   AND status IN ('queued', 'blocked')
                   AND next_attempt_at <= %s
                 RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+                          recipient_username,
                           message_text, publication_text, attachment_paths,
                           registration_notice_type, preflight_cycle
                 """,
@@ -334,6 +342,7 @@ def recover_expired_whatsapp_automation_jobs(
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
             RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+                      recipient_username,
                       message_text, publication_text, attachment_paths,
                       registration_notice_type, preflight_cycle
             """,
@@ -438,6 +447,11 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
         ),
         "recipient_phone": (
             str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
+        ),
+        "recipient_username": (
+            str(row["recipient_username"])
+            if row["recipient_username"] is not None
+            else None
         ),
         "message_text": (
             str(row["message_text"]) if row["message_text"] is not None else None

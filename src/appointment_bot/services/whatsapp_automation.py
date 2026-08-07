@@ -281,8 +281,13 @@ class WhatsAppAutomationDispatcher:
         job: WhatsAppAutomationJob,
     ) -> tuple[str, dict[str, object]]:
         recipient_phone = job["recipient_phone"]
+        recipient_username = job["recipient_username"]
         message_text = job["message_text"]
-        if job["order_id"] is None or not recipient_phone or not message_text:
+        if (
+            job["order_id"] is None
+            or not (recipient_phone or recipient_username)
+            or not message_text
+        ):
             raise ValueError(
                 "El trabajo del aviso de registro no contiene orden, destinatario o texto."
             )
@@ -290,6 +295,7 @@ class WhatsAppAutomationDispatcher:
         result = send_whatsapp_web_registration_notice(
             message_id=message_id,
             recipient_phone=recipient_phone,
+            recipient_username=recipient_username,
             message_text=message_text,
         )
         return message_id, result

@@ -33,13 +33,57 @@ def normalize_contact_whatsapp(value: str | None) -> str | None:
     normalized = _normalize_optional_text(value)
     if normalized is None:
         return None
-    digits = "".join(character for character in normalized if character.isdigit())
-    if not digits:
+    if normalized.startswith("@") or any(character.isalpha() for character in normalized):
         raise ContactValidationError(
             "contact_whatsapp",
-            "El WhatsApp debe contener al menos un digito.",
+            "Ingresa un numero de WhatsApp, no un nombre de usuario.",
+        )
+    allowed = set("+0123456789 -()")
+    if any(character not in allowed for character in normalized):
+        raise ContactValidationError(
+            "contact_whatsapp",
+            "El numero de WhatsApp contiene caracteres no permitidos.",
+        )
+    digits = "".join(character for character in normalized if character.isdigit())
+    if not 8 <= len(digits) <= 15:
+        raise ContactValidationError(
+            "contact_whatsapp",
+            "El WhatsApp debe tener entre 8 y 15 digitos.",
         )
     return f"+{digits}" if normalized.startswith("+") else digits
+
+
+def normalize_contact_whatsapp_username(value: str | None) -> str | None:
+    normalized = _normalize_optional_text(value)
+    if normalized is None:
+        return None
+    if not normalized.startswith("@") or len(normalized) < 2:
+        raise ContactValidationError(
+            "contact_whatsapp_username",
+            "El usuario de WhatsApp debe comenzar con @.",
+        )
+    if len(normalized) > 100 or any(character.isspace() for character in normalized):
+        raise ContactValidationError(
+            "contact_whatsapp_username",
+            "El usuario de WhatsApp no puede contener espacios y debe tener hasta 100 caracteres.",
+        )
+    return normalized
+
+
+def resolve_whatsapp_recipient(
+    phone: str | None,
+    username: str | None,
+) -> tuple[str | None, str | None]:
+    normalized_phone = normalize_contact_whatsapp(phone)
+    normalized_username = normalize_contact_whatsapp_username(username)
+    if normalized_phone is not None:
+        return normalized_phone, None
+    if normalized_username is not None:
+        return None, normalized_username
+    raise ContactValidationError(
+        "contact_whatsapp",
+        "Registra un numero o un usuario de WhatsApp.",
+    )
 
 
 def _normalize_optional_text(value: str | None) -> str | None:
@@ -55,4 +99,6 @@ __all__ = [
     "normalize_contact_name",
     "normalize_contact_source",
     "normalize_contact_whatsapp",
+    "normalize_contact_whatsapp_username",
+    "resolve_whatsapp_recipient",
 ]

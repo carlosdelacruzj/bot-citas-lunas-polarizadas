@@ -220,7 +220,8 @@ def send_whatsapp_web_daily_slot_summary(
 def send_whatsapp_web_registration_notice(
     *,
     message_id: str,
-    recipient_phone: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
     message_text: str,
 ) -> dict[str, object]:
     return _MANAGER.prepare(
@@ -228,6 +229,7 @@ def send_whatsapp_web_registration_notice(
             "action": "registration_notice",
             "message_id": message_id,
             "recipient_phone": recipient_phone,
+            "recipient_username": recipient_username,
             "message_text": message_text,
             "disable_closed_target_retry": True,
             "close_on_error": True,
@@ -291,17 +293,12 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
     if draft.get("document_items"):
         return _prepare_documents(context, draft)
     page = context.pages[0] if context.pages else context.new_page()
-    phone = "".join(character for character in str(draft["recipient_phone"]) if character.isdigit())
     message_id = str(draft["message_id"])
-    target = f"https://web.whatsapp.com/send?phone={phone}"
-    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-
-    if not _wait_for_chat(page):
-        return _chat_not_ready_result(
-            page,
-            message_id=message_id,
-            screenshot_name="whatsapp-confirmation-chat-not-ready",
-        )
+    recipient_error = _open_recipient_chat(
+        page, draft, message_id, "whatsapp-confirmation-chat-not-ready"
+    )
+    if recipient_error is not None:
+        return recipient_error
 
     attachment = Path(str(draft["attachment_path"])).resolve()
     if not attachment.is_file():
@@ -311,15 +308,19 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
     except RuntimeError as exc:
         if "control para adjuntar" not in str(exc):
             raise
-        page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-        if not _wait_for_chat(page):
-            raise RuntimeError("El chat no termino de cargar para adjuntar la imagen.") from exc
+        recipient_error = _open_recipient_chat(
+            page, draft, message_id, "whatsapp-confirmation-chat-retry-not-ready"
+        )
+        if recipient_error is not None:
+            raise RuntimeError(str(recipient_error["message"])) from exc
         _attach_image(page, attachment)
     draft_mode = _fill_caption(page, str(draft["caption"]))
     if draft_mode == "queued_text":
-        page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-        if not _wait_for_chat(page):
-            raise RuntimeError("El chat no termino de cargar para reintentar el texto.")
+        recipient_error = _open_recipient_chat(
+            page, draft, message_id, "whatsapp-confirmation-text-retry-not-ready"
+        )
+        if recipient_error is not None:
+            raise RuntimeError(str(recipient_error["message"]))
         _attach_image(page, attachment)
         draft_mode = _fill_caption(page, str(draft["caption"]))
         if draft_mode != "caption":
@@ -349,19 +350,11 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     if len(items) != 2:
         raise ValueError("El album de WhatsApp requiere exactamente dos imagenes.")
     page = _fresh_whatsapp_page(context)
-    phone = "".join(
-        character
-        for character in str(draft["recipient_phone"])
-        if character.isdigit()
+    recipient_error = _open_recipient_chat(
+        page, draft, str(draft["message_id"]), "whatsapp-album-chat-not-ready"
     )
-    target = f"https://web.whatsapp.com/send?phone={phone}"
-    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-    if not _wait_for_chat(page):
-        return _chat_not_ready_result(
-            page,
-            message_id=str(draft["message_id"]),
-            screenshot_name="whatsapp-album-chat-not-ready",
-        )
+    if recipient_error is not None:
+        return recipient_error
     attachments = [Path(str(item["attachment_path"])).resolve() for item in items]
     if not all(path.is_file() for path in attachments):
         raise FileNotFoundError("Una de las imagenes preparadas ya no esta disponible.")
@@ -448,20 +441,12 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
 
 def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
     page = _fresh_whatsapp_page(context)
-    phone = "".join(
-        character
-        for character in str(draft["recipient_phone"])
-        if character.isdigit()
-    )
     message_id = str(draft["message_id"])
-    target = f"https://web.whatsapp.com/send?phone={phone}"
-    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-    if not _wait_for_chat(page):
-        return _chat_not_ready_result(
-            page,
-            message_id=message_id,
-            screenshot_name="whatsapp-followup-chat-not-ready",
-        )
+    recipient_error = _open_recipient_chat(
+        page, draft, message_id, "whatsapp-followup-chat-not-ready"
+    )
+    if recipient_error is not None:
+        return recipient_error
     attachments = [Path(str(item)).resolve() for item in draft["document_items"]]
     if not all(path.is_file() for path in attachments):
         raise FileNotFoundError("Uno de los PDFs preparados ya no esta disponible.")
@@ -814,21 +799,13 @@ def _send_registration_notice(
     draft: dict[str, object],
 ) -> dict[str, object]:
     page = _fresh_whatsapp_page(context)
-    phone = "".join(
-        character
-        for character in str(draft["recipient_phone"])
-        if character.isdigit()
-    )
     message_id = str(draft["message_id"])
     evidence_id = _safe_whatsapp_artifact_name(message_id)
-    target = f"https://web.whatsapp.com/send?phone={phone}"
-    page.goto(target, wait_until="domcontentloaded", timeout=45_000)
-    if not _wait_for_chat(page):
-        return _chat_not_ready_result(
-            page,
-            message_id=message_id,
-            screenshot_name="whatsapp-registration-notice-chat-not-ready",
-        )
+    recipient_error = _open_recipient_chat(
+        page, draft, message_id, "whatsapp-registration-notice-chat-not-ready"
+    )
+    if recipient_error is not None:
+        return recipient_error
     if not _send_plain_text_message(page, str(draft["message_text"])):
         context.close()
         return _result(
@@ -898,6 +875,184 @@ def _album_control_summary(page: Page) -> list[dict[str, object]]:
             }
         )
     return summary
+
+
+def _open_recipient_chat(
+    page: Page,
+    draft: dict[str, object],
+    message_id: str,
+    screenshot_name: str,
+) -> dict[str, object] | None:
+    phone = "".join(
+        character
+        for character in str(draft.get("recipient_phone") or "")
+        if character.isdigit()
+    )
+    if phone:
+        page.goto(
+            f"https://web.whatsapp.com/send?phone={phone}",
+            wait_until="domcontentloaded",
+            timeout=45_000,
+        )
+        if _wait_for_chat(page):
+            return None
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name=screenshot_name,
+        )
+
+    username = str(draft.get("recipient_username") or "").strip()
+    if not username.startswith("@"):
+        return _result(
+            "recipient_not_configured",
+            "La orden no tiene un numero ni un usuario de WhatsApp valido.",
+            message_id=message_id,
+        )
+    page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded", timeout=45_000)
+    _dismiss_whatsapp_updates_dialog(page)
+    search = _visible_whatsapp_search(page)
+    if search is None:
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name=screenshot_name,
+        )
+    search.click()
+    search.fill(username)
+    page.wait_for_timeout(700)
+    deadline = time.monotonic() + 15
+    rows: list[Any] = []
+    previous_labels: tuple[str, ...] | None = None
+    stable_reads = 0
+    while time.monotonic() < deadline:
+        rows = _visible_username_chat_result_rows(page)
+        labels = tuple(_whatsapp_chat_row_label(row) for row in rows)
+        stable_reads = stable_reads + 1 if labels == previous_labels else 0
+        previous_labels = labels
+        if rows and stable_reads >= 2:
+            break
+        page.wait_for_timeout(300)
+    if len(rows) != 1:
+        _save_whatsapp_debug_screenshot(page, screenshot_name)
+        status = "recipient_not_found" if not rows else "recipient_ambiguous"
+        detail = "no aparecio" if not rows else "aparecio mas de una vez"
+        return _result(
+            status,
+            f"El usuario {username} {detail} como chat unico en WhatsApp. No se envio nada.",
+            message_id=message_id,
+        )
+    expected_chat_label = _whatsapp_chat_row_label(rows[0])
+    if not expected_chat_label:
+        _save_whatsapp_debug_screenshot(page, screenshot_name)
+        return _result(
+            "recipient_mismatch",
+            "WhatsApp no permitio identificar el chat encontrado para "
+            f"{username}. No se envio nada.",
+            message_id=message_id,
+        )
+    rows[0].click()
+    try:
+        page.locator("header[data-testid='conversation-header']").wait_for(
+            state="visible", timeout=10_000
+        )
+    except PlaywrightError:
+        pass
+    header = page.locator("header[data-testid='conversation-header']")
+    header_text = _safe_text_content(header).casefold() if header.count() else ""
+    header_titles = [
+        str(header.locator("[title]").nth(index).get_attribute("title") or "").casefold()
+        for index in range(header.locator("[title]").count())
+    ] if header.count() else []
+    expected_label = expected_chat_label.casefold()
+    if expected_label not in header_text and expected_label not in header_titles:
+        _save_whatsapp_debug_screenshot(page, screenshot_name)
+        return _result(
+            "recipient_mismatch",
+            "WhatsApp abrio un chat distinto del resultado unico para "
+            f"{username}. No se envio nada.",
+            message_id=message_id,
+        )
+    if not _wait_for_chat(page):
+        return _chat_not_ready_result(
+            page,
+            message_id=message_id,
+            screenshot_name=screenshot_name,
+        )
+    return None
+
+
+def _visible_whatsapp_search(page: Page):
+    selectors = (
+        "input[aria-label='Buscar un chat o iniciar uno nuevo']",
+        "input[aria-label='Search or start a new chat']",
+        "[data-tab='3'][contenteditable='true']",
+    )
+    deadline = time.monotonic() + CHAT_READY_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        for selector in selectors:
+            locator = page.locator(selector)
+            for index in range(locator.count()):
+                candidate = locator.nth(index)
+                if candidate.is_visible():
+                    return candidate
+        page.wait_for_timeout(300)
+    return None
+
+
+def _dismiss_whatsapp_updates_dialog(page: Page) -> None:
+    dialogs = page.locator("[role='dialog']")
+    for index in range(dialogs.count()):
+        dialog = dialogs.nth(index)
+        if not dialog.is_visible():
+            continue
+        text = _safe_text_content(dialog).casefold()
+        if "novedades en whatsapp web" not in text and "what's new in whatsapp web" not in text:
+            continue
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+        return
+
+
+def _visible_username_chat_result_rows(page: Page) -> list[Any]:
+    rows: list[Any] = []
+    seen: set[str] = set()
+    candidates = page.locator("[data-testid='cell-frame-container']")
+    for index in range(candidates.count()):
+        row = candidates.nth(index)
+        if not row.is_visible() or not _row_belongs_to_chat_results(row):
+            continue
+        container = row.locator("xpath=ancestor::*[@role='row'][1]")
+        key = str(
+            container.get_attribute("data-testid")
+            or row.get_attribute("data-id")
+            or _whatsapp_chat_row_label(row)
+        ).strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(row)
+    return rows
+
+
+def _row_belongs_to_chat_results(row) -> bool:
+    container = row.locator("xpath=ancestor::*[@role='row'][1]")
+    if container.count() != 1:
+        return False
+    section = container.locator("xpath=preceding-sibling::*[1]")
+    if section.count() != 1:
+        return False
+    return _safe_text_content(section).strip().casefold() == "chats"
+
+
+def _whatsapp_chat_row_label(row) -> str:
+    titles = row.locator("span[title]")
+    for index in range(titles.count()):
+        title = titles.nth(index)
+        value = str(title.get_attribute("title") or "").strip()
+        if title.is_visible() and value:
+            return value
+    return ""
 
 
 def _wait_for_chat(page: Page) -> bool:

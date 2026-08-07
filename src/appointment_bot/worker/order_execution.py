@@ -232,6 +232,10 @@ def run_service_order(
             details.setdefault("contact_name", order.contact_name)
         if order.contact_whatsapp:
             details.setdefault("contact_whatsapp", order.contact_whatsapp)
+        elif order.contact_whatsapp_username:
+            details.setdefault(
+                "contact_whatsapp_username", order.contact_whatsapp_username
+            )
         if order.contact_source:
             details.setdefault("contact_source", order.contact_source)
         if order.program_expediente:

@@ -226,6 +226,14 @@
                   >
                     {{ dashboard.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
                   </button>
+                } @else if (dashboard.selectedOrderDetail()?.contact_whatsapp_username) {
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="dashboard.copySelectedOrderWhatsapp()"
+                  >
+                    {{ dashboard.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
+                  </button>
                 } @else {
                   <button
                     type="button"

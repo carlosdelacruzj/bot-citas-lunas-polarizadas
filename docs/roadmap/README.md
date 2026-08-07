@@ -38,6 +38,14 @@ Estado: en observación.
 
 ### WhatsApp automático
 
+- Completado el `2026-08-07`: contactos y mensajes admiten destinatarios por
+  `@usuario` cuando no hay numero. La resolucion prioriza el numero y la ruta por
+  usuario exige un unico resultado en `Chats` y confirma en el encabezado el
+  nombre que WhatsApp mostro en esa fila. Las lecturas repetidas validaron un
+  alias no guardado y otro presentado con nombre local; falta validar el primer
+  envio real en el curso normal de una reserva y no se hara un mensaje de prueba
+  al cliente.
+
 - Completado el `2026-07-28`: la bandeja usa evidencia enviada y jobs durables,
   excluye `54` seguimientos históricos sin trabajo real y conserva los dos
   pagos vigentes. No borra paquetes ni reintenta resultados ambiguos.

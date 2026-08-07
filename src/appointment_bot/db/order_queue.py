@@ -87,7 +87,8 @@ def list_active_orders(
             f"""
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.document_type, wc.display_name AS contact_name,
-                   wc.phone AS contact_phone, wc.contact_source,
+                   wc.phone AS contact_phone, wc.username AS contact_username,
+                   wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -113,7 +114,8 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             WITH eligible_orders AS (
                 SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                        pa.username, pa.document_type, wc.display_name AS contact_name,
-                       wc.phone AS contact_phone, wc.contact_source,
+                       wc.phone AS contact_phone, wc.username AS contact_username,
+                       wc.contact_source,
                        so.priority, so.status, so.created_at, so.updated_at,
                        so.parent_order_id, so.program_expediente, so.program_plate,
                        os.last_run_at,
@@ -161,7 +163,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
                     OR (NOT has_exclusive_order AND selection_rank <= %s)
             )
             SELECT order_id, name, username, document_type,
-                   contact_name, contact_phone, contact_source,
+                   contact_name, contact_phone, contact_username, contact_source,
                    priority, status, created_at, updated_at, parent_order_id,
                    program_expediente, program_plate
             FROM active_block
@@ -218,7 +220,7 @@ def list_compatible_orders_for_opportunities(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.document_type, wc.display_name AS contact_name,
-                   wc.phone AS contact_phone, wc.contact_source,
+                   wc.phone AS contact_phone, wc.username AS contact_username, wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate,
                    so.minimum_date, so.maximum_date,
@@ -317,6 +319,7 @@ def _candidate_from_row(row: dict[str, Any]) -> ServiceOrderCandidate:
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
         contact_whatsapp=row.get("contact_phone"),
+        contact_whatsapp_username=row.get("contact_username"),
         contact_source=row.get("contact_source"),
         parent_order_id=row.get("parent_order_id"),
         program_expediente=row.get("program_expediente"),

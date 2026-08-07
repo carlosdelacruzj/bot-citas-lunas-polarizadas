@@ -49,6 +49,7 @@ class ServiceOrderCandidate:
     updated_at: str
     contact_name: str | None = None
     contact_whatsapp: str | None = None
+    contact_whatsapp_username: str | None = None
     contact_source: str | None = None
     parent_order_id: str | None = None
     program_expediente: str | None = None
@@ -84,6 +85,7 @@ class ServiceOrderRuntime:
     updated_at: str
     contact_name: str | None = None
     contact_whatsapp: str | None = None
+    contact_whatsapp_username: str | None = None
     contact_source: str | None = None
     parent_order_id: str | None = None
     program_expediente: str | None = None
@@ -117,6 +119,8 @@ class ServiceOrderSummary:
     contact_name: str | None
     contact_whatsapp: str | None
     contact_whatsapp_masked: str | None
+    contact_whatsapp_username: str | None
+    contact_whatsapp_username_masked: str | None
     contact_source: str | None
     priority: int
     charge_required: bool

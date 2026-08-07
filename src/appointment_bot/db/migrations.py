@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 44
+SCHEMA_VERSION = 45
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -49,11 +49,19 @@ def create_current_schema(connection: Connection) -> None:
         CREATE TABLE IF NOT EXISTS whatsapp_contacts (
             contact_id text PRIMARY KEY,
             phone text UNIQUE,
+            username text,
             display_name text,
             contact_source text NOT NULL DEFAULT 'whatsapp',
             created_at timestamptz NOT NULL,
             updated_at timestamptz NOT NULL
         )
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_whatsapp_contacts_username_lower
+        ON whatsapp_contacts(lower(username))
+        WHERE username IS NOT NULL
         """
     )
     connection.execute(
@@ -360,6 +368,7 @@ def _validate_current_schema(connection: Connection) -> None:
     required_columns = {
         ("schema_version", "version"),
         ("whatsapp_contacts", "contact_source"),
+        ("whatsapp_contacts", "username"),
         ("portal_accounts", "applicant_id"),
         ("portal_accounts", "password"),
         ("portal_accounts", "document_type"),
@@ -412,6 +421,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("finance_entries", "status"),
         ("whatsapp_messages", "message_id"),
         ("whatsapp_messages", "recipient_phone"),
+        ("whatsapp_messages", "recipient_username"),
         ("whatsapp_messages", "attachment_path"),
         ("whatsapp_messages", "payment_attachment_path"),
         ("whatsapp_messages", "status"),
@@ -419,6 +429,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_messages", "sent_at"),
         ("whatsapp_followup_messages", "message_id"),
         ("whatsapp_followup_messages", "recipient_phone"),
+        ("whatsapp_followup_messages", "recipient_username"),
         ("whatsapp_followup_messages", "steps"),
         ("whatsapp_followup_messages", "status"),
         ("whatsapp_followup_messages", "test_mode"),
@@ -434,6 +445,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "preflight_alerted_at"),
         ("whatsapp_automation_jobs", "report_date"),
         ("whatsapp_automation_jobs", "recipient_phone"),
+        ("whatsapp_automation_jobs", "recipient_username"),
         ("whatsapp_automation_jobs", "message_text"),
         ("whatsapp_automation_jobs", "publication_text"),
         ("whatsapp_automation_jobs", "attachment_paths"),
@@ -465,7 +477,9 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_payments_paid_fields",
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
+        "ck_whatsapp_messages_recipient",
         "ck_whatsapp_followup_messages_sent",
+        "ck_whatsapp_followup_messages_recipient",
         "ck_whatsapp_automation_job_status",
         "ck_whatsapp_automation_job_attempt",
         "ck_whatsapp_automation_job_kind",
@@ -510,6 +524,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_whatsapp_followup_messages_order_prepared")
     if "idx_whatsapp_automation_jobs_queued" not in indexes:
         missing.append("idx_whatsapp_automation_jobs_queued")
+    if "uq_whatsapp_contacts_username_lower" not in indexes:
+        missing.append("uq_whatsapp_contacts_username_lower")
     if "uq_whatsapp_automation_jobs_running" not in indexes:
         missing.append("uq_whatsapp_automation_jobs_running")
     if "idx_captcha_shadow_outbox_pending" not in indexes:
@@ -771,7 +787,8 @@ def _create_whatsapp_messages_schema(connection: Connection) -> None:
             message_kind text NOT NULL CHECK (
                 message_kind IN ('test', 'reservation_confirmation_payment')
             ),
-            recipient_phone text NOT NULL,
+            recipient_phone text,
+            recipient_username text,
             greeting text NOT NULL,
             evidence_caption text NOT NULL,
             payment_message text NOT NULL,
@@ -786,6 +803,10 @@ def _create_whatsapp_messages_schema(connection: Connection) -> None:
             CONSTRAINT ck_whatsapp_messages_sent CHECK (
                 (status = 'prepared' AND sent_at IS NULL)
                 OR (status = 'sent' AND sent_at IS NOT NULL)
+            ),
+            CONSTRAINT ck_whatsapp_messages_recipient CHECK (
+                (recipient_phone IS NOT NULL)::integer
+                + (recipient_username IS NOT NULL)::integer = 1
             )
         )
         """
@@ -804,7 +825,8 @@ def _create_whatsapp_followup_messages_schema(connection: Connection) -> None:
         CREATE TABLE IF NOT EXISTS whatsapp_followup_messages (
             message_id text PRIMARY KEY,
             order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
-            recipient_phone text NOT NULL,
+            recipient_phone text,
+            recipient_username text,
             steps jsonb NOT NULL,
             status text NOT NULL DEFAULT 'prepared' CHECK (status IN ('prepared', 'sent')),
             test_mode boolean NOT NULL DEFAULT false,
@@ -815,6 +837,10 @@ def _create_whatsapp_followup_messages_schema(connection: Connection) -> None:
             CONSTRAINT ck_whatsapp_followup_messages_sent CHECK (
                 (status = 'prepared' AND sent_at IS NULL)
                 OR (status = 'sent' AND sent_at IS NOT NULL)
+            ),
+            CONSTRAINT ck_whatsapp_followup_messages_recipient CHECK (
+                (recipient_phone IS NOT NULL)::integer
+                + (recipient_username IS NOT NULL)::integer = 1
             )
         )
         """
@@ -836,6 +862,7 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             job_kind text NOT NULL,
             report_date date,
             recipient_phone text,
+            recipient_username text,
             message_text text,
             publication_text text,
             attachment_paths jsonb,
@@ -870,23 +897,32 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
                     AND order_id IS NOT NULL
                     AND report_date IS NULL
                     AND recipient_phone IS NULL
+                    AND recipient_username IS NULL
                     AND message_text IS NULL
                     AND publication_text IS NULL
                     AND attachment_paths IS NULL
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
                 )
                 OR (
                     job_kind = 'daily_slot_summary'
                     AND order_id IS NULL
                     AND report_date IS NOT NULL
                     AND recipient_phone IS NOT NULL
+                    AND recipient_username IS NULL
                     AND message_text IS NOT NULL
                     AND jsonb_typeof(attachment_paths) = 'array'
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
                 )
                 OR (
                     job_kind = 'registration_notice'
                     AND order_id IS NOT NULL
                     AND report_date IS NULL
-                    AND recipient_phone IS NOT NULL
+                    AND (
+                        (recipient_phone IS NOT NULL AND recipient_username IS NULL)
+                        OR (recipient_phone IS NULL AND recipient_username IS NOT NULL)
+                    )
                     AND message_text IS NOT NULL
                     AND publication_text IS NULL
                     AND attachment_paths IS NULL
@@ -1558,6 +1594,103 @@ def migrate_database(connection: Connection) -> None:
             (44,),
         )
         current_version = 44
+    if current_version == 44:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_contacts
+            ADD COLUMN username text
+            """
+        )
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX uq_whatsapp_contacts_username_lower
+            ON whatsapp_contacts(lower(username))
+            WHERE username IS NOT NULL
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_messages
+            ADD COLUMN recipient_username text,
+            ALTER COLUMN recipient_phone DROP NOT NULL,
+            ADD CONSTRAINT ck_whatsapp_messages_recipient CHECK (
+                (recipient_phone IS NOT NULL)::integer
+                + (recipient_username IS NOT NULL)::integer = 1
+            )
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_followup_messages
+            ADD COLUMN recipient_username text,
+            ALTER COLUMN recipient_phone DROP NOT NULL,
+            ADD CONSTRAINT ck_whatsapp_followup_messages_recipient CHECK (
+                (recipient_phone IS NOT NULL)::integer
+                + (recipient_username IS NOT NULL)::integer = 1
+            )
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD COLUMN recipient_username text,
+            DROP CONSTRAINT ck_whatsapp_automation_job_target
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_job_target CHECK (
+                (
+                    job_kind IN ('reservation_album', 'post_payment_followup')
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND recipient_phone IS NULL
+                    AND recipient_username IS NULL
+                    AND message_text IS NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
+                )
+                OR (
+                    job_kind = 'daily_slot_summary'
+                    AND order_id IS NULL
+                    AND report_date IS NOT NULL
+                    AND recipient_phone IS NOT NULL
+                    AND recipient_username IS NULL
+                    AND message_text IS NOT NULL
+                    AND jsonb_typeof(attachment_paths) = 'array'
+                    AND registration_notice_type IS NULL
+                    AND preflight_cycle IS NULL
+                )
+                OR (
+                    job_kind = 'registration_notice'
+                    AND order_id IS NOT NULL
+                    AND report_date IS NULL
+                    AND (
+                        (recipient_phone IS NOT NULL AND recipient_username IS NULL)
+                        OR (recipient_phone IS NULL AND recipient_username IS NOT NULL)
+                    )
+                    AND message_text IS NOT NULL
+                    AND publication_text IS NULL
+                    AND attachment_paths IS NULL
+                    AND registration_notice_type IN (
+                        'monitoring_started',
+                        'no_pending_request',
+                        'invalid_credentials'
+                    )
+                    AND preflight_cycle IS NOT NULL
+                    AND preflight_cycle > 0
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (45,),
+        )
+        current_version = 45
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

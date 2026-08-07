@@ -40,6 +40,7 @@ def create_service_order(
     document_type: str = "dni",
     priority: int = 0,
     contact_whatsapp: str | None = None,
+    contact_whatsapp_username: str | None = None,
     contact_name: str | None = None,
     contact_source: str | None = None,
     applicant_name: str | None = None,
@@ -268,11 +269,12 @@ def create_service_order(
                 "Validacion de acceso pendiente." if require_preflight else None,
             ),
         )
-        if contact_whatsapp or contact_name:
+        if contact_whatsapp or contact_whatsapp_username or contact_name:
             contact_id = _upsert_contact(
                 connection,
                 applicant_id=applicant_id,
                 phone=contact_whatsapp,
+                username=contact_whatsapp_username,
                 display_name=contact_name,
                 source=contact_source,
                 now=now,
@@ -596,7 +598,8 @@ def get_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
-                   wc.phone AS contact_phone, wc.contact_source,
+                   wc.phone AS contact_phone, wc.username AS contact_username,
+                   wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -625,7 +628,8 @@ def get_claimed_service_order_runtime(
             """
             SELECT so.order_id, COALESCE(NULLIF(a.full_name, ''), a.document_number) AS name,
                    pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
-                   wc.phone AS contact_phone, wc.contact_source,
+                   wc.phone AS contact_phone, wc.username AS contact_username,
+                   wc.contact_source,
                    so.priority, so.status, so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
@@ -655,6 +659,7 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         updated_at=str(row["updated_at"]),
         contact_name=row.get("contact_name"),
         contact_whatsapp=row.get("contact_phone"),
+        contact_whatsapp_username=row.get("contact_username"),
         contact_source=row.get("contact_source"),
         parent_order_id=row.get("parent_order_id"),
         program_expediente=row.get("program_expediente"),

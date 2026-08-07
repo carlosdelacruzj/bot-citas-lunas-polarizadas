@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from appointment_bot.config import Settings
+from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -40,6 +41,7 @@ def prepare_test_post_payment_whatsapp_message(
         message_id=message_id,
         order_id=None,
         recipient_phone=phone,
+        recipient_username=None,
         steps=steps,
         test_mode=True,
         settings=settings,
@@ -70,6 +72,7 @@ def prepare_post_payment_whatsapp_message(
             SELECT so.order_id, so.status, so.charge_required,
                    a.full_name AS applicant_name,
                    wc.display_name AS contact_name, wc.phone AS contact_phone,
+                   wc.username AS contact_username,
                    r.status AS reservation_status, r.site, r.appointment_date,
                    r.appointment_hour,
                    p.status AS payment_status, p.amount_paid, p.amount_agreed
@@ -121,7 +124,11 @@ def prepare_post_payment_whatsapp_message(
     if row["payment_status"] != "paid" or row["amount_paid"] is None:
         raise ValueError("La orden no tiene el pago confirmado.")
 
-    phone = _international_phone(str(row["contact_phone"] or ""))
+    phone, recipient_username = resolve_whatsapp_recipient(
+        row["contact_phone"], row["contact_username"]
+    )
+    if phone is not None:
+        phone = _international_phone(phone)
     message_id = f"followup-{uuid4().hex}"
     applicant_name = str(row["applicant_name"] or "").strip()
     steps = _build_followup_steps(
@@ -135,6 +142,7 @@ def prepare_post_payment_whatsapp_message(
         message_id=message_id,
         order_id=order_id,
         recipient_phone=phone,
+        recipient_username=recipient_username,
         steps=steps,
         test_mode=False,
         settings=effective_settings,
@@ -210,7 +218,8 @@ def get_followup_web_draft(
     with _connection(_database_url(effective_settings)) as connection:
         row = connection.execute(
             """
-            SELECT message_id, order_id, recipient_phone, steps, status, test_mode
+            SELECT message_id, order_id, recipient_phone, recipient_username,
+                   steps, status, test_mode
             FROM whatsapp_followup_messages
             WHERE message_id = %s
             """,
@@ -231,7 +240,10 @@ def get_followup_web_draft(
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
-        "recipient_phone": str(row["recipient_phone"]),
+        "recipient_phone": (
+            str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
+        ),
+        "recipient_username": row["recipient_username"],
         "attachment_paths": attachment_paths,
         "caption": _combined_followup_text(steps),
         "draft_kind": "post_payment_followup",
@@ -384,7 +396,8 @@ def _insert_followup_message(
     *,
     message_id: str,
     order_id: str | None,
-    recipient_phone: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
     steps: list[dict[str, object]],
     test_mode: bool,
     settings: Settings | None,
@@ -396,15 +409,17 @@ def _insert_followup_message(
         connection.execute(
             """
             INSERT INTO whatsapp_followup_messages (
-                message_id, order_id, recipient_phone, steps, status, test_mode,
+                message_id, order_id, recipient_phone, recipient_username,
+                steps, status, test_mode,
                 prepared_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, 'prepared', %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, 'prepared', %s, %s, %s, %s)
             """,
             (
                 message_id,
                 order_id,
                 recipient_phone,
+                recipient_username,
                 json.dumps(steps, ensure_ascii=False),
                 test_mode,
                 now,
@@ -434,6 +449,8 @@ def _insert_followup_message(
         "status": "prepared",
         "recipient_phone": recipient_phone,
         "recipient_phone_masked": _mask_phone(recipient_phone),
+        "recipient_username": recipient_username,
+        "recipient_label": recipient_phone or recipient_username,
         "steps": enriched_steps,
         "prepared_at": now,
         "sent_at": None,

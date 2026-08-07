@@ -1358,10 +1358,17 @@ def _apply_manual_client_value(
         conversation.values["contact_source"] = source
     elif step == 5:
         if normalized.lower() not in {"omitir", "sin whatsapp"}:
-            phone = re.sub(r"[\s()-]", "", normalized)
-            if not re.fullmatch(r"\+?\d{8,15}", phone):
-                raise ValueError("WhatsApp invalido. Usa entre 8 y 15 digitos o elige Omitir.")
-            conversation.values["contact_whatsapp"] = phone
+            if normalized.startswith("@"):
+                if not re.fullmatch(r"@\S{1,99}", normalized):
+                    raise ValueError("Usuario invalido. Usa el formato @usuario.")
+                conversation.values["contact_whatsapp_username"] = normalized
+            else:
+                phone = re.sub(r"[\s()-]", "", normalized)
+                if not re.fullmatch(r"\+?\d{8,15}", phone):
+                    raise ValueError(
+                        "WhatsApp invalido. Usa un numero, @usuario o elige Omitir."
+                    )
+                conversation.values["contact_whatsapp"] = phone
     elif step == 6:
         choice = normalized.lower().replace(" ", "_")
         if choice == "sin_restricciones":
@@ -1394,7 +1401,7 @@ def _manual_client_step_prompt(step: int) -> str | None:
         2: "Paso 3: escribe la contrasena del portal.",
         3: "Paso 4: escribe el nombre de la persona de contacto.",
         4: "Paso 5: elige de donde llego el cliente.",
-        5: "Paso 6: escribe el WhatsApp o elige Omitir.",
+        5: "Paso 6: escribe el numero de WhatsApp, @usuario o elige Omitir.",
         6: "Paso 7: indica si deseas configurar restricciones ahora.",
         7: "Restriccion 1 de 4: fecha minima en DD-MM-YYYY o Sin limite.",
         8: "Restriccion 2 de 4: fecha maxima en DD-MM-YYYY o Sin limite.",
@@ -1432,7 +1439,12 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
             f"Contrasena: {values.get('password') or 'no disponible'}",
             f"Contacto: {values.get('contact_name') or 'no disponible'}",
             f"Fuente: {values.get('contact_source') or 'no disponible'}",
-            f"WhatsApp: {values.get('contact_whatsapp') or 'no registrado'}",
+            "WhatsApp: "
+            + str(
+                values.get("contact_whatsapp")
+                or values.get("contact_whatsapp_username")
+                or "no registrado"
+            ),
             "",
             "Fecha minima: "
             + _format_operator_date(values.get("minimum_reservation_date")),
@@ -1496,7 +1508,12 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Documento: {order.get('document_number') or 'no disponible'}",
         "",
         f"Contacto: {contact_name}",
-        f"WhatsApp: {order.get('contact_whatsapp') or 'no registrado'}",
+        "WhatsApp: "
+        + str(
+            order.get("contact_whatsapp")
+            or order.get("contact_whatsapp_username")
+            or "no registrado"
+        ),
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
         "",
         f"Estado: {_order_status_label(order.get('status'))}",
@@ -2582,6 +2599,8 @@ def _execute_client_creation(
             or creation.values.get("contact_source"),
             "contact_whatsapp": order.get("contact_whatsapp")
             or creation.values.get("contact_whatsapp"),
+            "contact_whatsapp_username": order.get("contact_whatsapp_username")
+            or creation.values.get("contact_whatsapp_username"),
             "minimum_reservation_date": order.get("minimum_reservation_date")
             if "minimum_reservation_date" in order
             else creation.values.get("minimum_reservation_date"),

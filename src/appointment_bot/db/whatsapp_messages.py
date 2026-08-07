@@ -9,6 +9,7 @@ from uuid import uuid4
 from playwright.sync_api import sync_playwright
 
 from appointment_bot.config import Settings
+from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -49,6 +50,7 @@ def prepare_test_whatsapp_message(
         order_id=None,
         message_kind="test",
         recipient_phone=phone,
+        recipient_username=None,
         greeting=greeting,
         evidence_caption="",
         payment_message=payment,
@@ -85,6 +87,7 @@ def prepare_order_whatsapp_message(
             SELECT so.order_id, so.status, so.charge_required,
                    a.full_name AS applicant_name,
                    wc.display_name AS contact_name, wc.phone AS contact_phone,
+                   wc.username AS contact_username,
                    r.status AS reservation_status, r.site, r.appointment_date,
                    r.appointment_hour, r.evidence_path, r.run_id,
                    p.status AS payment_status, p.amount_agreed,
@@ -145,7 +148,11 @@ def prepare_order_whatsapp_message(
     if row["payment_status"] != "pending" or row["amount_agreed"] is None:
         raise ValueError("La orden no tiene un pago pendiente con monto acordado.")
 
-    phone = _international_phone(str(row["contact_phone"] or ""))
+    phone, recipient_username = resolve_whatsapp_recipient(
+        row["contact_phone"], row["contact_username"]
+    )
+    if phone is not None:
+        phone = _international_phone(phone)
     source = _select_safe_evidence(
         [*(row["evidence_paths"] or []), row["evidence_path"]]
     )
@@ -166,6 +173,7 @@ def prepare_order_whatsapp_message(
         order_id=order_id,
         message_kind=MESSAGE_KIND,
         recipient_phone=phone,
+        recipient_username=recipient_username,
         greeting=greeting,
         evidence_caption="",
         payment_message=payment,
@@ -260,7 +268,7 @@ def get_whatsapp_web_draft(
     with _connection(_database_url(effective_settings)) as connection:
         row = connection.execute(
             """
-            SELECT message_id, order_id, recipient_phone, greeting,
+            SELECT message_id, order_id, recipient_phone, recipient_username, greeting,
                    evidence_caption, payment_message, payment_attachment_path,
                    status, test_mode
             FROM whatsapp_messages
@@ -292,7 +300,10 @@ def get_whatsapp_web_draft(
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
-        "recipient_phone": str(row["recipient_phone"]),
+        "recipient_phone": (
+            str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
+        ),
+        "recipient_username": row["recipient_username"],
         "attachment_path": attachment,
         "caption": text,
         "draft_kind": draft_kind,
@@ -320,7 +331,8 @@ def _insert_message(
     message_id: str,
     order_id: str | None,
     message_kind: str,
-    recipient_phone: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
     greeting: str,
     evidence_caption: str,
     payment_message: str,
@@ -336,17 +348,18 @@ def _insert_message(
         connection.execute(
             """
             INSERT INTO whatsapp_messages (
-                message_id, order_id, message_kind, recipient_phone, greeting,
+                message_id, order_id, message_kind, recipient_phone, recipient_username, greeting,
                 evidence_caption, payment_message, attachment_path, status,
                 payment_attachment_path, test_mode, prepared_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'prepared', %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'prepared', %s, %s, %s, %s, %s)
             """,
             (
                 message_id,
                 order_id,
                 message_kind,
                 recipient_phone,
+                recipient_username,
                 greeting,
                 evidence_caption,
                 payment_message,
@@ -365,10 +378,16 @@ def _insert_message(
         "status": "prepared",
         "recipient_phone": recipient_phone,
         "recipient_phone_masked": _mask_phone(recipient_phone),
+        "recipient_username": recipient_username,
+        "recipient_label": recipient_phone or recipient_username,
         "greeting": greeting,
         "evidence_caption": evidence_caption,
         "payment_message": payment_message,
-        "whatsapp_url": f"https://wa.me/{recipient_phone[1:]}?text={quote(greeting)}",
+        "whatsapp_url": (
+            f"https://wa.me/{recipient_phone[1:]}?text={quote(greeting)}"
+            if recipient_phone
+            else None
+        ),
         "attachment_url": f"/api/v1/whatsapp-messages/{message_id}/attachment",
         "payment_attachment_url": (
             f"/api/v1/whatsapp-messages/{message_id}/payment-attachment"

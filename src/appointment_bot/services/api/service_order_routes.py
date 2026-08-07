@@ -33,6 +33,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "document_type",
     "contact_name",
     "contact_whatsapp_masked",
+    "contact_whatsapp_username_masked",
     "contact_source",
     "priority",
     "charge_required",
@@ -77,6 +78,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
 PUBLIC_SERVICE_ORDER_DETAIL_FIELDS = PUBLIC_SERVICE_ORDER_FIELDS + (
     "document_number",
     "contact_whatsapp",
+    "contact_whatsapp_username",
 )
 
 
@@ -101,6 +103,7 @@ def search_service_orders_payload(query: str) -> dict[str, Any]:
                 "document_number",
                 "contact_name",
                 "contact_whatsapp",
+                "contact_whatsapp_username",
             )
         )
         if normalized not in searchable:
@@ -180,6 +183,9 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             password=str(payload["password"]),
             priority=int(payload.get("priority", 0) or 0),
             contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
+            contact_whatsapp_username=_optional_text(
+                payload, "contact_whatsapp_username"
+            ),
             contact_name=_optional_text(payload, "contact_name"),
             contact_source=_optional_text(payload, "contact_source"),
             applicant_name=_optional_text(payload, "applicant_name"),
@@ -268,22 +274,27 @@ def update_service_order_contact_payload(
     order_id: str,
     payload: dict[str, Any],
 ) -> tuple[HTTPStatus, dict[str, Any]]:
-    if payload.get("contact_whatsapp") in {None, ""} and payload.get("contact_name") in {
-        None,
-        "",
-    }:
+    if (
+        payload.get("contact_whatsapp") in {None, ""}
+        and payload.get("contact_whatsapp_username") in {None, ""}
+        and payload.get("contact_name") in {None, ""}
+    ):
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
-            "Missing contact_whatsapp or contact_name.",
+            "Missing WhatsApp recipient or contact_name.",
             field_errors={
                 "contact_name": "Ingresa nombre o WhatsApp.",
                 "contact_whatsapp": "Ingresa nombre o WhatsApp.",
+                "contact_whatsapp_username": "Ingresa nombre o WhatsApp.",
             },
         )
     try:
         add_or_update_service_order_contact(
             order_id,
             contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
+            contact_whatsapp_username=_optional_text(
+                payload, "contact_whatsapp_username"
+            ),
             contact_name=_optional_text(payload, "contact_name"),
             contact_source=_optional_text(payload, "contact_source"),
         )

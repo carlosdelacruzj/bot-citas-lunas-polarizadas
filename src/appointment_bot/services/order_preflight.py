@@ -274,6 +274,7 @@ def _queue_notice(
             preflight_cycle=preflight_cycle,
             notice_type=notice_type,
             recipient_phone=order.contact_whatsapp,
+            recipient_username=order.contact_whatsapp_username,
             display_name=display_name,
             settings=settings,
         )
@@ -292,7 +293,7 @@ def _queue_notice(
             ),
         )
         return
-    if not queued and not order.contact_whatsapp:
+    if not queued and not (order.contact_whatsapp or order.contact_whatsapp_username):
         logger.warning(
             "Registration notice skipped because the order has no WhatsApp: order=%s",
             order.order_id,
