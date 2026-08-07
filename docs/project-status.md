@@ -282,6 +282,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `uncertain`; ahora se exige confirmar cada imagen saliente antes de cerrar.
   El reintento manual autorizado terminó `sent` con las cuatro imágenes
   confirmadas.
+- Corregido el `2026-08-07`: el álbum automático posterior a una reserva ya no
+  considera suficiente que desaparezca la vista previa. Espera hasta `60`
+  segundos por las dos imágenes salientes confirmadas por WhatsApp; si no
+  aparecen, conserva una captura propia del mensaje, termina `uncertain` y no
+  se reintenta. El ajuste responde a un caso real que figuró `sent` aunque el
+  cliente no recibió el primer álbum y necesitó un envío manual.
 - Después de las imágenes, el mismo trabajo diario enviará una publicación para
   TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
   combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen

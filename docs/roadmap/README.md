@@ -57,6 +57,12 @@ Estado: en observación.
   La confirmación ahora espera todas las imágenes salientes sin reloj; el
   reintento manual autorizado terminó `sent` con cuatro confirmaciones. Validar
   el siguiente disparo automático directamente desde el cierre de las 18:00.
+- Completado el `2026-08-07`: el álbum automático de evidencia y Yape posterior
+  a una reserva aplica la misma confirmación estricta. Solo termina `sent` si
+  aparecen las dos imágenes salientes aceptadas por WhatsApp; un timeout queda
+  `uncertain`, guarda evidencia específica y no genera un reintento automático.
+  Observar el próximo envío real antes de considerar cerrada la validación
+  externa de WhatsApp Web.
 - Completado el `2026-07-30`: el resumen diario incorpora después del álbum una
   publicación variable para TikTok, sin IA ni consumo de tokens. El generador
   conserva datos comerciales fijos y rota 138,240 combinaciones por fecha. Una

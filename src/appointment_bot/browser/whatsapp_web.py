@@ -22,6 +22,10 @@ CHAT_READY_TIMEOUT_SECONDS = 20
 _HEADLESS_WHATSAPP_USER_AGENT: str | None = None
 
 
+class WhatsAppSendUncertain(RuntimeError):
+    pass
+
+
 @dataclass
 class _DraftCommand:
     draft: dict[str, object]
@@ -361,7 +365,29 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
                 "WhatsApp no confirmo el texto del album; no se realizo el envio automatico."
             )
         _save_whatsapp_debug_screenshot(page, "whatsapp-album-before-send")
-        _send_album(page)
+        message_id = str(draft["message_id"])
+        evidence_id = _safe_whatsapp_artifact_name(message_id)
+        try:
+            _send_album(
+                page,
+                uncertain_screenshot_name=(
+                    f"whatsapp-album-upload-uncertain-{evidence_id}"
+                ),
+            )
+        except WhatsAppSendUncertain as exc:
+            context.close()
+            logger.warning(
+                "WhatsApp Web album delivery is uncertain: message_id=%s",
+                message_id,
+            )
+            return _result(
+                "send_uncertain",
+                str(exc),
+                message_id=message_id,
+                draft_mode="album",
+                manual_send_required=True,
+                sent=False,
+            )
         _save_whatsapp_debug_screenshot(page, "whatsapp-album-sent")
         context.close()
         logger.info(
@@ -544,17 +570,13 @@ def _send_album(
     page: Page,
     *,
     expected_count: int = 2,
-    verify_uploaded_images: bool = False,
+    uncertain_screenshot_name: str = "whatsapp-album-upload-uncertain",
 ) -> None:
     if len(_album_thumbnails(page)) != expected_count:
         raise RuntimeError(
             "WhatsApp no mantuvo todas las miniaturas antes del envio."
         )
-    outgoing_image_count = (
-        len(_outgoing_image_message_states(page))
-        if verify_uploaded_images
-        else 0
-    )
+    outgoing_image_count = len(_outgoing_image_message_states(page))
     viewport = page.viewport_size or {"width": 0, "height": 0}
     if not viewport["width"] or not viewport["height"]:
         raise RuntimeError("WhatsApp no informo el tamaño de la ventana para enviar el album.")
@@ -590,16 +612,16 @@ def _send_album(
         if not _album_thumbnails(page) and _normal_chat_composer_visible(page):
             page.wait_for_timeout(1_000)
             if not _album_thumbnails(page):
-                if verify_uploaded_images and not _wait_until_outgoing_images_uploaded(
+                if not _wait_until_outgoing_images_uploaded(
                     page,
                     initial_count=outgoing_image_count,
                     expected_count=expected_count,
                 ):
                     _save_whatsapp_debug_screenshot(
                         page,
-                        "whatsapp-daily-summary-upload-uncertain",
+                        uncertain_screenshot_name,
                     )
-                    raise RuntimeError(
+                    raise WhatsAppSendUncertain(
                         "WhatsApp cerro la vista previa, pero no confirmo "
                         "la carga de todas las imagenes."
                     )
@@ -620,13 +642,12 @@ def _wait_until_outgoing_images_uploaded(
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         states = _outgoing_image_message_states(page)
-        if len(states) >= initial_count + expected_count:
-            batch_states = states[initial_count:]
-        else:
-            batch_states = states[-expected_count:]
-        if len(batch_states) >= expected_count and all(
-            state == "confirmed" for state in batch_states[-expected_count:]
-        ):
+        required_count = initial_count + expected_count
+        if len(states) < required_count:
+            page.wait_for_timeout(500)
+            continue
+        batch_states = states[initial_count:required_count]
+        if all(state == "confirmed" for state in batch_states):
             page.wait_for_timeout(1_000)
             return True
         page.wait_for_timeout(500)
@@ -684,6 +705,7 @@ def _send_daily_slot_summary(
         if character.isdigit()
     )
     message_id = str(draft["message_id"])
+    evidence_id = _safe_whatsapp_artifact_name(message_id)
     target = f"https://web.whatsapp.com/send?phone={phone}"
     page.goto(target, wait_until="domcontentloaded", timeout=45_000)
     if not _wait_for_chat(page):
@@ -725,11 +747,21 @@ def _send_daily_slot_summary(
                 "WhatsApp no mostro todas las imagenes del resumen diario."
             )
         _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-before-send")
-        _send_album(
-            page,
-            expected_count=len(attachments),
-            verify_uploaded_images=True,
-        )
+        try:
+            _send_album(
+                page,
+                expected_count=len(attachments),
+                uncertain_screenshot_name=(
+                    f"whatsapp-daily-summary-upload-uncertain-{evidence_id}"
+                ),
+            )
+        except WhatsAppSendUncertain as exc:
+            context.close()
+            return _result(
+                "send_uncertain",
+                str(exc),
+                message_id=message_id,
+            )
         _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-images-sent")
 
     publication_sent = _send_plain_text_message(
@@ -1613,6 +1645,10 @@ def _save_whatsapp_debug_screenshot(page: Page, name: str) -> None:
     debug_screenshot = Path(f".runtime/{name}.png").resolve()
     debug_screenshot.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(debug_screenshot))
+
+
+def _safe_whatsapp_artifact_name(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-") or "message"
 
 
 def _whatsapp_qr_image_data_url(page: Page) -> str | None:
