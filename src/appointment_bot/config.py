@@ -179,6 +179,7 @@ class Settings:
     captcha_shadow_queue_size: int = 100
     captcha_shadow_timeout_seconds: int = 2
     reservation_captcha_sample_limit: int = 1
+    reservation_captcha_runtime_control_enabled: bool = True
 
     @property
     def safe_username(self) -> str:

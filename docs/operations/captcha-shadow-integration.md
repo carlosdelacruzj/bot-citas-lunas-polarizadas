@@ -208,11 +208,17 @@ fail-open: una falla del servicio sombra no detiene el worker ni sustituye a
 
 ## Muestreo durante una reserva real
 
-Desde el `2026-08-01`, `RESERVATION_CAPTCHA_SAMPLE_LIMIT` controla la cantidad total de
-CAPTCHA capturados por cada intento real. `1` conserva el flujo normal. Con un valor mayor, el
-bot guarda y refresca las muestras anteriores, registra cada una en sombra y envía únicamente
-la última a 2Captcha. El límite permitido es `1-50` y se aplica nuevamente si existe un segundo
-intento por rechazo explícito.
+Desde el `2026-08-08`, el control operativo se encuentra en **Resumen > Capturas CAPTCHA para
+entrenamiento**. Guarda por separado `enabled` y el total deseado `2-50` en PostgreSQL
+(`captcha_sampling_control`, esquema `v47`). Desactivado conserva el total elegido pero aplica
+un total efectivo de `1`; activado guarda y refresca las muestras anteriores, registra cada una
+en sombra y envía únicamente la última a 2Captcha. El worker lee el control justo antes de cada
+lote, congela el valor durante ese lote y vuelve a leerlo ante un nuevo intento. El modo rápido
+siempre fuerza `1`.
+
+`RESERVATION_CAPTCHA_SAMPLE_LIMIT` permanece como fallback de arranque si la lectura del control
+persistido falla; ya no debe editarse para la operación diaria. La migración crea el control
+desactivado y con total preparado en `10`, por lo que desplegarla no agrega capturas por sí solo.
 
 La prueba local solicitada quedó configurada en `10`: nueve imágenes para entrenamiento y la
 décima para 2Captcha. Las muestras usan el original extraído del `data:` HTML; solo recurren al

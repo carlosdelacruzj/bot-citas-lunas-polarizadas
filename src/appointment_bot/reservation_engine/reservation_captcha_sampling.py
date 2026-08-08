@@ -11,6 +11,7 @@ from typing import Any
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
+from appointment_bot.db.captcha_sampling_control import get_captcha_sampling_control
 from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
@@ -37,7 +38,8 @@ def collect_reservation_captcha_training_samples(
     run_id: str | None,
     order_id: str | None,
 ) -> None:
-    extra_sample_count = settings.reservation_captcha_sample_limit - 1
+    sample_limit = _resolve_sample_limit(settings)
+    extra_sample_count = sample_limit - 1
     if extra_sample_count <= 0:
         return
 
@@ -96,7 +98,7 @@ def collect_reservation_captcha_training_samples(
                         "attempt": attempt_number,
                         "training_sample": sample_number,
                         "training_sample_limit": (
-                            settings.reservation_captcha_sample_limit
+                            sample_limit
                         ),
                         "captured_at_utc": datetime.now(UTC).isoformat(),
                         "source_image_kind": (
@@ -149,9 +151,7 @@ def collect_reservation_captcha_training_samples(
             )
             break
 
-    captcha_audit["captcha_training_sample_limit"] = (
-        settings.reservation_captcha_sample_limit
-    )
+    captcha_audit["captcha_training_sample_limit"] = sample_limit
     captcha_audit["captcha_training_sample_paths"] = sample_paths
     captcha_audit["captcha_training_samples_collected"] = len(sample_paths)
     captcha_audit["captcha_training_sample_timings"] = sample_timings
@@ -166,6 +166,20 @@ def collect_reservation_captcha_training_samples(
         extra_sample_count,
         captcha_audit["captcha_training_duration_ms"],
     )
+
+
+def _resolve_sample_limit(settings: Settings) -> int:
+    if not settings.reservation_captcha_runtime_control_enabled:
+        return 1
+    try:
+        control = get_captcha_sampling_control(settings)
+    except Exception as exc:
+        logger.warning(
+            "Could not read runtime CAPTCHA sampling control; using configured fallback: %s",
+            exc,
+        )
+        return settings.reservation_captcha_sample_limit
+    return control.effective_sample_limit
 
 
 def _ensure_reservation_can_continue(

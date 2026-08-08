@@ -34,6 +34,18 @@ export interface WorkerStatus {
   availability_signature?: string | null;
 }
 
+export interface CaptchaSamplingControl {
+  enabled: boolean;
+  sample_limit: number;
+  effective_sample_limit: number;
+  estimated_extra_seconds: number;
+  applies_from: 'next_captcha_batch';
+  rapid_mode_effective_sample_limit: 1;
+  updated_at: string | null;
+  updated_by: string;
+  source: 'database' | 'environment_fallback';
+}
+
 export interface ServiceOrder {
   order_id: string;
   applicant_id: string;
@@ -585,6 +597,23 @@ export class AppointmentApiService {
 
   async getWorker(scope?: RequestScope): Promise<WorkerStatus> {
     return this.read<WorkerStatus>('/api/v1/worker', scope);
+  }
+
+  async getCaptchaSamplingControl(scope?: RequestScope): Promise<CaptchaSamplingControl> {
+    return this.read<CaptchaSamplingControl>(
+      '/api/v1/runtime-controls/captcha-sampling',
+      scope,
+    );
+  }
+
+  async updateCaptchaSamplingControl(
+    enabled: boolean,
+    sampleLimit: number,
+  ): Promise<CaptchaSamplingControl> {
+    return this.post<CaptchaSamplingControl>('/api/v1/runtime-controls/captcha-sampling', {
+      enabled,
+      sample_limit: sampleLimit,
+    });
   }
 
   async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {

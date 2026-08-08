@@ -26,6 +26,7 @@ import {
   CaptchaQualityCasesPage,
   CaptchaQualityModel,
   CaptchaQualityWeek,
+  CaptchaSamplingControl,
   CaptchaSummary,
   CloseServiceOrderPayload,
   ContactUpdatePayload,
@@ -389,6 +390,11 @@ export class App implements OnDestroy {
   protected readonly runStatusFilter = signal('');
   protected readonly health = signal<HealthPayload | null>(null);
   protected readonly worker = signal<WorkerStatus | null>(null);
+  protected readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
+  protected readonly captchaSamplingEnabled = signal(false);
+  protected readonly captchaSamplingLimit = signal(10);
+  protected readonly captchaSamplingDirty = signal(false);
+  protected readonly captchaSamplingSaving = signal(false);
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
@@ -633,6 +639,12 @@ export class App implements OnDestroy {
   });
   protected readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
+  );
+  protected readonly captchaSamplingEffectiveLimit = computed(() =>
+    this.captchaSamplingEnabled() ? this.captchaSamplingLimit() : 1,
+  );
+  protected readonly captchaSamplingEstimatedSeconds = computed(() =>
+    Math.round(Math.max(this.captchaSamplingEffectiveLimit() - 1, 0) * 4) / 10,
   );
   protected readonly pendingPaymentOrders = computed(
     () => this.orders().filter((order) => order.payment_status === 'pending').length,
@@ -1215,14 +1227,16 @@ export class App implements OnDestroy {
       return;
     }
     if (view === 'summary') {
-      const [orders, runs, monthlySummary] = await Promise.all([
+      const [orders, runs, monthlySummary, captchaSamplingControl] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getRuns(scope),
         this.api.getMonthlySummary(this.selectedMonth(), scope),
+        this.api.getCaptchaSamplingControl(scope),
       ]);
       this.applyOrders(orders);
       this.runs.set(runs);
       this.monthlySummary.set(monthlySummary);
+      this.applyCaptchaSamplingControl(captchaSamplingControl);
       return;
     }
     if (view === 'finance') {
@@ -3279,6 +3293,60 @@ export class App implements OnDestroy {
       execute: () => this.api.restartWorker(),
       onSuccess: () => this.activeModal.set(null),
     });
+  }
+
+  protected setCaptchaSamplingEnabled(enabled: boolean): void {
+    if (this.captchaSamplingEnabled() === enabled) {
+      return;
+    }
+    this.captchaSamplingEnabled.set(enabled);
+    this.captchaSamplingDirty.set(true);
+  }
+
+  protected setCaptchaSamplingLimit(value: number | string): void {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    const normalized = Math.min(50, Math.max(2, Math.round(parsed)));
+    if (this.captchaSamplingLimit() === normalized) {
+      return;
+    }
+    this.captchaSamplingLimit.set(normalized);
+    this.captchaSamplingDirty.set(true);
+  }
+
+  protected async saveCaptchaSamplingControl(): Promise<void> {
+    if (this.captchaSamplingSaving()) {
+      return;
+    }
+    this.captchaSamplingSaving.set(true);
+    this.errorMessage.set(null);
+    try {
+      const control = await this.api.updateCaptchaSamplingControl(
+        this.captchaSamplingEnabled(),
+        this.captchaSamplingLimit(),
+      );
+      this.captchaSamplingDirty.set(false);
+      this.applyCaptchaSamplingControl(control);
+      await this.showToast(
+        control.enabled
+          ? `Muestreo activado: ${control.sample_limit} CAPTCHA por lote`
+          : 'Muestreo adicional desactivado',
+      );
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.captchaSamplingSaving.set(false);
+    }
+  }
+
+  private applyCaptchaSamplingControl(control: CaptchaSamplingControl): void {
+    this.captchaSamplingControl.set(control);
+    if (!this.captchaSamplingDirty()) {
+      this.captchaSamplingEnabled.set(control.enabled);
+      this.captchaSamplingLimit.set(control.sample_limit);
+    }
   }
 
   protected requestManualSession(): void {

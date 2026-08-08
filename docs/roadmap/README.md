@@ -152,12 +152,20 @@ Estado: en observación.
   conserva el recorrido real vigente. Un valor mayor captura y refresca
   muestras adicionales, registra cada una en sombra y manda solamente el
   último CAPTCHA a 2Captcha.
+- Completado en código el `2026-08-08`: el panel Resumen permite activar o
+  desactivar el muestreo y elegir un total `2-50`, persistido en PostgreSQL
+  `schema v47`. Desactivado equivale a `1`, conserva el total elegido y no exige
+  reiniciar el worker; un cambio se congela al comenzar el siguiente lote. El
+  modo rápido conserva el límite obligatorio de `1` y `.env` queda como fallback.
+  Reorganizado visualmente para presentar en orden modo, cantidad, efecto del
+  siguiente intento y confirmación de guardado, con ritmo de `16-24 px`,
+  tarjetas internas separadas y acción final delimitada.
 - Medido el `2026-08-01` con `.env` local en `10`: dos cupos incompatibles
   capturaron diez CAPTCHA originales cada uno. Las nueve muestras adicionales
   agregaron `3.609 s` y `3.625 s`, cerca de `0.402 s` por ciclo. No hubo submit
   ni llamada a 2Captcha porque ambas órdenes terminaron
   `partial / blocked_by_order_rule`.
-- Cerrado el experimento con el `.env` productivo nuevamente en `1`; las nueve
+- Cerrado el experimento con el control productivo desactivado; las nueve
   capturas adicionales ya no retrasan una reserva real.
 - Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
   20 eventos tienen tres predicciones y quedaron pendientes de revisión humana

@@ -249,11 +249,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - El modelo local no participa en la decisión de reserva; 2Captcha sigue siendo
   la respuesta enviada al portal.
 - Implementado el `2026-08-01`: el flujo real admite muestreo CAPTCHA opcional
-  mediante `RESERVATION_CAPTCHA_SAMPLE_LIMIT`. El valor `1` conserva el
-  comportamiento anterior; un valor mayor guarda y refresca las muestras
-  previas y envía únicamente la última a 2Captcha. Las imágenes adicionales
-  quedan registradas en sombra como datos de entrenamiento y nunca se envían
-  al portal.
+  mediante `RESERVATION_CAPTCHA_SAMPLE_LIMIT`. Desde el `2026-08-08`, el
+  dashboard permite activarlo o desactivarlo y conservar un total entre `2` y
+  `50` en PostgreSQL (`schema v47`), sin editar `.env` ni reiniciar el worker.
+  Desactivado aplica un total efectivo de `1`; activado guarda y refresca las
+  muestras previas y envía únicamente la última a 2Captcha. El valor queda fijo
+  durante el lote en curso y los cambios empiezan en el siguiente lote CAPTCHA.
+  El modo rápido mantiene una guarda independiente que siempre fuerza `1`. El
+  panel separa visualmente modo, cantidad, efecto del próximo intento y estado
+  guardado para evitar confundir el total elegido con el total efectivo. El
+  bloque usa separación explícita de `16-24 px`, tarjetas internas respiradas,
+  resultado aislado y acción final dividida por borde. El presupuesto CSS se
+  amplió de `27/30 kB` a `30/33 kB`; el build queda en `504.11 kB` sin warning.
 - Los 46 intervalos consecutivos medidos en el muestreo del observador tuvieron
   `0.390 s` de mediana y `0.406 s` de p90 por CAPTCHA adicional. Un límite de
   `5` agrega aproximadamente `1.6 s` antes de iniciar 2Captcha. La opción queda
@@ -264,10 +271,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   agregaron `3.609 s` y `3.625 s`; cada ciclo de captura y refresco promedió
   aproximadamente `0.402 s`. No hubo submit, consumo de 2Captcha ni reserva,
   por lo que todavía falta medir el impacto completo sobre una reserva real.
-- Terminado el experimento, el `.env` productivo volvió a
-  `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: cada intento conserva el CAPTCHA que
-  realmente usa, pero ya no añade los `3.6 s` observados por las nueve muestras
-  extra antes de competir por el cupo.
+- Terminado el experimento, el control productivo quedó desactivado: cada
+  intento conserva el CAPTCHA que realmente usa, pero no añade los `3.6 s`
+  observados por las nueve muestras extra antes de competir por el cupo. El
+  `.env` permanece como fallback seguro y no es el control operativo diario.
 - Corregido el mismo día: la ruta de evidencia bloqueada ahora conserva
   `run_id` y `order_id`, y registra tanto las nueve muestras previas como la
   final en CAPTCHA sombra. Los 20 originales ya capturados fueron recuperados
@@ -493,6 +500,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   abonados sobre `S/40`. El resumen mensual devuelve `2` cobros accionables por
   `S/70`: saldos de `S/20` y `S/50`. No se encoló ni envió WhatsApp durante el
   ajuste.
+- PostgreSQL v47 aplicado: el control CAPTCHA quedó desactivado, conserva total
+  `10` y reporta total efectivo `1`. Admin API leyó y guardó ese mismo estado,
+  el dashboard compilado contiene el control y el worker continúa detenido; no
+  se abrió el portal, no se llamó a 2Captcha y no se creó ninguna reserva.
 - WhatsApp del `2026-08-08`: `compileall`, Ruff, dashboard y `59` pruebas
   correctos. Admin API fue recuperada por su supervisor y sirve el bundle
   `main-IPC33IQD.js`; PostgreSQL conserva el resumen del 7 de agosto como

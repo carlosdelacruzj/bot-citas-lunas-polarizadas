@@ -224,6 +224,142 @@
   </article>
 </section>
 
+<section class="panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
+  <div class="panel-header">
+    <div>
+      <p class="eyebrow">Recolección para entrenamiento</p>
+      <h2 id="captcha-sampling-title">Capturas CAPTCHA</h2>
+      <p>Elige entre priorizar la reserva o guardar más imágenes para mejorar el modelo.</p>
+    </div>
+    <span class="badge {{ dashboard.captchaSamplingEnabled() ? 'warn' : 'good' }}">
+      {{ dashboard.captchaSamplingEnabled() ? 'recolección activa' : 'modo normal' }}
+    </span>
+  </div>
+
+  <div class="notice neutral captcha-sampling-intro" role="note">
+    2Captcha sigue resolviendo el CAPTCHA final. Esta opción solo decide si antes se guardan
+    imágenes adicionales.
+  </div>
+
+  <div class="split captcha-sampling-options">
+    <article class="action-card captcha-sampling-step">
+      <h3>1. Elige el modo</h3>
+      <div class="button-row captcha-mode-switch" role="radiogroup" aria-label="Modo de captura CAPTCHA">
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="!dashboard.captchaSamplingEnabled()"
+          [class.primary]="!dashboard.captchaSamplingEnabled()"
+          [class.secondary]="dashboard.captchaSamplingEnabled()"
+          (click)="dashboard.setCaptchaSamplingEnabled(false)"
+        >
+          Normal · 1 CAPTCHA
+        </button>
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="dashboard.captchaSamplingEnabled()"
+          [class.primary]="dashboard.captchaSamplingEnabled()"
+          [class.secondary]="!dashboard.captchaSamplingEnabled()"
+          (click)="dashboard.setCaptchaSamplingEnabled(true)"
+        >
+          Recolectar muestras
+        </button>
+      </div>
+      <p class="captcha-sampling-help">
+        @if (dashboard.captchaSamplingEnabled()) {
+          Guarda varias imágenes antes de resolver la última.
+        } @else {
+          Prioriza la velocidad para intentar reservar.
+        }
+      </p>
+    </article>
+
+    <article class="action-card captcha-sampling-step">
+      <h3>2. Define la cantidad</h3>
+      @if (dashboard.captchaSamplingEnabled()) {
+        <div class="admin-block">
+          <label>
+            Total por intento
+            <input
+              type="number"
+              min="2"
+              max="50"
+              step="1"
+              [disabled]="dashboard.captchaSamplingSaving()"
+              [ngModel]="dashboard.captchaSamplingLimit()"
+              (ngModelChange)="dashboard.setCaptchaSamplingLimit($event)"
+            />
+            <small>
+              Incluye {{ dashboard.captchaSamplingLimit() - 1 }} para entrenamiento y 1 final.
+            </small>
+          </label>
+        </div>
+      } @else {
+        <p class="empty compact-empty">
+          No se agregarán capturas. Al volver a activar se conservará el total
+          {{ dashboard.captchaSamplingLimit() }}.
+        </p>
+      }
+    </article>
+  </div>
+
+  @if (dashboard.captchaSamplingEnabled()) {
+    <div class="notice warn captcha-sampling-result" role="status">
+      En el siguiente intento normal se guardarán
+      <strong>{{ dashboard.captchaSamplingLimit() - 1 }} muestras</strong> y luego se enviará
+      <strong>1 CAPTCHA final</strong> a 2Captcha. Demora adicional estimada:
+      <strong>+{{ dashboard.captchaSamplingEstimatedSeconds() }} s</strong>.
+    </div>
+  } @else {
+    <div class="notice good captcha-sampling-result" role="status">
+      En el siguiente intento se usará <strong>1 CAPTCHA</strong>, sin demora por recolección.
+    </div>
+  }
+
+  <dl class="summary-list compact captcha-sampling-facts">
+    <div>
+      <dt>Modo guardado</dt>
+      <dd>{{ dashboard.captchaSamplingControl()?.enabled ? 'Recolección' : 'Normal' }}</dd>
+    </div>
+    <div>
+      <dt>Cambio pendiente</dt>
+      <dd>{{ dashboard.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
+    </div>
+    <div>
+      <dt>Ordenes listas</dt>
+      <dd>{{ dashboard.readyOrders() }}</dd>
+    </div>
+    <div>
+      <dt>Modo rapido</dt>
+      <dd>Siempre 1 CAPTCHA</dd>
+    </div>
+  </dl>
+
+  @if (dashboard.captchaSamplingEnabled() && dashboard.readyOrders() > 1) {
+    <div class="notice warn captcha-sampling-queue-warning" role="alert">
+      Hay varias órdenes listas. Considera el modo normal para no retrasar la competencia por un
+      cupo.
+    </div>
+  }
+  <div class="panel-actions captcha-sampling-actions">
+    <button
+      type="button"
+      class="primary"
+      [disabled]="!dashboard.captchaSamplingDirty() || dashboard.captchaSamplingSaving()"
+      (click)="dashboard.saveCaptchaSamplingControl()"
+    >
+      {{
+        dashboard.captchaSamplingSaving()
+          ? 'Guardando...'
+          : dashboard.captchaSamplingDirty()
+            ? 'Guardar cambio'
+            : 'Configuración guardada'
+      }}
+    </button>
+  </div>
+</section>
+
 <section class="split">
   <article class="panel">
     <div class="panel-header">

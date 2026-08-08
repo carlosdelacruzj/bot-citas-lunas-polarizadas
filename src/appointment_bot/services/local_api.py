@@ -7,6 +7,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from appointment_bot.services.api.captcha_sampling_routes import (
+    captcha_sampling_control_payload,
+    update_captcha_sampling_control_payload,
+)
 from appointment_bot.services.api.captcha_shadow_routes import (
     captcha_shadow_dataset_export_payload,
     captcha_shadow_events_payload,
@@ -126,6 +130,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             self._send_json(HTTPStatus.OK, list_worker_commands_payload(query))
+            return
+
+        if path == "/api/v1/runtime-controls/captcha-sampling":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = captcha_sampling_control_payload()
+            self._send_json(status, payload)
             return
 
         if path == "/api/v1/manual-sessions":
@@ -323,6 +334,16 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        if path == "/api/v1/runtime-controls/captcha-sampling":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_captcha_sampling_control_payload(
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
+            self._send_json(status, payload)
+            return
 
         captcha_event_id = captcha_shadow_human_label_event_id(path)
         if captcha_event_id is not None:

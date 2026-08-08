@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 46
+SCHEMA_VERSION = 47
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -334,6 +334,37 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_followup_messages_schema(connection)
     _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
+    _create_captcha_sampling_control_schema(connection)
+
+
+def _create_captcha_sampling_control_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS captcha_sampling_control (
+            id integer PRIMARY KEY CHECK (id = 1),
+            enabled boolean NOT NULL DEFAULT false,
+            sample_limit integer NOT NULL DEFAULT 10 CHECK (
+                sample_limit BETWEEN 2 AND 50
+            ),
+            updated_at timestamptz NOT NULL,
+            updated_by text NOT NULL DEFAULT 'system'
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO captcha_sampling_control (
+            id,
+            enabled,
+            sample_limit,
+            updated_at,
+            updated_by
+        )
+        VALUES (1, false, 10, %s, 'migration')
+        ON CONFLICT DO NOTHING
+        """,
+        (datetime.now(UTC),),
+    )
 
 
 def _validate_current_schema(connection: Connection) -> None:
@@ -361,6 +392,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_followup_messages",
         "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
+        "captcha_sampling_control",
     }
     tables = {
         row["table_name"]
@@ -459,6 +491,10 @@ def _validate_current_schema(connection: Connection) -> None:
         ("captcha_shadow_outbox", "sequence"),
         ("captcha_shadow_outbox", "status"),
         ("captcha_shadow_outbox", "next_attempt_at"),
+        ("captcha_sampling_control", "enabled"),
+        ("captcha_sampling_control", "sample_limit"),
+        ("captcha_sampling_control", "updated_at"),
+        ("captcha_sampling_control", "updated_by"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -1726,6 +1762,13 @@ def migrate_database(connection: Connection) -> None:
             (46,),
         )
         current_version = 46
+    if current_version == 46:
+        _create_captcha_sampling_control_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (47,),
+        )
+        current_version = 47
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

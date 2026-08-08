@@ -193,6 +193,7 @@ def run_service_order(
             monitor_window_seconds=0,
             monitor_max_attempts=1,
             reservation_captcha_sample_limit=1,
+            reservation_captcha_runtime_control_enabled=False,
         )
     elif observer_mode:
         site_toggle_enabled = settings.observer_site_toggle_enabled
