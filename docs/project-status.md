@@ -287,6 +287,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   confirmadas por el portal dentro de ese corte, una muestra insuficiente para
   diferenciarlos. El resultado prospectivo no confirma la ventaja histórica de
   v3 y mantiene a 2Captcha como única autoridad operativa.
+- Corregido el `2026-08-08`: los CAPTCHA capturados únicamente para documentar
+  un cupo incompatible (`blocked_by_order_rule` o `priority_deferred`) se
+  conservan en disco, historial y CAPTCHA sombra, pero dejaron de enviarse por
+  Telegram. La alerta urgente deduplicada de disponibilidad se mantiene; el
+  barrido diferido excluye esos reportes diagnósticos y nunca usa un CAPTCHA
+  como foto sustituta cuando no existe evidencia operativa normal.
 
 ### Comunicación y cobro
 
@@ -485,6 +491,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   correctos. Admin API fue recuperada por su supervisor y sirve el bundle
   `main-IPC33IQD.js`; PostgreSQL conserva el resumen del 7 de agosto como
   `sent`. No se realizó ningún envío de prueba.
+- Telegram del `2026-08-08`: el notificador diferido ya no publica evidencia
+  CAPTCHA de cupos incompatibles; la validación fue local y no realizó envíos
+  de prueba. Falta observar el próximo caso real bloqueado para confirmar la
+  ausencia de ruido en el chat operativo.
 
 ## Regla de mantenimiento
 

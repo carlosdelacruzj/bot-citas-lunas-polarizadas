@@ -134,7 +134,7 @@ class NotifierTests(unittest.TestCase):
             self.assertNotIn("Mayra", message)
             self.assertNotIn("usuario@example.com", message)
 
-    def test_deferred_summary_sends_only_primary_non_captcha_photo(self) -> None:
+    def test_deferred_summary_does_not_send_blocked_diagnostic_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             base_path = Path(directory)
             settings = make_settings(base_path)
@@ -175,16 +175,9 @@ class NotifierTests(unittest.TestCase):
                     [deferred],
                 )
 
-            self.assertTrue(delivered)
+            self.assertFalse(delivered)
             send_message.assert_not_called()
-            send_photo.assert_called_once()
-            self.assertEqual(send_photo.call_args.args[1], panel_path)
-            caption = send_photo.call_args.args[2]
-            self.assertIn("Evidencia guardada del cupo detectado.", caption)
-            self.assertIn("Fecha: 08/07/2026", caption)
-            self.assertIn("Hora: 10:00", caption)
-            self.assertNotIn("CUPO DETECTADO", caption)
-            self.assertNotIn("Submission_outcome", caption)
+            send_photo.assert_not_called()
 
 
 if __name__ == "__main__":

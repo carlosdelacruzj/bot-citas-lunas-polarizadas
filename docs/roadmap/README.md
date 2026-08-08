@@ -162,6 +162,12 @@ Estado: en observación.
 - Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
   20 eventos tienen tres predicciones y quedaron pendientes de revisión humana
   en el dashboard.
+- Completado en código el `2026-08-08`: la captura CAPTCHA de un cupo bloqueado
+  por reglas permanece disponible localmente y en sombra, pero ya no se envía
+  como evidencia diferida a Telegram. El selector de evidencia tampoco usa un
+  CAPTCHA como foto sustituta cuando falta una captura operativa normal.
+  Confirmar la ausencia de mensajes repetidos ante el próximo cupo real
+  incompatible.
 - Completado el `2026-08-02`: entrenado y seleccionado v3. Mejoró a `v2_selected` en los
   tres conjuntos comparables: `93/98` temporal, `147/150` humano y `77/78`
   sombra. El servicio carga cuatro modelos, el dashboard muestra

@@ -165,16 +165,7 @@ def notify_deferred_queue_summary(
     deferred_reports: list,
 ) -> bool:
     deferred_reports = [
-        report
-        for report in deferred_reports
-        if report.status != "partial"
-        or _should_notify_partial_result(
-            AvailabilityResult(
-                status=report.status,
-                message=report.message,
-                details=report.details,
-            )
-        )
+        item for item in deferred_reports if _should_send_deferred_report(item)
     ]
     if not deferred_reports:
         return not settings.telegram_enabled
@@ -349,6 +340,32 @@ def _should_notify_partial_result(result: AvailabilityResult) -> bool:
     )
 
 
+def _should_send_deferred_report(report) -> bool:
+    result = AvailabilityResult(
+        status=report.status,
+        message=report.message,
+        details=report.details,
+    )
+    if _is_blocked_diagnostic_evidence(result):
+        logger.info(
+            "Skipping deferred Telegram evidence for an appointment blocked by rules."
+        )
+        return False
+    return result.status != "partial" or _should_notify_partial_result(result)
+
+
+def _is_blocked_diagnostic_evidence(result: AvailabilityResult) -> bool:
+    if result.status != "partial":
+        return False
+    details = result.details or {}
+    return bool(
+        details.get("blocked_by_order_rule")
+        or details.get("blocked_selected_for_evidence")
+        or details.get("submission_outcome")
+        in {"blocked_by_order_rule", "priority_deferred"}
+    )
+
+
 def _should_send_immediate_availability(result: AvailabilityResult) -> bool:
     if result.status == "available":
         return True
@@ -373,7 +390,7 @@ def _primary_evidence_paths(image_paths: list[Path]) -> list[Path]:
         lower_name = image_path.name.lower()
         if "captcha" not in lower_name:
             return [image_path]
-    return [image_paths[0]]
+    return []
 
 
 def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
