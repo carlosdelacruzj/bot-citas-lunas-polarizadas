@@ -27,17 +27,23 @@ class ManualSessionHandle:
     session_id: str
     order_id: str
     username: str
+    mode: str
+    order_status: str
     status: str
+    status_message: str | None
     started_at: str
     updated_at: str
     close_requested: threading.Event
 
-    def summary(self) -> dict[str, str | bool]:
+    def summary(self) -> dict[str, str | bool | None]:
         return {
             "session_id": self.session_id,
             "order_id": self.order_id,
             "username": self.username,
+            "mode": self.mode,
+            "order_status": self.order_status,
             "status": self.status,
+            "status_message": self.status_message,
             "started_at": self.started_at,
             "updated_at": self.updated_at,
             "close_requested": self.close_requested.is_set(),
@@ -52,6 +58,8 @@ MANUAL_SESSION_CLOSE_GRACE_SECONDS = 8
 def open_manual_session_for_order(
     settings: Settings,
     order: ServiceOrderRuntime,
+    *,
+    mode: str = "appointment",
 ) -> str:
     session_id = f"manual-session-{uuid4().hex[:12]}"
     session_settings = settings_for_order(
@@ -65,7 +73,10 @@ def open_manual_session_for_order(
         session_id=session_id,
         order_id=order.order_id,
         username=session_settings.safe_username,
+        mode=mode,
+        order_status=order.status,
         status="opening",
+        status_message=None,
         started_at=now,
         updated_at=now,
         close_requested=threading.Event(),
@@ -153,8 +164,19 @@ def _run_manual_session(
             block_heavy_assets=False,
         ) as page:
             try:
-                _prepare_manual_session(page, session_settings, order, session_id)
+                _prepare_manual_session(
+                    page,
+                    session_settings,
+                    order,
+                    session_id,
+                    mode=handle.mode,
+                )
             except Exception:
+                _set_session_status(
+                    session_id,
+                    "error",
+                    "No se pudo preparar la vista solicitada; el navegador sigue abierto.",
+                )
                 logger.exception(
                     "Manual session preparation failed; keeping browser open: "
                     "session_id=%s order_id=%s",
@@ -213,8 +235,23 @@ def _prepare_manual_session(
     settings: Settings,
     order: ServiceOrderRuntime,
     session_id: str,
+    *,
+    mode: str,
 ) -> None:
     login(page, settings)
+    if mode == "portal":
+        _set_session_status(
+            session_id,
+            "ready",
+            "Portal abierto en modo de consulta manual.",
+        )
+        logger.info(
+            "Manual portal session ready: session_id=%s order_id=%s order_status=%s",
+            session_id,
+            order.order_id,
+            order.status,
+        )
+        return
     click_program_action(
         page,
         program_expediente=order.program_expediente,
@@ -222,7 +259,11 @@ def _prepare_manual_session(
     )
     open_appointment_panel(page)
     select_available_site(page, required_site=settings.observer_required_site)
-    _set_session_status(session_id, "ready")
+    _set_session_status(
+        session_id,
+        "ready",
+        "Panel de citas abierto para revisión manual.",
+    )
     logger.info(
         "Manual session ready at appointment panel: session_id=%s order_id=%s site=%s",
         session_id,
@@ -231,11 +272,16 @@ def _prepare_manual_session(
     )
 
 
-def _set_session_status(session_id: str, status: str) -> None:
+def _set_session_status(
+    session_id: str,
+    status: str,
+    status_message: str | None = None,
+) -> None:
     with _ACTIVE_SESSION_LOCK:
         handle = _ACTIVE_SESSIONS.get(session_id)
         if handle is not None:
             handle.status = status
+            handle.status_message = status_message
             handle.updated_at = datetime.now(UTC).isoformat(timespec="seconds")
 
 

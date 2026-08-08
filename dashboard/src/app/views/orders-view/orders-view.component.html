@@ -190,6 +190,16 @@
               Activar
             </button>
           }
+          @if (order.status !== 'ready') {
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="dashboard.actionBusy()"
+              (click)="dashboard.requestManualSession()"
+            >
+              Abrir portal
+            </button>
+          }
           <button type="button" class="secondary" (click)="dashboard.openOrderActions(order)">
             Más acciones
           </button>

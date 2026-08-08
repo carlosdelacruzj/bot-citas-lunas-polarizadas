@@ -151,6 +151,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Admin API independiente mediante `worker_commands`.
 - Dashboard Angular con vistas, rutas, carga diferida, estados y modales
   separados.
+- Implementado el `2026-08-08`: las sesiones manuales distinguen modo
+  `appointment` para órdenes listas y modo `portal` para consulta de órdenes
+  pausadas, reservadas con pago pendiente, pagadas o archivadas. El segundo
+  solo inicia sesión y deja el portal visible; no abre citas, selecciona sede
+  ni cambia el estado administrativo. El dashboard conserva pago y postpago
+  como acciones principales y ofrece **Abrir portal** como acción secundaria.
 - Corregido el `2026-08-01`: la actualización automática del dashboard conserva
   la vista en su posición. El indicador de refresco vive dentro del encabezado
   y ya no inserta ni retira una franja que desplazaba el contenido en cada

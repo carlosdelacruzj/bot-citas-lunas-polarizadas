@@ -74,10 +74,10 @@
           <button
             type="button"
             class="secondary"
-            [disabled]="order.status !== 'ready'"
+            [disabled]="view.actionBusy()"
             (click)="view.requestManualSession()"
           >
-            Sesion manual
+            {{ view.manualSessionActionLabel(order) }}
           </button>
           <button
             type="button"

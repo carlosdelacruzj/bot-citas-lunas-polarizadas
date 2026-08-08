@@ -200,7 +200,13 @@
             <article class="manual-session-row">
               <div>
                 <strong>{{ manualSessionOrderLabel(session) }}</strong>
-                <span>{{ session.session_id }}</span>
+                <span>
+                  {{ manualSessionTypeLabel(session) }} · {{ statusLabel(session.order_status) }}
+                </span>
+                <small>{{ session.session_id }}</small>
+                @if (session.status_message) {
+                  <small>{{ session.status_message }}</small>
+                }
               </div>
               <span class="badge {{ statusTone(session.status) }}">{{
                 statusLabel(session.status)

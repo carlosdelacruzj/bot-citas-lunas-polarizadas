@@ -252,11 +252,20 @@ los contactos a la vez.
 - El panel ofrece accesos directos para editar, pausar/activar y gestionar otros
   cierres, además de presets **Cola normal** (`0`), **Enfoque 100** y
   **Exclusivo 200**.
+- Las órdenes listas usan **Sesión manual** y llegan al panel de citas. Las
+  pausadas, reservadas con pago pendiente, pagadas o archivadas muestran
+  **Abrir portal** como acción secundaria: inicia sesión para consulta y no
+  ejecuta automáticamente el trámite, el panel de citas ni la selección de
+  sede. El navegador sigue siendo interactivo; cualquier acción manual dentro
+  del portal es responsabilidad del operador.
 - Las confirmaciones y resultados usan SweetAlert2 con mensajes claros; las
   acciones de lectura o navegación no solicitan confirmación innecesaria.
 - La navegación por teclado conserva el foco al abrir y cerrar el panel.
 - Al cerrar una sesión manual, la fila desaparece inmediatamente y el backend
   fuerza la limpieza del registro si Playwright no termina en ocho segundos.
+- La lista de sesiones identifica **Operativa** o **Consulta**, conserva el
+  estado de la orden al momento de abrir y muestra si la preparación terminó o
+  falló sin cerrar automáticamente el navegador de diagnóstico.
 
 ## Resumen mensual
 

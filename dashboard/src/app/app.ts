@@ -39,6 +39,7 @@ import {
   FinanceSummary,
   HealthPayload,
   ManualSession,
+  ManualSessionMode,
   MonthlySummary,
   PaymentPaidPayload,
   PriorityUpdatePayload,
@@ -3285,10 +3286,14 @@ export class App implements OnDestroy {
     if (!order) {
       return;
     }
+    const mode = this.manualSessionMode(order);
     this.setPendingAction({
-      title: 'Abrir sesion manual',
-      message: `Abrir navegador visible para ${order.order_id}.`,
-      execute: () => this.api.openManualSession(order.order_id),
+      title: this.manualSessionActionLabel(order),
+      message:
+        mode === 'appointment'
+          ? `Abrir el panel de citas en un navegador independiente para ${order.order_id}.`
+          : `Abrir el portal para consultar ${order.order_id}. El bot no cambiará el estado de la orden.`,
+      execute: () => this.api.openManualSession(order.order_id, mode),
       onSuccess: (response) => {
         if (response.session_id) {
           this.activeManualSessionIds.add(response.session_id);
@@ -3305,12 +3310,15 @@ export class App implements OnDestroy {
     this.actionBusy.set(true);
     this.errorMessage.set(null);
     try {
-      const response = await this.api.openManualSession(order.order_id);
+      const mode = this.manualSessionMode(order);
+      const response = await this.api.openManualSession(order.order_id, mode);
       if (response.session_id) {
         this.activeManualSessionIds.add(response.session_id);
       }
       await this.refreshAll();
-      await this.showToast('Sesión manual abierta');
+      await this.showToast(
+        mode === 'appointment' ? 'Sesión manual abierta' : 'Portal abierto para consulta',
+      );
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -3458,6 +3466,18 @@ export class App implements OnDestroy {
       return session.order_id;
     }
     return `${session.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
+  }
+
+  protected manualSessionMode(order: ServiceOrder): ManualSessionMode {
+    return order.status === 'ready' ? 'appointment' : 'portal';
+  }
+
+  protected manualSessionActionLabel(order: ServiceOrder): string {
+    return this.manualSessionMode(order) === 'appointment' ? 'Sesión manual' : 'Abrir portal';
+  }
+
+  protected manualSessionTypeLabel(session: ManualSession): string {
+    return session.mode === 'appointment' ? 'Operativa' : 'Consulta';
   }
 
   protected hasActiveChildOrders(order: ServiceOrder): boolean {

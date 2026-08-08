@@ -275,6 +275,11 @@ Estado: iniciado.
    `AppointmentBotContinuousWorker` y el supervisor raíz PowerShell. La
    recuperación individual de los cuatro supervisores ya quedó implementada;
    falta observarla después de un reinicio real.
+7. Completado el `2026-08-08`: separar las sesiones manuales operativas de las
+   sesiones de consulta. Las órdenes no listas pueden abrir el portal sin
+   ejecutar la navegación automática al panel de citas; la acción no reemplaza
+   los controles principales de pago o postpago y cada navegador conserva
+   cierre independiente.
 
 ## Retiro - Registro por invitaciones
 

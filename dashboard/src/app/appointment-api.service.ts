@@ -309,11 +309,16 @@ export interface ManualSession {
   session_id: string;
   order_id: string;
   username: string;
+  mode: ManualSessionMode;
+  order_status: string;
   status: string;
+  status_message: string | null;
   started_at: string;
   updated_at: string;
   close_requested: boolean;
 }
+
+export type ManualSessionMode = 'appointment' | 'portal';
 
 export interface MonthlySummary {
   month: string;
@@ -441,6 +446,8 @@ export interface ApiActionResponse {
   command_id?: string;
   command?: string;
   session_id?: string;
+  mode?: ManualSessionMode;
+  order_status?: string;
   order_id?: string;
   applicant_id?: string;
   portal_account_id?: string;
@@ -888,9 +895,13 @@ export class AppointmentApiService {
     return this.post<ApiActionResponse>('/api/v1/worker/restart', {});
   }
 
-  async openManualSession(orderId: string): Promise<ApiActionResponse> {
+  async openManualSession(
+    orderId: string,
+    mode: ManualSessionMode = 'appointment',
+  ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>('/api/v1/manual-session/open', {
       order_id: orderId,
+      mode,
     });
   }
 
