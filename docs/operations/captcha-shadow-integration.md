@@ -255,6 +255,58 @@ de 99% con una regla fijada previamente. El diseño candidato exige formato vál
 confianza aprobada y timeout local de `300-500 ms`; cualquier desacuerdo, baja confianza, caída
 o timeout deriva a 2Captcha. No se añadirá una espera fija de tres segundos.
 
+## Actualización v3 del 2 de agosto de 2026
+
+El servicio sombra carga ahora cuatro modelos y declara `v3_selected` como
+referencia de comparación en la interfaz. El archivo es
+`outputs/model_real_v3.pth` dentro de `test-captcha`.
+
+La selección se hizo únicamente con validación. En conjuntos separados v3
+obtuvo `93/98` en la prueba temporal disponible, `147/150` en el holdout humano
+y `77/78` en el corte sombra, superando a `v2_selected` en los tres conjuntos comparables.
+
+Para evitar contaminación visual se reprocesaron con v3 únicamente las 78
+imágenes que no participaron en su entrenamiento. Las 157 muestras humanas
+usadas para desarrollar v3 conservan sus predicciones históricas. Cada CAPTCHA
+nuevo sí recibe las cuatro predicciones.
+
+Esta integración cambia observabilidad, no autoridad: la respuesta enviada al
+portal continúa siendo exclusivamente la de 2Captcha. El próximo corte válido
+para decidir una reducción del fallback comienza después de este entrenamiento
+y exige más de 99% sobre al menos 500 CAPTCHA nuevos.
+
+## Primer corte prospectivo revisado el 7 de agosto de 2026
+
+La base del servicio sombra contiene `126` CAPTCHA recibidos después de la
+integración de v3, entre el 3 y el 5 de agosto. Los `126` tienen una revisión
+humana vigente y no incluyen las 157 muestras usadas para entrenar v3 ni las 78
+imágenes del corte histórico reprocesado.
+
+| Modelo | Aciertos contra revisión humana | Exactitud |
+| --- | ---: | ---: |
+| `v1_real` | `118/126` | `93.65%` |
+| `v2_scratch` | `120/126` | `95.24%` |
+| `v2_selected` | `119/126` | `94.44%` |
+| `v3_selected` | `119/126` | `94.44%` |
+
+`v2_selected` y `v3_selected` produjeron la misma respuesta en 124 casos. En
+los dos desacuerdos, cada modelo acertó una vez; ambos fallaron juntos en seis
+casos. Las `15` respuestas de este lote que además fueron aceptadas
+explícitamente por el portal coincidieron con los cuatro modelos, pero ese
+subconjunto es demasiado pequeño y uniforme para distinguirlos.
+
+Este resultado no reproduce todavía la ventaja histórica de v3. Sus siete
+errores también impiden superar 99% al completar exactamente 500 muestras:
+incluso acertando las 374 restantes obtendría `493/500` (`98.6%`). Por ello el
+lote debe utilizarse para revisar errores, ampliar datos difíciles y entrenar
+una nueva candidata. Cualquier nueva versión destinada a reducir 2Captcha debe
+iniciar después de su entrenamiento otro corte prospectivo limpio de al menos
+500 CAPTCHA y superar 99% con la regla fijada previamente.
+
+El último evento del corte ingresó el `2026-08-05`. El servicio está saludable
+en CUDA desde su reinicio del `2026-08-06`, con `v3_selected` como referencia
+visual, pero no había recibido muestras adicionales al momento de esta revisión.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;

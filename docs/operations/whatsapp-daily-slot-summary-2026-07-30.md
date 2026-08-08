@@ -85,6 +85,24 @@ aunque exista un envío nuevo confirmado. Para imágenes se validan las últimas
 la identidad de la nueva burbuja confirmada, no solo el número de coincidencias.
 Las evidencias con doble check se reconciliaron sin repetir contenido.
 
+## Falso incierto del 07-08-2026
+
+El cierre del 7 de agosto envió el texto, las imágenes y la publicación. El
+operador confirmó la recepción del resumen y la captura
+`.runtime/whatsapp-followup-text-send-uncertain.png` muestra la publicación
+completa como burbuja saliente con doble check azul. Sin embargo, el trabajo
+terminó `uncertain` porque el detector abandonaba la búsqueda al encontrar la
+primera familia de selectores DOM, aunque la nueva burbuja estuviera disponible
+mediante otra estructura compatible.
+
+Desde el `2026-08-08`, la confirmación acumula las firmas encontradas en todas
+las estructuras soportadas antes de comparar el estado anterior y posterior al
+clic. Las capturas de texto usan nombres únicos por `message_id` y etapa para no
+sobrescribir evidencia entre trabajos. El trabajo
+`daily_slot_summary:2026-08-07` se reconcilió a `sent`, sin reenviar contenido;
+los días anteriores conservan su estado porque no recibieron confirmación
+externa equivalente.
+
 ## Uso futuro en la landing
 
 Las capturas originales de `cupos-unicos` quedaron aprobadas como fuente de la

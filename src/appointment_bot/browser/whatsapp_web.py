@@ -81,6 +81,10 @@ class WhatsAppWebDraftManager:
                     context_headless = requested_headless
                     result = _prepare_draft(context, command.draft)
                 except PlaywrightError as exc:
+                    failure_evidence = _save_context_failure_screenshot(
+                        context,
+                        command.draft,
+                    )
                     if _is_closed_target_error(exc):
                         if command.draft.get("disable_closed_target_retry"):
                             logger.warning(
@@ -94,6 +98,8 @@ class WhatsAppWebDraftManager:
                                 "Si ya enviaste el mensaje, confirma el envio manualmente; "
                                 "si no, vuelve a preparar el borrador.",
                                 message_id=str(command.draft.get("message_id") or ""),
+                                delivery_phase="send_state_unknown",
+                                evidence_path=failure_evidence,
                             )
                             command.response.put(result)
                             continue
@@ -111,6 +117,10 @@ class WhatsAppWebDraftManager:
                             context_headless = requested_headless
                             result = _prepare_draft(context, command.draft)
                         except PlaywrightError as retry_exc:
+                            retry_evidence = _save_context_failure_screenshot(
+                                context,
+                                command.draft,
+                            )
                             logger.exception(
                                 "Could not prepare WhatsApp Web draft after reopening"
                             )
@@ -119,6 +129,8 @@ class WhatsAppWebDraftManager:
                             result = _result(
                                 "web_unavailable",
                                 f"No se pudo preparar WhatsApp Web: {retry_exc}",
+                                delivery_phase="send_state_unknown",
+                                evidence_path=retry_evidence,
                             )
                     else:
                         logger.exception("Could not prepare WhatsApp Web draft")
@@ -127,8 +139,14 @@ class WhatsAppWebDraftManager:
                         result = _result(
                             "web_unavailable",
                             f"No se pudo preparar WhatsApp Web: {exc}",
+                            delivery_phase="send_state_unknown",
+                            evidence_path=failure_evidence,
                         )
                 except Exception as exc:
+                    failure_evidence = _save_context_failure_screenshot(
+                        context,
+                        command.draft,
+                    )
                     logger.exception("Could not prepare WhatsApp Web draft")
                     if command.draft.get("close_on_error"):
                         context = _close_context(context)
@@ -136,6 +154,8 @@ class WhatsAppWebDraftManager:
                     result = _result(
                         "web_unavailable",
                         f"No se pudo preparar WhatsApp Web: {exc}",
+                        delivery_phase="send_state_unknown",
+                        evidence_path=failure_evidence,
                     )
                 command.response.put(result)
 
@@ -453,7 +473,14 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
     _attach_document(page, attachments)
     if draft.get("auto_send"):
         _click_send_button(page, attachments)
-        text_sent = _send_plain_text_message(page, str(draft["caption"]))
+        text_sent = _send_plain_text_message(
+            page,
+            str(draft["caption"]),
+            evidence_prefix=(
+                "whatsapp-followup-"
+                f"{_safe_whatsapp_artifact_name(message_id)}"
+            ),
+        )
         context.close()
         if not text_sent:
             logger.warning(
@@ -471,6 +498,11 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                 message_id=message_id,
                 draft_mode="documents",
                 manual_send_required=True,
+                delivery_phase="send_attempted",
+                evidence_path=(
+                    ".runtime/whatsapp-followup-"
+                    f"{_safe_whatsapp_artifact_name(message_id)}-text-send-uncertain.png"
+                ),
             )
         logger.info(
             "WhatsApp Web follow-up sent automatically: message_id=%s documents=%s",
@@ -723,13 +755,22 @@ def _send_daily_slot_summary(
 
     message_text = str(draft["message_text"])
     if message_text:
-        text_sent = _send_plain_text_message(page, message_text)
+        text_sent = _send_plain_text_message(
+            page,
+            message_text,
+            evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-summary",
+        )
         if not text_sent:
             context.close()
             return _result(
                 "send_uncertain",
                 "WhatsApp no confirmo el mensaje del resumen diario.",
                 message_id=message_id,
+                delivery_phase="send_attempted",
+                evidence_path=(
+                    f".runtime/whatsapp-daily-summary-{evidence_id}-summary-"
+                    "text-send-uncertain.png"
+                ),
             )
 
     attachments = [
@@ -773,6 +814,7 @@ def _send_daily_slot_summary(
     publication_sent = _send_plain_text_message(
         page,
         str(draft["publication_text"]),
+        evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-publication",
     )
     if not publication_sent:
         context.close()
@@ -780,6 +822,11 @@ def _send_daily_slot_summary(
             "send_uncertain",
             "WhatsApp no confirmo la publicacion diaria para TikTok.",
             message_id=message_id,
+            delivery_phase="send_attempted",
+            evidence_path=(
+                f".runtime/whatsapp-daily-summary-{evidence_id}-publication-"
+                "text-send-uncertain.png"
+            ),
         )
     _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-sent")
     context.close()
@@ -806,12 +853,21 @@ def _send_registration_notice(
     )
     if recipient_error is not None:
         return recipient_error
-    if not _send_plain_text_message(page, str(draft["message_text"])):
+    if not _send_plain_text_message(
+        page,
+        str(draft["message_text"]),
+        evidence_prefix=f"whatsapp-registration-notice-{evidence_id}",
+    ):
         context.close()
         return _result(
             "send_uncertain",
             "WhatsApp no confirmo el aviso automatico de registro.",
             message_id=message_id,
+            delivery_phase="send_attempted",
+            evidence_path=(
+                f".runtime/whatsapp-registration-notice-{evidence_id}-"
+                "text-send-uncertain.png"
+            ),
         )
     _save_whatsapp_debug_screenshot(
         page,
@@ -921,18 +977,7 @@ def _open_recipient_chat(
     search.click()
     search.fill(username)
     page.wait_for_timeout(700)
-    deadline = time.monotonic() + 15
-    rows: list[Any] = []
-    previous_labels: tuple[str, ...] | None = None
-    stable_reads = 0
-    while time.monotonic() < deadline:
-        rows = _visible_username_chat_result_rows(page)
-        labels = tuple(_whatsapp_chat_row_label(row) for row in rows)
-        stable_reads = stable_reads + 1 if labels == previous_labels else 0
-        previous_labels = labels
-        if rows and stable_reads >= 2:
-            break
-        page.wait_for_timeout(300)
+    rows = _wait_for_stable_username_chat_results(page)
     if len(rows) != 1:
         _save_whatsapp_debug_screenshot(page, screenshot_name)
         status = "recipient_not_found" if not rows else "recipient_ambiguous"
@@ -951,7 +996,15 @@ def _open_recipient_chat(
             f"{username}. No se envio nada.",
             message_id=message_id,
         )
-    rows[0].click()
+    click_error = _click_username_chat_result(
+        page,
+        username=username,
+        expected_chat_label=expected_chat_label,
+        row=rows[0],
+        message_id=message_id,
+    )
+    if click_error is not None:
+        return click_error
     try:
         page.locator("header[data-testid='conversation-header']").wait_for(
             state="visible", timeout=10_000
@@ -1012,6 +1065,146 @@ def _dismiss_whatsapp_updates_dialog(page: Page) -> None:
         page.keyboard.press("Escape")
         page.wait_for_timeout(300)
         return
+
+
+def _click_username_chat_result(
+    page: Page,
+    *,
+    username: str,
+    expected_chat_label: str,
+    row,
+    message_id: str,
+) -> dict[str, object] | None:
+    try:
+        row.click(timeout=4_000)
+        return None
+    except PlaywrightError as exc:
+        evidence_name = (
+            "whatsapp-recipient-chat-blocked-"
+            f"{_safe_whatsapp_artifact_name(message_id)}"
+        )
+        evidence_path = _save_whatsapp_debug_screenshot(page, evidence_name)
+        visible_dialogs = _visible_whatsapp_dialogs(page)
+        logger.warning(
+            "WhatsApp username chat click was blocked: message_id=%s dialogs=%s error=%s",
+            message_id,
+            len(visible_dialogs),
+            exc.__class__.__name__,
+        )
+        if not visible_dialogs or not _dismiss_safe_whatsapp_dialog(page, visible_dialogs):
+            return _result(
+                "recipient_chat_blocked",
+                (
+                    f"WhatsApp no permitio abrir el chat unico para {username}. "
+                    "No se escribio ni envio ningun mensaje."
+                ),
+                message_id=message_id,
+                delivery_phase="chat_not_opened",
+                evidence_path=evidence_path,
+            )
+
+    search = _visible_whatsapp_search(page)
+    if search is None:
+        return _result(
+            "recipient_chat_blocked",
+            (
+                f"WhatsApp cerro el dialogo, pero no recupero la busqueda de {username}. "
+                "No se escribio ni envio ningun mensaje."
+            ),
+            message_id=message_id,
+            delivery_phase="chat_not_opened",
+            evidence_path=evidence_path,
+        )
+    search.click()
+    search.fill(username)
+    page.wait_for_timeout(700)
+    rows = _wait_for_stable_username_chat_results(page)
+    if len(rows) != 1 or _whatsapp_chat_row_label(rows[0]) != expected_chat_label:
+        retry_evidence_path = _save_whatsapp_debug_screenshot(
+            page,
+            f"{evidence_name}-retry-result-mismatch",
+        )
+        return _result(
+            "recipient_mismatch",
+            (
+                f"WhatsApp no recupero el mismo chat unico para {username} despues "
+                "de cerrar el dialogo. No se escribio ni envio ningun mensaje."
+            ),
+            message_id=message_id,
+            delivery_phase="chat_not_opened",
+            evidence_path=retry_evidence_path,
+        )
+    try:
+        rows[0].click(timeout=4_000)
+    except PlaywrightError as exc:
+        retry_evidence_path = _save_whatsapp_debug_screenshot(
+            page,
+            f"{evidence_name}-retry-failed",
+        )
+        logger.warning(
+            "WhatsApp username chat retry failed before send: message_id=%s error=%s",
+            message_id,
+            exc.__class__.__name__,
+        )
+        return _result(
+            "recipient_chat_blocked",
+            (
+                f"WhatsApp volvio a bloquear el chat unico para {username}. "
+                "No se escribio ni envio ningun mensaje."
+            ),
+            message_id=message_id,
+            delivery_phase="chat_not_opened",
+            evidence_path=retry_evidence_path,
+        )
+    return None
+
+
+def _wait_for_stable_username_chat_results(page: Page) -> list[Any]:
+    deadline = time.monotonic() + 15
+    rows: list[Any] = []
+    previous_labels: tuple[str, ...] | None = None
+    stable_reads = 0
+    while time.monotonic() < deadline:
+        rows = _visible_username_chat_result_rows(page)
+        labels = tuple(_whatsapp_chat_row_label(row) for row in rows)
+        stable_reads = stable_reads + 1 if labels == previous_labels else 0
+        previous_labels = labels
+        if rows and stable_reads >= 2:
+            break
+        page.wait_for_timeout(300)
+    return rows
+
+
+def _visible_whatsapp_dialogs(page: Page) -> list[Any]:
+    dialogs = page.locator("[role='dialog'][aria-modal='true'], [role='dialog']")
+    return [
+        dialogs.nth(index)
+        for index in range(dialogs.count())
+        if dialogs.nth(index).is_visible()
+    ]
+
+
+def _dismiss_safe_whatsapp_dialog(page: Page, dialogs: list[Any]) -> bool:
+    safe_labels = (
+        "Cancelar",
+        "Cancel",
+        "Cerrar",
+        "Close",
+        "Ahora no",
+        "Not now",
+        "Entendido",
+        "Got it",
+    )
+    for dialog in dialogs:
+        for label in safe_labels:
+            button = dialog.get_by_role("button", name=label, exact=True)
+            if button.count() and button.first.is_visible():
+                button.first.click(timeout=2_000)
+                page.wait_for_timeout(500)
+                return not _visible_whatsapp_dialogs(page)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    return not _visible_whatsapp_dialogs(page)
 
 
 def _visible_username_chat_result_rows(page: Page) -> list[Any]:
@@ -1491,7 +1684,12 @@ def _click_bottom_right_send_button(page: Page) -> bool:
     return True
 
 
-def _send_plain_text_message(page: Page, text: str) -> bool:
+def _send_plain_text_message(
+    page: Page,
+    text: str,
+    *,
+    evidence_prefix: str = "whatsapp-followup",
+) -> bool:
     deadline = time.monotonic() + 15
     composer = None
     while time.monotonic() < deadline:
@@ -1505,7 +1703,7 @@ def _send_plain_text_message(page: Page, text: str) -> bool:
             break
         page.wait_for_timeout(500)
     if composer is None:
-        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-composer-missing")
+        _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-composer-missing")
         raise RuntimeError("No se encontro el campo para enviar el mensaje de texto.")
     logger.info("WhatsApp Web chat ready; preparing text message")
     _click_and_replace_text(page, composer, text)
@@ -1514,16 +1712,16 @@ def _send_plain_text_message(page: Page, text: str) -> bool:
         _paste_text_message(page, composer, text)
         page.wait_for_timeout(500)
     if not _plain_text_ready(page, text):
-        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-not-ready")
+        _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-not-ready")
         raise RuntimeError("WhatsApp no dejo listo el mensaje de texto.")
     outgoing_signatures = _matching_confirmed_outgoing_text_signatures(page, text)
-    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-text-send")
+    _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-before-text-send")
     if not _click_visible_send_button(page):
         page.keyboard.press("Enter")
     if not _wait_until_plain_text_send_finishes(page, text, outgoing_signatures):
-        _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-send-uncertain")
+        _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-send-uncertain")
         return False
-    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-text-sent")
+    _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-sent")
     logger.info("WhatsApp Web follow-up text message sent")
     return True
 
@@ -1558,11 +1756,11 @@ def _matching_confirmed_outgoing_text_signatures(
         ("div[data-id^='true_']", False),
         ("[data-testid='msg-container']", True),
     )
+    matches: set[str] = set()
     for selector, requires_outgoing_marker in selectors:
         messages = page.locator(selector)
         if not messages.count():
             continue
-        matches: set[str] = set()
         for index in range(messages.count()):
             message = messages.nth(index)
             if requires_outgoing_marker and not _message_container_is_outgoing(message):
@@ -1573,8 +1771,7 @@ def _matching_confirmed_outgoing_text_signatures(
                 and _message_container_has_confirmed_status(message)
             ):
                 matches.add(_message_container_signature(message))
-        return matches
-    return set()
+    return matches
 
 
 def _message_container_has_confirmed_status(message) -> bool:
@@ -1857,10 +2054,11 @@ def _caption_editor_summary(page: Page) -> list[dict[str, object]]:
     return summary
 
 
-def _save_whatsapp_debug_screenshot(page: Page, name: str) -> None:
+def _save_whatsapp_debug_screenshot(page: Page, name: str) -> str:
     debug_screenshot = Path(f".runtime/{name}.png").resolve()
     debug_screenshot.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(debug_screenshot))
+    return str(Path(".runtime") / f"{name}.png")
 
 
 def _safe_whatsapp_artifact_name(value: str) -> str:
@@ -1937,6 +2135,24 @@ def _close_context(context: BrowserContext | None) -> None:
     return None
 
 
+def _save_context_failure_screenshot(
+    context: BrowserContext | None,
+    draft: dict[str, object],
+) -> str | None:
+    if context is None or not context.pages:
+        return None
+    message_id = _safe_whatsapp_artifact_name(
+        str(draft.get("message_id") or draft.get("action") or "unknown")
+    )
+    try:
+        return _save_whatsapp_debug_screenshot(
+            context.pages[-1],
+            f"whatsapp-automation-error-{message_id}",
+        )
+    except PlaywrightError:
+        return None
+
+
 def _result(
     status: str,
     message: str,
@@ -1946,6 +2162,8 @@ def _result(
     manual_send_required: bool = True,
     sent: bool = False,
     qr_image_data_url: str | None = None,
+    delivery_phase: str | None = None,
+    evidence_path: str | None = None,
 ) -> dict[str, Any]:
     result = {
         "status": status,
@@ -1958,4 +2176,8 @@ def _result(
         result["draft_mode"] = draft_mode
     if qr_image_data_url is not None:
         result["qr_image_data_url"] = qr_image_data_url
+    if delivery_phase is not None:
+        result["delivery_phase"] = delivery_phase
+    if evidence_path is not None:
+        result["evidence_path"] = evidence_path
     return result

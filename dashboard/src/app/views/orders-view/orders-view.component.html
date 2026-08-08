@@ -71,6 +71,9 @@
               Aviso de registro: {{ dashboard.statusLabel(order.registration_notice_type) }} ·
               {{ dashboard.statusLabel(order.registration_notice_status) }}
             </small>
+            @if (order.registration_notice_error) {
+              <small>{{ order.registration_notice_error }}</small>
+            }
           }
         </div>
         <div class="next-action-card">

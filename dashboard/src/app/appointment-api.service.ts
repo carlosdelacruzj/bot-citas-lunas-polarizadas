@@ -80,6 +80,7 @@ export interface ServiceOrder {
   registration_notice_type: string | null;
   registration_notice_status: WhatsAppActionState | null;
   registration_notice_updated_at: string | null;
+  registration_notice_error: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -121,7 +122,7 @@ export interface RunSummary {
 export type RunDetail = RunSummary;
 
 export interface CaptchaPrediction {
-  model_name: 'v1_real' | 'v2_scratch' | 'v2_selected' | string;
+  model_name: 'v1_real' | 'v2_scratch' | 'v2_selected' | 'v3_selected' | string;
   prediction: string;
   mean_confidence: number;
   min_char_confidence: number;
@@ -149,6 +150,7 @@ export interface CaptchaEvent {
     created_at_utc: string;
   } | null;
   selected_matches_external: boolean;
+  selected_model_name: string | null;
   image_url: string;
   metadata: {
     run_id?: string | null;
@@ -168,6 +170,7 @@ export interface CaptchaSummary {
   status: string;
   device: string | null;
   models: string[];
+  selected_model: string;
   started_at_utc: string | null;
   stats: {
     events: number;

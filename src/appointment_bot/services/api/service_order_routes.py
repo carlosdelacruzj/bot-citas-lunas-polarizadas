@@ -71,6 +71,7 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "registration_notice_type",
     "registration_notice_status",
     "registration_notice_updated_at",
+    "registration_notice_error",
     "created_at",
     "updated_at",
 )

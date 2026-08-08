@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 45
+SCHEMA_VERSION = 46
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -116,7 +116,8 @@ def create_current_schema(connection: Connection) -> None:
                     'client_withdrew',
                     'external_slot',
                     'duplicate',
-                    'not_serviceable'
+                    'not_serviceable',
+                    'uncollectible'
                 )
             ),
             closure_note text,
@@ -267,7 +268,9 @@ def create_current_schema(connection: Connection) -> None:
             payment_id text PRIMARY KEY,
             order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
             reservation_id text,
-            status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+            status text NOT NULL DEFAULT 'pending' CHECK (
+                status IN ('pending', 'paid', 'written_off')
+            ),
             amount_agreed numeric(12, 2),
             amount_paid numeric(12, 2),
             currency text NOT NULL DEFAULT 'PEN',
@@ -1691,6 +1694,38 @@ def migrate_database(connection: Connection) -> None:
             (45,),
         )
         current_version = 45
+    if current_version == 45:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            DROP CONSTRAINT service_orders_closure_reason_check,
+            ADD CONSTRAINT service_orders_closure_reason_check CHECK (
+                closure_reason IS NULL OR closure_reason IN (
+                    'completed_by_us',
+                    'family_no_charge',
+                    'client_withdrew',
+                    'external_slot',
+                    'duplicate',
+                    'not_serviceable',
+                    'uncollectible'
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE payments
+            DROP CONSTRAINT payments_status_check,
+            ADD CONSTRAINT payments_status_check CHECK (
+                status IN ('pending', 'paid', 'written_off')
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (46,),
+        )
+        current_version = 46
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

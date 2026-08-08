@@ -1,0 +1,12 @@
+{
+  "exclude": [
+    ".runtime/",
+    "logs/",
+    "screenshots/",
+    "videos/",
+    "backups/",
+    "reports/evidence/history/",
+    "dashboard/node_modules/",
+    "dashboard/dist/"
+  ]
+}

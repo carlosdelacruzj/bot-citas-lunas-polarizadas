@@ -38,8 +38,15 @@ ORDER_CLOSURE_REASONS = {
     "external_slot",
     "duplicate",
     "not_serviceable",
+    "uncollectible",
 }
-NO_CHARGE_CLOSURE_REASONS = ORDER_CLOSURE_REASONS - {"completed_by_us"}
+NO_CHARGE_CLOSURE_REASONS = {
+    "family_no_charge",
+    "client_withdrew",
+    "external_slot",
+    "duplicate",
+    "not_serviceable",
+}
 
 
 def list_service_order_summaries(
@@ -109,7 +116,8 @@ def list_service_order_summaries(
                    COALESCE(os.preflight_cycle, 0) AS preflight_cycle,
                    rnaj.registration_notice_type,
                    rnaj.status AS registration_notice_status,
-                   rnaj.updated_at AS registration_notice_updated_at
+                   rnaj.updated_at AS registration_notice_updated_at,
+                   rnaj.error_message AS registration_notice_error
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
             JOIN portal_accounts pa ON pa.portal_account_id = so.portal_account_id
@@ -152,7 +160,7 @@ def list_service_order_summaries(
                 ON wfaj.order_id = so.order_id
                AND wfaj.job_kind = 'post_payment_followup'
             LEFT JOIN LATERAL (
-                SELECT registration_notice_type, status, updated_at
+                SELECT registration_notice_type, status, updated_at, error_message
                 FROM whatsapp_automation_jobs
                 WHERE order_id = so.order_id
                   AND job_kind = 'registration_notice'
@@ -327,7 +335,16 @@ def close_service_order(
         )
         if cursor.rowcount != 1:
             raise ValueError(f"Service order not found: {order_id}")
-        if not charge_required:
+        if closure_reason == "uncollectible":
+            connection.execute(
+                """
+                UPDATE payments
+                SET status = 'written_off', updated_at = %s
+                WHERE order_id = %s AND status = 'pending'
+                """,
+                (now, order_id),
+            )
+        elif not charge_required:
             connection.execute(
                 """
                 DELETE FROM payments
@@ -447,6 +464,9 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         registration_notice_updated_at=_timestamp_text(
             row["registration_notice_updated_at"]
         ),
+        registration_notice_error=_registration_notice_error(
+            row["registration_notice_error"]
+        ),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
     )
@@ -457,6 +477,21 @@ def _optional_clean_text(value: object) -> str | None:
         return None
     text = " ".join(str(value).split())
     return text or None
+
+
+def _registration_notice_error(value: object) -> str | None:
+    if value in {None, ""}:
+        return None
+    text = str(value)
+    if "role=\"dialog\"" in text and "intercepts pointer events" in text:
+        return (
+            "Un dialogo de WhatsApp bloqueo la apertura del chat. "
+            "No se confirmo el aviso de registro."
+        )
+    first_line = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    if len(first_line) <= 320:
+        return first_line or None
+    return f"{first_line[:317]}..."
 
 
 def _upsert_contact(

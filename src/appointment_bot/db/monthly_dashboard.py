@@ -59,14 +59,16 @@ def monthly_dashboard_summary(
                          AND (wc.phone IS NULL OR BTRIM(wc.phone) = '')
                    ) AS missing_contact_count,
                    COUNT(*) FILTER (WHERE p.status = 'pending') AS pending_payments,
-                   COALESCE(SUM(p.amount_agreed) FILTER (WHERE p.status = 'pending'), 0)
+                   COALESCE(SUM(
+                       GREATEST(p.amount_agreed - COALESCE(p.amount_paid, 0), 0)
+                   ) FILTER (WHERE p.status = 'pending'), 0)
                        AS pending_amount
             FROM service_orders so
             LEFT JOIN applicant_contacts ac
                 ON ac.applicant_id = so.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
             LEFT JOIN LATERAL (
-                SELECT status, amount_agreed
+                SELECT status, amount_agreed, amount_paid
                 FROM payments
                 WHERE order_id = so.order_id
                 ORDER BY created_at DESC
@@ -158,7 +160,10 @@ def monthly_dashboard_summary(
         pending_rows = connection.execute(
             """
             SELECT so.order_id, COALESCE(a.full_name, wc.display_name, 'Sin nombre') AS name,
-                   wc.contact_source, p.amount_agreed, r.appointment_date,
+                   wc.contact_source,
+                   GREATEST(p.amount_agreed - COALESCE(p.amount_paid, 0), 0)
+                       AS amount_agreed,
+                   r.appointment_date,
                    r.appointment_hour
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -166,7 +171,7 @@ def monthly_dashboard_summary(
                 ON ac.applicant_id = so.applicant_id AND ac.is_primary = true
             LEFT JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
             JOIN LATERAL (
-                SELECT status, amount_agreed
+                SELECT status, amount_agreed, amount_paid
                 FROM payments
                 WHERE order_id = so.order_id
                 ORDER BY created_at DESC

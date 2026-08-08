@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Última priorización: `2026-08-02`.
+Última priorización: `2026-08-08`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
@@ -42,9 +42,15 @@ Estado: en observación.
   `@usuario` cuando no hay numero. La resolucion prioriza el numero y la ruta por
   usuario exige un unico resultado en `Chats` y confirma en el encabezado el
   nombre que WhatsApp mostro en esa fila. Las lecturas repetidas validaron un
-  alias no guardado y otro presentado con nombre local; falta validar el primer
-  envio real en el curso normal de una reserva y no se hara un mensaje de prueba
-  al cliente.
+  alias no guardado y otro presentado con nombre local. Falta validar
+  externamente el próximo aviso de registro real y no se hará un mensaje de
+  prueba al cliente.
+- Corregido el `2026-08-08`: ante un diálogo que bloquea el resultado por
+  `@usuario`, se captura evidencia, se cierra solo de forma segura y se vuelve
+  a exigir el mismo chat único una vez antes de escribir. El fallo terminal
+  queda identificado como previo al envío y visible en la orden. Mantener
+  pendiente la confirmación externa del próximo aviso real por usuario; no se
+  enviará un mensaje de prueba al cliente.
 
 - Completado el `2026-07-28`: la bandeja usa evidencia enviada y jobs durables,
   excluye `54` seguimientos históricos sin trabajo real y conserva los dos
@@ -63,8 +69,10 @@ Estado: en observación.
   reveló que cerrar al desaparecer la vista previa podía cancelar imágenes aún
   pendientes: solo una de cuatro llegó y el trabajo se corrigió a `uncertain`.
   La confirmación ahora espera todas las imágenes salientes sin reloj; el
-  reintento manual autorizado terminó `sent` con cuatro confirmaciones. Validar
-  el siguiente disparo automático directamente desde el cierre de las 18:00.
+  reintento manual autorizado terminó `sent` con cuatro confirmaciones. El
+  resumen del 7 de agosto llegó completo y se reconcilió a `sent` sin reenviar;
+  su falso `uncertain` quedó corregido acumulando todas las estructuras DOM
+  compatibles. Mantener observación del siguiente cierre automático.
 - Completado el `2026-08-07`: el álbum automático de evidencia y Yape posterior
   a una reserva aplica la misma confirmación estricta. Solo termina `sent` si
   aparecen las dos imágenes salientes aceptadas por WhatsApp; un timeout queda
@@ -83,8 +91,10 @@ Estado: en observación.
   conserva datos comerciales fijos y rota 138,240 combinaciones por fecha. Una
   prueba controlada terminó con el texto completo y doble check azul después de
   normalizar los emojis transformados por WhatsApp; la prueba repetida añadió
-  soporte para historial virtualizado e identidad de nuevas burbujas. Validar
-  el recorrido completo desde el siguiente cierre diario.
+  soporte para historial virtualizado e identidad de nuevas burbujas. Corregido
+  el `2026-08-08`: el detector ya no deja de buscar al encontrar una familia DOM
+  sin coincidencias; la evidencia real del 7 de agosto mostró la publicación
+  completa y confirmada.
 - Completado el `2026-08-02`: publicaciones, seguimiento y órdenes nuevas
   quedan alineados a `S/50 por trámite`. PostgreSQL v42 asignó `S/40` a las
   `99` órdenes anteriores y usa `S/50` como valor por defecto para futuras
@@ -95,6 +105,10 @@ Estado: en observación.
   por defecto y con secretos en `.runtime`. Detalle en
   [`../operations/public-slot-evidence-cloudinary-plan-2026-08-01.md`](../operations/public-slot-evidence-cloudinary-plan-2026-08-01.md).
 - No habilitar reintentos automáticos para resultados ambiguos.
+- Completado el `2026-08-07`: PostgreSQL v46 distingue deudas incobrables de
+  pagos realizados. `uncollectible` archiva la orden y conserva la deuda como
+  `written_off`; los abonos parciales permanecen `pending` y el dashboard
+  descuenta `amount_paid` al calcular el saldo accionable.
 
 ### Reglas y backoff
 
@@ -148,6 +162,11 @@ Estado: en observación.
 - Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
   20 eventos tienen tres predicciones y quedaron pendientes de revisión humana
   en el dashboard.
+- Completado el `2026-08-02`: entrenado y seleccionado v3. Mejoró a `v2_selected` en los
+  tres conjuntos comparables: `93/98` temporal, `147/150` humano y `77/78`
+  sombra. El servicio carga cuatro modelos, el dashboard muestra
+  `v3_selected` y solo se reprocesaron las 78 imágenes excluidas del
+  entrenamiento para conservar una comparación honesta.
 - Pendiente: medir un cupo compatible de extremo a extremo y comparar selección
   conservada, demora previa, tiempo de 2Captcha, submit, resultado del portal y
   posible `slot_lost`. No declarar validada la opción con casos bloqueados.
@@ -156,6 +175,16 @@ Estado: en observación.
   sostener más de 99% con una regla fijada antes del corte. El desacuerdo, baja
   confianza, timeout o servicio local no saludable siempre deben derivar a
   2Captcha.
+- En progreso desde v3: el corte prospectivo reúne `126/500` CAPTCHA nuevos,
+  todos revisados manualmente. v3 obtuvo `119/126` (`94.44%`), empató con
+  `v2_selected` y quedó detrás de `v2_scratch`, que obtuvo `120/126` (`95.24%`).
+  Las métricas anteriores al `2026-08-02` siguen sirviendo solo como regresión y
+  comparación histórica.
+- Revisar los siete errores prospectivos de v3, reunir más casos difíciles y
+  entrenar una nueva candidata. No completar las 500 muestras como un trámite:
+  aun con acierto perfecto en las 374 restantes, v3 terminaría en `493/500`
+  (`98.6%`) y no alcanzaría la regla de más de 99%. La siguiente candidata debe
+  iniciar su propio corte limpio posterior al entrenamiento.
 - Detalle operativo, tiempos y guardas en
   [`../operations/captcha-shadow-integration.md`](../operations/captcha-shadow-integration.md#muestreo-durante-una-reserva-real).
 

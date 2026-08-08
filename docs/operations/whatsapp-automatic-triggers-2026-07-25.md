@@ -136,6 +136,29 @@ explícito de número inválido, por lo que el resultado correcto fue
 `chat_unavailable`, `sent=false`, sin adjuntos ni clic de envío. Después del
 simulacro, la validación del perfil continuó en `session_ready`.
 
+## Diálogos que bloquean destinatarios por usuario — 08-08-2026
+
+El primer aviso de registro dirigido por `@usuario` encontró un único chat,
+pero un elemento `role="dialog"` interceptó el clic durante 30 segundos. La
+excepción ocurrió antes de abrir el chat, escribir el texto o pulsar Enviar. El
+flujo anterior no guardó captura en esa rama y el detalle técnico quedó como un
+resultado genérico.
+
+La apertura por usuario ahora limita el primer clic a cuatro segundos y, si
+existe un diálogo visible:
+
+1. guarda una captura única identificada por el trabajo;
+2. usa solo acciones de cierre seguras (`Cancelar`, `Cerrar`, equivalentes en
+   inglés o `Escape`), sin pulsar `Volver a intentarlo`;
+3. vuelve a buscar el usuario y exige exactamente el mismo nombre de chat;
+4. realiza un único segundo clic antes de escribir cualquier contenido;
+5. si vuelve a fallar, termina como fallo previo al envío con fase
+   `chat_not_opened` y ruta de evidencia.
+
+No se usa clic forzado y no existe reintento automático después de pulsar
+Enviar. El dashboard muestra un detalle operativo compacto del aviso; la traza
+completa permanece en PostgreSQL y logs.
+
 ## Confirmación estricta del texto postpago — 30-07-2026
 
 Un envío real mostró que los dos PDF podían salir y que el texto quedaba listo

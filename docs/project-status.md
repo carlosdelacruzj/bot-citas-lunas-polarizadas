@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-08-02`.
+Última revisión integral: `2026-08-08`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -24,7 +24,7 @@ Estado verificado el `2026-07-28`:
 | Telegram remoto       | Operativo                | Alta manual, clientes, cuatro reglas de fecha y control del worker.                                       |
 | CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `499.88 kB`.                                                    |
+| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `499.64 kB`.                                                    |
 | Calidad Python        | Operativa                | Ruff y `compileall` correctos; pytest tiene `59 passed`.                                                  |
 
 ## Resultado comercial acumulado
@@ -266,6 +266,27 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `run_id` y `order_id`, y registra tanto las nueve muestras previas como la
   final en CAPTCHA sombra. Los 20 originales ya capturados fueron recuperados
   y quedaron pendientes de revisión humana, cada uno con tres predicciones.
+- Integrado el `2026-08-02`: el candidato `v3_finetuned_from_v2` quedó como
+  `v3_selected` en el servicio sombra. Es el mejor resultado global hasta ahora:
+  frente a `v2_selected` subió de `90/98` a `93/98` en la misma prueba temporal disponible,
+  de `143/150` a `147/150` en el holdout humano y de `76/78` a `77/78` en el
+  corte sombra independiente. El servicio carga cuatro modelos y el dashboard
+  identifica a v3 como seleccionado, pero 2Captcha conserva toda la autoridad
+  operativa.
+- Las 78 imágenes del corte sombra excluido del entrenamiento se reprocesaron
+  con v3 para mostrarlas en Calidad. Las 157 imágenes usadas para entrenarlo no
+  se reprocesaron, evitando presentar exactitud de entrenamiento como evidencia
+  independiente. Los CAPTCHA nuevos sí ejecutan los cuatro modelos.
+- Auditado el `2026-08-07`: el primer corte prospectivo posterior a v3 contiene
+  `126` CAPTCHA recibidos entre el 3 y el 5 de agosto, todos revisados
+  manualmente. `v3_selected` obtuvo `119/126` (`94.44%`), empatado con
+  `v2_selected`; `v2_scratch` obtuvo `120/126` (`95.24%`) y `v1_real`
+  `118/126` (`93.65%`). v2 seleccionado y v3 discreparon solo en dos casos:
+  cada uno resolvió correctamente uno, mientras ambos fallaron juntos en seis.
+- Los cuatro modelos coincidieron correctamente en las `15/15` referencias
+  confirmadas por el portal dentro de ese corte, una muestra insuficiente para
+  diferenciarlos. El resultado prospectivo no confirma la ventaja histórica de
+  v3 y mantiene a 2Captcha como única autoridad operativa.
 
 ### Comunicación y cobro
 
@@ -299,6 +320,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `uncertain` es terminal y nunca produce un reintento automático. Un preflight
   que quedó `running` al reiniciar pasa a fallo técnico y requiere revalidación
   manual, evitando un segundo intento de acceso dentro del mismo ciclo.
+- Corregido el `2026-08-08`: un diálogo de WhatsApp bloqueó el primer aviso
+  real dirigido por `@usuario` antes de abrir el chat. La ruta ahora guarda
+  captura única, cierra solamente controles seguros, vuelve a resolver el mismo
+  resultado único y permite un solo segundo clic antes de escribir. Si no puede
+  abrirlo, informa fase `chat_not_opened`; nunca usa clic forzado ni reintenta
+  después de una acción de envío. El dashboard expone el error operativo
+  resumido y conserva la traza completa en la base y logs.
 - Después de las imágenes, el mismo trabajo diario enviará una publicación para
   TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
   combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen
@@ -349,6 +377,21 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `2` pagos actuales permanecen accionables.
 - La clasificación es derivada y no destructiva: no se borraron mensajes, no se
   alteraron pagos y no se envió WhatsApp retroactivo.
+- Reconciliado el `2026-08-08`: el operador confirmó que el resumen del 7 de
+  agosto llegó correctamente y la captura posterior muestra la publicación
+  completa con doble check azul. El falso `uncertain` ocurría porque la
+  confirmación dejaba de revisar selectores alternativos al encontrar una
+  estructura anterior sin coincidencia. Ahora acumula firmas de todas las
+  estructuras soportadas y usa evidencias únicas por trabajo. Solo
+  `daily_slot_summary:2026-08-07` pasó a `sent`; no hubo reenvío ni se alteraron
+  los días anteriores.
+- Implementado el `2026-08-07`: una reserva impaga puede cerrarse como
+  `uncollectible` sin fingir un pago ni borrar la deuda histórica. La orden se
+  archiva, conserva `charge_required=true` y su pago pasa a `written_off`, por
+  lo que deja de inflar la cobranza accionable y los saldos pendientes.
+- Los pagos `pending` admiten un `amount_paid` parcial. El resumen mensual y la
+  lista de cobros muestran el saldo `amount_agreed - amount_paid`, mientras los
+  ingresos realizados siguen contando exclusivamente pagos con estado `paid`.
 
 ## Rendimiento observado
 
@@ -390,6 +433,13 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    El muestreo opcional de reservas reales aumenta los datos disponibles, pero
    también retrasa el submit unos `0.4 s` por muestra adicional y puede elevar
    el riesgo de perder el cupo.
+   v3 mejora a `v2_selected` en los holdouts históricos comparables, pero en el
+   primer lote prospectivo quedó en `119/126` (`94.44%`): empató con
+   `v2_selected` y quedó un acierto detrás de `v2_scratch`. Con siete errores ya
+   acumulados, aunque acertara las muestras restantes terminaría en `493/500`
+   (`98.6%`), por debajo del requisito de más de 99%. Se necesitan más datos para
+   analizar errores y entrenar una nueva candidata, cuyo corte prospectivo debe
+   comenzar nuevamente después de su entrenamiento.
 8. La evidencia versionada está sanitizada, pero sigue siendo telemetría
    operacional y debe revisarse antes de compartir.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
@@ -419,8 +469,22 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - Retiro de invitaciones: dashboard activo, ruta anterior responde `404`,
   Telegram valida correctamente y PostgreSQL quedó en esquema v43 sin la tabla
   `hosted_registration_contacts`.
-- Admin API, PostgreSQL y CAPTCHA sombra: saludables; worker pendiente del
-  siguiente arranque diario.
+- Admin API, PostgreSQL y CAPTCHA sombra: saludables; CAPTCHA sombra carga
+  `v1_real`, `v2_scratch`, `v2_selected` y `v3_selected` en CUDA, con v3 como
+  referencia visual; worker pendiente del siguiente arranque diario.
+- Corte CAPTCHA prospectivo consultado directamente en la base sombra:
+  `126/500` muestras revisadas; v3 `119/126`, sin eventos nuevos después del
+  `2026-08-05`. El servicio fue reiniciado y está saludable desde el
+  `2026-08-06`, pero todavía no recibió otra muestra.
+- PostgreSQL v46 aplicado: una deuda histórica vencida y sin destinatario quedó
+  archivada como `uncollectible/written_off`; otro pago conserva `S/20`
+  abonados sobre `S/40`. El resumen mensual devuelve `2` cobros accionables por
+  `S/70`: saldos de `S/20` y `S/50`. No se encoló ni envió WhatsApp durante el
+  ajuste.
+- WhatsApp del `2026-08-08`: `compileall`, Ruff, dashboard y `59` pruebas
+  correctos. Admin API fue recuperada por su supervisor y sirve el bundle
+  `main-IPC33IQD.js`; PostgreSQL conserva el resumen del 7 de agosto como
+  `sent`. No se realizó ningún envío de prueba.
 
 ## Regla de mantenimiento
 

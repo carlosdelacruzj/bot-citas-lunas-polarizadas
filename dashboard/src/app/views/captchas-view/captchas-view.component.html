@@ -3,7 +3,7 @@
     <div>
       <p class="eyebrow">Comparación en tiempo real</p>
       <h2 id="captcha-dashboard-title">Control de CAPTCHA</h2>
-      <p>La misma imagen frente a 2Captcha y tus tres modelos locales.</p>
+      <p>La misma imagen frente a 2Captcha y tus modelos locales.</p>
     </div>
     <div class="captcha-heading-actions">
       <button
@@ -80,7 +80,7 @@
           <strong>{{ dashboard.captchaReviewPosition() + 1 }} de {{ dashboard.captchaReviewTotal() }}</strong>
           <span>{{ dashboard.captchaChoiceLabel(event) }} · {{ dashboard.captchaSourceLabel(event) }}</span>
         </div>
-        <small>Atajos: 1–3 elegir · Enter confirmar consenso · ← → navegar</small>
+        <small>Atajos: 1–4 elegir · Enter confirmar consenso · ← → navegar</small>
       </div>
 
       @if (dashboard.captchaReviewMessage()) {
@@ -116,11 +116,14 @@
             <div class="captcha-review-intro">
               <span class="eyebrow">Elige la respuesta válida</span>
               @if (dashboard.captchaChoiceMode(event) === 'consensus') {
-                <strong>Los tres modelos coinciden</strong>
+                <strong>Todos los modelos coinciden</strong>
                 <small>Confirma con un clic o escribe otra respuesta.</small>
               } @else if (dashboard.captchaChoiceMode(event) === 'majority') {
-                <strong>Dos modelos coinciden y uno difiere</strong>
+                <strong>La mayoría de modelos coincide</strong>
                 <small>Escoge la lectura correcta.</small>
+              } @else if (dashboard.captchaChoiceMode(event) === 'plurality') {
+                <strong>Hay una coincidencia parcial</strong>
+                <small>Dos modelos coinciden, pero no forman mayoría.</small>
               } @else {
                 <strong>Los modelos no llegaron a un acuerdo</strong>
                 <small>Ingresa manualmente los cinco caracteres.</small>
@@ -199,14 +202,12 @@
               <small>{{ dashboard.formatMilliseconds(event.external_solve_ms) }}</small>
             </article>
           }
-          @for (modelName of ['v1_real', 'v2_scratch', 'v2_selected']; track modelName) {
-            @if (dashboard.captchaPrediction(event, modelName); as prediction) {
-              <article class="captcha-answer {{ dashboard.captchaPredictionTone(event, prediction) }}">
-                <span>{{ dashboard.captchaModelLabel(modelName) }}</span>
-                <strong>{{ prediction.prediction }}</strong>
-                <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
-              </article>
-            }
+          @for (prediction of event.predictions; track prediction.model_name) {
+            <article class="captcha-answer {{ dashboard.captchaPredictionTone(event, prediction) }}">
+              <span>{{ dashboard.captchaModelLabel(prediction.model_name) }}</span>
+              <strong>{{ prediction.prediction }}</strong>
+              <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
+            </article>
           }
         </div>
       </article>
@@ -442,13 +443,16 @@
                     <div class="captcha-review-intro">
                       <span class="eyebrow">Elige la respuesta válida</span>
                       @if (dashboard.captchaChoiceMode(event) === 'consensus') {
-                        <strong>Los tres modelos coinciden</strong>
+                        <strong>Todos los modelos coinciden</strong>
                         <small>Confirma con un clic o escribe otra respuesta.</small>
                       } @else if (dashboard.captchaChoiceMode(event) === 'majority') {
-                        <strong>Dos modelos coinciden y uno difiere</strong>
+                        <strong>La mayoría de modelos coincide</strong>
                         <small
-                          >Escoge la lectura correcta; luego se compararán los tres.</small
+                          >Escoge la lectura correcta; luego se compararán todos.</small
                         >
+                      } @else if (dashboard.captchaChoiceMode(event) === 'plurality') {
+                        <strong>Hay una coincidencia parcial</strong>
+                        <small>Dos modelos coinciden, pero no forman mayoría.</small>
                       } @else {
                         <strong>Los modelos no llegaron a un acuerdo</strong>
                         <small
@@ -561,32 +565,21 @@
                       </article>
                     }
 
-                    @for (
-                      modelName of ['v1_real', 'v2_scratch', 'v2_selected'];
-                      track modelName
-                    ) {
-                      @if (dashboard.captchaPrediction(event, modelName); as prediction) {
-                        <article
-                          class="captcha-answer {{
-                            dashboard.captchaPredictionTone(event, prediction)
-                          }}"
-                        >
-                          <span>{{ dashboard.captchaModelLabel(modelName) }}</span>
-                          <strong>{{ prediction.prediction }}</strong>
-                          <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
-                          <small>
-                            Confianza {{ dashboard.formatConfidence(prediction.mean_confidence) }} ·
-                            mínima
-                            {{ dashboard.formatConfidence(prediction.min_char_confidence) }}
-                          </small>
-                        </article>
-                      } @else {
-                        <article class="captcha-answer neutral">
-                          <span>{{ modelName }}</span>
-                          <strong>Pendiente</strong>
-                          <small>Sin predicción</small>
-                        </article>
-                      }
+                    @for (prediction of event.predictions; track prediction.model_name) {
+                      <article
+                        class="captcha-answer {{
+                          dashboard.captchaPredictionTone(event, prediction)
+                        }}"
+                      >
+                        <span>{{ dashboard.captchaModelLabel(prediction.model_name) }}</span>
+                        <strong>{{ prediction.prediction }}</strong>
+                        <small>{{ dashboard.formatMilliseconds(prediction.inference_ms) }}</small>
+                        <small>
+                          Confianza {{ dashboard.formatConfidence(prediction.mean_confidence) }} ·
+                          mínima
+                          {{ dashboard.formatConfidence(prediction.min_char_confidence) }}
+                        </small>
+                      </article>
                     }
                   </div>
                 </div>
@@ -725,7 +718,7 @@
         <article>
           <span>p90 modelos locales</span>
           <strong>{{ dashboard.formatMilliseconds(quality.local_total_ms.p90) }}</strong>
-          <small>Total de los tres modelos por imagen</small>
+          <small>Suma de los modelos disponibles por imagen</small>
         </article>
         <article>
           <span>p90 de 2Captcha</span>

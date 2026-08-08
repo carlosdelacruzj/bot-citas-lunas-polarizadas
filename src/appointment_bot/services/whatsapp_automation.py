@@ -40,6 +40,17 @@ logger = logging.getLogger(__name__)
 POLL_SECONDS = 1.0
 
 
+def _automation_result_detail(result: dict[str, object]) -> str:
+    details = [str(result.get("message") or "WhatsApp no confirmo el envio.")]
+    delivery_phase = str(result.get("delivery_phase") or "").strip()
+    evidence_path = str(result.get("evidence_path") or "").strip()
+    if delivery_phase:
+        details.append(f"Fase: {delivery_phase}.")
+    if evidence_path:
+        details.append(f"Evidencia local: {evidence_path}.")
+    return " ".join(details)
+
+
 class WhatsAppAutomationDispatcher:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -186,7 +197,7 @@ class WhatsAppAutomationDispatcher:
             return
 
         result_status = str(result.get("status") or "unknown")
-        message = str(result.get("message") or "WhatsApp no confirmó el envío.")
+        message = _automation_result_detail(result)
         if result_status == "login_required":
             returned = return_running_whatsapp_job_to_blocked(
                 job["job_key"],

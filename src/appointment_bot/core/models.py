@@ -158,6 +158,7 @@ class ServiceOrderSummary:
     registration_notice_type: str | None
     registration_notice_status: str | None
     registration_notice_updated_at: str | None
+    registration_notice_error: str | None
     created_at: str
     updated_at: str
 

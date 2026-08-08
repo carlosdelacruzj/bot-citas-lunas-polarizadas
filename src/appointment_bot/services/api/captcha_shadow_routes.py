@@ -33,6 +33,7 @@ ALLOWED_REVIEW_STATUSES = {"all", "validated", "pending"}
 ALLOWED_SORTS = {"newest", "oldest", "review_priority"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 QUALITY_CASE_PAGE_SIZES = {12, 24, 48}
+SELECTED_MODEL_PRIORITY = ("v3_selected", "v2_selected")
 
 
 def captcha_shadow_summary_payload() -> tuple[HTTPStatus, dict[str, Any]]:
@@ -55,6 +56,7 @@ def captcha_shadow_summary_payload() -> tuple[HTTPStatus, dict[str, Any]]:
         "status": str(health.get("status") or "unknown"),
         "device": health.get("device"),
         "models": list(health.get("models") or []),
+        "selected_model": health.get("selected_model") or "v2_selected",
         "started_at_utc": health.get("started_at_utc"),
         "stats": stats,
         "outbox": outbox,
@@ -448,7 +450,12 @@ def _sanitize_event(
             }
         )
     selected = next(
-        (item for item in predictions if item.get("model_name") == "v2_selected"),
+        (
+            item
+            for model_name in SELECTED_MODEL_PRIORITY
+            for item in predictions
+            if item.get("model_name") == model_name
+        ),
         None,
     )
     external_answer = event.get("external_answer")
@@ -479,6 +486,9 @@ def _sanitize_event(
             selected
             and external_answer
             and selected.get("prediction") == external_answer
+        ),
+        "selected_model_name": (
+            str(selected.get("model_name")) if selected else None
         ),
         "image_url": (
             f"/api/v1/captcha-shadow/events/{quote(event_id, safe='')}/image"

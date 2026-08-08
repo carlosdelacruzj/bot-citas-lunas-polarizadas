@@ -133,7 +133,8 @@ type ClosureReason =
   | 'client_withdrew'
   | 'external_slot'
   | 'duplicate'
-  | 'not_serviceable';
+  | 'not_serviceable'
+  | 'uncollectible';
 type SortDirection = 'asc' | 'desc';
 type StatusTone = 'good' | 'warn' | 'bad' | 'neutral';
 type StatusPresentation = { label: string; tone: StatusTone };
@@ -256,6 +257,7 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   unavailable: { label: 'Sin disponibilidad', tone: 'neutral' },
   validated: { label: 'Validado', tone: 'good' },
   voided: { label: 'Anulado', tone: 'neutral' },
+  written_off: { label: 'Incobrable', tone: 'neutral' },
   web_unavailable: { label: 'WhatsApp Web no disponible', tone: 'bad' },
 };
 const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -608,7 +610,10 @@ export class App implements OnDestroy {
     ).sort(),
   );
   protected readonly captchaSelectedStats = computed(
-    () => this.captchaSummary()?.stats.models['v2_selected'] ?? null,
+    () => {
+      const summary = this.captchaSummary();
+      return summary ? (summary.stats.models[summary.selected_model] ?? null) : null;
+    },
   );
   protected readonly captchaPageNumbers = computed(() => {
     return paginationWindow(this.captchaPage(), this.captchaTotalPages());
@@ -1546,7 +1551,11 @@ export class App implements OnDestroy {
     if (this.isObserverCaptcha(event)) {
       return event.predictions.length ? 'Solo modelos locales' : 'Inferencia pendiente';
     }
-    if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
+    if (
+      !event.external_answer ||
+      !event.selected_model_name ||
+      !this.captchaPrediction(event, event.selected_model_name)
+    ) {
       return 'Comparación pendiente';
     }
     return event.selected_matches_external ? 'Coincide con 2Captcha' : 'Difiere de 2Captcha';
@@ -1556,7 +1565,11 @@ export class App implements OnDestroy {
     if (this.isObserverCaptcha(event)) {
       return event.predictions.length ? 'good' : 'neutral';
     }
-    if (!event.external_answer || !this.captchaPrediction(event, 'v2_selected')) {
+    if (
+      !event.external_answer ||
+      !event.selected_model_name ||
+      !this.captchaPrediction(event, event.selected_model_name)
+    ) {
       return 'neutral';
     }
     return event.selected_matches_external ? 'good' : 'warn';
@@ -1592,7 +1605,7 @@ export class App implements OnDestroy {
 
   protected captchaQualityCaseSummary(item: CaptchaQualityCase): string {
     if (item.case_types.includes('unanimous_wrong')) {
-      return 'Los tres modelos coincidieron en una respuesta incorrecta.';
+      return 'Todos los modelos coincidieron en una respuesta incorrecta.';
     }
     if (item.case_types.includes('majority_wrong')) {
       return 'La respuesta apoyada por la mayoría fue incorrecta.';
@@ -1656,13 +1669,19 @@ export class App implements OnDestroy {
       );
   }
 
-  protected captchaChoiceMode(event: CaptchaEvent): 'consensus' | 'majority' | 'manual' {
+  protected captchaChoiceMode(
+    event: CaptchaEvent,
+  ): 'consensus' | 'majority' | 'plurality' | 'manual' {
     const options = this.captchaPredictionOptions(event);
-    if (event.predictions.length === 3 && options.length === 1) {
+    if (event.predictions.length >= 2 && options.length === 1) {
       return 'consensus';
     }
-    if (event.predictions.length === 3 && options.length === 2) {
+    const leadingVotes = options[0]?.modelNames.length ?? 0;
+    if (leadingVotes > event.predictions.length / 2) {
       return 'majority';
+    }
+    if (leadingVotes >= 2) {
+      return 'plurality';
     }
     return 'manual';
   }
@@ -1673,17 +1692,22 @@ export class App implements OnDestroy {
       return 'Consenso';
     }
     if (mode === 'majority') {
-      return 'Mayoría 2–1';
+      const leadingVotes = this.captchaPredictionOptions(event)[0]?.modelNames.length ?? 0;
+      return `Mayoría ${leadingVotes}–${event.predictions.length - leadingVotes}`;
     }
-    return event.predictions.length === 3 ? 'Tres respuestas' : 'Sin consenso';
+    if (mode === 'plurality') {
+      return 'Coincidencia parcial';
+    }
+    return event.predictions.length ? `${event.predictions.length} respuestas` : 'Sin consenso';
   }
 
   protected captchaModelLabel(modelName: string): string {
     return (
       {
-        v1_real: 'Modelo A',
-        v2_scratch: 'Modelo B',
-        v2_selected: 'Modelo C',
+        v1_real: 'v1 original',
+        v2_scratch: 'v2 desde cero',
+        v2_selected: 'v2 seleccionado',
+        v3_selected: 'v3 seleccionado',
       }[modelName] ?? modelName
     );
   }
@@ -3147,6 +3171,7 @@ export class App implements OnDestroy {
       'external_slot',
       'duplicate',
       'not_serviceable',
+      'uncollectible',
     ];
     const reason = allowed.includes(value as ClosureReason)
       ? (value as ClosureReason)
@@ -3388,6 +3413,13 @@ export class App implements OnDestroy {
     if (!order.charge_required) {
       return '';
     }
+    if (order.payment_status === 'pending' && order.amount_agreed) {
+      const agreed = Number(order.amount_agreed);
+      const paid = Number(order.amount_paid ?? 0);
+      if (Number.isFinite(agreed) && Number.isFinite(paid)) {
+        return Math.max(agreed - paid, 0).toFixed(2);
+      }
+    }
     return order.amount_paid ?? order.amount_agreed ?? '';
   }
 
@@ -3399,6 +3431,7 @@ export class App implements OnDestroy {
       external_slot: 'Cupo por tercero',
       duplicate: 'Duplicado',
       not_serviceable: 'No gestionable',
+      uncollectible: 'Incobrable',
     };
     if (!reason) {
       return 'sin cierre';
