@@ -431,12 +431,12 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         opportunity_burst_max_clients=_parse_int(
             os.getenv("OPPORTUNITY_BURST_MAX_CLIENTS"),
-            default=3,
-            minimum=2,
+            default=0,
+            minimum=0,
         ),
         opportunity_burst_max_seconds=_parse_int(
             os.getenv("OPPORTUNITY_BURST_MAX_SECONDS"),
-            default=60,
+            default=300,
             minimum=1,
         ),
         opportunity_burst_session_seconds=_parse_int(
@@ -587,38 +587,34 @@ def load_settings(*, require_login: bool = True) -> Settings:
             "OBSERVER_SITE_TOGGLE_ATTEMPTS"
         )
 
-    if settings.opportunity_burst_max_clients < settings.opportunity_burst_max_sessions:
+    if (
+        settings.opportunity_burst_max_clients != 0
+        and settings.opportunity_burst_max_clients
+        < settings.opportunity_burst_max_sessions
+    ):
         raise ValueError(
-            "OPPORTUNITY_BURST_MAX_CLIENTS must be greater than or equal to "
+            "OPPORTUNITY_BURST_MAX_CLIENTS must be 0 or greater than or equal to "
             "OPPORTUNITY_BURST_MAX_SESSIONS"
         )
 
     if settings.opportunity_burst_max_sessions != 2:
         raise ValueError(
-            "OPPORTUNITY_BURST_MAX_SESSIONS must remain 2 during the canary"
+            "OPPORTUNITY_BURST_MAX_SESSIONS must remain 2"
         )
 
-    if settings.opportunity_burst_max_clients > 3:
+    if settings.opportunity_burst_max_seconds > 300:
         raise ValueError(
-            "OPPORTUNITY_BURST_MAX_CLIENTS must be less than or equal to 3 during "
-            "the canary"
-        )
-
-    if settings.opportunity_burst_max_seconds > 60:
-        raise ValueError(
-            "OPPORTUNITY_BURST_MAX_SECONDS must be less than or equal to 60 during "
-            "the canary"
+            "OPPORTUNITY_BURST_MAX_SECONDS must be less than or equal to 300"
         )
 
     if settings.opportunity_burst_session_seconds > 20:
         raise ValueError(
-            "OPPORTUNITY_BURST_SESSION_SECONDS must be less than or equal to 20 "
-            "during the canary"
+            "OPPORTUNITY_BURST_SESSION_SECONDS must be less than or equal to 20"
         )
 
     if settings.opportunity_burst_attempts > 5:
         raise ValueError(
-            "OPPORTUNITY_BURST_ATTEMPTS must be less than or equal to 5 during the canary"
+            "OPPORTUNITY_BURST_ATTEMPTS must be less than or equal to 5"
         )
 
     if (

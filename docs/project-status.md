@@ -18,7 +18,7 @@ Estado verificado el `2026-08-09`:
 
 | Área                  | Estado                   | Lectura actual                                                                                            |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Worker de reservas    | Detenido por calendario  | `127.0.0.1:8765/health` no responde en domingo; el siguiente inicio supervisado debe confirmar la recuperación. |
+| Worker de reservas    | Operativo fuera de horario | Reinicio controlado aplicado; volvió saludable con `worker_running=true`, fase `outside_hot_window` y sin orden activa. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 en Docker lleva dos días saludable.                                                         |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
@@ -88,13 +88,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   segundos trámites y la mayor cobertura de oportunidades. La cadena continúa
   tras cada reserva y termina al confirmarse que ya no hay cupos, vencer la
   ventana, agotarse los candidatos o aparecer un resultado técnico ambiguo.
-- Implementado el `2026-08-09`: `OBS-006` entra como canario de dos posiciones.
+- Implementado y ampliado el `2026-08-09`: `OBS-006` opera con dos posiciones.
   Cuando el detector confirma fecha y hora seleccionables, continúa su reserva
   y abre en paralelo un auxiliar compatible, priorizando al otro usuario del
   bloque activo. Si cualquiera confirma `registered`, su posición toma el
-  siguiente usuario compatible. El canario admite tres clientes totales,
-  `60` segundos para admitir sesiones nuevas y un ciclo auxiliar de cinco
-  consultas durante `20` segundos con `reload_probe` en el tercer intento.
+  siguiente usuario compatible. La ráfaga recorre toda la fotografía inicial
+  de usuarios compatibles mientras las reservas confirmadas mantengan activa
+  alguna rama, con `300` segundos para admitir sesiones nuevas y un ciclo
+  auxiliar de cinco consultas durante `20` segundos con `reload_probe` en el
+  tercer intento.
   Claims, heartbeats, navegadores, CAPTCHA e intentos permanecen aislados por
   orden. `OPPORTUNITY_BURST_ENABLED=false` restaura la cadena secuencial sin
   migración ni reversión de datos. Falta la primera validación con cupos reales.
@@ -514,10 +516,12 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    historial del antivirus después de reinicios y actualizaciones de firmas.
 10. La cadena dirigida por oportunidades conserva su fallback secuencial de
     hasta diez candidatos y cinco minutos. `OBS-006` está implementada como
-    canario activo por default al próximo arranque: máximo dos sesiones, tres
-    clientes y 60 segundos de admisión. La simulación aislada confirmó el
-    reemplazo después de `registered` y el rollback por bandera, pero falta
-    validación real. El riesgo vigente es demostrar que añade reservas sin
+    ráfaga activa al próximo arranque: máximo dos sesiones, sin límite fijo de
+    clientes compatibles y 300 segundos de admisión. La simulación aislada
+    confirmó seis reemplazos auxiliares, agotamiento de cola, cierre sin cupos,
+    expiración y rollback por bandera. El reinicio controlado posterior quedó
+    `applied` y cargó la configuración; todavía falta validación real. El riesgo
+    vigente es demostrar que añade reservas sin
     aumentar defensas, `reservation_unconfirmed`, pérdida de claims, memoria o
     errores operativos. Ante cualquiera de esas señales debe aplicarse
     `OPPORTUNITY_BURST_ENABLED=false` y continuar con el flujo secuencial.
@@ -532,10 +536,14 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   `Programado/completed` informada por separado y dos señales de defensa.
 - Observación de optimización del mismo rango generada sin promoverla como nueva
   línea base y sin cambiar clics, esperas, CAPTCHA, orden ni concurrencia.
-- Canario `OBS-006`: simulaciones sin portal confirmaron detector + auxiliar,
-  máximo concurrente de dos, reemplazo por el siguiente usuario después de una
-  reserva auxiliar o detectora, límite de tres clientes y rollback desactivado
-  sin consulta de candidatos. No se llamó a 2Captcha ni se creó una reserva.
+- Ráfaga `OBS-006`: la validación aislada confirmó detector más seis auxiliares
+  registrados, máximo concurrente de dos, agotamiento de la cola compatible,
+  cierre sin reservas nuevas, expiración y rollback desactivado sin consulta de
+  candidatos. También corrigió dos carreras reproducibles con tareas
+  instantáneas. No se considera validada en portal hasta observar un cupo real.
+- Reinicio controlado de `OBS-006`: se solicitó solo con fase
+  `outside_hot_window` y `current_order_id=null`; el comando terminó `applied`
+  y el worker regresó saludable a la misma fase sin orden activa.
 - `python -m ruff check src tests`: correcto.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
@@ -585,7 +593,7 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - **Cada dos o tres días después de cambiar el observer:** revisar lecturas por
   hora, duración de sesiones, `slot_lost`, CAPTCHA, `403`, `429`, defensas y
   `recovery_backoff`; no cambiar otra variable durante ese corte.
-- **En el siguiente caso real relevante:** validar modal CSS, canario dirigido
+- **En el siguiente caso real relevante:** validar modal CSS, ráfaga dirigida
   por oportunidades y su rollback, backoff por reglas, CAPTCHA rechazado y
   entregas de WhatsApp según el tipo de evento observado.
 - **Cada 100 CAPTCHA frescos revisados:** registrar avance de v6 contra v3 sin

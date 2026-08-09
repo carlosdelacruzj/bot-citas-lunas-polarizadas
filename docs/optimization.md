@@ -56,9 +56,9 @@ appointment-bot-client optimization-observation `
 | OBS-001 | Línea base comparable | Promovida explícitamente |
 | OBS-002 | Desglose de selección | Muestra suficiente; conservar sin cambios |
 | OBS-003 | Variabilidad CAPTCHA | El corte 1-8 agosto no tuvo respuestas mayores de 10 s; conservar configuración y seguir midiendo |
-| OBS-004 | Supervivencia secuencial | Corte vigente: 1/6 intentos posteriores (`16.7%`); justifica canario acotado, no ampliar a tres sesiones |
+| OBS-004 | Supervivencia secuencial | Corte vigente: 1/6 intentos posteriores (`16.7%`); justifica ráfaga de dos sesiones, no ampliar a tres |
 | OBS-005 | Correlación `fetch_probe` | Sin señales nuevas; mantener observacional |
-| OBS-006 | Ráfaga multicliente después de una detección real | Canario de dos sesiones implementado; pendiente de validación real |
+| OBS-006 | Ráfaga multicliente después de una detección real | Dos sesiones y cola compatible continua implementadas; pendiente de validación real |
 
 ## Cierre semanal 2026-07-13 a 2026-07-18
 
@@ -94,7 +94,7 @@ appointment-bot-client optimization-observation `
   secuencial. Después de este corte el usuario autorizó `OBS-006` con dos
   sesiones y rollback por bandera; no se alteró la línea base histórica.
 
-## Arquitectura secuencial y canario OBS-006
+## Arquitectura secuencial y ráfaga OBS-006
 
 - `OBSERVER_ACTIVE_ORDER_LIMIT=2` solo limita las órdenes elegidas por la
   consulta. El worker reclama y ejecuta una sola en
@@ -110,20 +110,21 @@ appointment-bot-client optimization-observation `
   reintenta.
 - Elevar `OBSERVER_ACTIVE_ORDER_LIMIT` o
   `OPPORTUNITY_HANDOFF_MAX_CANDIDATES` por sí solo no abre sesiones en paralelo.
-  El canario usa un coordinador separado y conserva esa cadena como fallback
+  La ráfaga usa un coordinador separado y conserva esa cadena como fallback
   cuando `OPPORTUNITY_BURST_ENABLED=false`.
 
-## Hipótesis futura: ráfaga multicliente
+## Ráfaga multicliente OBS-006
 
-Estado al `2026-08-09`: **canario de dos sesiones implementado**. Se cargará en
-el siguiente arranque del worker y todavía no tiene validación con cupos reales.
+Estado al `2026-08-09`: **ráfaga deslizante de dos sesiones implementada**. Se
+cargó mediante un reinicio controlado del worker y todavía no tiene validación
+con cupos reales.
 
 ### Objetivo
 
 Aprovechar una liberación de varios cupos sin mantener varios observadores
 consultando durante toda la jornada. El flujo normal conserva una sola sesión.
 Una disponibilidad real inicia temporalmente un pool deslizante de hasta dos
-sesiones y tres clientes totales:
+sesiones y todos los clientes compatibles disponibles:
 
 1. la sesión que detectó el cupo continúa inmediatamente su propia reserva;
 2. se abre en paralelo una sesión Playwright nueva para otra orden `ready`
@@ -156,9 +157,10 @@ CAPTCHA y submit del cliente anterior. Sin embargo, todavía no se midió cuánt
 de esas ventanas habrían sobrevivido con auxiliares simultáneos ni el efecto de
 la carga sobre el portal.
 
-Conclusión: la implementación es técnicamente viable y quedó limitada a dos
-sesiones. La evidencia todavía no permite afirmar que mejorará la conversión;
-la decisión depende de las primeras ráfagas reales. No se ampliará a tres.
+Conclusión: la implementación es técnicamente viable y queda limitada a dos
+sesiones concurrentes. La evidencia todavía no permite afirmar cuánto mejorará
+la conversión; la decisión depende de las primeras ráfagas reales. No se
+ampliará a tres sesiones.
 
 ### Disparador
 
@@ -174,8 +176,9 @@ flujo normal o `reload_probe`. No deben activarla:
 ### Selección y aislamiento
 
 - Máximo dos sesiones activas en total, incluida la que detectó.
-- Tres sesiones solo
-  se evalúan después de cerrar el canario sin incidentes.
+- `OPPORTUNITY_BURST_MAX_CLIENTS=0` elimina el límite fijo y carga toda la cola
+  compatible observada al iniciar. Un valor positivo recupera un techo total.
+- Tres sesiones solo se evalúan después de cerrar la muestra sin incidentes.
 - Solo órdenes `ready`, reclamables y compatibles con la fecha/hora observada.
 - Reutilizar la selección compatible vigente: prioridad manual exclusiva,
   segundos trámites y mayor cobertura de oportunidades; no crear un segundo
@@ -193,12 +196,13 @@ flujo normal o `reload_probe`. No deben activarla:
 ### Cierre y guardas
 
 Un solo `Sin Cupos` termina esa sesión, pero no cancela otra que sigue
-procesando. El canario termina al quedarse sin sesiones activas. Sus guardas son:
+procesando. La ráfaga termina al quedarse sin sesiones activas. Sus guardas son:
 
-- admitir sesiones nuevas durante un máximo de `60` segundos;
+- admitir sesiones nuevas durante un máximo de `300` segundos;
 - cada auxiliar sin cupos hace hasta cinco consultas durante `20` segundos y un
   `reload_probe` en el tercer intento;
-- límite de `3` clientes procesados por ráfaga, incluido el detector;
+- sin límite fijo de clientes con el valor activo `0`; la fotografía inicial de
+  órdenes compatibles y los cinco minutos siguen siendo límites finitos;
 - detener reemplazos nuevos ante `403`, `429`, defensa general, pérdida de
   lease o fallo de coordinación; las sesiones ya enviadas terminan su
   reconciliación;
@@ -221,7 +225,7 @@ La telemetría implementada debe permitir revisar:
 
 ### Criterio de decisión
 
-El canario no se evalúa por velocidad aislada. Debe acumular al menos `10`
+La ráfaga no se evalúa por velocidad aislada. Debe acumular al menos `10`
 ráfagas reales y `30` ejecuciones auxiliares, y compararse contra la cadena
 secuencial. Para avanzar a tres sesiones deben cumplirse todos estos puntos:
 
@@ -237,7 +241,7 @@ desactivada y el flujo secuencial continúa siendo el fallback completo.
 
 ### Próximos pasos
 
-1. No mezclar el canario con otro cambio de intervalos, CAPTCHA o selección.
+1. No mezclar la ráfaga con otro cambio de intervalos, CAPTCHA o selección.
 2. Observar la primera ráfaga real y confirmar preferencia del usuario en
    espera, máximo de dos sesiones, reemplazo, claims y cierre.
 3. Ante cualquier defensa o incertidumbre, aplicar

@@ -53,6 +53,8 @@ class OpportunityBurstResult:
     executions: tuple[BurstExecution, ...] = ()
     confirmed_order_ids: tuple[str, ...] = ()
     max_active_sessions: int = 0
+    candidate_count: int = 0
+    scheduled_clients: int = 0
     duration_seconds: float = 0.0
     completion_reason: str = "not_started"
 
@@ -79,6 +81,8 @@ class OpportunityBurstResult:
                 "confirmed_reservations": len(self.confirmed_order_ids),
                 "confirmed_order_ids": list(self.confirmed_order_ids),
                 "max_active_sessions": self.max_active_sessions,
+                "compatible_candidates": self.candidate_count,
+                "scheduled_clients": self.scheduled_clients,
                 "duration_seconds": self.duration_seconds,
                 "results": [
                     {
@@ -121,6 +125,7 @@ class OpportunityBurstCoordinator:
         self._completion_reason: str | None = None
         self._scheduled_clients = 1
         self._max_active_sessions = 1
+        self._candidate_count = 0
 
     @property
     def started(self) -> bool:
@@ -129,6 +134,8 @@ class OpportunityBurstCoordinator:
 
     def maybe_start(self, result: AvailabilityResult) -> bool:
         if not self.settings.opportunity_burst_enabled or not self.settings.auto_reserve:
+            return False
+        if self.cancel_event is not None and self.cancel_event.is_set():
             return False
         if result.status != "available":
             return False
@@ -143,10 +150,15 @@ class OpportunityBurstCoordinator:
             if self._started:
                 return True
 
+        candidate_limit = (
+            None
+            if self.settings.opportunity_burst_max_clients == 0
+            else max(self.settings.opportunity_burst_max_clients - 1, 0)
+        )
         candidates = list_compatible_orders_for_opportunities(
             opportunities,
             exclude_order_ids={self.detector_order.order_id},
-            limit=self.settings.opportunity_handoff_max_candidates,
+            limit=candidate_limit,
             settings=self.settings,
         )
         if self.preferred_order_ids:
@@ -170,20 +182,27 @@ class OpportunityBurstCoordinator:
             self._started_at = time.monotonic()
             self._deadline = self._started_at + self.settings.opportunity_burst_max_seconds
             self._candidates.extend(candidates)
+            self._candidate_count = len(candidates)
             self._executor = ThreadPoolExecutor(
                 max_workers=self.settings.opportunity_burst_max_sessions,
                 thread_name_prefix="opportunity-burst",
             )
-            while self._active_sessions_locked() < self.settings.opportunity_burst_max_sessions:
+            initial_slots = (
+                self.settings.opportunity_burst_max_sessions
+                - self._active_sessions_locked()
+            )
+            launched = False
+            for _ in range(initial_slots):
                 if not self._submit_next_locked():
                     break
+                launched = True
             logger.info(
                 "Opportunity burst %s started after detector %s with %s candidate(s)",
                 self.burst_id,
                 self.detector_order.order_id,
                 len(candidates),
             )
-            return bool(self._futures)
+            return launched
 
     def finish_detector(
         self,
@@ -223,7 +242,7 @@ class OpportunityBurstCoordinator:
         if completion_reason is None:
             completion_reason = (
                 "client_limit"
-                if self._scheduled_clients >= self.settings.opportunity_burst_max_clients
+                if self._client_limit_reached_locked()
                 else "sessions_finished"
             )
         return OpportunityBurstResult(
@@ -232,6 +251,8 @@ class OpportunityBurstCoordinator:
             executions=tuple(self._executions),
             confirmed_order_ids=tuple(self._confirmed_order_ids),
             max_active_sessions=self._max_active_sessions,
+            candidate_count=self._candidate_count,
+            scheduled_clients=self._scheduled_clients,
             duration_seconds=duration,
             completion_reason=completion_reason,
         )
@@ -253,6 +274,10 @@ class OpportunityBurstCoordinator:
     def _active_sessions_locked(self) -> int:
         return len(self._futures) + int(self._detector_active)
 
+    def _client_limit_reached_locked(self) -> bool:
+        max_clients = self.settings.opportunity_burst_max_clients
+        return max_clients > 0 and self._scheduled_clients >= max_clients
+
     def _submit_next_locked(self) -> bool:
         if self._stop_refills or (
             self.cancel_event is not None and self.cancel_event.is_set()
@@ -261,11 +286,15 @@ class OpportunityBurstCoordinator:
         if self._deadline is not None and time.monotonic() >= self._deadline:
             self._completion_reason = "burst_window_expired"
             return False
-        if self._scheduled_clients >= self.settings.opportunity_burst_max_clients:
+        if self._client_limit_reached_locked():
             return False
         if self._active_sessions_locked() >= self.settings.opportunity_burst_max_sessions:
             return False
-        if not self._candidates or self._executor is None:
+        if not self._candidates:
+            if self._completion_reason is None:
+                self._completion_reason = "candidate_queue_exhausted"
+            return False
+        if self._executor is None:
             return False
 
         order = self._candidates.popleft()
@@ -278,11 +307,12 @@ class OpportunityBurstCoordinator:
         )
         future.add_done_callback(self._future_done)
         logger.info(
-            "Opportunity burst %s launched auxiliary order %s (%s/%s clients)",
+            "Opportunity burst %s launched auxiliary order %s "
+            "(%s clients scheduled, %s candidate(s) remaining)",
             self.burst_id,
             order.order_id,
             self._scheduled_clients,
-            self.settings.opportunity_burst_max_clients,
+            len(self._candidates),
         )
         return True
 

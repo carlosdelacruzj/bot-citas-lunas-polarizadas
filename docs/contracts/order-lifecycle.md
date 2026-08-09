@@ -120,15 +120,16 @@ resultado ambiguo. Cada nueva sesión vuelve a leer el portal: las oportunidades
 son evidencia temporal, no inventario garantizado ni transferencia directa.
 
 Con `OPPORTUNITY_BURST_ENABLED=true`, una selección completa del detector abre
-un canario antes de esa cadena: el detector continúa y se inicia un auxiliar
+una ráfaga antes de esa cadena: el detector continúa y se inicia un auxiliar
 compatible, priorizando la otra orden del bloque activo. Hay como máximo dos
-sesiones simultáneas y tres clientes totales. Solo `registered` confirmado
-libera una posición para el siguiente compatible. Un resultado sin cupos cierra
-esa sesión; una defensa, error técnico o `reservation_unconfirmed` detiene
-reemplazos nuevos sin repetir submits ambiguos. Cuando el canario termina, no
-repite los mismos cupos en la cadena secuencial y vuelve al observer normal.
-Con la bandera en `false`, este bloque no reclama candidatos y se conserva el
-comportamiento secuencial anterior.
+sesiones simultáneas. Cada `registered` confirmado libera una posición para el
+siguiente compatible; con `OPPORTUNITY_BURST_MAX_CLIENTS=0` se puede recorrer
+toda la fotografía inicial de la cola durante un máximo de 300 segundos. Un
+resultado sin cupos cierra esa sesión; una defensa, error técnico o
+`reservation_unconfirmed` detiene reemplazos nuevos sin repetir submits
+ambiguos. Cuando la ráfaga termina, no repite los mismos cupos en la cadena
+secuencial y vuelve al observer normal. Con la bandera en `false`, este bloque
+no reclama candidatos y se conserva el comportamiento secuencial anterior.
 
 El muestreo CAPTCHA adicional solo corresponde a la sesión detectora. Toda
 sesión posterior de la cadena fuerza una sola muestra antes de 2Captcha para no

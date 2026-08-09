@@ -76,5 +76,13 @@ vigentes estan en `../project-status.md`.
   secuencial anterior, sin migración ni reversión de datos. Tres sesiones sigue
   siendo una ampliación futura condicionada a evidencia sin defensas ni fallos
   de coordinación.
-- La revisión actualizó estado, resultado comercial, reportes, cadencia de
-  evaluación, worker y roadmap. No modificó `.env` ni la autoridad CAPTCHA.
+- Más tarde el mismo día se retiró el límite fijo de tres clientes para alinear
+  la ráfaga con el objetivo de maximizar reservas: continúa con cada
+  `registered` hasta agotar candidatos compatibles o 300 segundos, conservando
+  siempre el techo de dos sesiones y el mismo rollback por bandera.
+- El worker se reinició de forma controlada fuera de horario y sin orden activa;
+  el comando terminó `applied` y el proceso volvió saludable a
+  `outside_hot_window`, ya con la configuración ampliada cargada.
+- La revisión inicial actualizó estado, resultado comercial, reportes,
+  cadencia, worker y roadmap. La ampliación posterior sí fijó los valores de la
+  ráfaga en el `.env` local; ninguna de las dos cambió la autoridad CAPTCHA.

@@ -225,7 +225,7 @@ La secuencia completa de optimizaciones, esperas y condiciones de avance se
 mantiene en
 [`performance-roadmap-2026-07-22.md`](performance-roadmap-2026-07-22.md).
 
-El canario que abre un auxiliar al detectar disponibilidad, sus límites,
+La ráfaga que abre un auxiliar al detectar disponibilidad, sus límites,
 telemetría y rollback por bandera están en
 [`opportunity-burst-canary-2026-08-09.md`](opportunity-burst-canary-2026-08-09.md).
 

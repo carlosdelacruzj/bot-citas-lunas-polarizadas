@@ -8,8 +8,8 @@ estado de lo construido, validado y observado vive en
 
 ## Orden inmediato
 
-1. Validar en el próximo cupo real el canario `OBS-006`: detector + auxiliar,
-   preferencia por el otro usuario del bloque, reemplazo solo tras
+1. Validar en el próximo cupo real la ráfaga `OBS-006`: detector + auxiliar,
+   preferencia por el otro usuario del bloque, reemplazos continuos solo tras
    `registered`, máximo concurrente, tiempo hasta cada submit y cierre limpio.
 2. Cerrar dos o tres días comparables del observer `15/1-2/8` antes de cambiar
    otra variable. El corte semanal del 1 al 8 de agosto quedó actualizado.
@@ -283,9 +283,11 @@ Estado: en observación.
   posteriores y un `registered` posterior (`16.7%`). Esto confirma una pérdida
   temporal posible; es la línea previa para evaluar el canario, no una promesa
   de mejora.
-- Validado sin portal: detector + auxiliar, máximo de dos sesiones, reemplazo
-  después de una reserva detectora o auxiliar, límite de tres clientes y
-  rollback por bandera sin consultar candidatos. La suite continúa en verde.
+- Ampliado en código: detector + auxiliar conservan un máximo de dos sesiones y
+  cada `registered` admite otro compatible. `OPPORTUNITY_BURST_MAX_CLIENTS=0`
+  recorre toda la fotografía inicial de la cola durante hasta 300 segundos.
+  La simulación cerró múltiples reemplazos, agotamiento, fin sin cupos,
+  expiración y rollback; falta la prueba real.
 - Pendiente real: confirmar `burst_id`, máximo concurrente, duración, orden de
   candidatos, resultados, liberación de claims y vuelta al observer normal.
 - Evaluar después de al menos diez ráfagas reales y treinta ejecuciones
@@ -297,8 +299,9 @@ Estado: en observación.
   defensa, pérdida de lease o fallo de coordinación detiene reemplazos. El
   comportamiento y rollback están en
   [`../operations/opportunity-burst-canary-2026-08-09.md`](../operations/opportunity-burst-canary-2026-08-09.md).
-- Escalar a tres sesiones, diez clientes y `90` segundos continúa siendo una
-  mejora futura no autorizada hasta cerrar la muestra mínima sin incidentes.
+- Escalar a tres sesiones continúa siendo una mejora futura no autorizada hasta
+  cerrar la muestra mínima sin incidentes. La ampliación vigente aumenta
+  clientes y tiempo, pero mantiene dos sesiones como techo de carga concurrente.
 
 ## Prioridad 2 - Cerrar el corte documental
 
