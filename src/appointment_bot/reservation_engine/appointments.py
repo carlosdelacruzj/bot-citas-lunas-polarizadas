@@ -8,6 +8,9 @@ from urllib.parse import urlsplit, urlunsplit
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from appointment_bot.reservation_engine.appointment_modal_styles import (
+    ensure_appointment_modal_styles,
+)
 from appointment_bot.reservation_engine.appointment_reader import read_appointment_availability
 from appointment_bot.reservation_engine.appointment_selection import (
     has_available_date_options,
@@ -246,6 +249,7 @@ def open_hidden_appointment_panel_for_observer(page: Page) -> Page:
 
 def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
     logger.info("Opening appointment availability panel")
+    ensure_appointment_modal_styles(page)
     button = page.locator(RESERVE_APPOINTMENT_SELECTOR)
     button_count = button.count()
     logger.debug("Appointment panel buttons found: %s", button_count)
@@ -274,6 +278,7 @@ def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
             raise AppointmentWorkflowUnavailable(
                 "El postback oculto no entrego los controles de sede, fecha y hora."
             ) from exc
+        ensure_appointment_modal_styles(page)
         return page
 
     try:
@@ -287,6 +292,7 @@ def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
         ) from exc
 
     _wait_for_reservation_panel(page)
+    ensure_appointment_modal_styles(page)
 
     logger.info("Current page after opening appointment panel: %s", page.url)
     return page

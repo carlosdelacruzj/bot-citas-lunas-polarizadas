@@ -211,6 +211,15 @@ Estado: en observación.
 
 ### Observer
 
+- Completado en código y replay aislado el `2026-08-09`: el flujo compartido
+  por el worker y las sesiones manuales detecta la firma CSS defectuosa del
+  modal de citas y restaura la presentación anterior. Si el portal vuelve a
+  entregar un diseño nativo válido, el fallback se retira automáticamente; un
+  estado intermedio no reconocido no se modifica. La matriz aislada confirmó
+  `fallback_applied`, `healthy` y `unknown` sin cambiar controles.
+- Confirmar en la próxima sesión real el log `Appointment modal CSS` y una
+  captura centrada correcta, sin considerar la validación aislada como prueba
+  de comportamiento actual del portal.
 - Completado en código el `2026-08-01`: las órdenes usan `15` consultas de sede
   por sesión, `vacío -> LIMA-LA VICTORIA` desde el segundo intento, espera
   aleatoria nueva de `1-2` segundos después de cada consulta completa y un solo

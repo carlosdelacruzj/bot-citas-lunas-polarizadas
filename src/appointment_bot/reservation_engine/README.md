@@ -28,6 +28,7 @@ Desde el paso 9.5 contiene la implementacion del motor Playwright del portal:
 - `reservation_engine.monitor`
 - `reservation_engine.observer`
 - `reservation_engine.appointments`
+- `reservation_engine.appointment_modal_styles`
 - `reservation_engine.appointment_reader`
 - `reservation_engine.appointment_selection`
 - `reservation_engine.appointment_fetch_probe`

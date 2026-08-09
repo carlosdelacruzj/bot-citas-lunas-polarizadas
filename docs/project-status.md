@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-08-08`.
+Última revisión integral: `2026-08-09`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -114,6 +114,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `reload_probe` completo después del
   intento `8`; al terminar el intento `15` se cierra esa sesión y se rota al
   siguiente cliente con un contexto Playwright nuevo.
+- Implementado el `2026-08-09`: el portal dejó de entregar las reglas CSS de
+  su modal aunque conservó las mismas clases HTML. Antes y después de abrir el
+  panel, el worker y las sesiones manuales comprueban los estilos calculados.
+  Solo ante la firma conocida —panel transparente, sin radio, sombra, recorte
+  ni espaciado— se restaura localmente la apariencia anterior. Un diseño nativo
+  válido elimina el fallback y un estado no reconocido queda intacto. El replay
+  aislado confirmó `fallback_applied -> healthy`, retiro automático del estilo,
+  cero cambios en los controles y chequeos de `3.6-9.6 ms`; falta observar el
+  primer modal real posterior al despliegue.
 - Auditado el `2026-08-01`: los valores operativos del ciclo `15/1-2/8`, la sede,
   el límite de clientes activos, el cooldown por CAPTCHA, los intentos de
   CAPTCHA por reserva y el corte diario se pueden modificar desde `.env`. Los
