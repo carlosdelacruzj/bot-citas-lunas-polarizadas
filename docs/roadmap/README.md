@@ -19,8 +19,10 @@ estado de lo construido, validado y observado vive en
 3. Definir, después de revisar el corte inicial de **Post-cita**, qué frecuencia
    futura aporta valor sin repetir accesos innecesarios. El barrido cubrió
    `108/108` reservas y separó `16` accesos perdidos y `6` observaciones sin
-   avance. Sus textos internos ya se conservaron; antes de recordatorios u
-   ofertas adicionales, definir consentimiento, finalidad, retención y acceso.
+   avance. Los accesos perdidos ya quedaron archivados fuera de la operación y
+   no se volverán a revisar desde Post-cita. Sus textos internos se conservan;
+   antes de recordatorios u ofertas adicionales para los demás casos, definir
+   consentimiento, finalidad, retención y acceso.
 4. Confirmar en eventos reales pendientes el modal CSS, los backoffs por reglas
    y CAPTCHA, y los cuatro tipos de trabajos WhatsApp; no provocar mensajes de
    prueba a clientes.
@@ -78,6 +80,20 @@ Estado: en observación.
   quedó completado y el padre de Anggela quedó como contenedor archivado.
   Pendiente: decidir frecuencia y recordatorios sin repetir accesos innecesarios
   ni ampliar el tratamiento de datos sensibles.
+- Completado en código el `2026-08-09`: reorganización UX de **Post-cita** con
+  búsqueda, filtros contados, orden, numeración, detalle progresivo y
+  paginación `5/10/20`. El carril de seis etapas ya no cruza los nombres y se
+  vuelve vertical en móvil. Sus colores distinguen estado normal en verde,
+  observación sin continuidad en rojo y etapa futura sin fecha en neutral.
+  **Órdenes** ahora ordena la reserva por fecha y hora
+  reales en vez de comparar `DD/MM/YYYY` como texto. Build y prueba con las
+  `108` fechas reales quedaron correctos; falta revisión visual cuando vuelva a
+  estar disponible el navegador integrado.
+- Completado en código el `2026-08-09`: `access_lost` dejó de competir con los
+  seguimientos activos. La vista inicial, el contador accionable y **Requieren
+  atención** lo excluyen; **Historial sin acceso** conserva sus 16 registros,
+  última instantánea y fecha, sin acción de nueva revisión. Los errores
+  temporales del portal permanecen separados y accionables.
 
 ### WhatsApp automático
 

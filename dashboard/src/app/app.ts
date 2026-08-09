@@ -58,7 +58,12 @@ import {
   WhatsAppWebDraftResponse,
   apiErrorMessage,
 } from './appointment-api.service';
-import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
+import {
+  formatPeruDate,
+  formatPeruDateTime,
+  formatPeruTime,
+  peruDateTimeSortValue,
+} from './peru-date-time';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
 import {
@@ -132,6 +137,13 @@ type OrderSortKey =
   | 'payment'
   | 'closure'
   | 'applicant';
+type PostAppointmentFilter =
+  | 'active'
+  | 'attention'
+  | 'observations'
+  | 'access_lost'
+  | 'progressed';
+type PostAppointmentSortKey = 'priority' | 'appointment_date' | 'last_reviewed_at' | 'applicant';
 type ClosureReason =
   | 'completed_by_us'
   | 'family_no_charge'
@@ -189,6 +201,7 @@ const ERROR_MESSAGE_DURATION_MS = 8_000;
 const ORDER_VIEW_STATE_KEY = 'appointment-dashboard-order-view';
 const ORDER_SEARCH_SESSION_KEY = 'appointment-dashboard-order-search';
 const ORDER_PAGE_SIZES = [10, 20, 50] as const;
+const POST_APPOINTMENT_PAGE_SIZES = [5, 10, 20] as const;
 const ORDER_QUICK_FILTERS: readonly OrderQuickFilter[] = [
   'all',
   'ready',
@@ -232,7 +245,7 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   awaiting_update: { label: 'Esperando actualización', tone: 'warn' },
   in_progress: { label: 'En progreso', tone: 'good' },
   upcoming: { label: 'Cita próxima', tone: 'neutral' },
-  access_lost: { label: 'Acceso perdido', tone: 'bad' },
+  access_lost: { label: 'Archivado · acceso perdido', tone: 'neutral' },
   portal_unavailable: { label: 'Portal no disponible', tone: 'bad' },
   review_required: { label: 'Revisión pendiente', tone: 'warn' },
   not_checked: { label: 'Aún no revisado', tone: 'neutral' },
@@ -338,6 +351,31 @@ function paginationWindow(current: number, total: number): number[] {
   return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
 }
 
+function compareOptionalTimestamps(
+  left: number | null,
+  right: number | null,
+  direction: number,
+): number {
+  if (left === null && right === null) {
+    return 0;
+  }
+  if (left === null) {
+    return 1;
+  }
+  if (right === null) {
+    return -1;
+  }
+  return (left - right) * direction;
+}
+
+function normalizeDashboardText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase('es');
+}
+
 @Component({
   selector: 'app-root',
   imports: [
@@ -412,6 +450,12 @@ export class App implements OnDestroy {
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
   protected readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly postAppointmentFilter = signal<PostAppointmentFilter>('active');
+  protected readonly postAppointmentSearch = signal('');
+  protected readonly postAppointmentSortKey = signal<PostAppointmentSortKey>('priority');
+  protected readonly postAppointmentSortDirection = signal<SortDirection>('asc');
+  protected readonly postAppointmentPage = signal(1);
+  protected readonly postAppointmentPageSize = signal(10);
   protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
   protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
   protected readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
@@ -800,20 +844,130 @@ export class App implements OnDestroy {
   );
   protected readonly postAppointmentItems = computed(() => {
     const priority: Record<string, number> = {
-      access_lost: 0,
-      observation_no_progress: 1,
-      portal_unavailable: 2,
-      awaiting_update: 3,
-      review_required: 4,
-      observation_with_progress: 5,
-      in_progress: 6,
-      upcoming: 7,
-      completed: 8,
+      observation_no_progress: 0,
+      portal_unavailable: 1,
+      awaiting_update: 2,
+      review_required: 3,
+      observation_with_progress: 4,
+      in_progress: 5,
+      upcoming: 6,
+      completed: 7,
+      access_lost: 8,
     };
-    return [...(this.postAppointmentPayload()?.items ?? [])].sort(
-      (left, right) => (priority[left.outcome] ?? 99) - (priority[right.outcome] ?? 99),
-    );
+    const search = this.postAppointmentSearch().trim().toLocaleLowerCase('es');
+    const filter = this.postAppointmentFilter();
+    const direction = this.postAppointmentSortDirection() === 'asc' ? 1 : -1;
+    const filtered = (this.postAppointmentPayload()?.items ?? []).filter((item) => {
+      if (!this.matchesPostAppointmentFilter(item, filter)) {
+        return false;
+      }
+      if (!search) {
+        return true;
+      }
+      return [
+        item.applicant_name,
+        item.document_number_masked,
+        item.order_id,
+        item.program_expediente,
+        item.program_plate,
+        item.site,
+        item.outcome,
+        ...item.stages.map((stage) => stage.message_text),
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('es').includes(search));
+    });
+    return [...filtered].sort((left, right) => {
+      const key = this.postAppointmentSortKey();
+      let compared = 0;
+      if (key === 'priority') {
+        compared = (priority[left.outcome] ?? 99) - (priority[right.outcome] ?? 99);
+      } else if (key === 'appointment_date') {
+        compared = compareOptionalTimestamps(
+          peruDateTimeSortValue(left.appointment_date, left.appointment_hour),
+          peruDateTimeSortValue(right.appointment_date, right.appointment_hour),
+          direction,
+        );
+        if (compared !== 0) {
+          return compared;
+        }
+      } else if (key === 'last_reviewed_at') {
+        compared = compareOptionalTimestamps(
+          peruDateTimeSortValue(left.last_reviewed_at),
+          peruDateTimeSortValue(right.last_reviewed_at),
+          direction,
+        );
+        if (compared !== 0) {
+          return compared;
+        }
+      } else {
+        compared = left.applicant_name.localeCompare(right.applicant_name, 'es', {
+          numeric: true,
+          sensitivity: 'base',
+        });
+      }
+      if (compared !== 0) {
+        return compared * direction;
+      }
+      return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
+    });
   });
+  protected readonly postAppointmentQuickFilters = computed(() => {
+    const items = this.postAppointmentPayload()?.items ?? [];
+    return [
+      {
+        key: 'active' as const,
+        label: 'En seguimiento',
+        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'active')).length,
+      },
+      {
+        key: 'attention' as const,
+        label: 'Requieren atención',
+        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'attention')).length,
+      },
+      {
+        key: 'observations' as const,
+        label: 'Con observación',
+        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'observations'))
+          .length,
+      },
+      {
+        key: 'access_lost' as const,
+        label: 'Historial sin acceso',
+        count: items.filter((item) => item.outcome === 'access_lost').length,
+      },
+      {
+        key: 'progressed' as const,
+        label: 'Con avance o cierre',
+        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'progressed')).length,
+      },
+    ];
+  });
+  protected readonly postAppointmentTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.postAppointmentItems().length / this.postAppointmentPageSize())),
+  );
+  protected readonly currentPostAppointmentPage = computed(() =>
+    Math.min(this.postAppointmentPage(), this.postAppointmentTotalPages()),
+  );
+  protected readonly paginatedPostAppointmentItems = computed(() => {
+    const start =
+      (this.currentPostAppointmentPage() - 1) * this.postAppointmentPageSize();
+    return this.postAppointmentItems().slice(start, start + this.postAppointmentPageSize());
+  });
+  protected readonly postAppointmentPageStart = computed(() =>
+    this.postAppointmentItems().length
+      ? (this.currentPostAppointmentPage() - 1) * this.postAppointmentPageSize() + 1
+      : 0,
+  );
+  protected readonly postAppointmentPageEnd = computed(() =>
+    Math.min(
+      this.currentPostAppointmentPage() * this.postAppointmentPageSize(),
+      this.postAppointmentItems().length,
+    ),
+  );
+  protected readonly postAppointmentPageNumbers = computed(() =>
+    paginationWindow(this.currentPostAppointmentPage(), this.postAppointmentTotalPages()),
+  );
   protected readonly failedRuns = computed(
     () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
   );
@@ -2964,6 +3118,13 @@ export class App implements OnDestroy {
     return this.orderSortDirection() === 'asc' ? 'ASC' : 'DESC';
   }
 
+  protected orderAriaSort(key: OrderSortKey): 'ascending' | 'descending' | null {
+    if (this.orderSortKey() !== key) {
+      return null;
+    }
+    return this.orderSortDirection() === 'asc' ? 'ascending' : 'descending';
+  }
+
   protected requestContactUpdate(): void {
     if (this.orderDetailLoading()) {
       this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
@@ -3469,8 +3630,71 @@ export class App implements OnDestroy {
     return this.closingManualSessionIds().has(sessionId);
   }
 
+  protected setPostAppointmentFilter(filter: PostAppointmentFilter): void {
+    this.postAppointmentFilter.set(filter);
+    this.postAppointmentPage.set(1);
+  }
+
+  protected setPostAppointmentSearch(value: string): void {
+    this.postAppointmentSearch.set(value);
+    this.postAppointmentPage.set(1);
+  }
+
+  protected choosePostAppointmentSort(key: PostAppointmentSortKey): void {
+    if (this.postAppointmentSortKey() === key) {
+      return;
+    }
+    this.postAppointmentSortKey.set(key);
+    this.postAppointmentSortDirection.set(
+      key === 'priority' || key === 'applicant' ? 'asc' : 'desc',
+    );
+    this.postAppointmentPage.set(1);
+  }
+
+  protected togglePostAppointmentSortDirection(): void {
+    this.postAppointmentSortDirection.set(
+      this.postAppointmentSortDirection() === 'asc' ? 'desc' : 'asc',
+    );
+    this.postAppointmentPage.set(1);
+  }
+
+  protected changePostAppointmentPageSize(value: number | string): void {
+    const pageSize = Number(value);
+    if (
+      !POST_APPOINTMENT_PAGE_SIZES.includes(
+        pageSize as (typeof POST_APPOINTMENT_PAGE_SIZES)[number],
+      )
+    ) {
+      return;
+    }
+    this.postAppointmentPageSize.set(pageSize);
+    this.postAppointmentPage.set(1);
+  }
+
+  protected goToPostAppointmentPage(page: number): void {
+    if (
+      page < 1 ||
+      page > this.postAppointmentTotalPages() ||
+      page === this.currentPostAppointmentPage()
+    ) {
+      return;
+    }
+    this.postAppointmentPage.set(page);
+    window.requestAnimationFrame(() => {
+      document.querySelector('.followups-controls')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  protected postAppointmentItemNumber(index: number): number {
+    return this.postAppointmentPageStart() + index;
+  }
+
+  protected postAppointmentItemLabel(index: number): string {
+    return String(this.postAppointmentItemNumber(index)).padStart(3, '0');
+  }
+
   protected async reviewPostAppointment(item: PostAppointmentFollowup): Promise<void> {
-    if (this.isPostAppointmentReviewing(item.order_id)) {
+    if (item.outcome === 'access_lost' || this.isPostAppointmentReviewing(item.order_id)) {
       return;
     }
     this.reviewingPostAppointmentOrderIds.update((orderIds) => {
@@ -3507,21 +3731,47 @@ export class App implements OnDestroy {
       completed: 'La etapa final figura atendida o completada.',
       observation_with_progress: 'Hubo una observación y también avance posterior.',
       observation_no_progress: 'Hubo una observación y no aparece avance posterior.',
-      access_lost: 'El portal rechazó las credenciales guardadas.',
+      access_lost:
+        'Archivado: el cliente cambió sus credenciales. Se conserva el último historial sin programar nuevas revisiones.',
       portal_unavailable: 'La consulta no pudo completarse por un error del portal.',
       review_required: 'Todavía no existe una revisión post-cita concluyente.',
     };
     return details[item.outcome] ?? 'Estado pendiente de interpretación.';
   }
 
-  protected postAppointmentStageTone(stage: { status_text: string | null; message_class: string }): StatusTone {
-    if (stage.message_class === 'observation') {
-      return 'bad';
+  protected postAppointmentStageTone(
+    item: PostAppointmentFollowup,
+    stage: { stage_date: string | null; status_text: string | null; message_class: string },
+  ): string {
+    if (stage.message_class === 'observation' && !item.later_progress_observed) {
+      return 'followup-stage--bad';
     }
-    if (stage.message_class === 'ok') {
-      return 'good';
+    if (stage.message_class === 'observation' && item.later_progress_observed) {
+      return 'followup-stage--good';
     }
-    return stage.status_text ? this.statusTone(stage.status_text) : 'neutral';
+    const status = normalizeDashboardText(stage.status_text);
+    if (
+      ['rechazado', 'cancelado', 'observado', 'no atendido', 'desaprobado'].includes(status)
+    ) {
+      return 'followup-stage--bad';
+    }
+    if (
+      stage.message_class === 'ok' ||
+      stage.stage_date ||
+      ['atendido', 'programado', 'por programar', 'aprobado', 'completado'].includes(status)
+    ) {
+      return 'followup-stage--good';
+    }
+    return 'followup-stage--neutral';
+  }
+
+  protected postAppointmentMessageTone(
+    item: PostAppointmentFollowup,
+    messageClass: string,
+  ): string {
+    return messageClass === 'observation' && !item.later_progress_observed
+      ? 'stage-observation'
+      : 'stage-ok';
   }
 
   protected requestSplitPrograms(): void {
@@ -3949,6 +4199,30 @@ export class App implements OnDestroy {
     this.selectedOrderId.set(orders[0]?.order_id ?? '');
   }
 
+  private matchesPostAppointmentFilter(
+    item: PostAppointmentFollowup,
+    filter: PostAppointmentFilter,
+  ): boolean {
+    if (filter === 'active') {
+      return item.outcome !== 'access_lost';
+    }
+    if (filter === 'attention') {
+      return [
+        'awaiting_update',
+        'observation_no_progress',
+        'portal_unavailable',
+        'review_required',
+      ].includes(item.outcome);
+    }
+    if (filter === 'observations') {
+      return ['observation_no_progress', 'observation_with_progress'].includes(item.outcome);
+    }
+    if (filter === 'access_lost') {
+      return item.outcome === 'access_lost';
+    }
+    return ['in_progress', 'completed', 'observation_with_progress'].includes(item.outcome);
+  }
+
   private countOrders(filter: OrderQuickFilter): number {
     return this.orders().filter((order) => this.matchesOrderQuickFilter(order, filter)).length;
   }
@@ -3982,6 +4256,17 @@ export class App implements OnDestroy {
       if (key === 'queue') {
         return this.compareQueueOrder(left, right) * direction;
       }
+      if (key === 'reservation') {
+        const compared = compareOptionalTimestamps(
+          peruDateTimeSortValue(left.reservation_date, left.reservation_hour),
+          peruDateTimeSortValue(right.reservation_date, right.reservation_hour),
+          direction,
+        );
+        if (compared !== 0) {
+          return compared;
+        }
+        return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
+      }
       const leftValue = this.orderSortValue(left, key);
       const rightValue = this.orderSortValue(right, key);
       const compared =
@@ -4003,16 +4288,13 @@ export class App implements OnDestroy {
       return order.priority;
     }
     if (key === 'created_at') {
-      return Date.parse(order.created_at) || 0;
+      return peruDateTimeSortValue(order.created_at) ?? 0;
     }
     if (key === 'updated_at') {
-      return Date.parse(order.updated_at) || 0;
+      return peruDateTimeSortValue(order.updated_at) ?? 0;
     }
     if (key === 'status') {
       return order.status;
-    }
-    if (key === 'reservation') {
-      return `${order.reservation_date ?? ''} ${order.reservation_hour ?? ''}`;
     }
     if (key === 'payment') {
       return order.payment_status ?? '';
@@ -4028,7 +4310,9 @@ export class App implements OnDestroy {
     if (priorityCompare !== 0) {
       return priorityCompare;
     }
-    const createdCompare = (Date.parse(left.created_at) || 0) - (Date.parse(right.created_at) || 0);
+    const createdCompare =
+      (peruDateTimeSortValue(left.created_at) ?? 0) -
+      (peruDateTimeSortValue(right.created_at) ?? 0);
     if (createdCompare !== 0) {
       return createdCompare;
     }

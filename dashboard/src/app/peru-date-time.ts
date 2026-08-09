@@ -82,6 +82,42 @@ export function formatPeruDateTime(value: string | null | undefined, fallback = 
   return `${parts.date} ${parts.time}`;
 }
 
+export function peruDateTimeSortValue(
+  dateValue: string | null | undefined,
+  timeValue?: string | number | null,
+): number | null {
+  if (!dateValue) {
+    return null;
+  }
+  const text = dateValue.trim();
+  const isoDate = ISO_DATE_ONLY_PATTERN.exec(text);
+  const dayFirstDate = DAY_FIRST_DATE_ONLY_PATTERN.exec(text);
+  if (isoDate || dayFirstDate) {
+    const [year, month, day] = isoDate
+      ? [Number(isoDate[1]), Number(isoDate[2]), Number(isoDate[3])]
+      : [Number(dayFirstDate![3]), Number(dayFirstDate![2]), Number(dayFirstDate![1])];
+    const timeMatch = TIME_ONLY_PATTERN.exec(String(timeValue ?? '').trim());
+    const hour = timeMatch ? Number(timeMatch[1]) : 0;
+    const minute = timeMatch ? Number(timeMatch[2]) : 0;
+    const candidate = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    if (
+      candidate.getUTCFullYear() !== year ||
+      candidate.getUTCMonth() !== month - 1 ||
+      candidate.getUTCDate() !== day ||
+      hour > 23 ||
+      minute > 59
+    ) {
+      return null;
+    }
+    return candidate.getTime();
+  }
+  const normalizedTimestamp = /^\d{4}-\d{2}-\d{2}\s/.test(text)
+    ? text.replace(' ', 'T')
+    : text;
+  const timestamp = Date.parse(normalizedTimestamp);
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
 function formatParts(date: Date): { date: string; time: string } {
   const parts = Object.fromEntries(
     dateTimeFormatter.formatToParts(date).map((part) => [part.type, part.value]),

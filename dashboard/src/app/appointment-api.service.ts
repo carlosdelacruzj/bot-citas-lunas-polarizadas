@@ -165,6 +165,7 @@ export interface PostAppointmentFollowup {
 export interface PostAppointmentPayload {
   summary: {
     total_confirmed: number;
+    active_followups: number;
     needs_attention: number;
     access_lost: number;
     progressed_or_completed: number;

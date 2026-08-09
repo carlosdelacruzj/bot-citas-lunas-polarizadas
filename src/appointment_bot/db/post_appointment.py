@@ -224,13 +224,16 @@ def list_post_appointment_followups(
     attention_outcomes = {
         "awaiting_update",
         "observation_no_progress",
-        "access_lost",
         "portal_unavailable",
         "review_required",
     }
+    archived_access_outcomes = {"access_lost"}
     return {
         "summary": {
             "total_confirmed": len(items),
+            "active_followups": sum(
+                item["outcome"] not in archived_access_outcomes for item in items
+            ),
             "needs_attention": sum(item["outcome"] in attention_outcomes for item in items),
             "access_lost": sum(item["outcome"] == "access_lost" for item in items),
             "progressed_or_completed": sum(

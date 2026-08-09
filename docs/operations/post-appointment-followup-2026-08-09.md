@@ -36,13 +36,31 @@ una finalidad legítima y controles de acceso acordes.
 ## Uso desde el dashboard
 
 1. Abrir **Post-cita**.
-2. Revisar primero los casos marcados con acceso perdido, observación sin avance
-   o fecha pasada sin actualización.
+2. La vista inicial **En seguimiento** excluye los accesos perdidos. Revisar
+   primero las observaciones sin avance y las fechas pasadas sin actualización.
 3. Pulsar **Revisar ahora** en una sola orden.
 4. Esperar el resultado individual. La consulta abre un contexto Playwright
    nuevo, inicia sesión, entra al trámite y lee la tabla de etapas.
-5. Si aparecen credenciales rechazadas, confirmar con el cliente si cambió su
-   clave antes de actualizar el acceso por el flujo administrativo existente.
+5. Si el portal rechaza las credenciales, el caso pasa a **Historial sin
+   acceso**. Conserva su última instantánea y la fecha de revisión, pero deja de
+   ofrecer nuevos intentos desde Post-cita.
+
+La vista permite buscar por cliente, expediente, placa o mensaje, filtrar los
+casos que requieren atención y ordenar por prioridad, cita, revisión o nombre.
+**Requieren atención** no incluye accesos perdidos: esos registros se consultan
+únicamente desde **Historial sin acceso** y no ocupan la paginación operativa.
+Presenta `10` seguimientos por página de forma predeterminada. Cada ficha tiene
+un número estable dentro del resultado paginado y mantiene las etapas plegadas
+hasta que el operador elige **Ver recorrido completo**. El recorrido usa nodos
+`1-6`; en escritorio el conector queda separado de los títulos y en móvil se
+convierte en una línea vertical.
+
+Los colores no se calculan por el texto aislado de una fila. `Atendido`,
+`Programado`, `Por programar`, `OK` y cualquier etapa con fecha se muestran en
+verde. Una observación se muestra en rojo únicamente cuando no hay avance en
+`Peritaje Vehicular`, `Peritaje Lunas` o `Validación`; si sí existe continuidad,
+el mensaje permanece visible pero la etapa se pinta verde. Un estado futuro sin
+fecha queda neutral.
 
 Una revisión no implica que el resultado de la PNP sea definitivo. La
 clasificación **observación con avance** significa únicamente que el portal
@@ -56,6 +74,8 @@ también muestra actividad en `Peritaje Vehicular`, `Peritaje Lunas` o
 - No se crean mensajes ni recordatorios.
 - No se determina por cuenta propia si una persona es apta o no apta.
 - Una falla técnica del portal se separa de credenciales inválidas.
+- `access_lost` es un archivo operativo, no un pendiente: no crea reintentos ni
+  recordatorios y no se suma a **Requieren atención**.
 - La ausencia de avance en una lectura no prueba un rechazo definitivo.
 
 Después de observar varios casos reales se podrá decidir una periodicidad segura
@@ -93,6 +113,13 @@ Validado el `2026-08-09` con consultas reales de solo lectura. PostgreSQL `v49`
 conserva `message_text`, expediente y placa. Un segundo barrido dirigido volvió
 a leer las seis órdenes clasificadas con observación y almacenó sus seis textos.
 No se generaron CAPTCHA, reservas, mensajes ni capturas.
+
+El archivado operativo se validó el mismo día contra los `108` registros
+reales: `92` permanecen en seguimiento, `10` requieren atención y `16` quedan
+en **Historial sin acceso**. Admin API se reinició de forma aislada con cero
+trabajos WhatsApp `running` y publicó esos conteos; `/post-cita` siguió
+respondiendo. `compileall`, Ruff, `59` pruebas, build Angular y
+`git diff --check` quedaron correctos.
 
 ## Primera revisión completa
 

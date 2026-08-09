@@ -3,8 +3,8 @@
     <p class="eyebrow">Historial interno</p>
     <h2 id="followups-title">Después de la cita</h2>
     <p>
-      Revisa el avance real de cada trámite y detecta accesos perdidos u observaciones que no
-      tuvieron continuidad.
+      Revisa los trámites que todavía podemos seguir. Los accesos perdidos permanecen en un
+      historial separado y no generan nuevas revisiones.
     </p>
   </div>
   <div class="followups-privacy-note">
@@ -15,23 +15,77 @@
 
 @if (dashboard.postAppointmentPayload(); as payload) {
   <section class="followups-metrics" aria-label="Resumen post-cita">
-    <article><span>Citas confirmadas</span><strong>{{ payload.summary.total_confirmed }}</strong></article>
-    <article class="warn"><span>Requieren atención</span><strong>{{ payload.summary.needs_attention }}</strong></article>
-    <article class="bad"><span>Accesos perdidos</span><strong>{{ payload.summary.access_lost }}</strong></article>
-    <article class="good"><span>Con avance o cierre</span><strong>{{ payload.summary.progressed_or_completed }}</strong></article>
+    <article><span>En seguimiento</span><strong>{{ payload.summary.active_followups }}</strong></article>
+    <article class="followup-metric--warn"><span>Requieren atención</span><strong>{{ payload.summary.needs_attention }}</strong></article>
+    <article class="followup-metric--muted"><span>Historial sin acceso</span><strong>{{ payload.summary.access_lost }}</strong></article>
+    <article class="followup-metric--good"><span>Con avance o cierre</span><strong>{{ payload.summary.progressed_or_completed }}</strong></article>
+  </section>
+
+  <section class="panel followups-controls" aria-label="Filtros del seguimiento post-cita">
+    <div class="quick-filters">
+      @for (filter of dashboard.postAppointmentQuickFilters(); track filter.key) {
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="dashboard.postAppointmentFilter() === filter.key"
+          (click)="dashboard.setPostAppointmentFilter(filter.key)"
+        >
+          {{ filter.label }}
+          <span>{{ filter.count }}</span>
+        </button>
+      }
+    </div>
+    <div class="order-tool-row">
+      <label class="filter">
+        Buscar cliente, expediente, placa o mensaje
+        <input
+          name="postAppointmentSearch"
+          type="search"
+          autocomplete="off"
+          [ngModel]="dashboard.postAppointmentSearch()"
+          (ngModelChange)="dashboard.setPostAppointmentSearch($event)"
+        />
+      </label>
+      <label class="filter">
+        Ordenar
+        <select
+          name="postAppointmentSort"
+          [ngModel]="dashboard.postAppointmentSortKey()"
+          (ngModelChange)="dashboard.choosePostAppointmentSort($event)"
+        >
+          <option value="priority">Atención primero</option>
+          <option value="appointment_date">Fecha de cita</option>
+          <option value="last_reviewed_at">Última revisión</option>
+          <option value="applicant">Cliente</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="secondary followups-sort-direction"
+        (click)="dashboard.togglePostAppointmentSortDirection()"
+      >
+        {{ dashboard.postAppointmentSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
+      </button>
+    </div>
+    <p class="followups-result-count" aria-live="polite">
+      {{ dashboard.postAppointmentItems().length }} resultados
+    </p>
   </section>
 
   @if (dashboard.postAppointmentItems().length === 0) {
     <app-view-state
       state="empty"
-      title="Aún no hay citas para seguir"
-      message="Cuando exista una reserva confirmada aparecerá aquí para su revisión post-cita."
+      title="No hay seguimientos con estos filtros"
+      message="Cambia el filtro o la búsqueda para volver a mostrar citas confirmadas."
     />
   } @else {
     <section class="followups-list" aria-label="Clientes con seguimiento post-cita">
-      @for (item of dashboard.postAppointmentItems(); track item.order_id) {
+      @for (item of dashboard.paginatedPostAppointmentItems(); track item.order_id; let itemIndex = $index) {
         <article class="panel followup-card">
           <header class="followup-card-header">
+            <span class="followup-record-number" aria-label="Registro {{ dashboard.postAppointmentItemNumber(itemIndex) }}">
+              #{{ dashboard.postAppointmentItemLabel(itemIndex) }}
+            </span>
             <div>
               <div class="followup-identity">
                 <h3>{{ item.applicant_name }}</h3>
@@ -60,28 +114,36 @@
           </header>
 
           @if (item.stages.length) {
-            <ol class="stage-rail" aria-label="Etapas observadas en el portal">
-              @for (stage of item.stages; track stage.stage_key) {
-                <li class="{{ dashboard.postAppointmentStageTone(stage) }}">
-                  <span class="stage-marker" aria-hidden="true"></span>
-                  <div>
-                    <strong>{{ stage.stage_label }}</strong>
-                    <span>
-                      {{ stage.status_text || 'Sin estado' }}
-                      @if (stage.stage_date) { · {{ dashboard.formatDate(stage.stage_date) }} }
-                      @if (stage.stage_hour) { {{ stage.stage_hour }} }
-                    </span>
-                    @if (stage.message_text) {
-                      <small
-                        class="{{ stage.message_class === 'observation' ? 'stage-observation' : 'stage-ok' }}"
-                      >
-                        {{ stage.message_text }}
-                      </small>
-                    }
-                  </div>
-                </li>
-              }
-            </ol>
+            <details class="followup-stage-disclosure">
+              <summary>
+                <span>Ver recorrido completo</span>
+                <small>{{ item.stages.length }} etapas registradas</small>
+              </summary>
+              <ol class="stage-rail" aria-label="Etapas observadas en el portal">
+                @for (stage of item.stages; track stage.stage_key; let stageIndex = $index) {
+                  <li class="{{ dashboard.postAppointmentStageTone(item, stage) }}">
+                    <div class="stage-track" aria-hidden="true">
+                      <span class="stage-marker">{{ stageIndex + 1 }}</span>
+                    </div>
+                    <div class="stage-copy">
+                      <strong>{{ stage.stage_label }}</strong>
+                      <span>
+                        {{ stage.status_text || 'Sin estado' }}
+                        @if (stage.stage_date) { · {{ dashboard.formatDate(stage.stage_date) }} }
+                        @if (stage.stage_hour) { {{ stage.stage_hour }} }
+                      </span>
+                      @if (stage.message_text) {
+                        <small
+                          class="{{ dashboard.postAppointmentMessageTone(item, stage.message_class) }}"
+                        >
+                          {{ stage.message_text }}
+                        </small>
+                      }
+                    </div>
+                  </li>
+                }
+              </ol>
+            </details>
           } @else {
             <div class="followup-no-stages">
               <strong>Sin instantánea de etapas</strong>
@@ -101,17 +163,77 @@
               </small>
               @if (item.error_message) { <small class="followup-error">{{ item.error_message }}</small> }
             </div>
-            <button
-              type="button"
-              class="primary"
-              [disabled]="dashboard.isPostAppointmentReviewing(item.order_id)"
-              (click)="dashboard.reviewPostAppointment(item)"
-            >
-              {{ dashboard.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}
-            </button>
+            @if (item.outcome === 'access_lost') {
+              <div class="followup-archive-state">
+                <span>Archivado</span>
+                <small>Sin nuevos intentos de acceso</small>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="dashboard.isPostAppointmentReviewing(item.order_id)"
+                (click)="dashboard.reviewPostAppointment(item)"
+              >
+                {{ dashboard.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}
+              </button>
+            }
           </footer>
         </article>
       }
     </section>
+
+    <div class="order-table-footer">
+      <span aria-live="polite">
+        {{ dashboard.postAppointmentPageStart() }}–{{ dashboard.postAppointmentPageEnd() }} de
+        {{ dashboard.postAppointmentItems().length }} resultados · Página
+        {{ dashboard.currentPostAppointmentPage() }} de {{ dashboard.postAppointmentTotalPages() }}
+      </span>
+      <label class="filter">
+        Seguimientos por página
+        <select
+          name="postAppointmentPageSize"
+          [ngModel]="dashboard.postAppointmentPageSize()"
+          (ngModelChange)="dashboard.changePostAppointmentPageSize($event)"
+        >
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+        </select>
+      </label>
+    </div>
+
+    @if (dashboard.postAppointmentTotalPages() > 1) {
+      <nav class="order-pagination" aria-label="Páginas de seguimiento post-cita">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="dashboard.currentPostAppointmentPage() === 1"
+          (click)="dashboard.goToPostAppointmentPage(dashboard.currentPostAppointmentPage() - 1)"
+        >
+          Anterior
+        </button>
+        @for (page of dashboard.postAppointmentPageNumbers(); track page) {
+          <button
+            type="button"
+            class="page-button"
+            [class.active]="page === dashboard.currentPostAppointmentPage()"
+            [attr.aria-current]="page === dashboard.currentPostAppointmentPage() ? 'page' : null"
+            [attr.aria-label]="'Página ' + page"
+            (click)="dashboard.goToPostAppointmentPage(page)"
+          >
+            {{ page }}
+          </button>
+        }
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="dashboard.currentPostAppointmentPage() === dashboard.postAppointmentTotalPages()"
+          (click)="dashboard.goToPostAppointmentPage(dashboard.currentPostAppointmentPage() + 1)"
+        >
+          Siguiente
+        </button>
+      </nav>
+    }
   }
 }

@@ -24,7 +24,7 @@ Estado verificado el `2026-08-09`:
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
 | CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Build correcto; bundle inicial de `508.17 kB` y ruta **Post-cita** activa.                                |
+| Dashboard             | Operativo                | Build correcto; bundle inicial de `513.45 kB`, Post-cita paginado y fechas de Órdenes cronológicas.       |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -219,6 +219,34 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   secuencial de las `107` pendientes tomó `20 min 44 s`, usó pausas de `4-7`
   segundos y no produjo errores generales del portal, CAPTCHA, reservas,
   mensajes ni capturas.
+- Corregido el `2026-08-09`: **Post-cita** dejó de renderizar `108` expedientes
+  completos de corrido. Ahora comparte el patrón de controles de **Órdenes**,
+  con búsqueda por cliente/expediente/placa/mensaje, cinco filtros con conteo,
+  orden configurable, fichas numeradas, páginas de `5/10/20` y rango visible.
+  Las seis etapas permanecen dentro de un detalle expandible: el conector ocupa
+  únicamente la fila de marcadores, cada nodo muestra su número y en móvil el
+  recorrido cambia a una línea vertical. El CSS quedó encapsulado, usa
+  `--ink-muted` y retiró las clases globales ambiguas `good/warn/bad` de esta
+  vista. La semántica de color evalúa el recorrido completo: `Atendido`,
+  `Programado`, `Por programar`, mensajes `OK` y etapas con fecha son verdes;
+  una observación solo se pinta roja si no existe continuidad posterior. Si el
+  trámite avanzó, el comentario se conserva visible pero la etapa se considera
+  satisfactoria. Etapas futuras sin fecha permanecen neutrales.
+- Ajustado el `2026-08-09`: los casos `access_lost` se conservan como historial
+  interno, pero salen de la vista predeterminada **En seguimiento**, de la
+  métrica **Requieren atención** y de la paginación operativa. El filtro
+  **Historial sin acceso** permite consultar la última instantánea y cuándo se
+  perdió el acceso; esas fichas figuran archivadas y no ofrecen **Revisar
+  ahora**. Los errores técnicos continúan separados y sí permanecen
+  accionables. No se borraron revisiones ni textos y no se añadieron
+  recordatorios o reintentos automáticos.
+- Corregido el `2026-08-09`: el orden **Reserva** de **Órdenes** ya no compara
+  el texto `DD/MM/YYYY`. Un parser común normaliza `DD/MM/YYYY`, `DD-MM-YYYY`,
+  `YYYY-MM-DD` y timestamps, combina fecha con hora y mantiene valores ausentes
+  al final. La prueba contra las `108` reservas activas produjo un recorrido
+  ascendente real desde `10/07/2026 09:00` hasta `29/08/2026 08:00`, sin
+  agrupar primero por día. La paginación de Órdenes muestra además siempre
+  `Página X de Y` y sus cabeceras ordenables exponen `aria-sort`.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
 - Retirado el `2026-08-07`: el registro por invitaciones dejó de formar parte
@@ -604,6 +632,19 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   manual se controla por `session_id`. La validación fue de código y build: no
   se cerraron sesiones reales ni se enviaron mensajes, y el navegador integrado
   no estuvo disponible para una repetición visual.
+- UX de Post-cita y fechas de Órdenes: build Angular correcto con bundle
+  inicial de `513.45 kB`; el parser cronológico se ejecutó sobre la respuesta
+  real de Admin API y ordenó `108` citas de julio a agosto correctamente. La
+  ventana de navegador integrada continuó no disponible, por lo que queda
+  pendiente una aprobación visual de escritorio y móvil; no se sustituyó por
+  una afirmación basada solo en build.
+- Archivo de accesos perdidos: la consulta directa y el endpoint autenticado
+  activo coincidieron en `108` históricos, `92` seguimientos visibles por
+  defecto, `10` casos accionables y `16` accesos archivados. Antes del reinicio
+  aislado se comprobaron cero trabajos WhatsApp `running`; Admin API regresó
+  saludable en `8766`, `/post-cita` respondió `200` y el worker continuó en
+  modo `api_only`. `compileall`, Ruff, `59 passed`, build Angular y
+  `git diff --check` quedaron correctos.
 - Proyecto `test-captcha`: `compileall`, Ruff y `28 passed`; servicio reiniciado
   de forma aislada y saludable en CUDA con v3 y v6.
 - Destinatario por usuario: esquema v45 aplicado; resolucion local comprobo

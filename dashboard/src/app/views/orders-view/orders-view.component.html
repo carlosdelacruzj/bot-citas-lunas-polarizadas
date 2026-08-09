@@ -460,22 +460,22 @@
     <table class="responsive-table order-table">
       <thead>
         <tr>
-          <th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('applicant')">
             <button type="button" class="sort-header" (click)="dashboard.setOrderSort('applicant')">
               Cliente {{ dashboard.sortIndicator('applicant') }}
             </button>
           </th>
-          <th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('status')">
             <button type="button" class="sort-header" (click)="dashboard.setOrderSort('status')">
               Estado {{ dashboard.sortIndicator('status') }}
             </button>
           </th>
-          <th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('reservation')">
             <button type="button" class="sort-header" (click)="dashboard.setOrderSort('reservation')">
               Reserva {{ dashboard.sortIndicator('reservation') }}
             </button>
           </th>
-          <th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('payment')">
             <button type="button" class="sort-header" (click)="dashboard.setOrderSort('payment')">
               Pago {{ dashboard.sortIndicator('payment') }}
             </button>
@@ -569,7 +569,8 @@
 
   <div class="order-table-footer">
     <span>
-      {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de {{ dashboard.filteredOrders().length }} resultados
+      {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de {{ dashboard.filteredOrders().length }} resultados ·
+      Página {{ dashboard.currentOrderPage() }} de {{ dashboard.orderTotalPages() }}
     </span>
     <label class="filter">
       Filas por página
@@ -601,6 +602,7 @@
           class="page-button"
           [class.active]="page === dashboard.currentOrderPage()"
           [attr.aria-current]="page === dashboard.currentOrderPage() ? 'page' : null"
+          [attr.aria-label]="'Página ' + page"
           (click)="dashboard.goToOrderPage(page)"
         >
           {{ page }}
