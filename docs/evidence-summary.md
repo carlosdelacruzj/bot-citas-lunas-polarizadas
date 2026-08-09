@@ -3,27 +3,27 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 831
+- Eventos indexados: 849
 - Reservas registradas: 87
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 423
-- Disponibilidades parciales: 163
+- Disponibilidades parciales: 173
 - Senales de defensa: 8
 
 ## Origen de deteccion
-- normal: 831
+- normal: 849
 
 ## Ultimos eventos utiles
-- 2026-08-07 16:11:51 | order-*** | error | normal | sin cita | sin outcome
-- 2026-08-07 15:41:05 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
-- 2026-08-07 15:40:58 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
-- 2026-08-07 15:40:52 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
-- 2026-08-07 15:40:46 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
-- 2026-08-07 15:40:38 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
-- 2026-08-07 15:40:32 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
-- 2026-08-07 15:40:25 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
-- 2026-08-07 15:40:19 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
-- 2026-08-07 15:40:13 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
+- 2026-08-08 11:08:13 | order-*** | unavailable | normal | 22/08/2026 10:00 | slot_lost
+- 2026-08-08 11:07:24 | order-*** | unavailable | normal | 13/08/2026 09:00 | slot_lost
+- 2026-08-08 11:05:13 | order-*** | unavailable | normal | 29/08/2026 09:00 | slot_lost
+- 2026-08-08 10:39:00 | order-*** | unavailable | normal | 31/08/2026 12:00 | slot_lost
+- 2026-08-08 10:36:30 | order-*** | unavailable | normal | 31/08/2026 11:00 | slot_lost
+- 2026-08-08 10:35:28 | order-*** | unavailable | normal | 31/08/2026 08:00 | slot_lost
+- 2026-08-08 10:19:00 | order-*** | unavailable | normal | 10/08/2026 12:00 | slot_lost
+- 2026-08-08 10:06:43 | order-*** | unavailable | normal | 31/08/2026 09:00 | slot_lost
+- 2026-08-08 10:05:21 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
+- 2026-08-08 10:03:18 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
 
 ## Senales de defensa
 - 2026-08-07 16:11:51 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

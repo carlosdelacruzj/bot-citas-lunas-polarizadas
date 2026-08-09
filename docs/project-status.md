@@ -226,10 +226,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
-- Simplificado el `2026-08-01`: se retiró por completo el etiquetado manual de
-  CAPTCHA desde Telegram, junto con sus variables y scripts exclusivos. El menú
-  dejó de mostrar recientes y credenciales, agrupó sistema con errores y la
-  búsqueda ahora solicita el término como una conversación guiada.
+- Simplificado el `2026-08-01`: se retiró el etiquetado antiguo de CAPTCHA que
+  escribía en un CSV separado, junto con sus variables y scripts exclusivos.
+  Implementado nuevamente el `2026-08-08` sobre la cola sombra vigente: Telegram
+  muestra el pendiente más antiguo, agrupa respuestas iguales de los modelos,
+  permite elegir una, escribir cinco caracteres manualmente u omitir, guarda por
+  Admin API y avanza automáticamente. La sesión vence tras `10` minutos de
+  inactividad y cada imagen invalida los botones anteriores.
 - `/cliente_nuevo` crea una orden de forma manual. Solicita tipo y número de documento,
   contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
   las cuatro restricciones de fecha. Por decisión del único operador autorizado, la
@@ -245,9 +248,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   1 de agosto se sanitizaron antes de versionarlas.
 - CAPTCHA original utilizado para el solver.
 - Servicio local en modo sombra, cola durable y revisión humana desde el
-  dashboard.
+  dashboard o Telegram; ambas interfaces guardan en la misma fuente de verdad.
+- El botón **Etiquetar CAPTCHA** y `/captchas` recorren en orden los eventos no
+  etiquetados. Las respuestas repetidas de varios modelos aparecen como una sola
+  opción con sus modelos asociados; **Escribir otra respuesta**, **Omitir** y
+  **Salir** cubren los demás casos. Antes de guardar se exige que el evento siga
+  sin etiqueta para no pisar una revisión realizada desde la otra interfaz.
 - El modelo local no participa en la decisión de reserva; 2Captcha sigue siendo
   la respuesta enviada al portal.
+- Implementado el `2026-08-09`: el servicio sombra residente ejecuta únicamente
+  `v3_selected` como control y `v6_sequence_candidate` como candidata sobre
+  CAPTCHA nuevos. V1, las dos variantes V2, V4 y V5 dejaron de consumir GPU,
+  pero sus checkpoints, métricas y predicciones históricas permanecen intactos.
+  El dashboard y Telegram siguen leyendo eventos antiguos de forma dinámica.
 - Implementado el `2026-08-01`: el flujo real admite muestreo CAPTCHA opcional
   mediante `RESERVATION_CAPTCHA_SAMPLE_LIMIT`. Desde el `2026-08-08`, el
   dashboard permite activarlo o desactivarlo y conservar un total entre `2` y
@@ -260,7 +273,8 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   guardado para evitar confundir el total elegido con el total efectivo. El
   bloque usa separación explícita de `16-24 px`, tarjetas internas respiradas,
   resultado aislado y acción final dividida por borde. El presupuesto CSS se
-  amplió de `27/30 kB` a `30/33 kB`; el build queda en `504.11 kB` sin warning.
+  amplió de `27/30 kB` a `30/33 kB`; el build vigente queda en `504.21 kB` sin
+  warning.
 - Los 46 intervalos consecutivos medidos en el muestreo del observador tuvieron
   `0.390 s` de mediana y `0.406 s` de p90 por CAPTCHA adicional. Un límite de
   `5` agrega aproximadamente `1.6 s` antes de iniciar 2Captcha. La opción queda
@@ -452,13 +466,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    El muestreo opcional de reservas reales aumenta los datos disponibles, pero
    también retrasa el submit unos `0.4 s` por muestra adicional y puede elevar
    el riesgo de perder el cupo.
-   v3 mejora a `v2_selected` en los holdouts históricos comparables, pero en el
-   primer lote prospectivo quedó en `119/126` (`94.44%`): empató con
-   `v2_selected` y quedó un acierto detrás de `v2_scratch`. Con siete errores ya
-   acumulados, aunque acertara las muestras restantes terminaría en `493/500`
-   (`98.6%`), por debajo del requisito de más de 99%. Se necesitan más datos para
-   analizar errores y entrenar una nueva candidata, cuyo corte prospectivo debe
-   comenzar nuevamente después de su entrenamiento.
+   El corte prospectivo de v3 cerró como evidencia insuficiente y produjo la
+   arquitectura v6. V6 alcanzó `487/490` (`99.39%`) en regresión protegida, pero
+   ese resultado retrospectivo no autoriza producción. Debe superar más de 99%
+   sobre al menos 500 CAPTCHA frescos posteriores a su congelación; hasta cerrar
+   ese corte, v3 y v6 permanecen solo en sombra y 2Captcha conserva autoridad.
 8. La evidencia versionada está sanitizada, pero sigue siendo telemetría
    operacional y debe revisarse antes de compartir.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
@@ -479,6 +491,8 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
 - `python -m pytest -q`: `59 passed`.
+- Proyecto `test-captcha`: `compileall`, Ruff y `28 passed`; servicio reiniciado
+  de forma aislada y saludable en CUDA con v3 y v6.
 - Destinatario por usuario: esquema v45 aplicado; resolucion local comprobo
   usuario solo, prioridad del numero y rechazo de alias como telefono. La prueba
   de solo lectura abrio dos veces `@diego.durand` con el alias visible y dos
@@ -488,9 +502,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - Retiro de invitaciones: dashboard activo, ruta anterior responde `404`,
   Telegram valida correctamente y PostgreSQL quedó en esquema v43 sin la tabla
   `hosted_registration_contacts`.
-- Admin API, PostgreSQL y CAPTCHA sombra: saludables; CAPTCHA sombra carga
-  `v1_real`, `v2_scratch`, `v2_selected` y `v3_selected` en CUDA, con v3 como
-  referencia visual; worker pendiente del siguiente arranque diario.
+- Admin API, PostgreSQL y CAPTCHA sombra: saludables. Desde el `2026-08-09`,
+  CAPTCHA sombra carga únicamente `v3_selected` y `v6_sequence_candidate` en
+  CUDA para eventos nuevos, con v3 como referencia visual; `/health` y
+  `/v1/models` confirmaron ambos después del reinicio aislado y el historial de
+  los modelos retirados continúa consultable.
 - Corte CAPTCHA prospectivo consultado directamente en la base sombra:
   `126/500` muestras revisadas; v3 `119/126`, sin eventos nuevos después del
   `2026-08-05`. El servicio fue reiniciado y está saludable desde el

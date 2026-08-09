@@ -1723,6 +1723,9 @@ export class App implements OnDestroy {
         v2_scratch: 'v2 desde cero',
         v2_selected: 'v2 seleccionado',
         v3_selected: 'v3 seleccionado',
+        v4_candidate: 'v4 histórico',
+        v5_candidate: 'v5 histórico',
+        v6_sequence_candidate: 'v6 secuencial',
       }[modelName] ?? modelName
     );
   }

@@ -352,6 +352,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = save_captcha_shadow_human_label_payload(
                 captcha_event_id,
                 self._read_json(),
+                reviewer=self.headers.get("X-Appointment-Actor") or "dashboard-owner",
             )
             self._send_json(status, payload)
             return

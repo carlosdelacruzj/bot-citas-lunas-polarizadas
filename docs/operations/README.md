@@ -102,6 +102,7 @@ memoria con el worker. En la primera version admite:
 - `/prioridad ORDER_ID VALOR`;
 - `/reglas_editar ORDER_ID`;
 - `/cliente_nuevo`;
+- `/captchas`;
 - `/pausar`;
 - `/reanudar`;
 - `/reiniciar`;
@@ -158,6 +159,20 @@ de iniciar o recuperarse.
 busqueda guiada, estado, resumen y sistema. Al pulsar
 `Buscar cliente`, el receptor espera el nombre, contacto, documento, WhatsApp u
 orden y devuelve botones; no es necesario recordar `/buscar TEXTO`.
+
+El botón `Etiquetar CAPTCHA` y `/captchas` abren la misma cola de revisión humana
+que usa el dashboard. Telegram envía primero el evento pendiente más antiguo y
+muestra una opción por respuesta única; cuando varios modelos coinciden, sus
+nombres aparecen agrupados en el mismo botón. El operador puede elegir una
+predicción, pulsar `Escribir otra respuesta` y enviar exactamente cinco letras o
+números, omitir la imagen durante esa sesión o salir. Cada guardado abre
+automáticamente el siguiente CAPTCHA y actualiza el progreso.
+
+La sesión vence después de diez minutos sin actividad. Cada imagen genera un
+token nuevo, por lo que los botones de mensajes anteriores quedan obsoletos. El
+guardado pasa por Admin API, comprueba que el evento todavía no tenga etiqueta y
+registra al actor remoto sin exponer el chat. Esta revisión no interviene en una
+reserva activa: 2Captcha conserva la única respuesta enviada al portal.
 
 `/cliente_nuevo` solicita tipo y numero de documento, contrasena, nombre de
 contacto, fuente y WhatsApp opcional. Luego permite crear sin restricciones o

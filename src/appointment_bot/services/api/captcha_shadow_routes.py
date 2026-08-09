@@ -269,6 +269,8 @@ def captcha_shadow_human_label_event_id(path: str) -> str | None:
 def save_captcha_shadow_human_label_payload(
     event_id: str,
     payload: dict[str, Any],
+    *,
+    reviewer: str = "dashboard-owner",
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     answer = str(payload.get("answer") or "").strip().upper()
     image_sha256 = str(payload.get("expected_image_sha256") or "").strip().lower()
@@ -284,13 +286,21 @@ def save_captcha_shadow_human_label_payload(
         )
     settings = load_settings(require_login=False)
     try:
+        if bool(payload.get("expected_unlabeled")):
+            current = _shadow_get(settings, f"/v1/events/{quote(event_id, safe='')}")
+            event = current.get("event") if isinstance(current.get("event"), dict) else current
+            if event.get("human_label"):
+                return HTTPStatus.CONFLICT, error_payload(
+                    "captcha_already_labeled",
+                    "El CAPTCHA ya fue etiquetado desde otra interfaz.",
+                )
         response = _shadow_post(
             settings,
             f"/v1/events/{quote(event_id, safe='')}/human-label",
             {
                 "answer": answer,
                 "expected_image_sha256": image_sha256,
-                "reviewer": "dashboard-owner",
+                "reviewer": str(reviewer or "dashboard-owner")[:100],
                 "note": note[:500],
             },
         )

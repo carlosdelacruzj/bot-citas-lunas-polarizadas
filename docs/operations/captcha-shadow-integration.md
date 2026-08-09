@@ -313,6 +313,23 @@ El último evento del corte ingresó el `2026-08-05`. El servicio está saludabl
 en CUDA desde su reinicio del `2026-08-06`, con `v3_selected` como referencia
 visual, pero no había recibido muestras adicionales al momento de esta revisión.
 
+## Reducción residente para v6 del 9 de agosto de 2026
+
+La arquitectura `v6_sequence_candidate` alcanzó `487/490` (`99.39%`) en la
+regresión protegida y abrió un corte prospectivo independiente. Para evitar
+seguir consumiendo GPU y poblando la revisión humana con comparadores que ya
+cumplieron su función, el servicio residente procesa desde este corte únicamente:
+
+- `v3_selected`, como control y referencia visual;
+- `v6_sequence_candidate`, como candidata prospectiva.
+
+V1, las dos variantes V2, V4 y V5 no fueron borradas. Sus checkpoints, métricas
+y predicciones históricas siguen disponibles, y `v2_selected` permanece como
+fallback de lectura para eventos antiguos que no tengan una predicción v3. La
+reducción solo afecta imágenes nuevas. Tampoco cambia la autoridad: 2Captcha
+continúa siendo la única respuesta enviada al portal hasta que v6 supere más de
+99% en al menos 500 CAPTCHA frescos posteriores a su congelación.
+
 ## Historial de entregas publicadas
 
 - `9f0f30c`: contrato y registro de implementación;

@@ -170,6 +170,17 @@ Estado: en observación.
 - Corregida y recuperada la publicación de esa ruta hacia CAPTCHA sombra: los
   20 eventos tienen tres predicciones y quedaron pendientes de revisión humana
   en el dashboard.
+- Completado el `2026-08-08`: Telegram recuperó el etiquetado humano conectado a
+  la cola sombra actual, no al CSV antiguo. El botón muestra pendientes en orden,
+  deduplica las respuestas coincidentes de los modelos, admite respuesta manual,
+  omitir y salir, avanza automáticamente y vence tras `10` minutos sin actividad.
+  Los tokens por imagen rechazan botones obsoletos y el guardado no sobrescribe
+  una etiqueta creada simultáneamente desde el dashboard. Mantener 2Captcha como
+  única autoridad para las reservas reales.
+- Completado el `2026-08-09`: las inferencias residentes nuevas se redujeron a
+  `v3_selected` como control y `v6_sequence_candidate` como candidata. V1, V2,
+  V4 y V5 conservan checkpoints y predicciones históricas, pero ya no consumen
+  GPU ni agregan opciones a los CAPTCHA nuevos.
 - Completado en código el `2026-08-08`: la captura CAPTCHA de un cupo bloqueado
   por reglas permanece disponible localmente y en sombra, pero ya no se envía
   como evidencia diferida a Telegram. El selector de evidencia tampoco usa un
@@ -189,16 +200,12 @@ Estado: en observación.
   sostener más de 99% con una regla fijada antes del corte. El desacuerdo, baja
   confianza, timeout o servicio local no saludable siempre deben derivar a
   2Captcha.
-- En progreso desde v3: el corte prospectivo reúne `126/500` CAPTCHA nuevos,
-  todos revisados manualmente. v3 obtuvo `119/126` (`94.44%`), empató con
-  `v2_selected` y quedó detrás de `v2_scratch`, que obtuvo `120/126` (`95.24%`).
-  Las métricas anteriores al `2026-08-02` siguen sirviendo solo como regresión y
-  comparación histórica.
-- Revisar los siete errores prospectivos de v3, reunir más casos difíciles y
-  entrenar una nueva candidata. No completar las 500 muestras como un trámite:
-  aun con acierto perfecto en las 374 restantes, v3 terminaría en `493/500`
-  (`98.6%`) y no alcanzaría la regla de más de 99%. La siguiente candidata debe
-  iniciar su propio corte limpio posterior al entrenamiento.
+- En progreso desde la congelación de v6: reunir y revisar al menos `500`
+  CAPTCHA nuevos sin usarlos para reentrenar. Comparar prospectivamente v6
+  contra el control v3, auditar errores y estabilidad por día y sesión, y no
+  promover ningún modelo hasta sostener más de `99%` con la regla fijada antes
+  del corte. V1, V2, V4 y V5 quedan como comparaciones históricas fuera del
+  servicio residente.
 - Detalle operativo, tiempos y guardas en
   [`../operations/captcha-shadow-integration.md`](../operations/captcha-shadow-integration.md#muestreo-durante-una-reserva-real).
 
@@ -276,9 +283,9 @@ Estado: iniciado.
 3. Medir dependencia de intervención humana en WhatsApp y pagos.
 4. Mantener Telegram como interfaz remota y Admin API como frontera de
    autorización.
-5. Completado el `2026-08-01`: simplificado el menú remoto, retirada la función
-   antigua de etiquetado CAPTCHA y convertida la búsqueda por botón en un flujo
-   guiado que no requiere recordar comandos.
+5. Completado el `2026-08-08`: el menú remoto conserva la búsqueda guiada y
+   recupera el etiquetado CAPTCHA sobre la cola sombra vigente. El flujo antiguo
+   basado en un CSV separado permanece retirado.
 6. Confirmar en el siguiente reinicio que Kaspersky conserva la tarea
    `AppointmentBotContinuousWorker` y el supervisor raíz PowerShell. La
    recuperación individual de los cuatro supervisores ya quedó implementada;

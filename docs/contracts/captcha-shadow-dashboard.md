@@ -5,8 +5,8 @@ Fecha de referencia: 21 de julio de 2026.
 ## Objetivo
 
 El dashboard administrativo incorpora una vista `CAPTCHA` para revisar, con pocos clics, la
-misma imagen enviada a 2Captcha y a los tres modelos locales. La vista es de solo lectura y no
-participa en la decisión operativa de reserva.
+misma imagen enviada a 2Captcha y las predicciones locales disponibles. La cantidad de modelos es
+dinámica y la vista no participa en la decisión operativa de reserva.
 
 ## Experiencia de uso
 
@@ -15,7 +15,7 @@ La vista muestra sin abrir modales:
 - miniatura de la imagen original;
 - fecha, orden, intento y referencia del evento;
 - respuesta y tiempo de 2Captcha;
-- respuesta, confianza y tiempo de inferencia de `v1_real`, `v2_scratch` y `v2_selected`;
+- respuesta, confianza y tiempo de inferencia de cada modelo almacenado en el evento;
 - coincidencia o diferencia frente a 2Captcha;
 - validación explícita del portal o estado pendiente.
 
@@ -88,7 +88,7 @@ originales consecutivos. Cada imagen se registra como un evento independiente:
 Estas muestras:
 
 - no se envían a 2Captcha y no generan consumo externo;
-- sí se persisten en el outbox y se procesan por `v1_real`, `v2_scratch` y `v2_selected`;
+- sí se persisten en el outbox y se procesan por los modelos sombra activos;
 - conservan los tiempos `inference_ms` de cada modelo;
 - aparecen en el dashboard como `Solo modelos locales` y `2Captcha: No enviado`;
 - no se presentan como aceptadas por el portal porque nunca se envían al formulario.
