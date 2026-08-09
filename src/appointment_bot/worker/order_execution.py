@@ -128,6 +128,7 @@ def run_service_order(
     lease_owner: str,
     rapid_mode: bool = False,
     observer_mode: bool = False,
+    burst_mode: bool = False,
     cancel_event: threading.Event | None = None,
     on_check: Callable[..., None] | None = None,
 ) -> RunReport:
@@ -192,6 +193,25 @@ def run_service_order(
             order_settings,
             monitor_window_seconds=0,
             monitor_max_attempts=1,
+            reservation_captcha_sample_limit=1,
+            reservation_captcha_runtime_control_enabled=False,
+        )
+    elif burst_mode:
+        order_settings = replace(
+            order_settings,
+            auto_reserve=settings.auto_reserve,
+            monitor_window_seconds=settings.opportunity_burst_session_seconds,
+            monitor_max_attempts=settings.opportunity_burst_attempts,
+            monitor_interval_min_seconds=(
+                settings.observer_site_toggle_interval_min_seconds
+            ),
+            monitor_interval_max_seconds=(
+                settings.observer_site_toggle_interval_max_seconds
+            ),
+            monitor_site_toggle_enabled=True,
+            monitor_reload_probe_after_attempt=(
+                settings.opportunity_burst_reload_probe_after_attempt
+            ),
             reservation_captcha_sample_limit=1,
             reservation_captcha_runtime_control_enabled=False,
         )
@@ -291,7 +311,9 @@ def run_service_order(
             ),
             on_submission_intent=on_submission_intent,
             on_submission_started=on_submission_started,
-            notify_mode="deferred" if rapid_mode or observer_mode else "full",
+            notify_mode=(
+                "deferred" if rapid_mode or observer_mode or burst_mode else "full"
+            ),
         )
         lease_lost = heartbeat.lost_event.is_set()
     report = with_order_details(report)

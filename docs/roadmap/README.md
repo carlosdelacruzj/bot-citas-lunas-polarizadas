@@ -1,10 +1,28 @@
 # Trabajo pendiente
 
-Última priorización: `2026-08-08`.
+Última priorización: `2026-08-09`.
 
 Esta es la única lista de tareas futuras y el orden vigente de ejecución. El
 estado de lo construido, validado y observado vive en
 [`../project-status.md`](../project-status.md).
+
+## Orden inmediato
+
+1. Validar en el próximo cupo real el canario `OBS-006`: detector + auxiliar,
+   preferencia por el otro usuario del bloque, reemplazo solo tras
+   `registered`, máximo concurrente, tiempo hasta cada submit y cierre limpio.
+2. Cerrar dos o tres días comparables del observer `15/1-2/8` antes de cambiar
+   otra variable. El corte semanal del 1 al 8 de agosto quedó actualizado.
+3. Confirmar en eventos reales pendientes el modal CSS, los backoffs por reglas
+   y CAPTCHA, y los cuatro tipos de trabajos WhatsApp; no provocar mensajes de
+   prueba a clientes.
+4. Si aparece defensa, reserva incierta, claim perdido, navegador huérfano o
+   regresión operativa, aplicar `OPPORTUNITY_BURST_ENABLED=false`, reiniciar
+   únicamente el worker cuando no haya submissions pendientes y conservar la
+   cadena secuencial como fallback.
+5. Ejecutar las revisiones semanales, mensuales, por cada 100 CAPTCHA y después
+   del próximo reinicio definidas en
+   [`../project-status.md`](../project-status.md#cadencia-de-revisión-vigente).
 
 ## Prioridad 0 - Recuperar una validación confiable
 
@@ -257,20 +275,30 @@ Estado: en observación.
 - Revisar lecturas por hora, sesiones, errores, `slot_lost`, CAPTCHA y señales
   `403`, `429` o `recovery_backoff`.
 - Cambiar una sola variable por experimento.
-- Mejora futura `OBS-006`, en evaluación y todavía no aprobada: conservar una
-  sola sesión durante la operación normal y, ante disponibilidad completa real,
-  iniciar un pool deslizante de hasta tres clientes. El detector reserva sin
-  esperar; hasta dos sesiones nuevas se abren en paralelo y cada posición
-  liberada por una reserva confirmada puede tomar el siguiente cliente
-  compatible. La ráfaga termina al agotarse clientes, desaparecer los cupos o
-  alcanzar sus guardas.
-- Antes de implementar `OBS-006`, diseñar el controlador separado, el estado
-  multisesión, claims/heartbeats independientes, cancelación conjunta, límites
-  de duración/clientes y telemetría. Preparar primero detrás de una bandera
-  desactivada y validar apertura/cierre sin enviar reservas.
-- No activar `OBS-006` mientras se evalúe otra variable operativa. Los criterios,
-  tiempos medidos, riesgos, métricas y pasos están en
-  [`../optimization.md`](../optimization.md#hipótesis-futura-ráfaga-multicliente).
+- Completado en código el `2026-08-09`: `OBS-006` implementa un pool deslizante
+  de dos posiciones. El detector continúa su reserva y abre un auxiliar,
+  priorizando al otro usuario del bloque activo si es compatible. Cada
+  `registered` confirmado admite al siguiente cliente compatible.
+- El corte del 1 al 8 de agosto registró seis tandas compartidas, seis intentos
+  posteriores y un `registered` posterior (`16.7%`). Esto confirma una pérdida
+  temporal posible; es la línea previa para evaluar el canario, no una promesa
+  de mejora.
+- Validado sin portal: detector + auxiliar, máximo de dos sesiones, reemplazo
+  después de una reserva detectora o auxiliar, límite de tres clientes y
+  rollback por bandera sin consultar candidatos. La suite continúa en verde.
+- Pendiente real: confirmar `burst_id`, máximo concurrente, duración, orden de
+  candidatos, resultados, liberación de claims y vuelta al observer normal.
+- Evaluar después de al menos diez ráfagas reales y treinta ejecuciones
+  auxiliares. Comparar reservas adicionales por tanda, tiempo a primera lectura
+  y submit, `slot_lost`, `reservation_unconfirmed`, CAPTCHA, memoria y defensas
+  contra la cadena secuencial.
+- No cambiar otra variable mientras se evalúa `OBS-006`. Un submit
+  ambiguo detiene nuevos auxiliares y nunca se reintenta; un `403`, `429`,
+  defensa, pérdida de lease o fallo de coordinación detiene reemplazos. El
+  comportamiento y rollback están en
+  [`../operations/opportunity-burst-canary-2026-08-09.md`](../operations/opportunity-burst-canary-2026-08-09.md).
+- Escalar a tres sesiones, diez clientes y `90` segundos continúa siendo una
+  mejora futura no autorizada hasta cerrar la muestra mínima sin incidentes.
 
 ## Prioridad 2 - Cerrar el corte documental
 
@@ -280,8 +308,9 @@ Estado: iniciado con el punto de partida del `2026-07-25`.
 2. Mantener este archivo como única cola futura.
 3. Corregir documentos con texto o fechas obsoletas solo cuando afecten una
    decisión actual; los documentos históricos no se reescriben.
-4. Añadir a `history/` un nuevo cierre cuando termine esta fase de
-   consolidación.
+4. Completado el `2026-08-09`: se añadió a `history/milestones.md` el corte de
+   revisión integral, las métricas del 1 al 8 de agosto y la decisión vigente
+   sobre `OBS-006`.
 
 ## Prioridad 3 - Reducir riesgo operativo
 

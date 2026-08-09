@@ -1,9 +1,9 @@
 # Reporte semanal de operacion
 
-- Rango actual: `2026-07-13` a `2026-07-18` (America/Lima, inclusivo).
-- Rango comparable anterior: `2026-07-07` a `2026-07-12`.
-- Runs medidos: 5356 actuales; 3918 anteriores.
-- Intentos medidos: 61 actuales; 36 anteriores.
+- Rango actual: `2026-08-01` a `2026-08-08` (America/Lima, inclusivo).
+- Rango comparable anterior: `2026-07-24` a `2026-07-31`.
+- Runs medidos: 5299 actuales; 4234 anteriores.
+- Intentos medidos: 78 actuales; 21 anteriores.
 
 `registered` significa reserva confirmada por esta ejecucion. `Programado/completed` se informa aparte y nunca se suma a `registered`.
 
@@ -11,33 +11,33 @@
 
 | Resultado | Actual | Anterior |
 | --- | ---: | ---: |
-| registered | 28 | 15 |
-| Programado/completed | 4 | 6 |
+| registered | 20 | 5 |
+| Programado/completed | 1 | 0 |
 | completed sin Programado | 0 | 0 |
 | reservation_unconfirmed | 0 | 0 |
-| slot_lost | 29 | 15 |
-| bloqueado por regla | 16 | 10 |
-| senales de defensa | 1 | 0 |
+| slot_lost | 57 | 15 |
+| bloqueado por regla | 121 | 4 |
+| senales de defensa | 2 | 0 |
 
 ## Tiempos
 
 | Tramo | n | p50 | p90 |
 | --- | ---: | ---: | ---: |
-| Deteccion a fin | 75 | 7.485s | 18.559s |
-| CAPTCHA | 57 | 1.406s | 12.046s |
-| Seleccion | 75 | 1.703s | 1.797s |
-| Cambio de usuario | 29 | 2.000s | 62.800s |
+| Deteccion a fin | 198 | 3.000s | 15.900s |
+| CAPTCHA | 77 | 1.641s | 7.256s |
+| Seleccion | 198 | 1.968s | 2.031s |
+| Cambio de usuario | 23 | 2.000s | 104.000s |
 
 ## Variabilidad CAPTCHA
 
-- Mas de 3s: 19.
-- Mas de 5s: 19.
-- Mas de 10s: 19.
-- Mas de 20s: 2.
+- Mas de 3s: 34.
+- Mas de 5s: 34.
+- Mas de 10s: 0.
+- Mas de 20s: 0.
 
 ## Alertas
 
-- CAPTCHA: 19 respuestas superaron 10 segundos.
+- Sin alertas para este rango.
 
 ## Acumulado historico
 

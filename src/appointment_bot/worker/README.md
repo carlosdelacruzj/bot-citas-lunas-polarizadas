@@ -23,6 +23,7 @@ Desde el paso 9.4 contiene la implementacion del proceso continuo:
 - `worker.state_callbacks`
 - `worker.order_results`
 - `worker.observer_results`
+- `worker.opportunity_burst`
 
 Desde el paso 9.7 se retiraron las rutas antiguas `services/continuous_*`,
 `services/order_execution.py` y `services/worker_*.py`. `appointment-bot-worker`
@@ -33,3 +34,5 @@ Desde el P2 de backend, `worker.queue_runtime` es una fachada de compatibilidad.
 `queue_traversal` recorre la cola, `order_execution` ejecuta una orden y
 `queue_policy` concentra limites, diferimiento de estado y pausas entre ordenes.
 La ejecucion individual invoca el motor de sesion en `reservation_engine/`.
+`opportunity_burst` coordina el canario detector + auxiliar y deja la cadena
+secuencial intacta como rollback por configuracion.

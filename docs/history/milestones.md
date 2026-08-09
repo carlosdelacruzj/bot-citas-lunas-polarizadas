@@ -58,3 +58,23 @@ vigentes estan en `../project-status.md`.
   significa que la optimizacion haya terminado.
 - Uso: si un cambio posterior afecta reservas, comparar primero contra este tag
   y revisar evidencia antes de hacer rollback.
+
+## 9 de agosto de 2026 - Revisión integral y decisión sobre multisesión
+
+- El corte operacional del 1 al 8 de agosto reunió `5,299` runs, `78` intentos
+  compatibles, `20 registered` y `57 slot_lost`.
+- En seis tandas compartidas hubo seis intentos posteriores y un
+  `registered`, proxy de supervivencia secuencial de `16.7%`.
+- Se confirmó en código que `OBSERVER_ACTIVE_ORDER_LIMIT=2` no abre dos
+  navegadores en paralelo: el observer y la cadena de hasta diez candidatos
+  continúan ejecutándose secuencialmente.
+- Después de la revisión, el usuario autorizó implementar `OBS-006` como
+  canario: detector + un auxiliar, tres clientes totales y reemplazo solo
+  después de `registered`. La simulación aislada confirmó ambas rutas de
+  reemplazo y el máximo de dos sesiones.
+- La bandera `OPPORTUNITY_BURST_ENABLED=false` conserva como rollback la cadena
+  secuencial anterior, sin migración ni reversión de datos. Tres sesiones sigue
+  siendo una ampliación futura condicionada a evidencia sin defensas ni fallos
+  de coordinación.
+- La revisión actualizó estado, resultado comercial, reportes, cadencia de
+  evaluación, worker y roadmap. No modificó `.env` ni la autoridad CAPTCHA.

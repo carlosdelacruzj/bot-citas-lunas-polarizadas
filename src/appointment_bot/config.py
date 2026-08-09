@@ -155,6 +155,13 @@ class Settings:
     observer_active_order_limit: int
     opportunity_handoff_max_candidates: int
     opportunity_handoff_max_seconds: int
+    opportunity_burst_enabled: bool
+    opportunity_burst_max_sessions: int
+    opportunity_burst_max_clients: int
+    opportunity_burst_max_seconds: int
+    opportunity_burst_session_seconds: int
+    opportunity_burst_attempts: int
+    opportunity_burst_reload_probe_after_attempt: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
     observer_hot_window_extension_seconds: int
@@ -413,6 +420,40 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=300,
             minimum=1,
         ),
+        opportunity_burst_enabled=_parse_bool(
+            os.getenv("OPPORTUNITY_BURST_ENABLED"),
+            default=True,
+        ),
+        opportunity_burst_max_sessions=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_MAX_SESSIONS"),
+            default=2,
+            minimum=2,
+        ),
+        opportunity_burst_max_clients=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_MAX_CLIENTS"),
+            default=3,
+            minimum=2,
+        ),
+        opportunity_burst_max_seconds=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_MAX_SECONDS"),
+            default=60,
+            minimum=1,
+        ),
+        opportunity_burst_session_seconds=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_SESSION_SECONDS"),
+            default=20,
+            minimum=1,
+        ),
+        opportunity_burst_attempts=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_ATTEMPTS"),
+            default=5,
+            minimum=1,
+        ),
+        opportunity_burst_reload_probe_after_attempt=_parse_int(
+            os.getenv("OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT"),
+            default=3,
+            minimum=1,
+        ),
         observer_required_site=os.getenv("OBSERVER_REQUIRED_SITE", "LIMA-LA VICTORIA").strip(),
         observer_hot_windows=_parse_time_windows(
             os.getenv("OBSERVER_HOT_WINDOWS"),
@@ -544,6 +585,49 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "OBSERVER_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal to "
             "OBSERVER_SITE_TOGGLE_ATTEMPTS"
+        )
+
+    if settings.opportunity_burst_max_clients < settings.opportunity_burst_max_sessions:
+        raise ValueError(
+            "OPPORTUNITY_BURST_MAX_CLIENTS must be greater than or equal to "
+            "OPPORTUNITY_BURST_MAX_SESSIONS"
+        )
+
+    if settings.opportunity_burst_max_sessions != 2:
+        raise ValueError(
+            "OPPORTUNITY_BURST_MAX_SESSIONS must remain 2 during the canary"
+        )
+
+    if settings.opportunity_burst_max_clients > 3:
+        raise ValueError(
+            "OPPORTUNITY_BURST_MAX_CLIENTS must be less than or equal to 3 during "
+            "the canary"
+        )
+
+    if settings.opportunity_burst_max_seconds > 60:
+        raise ValueError(
+            "OPPORTUNITY_BURST_MAX_SECONDS must be less than or equal to 60 during "
+            "the canary"
+        )
+
+    if settings.opportunity_burst_session_seconds > 20:
+        raise ValueError(
+            "OPPORTUNITY_BURST_SESSION_SECONDS must be less than or equal to 20 "
+            "during the canary"
+        )
+
+    if settings.opportunity_burst_attempts > 5:
+        raise ValueError(
+            "OPPORTUNITY_BURST_ATTEMPTS must be less than or equal to 5 during the canary"
+        )
+
+    if (
+        settings.opportunity_burst_reload_probe_after_attempt
+        > settings.opportunity_burst_attempts
+    ):
+        raise ValueError(
+            "OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal "
+            "to OPPORTUNITY_BURST_ATTEMPTS"
         )
 
     if settings.observer_captcha_sample_limit > 50:

@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral: `2026-08-09`.
+Última revisión integral y documental: `2026-08-09`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -14,32 +14,32 @@ prioriza órdenes, monitorea el portal, realiza reservas con confirmación
 estricta, conserva evidencia, permite administración local y remota, registra
 pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
 
-Estado verificado el `2026-07-28`:
+Estado verificado el `2026-08-09`:
 
 | Área                  | Estado                   | Lectura actual                                                                                            |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Worker de reservas    | En espera nocturna       | `127.0.0.1:8765/health` no responde antes del arranque diario; verificar el siguiente inicio supervisado. |
-| Admin API y dashboard | Operativos               | `127.0.0.1:8766`; `api_only` no significa que el worker esté apagado.                                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 en Docker, saludable.                                                                       |
-| Telegram remoto       | Operativo                | Alta manual, clientes, cuatro reglas de fecha y control del worker.                                       |
-| CAPTCHA sombra        | Operativo                | Servicio CUDA en `127.0.0.1:8787`; solo observa, 2Captcha conserva autoridad.                             |
+| Worker de reservas    | Detenido por calendario  | `127.0.0.1:8765/health` no responde en domingo; el siguiente inicio supervisado debe confirmar la recuperación. |
+| Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
+| PostgreSQL            | Operativo                | PostgreSQL 16 en Docker lleva dos días saludable.                                                         |
+| Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
+| CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Build Angular correcto; bundle inicial de `499.64 kB`.                                                    |
-| Calidad Python        | Operativa                | Ruff y `compileall` correctos; pytest tiene `59 passed`.                                                  |
+| Dashboard             | Operativo                | Último build documentado correcto; bundle inicial de `504.21 kB` sin warning.                            |
+| Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
 
-Datos consultados en PostgreSQL al `2026-07-28`:
+Datos consultados en PostgreSQL al `2026-08-09`:
 
 | Periodo               | Órdenes | Reservas confirmadas |  Pagos | Ingreso cobrado |
 | --------------------- | ------: | -------------------: | -----: | --------------: |
 | Junio 2026            |       9 |                    4 |      3 |          S/ 120 |
-| Julio 2026, días 1-28 |      85 |                   81 |     76 |        S/ 3,025 |
-| **Acumulado**         |  **94** |               **85** | **79** |    **S/ 3,145** |
+| Julio 2026            |      89 |                   83 |     78 |        S/ 3,105 |
+| Agosto 2026, días 1-8 |      18 |                   21 |     20 |          S/ 930 |
+| **Acumulado**         | **116** |              **108** | **101** |   **S/ 4,155** |
 
-- Ticket promedio de julio: `S/ 39.80`.
-- Pagos pendientes actuales: `2`, por `S/ 80`.
-- TikTok aporta `S/ 2,240` del ingreso de julio.
+- Ticket promedio de julio: `S/ 39.81`; agosto al corte: `S/ 46.50`.
+- Pagos pendientes actuales: `2`, con saldo total de `S/ 70`.
 - Estas cifras son ingresos cobrados, no utilidad neta.
 
 ## Punto de partida técnico
@@ -55,7 +55,7 @@ La referencia estable del motor de reserva sigue siendo:
 Los cambios posteriores ampliaron administración, observabilidad y
 comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
-## Qué se realizó en julio
+## Capacidades implementadas y cambios recientes
 
 ### Reserva y cola
 
@@ -88,6 +88,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   segundos trámites y la mayor cobertura de oportunidades. La cadena continúa
   tras cada reserva y termina al confirmarse que ya no hay cupos, vencer la
   ventana, agotarse los candidatos o aparecer un resultado técnico ambiguo.
+- Implementado el `2026-08-09`: `OBS-006` entra como canario de dos posiciones.
+  Cuando el detector confirma fecha y hora seleccionables, continúa su reserva
+  y abre en paralelo un auxiliar compatible, priorizando al otro usuario del
+  bloque activo. Si cualquiera confirma `registered`, su posición toma el
+  siguiente usuario compatible. El canario admite tres clientes totales,
+  `60` segundos para admitir sesiones nuevas y un ciclo auxiliar de cinco
+  consultas durante `20` segundos con `reload_probe` en el tercer intento.
+  Claims, heartbeats, navegadores, CAPTCHA e intentos permanecen aislados por
+  orden. `OPPORTUNITY_BURST_ENABLED=false` restaura la cadena secuencial sin
+  migración ni reversión de datos. Falta la primera validación con cupos reales.
 - Los clientes de la cadena posterior fuerzan
   `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: el muestreo adicional solo puede ocurrir
   en la sesión detectora y no multiplica su demora por cada cuenta siguiente.
@@ -312,7 +322,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Las 78 imágenes del corte sombra excluido del entrenamiento se reprocesaron
   con v3 para mostrarlas en Calidad. Las 157 imágenes usadas para entrenarlo no
   se reprocesaron, evitando presentar exactitud de entrenamiento como evidencia
-  independiente. Los CAPTCHA nuevos sí ejecutan los cuatro modelos.
+  independiente. Desde el `2026-08-09`, los CAPTCHA nuevos ejecutan únicamente
+  `v3_selected` y `v6_sequence_candidate`; los demás modelos permanecen como
+  historia comparable.
 - Auditado el `2026-08-07`: el primer corte prospectivo posterior a v3 contiene
   `126` CAPTCHA recibidos entre el 3 y el 5 de agosto, todos revisados
   manualmente. `v3_selected` obtuvo `119/126` (`94.44%`), empatado con
@@ -427,6 +439,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   estructuras soportadas y usa evidencias únicas por trabajo. Solo
   `daily_slot_summary:2026-08-07` pasó a `sent`; no hubo reenvío ni se alteraron
   los días anteriores.
+- El corte de PostgreSQL del `2026-08-09` conserva `69` trabajos automáticos:
+  `50 sent`, `3 failed` y `16 uncertain`; no existe un estado `blocked` en ese
+  corte. Es un inventario durable, no una tasa de entrega actual: incluye
+  ambigüedades históricas de resúmenes diarios y no autoriza reintentos. Por
+  tipo hay `21/2/2` álbumes de reserva `sent/failed/uncertain`, `22/1/2`
+  postpagos, `4/0/11` resúmenes diarios y `3/0/1` avisos de registro.
 - Implementado el `2026-08-07`: una reserva impaga puede cerrarse como
   `uncollectible` sin fingir un pago ni borrar la deuda histórica. La orden se
   archiva, conserva `charge_required=true` y su pago pasa a `written_off`, por
@@ -437,14 +455,23 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ## Rendimiento observado
 
-| Periodo     | Runs conservados | Intentos | `registered` | `slot_lost` | Errores |
-| ----------- | ---------------: | -------: | -----------: | ----------: | ------: |
-| 13-19 julio |            5,356 |       61 |           28 |  29 (47.5%) |      14 |
-| 20-25 julio |            4,662 |       43 |           20 |  17 (39.5%) |       3 |
+| Periodo       | Runs conservados | Intentos | `registered` | `slot_lost` | Errores/defensas |
+| ------------- | ---------------: | -------: | -----------: | ----------: | ----------------: |
+| 13-19 julio   |            5,356 |       61 |           28 |  29 (47.5%) |                14 |
+| 20-25 julio   |            4,662 |       43 |           20 |  17 (39.5%) |                 3 |
+| 1-8 agosto    |            5,299 |       78 |           20 |  57 (73.1%) |        2 defensas |
 
-La última semana muestra menos errores y menor proporción de `slot_lost`, pero
-todavía se necesita una muestra mayor antes de atribuir la mejora a un solo
-cambio.
+El corte del 1 al 8 de agosto aumentó el volumen, pero no la efectividad:
+`20/78` intentos compatibles terminaron `registered` (`25.6%`) y `57/78`
+terminaron `slot_lost`. No se debe presentar el mayor número absoluto de
+reservas como una mejora del motor. Las dos señales de defensa requieren
+correlación individual antes de atribuirlas al ciclo de observación.
+
+En seis tandas compartidas hubo seis intentos posteriores al primero y solo uno
+terminó `registered`, un proxy de supervivencia secuencial de `16.7%`. La
+muestra confirma que existe una oportunidad para reducir el tiempo entre
+clientes, pero todavía es demasiado pequeña para demostrar que la concurrencia
+producirá más reservas netas.
 
 La tabla `runs` conserva actualmente información desde el 11 de julio. Para
 periodos anteriores deben usarse los reportes y documentos versionados; no se
@@ -485,17 +512,30 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
    El reemplazo PowerShell reduce esa superficie, pero debe vigilarse el
    historial del antivirus después de reinicios y actualizaciones de firmas.
-10. La cadena dirigida por oportunidades ya funciona de forma secuencial,
-    con sesiones aisladas, sin pausa artificial, hasta diez candidatos y cinco
-    minutos. Conserva combinaciones y telemetría de duración, pero falta
-    validarla ante el próximo caso real y medir cuántos milisegundos transcurren
-    hasta cada submit. La ráfaga concurrente `OBS-006` sigue siendo solo una
-    mejora futura: antes de activarla debe aislar claims, heartbeats e intentos,
-    definir guardas globales y demostrar que añade reservas sin aumentar
-    defensas, resultados inciertos ni errores operativos.
+10. La cadena dirigida por oportunidades conserva su fallback secuencial de
+    hasta diez candidatos y cinco minutos. `OBS-006` está implementada como
+    canario activo por default al próximo arranque: máximo dos sesiones, tres
+    clientes y 60 segundos de admisión. La simulación aislada confirmó el
+    reemplazo después de `registered` y el rollback por bandera, pero falta
+    validación real. El riesgo vigente es demostrar que añade reservas sin
+    aumentar defensas, `reservation_unconfirmed`, pérdida de claims, memoria o
+    errores operativos. Ante cualquiera de esas señales debe aplicarse
+    `OPPORTUNITY_BURST_ENABLED=false` y continuar con el flujo secuencial.
 
 ## Validación del corte
 
+- Revisión operativa del `2026-08-09`: Admin API `8766` y CAPTCHA sombra
+  `8787` saludables; PostgreSQL saludable en Docker. El puerto `8765` no
+  respondió durante el domingo y Admin API informó correctamente `api_only`.
+- Reporte operacional actualizado para `2026-08-01` a `2026-08-08`: `5,299`
+  runs, `78` intentos compatibles, `20 registered`, `57 slot_lost`, una etapa
+  `Programado/completed` informada por separado y dos señales de defensa.
+- Observación de optimización del mismo rango generada sin promoverla como nueva
+  línea base y sin cambiar clics, esperas, CAPTCHA, orden ni concurrencia.
+- Canario `OBS-006`: simulaciones sin portal confirmaron detector + auxiliar,
+  máximo concurrente de dos, reemplazo por el siguiente usuario después de una
+  reserva auxiliar o detectora, límite de tres clientes y rollback desactivado
+  sin consulta de candidatos. No se llamó a 2Captcha ni se creó una reserva.
 - `python -m ruff check src tests`: correcto.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
@@ -537,6 +577,25 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   CAPTCHA de cupos incompatibles; la validación fue local y no realizó envíos
   de prueba. Falta observar el próximo caso real bloqueado para confirmar la
   ausencia de ruido en el chat operativo.
+
+## Cadencia de revisión vigente
+
+- **Cada domingo:** generar el reporte de la semana operativa cerrada, usando un
+  rango explícito comparable y sin notificación externa salvo autorización.
+- **Cada dos o tres días después de cambiar el observer:** revisar lecturas por
+  hora, duración de sesiones, `slot_lost`, CAPTCHA, `403`, `429`, defensas y
+  `recovery_backoff`; no cambiar otra variable durante ese corte.
+- **En el siguiente caso real relevante:** validar modal CSS, canario dirigido
+  por oportunidades y su rollback, backoff por reglas, CAPTCHA rechazado y
+  entregas de WhatsApp según el tipo de evento observado.
+- **Cada 100 CAPTCHA frescos revisados:** registrar avance de v6 contra v3 sin
+  reentrenar con el corte. La decisión de autoridad solo ocurre al llegar a
+  `500` y superar la regla prospectiva fijada de más de `99%`.
+- **El primer día hábil de cada mes:** actualizar resultado comercial, cobros
+  pendientes y dependencia de intervención humana.
+- **Después del próximo reinicio de Windows:** comprobar tarea programada,
+  supervisor raíz, Docker, Admin API, worker, Telegram, CAPTCHA y perfiles de
+  navegador.
 
 ## Regla de mantenimiento
 

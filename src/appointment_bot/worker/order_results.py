@@ -61,7 +61,7 @@ def handle_observer_order_report(
             "Order %s remains eligible after a slot was blocked by its rules",
             order.order_id,
         )
-        compatible_order_ids = _compatible_handoff_order_ids(
+        compatible_order_ids = compatible_handoff_order_ids(
             settings,
             order,
             report,
@@ -79,7 +79,7 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
         mark_order_done(order.order_id, settings=settings)
-        compatible_order_ids = _compatible_handoff_order_ids(
+        compatible_order_ids = compatible_handoff_order_ids(
             settings,
             order,
             report,
@@ -152,13 +152,13 @@ def handle_observer_order_report(
     return ObserverOrderDecision(requires_error_handling=True)
 
 
-def _compatible_handoff_order_ids(
+def compatible_handoff_order_ids(
     settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     report: RunReport,
 ) -> tuple[str, ...]:
     details = report.details or {}
-    opportunities = _observed_opportunities(details)
+    opportunities = observed_opportunities(details)
     if not opportunities:
         return ()
     try:
@@ -190,7 +190,7 @@ def _compatible_handoff_order_ids(
     return order_ids
 
 
-def _observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str], ...]:
+def observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str], ...]:
     observation = details.get("selection_observation")
     raw_appointments = (
         observation.get("observed_appointments")

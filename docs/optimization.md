@@ -1,5 +1,7 @@
 # Optimizacion observacional
 
+Última revisión: `2026-08-09`.
+
 ## Limite acordado
 
 La etapa actual mide sin modificar clics, esperas, proveedor CAPTCHA,
@@ -17,6 +19,11 @@ intentos compatibles.
 - Reporte semanal: `reports/operations/latest.md`.
 - Evidencia compacta: `docs/evidence-summary.md` y
   `docs/evidence-index.csv`.
+
+El reporte operacional comparable más reciente cubre `2026-08-01` a
+`2026-08-08`: `5,299` runs, `78` intentos compatibles, `20 registered` y
+`57 slot_lost`. La observación del mismo rango se generó sin `--set-baseline`;
+por tanto, no reemplaza automáticamente la línea base promovida.
 
 La línea base solo cambia con:
 
@@ -48,10 +55,10 @@ appointment-bot-client optimization-observation `
 | --- | --- | --- |
 | OBS-001 | Línea base comparable | Promovida explícitamente |
 | OBS-002 | Desglose de selección | Muestra suficiente; conservar sin cambios |
-| OBS-003 | Variabilidad CAPTCHA | Experimento aprobado: polling de 5 segundos desde 2026-07-19 |
-| OBS-004 | Supervivencia secuencial | Bajó de 66.7% a 37.5% con muestra pequeña; no activar concurrencia |
+| OBS-003 | Variabilidad CAPTCHA | El corte 1-8 agosto no tuvo respuestas mayores de 10 s; conservar configuración y seguir midiendo |
+| OBS-004 | Supervivencia secuencial | Corte vigente: 1/6 intentos posteriores (`16.7%`); justifica canario acotado, no ampliar a tres sesiones |
 | OBS-005 | Correlación `fetch_probe` | Sin señales nuevas; mantener observacional |
-| OBS-006 | Ráfaga multicliente después de una detección real | Mejora futura en evaluación; no implementada ni aprobada para producción |
+| OBS-006 | Ráfaga multicliente después de una detección real | Canario de dos sesiones implementado; pendiente de validación real |
 
 ## Cierre semanal 2026-07-13 a 2026-07-18
 
@@ -67,29 +74,63 @@ appointment-bot-client optimization-observation `
   línea base; esta es la principal oportunidad medible.
 - Una señal de red `ERR_NETWORK_CHANGED`; no fue un `403`, `429` ni bloqueo
   confirmado del portal.
-- Decisión: no cambiar selección, concurrencia, confirmación ni proveedor. El
-  único experimento aprobado usa polling de CAPTCHA a 5 segundos, que respeta
-  el mínimo recomendado por 2Captcha. Se evaluará tras 30 nuevos submits o una
-  semana completa.
+- Decisión histórica: no cambiar selección, concurrencia, confirmación ni
+  proveedor; evaluar el polling de CAPTCHA a 5 segundos tras 30 nuevos submits
+  o una semana completa. Esa condición ya se cumplió y su lectura vigente está
+  en el corte siguiente.
+
+## Corte 2026-08-01 a 2026-08-08
+
+- `5,299` runs y `78` intentos compatibles.
+- `20 registered` (`25.6%`) y `57 slot_lost` (`73.1%`). El incremento de
+  reservas absolutas frente a semanas anteriores provino de mayor volumen y no
+  demuestra una mejora de conversión.
+- CAPTCHA p50/p90 de `1.641/7.256 s`; ninguna respuesta superó `10 s`.
+- Seis tandas compartidas generaron seis intentos posteriores y un
+  `registered` posterior: proxy de supervivencia secuencial de `16.7%`.
+- Hubo dos señales de defensa. El reporte no las atribuye por sí solo al ciclo,
+  pero impide asumir que más carga paralela será gratuita.
+- Decisión previa al canario: conservar configuración y validar el handoff
+  secuencial. Después de este corte el usuario autorizó `OBS-006` con dos
+  sesiones y rollback por bandera; no se alteró la línea base histórica.
+
+## Arquitectura secuencial y canario OBS-006
+
+- `OBSERVER_ACTIVE_ORDER_LIMIT=2` solo limita las órdenes elegidas por la
+  consulta. El worker reclama y ejecuta una sola en
+  `_run_observer_order_block()`.
+- Después de detectar oportunidades se construye una lista compatible de hasta
+  diez clientes y `300` segundos. `queue_traversal.py` la recorre con un bucle
+  secuencial, un contexto Playwright por cliente y sin pausa artificial.
+- El detector compatible reserva primero. Luego se conserva el orden vigente:
+  prioridad manual exclusiva, segundo trámite y mayor cobertura de las
+  oportunidades observadas.
+- Los candidatos posteriores fuerzan una sola muestra CAPTCHA. Cada orden
+  mantiene claim y heartbeat durante su ejecución y un resultado ambiguo no se
+  reintenta.
+- Elevar `OBSERVER_ACTIVE_ORDER_LIMIT` o
+  `OPPORTUNITY_HANDOFF_MAX_CANDIDATES` por sí solo no abre sesiones en paralelo.
+  El canario usa un coordinador separado y conserva esa cadena como fallback
+  cuando `OPPORTUNITY_BURST_ENABLED=false`.
 
 ## Hipótesis futura: ráfaga multicliente
 
-Estado al `2026-07-31`: **en evaluación**. La concurrencia productiva continúa
-desactivada. Esta sección no autoriza implementación ni activación.
+Estado al `2026-08-09`: **canario de dos sesiones implementado**. Se cargará en
+el siguiente arranque del worker y todavía no tiene validación con cupos reales.
 
 ### Objetivo
 
-Aprovechar una liberación de varios cupos sin mantener tres observadores
-consultando durante toda la jornada. El flujo normal conservaría una sola
-sesión. Una disponibilidad real iniciaría temporalmente un pool deslizante de
-hasta tres clientes:
+Aprovechar una liberación de varios cupos sin mantener varios observadores
+consultando durante toda la jornada. El flujo normal conserva una sola sesión.
+Una disponibilidad real inicia temporalmente un pool deslizante de hasta dos
+sesiones y tres clientes totales:
 
 1. la sesión que detectó el cupo continúa inmediatamente su propia reserva;
-2. se abren en paralelo hasta dos sesiones Playwright nuevas para otras órdenes
-   `ready` compatibles;
+2. se abre en paralelo una sesión Playwright nueva para otra orden `ready`
+   compatible, priorizando al usuario que ya estaba en el bloque activo;
 3. cada reserva confirmada libera una posición y permite abrir el siguiente
    cliente elegible;
-4. el pool se mantiene en un máximo de tres sesiones hasta agotar clientes
+4. el pool se mantiene en un máximo de dos sesiones hasta agotar clientes
    elegibles, perder la disponibilidad o alcanzar un límite operativo;
 5. al terminar la ráfaga se cierran las sesiones auxiliares y vuelve el
    observador secuencial normal.
@@ -107,9 +148,21 @@ Estos tiempos permiten evaluar sesiones nuevas en frío, pero no demuestran
 todavía que los cupos sobrevivan lo suficiente ni que tres accesos simultáneos
 sean aceptados por el portal.
 
+La evidencia más reciente refuerza esa incertidumbre: entre el 1 y el 8 de
+agosto solo existieron seis intentos posteriores comparables y uno reservó. El
+beneficio teórico de paralelizar es evitar que cada auxiliar pague en serie sus
+aproximadamente `3.2-3.7 s` hasta la primera lectura, además del tiempo de
+CAPTCHA y submit del cliente anterior. Sin embargo, todavía no se midió cuántas
+de esas ventanas habrían sobrevivido con auxiliares simultáneos ni el efecto de
+la carga sobre el portal.
+
+Conclusión: la implementación es técnicamente viable y quedó limitada a dos
+sesiones. La evidencia todavía no permite afirmar que mejorará la conversión;
+la decisión depende de las primeras ráfagas reales. No se ampliará a tres.
+
 ### Disparador
 
-La ráfaga solo podría comenzar por disponibilidad completa confirmada por el
+La ráfaga solo comienza por disponibilidad completa confirmada por el
 flujo normal o `reload_probe`. No deben activarla:
 
 - `fetch_probe`;
@@ -120,36 +173,42 @@ flujo normal o `reload_probe`. No deben activarla:
 
 ### Selección y aislamiento
 
-- Máximo tres sesiones activas en total, incluida la que detectó.
+- Máximo dos sesiones activas en total, incluida la que detectó.
+- Tres sesiones solo
+  se evalúan después de cerrar el canario sin incidentes.
 - Solo órdenes `ready`, reclamables y compatibles con la fecha/hora observada.
-- Prioridad `DESC` y antigüedad `ASC` para elegir el siguiente cliente.
+- Reutilizar la selección compatible vigente: prioridad manual exclusiva,
+  segundos trámites y mayor cobertura de oportunidades; no crear un segundo
+  criterio de orden dentro del controlador concurrente.
 - Nunca dos sesiones para la misma cuenta del portal.
-- Navegador, contexto, cookies, credenciales, lease, heartbeat, `run_id` e
-  intento de reserva independientes por orden.
+- Navegador, contexto, cookies, credenciales, owner token de claim, heartbeat,
+  `run_id` e intento de reserva independientes por orden.
 - Una orden con submission pendiente, lease ajeno, credenciales inválidas o
   resultado incierto no entra al pool.
-- `registered` o `Programado` termina esa orden y habilita el siguiente cliente.
+- Solo `registered` confirmado habilita el siguiente cliente. `Programado`
+  encontrado al entrar cierra esa orden, pero no se atribuye a la ráfaga.
 - `slot_lost` conserva la orden según sus reglas normales, pero no la repite
   automáticamente dentro de la misma ráfaga.
 
 ### Cierre y guardas
 
-El diseño debe definir una condición global de fin; un solo `Sin Cupos` no
-alcanza mientras otras sesiones siguen procesando. Punto de partida para una
-prueba controlada:
+Un solo `Sin Cupos` termina esa sesión, pero no cancela otra que sigue
+procesando. El canario termina al quedarse sin sesiones activas. Sus guardas son:
 
-- cerrar cuando todas las sesiones activas completen una ronda sin cupos y no
-  exista una señal positiva reciente durante `10–15` segundos;
-- duración máxima de ráfaga de `60–90` segundos;
-- límite inicial de `10` clientes procesados por ráfaga;
-- detener y cerrar sesiones auxiliares ante `403`, `429`, defensa general,
-  pérdida de lease o fallo de coordinación;
-- nunca repetir automáticamente un submit ambiguo;
+- admitir sesiones nuevas durante un máximo de `60` segundos;
+- cada auxiliar sin cupos hace hasta cinco consultas durante `20` segundos y un
+  `reload_probe` en el tercer intento;
+- límite de `3` clientes procesados por ráfaga, incluido el detector;
+- detener reemplazos nuevos ante `403`, `429`, defensa general, pérdida de
+  lease o fallo de coordinación; las sesiones ya enviadas terminan su
+  reconciliación;
+- nunca repetir automáticamente un submit ambiguo; detener la admisión de
+  auxiliares nuevos y permitir que los ya enviados terminen su reconciliación;
 - permitir pausa y apagado del worker sin dejar navegadores o claims huérfanos.
 
 ### Métricas obligatorias
 
-Antes de activar debe existir instrumentación para:
+La telemetría implementada debe permitir revisar:
 
 - identificador y duración de cada ráfaga;
 - clientes elegibles, iniciados, omitidos y reemplazados;
@@ -160,16 +219,31 @@ Antes de activar debe existir instrumentación para:
 - gasto y latencia CAPTCHA por ráfaga;
 - cantidad de reservas adicionales atribuibles a la concurrencia.
 
+### Criterio de decisión
+
+El canario no se evalúa por velocidad aislada. Debe acumular al menos `10`
+ráfagas reales y `30` ejecuciones auxiliares, y compararse contra la cadena
+secuencial. Para avanzar a tres sesiones deben cumplirse todos estos puntos:
+
+- cero navegadores, claims o heartbeats huérfanos;
+- cero duplicados y cero reintentos de resultados ambiguos;
+- ningún aumento atribuible de `403`, `429`, defensas o
+  `reservation_unconfirmed`;
+- memoria y cierre estables durante pausa, corte diario y apagado;
+- reservas adicionales observables por tanda, no solo menor latencia.
+
+Si aparece un incidente de coordinación o defensa, la bandera vuelve a
+desactivada y el flujo secuencial continúa siendo el fallback completo.
+
 ### Próximos pasos
 
-1. No mezclar esta hipótesis con otro cambio de intervalos, CAPTCHA o selección.
-2. Diseñar el controlador del pool separado del flujo de reserva individual.
-3. Preparar una bandera desactivada por defecto y límites configurables.
-4. Validar primero apertura/cierre, claims y cancelación sin enviar reservas.
-5. Ejecutar una prueba controlada con cuentas autorizadas cuando exista una
-   ventana real.
-6. Comparar contra la operación secuencial y decidir conservar, ajustar o
-   descartar.
+1. No mezclar el canario con otro cambio de intervalos, CAPTCHA o selección.
+2. Observar la primera ráfaga real y confirmar preferencia del usuario en
+   espera, máximo de dos sesiones, reemplazo, claims y cierre.
+3. Ante cualquier defensa o incertidumbre, aplicar
+   `OPPORTUNITY_BURST_ENABLED=false` y conservar la cadena secuencial.
+4. Reunir la muestra mínima, comparar contra la operación secuencial y decidir
+   descartar, mantener dos sesiones o evaluar una ampliación futura.
 
 ## Regla para un experimento futuro
 

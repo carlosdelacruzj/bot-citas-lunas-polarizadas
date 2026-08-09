@@ -45,7 +45,11 @@ from appointment_bot.worker.observer_results import (
     decide_observer_report,
     notify_confirmed_observer_availability,
 )
+from appointment_bot.worker.opportunity_burst import OpportunityBurstCoordinator
 from appointment_bot.worker.order_results import handle_observer_order_report
+from appointment_bot.worker.post_reservation_review import (
+    review_confirmed_orders_after_queue,
+)
 from appointment_bot.worker.queue_runtime import (
     SERVICE_ORDER_LEASE_SECONDS,
     run_rapid_queue_with_settings,
@@ -86,6 +90,8 @@ class ContinuousWorker:
         self._rapid_queue_initial_confirmed_order_ids: set[str] = set()
         self._rapid_queue_follow_up_order_ids: set[str] = set()
         self._compatible_handoff_order_ids: tuple[str, ...] = ()
+        self._opportunity_burst_started = False
+        self._opportunity_burst_recovery_report: RunReport | None = None
         self._deferred_order_reports = DeferredOrderReports(settings)
         self._state_callbacks = WorkerStateCallbacks(
             settings,
@@ -260,10 +266,25 @@ class ContinuousWorker:
             self._rapid_queue_initial_confirmed_order_ids = set()
             self._rapid_queue_follow_up_order_ids = set()
             self._compatible_handoff_order_ids = ()
-            queue_requested = self._monitor_order(order)
+            self._opportunity_burst_started = False
+            self._opportunity_burst_recovery_report = None
+            queue_requested = self._monitor_order(
+                order,
+                preferred_burst_order_ids=tuple(
+                    candidate.order_id
+                    for candidate in orders
+                    if candidate.order_id != order.order_id
+                ),
+            )
         finally:
             self._release_order(order.order_id)
-        if self._compatible_handoff_order_ids and self.settings.auto_reserve:
+        if self._opportunity_burst_recovery_report is not None:
+            if self._maybe_recovery_backoff(self._opportunity_burst_recovery_report):
+                self._flush_deferred_order_reports()
+                return
+        if self._opportunity_burst_started:
+            logger.info("Sequential opportunity handoff skipped after guarded burst")
+        elif self._compatible_handoff_order_ids and self.settings.auto_reserve:
             self._run_rapid_queue(
                 target_order_ids=self._compatible_handoff_order_ids,
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
@@ -307,6 +328,8 @@ class ContinuousWorker:
     def _monitor_order(
         self,
         order: ServiceOrderCandidate | ServiceOrderRuntime,
+        *,
+        preferred_burst_order_ids: tuple[str, ...] = (),
     ) -> bool:
         previous_state = get_worker_state(self.settings)
         order_settings = continuous_order_settings(self.settings, order)
@@ -333,14 +356,53 @@ class ContinuousWorker:
             order.order_id,
             order_settings.safe_username,
         )
+        burst = OpportunityBurstCoordinator(
+            self.settings,
+            order,
+            cancel_event=self._cancel_event,
+            preferred_order_ids=preferred_burst_order_ids,
+        )
+
+        def on_order_check(result, attempt, next_check_seconds) -> None:
+            self._state_callbacks.on_order_check(result, attempt, next_check_seconds)
+            try:
+                if burst.maybe_start(result):
+                    self._update_state(
+                        phase="opportunity_burst",
+                        current_order_id=order.order_id,
+                        next_check_at=None,
+                    )
+            except Exception:
+                logger.exception(
+                    "Could not start opportunity burst for detector %s; "
+                    "the detector will continue normally",
+                    order.order_id,
+                )
+
         report = run_service_order(
             order_settings,
             order,
             lease_owner=self._worker_lease.required_owner_token(),
             observer_mode=True,
             cancel_event=self._cancel_event,
-            on_check=self._state_callbacks.on_order_check,
+            on_check=on_order_check,
         )
+        burst_result = burst.finish_detector(
+            report,
+            on_wait=self._renew_worker_lease_if_due,
+        )
+        self._opportunity_burst_started = burst_result.started
+        for execution in burst_result.executions:
+            self._defer_order_report_if_needed(execution.report)
+            self._record_window_metric(
+                execution.report,
+                source="opportunity_burst_order",
+            )
+        if burst_result.started:
+            burst_summary = burst_result.summary_report()
+            self._record_window_metric(burst_summary, source="opportunity_burst")
+            if burst_result.completion_reason.startswith("portal_defense:"):
+                self._opportunity_burst_recovery_report = burst_summary
         self._defer_order_report_if_needed(report)
         self._record_check(report)
         if self._maybe_recovery_backoff(report):
@@ -350,10 +412,32 @@ class ContinuousWorker:
             self._reset_errors()
         if decision.confirmed_reservations:
             self._increment_confirmed(decision.confirmed_reservations)
+        if burst_result.confirmed_order_ids:
+            self._increment_confirmed(len(burst_result.confirmed_order_ids))
         self._rapid_queue_initial_confirmed = decision.rapid_queue_initial_confirmed
         self._rapid_queue_initial_confirmed_order_ids = set(decision.confirmed_order_ids)
         self._rapid_queue_follow_up_order_ids = set(decision.follow_up_order_ids)
-        self._compatible_handoff_order_ids = decision.compatible_handoff_order_ids
+        self._compatible_handoff_order_ids = (
+            () if burst_result.started else decision.compatible_handoff_order_ids
+        )
+        confirmed_order_ids = tuple(
+            dict.fromkeys(
+                (*decision.confirmed_order_ids, *burst_result.confirmed_order_ids)
+            )
+        )
+        if burst_result.started and confirmed_order_ids:
+            self._update_state(
+                phase="post_reservation_review",
+                current_order_id=None,
+                masked_account=None,
+                session_started_at=None,
+            )
+            review_results = review_confirmed_orders_after_queue(
+                self.settings,
+                list(confirmed_order_ids),
+                cancel_event=self._cancel_event,
+            )
+            self._deferred_order_reports.replace_reviewed_evidence(review_results)
         if decision.requires_error_handling:
             self._handle_order_error(order, report)
             return False
