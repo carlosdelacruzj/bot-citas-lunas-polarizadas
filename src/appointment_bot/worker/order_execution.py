@@ -240,8 +240,7 @@ def run_service_order(
             monitor_reload_probe_after_attempt=settings.observer_reload_probe_after_attempt,
         )
 
-    attempt_id = f"attempt-{uuid4().hex}"
-    attempt_created = False
+    active_attempt_id: str | None = None
 
     def with_order_details(result):
         details = dict(result.details or {})
@@ -276,19 +275,42 @@ def run_service_order(
             on_check(with_order_details(result), *args)
 
     def on_submission_intent(details) -> None:
-        nonlocal attempt_created
+        nonlocal active_attempt_id
+        if active_attempt_id is None:
+            active_attempt_id = f"attempt-{uuid4().hex}"
         create_reservation_attempt(
-            attempt_id,
+            active_attempt_id,
             order.order_id,
             details=details,
             settings=settings,
         )
-        attempt_created = True
         mark_order_submission_intent(order.order_id, settings=settings)
 
     def on_submission_started(_details) -> None:
-        mark_reservation_attempt_pending(attempt_id, settings=settings)
+        if active_attempt_id is None:
+            raise RuntimeError("Reservation submission started without a durable intent.")
+        mark_reservation_attempt_pending(active_attempt_id, settings=settings)
         mark_order_submission_pending(order.order_id, settings=settings)
+
+    def on_submission_resolved(
+        outcome: str,
+        resolved_run_id: str | None,
+        evidence_path: str | None,
+    ) -> None:
+        nonlocal active_attempt_id
+        if outcome != "slot_lost":
+            raise ValueError(f"Unsupported intermediate submission outcome: {outcome}")
+        if active_attempt_id is None:
+            raise RuntimeError("Reservation submission resolved without an active attempt.")
+        resolve_reservation_attempt(
+            active_attempt_id,
+            "rejected",
+            run_id=resolved_run_id,
+            evidence_path=evidence_path,
+            settings=settings,
+        )
+        clear_order_submission_state(order.order_id, settings=settings)
+        active_attempt_id = None
 
     with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
         effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
@@ -311,6 +333,7 @@ def run_service_order(
             ),
             on_submission_intent=on_submission_intent,
             on_submission_started=on_submission_started,
+            on_submission_resolved=on_submission_resolved,
             notify_mode=(
                 "deferred" if rapid_mode or observer_mode or burst_mode else "full"
             ),
@@ -342,11 +365,11 @@ def run_service_order(
     if lease_lost and report.status != "registered":
         report = replace(
             report,
-            status="reservation_unconfirmed" if attempt_created else "error",
+            status="reservation_unconfirmed" if active_attempt_id is not None else "error",
             message="Se perdio el lease de la orden durante la ejecucion; no se repetira el envio.",
             exit_code=1,
         )
-    if attempt_created:
+    if active_attempt_id is not None:
         submission_outcome = str((report.details or {}).get("submission_outcome") or "")
         if report.status == "registered":
             attempt_status = "confirmed"
@@ -355,7 +378,7 @@ def run_service_order(
         else:
             attempt_status = "unknown"
         resolve_reservation_attempt(
-            attempt_id,
+            active_attempt_id,
             attempt_status,
             run_id=report.run_id,
             evidence_path=report.screenshot_path,

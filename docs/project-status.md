@@ -100,6 +100,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   Claims, heartbeats, navegadores, CAPTCHA e intentos permanecen aislados por
   orden. `OPPORTUNITY_BURST_ENABLED=false` restaura la cadena secuencial sin
   migración ni reversión de datos. Falta la primera validación con cupos reales.
+- Implementado el `2026-08-09`: después de un `slot_lost` explícito, la misma
+  sesión autenticada ejecuta una única reobservación de hasta `12` segundos,
+  cinco lecturas y un `reload_probe` en la tercera. No consume otro CAPTCHA
+  mientras no reaparezca una fecha y hora compatibles. Si encuentra otro cupo,
+  crea un segundo `reservation_attempt` durable; el primero ya quedó cerrado
+  como `rejected`. El segundo resultado siempre termina la ventana, por lo que
+  no existen reobservaciones recursivas ni reintentos de resultados ambiguos.
+  `SLOT_LOST_REOBSERVATION_ENABLED=false` restaura el cierre inmediato sin
+  migración. Falta validarlo en el próximo `slot_lost` real.
 - Los clientes de la cadena posterior fuerzan
   `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: el muestreo adicional solo puede ocurrir
   en la sesión detectora y no multiplica su demora por cada cuenta siguiente.
@@ -525,6 +534,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     aumentar defensas, `reservation_unconfirmed`, pérdida de claims, memoria o
     errores operativos. Ante cualquiera de esas señales debe aplicarse
     `OPPORTUNITY_BURST_ENABLED=false` y continuar con el flujo secuencial.
+11. La reobservación posterior a `slot_lost` reutiliza una sesión que ya envió
+    una reserva y añade como máximo otro submit confirmado por una nueva
+    disponibilidad. Su riesgo vigente es sumar carga durante una tanda; debe
+    medirse recuperación, duración, CAPTCHA, defensas y cierre de intentos. Un
+    `reservation_unconfirmed` nunca entra en esta ruta.
 
 ## Validación del corte
 
@@ -541,6 +555,15 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   cierre sin reservas nuevas, expiración y rollback desactivado sin consulta de
   candidatos. También corrigió dos carreras reproducibles con tareas
   instantáneas. No se considera validada en portal hasta observar un cupo real.
+- Reobservación `OBS-007`: `compileall`, Ruff y las `59` pruebas existentes
+  quedaron correctos. Una simulación aislada recorrió cuatro lecturas, utilizó
+  exactamente un reload, encontró otro horario y terminó `registered`,
+  conservando el `slot_lost` previo. Otra confirmó IDs durables distintos con
+  el primero `rejected` y el segundo `confirmed`. No abrieron el portal, no
+  llamaron a 2Captcha y no sustituyen la validación real.
+- Reinicio controlado final de `OBS-007`: el worker estaba en `outside_hot_window`,
+  sin orden activa; el comando persistido terminó `applied` y regresó saludable
+  con `worker_running=true`, `current_order_id=null`. No se modificó `.env`.
 - Reinicio controlado de `OBS-006`: se solicitó solo con fase
   `outside_hot_window` y `current_order_id=null`; el comando terminó `applied`
   y el worker regresó saludable a la misma fase sin orden activa.
@@ -594,8 +617,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   hora, duración de sesiones, `slot_lost`, CAPTCHA, `403`, `429`, defensas y
   `recovery_backoff`; no cambiar otra variable durante ese corte.
 - **En el siguiente caso real relevante:** validar modal CSS, ráfaga dirigida
-  por oportunidades y su rollback, backoff por reglas, CAPTCHA rechazado y
-  entregas de WhatsApp según el tipo de evento observado.
+  por oportunidades, reobservación posterior a `slot_lost` y sus rollbacks,
+  backoff por reglas, CAPTCHA rechazado y entregas de WhatsApp según el tipo de
+  evento observado.
 - **Cada 100 CAPTCHA frescos revisados:** registrar avance de v6 contra v3 sin
   reentrenar con el corte. La decisión de autoridad solo ocurre al llegar a
   `500` y superar la regla prospectiva fijada de más de `99%`.

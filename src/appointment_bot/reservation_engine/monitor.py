@@ -8,12 +8,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from playwright.sync_api import Error as PlaywrightError
+
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
+    AppointmentWorkflowUnavailable,
     has_available_date_options,
     open_appointment_panel,
     read_appointment_availability,
@@ -56,6 +59,7 @@ def monitor_appointment_availability(
     can_solve_captcha: Callable[[], bool] | None = None,
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
+    on_submission_resolved: Callable[[str, str | None, str | None], None] | None = None,
     expected_person_name: str | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
@@ -190,7 +194,10 @@ def monitor_appointment_availability(
                 can_solve_captcha,
                 on_submission_intent,
                 on_submission_started,
+                on_submission_resolved,
                 expected_person_name,
+                program_expediente,
+                program_plate,
                 run_id,
                 order_id,
             )
@@ -264,7 +271,10 @@ def _try_reservation_from_availability(
     can_solve_captcha: Callable[[], bool] | None,
     on_submission_intent: Callable[[dict | None], None] | None,
     on_submission_started: Callable[[dict | None], None] | None,
+    on_submission_resolved: Callable[[str, str | None, str | None], None] | None,
     expected_person_name: str | None,
+    program_expediente: str | None,
+    program_plate: str | None,
     run_id: str | None,
     order_id: str | None,
 ):
@@ -345,19 +355,51 @@ def _try_reservation_from_availability(
         if on_check is not None:
             on_check(selected_result, attempt, None)
         try:
+            completed_result = complete_available_reservation(
+                page,
+                settings,
+                selected_result,
+                screenshot_path,
+                timing,
+                cancel_event,
+                can_submit,
+                can_solve_captcha,
+                on_submission_intent,
+                on_submission_started,
+                expected_person_name,
+                run_id=run_id,
+                order_id=order_id,
+            )
+            if not _is_explicit_slot_lost(completed_result[0]) or not (
+                settings.slot_lost_reobservation_enabled
+            ):
+                return ReservationAttemptOutcome(
+                    completed_result=completed_result,
+                    selected_result=selected_result,
+                )
+            if on_submission_resolved is not None:
+                on_submission_resolved(
+                    "slot_lost",
+                    run_id,
+                    str(completed_result[1]) if completed_result[1] is not None else None,
+                )
             return ReservationAttemptOutcome(
-                completed_result=complete_available_reservation(
+                completed_result=_reobserve_after_slot_lost(
                     page,
                     settings,
-                    selected_result,
-                    screenshot_path,
-                    timing,
-                    cancel_event,
-                    can_submit,
-                    can_solve_captcha,
-                    on_submission_intent,
-                    on_submission_started,
-                    expected_person_name,
+                    completed_result,
+                    original_attempt=attempt,
+                    session_started=session_started,
+                    cancel_event=cancel_event,
+                    on_check=on_check,
+                    is_allowed_appointment=is_allowed_appointment,
+                    can_submit=can_submit,
+                    can_solve_captcha=can_solve_captcha,
+                    on_submission_intent=on_submission_intent,
+                    on_submission_started=on_submission_started,
+                    expected_person_name=expected_person_name,
+                    program_expediente=program_expediente,
+                    program_plate=program_plate,
                     run_id=run_id,
                     order_id=order_id,
                 ),
@@ -373,6 +415,359 @@ def _try_reservation_from_availability(
                 selected_result=selected_result,
             )
     return ReservationAttemptOutcome(selected_result=selected_result)
+
+
+def _is_explicit_slot_lost(result: AvailabilityResult) -> bool:
+    return (
+        result.status == "unavailable"
+        and str((result.details or {}).get("submission_outcome") or "") == "slot_lost"
+    )
+
+
+def _reobserve_after_slot_lost(
+    page,
+    settings: Settings,
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    *,
+    original_attempt: int,
+    session_started: float,
+    cancel_event: threading.Event | None,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None,
+    is_allowed_appointment: Callable[[str, str], bool] | None,
+    can_submit: Callable[[], bool] | None,
+    can_solve_captcha: Callable[[], bool] | None,
+    on_submission_intent: Callable[[dict | None], None] | None,
+    on_submission_started: Callable[[dict | None], None] | None,
+    expected_person_name: str | None,
+    program_expediente: str | None,
+    program_plate: str | None,
+    run_id: str | None,
+    order_id: str | None,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    _, original_screenshot_path, _ = original_completed_result
+    started_at = time.monotonic()
+    deadline = started_at + settings.slot_lost_reobservation_seconds
+    observations: list[dict] = []
+    reload_probe_used = False
+
+    logger.info(
+        "Starting slot_lost reobservation for up to %s seconds and %s attempts",
+        settings.slot_lost_reobservation_seconds,
+        settings.slot_lost_reobservation_attempts,
+    )
+    if not _appointment_panel_is_visible(page):
+        try:
+            page = open_appointment_panel(page)
+        except AppointmentWorkflowUnavailable as exc:
+            observations.append(
+                {
+                    "attempt": 0,
+                    "mode": "panel_reopen",
+                    "status": "panel_unavailable",
+                    "message": str(exc),
+                    "duration_seconds": round(time.monotonic() - started_at, 3),
+                }
+            )
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                settings,
+                observations,
+                started_at,
+                reload_probe_used,
+                outcome="panel_unavailable",
+            )
+
+    for reobservation_attempt in range(1, settings.slot_lost_reobservation_attempts + 1):
+        if cancel_event is not None and cancel_event.is_set():
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                settings,
+                observations,
+                started_at,
+                reload_probe_used,
+                outcome="paused",
+                message="La reobservacion posterior a slot_lost fue interrumpida por una pausa.",
+                status="paused",
+            )
+        if time.monotonic() >= deadline:
+            break
+
+        check_started = time.monotonic()
+        use_reload_probe = (
+            reobservation_attempt
+            == settings.slot_lost_reobservation_reload_probe_after_attempt
+        )
+        if use_reload_probe:
+            reload_probe_used = True
+            result = reload_and_recheck_appointment_availability(
+                page,
+                settings,
+                program_expediente=program_expediente,
+                program_plate=program_plate,
+                telemetry_attempt=reobservation_attempt,
+            )
+            if result is None:
+                observations.append(
+                    {
+                        "attempt": reobservation_attempt,
+                        "mode": "reload_probe",
+                        "status": "reload_failed",
+                        "duration_seconds": round(time.monotonic() - check_started, 3),
+                    }
+                )
+                break
+            monitoring_mode = "reload_probe"
+        else:
+            page = select_available_site(
+                page,
+                required_site=settings.observer_required_site,
+                reset_first=True,
+                timeout=settings.postback_timeout_seconds * 1_000,
+                telemetry_attempt=reobservation_attempt,
+                telemetry_phase="slot_lost_reobservation",
+            )
+            result = read_appointment_availability(
+                page,
+                timeout=settings.read_timeout_seconds * 1_000,
+            )
+            monitoring_mode = "slot_lost_reobservation"
+
+        result = with_monitor_diagnostics(
+            result,
+            settings=settings,
+            attempt=original_attempt + reobservation_attempt,
+            session_age_seconds=time.monotonic() - session_started,
+            check_duration_seconds=time.monotonic() - check_started,
+            monitoring_mode=monitoring_mode,
+        )
+        observation = {
+            "attempt": reobservation_attempt,
+            "mode": monitoring_mode,
+            "status": result.status,
+            "duration_seconds": round(time.monotonic() - check_started, 3),
+        }
+        observations.append(observation)
+        if on_check is not None:
+            on_check(result, original_attempt + reobservation_attempt, None)
+
+        can_select = result.status == "available" or (
+            result.status == "partial" and has_available_date_options(page)
+        )
+        if can_select:
+            timing = ReservationTiming()
+            timing.mark("selection_started")
+            selected_result = select_available_appointment(
+                page,
+                is_allowed_appointment=is_allowed_appointment,
+                timeout=settings.postback_timeout_seconds * 1_000,
+            )
+            timing.mark("selection_finished")
+            selected_result = with_monitor_diagnostics(
+                selected_result,
+                settings=settings,
+                attempt=original_attempt + reobservation_attempt,
+                session_age_seconds=time.monotonic() - session_started,
+                check_duration_seconds=time.monotonic() - check_started,
+                monitoring_mode=monitoring_mode,
+            )
+            observation["selected_status"] = selected_result.status
+            if selected_result.status == "available":
+                recovered_screenshot_path = save_available_appointment_snapshot(page, settings)
+                if on_check is not None:
+                    on_check(
+                        selected_result,
+                        original_attempt + reobservation_attempt,
+                        None,
+                    )
+                recovered_completed_result = complete_available_reservation(
+                    page,
+                    settings,
+                    selected_result,
+                    recovered_screenshot_path or original_screenshot_path,
+                    timing,
+                    cancel_event,
+                    can_submit,
+                    can_solve_captcha,
+                    on_submission_intent,
+                    on_submission_started,
+                    expected_person_name,
+                    run_id=run_id,
+                    order_id=order_id,
+                )
+                return _merge_recovered_reservation(
+                    original_completed_result,
+                    settings,
+                    recovered_completed_result,
+                    observations,
+                    started_at,
+                    reload_probe_used,
+                )
+
+        if result.status == "unknown":
+            break
+        if reobservation_attempt >= settings.slot_lost_reobservation_attempts:
+            break
+        remaining_seconds = deadline - time.monotonic()
+        if remaining_seconds <= 0:
+            break
+        wait_seconds = min(
+            random.randint(
+                settings.observer_site_toggle_interval_min_seconds,
+                settings.observer_site_toggle_interval_max_seconds,
+            ),
+            max(1, int(remaining_seconds)),
+        )
+        if cancel_event is not None:
+            if cancel_event.wait(wait_seconds):
+                return _finish_slot_lost_reobservation(
+                    original_completed_result,
+                    settings,
+                    observations,
+                    started_at,
+                    reload_probe_used,
+                    outcome="paused",
+                    message=(
+                        "La reobservacion posterior a slot_lost fue interrumpida por una pausa."
+                    ),
+                    status="paused",
+                )
+        else:
+            page.wait_for_timeout(wait_seconds * 1_000)
+
+    return _finish_slot_lost_reobservation(
+        original_completed_result,
+        settings,
+        observations,
+        started_at,
+        reload_probe_used,
+        outcome="exhausted",
+    )
+
+
+def _finish_slot_lost_reobservation(
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    settings: Settings,
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+    *,
+    outcome: str,
+    message: str | None = None,
+    status: str | None = None,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    result, screenshot_path, screenshot_paths = original_completed_result
+    details = dict(result.details or {})
+    details["slot_lost_reobservation"] = _slot_lost_reobservation_details(
+        observations,
+        started_at,
+        reload_probe_used,
+        max_seconds=settings.slot_lost_reobservation_seconds,
+        max_attempts=settings.slot_lost_reobservation_attempts,
+        outcome=outcome,
+        recovered=False,
+    )
+    return (
+        AvailabilityResult(
+            status=status or result.status,
+            message=message or result.message,
+            details=details,
+        ),
+        screenshot_path,
+        screenshot_paths,
+    )
+
+
+def _merge_recovered_reservation(
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    settings: Settings,
+    recovered_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    original_result, original_screenshot_path, original_screenshot_paths = (
+        original_completed_result
+    )
+    recovered_result, recovered_screenshot_path, recovered_screenshot_paths = (
+        recovered_completed_result
+    )
+    details = dict(recovered_result.details or {})
+    details["slot_lost_reobservation"] = _slot_lost_reobservation_details(
+        observations,
+        started_at,
+        reload_probe_used,
+        max_seconds=settings.slot_lost_reobservation_seconds,
+        max_attempts=settings.slot_lost_reobservation_attempts,
+        outcome="reservation_attempted",
+        recovered=True,
+    )
+    details["previous_submission_outcomes"] = [
+        {
+            "outcome": "slot_lost",
+            "sede": (original_result.details or {}).get("sede"),
+            "fecha": (original_result.details or {}).get("fecha"),
+            "hora": (original_result.details or {}).get("hora"),
+        }
+    ]
+    screenshot_paths = _unique_paths(
+        original_screenshot_paths,
+        [original_screenshot_path] if original_screenshot_path is not None else [],
+        recovered_screenshot_paths,
+        [recovered_screenshot_path] if recovered_screenshot_path is not None else [],
+    )
+    return (
+        AvailabilityResult(
+            status=recovered_result.status,
+            message=recovered_result.message,
+            details=details,
+        ),
+        recovered_screenshot_path or original_screenshot_path,
+        screenshot_paths,
+    )
+
+
+def _slot_lost_reobservation_details(
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+    *,
+    max_seconds: int,
+    max_attempts: int,
+    outcome: str,
+    recovered: bool,
+) -> dict:
+    return {
+        "enabled": True,
+        "max_seconds": max_seconds,
+        "max_attempts": max_attempts,
+        "attempts_completed": len(observations),
+        "reload_probe_used": reload_probe_used,
+        "elapsed_seconds": round(time.monotonic() - started_at, 3),
+        "outcome": outcome,
+        "recovered_availability": recovered,
+        "observations": observations,
+    }
+
+
+def _unique_paths(*groups: list[Path]) -> list[Path]:
+    paths: list[Path] = []
+    seen: set[str] = set()
+    for group in groups:
+        for path in group:
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            paths.append(path)
+    return paths
+
+
+def _appointment_panel_is_visible(page) -> bool:
+    try:
+        site = page.locator("#MainContent_idUcitas_cbosede").first
+        return site.count() > 0 and site.is_visible(timeout=500)
+    except PlaywrightError:
+        return False
 
 
 def reload_and_recheck_appointment_availability(
@@ -461,7 +856,8 @@ def with_monitor_diagnostics(
         if details.get("fetch_probe")
         else (
             monitoring_mode
-            if monitoring_mode in {"reload_probe", "site_toggle"}
+            if monitoring_mode
+            in {"reload_probe", "site_toggle", "slot_lost_reobservation"}
             else "normal"
         )
     )

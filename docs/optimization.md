@@ -59,6 +59,7 @@ appointment-bot-client optimization-observation `
 | OBS-004 | Supervivencia secuencial | Corte vigente: 1/6 intentos posteriores (`16.7%`); justifica ráfaga de dos sesiones, no ampliar a tres |
 | OBS-005 | Correlación `fetch_probe` | Sin señales nuevas; mantener observacional |
 | OBS-006 | Ráfaga multicliente después de una detección real | Dos sesiones y cola compatible continua implementadas; pendiente de validación real |
+| OBS-007 | Reobservación después de `slot_lost` | Misma sesión durante 12 s, cinco lecturas y un reload; implementada con un solo segundo submit posible y pendiente de validación real |
 
 ## Cierre semanal 2026-07-13 a 2026-07-18
 
@@ -190,8 +191,10 @@ flujo normal o `reload_probe`. No deben activarla:
   resultado incierto no entra al pool.
 - Solo `registered` confirmado habilita el siguiente cliente. `Programado`
   encontrado al entrar cierra esa orden, pero no se atribuye a la ráfaga.
-- `slot_lost` conserva la orden según sus reglas normales, pero no la repite
-  automáticamente dentro de la misma ráfaga.
+- Un primer `slot_lost` explícito conserva la sesión durante una única ventana
+  de `12` segundos, cinco lecturas y un reload. Si reaparece otro horario se
+  permite un segundo intento durable; ese segundo resultado siempre cierra la
+  reobservación y nunca inicia otra ventana.
 
 ### Cierre y guardas
 

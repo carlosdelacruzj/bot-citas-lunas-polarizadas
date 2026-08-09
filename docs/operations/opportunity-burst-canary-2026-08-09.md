@@ -26,6 +26,31 @@ sesión real pueden iniciar la ráfaga.
 7. Cuando no quedan sesiones activas, candidatos compatibles o tiempo para
    admitir sesiones nuevas, el worker vuelve al observer normal.
 
+### Reobservación posterior a `slot_lost`
+
+Desde el `2026-08-09`, un `slot_lost` explícito ya no cierra inmediatamente la
+sesión que acaba de competir por el cupo. El primer intento se resuelve como
+`rejected` y se limpia su estado de submission antes de cualquier segundo
+envío. La misma página autenticada ejecuta entonces una única ventana de
+recuperación:
+
+1. hasta `12` segundos y cinco lecturas;
+2. cambio `vacío -> LIMA-LA VICTORIA` en las lecturas ligeras;
+3. un solo `reload_probe` en la tercera lectura;
+4. ningún CAPTCHA nuevo mientras no exista otra fecha y hora seleccionables;
+5. como máximo un segundo intento de reserva dentro de esa ventana.
+
+Si reaparece disponibilidad compatible, la misma orden selecciona el nuevo
+horario, crea otro `reservation_attempt` durable y vuelve a competir. Si ese
+segundo envío también termina `slot_lost`, la sesión se cierra: no se inicia una
+segunda reobservación ni un bucle infinito. Si no aparece otro cupo, se conserva
+el resultado original y el flujo normal continúa.
+
+La reobservación nunca se ejecuta después de `reservation_unconfirmed`,
+`unknown`, error técnico, CAPTCHA rechazado sin pérdida explícita o rechazo
+genérico. Pausa y pérdida de lease cancelan la ventana; ninguna de ellas
+autoriza repetir un envío ambiguo.
+
 `OPPORTUNITY_BURST_MAX_CLIENTS=0` elimina el límite fijo de clientes: se toma
 una fotografía de toda la cola compatible al detectar el cupo. La admisión de
 sesiones nuevas vence a los 300 segundos. Una reserva ya iniciada siempre
@@ -59,6 +84,10 @@ termina su confirmación o reconciliación aunque ese plazo se cumpla.
   candidato sin duplicar cuenta.
 - Pausa, reinicio y corte del worker reutilizan el evento de cancelación
   existente; los claims auxiliares se liberan en `finally`.
+- Cada primer `slot_lost` cerrado antes de reobservar y cada segundo submit
+  usan identificadores de intento distintos. La telemetría final conserva
+  `slot_lost_reobservation`, sus lecturas, duración, uso de reload y el primer
+  horario perdido en `previous_submission_outcomes`.
 
 ## Configuración activa
 
@@ -70,6 +99,10 @@ OPPORTUNITY_BURST_MAX_SECONDS=300
 OPPORTUNITY_BURST_SESSION_SECONDS=20
 OPPORTUNITY_BURST_ATTEMPTS=5
 OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT=3
+SLOT_LOST_REOBSERVATION_ENABLED=true
+SLOT_LOST_REOBSERVATION_SECONDS=12
+SLOT_LOST_REOBSERVATION_ATTEMPTS=5
+SLOT_LOST_REOBSERVATION_RELOAD_PROBE_AFTER_ATTEMPT=3
 ```
 
 El `.env` local quedó actualizado con estos valores. `0` significa sin límite
@@ -95,9 +128,20 @@ error. Los intervalos reutilizan
   antes de retornar.
 - `compileall`, Ruff, `59 passed`, build Angular y `git diff --check` quedaron
   correctos.
+- La ampliación de reobservación pasó `compileall`, Ruff y las `59` pruebas
+  existentes. Una simulación aislada recorrió cuatro lecturas, usó exactamente
+  un reload, encontró otro horario y terminó `registered`, conservando el
+  `slot_lost` anterior. Otra simulación del ciclo durable confirmó dos IDs
+  distintos: primero `rejected` y luego `confirmed`. No abrieron el portal ni
+  llamaron a 2Captcha.
 - El worker se reinició sin orden activa. El comando persistido terminó
   `applied` y el proceso volvió saludable a `outside_hot_window` con
   `current_order_id=null`.
+- Después de incorporar `OBS-007`, el reinicio controlado final terminó
+  `applied` y volvió a confirmar `worker_running=true`,
+  `reason=outside_hot_window` y `current_order_id=null`. El `.env` local no se
+  modificó: los valores documentados son defaults seguros y el rollback sigue
+  disponible por bandera.
 
 Estas simulaciones no sustituyen una prueba real: no abrieron el portal, no
 llamaron a 2Captcha y no crearon reservas. La primera ejecución real debe
@@ -117,6 +161,12 @@ Rollback preferido, sin revertir código:
 
 La bandera desactivada restaura la cadena previa de hasta diez clientes y 300
 segundos. No hay migración PostgreSQL ni datos que revertir.
+
+La reobservación tiene rollback independiente. Para volver al cierre inmediato
+después de `slot_lost`, establecer
+`SLOT_LOST_REOBSERVATION_ENABLED=false` y reiniciar únicamente el worker cuando
+no exista un submission pendiente. No requiere migración, limpieza de datos ni
+desactivar la ráfaga.
 
 Rollback parcial si la ráfaga continua genera demasiada carga:
 

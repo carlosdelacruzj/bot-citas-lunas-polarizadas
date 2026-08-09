@@ -8,11 +8,14 @@ estado de lo construido, validado y observado vive en
 
 ## Orden inmediato
 
-1. Validar en el próximo cupo real la ráfaga `OBS-006`: detector + auxiliar,
-   preferencia por el otro usuario del bloque, reemplazos continuos solo tras
-   `registered`, máximo concurrente, tiempo hasta cada submit y cierre limpio.
-2. Cerrar dos o tres días comparables del observer `15/1-2/8` antes de cambiar
-   otra variable. El corte semanal del 1 al 8 de agosto quedó actualizado.
+1. Validar en el próximo cupo real el canario combinado: ráfaga `OBS-006` y
+   reobservación `OBS-007`. Confirmar detector + auxiliar, preferencia por el
+   otro usuario, máximo concurrente y, ante `slot_lost`, cinco lecturas en la
+   misma sesión, un solo reload, intentos durables separados y cierre limpio.
+2. Cerrar dos o tres días comparables del observer `15/1-2/8` con el canario
+   combinado antes de cambiar otra variable. Como `OBS-006` todavía no tuvo una
+   ejecución real, no existe una muestra productiva previa que se mezcle con
+   esta ampliación. El corte semanal del 1 al 8 de agosto queda como baseline.
 3. Confirmar en eventos reales pendientes el modal CSS, los backoffs por reglas
    y CAPTCHA, y los cuatro tipos de trabajos WhatsApp; no provocar mensajes de
    prueba a clientes.
@@ -288,13 +291,20 @@ Estado: en observación.
   recorre toda la fotografía inicial de la cola durante hasta 300 segundos.
   La simulación cerró múltiples reemplazos, agotamiento, fin sin cupos,
   expiración y rollback; falta la prueba real.
+- Completado en código el `2026-08-09`: `OBS-007` conserva la misma sesión tras
+  un `slot_lost` explícito durante hasta `12` segundos y cinco lecturas, con un
+  reload en la tercera. Solo una nueva fecha/hora compatible crea un segundo
+  intento; ese resultado cierra la ventana. La simulación recuperó un horario
+  y terminó `registered`; falta la prueba real.
 - Pendiente real: confirmar `burst_id`, máximo concurrente, duración, orden de
-  candidatos, resultados, liberación de claims y vuelta al observer normal.
+  candidatos, resultados, liberación de claims, telemetría
+  `slot_lost_reobservation`, dos intentos durables cuando corresponda y vuelta
+  al observer normal.
 - Evaluar después de al menos diez ráfagas reales y treinta ejecuciones
   auxiliares. Comparar reservas adicionales por tanda, tiempo a primera lectura
   y submit, `slot_lost`, `reservation_unconfirmed`, CAPTCHA, memoria y defensas
   contra la cadena secuencial.
-- No cambiar otra variable mientras se evalúa `OBS-006`. Un submit
+- No cambiar otra variable mientras se evalúa el canario `OBS-006/OBS-007`. Un submit
   ambiguo detiene nuevos auxiliares y nunca se reintenta; un `403`, `429`,
   defensa, pérdida de lease o fallo de coordinación detiene reemplazos. El
   comportamiento y rollback están en

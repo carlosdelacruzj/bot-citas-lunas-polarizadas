@@ -162,6 +162,10 @@ class Settings:
     opportunity_burst_session_seconds: int
     opportunity_burst_attempts: int
     opportunity_burst_reload_probe_after_attempt: int
+    slot_lost_reobservation_enabled: bool
+    slot_lost_reobservation_seconds: int
+    slot_lost_reobservation_attempts: int
+    slot_lost_reobservation_reload_probe_after_attempt: int
     observer_required_site: str
     observer_hot_windows: tuple[tuple[datetime_time, datetime_time], ...]
     observer_hot_window_extension_seconds: int
@@ -454,6 +458,25 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=3,
             minimum=1,
         ),
+        slot_lost_reobservation_enabled=_parse_bool(
+            os.getenv("SLOT_LOST_REOBSERVATION_ENABLED"),
+            default=True,
+        ),
+        slot_lost_reobservation_seconds=_parse_int(
+            os.getenv("SLOT_LOST_REOBSERVATION_SECONDS"),
+            default=12,
+            minimum=1,
+        ),
+        slot_lost_reobservation_attempts=_parse_int(
+            os.getenv("SLOT_LOST_REOBSERVATION_ATTEMPTS"),
+            default=5,
+            minimum=1,
+        ),
+        slot_lost_reobservation_reload_probe_after_attempt=_parse_int(
+            os.getenv("SLOT_LOST_REOBSERVATION_RELOAD_PROBE_AFTER_ATTEMPT"),
+            default=3,
+            minimum=1,
+        ),
         observer_required_site=os.getenv("OBSERVER_REQUIRED_SITE", "LIMA-LA VICTORIA").strip(),
         observer_hot_windows=_parse_time_windows(
             os.getenv("OBSERVER_HOT_WINDOWS"),
@@ -624,6 +647,25 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal "
             "to OPPORTUNITY_BURST_ATTEMPTS"
+        )
+
+    if settings.slot_lost_reobservation_seconds > 30:
+        raise ValueError(
+            "SLOT_LOST_REOBSERVATION_SECONDS must be less than or equal to 30"
+        )
+
+    if settings.slot_lost_reobservation_attempts > 10:
+        raise ValueError(
+            "SLOT_LOST_REOBSERVATION_ATTEMPTS must be less than or equal to 10"
+        )
+
+    if (
+        settings.slot_lost_reobservation_reload_probe_after_attempt
+        > settings.slot_lost_reobservation_attempts
+    ):
+        raise ValueError(
+            "SLOT_LOST_REOBSERVATION_RELOAD_PROBE_AFTER_ATTEMPT must be less than or "
+            "equal to SLOT_LOST_REOBSERVATION_ATTEMPTS"
         )
 
     if settings.observer_captcha_sample_limit > 50:
