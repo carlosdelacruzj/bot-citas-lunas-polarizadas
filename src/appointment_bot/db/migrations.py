@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 47
+SCHEMA_VERSION = 49
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -335,6 +335,169 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
+    _create_post_appointment_schema(connection)
+    _create_reservation_program_identity_schema(connection)
+
+
+def _create_reservation_program_identity_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        ALTER TABLE post_appointment_stage_snapshots
+        ADD COLUMN IF NOT EXISTS message_text text
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE reservations
+        ADD COLUMN IF NOT EXISTS program_expediente text,
+        ADD COLUMN IF NOT EXISTS program_plate text
+        """
+    )
+    connection.execute(
+        """
+        UPDATE reservations r
+        SET program_expediente = COALESCE(
+                r.program_expediente,
+                NULLIF(r.details_json ->> 'program_expediente', ''),
+                so.program_expediente
+            ),
+            program_plate = COALESCE(
+                r.program_plate,
+                NULLIF(r.details_json ->> 'program_plate', ''),
+                so.program_plate
+            )
+        FROM service_orders so
+        WHERE so.order_id = r.order_id
+          AND (r.program_expediente IS NULL OR r.program_plate IS NULL)
+        """
+    )
+    connection.execute(
+        """
+        WITH pending_programs AS (
+            SELECT r.reservation_id,
+                   row_data ->> 'expediente' AS program_expediente,
+                   row_data ->> 'placa' AS program_plate,
+                   count(*) OVER (PARTITION BY r.reservation_id) AS pending_count
+            FROM reservations r
+            JOIN order_state os ON os.order_id = r.order_id
+            CROSS JOIN LATERAL jsonb_array_elements(
+                COALESCE(
+                    os.program_listing -> 'details' -> 'rows',
+                    os.program_listing -> 'rows',
+                    '[]'::jsonb
+                )
+            ) row_data
+            WHERE r.status = 'confirmed'
+              AND r.program_expediente IS NULL
+              AND r.program_plate IS NULL
+              AND lower(COALESCE(row_data ->> 'status', '')) = 'pendiente'
+        )
+        UPDATE reservations r
+        SET program_expediente = NULLIF(candidate.program_expediente, ''),
+            program_plate = NULLIF(candidate.program_plate, '')
+        FROM pending_programs candidate
+        WHERE candidate.reservation_id = r.reservation_id
+          AND candidate.pending_count = 1
+        """
+    )
+    connection.execute(
+        """
+        WITH latest_reservations AS (
+            SELECT DISTINCT ON (r.order_id)
+                   r.order_id, r.program_expediente, r.program_plate, r.updated_at
+            FROM reservations r
+            WHERE r.status = 'confirmed'
+              AND (r.program_expediente IS NOT NULL OR r.program_plate IS NOT NULL)
+            ORDER BY r.order_id, r.created_at DESC
+        )
+        UPDATE service_orders so
+        SET program_expediente = reservation.program_expediente,
+            program_plate = reservation.program_plate,
+            updated_at = GREATEST(so.updated_at, reservation.updated_at)
+        FROM latest_reservations reservation
+        WHERE so.program_expediente IS NULL
+          AND so.program_plate IS NULL
+          AND reservation.order_id = so.order_id
+        """
+    )
+    connection.execute(
+        """
+        UPDATE service_orders parent
+        SET status = 'archived', updated_at = CURRENT_TIMESTAMP
+        WHERE parent.status IN ('ready', 'paused')
+          AND EXISTS (
+              SELECT 1 FROM service_orders child
+              WHERE child.parent_order_id = parent.order_id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM reservations own_reservation
+              WHERE own_reservation.order_id = parent.order_id
+          )
+        """
+    )
+
+
+def _create_post_appointment_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS post_appointment_reviews (
+            review_id text PRIMARY KEY,
+            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
+            access_status text NOT NULL CHECK (
+                access_status IN (
+                    'success', 'invalid_credentials', 'workflow_unavailable', 'portal_error'
+                )
+            ),
+            outcome text NOT NULL CHECK (
+                outcome IN (
+                    'upcoming', 'awaiting_update', 'in_progress', 'completed',
+                    'observation_with_progress', 'observation_no_progress',
+                    'access_lost', 'portal_unavailable', 'review_required'
+                )
+            ),
+            appointment_date date,
+            appointment_hour text,
+            stage_count integer NOT NULL DEFAULT 0 CHECK (stage_count >= 0),
+            observation_count integer NOT NULL DEFAULT 0 CHECK (observation_count >= 0),
+            later_progress_observed boolean NOT NULL DEFAULT false,
+            error_code text,
+            error_message text,
+            started_at timestamptz NOT NULL,
+            finished_at timestamptz NOT NULL,
+            created_at timestamptz NOT NULL,
+            CONSTRAINT ck_post_appointment_reviews_timestamps CHECK (
+                finished_at >= started_at
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_post_appointment_reviews_order_finished
+        ON post_appointment_reviews(order_id, finished_at DESC)
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS post_appointment_stage_snapshots (
+            review_id text NOT NULL REFERENCES post_appointment_reviews(review_id)
+                ON DELETE CASCADE,
+            stage_index integer NOT NULL CHECK (stage_index >= 0),
+            stage_key text NOT NULL,
+            stage_label text NOT NULL,
+            stage_date date,
+            stage_hour text,
+            status_text text,
+            message_present boolean NOT NULL DEFAULT false,
+            message_text text,
+            message_class text NOT NULL DEFAULT 'none' CHECK (
+                message_class IN ('none', 'ok', 'observation', 'unknown')
+            ),
+            created_at timestamptz NOT NULL,
+            PRIMARY KEY (review_id, stage_index)
+        )
+        """
+    )
 
 
 def _create_captcha_sampling_control_schema(connection: Connection) -> None:
@@ -393,6 +556,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
         "captcha_sampling_control",
+        "post_appointment_reviews",
+        "post_appointment_stage_snapshots",
     }
     tables = {
         row["table_name"]
@@ -437,6 +602,8 @@ def _validate_current_schema(connection: Connection) -> None:
         ("reservation_attempts", "status"),
         ("reservations", "run_id"),
         ("reservations", "status"),
+        ("reservations", "program_expediente"),
+        ("reservations", "program_plate"),
         ("payments", "reservation_id"),
         ("payments", "status"),
         ("worker_state", "current_order_id"),
@@ -495,6 +662,15 @@ def _validate_current_schema(connection: Connection) -> None:
         ("captcha_sampling_control", "sample_limit"),
         ("captcha_sampling_control", "updated_at"),
         ("captcha_sampling_control", "updated_by"),
+        ("post_appointment_reviews", "order_id"),
+        ("post_appointment_reviews", "access_status"),
+        ("post_appointment_reviews", "outcome"),
+        ("post_appointment_reviews", "finished_at"),
+        ("post_appointment_stage_snapshots", "review_id"),
+        ("post_appointment_stage_snapshots", "stage_key"),
+        ("post_appointment_stage_snapshots", "message_present"),
+        ("post_appointment_stage_snapshots", "message_class"),
+        ("post_appointment_stage_snapshots", "message_text"),
     }
     columns = {
         (row["table_name"], row["column_name"])
@@ -523,6 +699,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_whatsapp_automation_job_attempt",
         "ck_whatsapp_automation_job_kind",
         "ck_whatsapp_automation_job_target",
+        "ck_post_appointment_reviews_timestamps",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -569,6 +746,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("uq_whatsapp_automation_jobs_running")
     if "idx_captcha_shadow_outbox_pending" not in indexes:
         missing.append("idx_captcha_shadow_outbox_pending")
+    if "idx_post_appointment_reviews_order_finished" not in indexes:
+        missing.append("idx_post_appointment_reviews_order_finished")
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -1769,6 +1948,20 @@ def migrate_database(connection: Connection) -> None:
             (47,),
         )
         current_version = 47
+    if current_version == 47:
+        _create_post_appointment_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (48,),
+        )
+        current_version = 48
+    if current_version == 48:
+        _create_reservation_program_identity_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (49,),
+        )
+        current_version = 49
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

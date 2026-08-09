@@ -12,7 +12,7 @@ from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.db.reservations import replace_confirmed_reservation_evidence
 from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.login import login
-from appointment_bot.reservation_engine.programs import click_program_action
+from appointment_bot.reservation_engine.programs import open_program_detail_for_review
 from appointment_bot.reservation_engine.stages import read_process_stages
 from appointment_bot.utils.screenshots import (
     save_error_screenshot,
@@ -96,7 +96,7 @@ def _review_confirmed_order(settings: Settings, order_id: str) -> dict[str, str]
         ) as page:
             try:
                 login(page, review_settings)
-                page = click_program_action(
+                page = open_program_detail_for_review(
                     page,
                     program_expediente=order.program_expediente,
                     program_plate=order.program_plate,

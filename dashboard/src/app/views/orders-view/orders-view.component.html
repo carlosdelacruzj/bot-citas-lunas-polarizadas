@@ -506,7 +506,7 @@
             </td>
             <td data-label="Estado">
               <span class="badge {{ dashboard.statusTone(order.status) }}">{{
-                dashboard.statusLabel(order.status)
+                dashboard.orderStatusDisplay(order)
               }}</span>
               <span class="badge {{ dashboard.statusTone(order.preflight_status) }}">
                 {{ dashboard.preflightLabel(order) }}

@@ -70,6 +70,16 @@
           <span class="nav-icon" aria-hidden="true">↻</span>
           <span class="nav-label">Actividad</span>
         </a>
+        <a
+          class="sidebar-link"
+          routerLink="/post-cita"
+          [class.active]="activeView() === 'followups'"
+          [attr.aria-current]="activeView() === 'followups' ? 'page' : null"
+          title="Seguimiento post-cita"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">PC</span>
+          <span class="nav-label">Post-cita</span>
+        </a>
       </section>
 
       <section class="sidebar-group">
@@ -215,10 +225,10 @@
               <button
                 type="button"
                 class="danger"
-                [disabled]="actionBusy() || session.close_requested"
+                [disabled]="isManualSessionClosing(session.session_id) || session.close_requested"
                 (click)="closeManualSession(session)"
               >
-                Cerrar
+                {{ isManualSessionClosing(session.session_id) ? 'Cerrando…' : 'Cerrar' }}
               </button>
             </article>
           }

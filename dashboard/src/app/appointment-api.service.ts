@@ -113,6 +113,65 @@ export interface ServiceOrderDetail extends ServiceOrder {
   contact_whatsapp_username: string | null;
 }
 
+export type PostAppointmentOutcome =
+  | 'upcoming'
+  | 'awaiting_update'
+  | 'in_progress'
+  | 'completed'
+  | 'observation_with_progress'
+  | 'observation_no_progress'
+  | 'access_lost'
+  | 'portal_unavailable'
+  | 'review_required';
+
+export interface PostAppointmentStage {
+  stage_key: string;
+  stage_label: string;
+  stage_date: string | null;
+  stage_hour: string | null;
+  status_text: string | null;
+  message_present: boolean;
+  message_class: 'none' | 'ok' | 'observation' | 'unknown';
+  message_text: string | null;
+}
+
+export interface PostAppointmentFollowup {
+  order_id: string;
+  parent_order_id: string | null;
+  applicant_name: string;
+  document_number_masked: string;
+  reservation_id: string;
+  site: string | null;
+  program_expediente: string | null;
+  program_plate: string | null;
+  appointment_date: string | null;
+  appointment_hour: string | null;
+  review_id: string | null;
+  access_status:
+    | 'not_checked'
+    | 'success'
+    | 'invalid_credentials'
+    | 'workflow_unavailable'
+    | 'portal_error';
+  outcome: PostAppointmentOutcome;
+  observation_count: number;
+  later_progress_observed: boolean;
+  error_code: string | null;
+  error_message: string | null;
+  last_reviewed_at: string | null;
+  stages: PostAppointmentStage[];
+}
+
+export interface PostAppointmentPayload {
+  summary: {
+    total_confirmed: number;
+    needs_attention: number;
+    access_lost: number;
+    progressed_or_completed: number;
+  };
+  items: PostAppointmentFollowup[];
+}
+
 export interface RunSummary {
   run_id: string;
   order_id: string | null;
@@ -624,6 +683,17 @@ export class AppointmentApiService {
   async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {
     return firstValueFrom(
       this.http.get<ServiceOrderDetail>(`/api/v1/service-orders/${encodeURIComponent(orderId)}`),
+    );
+  }
+
+  async getPostAppointmentFollowups(scope?: RequestScope): Promise<PostAppointmentPayload> {
+    return this.read<PostAppointmentPayload>('/api/v1/post-appointment-followups', scope);
+  }
+
+  async reviewPostAppointment(orderId: string): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/post-appointment/review`,
+      {},
     );
   }
 

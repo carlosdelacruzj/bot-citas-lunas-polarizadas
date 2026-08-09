@@ -24,6 +24,7 @@ def click_program_action(
     page: Page,
     *,
     on_multiple_programs: Callable[[dict[str, Any]], None] | None = None,
+    on_program_selected: Callable[[dict[str, Any]], None] | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
 ) -> Page:
@@ -40,8 +41,11 @@ def click_program_action(
 
     target = _program_target(program_expediente=program_expediente, program_plate=program_plate)
 
+    selected_row: dict[str, Any] | None = None
     if button_count == 1 and target is None:
         selected_button = button.first
+        program_rows = _read_program_action_rows(page)
+        selected_row = program_rows[0] if program_rows else None
     else:
         program_rows = _read_program_action_rows(page)
         if target is not None:
@@ -100,6 +104,7 @@ def click_program_action(
                 if on_multiple_programs is not None:
                     on_multiple_programs(multiple_details)
                 selected_button = button.nth(int(pending_rows[0]["action_index"]))
+                selected_row = pending_rows[0]
                 logger.info(
                     "Multiple program actions found; selecting the only pending program: %s",
                     pending_rows[0],
@@ -110,6 +115,7 @@ def click_program_action(
                 if on_multiple_programs is not None:
                     on_multiple_programs(multiple_details)
                 selected_button = button.nth(int(pending_rows[0]["action_index"]))
+                selected_row = pending_rows[0]
                 logger.info(
                     "Multiple pending program actions found; "
                     "selecting the first pending program: %s",
@@ -123,11 +129,54 @@ def click_program_action(
                     "Hay varios tramites programables, pero ninguno figura como PENDIENTE."
                 )
 
+    if selected_row is not None and on_program_selected is not None:
+        on_program_selected(dict(selected_row))
+
     selected_button.scroll_into_view_if_needed(timeout=15_000)
 
     selected_button.click(timeout=15_000)
     _wait_for_program_detail(page)
     logger.info("Current page after program action: %s", page.url)
+    return page
+
+
+def open_program_detail_for_review(
+    page: Page,
+    *,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
+) -> Page:
+    logger.info("Opening program detail for read-only review")
+    buttons = page.locator(PROGRAM_ACTION_SELECTOR)
+    button_count = buttons.count()
+    if button_count == 0:
+        raise AppointmentWorkflowUnavailable(
+            "No se encontró una acción de trámite disponible para revisar."
+        )
+
+    rows = _read_program_action_rows(page)
+    target = _program_target(
+        program_expediente=program_expediente,
+        program_plate=program_plate,
+    )
+    if target is not None:
+        selected_row = _find_target_program_row(rows, target)
+        if selected_row is None:
+            raise AppointmentWorkflowUnavailable(
+                "No se encontró el trámite reservado por expediente o placa."
+            )
+        selected_button = buttons.nth(int(selected_row["action_index"]))
+    elif button_count == 1:
+        selected_button = buttons.first
+    else:
+        raise AppointmentWorkflowUnavailable(
+            "La cuenta tiene varios trámites y la reserva no identifica cuál debe revisarse."
+        )
+
+    selected_button.scroll_into_view_if_needed(timeout=15_000)
+    selected_button.click(timeout=15_000)
+    _wait_for_program_detail(page)
+    logger.info("Read-only program detail opened: %s", page.url)
     return page
 
 

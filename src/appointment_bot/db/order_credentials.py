@@ -579,7 +579,7 @@ def split_service_order_programs(
                 """
                 UPDATE service_orders
                 SET status = 'archived', updated_at = %s
-                WHERE order_id = %s AND status = 'ready'
+                WHERE order_id = %s AND status IN ('ready', 'paused')
                 """,
                 (_now(), order_id),
             )

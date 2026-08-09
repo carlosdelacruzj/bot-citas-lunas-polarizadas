@@ -18,6 +18,10 @@ const loadCaptchasView = () =>
   import('./views/captchas-view/captchas-view.component').then(
     (module) => module.CaptchasViewComponent,
   );
+const loadFollowupsView = () =>
+  import('./views/followups-view/followups-view.component').then(
+    (module) => module.FollowupsViewComponent,
+  );
 
 export const routes: Routes = [
   { path: 'pendientes', title: 'Pendientes', loadComponent: loadInboxView },
@@ -26,6 +30,7 @@ export const routes: Routes = [
   { path: 'ordenes/:orderId', title: 'Detalle de orden', loadComponent: loadOrdersView },
   { path: 'actividad', title: 'Actividad', loadComponent: loadRunsView },
   { path: 'actividad/:runId', title: 'Detalle de actividad', loadComponent: loadRunsView },
+  { path: 'post-cita', title: 'Seguimiento post-cita', loadComponent: loadFollowupsView },
   { path: 'finanzas', title: 'Finanzas', loadComponent: loadFinanceView },
   { path: 'captchas', title: 'Control de CAPTCHA', loadComponent: loadCaptchasView },
   { path: '', pathMatch: 'full', redirectTo: 'resumen' },

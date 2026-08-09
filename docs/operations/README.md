@@ -29,6 +29,14 @@ El panel separa las acciones frecuentes de contacto, restricciones y pago. Los
 indicadores de pagos pendientes funcionan también como filtros y el número
 completo de WhatsApp puede copiarse o abrirse desde el detalle protegido.
 
+## Seguimiento post-cita
+
+La vista **Post-cita** lista las reservas confirmadas y permite consultar el
+estado posterior mediante una sesión aislada y de solo lectura. Guarda fechas,
+estados, expediente, placa y el texto del mensaje para uso interno autenticado.
+Uso, límites y rollback en
+[`post-appointment-followup-2026-08-09.md`](post-appointment-followup-2026-08-09.md).
+
 ## Arranque recomendado
 
 En Windows, la tarea programada `AppointmentBotContinuousWorker` ejecuta

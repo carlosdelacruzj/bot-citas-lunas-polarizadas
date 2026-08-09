@@ -80,7 +80,8 @@ def _record_reservation_for_order(
     with _operation_connection(settings, _connection_override) as connection:
         order = connection.execute(
             """
-            SELECT order_id, charge_required, reservation_price
+            SELECT order_id, charge_required, reservation_price,
+                   program_expediente, program_plate
             FROM service_orders
             WHERE order_id = %s
             """,
@@ -88,6 +89,10 @@ def _record_reservation_for_order(
         ).fetchone()
         if order is None:
             return
+        program_expediente = _detail_text(details, "program_expediente") or order[
+            "program_expediente"
+        ]
+        program_plate = _detail_text(details, "program_plate") or order["program_plate"]
         evidence_path = getattr(report, "screenshot_path", None)
         if status == "confirmed":
             archived = archive_whatsapp_evidence(
@@ -101,13 +106,20 @@ def _record_reservation_for_order(
             INSERT INTO reservations (
                 reservation_id, order_id, run_id, status, site, appointment_date,
                 appointment_hour, slots, evidence_path, details_json,
-                reserved_at, created_at, updated_at
+                program_expediente, program_plate, reserved_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s
+            )
             ON CONFLICT(reservation_id) DO UPDATE SET
                 status = excluded.status,
                 evidence_path = excluded.evidence_path,
                 details_json = excluded.details_json,
+                program_expediente = COALESCE(
+                    excluded.program_expediente, reservations.program_expediente
+                ),
+                program_plate = COALESCE(excluded.program_plate, reservations.program_plate),
                 updated_at = excluded.updated_at
             """,
             (
@@ -121,6 +133,8 @@ def _record_reservation_for_order(
                 _detail_text(details, "cupos"),
                 evidence_path,
                 Jsonb(sanitize_details(details)) if details else None,
+                program_expediente,
+                program_plate,
                 now,
                 now,
                 now,
@@ -154,10 +168,18 @@ def _record_reservation_for_order(
                         WHEN status = 'paid' THEN 'paid'
                         ELSE %s
                     END,
+                    program_expediente = COALESCE(program_expediente, %s),
+                    program_plate = COALESCE(program_plate, %s),
                     updated_at = %s
                 WHERE order_id = %s
                 """,
-                ("archived" if no_charge else "reserved_payment_pending", now, order_id),
+                (
+                    "archived" if no_charge else "reserved_payment_pending",
+                    program_expediente,
+                    program_plate,
+                    now,
+                    order_id,
+                ),
             )
 
 

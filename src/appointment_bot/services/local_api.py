@@ -47,6 +47,11 @@ from appointment_bot.services.api.manual_session_routes import (
     open_manual_session_payload,
 )
 from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
+from appointment_bot.services.api.post_appointment_routes import (
+    post_appointment_followups_payload,
+    post_appointment_review_order_id,
+    review_post_appointment_payload,
+)
 from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
@@ -204,6 +209,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             self._send_json(HTTPStatus.OK, list_service_orders_payload())
+            return
+
+        if path == "/api/v1/post-appointment-followups":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = post_appointment_followups_payload()
+            self._send_json(status, payload)
             return
 
         if path == "/api/v1/monthly-summary":
@@ -372,6 +384,14 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 search_service_orders_payload(str(payload.get("query") or "")),
             )
+            return
+
+        post_appointment_order_id = post_appointment_review_order_id(path)
+        if post_appointment_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = review_post_appointment_payload(post_appointment_order_id)
+            self._send_json(status, payload)
             return
 
         if path == "/api/v1/whatsapp-messages/test/prepare":

@@ -16,14 +16,19 @@ estado de lo construido, validado y observado vive en
    combinado antes de cambiar otra variable. Como `OBS-006` todavía no tuvo una
    ejecución real, no existe una muestra productiva previa que se mezcle con
    esta ampliación. El corte semanal del 1 al 8 de agosto queda como baseline.
-3. Confirmar en eventos reales pendientes el modal CSS, los backoffs por reglas
+3. Definir, después de revisar el corte inicial de **Post-cita**, qué frecuencia
+   futura aporta valor sin repetir accesos innecesarios. El barrido cubrió
+   `108/108` reservas y separó `16` accesos perdidos y `6` observaciones sin
+   avance. Sus textos internos ya se conservaron; antes de recordatorios u
+   ofertas adicionales, definir consentimiento, finalidad, retención y acceso.
+4. Confirmar en eventos reales pendientes el modal CSS, los backoffs por reglas
    y CAPTCHA, y los cuatro tipos de trabajos WhatsApp; no provocar mensajes de
    prueba a clientes.
-4. Si aparece defensa, reserva incierta, claim perdido, navegador huérfano o
+5. Si aparece defensa, reserva incierta, claim perdido, navegador huérfano o
    regresión operativa, aplicar `OPPORTUNITY_BURST_ENABLED=false`, reiniciar
    únicamente el worker cuando no haya submissions pendientes y conservar la
    cadena secuencial como fallback.
-5. Ejecutar las revisiones semanales, mensuales, por cada 100 CAPTCHA y después
+6. Ejecutar las revisiones semanales, mensuales, por cada 100 CAPTCHA y después
    del próximo reinicio definidas en
    [`../project-status.md`](../project-status.md#cadencia-de-revisión-vigente).
 
@@ -56,6 +61,23 @@ Estado: en observación.
 - Completado el `2026-08-01`: el auto-refresh continúa funcionando en segundo
   plano sin insertar una franja temporal encima de la vista. El estado breve
   aparece en el encabezado y no provoca saltos verticales del contenido.
+- Completado el `2026-08-09`: los toast dejaron de formar parte de la espera de
+  las operaciones. La API y el refresco conservan sus guardas mientras trabajan,
+  pero los controles se liberan aunque el aviso de `2.2` segundos siga visible.
+  El cierre manual se aísla por `session_id`, por lo que varias sesiones pueden
+  cerrarse en paralelo y cada botón informa su propio estado **Cerrando…**. El
+  build Angular y las `59` pruebas quedaron correctos; falta solo observación
+  visual durante el próximo uso normal, sin provocar acciones reales de prueba.
+- Completado en código el `2026-08-09`: nueva vista **Post-cita**, historial
+  PostgreSQL `v49` y revisión manual de solo lectura. Prioriza observaciones sin
+  avance, fechas pasadas y accesos perdidos; conserva el mensaje dentro del
+  límite administrativo y no activa comunicaciones. La revisión cubrió
+  `108/108` reservas: `47` próximas, `26` completadas, `16` accesos perdidos,
+  `9` en progreso, `6` observaciones sin avance y `4` esperando actualización.
+  La identidad expediente/placa corrige cuentas con varios trámites; Macario
+  quedó completado y el padre de Anggela quedó como contenedor archivado.
+  Pendiente: decidir frecuencia y recordatorios sin repetir accesos innecesarios
+  ni ampliar el tratamiento de datos sensibles.
 
 ### WhatsApp automático
 

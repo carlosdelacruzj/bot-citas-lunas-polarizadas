@@ -20,11 +20,11 @@ Estado verificado el `2026-08-09`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Operativo fuera de horario | Reinicio controlado aplicado; volvió saludable con `worker_running=true`, fase `outside_hot_window` y sin orden activa. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 en Docker lleva dos días saludable.                                                         |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v49` aplicado con identidad de trámite y mensajes post-cita.            |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
 | CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Último build documentado correcto; bundle inicial de `504.21 kB` sin warning.                            |
+| Dashboard             | Operativo                | Build correcto; bundle inicial de `508.17 kB` y ruta **Post-cita** activa.                                |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -191,6 +191,34 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   la vista en su posición. El indicador de refresco vive dentro del encabezado
   y ya no inserta ni retira una franja que desplazaba el contenido en cada
   consulta periódica.
+- Corregido el `2026-08-09`: los avisos toast son informativos y ya no prolongan
+  durante `2.2` segundos los estados de operación del dashboard. Los bloqueos
+  globales y específicos terminan al completar la API y el refresco necesario,
+  aunque el aviso continúa visible. El cierre de sesiones manuales usa un estado
+  independiente por `session_id`: cada fila muestra **Cerrando…** y permite
+  solicitar en paralelo el cierre de otras sesiones sin desbloquear dos veces
+  la misma. El cambio no modifica Admin API, reservas ni envíos.
+- Implementado el `2026-08-09`: el dashboard incorpora **Post-cita** para
+  revisar manualmente cada reserva confirmada en una sesión Playwright aislada
+  y de solo lectura. PostgreSQL `schema v49` conserva eventos históricos,
+  expediente, placa y etapas con fecha, hora, estado, texto/clase de mensaje y
+  continuidad posterior. Los textos quedan restringidos a la API administrativa
+  y no se propagan a comunicaciones ni reportes públicos. La
+  vista separa cita próxima, fecha pasada sin actualización, avance, cierre,
+  observación con o sin avance, credenciales cambiadas y error técnico. No
+  altera cola, reservas, CAPTCHA, pagos ni mensajes. Operación y rollback:
+  [`operations/post-appointment-followup-2026-08-09.md`](operations/post-appointment-followup-2026-08-09.md).
+  La primera consulta real controlada leyó seis etapas de una orden conocida y
+  produjo `observation_no_progress`: una observación, cita pasada y las tres
+  etapas posteriores aún pendientes. No se ejecutaron CAPTCHA, reservas,
+  comunicaciones ni capturas.
+  La primera revisión completa terminó el mismo día: `108/108` reservas
+  confirmadas con último estado disponible. Resultado: `47` citas próximas,
+  `26` completadas, `16` accesos perdidos, `9` en progreso, `6` observaciones
+  sin avance y `4` esperando actualización. El lote
+  secuencial de las `107` pendientes tomó `20 min 44 s`, usó pausas de `4-7`
+  segundos y no produjo errores generales del portal, CAPTCHA, reservas,
+  mensajes ni capturas.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
 - Retirado el `2026-08-07`: el registro por invitaciones dejó de formar parte
@@ -571,6 +599,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
 - `python -m pytest -q`: `59 passed`.
+- Dashboard no bloqueante: el build Angular quedó correcto con bundle inicial
+  de `504.46 kB`; no quedan llamadas `await this.showToast(...)` y el cierre
+  manual se controla por `session_id`. La validación fue de código y build: no
+  se cerraron sesiones reales ni se enviaron mensajes, y el navegador integrado
+  no estuvo disponible para una repetición visual.
 - Proyecto `test-captcha`: `compileall`, Ruff y `28 passed`; servicio reiniciado
   de forma aislada y saludable en CUDA con v3 y v6.
 - Destinatario por usuario: esquema v45 aplicado; resolucion local comprobo
@@ -600,6 +633,19 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   `10` y reporta total efectivo `1`. Admin API leyó y guardó ese mismo estado,
   el dashboard compilado contiene el control y el worker continúa detenido; no
   se abrió el portal, no se llamó a 2Captcha y no se creó ninguna reserva.
+- PostgreSQL v48-v49 y seguimiento post-cita: migraciones aditivas aplicadas, Admin API
+  reiniciada de forma aislada con cero trabajos WhatsApp `running` y salud
+  `ok/api_only`. La ruta `/post-cita` y el endpoint interno listaron las `108`
+  reservas confirmadas; `52` requieren primera revisión por fecha pasada. La
+  consulta controlada inicial terminó con acceso correcto, `6` etapas, `1`
+  observación y `observation_no_progress`.
+  El barrido inicial posterior cubrió `108/108` órdenes. Los últimos registros
+  conservan `92` accesos correctos y `16` credenciales rechazadas. El segundo
+  barrido dirigido almacenó los textos de las `6` observaciones. Macario quedó
+  corregido a `completed` al abrir `27199/CKJ799`; sus seis etapas figuran
+  `Atendido`. El padre sin reserva de Anggela quedó archivado como contenedor y
+  sus dos subtrámites confirmados permanecen separados como `28600/BWS839` y
+  `28614/CZU668`, ambos con `access_lost` por credenciales cambiadas.
 - WhatsApp del `2026-08-08`: `compileall`, Ruff, dashboard y `59` pruebas
   correctos. Admin API fue recuperada por su supervisor y sirve el bundle
   `main-IPC33IQD.js`; PostgreSQL conserva el resumen del 7 de agosto como

@@ -30,6 +30,7 @@ GET  /api/v1/worker
 GET  /api/v1/service-orders
 GET  /api/v1/service-orders/{order_id}
 GET  /api/v1/monthly-summary?month=YYYY-MM
+GET  /api/v1/post-appointment-followups
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/validate
 POST /api/v1/service-orders/{order_id}/contact
@@ -54,6 +55,7 @@ POST /api/v1/service-orders/{order_id}/done
 POST /api/v1/service-orders/{order_id}/no-charge
 POST /api/v1/service-orders/{order_id}/close
 POST /api/v1/service-orders/{order_id}/split-programs
+POST /api/v1/service-orders/{order_id}/post-appointment/review
 GET  /api/v1/runs
 GET  /api/v1/runs/{run_id}
 GET  /api/v1/worker/commands
@@ -68,6 +70,27 @@ POST /api/v1/manual-session/close
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
+
+## Seguimiento post-cita
+
+`GET /api/v1/post-appointment-followups` devuelve todas las órdenes con una
+reserva confirmada, su cita, el último resultado post-cita y una instantánea de
+etapas. Documento y contactos permanecen enmascarados. Cada elemento incluye
+`parent_order_id`, `program_expediente` y `program_plate` para distinguir los
+trámites de una misma cuenta. El payload incluye totales de casos que requieren
+atención, accesos perdidos y trámites con avance o cierre.
+
+`POST /api/v1/service-orders/{order_id}/post-appointment/review` realiza una
+consulta sin cuerpo y de solo lectura. Exige una reserva confirmada, rechaza una
+segunda revisión concurrente de la misma orden y abre un contexto Playwright
+aislado. No pulsa reservar, no selecciona sede, no resuelve CAPTCHA y no envía
+mensajes.
+
+La API persiste y devuelve `message_text` exactamente como fue leído de la
+columna `Mensaje`, además de `message_present` y `message_class` (`none`, `ok`,
+`observation` o `unknown`). Este endpoint es interno y requiere autenticación
+administrativa. Un rechazo de credenciales se informa como
+`access_lost`; un fallo técnico se mantiene separado como `portal_unavailable`.
 
 ## Resumen mensual
 

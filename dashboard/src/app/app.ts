@@ -43,6 +43,8 @@ import {
   ManualSessionMode,
   MonthlySummary,
   PaymentPaidPayload,
+  PostAppointmentFollowup,
+  PostAppointmentPayload,
   PriorityUpdatePayload,
   ReservationRestrictionsUpdatePayload,
   RunDetail,
@@ -79,6 +81,7 @@ type ViewKey =
   | 'summary'
   | 'finance'
   | 'orders'
+  | 'followups'
   | 'runs'
   | 'captchas';
 type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
@@ -224,6 +227,15 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   closing: { label: 'Cerrando', tone: 'warn' },
   closed: { label: 'Cerrado', tone: 'neutral' },
   completed: { label: 'Completado', tone: 'good' },
+  observation_with_progress: { label: 'Observación con avance', tone: 'warn' },
+  observation_no_progress: { label: 'Observación sin avance', tone: 'bad' },
+  awaiting_update: { label: 'Esperando actualización', tone: 'warn' },
+  in_progress: { label: 'En progreso', tone: 'good' },
+  upcoming: { label: 'Cita próxima', tone: 'neutral' },
+  access_lost: { label: 'Acceso perdido', tone: 'bad' },
+  portal_unavailable: { label: 'Portal no disponible', tone: 'bad' },
+  review_required: { label: 'Revisión pendiente', tone: 'warn' },
+  not_checked: { label: 'Aún no revisado', tone: 'neutral' },
   confirmed: { label: 'Confirmada', tone: 'good' },
   degraded: { label: 'Degradado', tone: 'bad' },
   draft_ready: { label: 'Borrador preparado', tone: 'warn' },
@@ -282,6 +294,7 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   inbox: { label: 'Pendientes', group: 'Operación' },
   summary: { label: 'Resumen', group: 'Operación' },
   orders: { label: 'Órdenes', group: 'Operación' },
+  followups: { label: 'Seguimiento post-cita', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
@@ -397,6 +410,8 @@ export class App implements OnDestroy {
   protected readonly captchaSamplingSaving = signal(false);
   protected readonly orders = signal<ServiceOrder[]>([]);
   protected readonly runs = signal<RunSummary[]>([]);
+  protected readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
+  protected readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
   protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
   protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
   protected readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
@@ -437,6 +452,7 @@ export class App implements OnDestroy {
   protected readonly runDetailError = signal<string | null>(null);
   protected readonly workerCommands = signal<WorkerCommand[]>([]);
   protected readonly manualSessions = signal<ManualSession[]>([]);
+  protected readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
   protected readonly selectedMonth = signal(INITIAL_MONTH);
   protected readonly monthlySummary = signal<MonthlySummary | null>(null);
   protected readonly monthlyLoading = signal(false);
@@ -782,6 +798,22 @@ export class App implements OnDestroy {
   protected readonly confirmedOrders = computed(
     () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
   );
+  protected readonly postAppointmentItems = computed(() => {
+    const priority: Record<string, number> = {
+      access_lost: 0,
+      observation_no_progress: 1,
+      portal_unavailable: 2,
+      awaiting_update: 3,
+      review_required: 4,
+      observation_with_progress: 5,
+      in_progress: 6,
+      upcoming: 7,
+      completed: 8,
+    };
+    return [...(this.postAppointmentPayload()?.items ?? [])].sort(
+      (left, right) => (priority[left.outcome] ?? 99) - (priority[right.outcome] ?? 99),
+    );
+  });
   protected readonly failedRuns = computed(
     () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
   );
@@ -914,6 +946,9 @@ export class App implements OnDestroy {
     }
     if (view === 'runs') {
       return this.runs().length > 0 || this.workerCommands().length > 0 || state === 'ready';
+    }
+    if (view === 'followups') {
+      return this.postAppointmentPayload() !== null;
     }
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
@@ -1069,6 +1104,7 @@ export class App implements OnDestroy {
       resumen: 'summary',
       ordenes: 'orders',
       actividad: 'runs',
+      'post-cita': 'followups',
       finanzas: 'finance',
       captchas: 'captchas',
     };
@@ -1264,6 +1300,10 @@ export class App implements OnDestroy {
       ]);
       this.runs.set(runs);
       this.workerCommands.set(workerCommands);
+      return;
+    }
+    if (view === 'followups') {
+      this.postAppointmentPayload.set(await this.api.getPostAppointmentFollowups(scope));
       return;
     }
     await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
@@ -1973,7 +2013,7 @@ export class App implements OnDestroy {
       try {
         await this.api.voidFinanceEntry(entry.entry_id, String(result.value).trim());
         await this.refreshAll();
-        await this.showToast('Movimiento anulado');
+        this.showToast('Movimiento anulado');
       } catch (error) {
         this.errorMessage.set(this.readError(error));
       } finally {
@@ -2286,7 +2326,7 @@ export class App implements OnDestroy {
         const response = await this.api.validateWhatsAppWebSession();
         if (response.status === 'session_ready') {
           this.whatsappSessionState.set('ready');
-          await this.showToast('WhatsApp vinculado y listo');
+          this.showToast('WhatsApp vinculado y listo');
           return true;
         }
         if (response.status !== 'login_required') {
@@ -2351,12 +2391,12 @@ export class App implements OnDestroy {
         this.api.prepareWhatsAppFollowUpTest(recipient),
       );
       this.whatsappManualFallbackOpen.set(false);
-      await this.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
+      this.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
       return;
     }
     await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
     this.whatsappManualFallbackOpen.set(false);
-    await this.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
+    this.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
 
   protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
@@ -2372,7 +2412,7 @@ export class App implements OnDestroy {
         this.api.prepareOrderWhatsApp(order.order_id, allowResend),
       );
       this.whatsappManualFallbackOpen.set(false);
-      await this.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
+      this.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
     } catch {
       if (!allowResend && order.whatsapp_message_status === 'sent') {
         const result = await (await this.getSweetAlert()).fire({
@@ -2503,7 +2543,7 @@ export class App implements OnDestroy {
     try {
       await navigator.clipboard.writeText(text);
       this.markCopied(label);
-      await this.showToast('Texto copiado');
+      this.showToast('Texto copiado');
     } catch {
       this.errorMessage.set('El navegador no permitio copiar. Selecciona el texto manualmente.');
     }
@@ -2519,7 +2559,7 @@ export class App implements OnDestroy {
       const png = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
       this.markCopied('constancia');
-      await this.showToast('Constancia copiada. Pegala con Ctrl+V en WhatsApp.');
+      this.showToast('Constancia copiada. Pegala con Ctrl+V en WhatsApp.');
     } catch {
       this.errorMessage.set(
         'No se pudo copiar la imagen. Usa Descargar constancia como alternativa.',
@@ -2558,14 +2598,14 @@ export class App implements OnDestroy {
       if (response.status === 'login_required') {
         this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
-        await this.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
+        this.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        await this.showToast('Constancia y cobro enviados por WhatsApp');
+        this.showToast('Constancia y cobro enviados por WhatsApp');
       }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -2620,14 +2660,14 @@ export class App implements OnDestroy {
       if (response.status === 'login_required') {
         this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
-        await this.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
+        this.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappFollowUpPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        await this.showToast('Post-pago enviado por WhatsApp');
+        this.showToast('Post-pago enviado por WhatsApp');
       }
       return response;
     } catch (error) {
@@ -2691,7 +2731,7 @@ export class App implements OnDestroy {
         sent_at: response.sent_at ?? new Date().toISOString(),
       });
       await this.refreshAll();
-      await this.showToast('Envio de WhatsApp registrado');
+      this.showToast('Envio de WhatsApp registrado');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -2723,7 +2763,7 @@ export class App implements OnDestroy {
         status: 'sent',
         sent_at: response.sent_at ?? new Date().toISOString(),
       });
-      await this.showToast('Seguimiento post-pago registrado');
+      this.showToast('Seguimiento post-pago registrado');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
@@ -3332,7 +3372,7 @@ export class App implements OnDestroy {
       );
       this.captchaSamplingDirty.set(false);
       this.applyCaptchaSamplingControl(control);
-      await this.showToast(
+      this.showToast(
         control.enabled
           ? `Muestreo activado: ${control.sample_limit} CAPTCHA por lote`
           : 'Muestreo adicional desactivado',
@@ -3387,7 +3427,7 @@ export class App implements OnDestroy {
         this.activeManualSessionIds.add(response.session_id);
       }
       await this.refreshAll();
-      await this.showToast(
+      this.showToast(
         mode === 'appointment' ? 'Sesión manual abierta' : 'Portal abierto para consulta',
       );
     } catch (error) {
@@ -3398,10 +3438,14 @@ export class App implements OnDestroy {
   }
 
   protected async closeManualSession(session: ManualSession): Promise<void> {
-    if (this.actionBusy()) {
+    if (this.isManualSessionClosing(session.session_id) || session.close_requested) {
       return;
     }
-    this.actionBusy.set(true);
+    this.closingManualSessionIds.update((sessionIds) => {
+      const next = new Set(sessionIds);
+      next.add(session.session_id);
+      return next;
+    });
     this.errorMessage.set(null);
     try {
       await this.api.closeManualSession(session.session_id);
@@ -3409,12 +3453,75 @@ export class App implements OnDestroy {
       this.manualSessions.update((sessions) =>
         sessions.filter((item) => item.session_id !== session.session_id),
       );
-      await this.showToast('Cierre solicitado');
+      this.showToast('Cierre solicitado');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
     } finally {
-      this.actionBusy.set(false);
+      this.closingManualSessionIds.update((sessionIds) => {
+        const next = new Set(sessionIds);
+        next.delete(session.session_id);
+        return next;
+      });
     }
+  }
+
+  protected isManualSessionClosing(sessionId: string): boolean {
+    return this.closingManualSessionIds().has(sessionId);
+  }
+
+  protected async reviewPostAppointment(item: PostAppointmentFollowup): Promise<void> {
+    if (this.isPostAppointmentReviewing(item.order_id)) {
+      return;
+    }
+    this.reviewingPostAppointmentOrderIds.update((orderIds) => {
+      const next = new Set(orderIds);
+      next.add(item.order_id);
+      return next;
+    });
+    this.errorMessage.set(null);
+    try {
+      await this.api.reviewPostAppointment(item.order_id);
+      this.postAppointmentPayload.set(await this.api.getPostAppointmentFollowups());
+      this.lastUpdatedAt.set(this.formatClock(new Date()));
+      this.showToast('Seguimiento post-cita actualizado');
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.reviewingPostAppointmentOrderIds.update((orderIds) => {
+        const next = new Set(orderIds);
+        next.delete(item.order_id);
+        return next;
+      });
+    }
+  }
+
+  protected isPostAppointmentReviewing(orderId: string): boolean {
+    return this.reviewingPostAppointmentOrderIds().has(orderId);
+  }
+
+  protected postAppointmentOutcomeDetail(item: PostAppointmentFollowup): string {
+    const details: Record<string, string> = {
+      upcoming: 'La cita todavía no ocurre; puede revisarse más adelante.',
+      awaiting_update: 'La fecha pasó, pero el portal aún no muestra avance posterior.',
+      in_progress: 'El portal ya registra actividad posterior a la cita.',
+      completed: 'La etapa final figura atendida o completada.',
+      observation_with_progress: 'Hubo una observación y también avance posterior.',
+      observation_no_progress: 'Hubo una observación y no aparece avance posterior.',
+      access_lost: 'El portal rechazó las credenciales guardadas.',
+      portal_unavailable: 'La consulta no pudo completarse por un error del portal.',
+      review_required: 'Todavía no existe una revisión post-cita concluyente.',
+    };
+    return details[item.outcome] ?? 'Estado pendiente de interpretación.';
+  }
+
+  protected postAppointmentStageTone(stage: { status_text: string | null; message_class: string }): StatusTone {
+    if (stage.message_class === 'observation') {
+      return 'bad';
+    }
+    if (stage.message_class === 'ok') {
+      return 'good';
+    }
+    return stage.status_text ? this.statusTone(stage.status_text) : 'neutral';
   }
 
   protected requestSplitPrograms(): void {
@@ -3559,6 +3666,18 @@ export class App implements OnDestroy {
     );
   }
 
+  protected programChildCount(order: ServiceOrder): number {
+    return this.orders().filter((item) => item.parent_order_id === order.order_id).length;
+  }
+
+  protected orderStatusDisplay(order: ServiceOrder): string {
+    const childCount = this.programChildCount(order);
+    if (childCount) {
+      return `Contenedor · ${childCount} trámite${childCount === 1 ? '' : 's'}`;
+    }
+    return this.statusLabel(order.status);
+  }
+
   protected statusLabel(
     value: string | boolean | null | undefined,
     fallback = 'Sin estado',
@@ -3658,7 +3777,7 @@ export class App implements OnDestroy {
       action.onSuccess?.(response);
       await this.refreshAll();
       await action.afterRefresh?.(response);
-      await this.showToast(action.successMessage ?? `${action.title}: completado`);
+      this.showToast(action.successMessage ?? `${action.title}: completado`);
     } catch (error) {
       const message = this.readError(error);
       this.errorMessage.set(message);
@@ -3675,16 +3794,20 @@ export class App implements OnDestroy {
     }
   }
 
-  private async showToast(title: string): Promise<void> {
-    await (await this.getSweetAlert()).fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title,
-      showConfirmButton: false,
-      timer: 2200,
-      timerProgressBar: true,
-    });
+  private showToast(title: string): void {
+    void this.getSweetAlert()
+      .then((sweetAlert) =>
+        sweetAlert.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title,
+          showConfirmButton: false,
+          timer: 2200,
+          timerProgressBar: true,
+        }),
+      )
+      .catch(() => undefined);
   }
 
   private getSweetAlert(): Promise<typeof import('sweetalert2').default> {

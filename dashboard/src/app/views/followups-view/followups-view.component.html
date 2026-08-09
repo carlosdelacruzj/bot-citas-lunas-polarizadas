@@ -1,0 +1,117 @@
+<section class="panel followups-hero" aria-labelledby="followups-title">
+  <div>
+    <p class="eyebrow">Historial interno</p>
+    <h2 id="followups-title">Después de la cita</h2>
+    <p>
+      Revisa el avance real de cada trámite y detecta accesos perdidos u observaciones que no
+      tuvieron continuidad.
+    </p>
+  </div>
+  <div class="followups-privacy-note">
+    <span aria-hidden="true">i</span>
+    <p><strong>Uso interno</strong>Los mensajes del portal se conservan para seguimiento y análisis.</p>
+  </div>
+</section>
+
+@if (dashboard.postAppointmentPayload(); as payload) {
+  <section class="followups-metrics" aria-label="Resumen post-cita">
+    <article><span>Citas confirmadas</span><strong>{{ payload.summary.total_confirmed }}</strong></article>
+    <article class="warn"><span>Requieren atención</span><strong>{{ payload.summary.needs_attention }}</strong></article>
+    <article class="bad"><span>Accesos perdidos</span><strong>{{ payload.summary.access_lost }}</strong></article>
+    <article class="good"><span>Con avance o cierre</span><strong>{{ payload.summary.progressed_or_completed }}</strong></article>
+  </section>
+
+  @if (dashboard.postAppointmentItems().length === 0) {
+    <app-view-state
+      state="empty"
+      title="Aún no hay citas para seguir"
+      message="Cuando exista una reserva confirmada aparecerá aquí para su revisión post-cita."
+    />
+  } @else {
+    <section class="followups-list" aria-label="Clientes con seguimiento post-cita">
+      @for (item of dashboard.postAppointmentItems(); track item.order_id) {
+        <article class="panel followup-card">
+          <header class="followup-card-header">
+            <div>
+              <div class="followup-identity">
+                <h3>{{ item.applicant_name }}</h3>
+                <span>{{ item.document_number_masked }}</span>
+              </div>
+              <p>
+                Cita {{ dashboard.formatDate(item.appointment_date) }}
+                @if (item.appointment_hour) { · {{ item.appointment_hour }} }
+                @if (item.site) { · {{ item.site }} }
+              </p>
+              @if (item.program_expediente || item.program_plate) {
+                <p>
+                  @if (item.program_expediente) { Exp. {{ item.program_expediente }} }
+                  @if (item.program_expediente && item.program_plate) { · }
+                  @if (item.program_plate) { Placa {{ item.program_plate }} }
+                  @if (item.parent_order_id) { · Subtrámite }
+                </p>
+              }
+            </div>
+            <div class="followup-status-block">
+              <span class="badge {{ dashboard.statusTone(item.outcome) }}">
+                {{ dashboard.statusLabel(item.outcome) }}
+              </span>
+              <small>{{ dashboard.postAppointmentOutcomeDetail(item) }}</small>
+            </div>
+          </header>
+
+          @if (item.stages.length) {
+            <ol class="stage-rail" aria-label="Etapas observadas en el portal">
+              @for (stage of item.stages; track stage.stage_key) {
+                <li class="{{ dashboard.postAppointmentStageTone(stage) }}">
+                  <span class="stage-marker" aria-hidden="true"></span>
+                  <div>
+                    <strong>{{ stage.stage_label }}</strong>
+                    <span>
+                      {{ stage.status_text || 'Sin estado' }}
+                      @if (stage.stage_date) { · {{ dashboard.formatDate(stage.stage_date) }} }
+                      @if (stage.stage_hour) { {{ stage.stage_hour }} }
+                    </span>
+                    @if (stage.message_text) {
+                      <small
+                        class="{{ stage.message_class === 'observation' ? 'stage-observation' : 'stage-ok' }}"
+                      >
+                        {{ stage.message_text }}
+                      </small>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          } @else {
+            <div class="followup-no-stages">
+              <strong>Sin instantánea de etapas</strong>
+              <span>Usa “Revisar ahora” para consultar el portal con una sesión aislada.</span>
+            </div>
+          }
+
+          <footer class="followup-card-footer">
+            <div>
+              <span>Orden {{ item.order_id }}</span>
+              <small>
+                @if (item.last_reviewed_at) {
+                  Última revisión: {{ dashboard.formatDateTime(item.last_reviewed_at) }}
+                } @else {
+                  Nunca revisado
+                }
+              </small>
+              @if (item.error_message) { <small class="followup-error">{{ item.error_message }}</small> }
+            </div>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="dashboard.isPostAppointmentReviewing(item.order_id)"
+              (click)="dashboard.reviewPostAppointment(item)"
+            >
+              {{ dashboard.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}
+            </button>
+          </footer>
+        </article>
+      }
+    </section>
+  }
+}

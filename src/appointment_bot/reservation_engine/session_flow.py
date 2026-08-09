@@ -48,6 +48,16 @@ def execute_session_flow(
     program_plate: str | None = None,
     notify_mode: str = "full",
 ) -> SessionFlowResult:
+    selected_program_expediente = program_expediente
+    selected_program_plate = program_plate
+
+    def remember_selected_program(row: dict[str, object]) -> None:
+        nonlocal selected_program_expediente, selected_program_plate
+        selected_program_expediente = (
+            str(row.get("expediente") or "").strip() or selected_program_expediente
+        )
+        selected_program_plate = str(row.get("placa") or "").strip() or selected_program_plate
+
     login(page, settings)
     page = click_program_action(
         page,
@@ -57,6 +67,7 @@ def execute_session_flow(
             client_name,
             details,
         ),
+        on_program_selected=remember_selected_program,
         program_expediente=program_expediente,
         program_plate=program_plate,
     )
@@ -68,8 +79,8 @@ def execute_session_flow(
             order_id=order_id,
             client_name=client_name,
             settings=settings,
-            program_expediente=program_expediente,
-            program_plate=program_plate,
+            program_expediente=selected_program_expediente,
+            program_plate=selected_program_plate,
         )
         screenshot_path = save_process_stages_snapshot(page, settings)
         if notify_mode == "full":
@@ -91,8 +102,8 @@ def execute_session_flow(
         on_submission_started,
         on_submission_resolved,
         expected_person_name,
-        program_expediente,
-        program_plate,
+        selected_program_expediente,
+        selected_program_plate,
         run_id,
         order_id,
     )
@@ -101,8 +112,8 @@ def execute_session_flow(
         order_id=order_id,
         client_name=client_name,
         settings=settings,
-        program_expediente=program_expediente,
-        program_plate=program_plate,
+        program_expediente=selected_program_expediente,
+        program_plate=selected_program_plate,
     )
     if notify_mode == "full":
         notify_result(
