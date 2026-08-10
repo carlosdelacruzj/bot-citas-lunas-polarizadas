@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral y documental: `2026-08-09`.
+Última revisión integral y documental: `2026-08-10`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -20,7 +20,7 @@ Estado verificado el `2026-08-09`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Corte diario normal       | El supervisor sigue vivo; el proceso terminó con código `0` a las 18:00 y espera el siguiente arranque de las 07:30. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v49` aplicado con identidad de trámite y mensajes post-cita.            |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v50` aplicado con telemetría durable y control de OBS-006/OBS-007.       |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
 | CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
@@ -109,6 +109,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   no existen reobservaciones recursivas ni reintentos de resultados ambiguos.
   `SLOT_LOST_REOBSERVATION_ENABLED=false` restaura el cierre inmediato sin
   migración. Falta validarlo en el próximo `slot_lost` real.
+- Implementado el `2026-08-10`: PostgreSQL `schema v50` conserva cada ráfaga
+  OBS-006 con `burst_id`, candidatos, detector, auxiliares, posiciones, lease,
+  primera lectura, tiempos de reserva allowlisted, resultados y causa de
+  cierre. OBS-007 conserva una secuencia durable que enlaza el primer intento
+  `slot_lost`, sus observaciones, el segundo intento y el resultado final,
+  incluso fuera de una ráfaga. Estos datos no dependen de la retención corta de
+  `runs`.
+- Implementado el `2026-08-10`: un control singleton persistido y versionado
+  permite activar, desactivar o drenar OBS-006/OBS-007 desde Admin API,
+  dashboard y Telegram. El estado inicial `inherit` respeta las banderas
+  actuales; un circuit breaker durable cierra admisiones ante defensa,
+  `403/429`, pérdida de lease posterior al intento, resultado no confirmado o
+  fallo de coordinación. El límite duro sigue siendo dos sesiones.
 - Los clientes de la cadena posterior fuerzan
   `RESERVATION_CAPTCHA_SAMPLE_LIMIT=1`: el muestreo adicional solo puede ocurrir
   en la sesión detectora y no multiplica su demora por cada cuenta siguiente.
@@ -610,10 +623,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     disponibilidad. Su riesgo vigente es sumar carga durante una tanda; debe
     medirse recuperación, duración, CAPTCHA, defensas y cierre de intentos. Un
     `reservation_unconfirmed` nunca entra en esta ruta.
-12. La telemetría de ventana actual no conserva todos los detalles producidos
-    por `OBS-006`: `burst_id`, candidatos, posiciones y resultados auxiliares
-    no pueden reconstruirse de forma completa desde PostgreSQL. Debe corregirse
-    antes de usar el primer caso real para decidir continuidad o escalamiento.
+12. La telemetría durable de OBS-006/OBS-007 ya permite reconstruir el canario
+    desde PostgreSQL, pero todavía no existe la muestra productiva mínima de
+    `10` ráfagas y `30` auxiliares. No debe decidirse continuidad o escalamiento
+    antes de completar y comparar ese corte.
 13. El Resumen mensual mezcla eventos del periodo, cohortes de alta y una
     fotografía actual de pendientes. También compara mes parcial contra mes
     completo y considera faltante un contacto válido por `@usuario`. Estas
@@ -623,6 +636,28 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     sobreviva a la caída completa del equipo operativo.
 
 ## Validación del corte
+
+- Fase 1 técnica del `2026-08-10`: migración PostgreSQL `v49 -> v50` aplicada
+  sin borrar datos; verificadas las cinco tablas nuevas y el control inicial
+  `inherit/inherit`, revisión `0`, breaker cerrado. Las lecturas directas del
+  contrato devolvieron HTTP lógico `200`, estado efectivo habilitado por las
+  banderas vigentes y cero ráfagas históricas inventadas.
+- Tres recorridos transaccionales con `ROLLBACK` validaron sobre PostgreSQL real
+  la cabecera, candidato, detector, auxiliar, evento OBS-007, cierre y detalle;
+  también comprobaron `draining -> breaker open -> reset -> disabled` sin
+  marcar el drenaje aplicado antes de cerrar, el enlace anterior/siguiente y
+  los timestamps de CAPTCHA, submit y confirmación. Todos dejaron cero filas de
+  prueba y el control productivo siguió `inherit/inherit`, revisión `0`.
+- Validación del mismo cambio: `python -m compileall -q src`, Ruff,
+  `python -m pytest -q` con `59 passed`, build Angular con bundle inicial de
+  `519.99 kB` y `git diff --check` correctos. No se abrió el portal, no se llamó
+  a 2Captcha, no se envió Telegram/WhatsApp y no se creó una reserva.
+- Admin API y el receptor Telegram se reiniciaron aisladamente después de
+  comprobar cero submissions y trabajos WhatsApp activos. El endpoint nuevo
+  respondió a través del proxy Angular con revisión `0`, breaker cerrado y
+  ambos modos efectivos habilitados. El navegador integrado no estuvo
+  disponible, por lo que no se afirma aprobación visual: el panel quedó
+  validado por contrato y build.
 
 - Revisión operativa del `2026-08-09`: Admin API `8766` y CAPTCHA sombra
   `8787` saludables; PostgreSQL saludable en Docker. El puerto `8765` no

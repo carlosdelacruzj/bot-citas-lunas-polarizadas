@@ -34,6 +34,64 @@ export interface WorkerStatus {
   availability_signature?: string | null;
 }
 
+export type OpportunityControlTarget = 'obs006' | 'obs007';
+export type OpportunityControlAction = 'activate' | 'deactivate' | 'drain' | 'reset_breaker';
+
+export interface OpportunityControlMode {
+  desired_mode: string;
+  effective_mode: string;
+  admissions_allowed: boolean;
+}
+
+export interface OpportunityActiveBurst {
+  burst_id: string;
+  status: string;
+  started_at: string;
+  max_active_sessions: number;
+  scheduled_clients: number;
+  completion_reason: string | null;
+}
+
+export interface OpportunityControl {
+  revision: number;
+  source: string;
+  obs006: OpportunityControlMode;
+  obs007: OpportunityControlMode;
+  breaker: {
+    state: string;
+    reason: string | null;
+    opened_at: string | null;
+  };
+  active_burst: OpportunityActiveBurst | null;
+  updated_at: string | null;
+  updated_by: string | null;
+  pending_application: boolean;
+  status?: string;
+  message?: string;
+}
+
+export interface OpportunityBurst {
+  burst_id: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  completion_reason: string | null;
+  max_active_sessions: number;
+  candidate_count: number;
+  scheduled_clients: number;
+}
+
+export interface OpportunityBurstsResponse {
+  bursts: OpportunityBurst[];
+}
+
+export interface OpportunityControlActionPayload {
+  action: OpportunityControlAction;
+  target: OpportunityControlTarget;
+  reason: string;
+  expected_revision: number;
+}
+
 export interface CaptchaSamplingControl {
   enabled: boolean;
   sample_limit: number;
@@ -657,6 +715,20 @@ export class AppointmentApiService {
 
   async getWorker(scope?: RequestScope): Promise<WorkerStatus> {
     return this.read<WorkerStatus>('/api/v1/worker', scope);
+  }
+
+  async getOpportunityControl(scope?: RequestScope): Promise<OpportunityControl> {
+    return this.read<OpportunityControl>('/api/v1/runtime-controls/opportunity', scope);
+  }
+
+  async updateOpportunityControl(
+    payload: OpportunityControlActionPayload,
+  ): Promise<OpportunityControl> {
+    return this.post<OpportunityControl>('/api/v1/runtime-controls/opportunity', payload);
+  }
+
+  async getOpportunityBursts(scope?: RequestScope): Promise<OpportunityBurstsResponse> {
+    return this.read<OpportunityBurstsResponse>('/api/v1/opportunity-bursts', scope);
   }
 
   async getCaptchaSamplingControl(scope?: RequestScope): Promise<CaptchaSamplingControl> {

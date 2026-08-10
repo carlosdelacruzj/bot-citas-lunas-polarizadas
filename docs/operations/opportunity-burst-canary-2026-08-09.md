@@ -3,10 +3,12 @@
 Estado: ampliada y cargada mediante reinicio controlado el `2026-08-09`;
 pendiente de la primera disponibilidad real posterior al despliegue.
 
-Limitacion conocida: la implementacion actual agrega metricas por ventana pero
-no conserva durablemente `burst_id` ni el detalle de cada auxiliar. La primera
-prioridad de `docs/roadmap/README.md` cierra esa brecha antes de usar el canario
-para decidir un escalamiento.
+Desde el `2026-08-10`, `schema v50` conserva durablemente `burst_id`, foto de
+candidatos, detector, auxiliares, posiciones, concurrencia, resultados y causa
+de cierre. OBS-007 conserva ademas el primer intento `slot_lost`, cada lectura,
+el segundo intento y su resultado. La implementacion tecnica esta completa;
+falta la muestra real de `10` rafagas y `30` auxiliares antes de decidir un
+escalamiento.
 
 ## Objetivo
 
@@ -117,6 +119,12 @@ error. Los intervalos reutilizan
 `OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS` y
 `OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS`.
 
+El control durable inicia en `inherit`, por lo que estas banderas siguen siendo
+efectivas despues de migrar. Cuando el operador usa Admin API, dashboard o
+Telegram, PostgreSQL pasa a gobernar el modo sin editar `.env` ni reiniciar.
+Todas las acciones exigen motivo y revision vigente; Telegram pasa solo por el
+Admin API autenticado.
+
 ## Validación sin portal
 
 - Una simulación procesó detector más seis auxiliares confirmados, consumió
@@ -157,12 +165,16 @@ máximo concurrente, resultados, defensas y reservas confirmadas.
 
 Rollback preferido, sin revertir código:
 
-1. No reiniciar durante un submit. Esperar que el dashboard deje de mostrar
-   `opportunity_burst` y revisar que no exista una reserva pendiente.
-2. Establecer `OPPORTUNITY_BURST_ENABLED=false` en `.env`.
-3. Reiniciar únicamente el worker desde Admin API o Telegram.
+1. Si existe una rafaga activa, solicitar **Drenar OBS-006** desde dashboard o
+   Telegram; no reiniciar durante un submit.
+2. Esperar que la rafaga cierre y que el modo efectivo quede `disabled`.
+3. Si no existe rafaga activa, usar **Desactivar OBS-006** directamente.
 4. Confirmar que el siguiente cupo usa `opportunity_queue` secuencial y que no
    aparece un nuevo `burst_id`.
+
+La bandera `OPPORTUNITY_BURST_ENABLED=false` y un reinicio seguro quedan como
+fallback de emergencia si el Admin API no esta disponible. No son el rollback
+normal desde `schema v50`.
 
 La bandera desactivada restaura la cadena previa de hasta diez clientes y 300
 segundos. No hay migración PostgreSQL ni datos que revertir.

@@ -52,6 +52,7 @@ MUTATING_COMMANDS = {
     "reanudar",
     "reglas_editar",
     "reiniciar",
+    "oportunidad",
 }
 ORDER_TARGET_COMMANDS = {
     "cliente",
@@ -74,6 +75,7 @@ HELP_TEXT = """Control remoto disponible:
 /pausar - Pausar el worker con confirmacion
 /reanudar - Reanudar el worker con confirmacion
 /reiniciar - Reiniciar el worker con confirmacion
+/oportunidad - Control de admision y breaker de oportunidades
 /ayuda - Mostrar esta ayuda
 /cancelar - Cancelar la operacion guiada actual
 /menu - Abrir el menu principal con botones
@@ -102,6 +104,9 @@ class PendingWorkerConfirmation:
     chat_id: str
     command: str
     expires_at: float
+    opportunity_target: str | None = None
+    expected_revision: int | None = None
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -321,6 +326,43 @@ class AdminApiClient:
                 if isinstance(item, dict) and item.get("command_id") == command_id
             ),
             None,
+        )
+
+    def get_opportunity_control(self) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/runtime-controls/opportunity")
+
+    def update_opportunity_control(
+        self,
+        *,
+        action: str,
+        target: str,
+        reason: str,
+        expected_revision: int,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/api/v1/runtime-controls/opportunity",
+            payload={
+                "action": action,
+                "target": target,
+                "reason": reason,
+                "expected_revision": expected_revision,
+            },
+            actor=actor,
+        )
+
+    def get_opportunity_bursts(self) -> list[dict[str, Any]]:
+        payload = self._request("GET", "/api/v1/opportunity-bursts")
+        bursts = payload.get("bursts", [])
+        if not isinstance(bursts, list):
+            raise TelegramControlError("Admin API returned an invalid opportunity burst list.")
+        return [item for item in bursts if isinstance(item, dict)]
+
+    def get_opportunity_burst(self, burst_id: str) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            f"/api/v1/opportunity-bursts/{quote(burst_id, safe='')}",
         )
 
     def _request(
@@ -783,6 +825,12 @@ def _process_update(
     if command == "estado":
         _send_worker_panel(chat_id, telegram, admin_api)
         return
+    if command == "oportunidad":
+        if arguments:
+            telegram.send_message(chat_id, "Uso: /oportunidad")
+            return
+        _send_opportunity_panel(chat_id, telegram, admin_api)
+        return
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
         return
@@ -903,6 +951,7 @@ def _main_menu_markup() -> dict[str, Any]:
             [
                 {"text": "Sistema y errores", "callback_data": "ui:worker:show"},
             ],
+            [{"text": "Oportunidades", "callback_data": "ui:opportunity:show"}],
         ]
     }
 
@@ -1465,6 +1514,107 @@ def _send_worker_panel(
             ]
         },
     )
+
+
+def _send_opportunity_panel(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        control = admin_api.get_opportunity_control()
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare opportunity panel: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar los controles de oportunidad.")
+        return
+    revision = control.get("revision")
+    if isinstance(revision, bool) or not isinstance(revision, int):
+        telegram.send_message(chat_id, "El Admin API devolvio una revision de control invalida.")
+        return
+
+    rows: list[list[dict[str, str]]] = []
+    pending_application = bool(control.get("pending_application"))
+    active_burst = control.get("active_burst")
+    if not pending_application:
+        for target, label in (("obs006", "Rafaga"), ("obs007", "Optimizada")):
+            target_control = control.get(target)
+            if not isinstance(target_control, dict):
+                continue
+            effective = str(target_control.get("effective_mode") or "disabled")
+            if target == "obs006" and isinstance(active_burst, dict):
+                action = "drain"
+                action_label = "Drenar"
+            elif effective == "enabled":
+                action = "deactivate"
+                action_label = "Desactivar"
+            else:
+                action = "activate"
+                action_label = "Activar"
+            rows.append(
+                [
+                    {
+                        "text": f"{action_label} {label}",
+                        "callback_data": f"op:{target}:{action}-r{revision}",
+                    }
+                ]
+            )
+
+    breaker = control.get("breaker")
+    if isinstance(breaker, dict) and str(breaker.get("state") or "closed") != "closed":
+        rows.append([{
+            "text": "Revisar y resetear breaker",
+            "callback_data": f"op:obs006:reset_breaker-r{revision}",
+        }])
+    rows.append([
+        {"text": "Actualizar", "callback_data": "ui:opportunity:show"},
+        {"text": "Menu", "callback_data": "ui:menu:main"},
+    ])
+    telegram.send_message(
+        chat_id,
+        _format_opportunity_control(control),
+        reply_markup={"inline_keyboard": rows},
+    )
+
+
+def _format_opportunity_control(control: dict[str, Any]) -> str:
+    lines = [
+        "CONTROL DE OPORTUNIDADES",
+        "",
+        f"Revision: {control.get('revision', 'desconocida')}",
+    ]
+    for target, label in (("obs006", "OBS-006 Rafaga"), ("obs007", "OBS-007 Optimizada")):
+        item = control.get(target)
+        if not isinstance(item, dict):
+            lines.append(f"{label}: sin datos")
+            continue
+        admissions = "si" if bool(item.get("admissions_allowed")) else "no"
+        lines.append(
+            f"{label}: deseado={item.get('desired_mode') or 'desconocido'} | "
+            f"efectivo={item.get('effective_mode') or 'desconocido'} | admite={admissions}"
+        )
+    breaker = control.get("breaker")
+    if isinstance(breaker, dict):
+        lines.extend(
+            [
+                "",
+                f"Breaker: {breaker.get('state') or 'desconocido'}",
+                f"Motivo: {breaker.get('reason') or 'sin motivo activo'}",
+            ]
+        )
+    active = control.get("active_burst")
+    if isinstance(active, dict):
+        lines.extend(
+            [
+                "",
+                f"Rafaga activa: {active.get('burst_id') or 'sin id'}",
+                f"Estado: {active.get('status') or 'desconocido'} | "
+                f"sesiones max: {active.get('max_active_sessions') or 0} | "
+                f"programados: {active.get('scheduled_clients') or 0}",
+            ]
+        )
+    if bool(control.get("pending_application")):
+        lines.extend(["", "Hay un cambio pendiente de aplicar por el worker."])
+    return "\n".join(lines)
 
 
 def _send_order_panel(
@@ -2601,6 +2751,75 @@ def _request_worker_confirmation(
     )
 
 
+def _request_opportunity_confirmation(
+    chat_id: str,
+    action: str,
+    target: str,
+    expected_revision: int,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_confirmations: dict[str, PendingWorkerConfirmation],
+    confirmation_lock: Lock,
+) -> None:
+    try:
+        current = admin_api.get_opportunity_control()
+    except TelegramControlError as exc:
+        logger.warning("Could not review opportunity control before confirmation: %s", exc)
+        telegram.send_message(chat_id, "No pude revisar el estado actual. Actualiza el panel.")
+        return
+    if current.get("revision") != expected_revision:
+        telegram.send_message(
+            chat_id,
+            "El control cambio desde que abriste el panel. Revisa el estado actualizado.",
+        )
+        _send_opportunity_panel(chat_id, telegram, admin_api)
+        return
+
+    reason = {
+        "activate": "Activacion confirmada por el operador desde Telegram.",
+        "deactivate": "Desactivacion confirmada por el operador desde Telegram.",
+        "drain": "Drenaje controlado confirmado por el operador desde Telegram.",
+        "reset_breaker": "Reset manual del breaker confirmado tras revision en Telegram.",
+    }[action]
+    operation_id = secrets.token_hex(6)
+    confirmation = PendingWorkerConfirmation(
+        operation_id=operation_id,
+        chat_id=chat_id,
+        command=f"opportunity:{action}",
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+        opportunity_target=target,
+        expected_revision=expected_revision,
+        reason=reason,
+    )
+    with confirmation_lock:
+        _cancel_chat_confirmations_unlocked(chat_id, pending_confirmations)
+        pending_confirmations[operation_id] = confirmation
+    label = {
+        "activate": "activar",
+        "deactivate": "desactivar",
+        "drain": "drenar sin abrir nuevas sesiones",
+        "reset_breaker": "resetear el breaker revisado",
+    }[action]
+    consequence = (
+        " Al resetear, volvera a regir el modo deseado actual y las admisiones "
+        "podran reanudarse."
+        if action == "reset_breaker"
+        else ""
+    )
+    telegram.send_message(
+        chat_id,
+        f"Confirmar: {label} {target}.\n\n"
+        f"Revision revisada: {expected_revision}.{consequence} "
+        "La confirmacion vence en 2 minutos.",
+        reply_markup={
+            "inline_keyboard": [[
+                {"text": "Confirmar", "callback_data": f"wc:{operation_id}:yes"},
+                {"text": "Cancelar", "callback_data": f"wc:{operation_id}:no"},
+            ]]
+        },
+    )
+
+
 def _process_interface_callback(
     callback_id: str,
     data: str,
@@ -2619,7 +2838,7 @@ def _process_interface_callback(
     confirmation_lock: Lock,
 ) -> bool:
     parts = data.split(":")
-    if len(parts) != 3 or parts[0] not in {"ui", "om", "pq", "wk", "nf", "rf"}:
+    if len(parts) != 3 or parts[0] not in {"ui", "om", "op", "pq", "wk", "nf", "rf"}:
         return False
     prefix, subject, action = parts
     telegram.answer_callback_query(callback_id, "Procesando...")
@@ -2690,6 +2909,8 @@ def _process_interface_callback(
             _send_recent_orders(chat_id, telegram, admin_api, recent_orders)
         elif subject == "worker":
             _send_worker_panel(chat_id, telegram, admin_api)
+        elif subject == "opportunity":
+            _send_opportunity_panel(chat_id, telegram, admin_api)
         elif subject == "errors":
             _send_recent_errors(chat_id, telegram, admin_api)
         elif subject == "delete":
@@ -2715,6 +2936,27 @@ def _process_interface_callback(
             )
         else:
             telegram.send_message(chat_id, "Accion de menu no reconocida.")
+        return True
+    if prefix == "op":
+        action_text, separator, revision_text = action.rpartition("-r")
+        if (
+            subject not in {"obs006", "obs007"}
+            or action_text not in {"activate", "deactivate", "drain", "reset_breaker"}
+            or not separator
+            or not revision_text.isdigit()
+        ):
+            telegram.send_message(chat_id, "Ese control de oportunidad ya no es valido.")
+            return True
+        _request_opportunity_confirmation(
+            chat_id,
+            action_text,
+            subject,
+            int(revision_text),
+            telegram,
+            admin_api,
+            pending_confirmations,
+            confirmation_lock,
+        )
         return True
     if prefix == "om":
         order_id = subject
@@ -3014,10 +3256,22 @@ def _process_callback_query(
         telegram.send_message(chat_id, "Operacion cancelada. No se realizaron cambios.")
         return
     telegram.answer_callback_query(callback_id, "Solicitud confirmada.")
+    is_opportunity_control = confirmation.command.startswith("opportunity:")
     _record_audit_safe(
         actor=_telegram_actor(chat_id), action=confirmation.command,
-        status="accepted", operation_id=operation_id,
+        status="accepted",
+        target_type="opportunity_control" if is_opportunity_control else None,
+        target_id=confirmation.opportunity_target,
+        operation_id=operation_id,
     )
+    if is_opportunity_control:
+        executor.submit(
+            _execute_opportunity_control,
+            confirmation,
+            telegram,
+            admin_api,
+        )
+        return
     executor.submit(
         _execute_worker_command,
         confirmation,
@@ -3236,6 +3490,84 @@ def _wait_for_order_preflight(
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
     return all(order.get(field) == value for field, value in change.updated.items())
+
+
+def _execute_opportunity_control(
+    confirmation: PendingWorkerConfirmation,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    actor = _telegram_actor(confirmation.chat_id)
+    action = confirmation.command.removeprefix("opportunity:")
+    target = confirmation.opportunity_target
+    revision = confirmation.expected_revision
+    if target not in {"obs006", "obs007"} or revision is None or confirmation.reason is None:
+        logger.error(
+            "Incomplete opportunity confirmation operation_id=%s",
+            confirmation.operation_id,
+        )
+        return
+    try:
+        current = admin_api.get_opportunity_control()
+        if current.get("revision") != revision:
+            telegram.send_message(
+                confirmation.chat_id,
+                "El control cambio antes de aplicar la solicitud. No se modifico nada.",
+            )
+            _record_audit_safe(
+                actor=actor,
+                action=confirmation.command,
+                status="failed",
+                target_type="opportunity_control",
+                target_id=target,
+                operation_id=confirmation.operation_id,
+                detail="stale_revision",
+            )
+            _send_opportunity_panel(confirmation.chat_id, telegram, admin_api)
+            return
+        result = admin_api.update_opportunity_control(
+            action=action,
+            target=target,
+            reason=confirmation.reason,
+            expected_revision=revision,
+            actor=actor,
+        )
+        telegram.send_message(
+            confirmation.chat_id,
+            str(result.get("message") or "Control de oportunidad actualizado."),
+        )
+        _record_audit_safe(
+            actor=actor,
+            action=confirmation.command,
+            status="applied",
+            target_type="opportunity_control",
+            target_id=target,
+            operation_id=confirmation.operation_id,
+            detail=f"revision={result.get('revision', 'unknown')}",
+        )
+        _send_opportunity_panel(confirmation.chat_id, telegram, admin_api)
+    except TelegramControlError as exc:
+        stale = "HTTP 409" in str(exc)
+        logger.warning("Opportunity control %s failed: %s", action, exc)
+        telegram.send_message(
+            confirmation.chat_id,
+            (
+                "El estado cambio o la operacion ya no es segura. Revisa el panel actualizado."
+                if stale
+                else "No pude aplicar el control de oportunidad. No confirmo cambios."
+            ),
+        )
+        _record_audit_safe(
+            actor=actor,
+            action=confirmation.command,
+            status="failed",
+            target_type="opportunity_control",
+            target_id=target,
+            operation_id=confirmation.operation_id,
+            detail="stale_or_unsafe" if stale else "admin_api_error",
+        )
+        if stale:
+            _send_opportunity_panel(confirmation.chat_id, telegram, admin_api)
 
 
 def _execute_worker_command(

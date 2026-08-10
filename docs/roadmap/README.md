@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-09`.
+Ultima priorizacion: `2026-08-10`.
 
 Esta es la unica lista de trabajo futuro y su orden de ejecucion. El estado de
 lo construido, validado y activo vive en
@@ -23,8 +23,8 @@ crear colas paralelas.
 
 ## Orden inmediato
 
-1. Completar la **Fase 1 - Seguridad y medicion del canario** antes de seguir
-   evaluando o ampliar `OBS-006/OBS-007`.
+1. Reunir la muestra productiva de cierre de la **Fase 1** sin cambiar sus
+   parametros: `10` rafagas y `30` auxiliares reconstruibles.
 2. Corregir en la **Fase 2** los falsos pendientes y la mezcla temporal del
    Resumen; no tomar decisiones comerciales desde la comparacion actual de mes
    parcial contra mes completo.
@@ -56,6 +56,9 @@ contradicciones operativas criticas corregidas y `git diff --check` correcto.
 ## Fase 1 - Seguridad y medicion de OBS-006/OBS-007
 
 Prioridad: **P0**.
+
+Estado: **implementacion tecnica completada el 2026-08-10; pendiente muestra
+productiva de aceptacion**.
 
 Objetivo: hacer que cada rafaga real sea reconstruible y reversible antes de
 usar sus resultados para decidir continuidad o escalamiento.
@@ -93,6 +96,26 @@ usar sus resultados para decidir continuidad o escalamiento.
 - autorizacion explicita antes de agregar tests automatizados nuevos;
 - luego, muestra real minima de `10` rafagas y `30` auxiliares;
 - comparar contra el baseline del 1 al 8 de agosto.
+
+### Implementado el 2026-08-10
+
+- esquema PostgreSQL `v50` aditivo, con cabecera de rafaga, foto de candidatos,
+  ejecuciones y eventos OBS-007 fuera de la retencion corta de `runs`;
+- propagacion durable de rol, posicion, IDs de intento, lease, resultado,
+  tiempos allowlisted y causa de cierre;
+- control singleton con revision optimista, estado efectivo, drenaje y circuit
+  breaker, manteniendo `inherit` como compatibilidad con las banderas vigentes;
+- endpoints autenticados, panel operativo en Resumen y controles Telegram que
+  pasan exclusivamente por Admin API;
+- reconciliacion de rafagas incompletas al tomar un nuevo lease y limite duro de
+  dos sesiones;
+- migracion viva `v49 -> v50`, `compileall`, Ruff, `59 passed`, build Angular y
+  `git diff --check` correctos.
+
+No se marca la fase como cerrada porque todavia faltan `10` rafagas reales y
+`30` auxiliares. Durante esa muestra no se deben cambiar intervalos, orden,
+CAPTCHA ni concurrencia; cualquier breaker abierto detiene admisiones hasta la
+revision manual.
 
 ### Criterio de aceptacion
 

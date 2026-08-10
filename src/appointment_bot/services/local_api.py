@@ -47,6 +47,13 @@ from appointment_bot.services.api.manual_session_routes import (
     open_manual_session_payload,
 )
 from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
+from appointment_bot.services.api.opportunity_routes import (
+    opportunity_burst_id,
+    opportunity_burst_payload,
+    opportunity_bursts_payload,
+    opportunity_control_payload,
+    update_opportunity_control_payload,
+)
 from appointment_bot.services.api.post_appointment_routes import (
     post_appointment_followups_payload,
     post_appointment_review_order_id,
@@ -141,6 +148,34 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = captcha_sampling_control_payload()
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/runtime-controls/opportunity":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = opportunity_control_payload()
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/opportunity-bursts":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = opportunity_bursts_payload(query)
+            self._send_json(status, payload)
+            return
+
+        burst_id = opportunity_burst_id(path)
+        if burst_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            if not burst_id:
+                self._send_json(
+                    HTTPStatus.NOT_FOUND,
+                    error_payload("not_found", "Rafaga no encontrada."),
+                )
+                return
+            status, payload = opportunity_burst_payload(burst_id)
             self._send_json(status, payload)
             return
 
@@ -351,6 +386,16 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = update_captcha_sampling_control_payload(
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/runtime-controls/opportunity":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_opportunity_control_payload(
                 self._read_json(),
                 requested_by=self.headers.get("X-Appointment-Actor"),
             )

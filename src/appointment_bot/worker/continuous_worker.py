@@ -11,6 +11,7 @@ from appointment_bot.core.models import (
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )
+from appointment_bot.db.opportunity_bursts import reconcile_stale_opportunity_bursts
 from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
@@ -203,6 +204,15 @@ class ContinuousWorker:
         cleaned_claims = cleanup_expired_service_order_claims(self.settings)
         if cleaned_claims:
             logger.info("Released %s expired service order claim(s)", cleaned_claims)
+        reconciled_bursts = reconcile_stale_opportunity_bursts(
+            datetime.now(UTC),
+            settings=self.settings,
+        )
+        if reconciled_bursts:
+            logger.warning(
+                "Reconciled %s unfinished opportunity burst(s) from a previous worker",
+                len(reconciled_bursts),
+            )
         with self._guard:
             self._starting = False
             self._running = True
@@ -386,6 +396,7 @@ class ContinuousWorker:
             observer_mode=True,
             cancel_event=self._cancel_event,
             on_check=on_order_check,
+            opportunity_context=burst.detector_context,
         )
         burst_result = burst.finish_detector(
             report,

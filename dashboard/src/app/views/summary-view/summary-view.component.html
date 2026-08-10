@@ -361,7 +361,8 @@
 </section>
 
 <section class="split">
-  <article class="panel">
+  <div class="panel-stack">
+    <article class="panel">
     <div class="panel-header">
       <div>
         <h2>Actividad actual</h2>
@@ -421,7 +422,144 @@
         Reiniciar worker
       </button>
     </div>
-  </article>
+    </article>
+
+    <article class="panel opportunity-control-panel" aria-labelledby="opportunity-control-title">
+      <div class="panel-header">
+        <div>
+          <h2 id="opportunity-control-title">Canario de oportunidades</h2>
+          <p>Control operativo de OBS-006 y OBS-007 · máximo 2 sesiones</p>
+        </div>
+        <span
+          class="badge {{ dashboard.opportunityCanaryTone() }}"
+          aria-live="polite"
+        >
+          {{ dashboard.opportunityCanaryLabel() }}
+        </span>
+      </div>
+
+      @if (dashboard.opportunityControl(); as control) {
+        @if (dashboard.opportunityBreakerOpen()) {
+          <div class="canary-breaker" role="alert">
+            <div>
+              <strong>Protección automática activada</strong>
+              <p>
+                {{ dashboard.opportunityReasonLabel(control.breaker.reason) }}
+                @if (control.breaker.opened_at) {
+                  · {{ dashboard.formatDateTime(control.breaker.opened_at) }}
+                }
+              </p>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="dashboard.actionBusy() || control.pending_application"
+              (click)="dashboard.requestResetOpportunityBreaker()"
+            >
+              Restablecer protección
+            </button>
+          </div>
+        }
+
+        <p
+          id="opportunity-application-state"
+          class="canary-application-state"
+          aria-live="polite"
+        >
+          <strong>{{ control.pending_application ? 'Pendiente de aplicar' : 'Aplicado' }}</strong>
+          · revisión {{ control.revision }}
+          @if (control.updated_at) {
+            · {{ dashboard.formatDateTime(control.updated_at) }}
+          }
+        </p>
+
+        <div class="canary-control-list">
+          <section class="canary-control-row" aria-labelledby="obs006-control-title">
+            <div>
+              <h3 id="obs006-control-title">OBS-006</h3>
+              <p>Ráfaga de oportunidades con un máximo de 2 sesiones simultáneas.</p>
+            </div>
+            <div class="canary-control-state">
+              <span class="badge {{ dashboard.opportunityModeTone(control.obs006.effective_mode) }}">
+                {{ dashboard.opportunityModeLabel(control.obs006.effective_mode) }}
+              </span>
+              <small>
+                Deseado: {{ dashboard.opportunityModeLabel(control.obs006.desired_mode) }}
+                · admisiones {{ control.obs006.admissions_allowed ? 'abiertas' : 'cerradas' }}
+              </small>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="dashboard.opportunityActionDisabled('obs006')"
+              aria-describedby="opportunity-action-hint"
+              (click)="dashboard.requestOpportunityContextAction('obs006')"
+            >
+              {{ dashboard.opportunityActionLabel('obs006') }}
+            </button>
+          </section>
+
+          <section class="canary-control-row" aria-labelledby="obs007-control-title">
+            <div>
+              <h3 id="obs007-control-title">OBS-007</h3>
+              <p>Reobservación controlada después de perder un cupo durante la reserva.</p>
+            </div>
+            <div class="canary-control-state">
+              <span class="badge {{ dashboard.opportunityModeTone(control.obs007.effective_mode) }}">
+                {{ dashboard.opportunityModeLabel(control.obs007.effective_mode) }}
+              </span>
+              <small>
+                Deseado: {{ dashboard.opportunityModeLabel(control.obs007.desired_mode) }}
+                · admisiones {{ control.obs007.admissions_allowed ? 'abiertas' : 'cerradas' }}
+              </small>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="dashboard.opportunityActionDisabled('obs007')"
+              aria-describedby="opportunity-action-hint"
+              (click)="dashboard.requestOpportunityContextAction('obs007')"
+            >
+              {{ dashboard.opportunityActionLabel('obs007') }}
+            </button>
+          </section>
+        </div>
+
+        <p id="opportunity-action-hint" class="canary-hint">
+          Drenar bloquea trabajos nuevos y permite terminar confirmaciones ya iniciadas.
+          @if (dashboard.opportunityBreakerOpen()) {
+            La protección debe restablecerse antes de volver a activar controles.
+          }
+        </p>
+
+        @if (control.active_burst; as burst) {
+          <div
+            class="canary-burst"
+            [class.canary-burst--unsafe]="burst.max_active_sessions > 2"
+            [attr.role]="burst.max_active_sessions > 2 ? 'alert' : null"
+            aria-live="polite"
+          >
+            <strong>Ráfaga activa</strong>
+            <span>{{ burst.scheduled_clients }} clientes programados</span>
+            <span>{{ burst.max_active_sessions }} de 2 sesiones máximas</span>
+            <span>Inició {{ dashboard.formatDateTime(burst.started_at) }}</span>
+          </div>
+        } @else if (dashboard.latestOpportunityBurst(); as burst) {
+          <div class="canary-burst canary-burst--quiet">
+            <strong>Última ráfaga</strong>
+            <span>{{ dashboard.opportunityModeLabel(burst.status) }}</span>
+            <span>{{ burst.scheduled_clients }} clientes programados</span>
+            <span>{{ dashboard.opportunityReasonLabel(burst.completion_reason) }}</span>
+          </div>
+        }
+      } @else {
+        <p class="empty" role="status" aria-live="polite">
+          El estado del canario todavía no está disponible. No se habilitan acciones hasta
+          confirmar una revisión vigente.
+        </p>
+      }
+    </article>
+  </div>
 
   <article class="panel">
     <div class="panel-header">

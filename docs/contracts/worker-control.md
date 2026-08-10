@@ -121,3 +121,23 @@ Mientras la migracion conserva compatibilidad:
 - mantener `appointment-bot-worker`;
 - mantener `scripts/start-worker.ps1`;
 - no cambiar codigos de salida 0, 75 y 76.
+
+## Control durable de oportunidades
+
+OBS-006 y OBS-007 tienen un control independiente en
+`opportunity_runtime_control`. No reemplaza `worker_commands`: gobierna la
+admision de nuevas rafagas y nuevas reobservaciones en cada frontera segura.
+
+- `inherit`: usa la bandera de entorno actual sin cambiar el comportamiento al
+  migrar a `schema v50`;
+- `enabled`: admite trabajo si el breaker esta cerrado;
+- `disabled`: bloquea admisiones nuevas;
+- `draining` en OBS-006: bloquea reemplazos nuevos y deja terminar las sesiones
+  ya iniciadas; al cerrar la ultima rafaga se convierte en `disabled`;
+- `circuit_state=open`: prevalece sobre cualquier modo deseado y requiere un
+  reset explicito, con actor, motivo y revision vigente.
+
+El worker reconcilia como `aborted` cualquier rafaga que haya quedado activa al
+adquirir un nuevo lease. Esa reconciliacion no reintenta submits ni borra la
+evidencia. El control general de pausa/reinicio seguro y la salud compuesta
+siguen perteneciendo a la Fase 3 del roadmap.

@@ -555,6 +555,103 @@ td span {
   margin-top: 14px;
 }
 
+.panel-stack {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+}
+
+.panel-stack .panel + .panel {
+  margin-top: 0;
+}
+
+.opportunity-control-panel .panel-header p,
+.canary-control-row p,
+.canary-breaker p,
+.canary-hint {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+}
+
+.canary-breaker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  border: 1px solid #f2c94c;
+  border-radius: 8px;
+  background: #fffbeb;
+  padding: 12px 14px;
+}
+
+.canary-breaker p {
+  overflow-wrap: anywhere;
+}
+
+.canary-application-state {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+.canary-control-list {
+  display: grid;
+  gap: 8px;
+}
+
+.canary-control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.canary-control-row h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.canary-control-state {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+}
+
+.canary-control-state small {
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.canary-hint {
+  font-size: 0.8rem;
+}
+
+.canary-burst {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  border-left: 3px solid var(--accent-600);
+  background: var(--surface-soft);
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+.canary-burst--quiet {
+  border-left-color: var(--line-strong);
+  color: var(--ink-muted);
+}
+
+.canary-burst--unsafe {
+  border-left-color: #b42318;
+  background: #fff3f1;
+  color: #9b1c1c;
+}
+
 .order-workspace {
   position: fixed;
   top: 0;
@@ -1767,6 +1864,15 @@ td span {
   .order-task-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .canary-control-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .canary-control-row > button {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1878,12 +1984,23 @@ td span {
   .metrics,
   .split,
   .panel-header,
+  .canary-breaker,
+  .canary-control-row,
   .selected-detail,
   .form-grid,
   .form-grid.wide,
   .summary-list,
   .summary-list.compact {
     grid-template-columns: 1fr;
+  }
+
+  .canary-control-state {
+    justify-items: start;
+  }
+
+  .canary-control-row > button {
+    grid-column: auto;
+    justify-self: stretch;
   }
 
   .captcha-heading,

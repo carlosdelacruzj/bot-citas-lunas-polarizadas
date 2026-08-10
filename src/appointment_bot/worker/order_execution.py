@@ -131,6 +131,7 @@ def run_service_order(
     burst_mode: bool = False,
     cancel_event: threading.Event | None = None,
     on_check: Callable[..., None] | None = None,
+    opportunity_context: dict[str, str] | None = None,
 ) -> RunReport:
     logger.info("Starting queued appointment check for order %s", order.order_id)
     try:
@@ -241,6 +242,7 @@ def run_service_order(
         )
 
     active_attempt_id: str | None = None
+    execution_context = opportunity_context if opportunity_context is not None else {}
 
     def with_order_details(result):
         details = dict(result.details or {})
@@ -262,6 +264,8 @@ def run_service_order(
             details.setdefault("program_expediente", order.program_expediente)
         if order.program_plate:
             details.setdefault("program_plate", order.program_plate)
+        if opportunity_context:
+            details.update(opportunity_context)
         return replace(result, details=details)
 
     def handle_check(result, *args) -> None:
@@ -278,6 +282,10 @@ def run_service_order(
         nonlocal active_attempt_id
         if active_attempt_id is None:
             active_attempt_id = f"attempt-{uuid4().hex}"
+            if "original_attempt_id" not in execution_context:
+                execution_context["original_attempt_id"] = active_attempt_id
+            else:
+                execution_context["second_attempt_id"] = active_attempt_id
         create_reservation_attempt(
             active_attempt_id,
             order.order_id,
@@ -312,33 +320,42 @@ def run_service_order(
         clear_order_submission_state(order.order_id, settings=settings)
         active_attempt_id = None
 
-    with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
-        effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
-        report = run_with_report(
-            order_settings,
-            order_id=order.order_id,
-            client_name=order.notification_name,
-            expected_person_name=order.name,
-            program_expediente=order.program_expediente,
-            program_plate=order.program_plate,
-            cancel_event=effective_cancel_event,
-            on_check=handle_check,
-            can_submit=lambda: (
-                not heartbeat.lost_event.is_set()
-                and order_can_submit(order.order_id, lease_owner, settings)
-            ),
-            is_allowed_appointment=_appointment_filter_for_order(
-                order.order_id,
-                settings,
-            ),
-            on_submission_intent=on_submission_intent,
-            on_submission_started=on_submission_started,
-            on_submission_resolved=on_submission_resolved,
-            notify_mode=(
-                "deferred" if rapid_mode or observer_mode or burst_mode else "full"
-            ),
-        )
-        lease_lost = heartbeat.lost_event.is_set()
+    from appointment_bot.reservation_engine.monitor import (
+        reset_opportunity_execution_context,
+        set_opportunity_execution_context,
+    )
+
+    context_token = set_opportunity_execution_context(execution_context)
+    try:
+        with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
+            effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
+            report = run_with_report(
+                order_settings,
+                order_id=order.order_id,
+                client_name=order.notification_name,
+                expected_person_name=order.name,
+                program_expediente=order.program_expediente,
+                program_plate=order.program_plate,
+                cancel_event=effective_cancel_event,
+                on_check=handle_check,
+                can_submit=lambda: (
+                    not heartbeat.lost_event.is_set()
+                    and order_can_submit(order.order_id, lease_owner, settings)
+                ),
+                is_allowed_appointment=_appointment_filter_for_order(
+                    order.order_id,
+                    settings,
+                ),
+                on_submission_intent=on_submission_intent,
+                on_submission_started=on_submission_started,
+                on_submission_resolved=on_submission_resolved,
+                notify_mode=(
+                    "deferred" if rapid_mode or observer_mode or burst_mode else "full"
+                ),
+            )
+            lease_lost = heartbeat.lost_event.is_set()
+    finally:
+        reset_opportunity_execution_context(context_token)
     report = with_order_details(report)
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":
         failures, paused = record_invalid_credential_failure(
@@ -363,11 +380,14 @@ def run_service_order(
             details=details,
         )
     if lease_lost and report.status != "registered":
+        details = dict(report.details or {})
+        details["lease_lost"] = True
         report = replace(
             report,
             status="reservation_unconfirmed" if active_attempt_id is not None else "error",
             message="Se perdio el lease de la orden durante la ejecucion; no se repetira el envio.",
             exit_code=1,
+            details=details,
         )
     if active_attempt_id is not None:
         submission_outcome = str((report.details or {}).get("submission_outcome") or "")

@@ -67,6 +67,10 @@ GET  /api/v1/worker/commands
 POST /api/v1/worker/pause
 POST /api/v1/worker/resume
 POST /api/v1/worker/restart
+GET  /api/v1/runtime-controls/opportunity
+POST /api/v1/runtime-controls/opportunity
+GET  /api/v1/opportunity-bursts?limit=20&status=closed
+GET  /api/v1/opportunity-bursts/{burst_id}
 GET  /api/v1/manual-sessions
 POST /api/v1/manual-session/open
 POST /api/v1/manual-session/close
@@ -75,6 +79,37 @@ POST /api/v1/manual-session/close
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
+
+## Control de OBS-006 y OBS-007
+
+`GET /api/v1/runtime-controls/opportunity` devuelve la revision, fuente del
+estado, modo deseado y efectivo de OBS-006/OBS-007, admision, breaker y rafaga
+activa. `inherit` significa que la bandera de entorno vigente sigue siendo la
+fuente efectiva; `enabled`, `disabled` y `draining` hacen que PostgreSQL sea la
+autoridad.
+
+`POST /api/v1/runtime-controls/opportunity` exige actor autenticado, motivo y
+proteccion contra acciones obsoletas:
+
+```json
+{
+  "action": "drain",
+  "target": "obs006",
+  "reason": "rollback del canario",
+  "expected_revision": 3
+}
+```
+
+Las acciones son `activate`, `deactivate`, `drain` y `reset_breaker`. El
+drenaje solo aplica a OBS-006 y solo cuando existe una rafaga activa. Una
+revision desactualizada, activar con breaker abierto, desactivar una rafaga sin
+drenarla o resetear un breaker ya cerrado devuelve `409 Conflict`. Activar o
+reiniciar procesos nunca resetea el breaker implicitamente.
+
+`GET /api/v1/opportunity-bursts` acepta `limit=1..100` y el filtro opcional
+`status=running|draining|closed|aborted`. El detalle incluye candidatos,
+ejecuciones y eventos OBS-007 sanitizados. No expone credenciales, contactos,
+cookies, owner tokens ni `RunReport.details` crudo.
 
 ## Seguimiento post-cita
 

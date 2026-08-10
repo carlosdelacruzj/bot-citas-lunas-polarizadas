@@ -5,8 +5,10 @@ import random
 import threading
 import time
 from collections.abc import Callable
+from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from playwright.sync_api import Error as PlaywrightError
 
@@ -40,6 +42,23 @@ from appointment_bot.utils.screenshots import (
 )
 
 logger = logging.getLogger(__name__)
+
+_OPPORTUNITY_EXECUTION_CONTEXT: ContextVar[dict[str, str] | None] = ContextVar(
+    "opportunity_execution_context",
+    default=None,
+)
+
+
+def set_opportunity_execution_context(
+    context: dict[str, str] | None,
+) -> Token[dict[str, str] | None]:
+    return _OPPORTUNITY_EXECUTION_CONTEXT.set(context)
+
+
+def reset_opportunity_execution_context(
+    token: Token[dict[str, str] | None],
+) -> None:
+    _OPPORTUNITY_EXECUTION_CONTEXT.reset(token)
 
 
 @dataclass
@@ -377,6 +396,11 @@ def _try_reservation_from_availability(
                     completed_result=completed_result,
                     selected_result=selected_result,
                 )
+            if not _reobservation_admission_allowed(settings):
+                return ReservationAttemptOutcome(
+                    completed_result=completed_result,
+                    selected_result=selected_result,
+                )
             if on_submission_resolved is not None:
                 on_submission_resolved(
                     "slot_lost",
@@ -445,10 +469,34 @@ def _reobserve_after_slot_lost(
     order_id: str | None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     _, original_screenshot_path, _ = original_completed_result
+    reobservation_id = f"reobservation-{uuid4().hex}"
     started_at = time.monotonic()
     deadline = started_at + settings.slot_lost_reobservation_seconds
     observations: list[dict] = []
     reload_probe_used = False
+    if not _record_reobservation_event(
+        reobservation_id,
+        0,
+        "slot_lost_resolved",
+        order_id=order_id,
+        run_id=run_id,
+        outcome="slot_lost",
+        settings=settings,
+    ):
+        return original_completed_result
+    if not _record_reobservation_event(
+        reobservation_id,
+        1,
+        "started",
+        order_id=order_id,
+        run_id=run_id,
+        details={
+            "max_seconds": settings.slot_lost_reobservation_seconds,
+            "max_attempts": settings.slot_lost_reobservation_attempts,
+        },
+        settings=settings,
+    ):
+        return original_completed_result
 
     logger.info(
         "Starting slot_lost reobservation for up to %s seconds and %s attempts",
@@ -474,6 +522,7 @@ def _reobserve_after_slot_lost(
                 observations,
                 started_at,
                 reload_probe_used,
+                reobservation_id=reobservation_id,
                 outcome="panel_unavailable",
             )
 
@@ -485,6 +534,7 @@ def _reobserve_after_slot_lost(
                 observations,
                 started_at,
                 reload_probe_used,
+                reobservation_id=reobservation_id,
                 outcome="paused",
                 message="La reobservacion posterior a slot_lost fue interrumpida por una pausa.",
                 status="paused",
@@ -547,6 +597,29 @@ def _reobserve_after_slot_lost(
             "duration_seconds": round(time.monotonic() - check_started, 3),
         }
         observations.append(observation)
+        event_recorded = _record_reobservation_event(
+            reobservation_id,
+            len(observations) + 1,
+            "observation",
+            order_id=order_id,
+            run_id=run_id,
+            attempt_number=reobservation_attempt,
+            mode=monitoring_mode,
+            observed_status=result.status,
+            duration_ms=int((time.monotonic() - check_started) * 1000),
+            details=observation,
+            settings=settings,
+        )
+        if not event_recorded:
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                settings,
+                observations,
+                started_at,
+                reload_probe_used,
+                reobservation_id=reobservation_id,
+                outcome="telemetry_failed",
+            )
         if on_check is not None:
             on_check(result, original_attempt + reobservation_attempt, None)
 
@@ -579,6 +652,23 @@ def _reobserve_after_slot_lost(
                         original_attempt + reobservation_attempt,
                         None,
                     )
+
+                def record_second_submission_intent(details: dict | None) -> None:
+                    if on_submission_intent is not None:
+                        on_submission_intent(details)
+                    if not _record_reobservation_event(
+                        reobservation_id,
+                        len(observations) + 2,
+                        "second_attempt_intent",
+                        order_id=order_id,
+                        run_id=run_id,
+                        outcome="intent",
+                        settings=settings,
+                    ):
+                        raise RuntimeError(
+                            "Could not persist the second reservation attempt intent."
+                        )
+
                 recovered_completed_result = complete_available_reservation(
                     page,
                     settings,
@@ -588,7 +678,7 @@ def _reobserve_after_slot_lost(
                     cancel_event,
                     can_submit,
                     can_solve_captcha,
-                    on_submission_intent,
+                    record_second_submission_intent,
                     on_submission_started,
                     expected_person_name,
                     run_id=run_id,
@@ -601,6 +691,7 @@ def _reobserve_after_slot_lost(
                     observations,
                     started_at,
                     reload_probe_used,
+                    reobservation_id=reobservation_id,
                 )
 
         if result.status == "unknown":
@@ -625,6 +716,7 @@ def _reobserve_after_slot_lost(
                     observations,
                     started_at,
                     reload_probe_used,
+                    reobservation_id=reobservation_id,
                     outcome="paused",
                     message=(
                         "La reobservacion posterior a slot_lost fue interrumpida por una pausa."
@@ -640,6 +732,7 @@ def _reobserve_after_slot_lost(
         observations,
         started_at,
         reload_probe_used,
+        reobservation_id=reobservation_id,
         outcome="exhausted",
     )
 
@@ -651,6 +744,7 @@ def _finish_slot_lost_reobservation(
     started_at: float,
     reload_probe_used: bool,
     *,
+    reobservation_id: str,
     outcome: str,
     message: str | None = None,
     status: str | None = None,
@@ -665,6 +759,16 @@ def _finish_slot_lost_reobservation(
         max_attempts=settings.slot_lost_reobservation_attempts,
         outcome=outcome,
         recovered=False,
+    )
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 2,
+        "finished",
+        outcome=outcome,
+        observed_status=status or result.status,
+        duration_ms=int((time.monotonic() - started_at) * 1000),
+        details=details["slot_lost_reobservation"],
+        settings=settings,
     )
     return (
         AvailabilityResult(
@@ -684,6 +788,8 @@ def _merge_recovered_reservation(
     observations: list[dict],
     started_at: float,
     reload_probe_used: bool,
+    *,
+    reobservation_id: str,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     original_result, original_screenshot_path, original_screenshot_paths = (
         original_completed_result
@@ -707,8 +813,29 @@ def _merge_recovered_reservation(
             "sede": (original_result.details or {}).get("sede"),
             "fecha": (original_result.details or {}).get("fecha"),
             "hora": (original_result.details or {}).get("hora"),
+            "reservation_timing": (original_result.details or {}).get(
+                "reservation_timing"
+            ),
         }
     ]
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 3,
+        "second_attempt_resolved",
+        outcome=str((recovered_result.details or {}).get("submission_outcome") or ""),
+        observed_status=recovered_result.status,
+        settings=settings,
+    )
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 4,
+        "finished",
+        outcome="reservation_attempted",
+        observed_status=recovered_result.status,
+        duration_ms=int((time.monotonic() - started_at) * 1000),
+        details=details["slot_lost_reobservation"],
+        settings=settings,
+    )
     screenshot_paths = _unique_paths(
         original_screenshot_paths,
         [original_screenshot_path] if original_screenshot_path is not None else [],
@@ -747,6 +874,85 @@ def _slot_lost_reobservation_details(
         "recovered_availability": recovered,
         "observations": observations,
     }
+
+
+def _reobservation_admission_allowed(settings: Settings) -> bool:
+    try:
+        from appointment_bot.db.opportunity_controls import (
+            is_opportunity_admission_allowed,
+        )
+
+        return bool(is_opportunity_admission_allowed("obs007", settings=settings))
+    except Exception:
+        logger.exception("Could not read OBS-007 admission control")
+        _trip_opportunity_breaker("persistence_failed", None, settings)
+        return False
+
+
+def _record_reobservation_event(
+    reobservation_id: str,
+    sequence: int,
+    event_type: str,
+    *,
+    order_id: str | None = None,
+    run_id: str | None = None,
+    attempt_number: int | None = None,
+    mode: str | None = None,
+    observed_status: str | None = None,
+    outcome: str | None = None,
+    duration_ms: int | None = None,
+    details: dict | None = None,
+    settings: Settings,
+) -> bool:
+    context = _OPPORTUNITY_EXECUTION_CONTEXT.get() or {}
+    burst_id = context.get("burst_id")
+    execution_id = context.get("execution_id")
+    try:
+        from appointment_bot.db.opportunity_bursts import record_burst_event
+
+        record_burst_event(
+            reobservation_id=reobservation_id,
+            sequence=sequence,
+            event_type=event_type,
+            burst_id=burst_id,
+            execution_id=execution_id,
+            order_id=order_id,
+            run_id=run_id,
+            original_attempt_id=context.get("original_attempt_id"),
+            second_attempt_id=context.get("second_attempt_id"),
+            attempt_number=attempt_number,
+            mode=mode,
+            observed_status=observed_status,
+            outcome=outcome,
+            duration_ms=duration_ms,
+            details=details,
+            event_key=f"{reobservation_id}:{sequence}:{event_type}",
+            settings=settings,
+        )
+        return True
+    except Exception:
+        logger.exception("Could not persist OBS-007 event %s", event_type)
+        _trip_opportunity_breaker("persistence_failed", burst_id, settings)
+        return False
+
+
+def _trip_opportunity_breaker(
+    reason: str,
+    burst_id: str | None,
+    settings: Settings,
+) -> None:
+    try:
+        from appointment_bot.db.opportunity_controls import (
+            trip_opportunity_circuit_breaker,
+        )
+
+        trip_opportunity_circuit_breaker(
+            reason=reason,
+            burst_id=burst_id,
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("Could not trip opportunity circuit breaker: %s", reason)
 
 
 def _unique_paths(*groups: list[Path]) -> list[Path]:

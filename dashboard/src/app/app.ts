@@ -42,6 +42,10 @@ import {
   ManualSession,
   ManualSessionMode,
   MonthlySummary,
+  OpportunityBurst,
+  OpportunityControl,
+  OpportunityControlAction,
+  OpportunityControlTarget,
   PaymentPaidPayload,
   PostAppointmentFollowup,
   PostAppointmentPayload,
@@ -441,6 +445,8 @@ export class App implements OnDestroy {
   protected readonly runStatusFilter = signal('');
   protected readonly health = signal<HealthPayload | null>(null);
   protected readonly worker = signal<WorkerStatus | null>(null);
+  protected readonly opportunityControl = signal<OpportunityControl | null>(null);
+  protected readonly opportunityBursts = signal<OpportunityBurst[]>([]);
   protected readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
   protected readonly captchaSamplingEnabled = signal(false);
   protected readonly captchaSamplingLimit = signal(10);
@@ -587,6 +593,9 @@ export class App implements OnDestroy {
     const selected = this.selectedOrderId();
     return this.orders().find((order) => order.order_id === selected) ?? this.orders()[0] ?? null;
   });
+  protected readonly latestOpportunityBurst = computed(
+    () => this.opportunityBursts()[0] ?? null,
+  );
   protected readonly currentOrder = computed(() => {
     const currentOrderId = this.worker()?.current_order_id;
     return this.orders().find((order) => order.order_id === currentOrderId) ?? null;
@@ -1417,16 +1426,27 @@ export class App implements OnDestroy {
       return;
     }
     if (view === 'summary') {
-      const [orders, runs, monthlySummary, captchaSamplingControl] = await Promise.all([
+      const [
+        orders,
+        runs,
+        monthlySummary,
+        captchaSamplingControl,
+        opportunityControl,
+        opportunityBursts,
+      ] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getRuns(scope),
         this.api.getMonthlySummary(this.selectedMonth(), scope),
         this.api.getCaptchaSamplingControl(scope),
+        this.api.getOpportunityControl(scope),
+        this.api.getOpportunityBursts(scope),
       ]);
       this.applyOrders(orders);
       this.runs.set(runs);
       this.monthlySummary.set(monthlySummary);
       this.applyCaptchaSamplingControl(captchaSamplingControl);
+      this.opportunityControl.set(opportunityControl);
+      this.opportunityBursts.set(opportunityBursts.bursts);
       return;
     }
     if (view === 'finance') {
@@ -2927,6 +2947,209 @@ export class App implements OnDestroy {
 
   protected openWorkerRestart(): void {
     this.openModal('worker-restart');
+  }
+
+  protected opportunityMode(target: OpportunityControlTarget) {
+    return this.opportunityControl()?.[target] ?? null;
+  }
+
+  protected opportunityModeLabel(mode: string | null | undefined): string {
+    const normalized = normalizeDashboardText(mode);
+    if (normalized === 'enabled' || normalized === 'active') {
+      return 'Activo';
+    }
+    if (normalized === 'draining') {
+      return 'Drenando';
+    }
+    if (normalized === 'disabled' || normalized === 'inactive') {
+      return 'Desactivado';
+    }
+    if (normalized === 'running') {
+      return 'En curso';
+    }
+    if (normalized === 'completed') {
+      return 'Finalizada';
+    }
+    if (normalized === 'failed') {
+      return 'Fallida';
+    }
+    return mode ? mode.replaceAll('_', ' ') : 'Sin confirmar';
+  }
+
+  protected opportunityReasonLabel(reason: string | null | undefined): string {
+    if (!reason) {
+      return 'Sin motivo informado';
+    }
+    const normalized = normalizeDashboardText(reason);
+    if (
+      normalized.includes('portal_defense') ||
+      normalized.includes('403') ||
+      normalized.includes('429')
+    ) {
+      return 'Defensa del portal detectada';
+    }
+    if (normalized.includes('reservation_unconfirmed')) {
+      return 'La reserva no pudo confirmarse';
+    }
+    return reason.replaceAll('_', ' ');
+  }
+
+  protected opportunityModeTone(mode: string | null | undefined): StatusTone {
+    const normalized = normalizeDashboardText(mode);
+    if (normalized === 'enabled' || normalized === 'active') {
+      return 'good';
+    }
+    if (normalized === 'draining') {
+      return 'warn';
+    }
+    if (normalized === 'disabled' || normalized === 'inactive') {
+      return 'neutral';
+    }
+    return 'bad';
+  }
+
+  protected opportunityBreakerOpen(): boolean {
+    return normalizeDashboardText(this.opportunityControl()?.breaker.state) === 'open';
+  }
+
+  protected opportunityCanaryLabel(): string {
+    const control = this.opportunityControl();
+    if (!control) {
+      return 'Estado sin confirmar';
+    }
+    if (this.opportunityBreakerOpen()) {
+      return 'Protección activa';
+    }
+    if (control.pending_application) {
+      return 'Pendiente de aplicar';
+    }
+    const modes = [control.obs006.effective_mode, control.obs007.effective_mode].map((mode) =>
+      normalizeDashboardText(mode),
+    );
+    if (modes.includes('draining')) {
+      return 'Drenando';
+    }
+    if (modes.every((mode) => mode === 'enabled' || mode === 'active')) {
+      return 'Activo';
+    }
+    if (modes.every((mode) => mode === 'disabled' || mode === 'inactive')) {
+      return 'Desactivado';
+    }
+    return 'Configuración parcial';
+  }
+
+  protected opportunityCanaryTone(): StatusTone {
+    if (!this.opportunityControl()) {
+      return 'bad';
+    }
+    if (this.opportunityBreakerOpen() || this.opportunityControl()?.pending_application) {
+      return 'warn';
+    }
+    const modes = [
+      this.opportunityControl()!.obs006.effective_mode,
+      this.opportunityControl()!.obs007.effective_mode,
+    ];
+    return modes.some((mode) => normalizeDashboardText(mode) === 'draining')
+      ? 'warn'
+      : modes.every((mode) => ['enabled', 'active'].includes(normalizeDashboardText(mode)))
+        ? 'good'
+        : 'neutral';
+  }
+
+  protected opportunityActionLabel(target: OpportunityControlTarget): string {
+    const mode = normalizeDashboardText(this.opportunityMode(target)?.effective_mode);
+    if (mode === 'disabled' || mode === 'inactive') {
+      return 'Activar';
+    }
+    return this.shouldDrainOpportunity(target) ? 'Drenar' : 'Desactivar';
+  }
+
+  protected opportunityActionDisabled(target: OpportunityControlTarget): boolean {
+    const control = this.opportunityControl();
+    if (!control || this.actionBusy() || control.pending_application) {
+      return true;
+    }
+    const activates = ['disabled', 'inactive'].includes(
+      normalizeDashboardText(control[target].effective_mode),
+    );
+    return activates && this.opportunityBreakerOpen();
+  }
+
+  protected requestOpportunityContextAction(target: OpportunityControlTarget): void {
+    const mode = normalizeDashboardText(this.opportunityMode(target)?.effective_mode);
+    const action: OpportunityControlAction =
+      mode === 'disabled' || mode === 'inactive'
+        ? 'activate'
+        : this.shouldDrainOpportunity(target)
+          ? 'drain'
+          : 'deactivate';
+    this.requestOpportunityAction(target, action);
+  }
+
+  protected requestResetOpportunityBreaker(): void {
+    this.requestOpportunityAction('obs006', 'reset_breaker');
+  }
+
+  private shouldDrainOpportunity(target: OpportunityControlTarget): boolean {
+    const control = this.opportunityControl();
+    if (target !== 'obs006') {
+      return false;
+    }
+    return Boolean(
+      normalizeDashboardText(control?.[target].effective_mode) === 'draining' ||
+        control?.active_burst,
+    );
+  }
+
+  private requestOpportunityAction(
+    target: OpportunityControlTarget,
+    action: OpportunityControlAction,
+  ): void {
+    const control = this.opportunityControl();
+    if (!control || this.actionBusy()) {
+      return;
+    }
+    const targetLabel = target === 'obs006' ? 'OBS-006' : 'OBS-007';
+    const copy: Record<OpportunityControlAction, { title: string; message: string }> = {
+      activate: {
+        title: `Activar ${targetLabel}`,
+        message:
+          'Se aplicará a nuevas detecciones. El máximo seguirá siendo 2 sesiones y no cambiarán los intervalos ni CAPTCHA.',
+      },
+      deactivate: {
+        title: `Desactivar ${targetLabel}`,
+        message:
+          'Se desactivará para nuevas detecciones. Si aparece trabajo activo, el servidor rechazará la acción y solicitará drenaje.',
+      },
+      drain: {
+        title: `Drenar ${targetLabel}`,
+        message:
+          'No se admitirán trabajos nuevos. Las sesiones ya iniciadas terminarán su confirmación y el flujo secuencial continuará.',
+      },
+      reset_breaker: {
+        title: 'Restablecer protección',
+        message:
+          'Se quitará el bloqueo. Volverá a regir el modo actual; si está habilitado, podrán reanudarse nuevas admisiones.',
+      },
+    };
+    const selection = copy[action];
+    this.setPendingAction({
+      ...selection,
+      execute: async () => {
+        const updated = await this.api.updateOpportunityControl({
+          action,
+          target,
+          reason: `dashboard_${action}`,
+          expected_revision: control.revision,
+        });
+        this.opportunityControl.set(updated);
+        return {
+          status: updated.status ?? 'updated',
+          message: updated.message,
+        };
+      },
+      successMessage: `${selection.title}: solicitado`,
+    });
   }
 
   protected closeModal(): void {
