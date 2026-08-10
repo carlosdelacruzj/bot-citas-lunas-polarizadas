@@ -41,9 +41,10 @@ La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsar
 
 ## Confirmacion
 
-La confirmacion mas fuerte es la etapa `Programado`. El texto de exito del
-portal puede ser evidencia positiva, pero futuras fases deben mantener una
-frontera clara entre:
+La confirmacion primaria es el texto explicito de exito devuelto por el portal
+despues del submit. La etapa `Programado` es una confirmacion posterior y sirve
+como conciliacion o fallback cuando el texto no pudo conservarse. Ambas deben
+mantener una frontera clara entre:
 
 - cupo detectado;
 - envio de reserva;

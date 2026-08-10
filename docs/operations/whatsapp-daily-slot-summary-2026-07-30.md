@@ -103,6 +103,31 @@ sobrescribir evidencia entre trabajos. El trabajo
 los días anteriores conservan su estado porque no recibieron confirmación
 externa equivalente.
 
+## Falso incierto del 09-08-2026
+
+El domingo 9 de agosto no existían capturas de cupos y el trabajo omitió el
+álbum correctamente. El mensaje de cierre fue confirmado a las `18:00:31` y la
+publicación de TikTok se envió inmediatamente después. El detector agotó sus
+15 segundos sin reconocer la segunda burbuja y marcó todo el trabajo
+`uncertain`; Telegram informó el estado global aunque el problema correspondía
+únicamente a la confirmación automática del segundo texto.
+
+La captura durable
+`.runtime/whatsapp-daily-summary-daily_slot_summary-2026-08-09-publication-text-send-uncertain.png`
+muestra ambos textos completos como burbujas salientes con doble check azul. El
+operador confirmó la recepción. Por esa evidencia, el trabajo se reconcilió de
+`uncertain` a `sent`, conservó `attempt_count=1` y su hora original de
+finalización; no se creó ni envió un reintento.
+
+La confirmación genérica de `[data-testid='msg-container']` ahora reconoce como
+saliente un contenedor que posee una marca propia de enviado, entregado o leído.
+El resultado del resumen también conserva por separado `summary`, `images` y
+`publication`. Ante una ambigüedad futura, Telegram podrá indicar, por ejemplo,
+**Resumen: confirmado**, **Imágenes: omitidas porque no había archivos** y
+**Publicación TikTok: no confirmado automáticamente**, sin afirmar que falló el
+paquete completo. La política de seguridad no cambió: un resultado ambiguo no
+se reintenta automáticamente.
+
 ## Uso futuro en la landing
 
 Las capturas originales de `cupos-unicos` quedaron aprobadas como fuente de la

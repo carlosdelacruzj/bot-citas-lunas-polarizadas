@@ -1,5 +1,8 @@
 # Resumen financiero para análisis externo
 
+> Handoff historico sustituido por PostgreSQL, el contrato financiero y el
+> dashboard. No usar sus cifras o categorias como fuente vigente.
+
 Fecha de corte: 16 de julio de 2026. Moneda: soles peruanos (PEN).
 
 ## Negocio

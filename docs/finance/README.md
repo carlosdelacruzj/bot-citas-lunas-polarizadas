@@ -9,8 +9,8 @@ como si fueran utilidad.
 El registro serio vive en PostgreSQL y se administra desde la vista **Finanzas** del
 dashboard. La estructura y API estan documentadas en
 [`../contracts/finance.md`](../contracts/finance.md). El archivo
-[`cost-register.csv`](cost-register.csv) queda como antecedente del primer dato y formato de
-intercambio; ya no es la fuente usada por los calculos.
+[`cost-register.csv`](cost-register.csv) queda como antecedente historico del primer dato;
+ya no es fuente de calculo ni formato autorizado para nuevas altas.
 
 Desde el dashboard se puede crear, editar y anular. La anulacion reemplaza la eliminacion
 fisica para mantener auditoria.
@@ -19,10 +19,12 @@ fisica para mantener auditoria.
 
 La recarga y el consumo no son el mismo costo:
 
-- `captcha_topup`: dinero convertido en saldo prepagado. Es salida de caja, pero no debe
-  sumarse nuevamente como gasto cuando se calcula el consumo.
-- `captcha_consumption`: saldo realmente consumido durante el periodo. Este es el costo que
-  debe compararse con los ingresos del periodo.
+- categoria `captcha` + `entry_kind=prepaid_topup`: dinero convertido en saldo
+  prepagado. Es salida de caja, pero no debe sumarse nuevamente como gasto
+  cuando se calcula el consumo.
+- categoria `captcha` + `entry_kind=prepaid_consumption`: saldo realmente
+  consumido durante el periodo. Este es el costo que debe compararse con los
+  ingresos del periodo.
 
 Para conciliarlo al cierre de cada mes:
 
@@ -51,13 +53,15 @@ horas humanas por separado cuando exista una estimacion razonable.
 
 Empezar solo con costos que tengan evidencia:
 
-1. `captcha_topup` y `captcha_consumption`.
-2. `marketing_paid` para TikTok u otros canales.
-3. `payment_fee` y `refund`, si aparecen.
-4. `internet`, `electricity`, `hosting`, `backup` y `equipment` cuando exista un recibo o una
-   metodologia de reparto.
-5. `human_time` cuando se empiecen a medir minutos y se defina un valor por hora.
-6. `tax` cuando corresponda y exista criterio contable.
+1. categoria `captcha`, usando `prepaid_topup` o `prepaid_consumption` segun el
+   movimiento.
+2. categoria `marketing` para TikTok u otros canales.
+3. categorias de comision o devolucion cuando aparezcan y esten definidas en
+   PostgreSQL.
+4. Internet, electricidad, hosting, backup y equipo cuando exista recibo o una
+   metodologia documentada de reparto.
+5. Tiempo humano cuando se midan minutos y se defina un valor por hora.
+6. Impuestos cuando corresponda y exista criterio contable.
 
 No hace falta reconstruir hoy todos los costos historicos. Registrar desde ahora los gastos
 reales y marcar cualquier reconstruccion anterior como `estimated`.

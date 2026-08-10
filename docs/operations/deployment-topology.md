@@ -3,7 +3,7 @@
 Este documento describe como correr el sistema durante y despues de la
 migracion.
 
-## Topologia actual
+## Topologia heredada de rollback
 
 ```text
 scripts/start-worker.ps1
@@ -15,10 +15,11 @@ scripts/start-worker.ps1
   -> n8n supervisa externamente
 ```
 
-El worker y la API local viven en el mismo proceso Python. La API puede
-controlar el worker porque comparte memoria con `ContinuousWorker`.
+Esta topologia embebida ya no es la arquitectura administrativa principal. Se
+conserva solo como rollback local: el worker y la API de `8765` comparten
+memoria con `ContinuousWorker`.
 
-## Topologia objetivo
+## Topologia actual
 
 ```text
 PostgreSQL
@@ -31,7 +32,7 @@ PostgreSQL
 El admin API y el worker comparten base y modulos `core`/`db`, pero no memoria.
 Los comandos al worker deben persistirse antes de consumirse.
 
-## Ejecucion actual
+## Ejecucion manual minima del worker
 
 ```powershell
 python -m pip install -e .
@@ -64,7 +65,7 @@ reinicio vuelven a ser efectivas si el propio supervisor raiz termina.
 
 ## Procesos administrativos
 
-Ejecucion local recomendada en tres procesos:
+Ejecucion local recomendada en cuatro procesos independientes:
 
 ```powershell
 # Terminal 1
@@ -86,9 +87,9 @@ guardar el token en el navegador. Este modo solo acepta loopback y no abre CORS.
 
 ## Rollback y desarrollo
 
-Para volver al modo de tres terminales, ejecutar `appointment-bot-admin-api` y
-`npm start` dentro de `dashboard/`. El proxy `dashboard/proxy.conf.cjs` conserva
-la inyeccion del token fuera de Angular y apunta a `127.0.0.1:8766`.
+Para desarrollo del dashboard, ejecutar `appointment-bot-admin-api` y `npm
+start` dentro de `dashboard/`. El proxy `dashboard/proxy.conf.cjs` conserva la
+inyeccion del token fuera de Angular y apunta a `127.0.0.1:8766`.
 
 ## Compatibilidad con API embebida
 

@@ -25,6 +25,11 @@ referencia en memoria a `ContinuousWorker`.
 
 ## Endpoints actuales
 
+La lista siguiente documenta las rutas nucleares, no un inventario exhaustivo.
+Para comprobar el contrato desplegado se debe contrastar el router en
+`src/appointment_bot/api/` y la respuesta del proceso activo; toda ruta nueva
+debe incorporarse aqui cuando cambie una capacidad publica del dashboard.
+
 ```text
 GET  /api/v1/worker
 GET  /api/v1/service-orders

@@ -68,9 +68,9 @@ La primera serie automática procesó tres álbumes el 25-07-2026:
 
 | Orden | Inicio (Lima) | Resultado | Detalle |
 | --- | --- | --- | --- |
-| `order-43052362` | 08:27:18 | `failed` | El chat no quedó listo y se informó que la sesión necesitaba vincularse. |
-| `order-002394293` | 08:27:45 | `sent` | Álbum de dos imágenes confirmado a las 08:27:57. |
-| `order-44836574` | 08:27:57 | `sent` | Álbum de dos imágenes confirmado a las 08:28:14. |
+| `order-***` | 08:27:18 | `failed` | El chat no quedó listo y se informó que la sesión necesitaba vincularse. |
+| `order-***` | 08:27:45 | `sent` | Álbum de dos imágenes confirmado a las 08:27:57. |
+| `order-***` | 08:27:57 | `sent` | Álbum de dos imágenes confirmado a las 08:28:14. |
 
 El primer paquete quedó `prepared`, sin `sent_at`. El flujo retornó antes de
 adjuntar las imágenes, por lo que no hubo clic de envío ni evidencia de entrega
@@ -95,7 +95,7 @@ Por esta razón, el error persistido describe con certeza que el chat no quedó
 listo, pero no prueba por sí solo que se hubiera mostrado un QR.
 
 La misma condición volvió a aparecer a las 09:09 con el postpago de
-`order-44836574`: el worker tomó el trabajo y solicitó vinculación, aunque el
+`order-***`: el worker tomó el trabajo y solicitó vinculación, aunque el
 Admin API conservaba una sesión válida. Este segundo resultado confirmó que el
 problema pertenecía a la propiedad del perfil entre procesos y no solamente al
 destinatario del primer álbum.
@@ -178,11 +178,11 @@ Si no se cumplen dentro del plazo, se guarda la captura
 por lo que no existe reintento automático; el operador debe revisar el chat y
 completar solamente el texto cuando corresponda.
 
-El incidente observado en `order-76502677` fue reconciliado en PostgreSQL:
+El incidente observado en `order-***` fue reconciliado en PostgreSQL:
 el trabajo postpago pasó de `sent` a `uncertain` y el paquete volvió a
 `prepared`, sin crear ni encolar otro intento automático.
 
-El siguiente caso real, `order-09612178`, envió correctamente los PDF y el
+El siguiente caso real, `order-***`, envió correctamente los PDF y el
 texto, pero produjo un falso `uncertain`. La captura posterior mostró la
 burbuja verde y el compositor vacío. La inspección de solo lectura confirmó
 que la interfaz vigente ya no exponía `div.message-out` ni identificadores
@@ -192,5 +192,5 @@ con `aria-label="Tú:"`.
 La confirmación conserva los selectores anteriores como compatibilidad y añade
 la estructura vigente. Para el contenedor genérico exige tanto el contenido
 completo esperado como una marca saliente (`Tú:`, `You:` o el estado de
-envío/lectura). El registro de `order-09612178` se reconcilió a `sent` usando
+envío/lectura). El registro de `order-***` se reconcilió a `sent` usando
 la evidencia real; no se realizó otro envío.

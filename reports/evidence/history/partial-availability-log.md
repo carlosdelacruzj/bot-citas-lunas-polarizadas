@@ -2,10 +2,10 @@
 
 Archivo curado y automatico para senales donde aparece fecha, hora parcial o disponibilidad bloqueada por regla sin llegar necesariamente a resolver CAPTCHA. Complementa la bitacora de optimizacion de reservas y ayuda a detectar patrones previos a cupos reales.
 
-## 2026-07-03 12:50:00 - order-70572463 - partial
+## 2026-07-03 12:50:00 - order-*** - partial
 
 - Run: 20260703-124910-f22cdf16
-- Orden: order-70572463
+- Orden: order-***
 - Cliente: no registrado
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
@@ -30,14 +30,14 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: no registrado
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-124910-f22cdf16-order-70572463-5e53dda2cd0943ff90ebe8aa6a4d5d11.png
+  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-124910-f22cdf16-order-***.png
 - Observacion tecnica:
   - Aparecio fecha del dia actual sin hora seleccionable entre 12:49 y 12:50. La senal vino de fetch_probe y no era reservable por la nueva regla de no reservar el dia actual.
 
-## 2026-07-03 12:50:52 - order-45257623 - partial
+## 2026-07-03 12:50:52 - order-*** - partial
 
 - Run: 20260703-125003-74f05677
-- Orden: order-45257623
+- Orden: order-***
 - Cliente: no registrado
 - Cuenta: 45***3
 - Sede: LIMA-LA VICTORIA
@@ -62,14 +62,14 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: no registrado
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-125003-74f05677-order-45257623-f17068858cb24f3d9b68b832753ac294.png
+  - Screenshot principal: ruta historica limpiada antes de este cambio: screenshots\03-modal-reserva-citas-disponibilidad-parcial-20260703-125003-74f05677-order-***.png
 - Observacion tecnica:
   - El mismo patron se repitio para Percy unos segundos despues: fecha del dia actual visible por fetch_probe, pero hora seguia en Sin Cupos.
-## 2026-07-03 17:15:00 - order-70572463 - partial
+## 2026-07-03 17:15:00 - order-*** - partial
 
 - Run: 20260703-171408-cc5a3747
 - Orden: order-***
-- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cliente: registrado y oculto
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -97,11 +97,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:15:54 - order-45257623 - partial
+## 2026-07-03 17:15:54 - order-*** - partial
 
 - Run: 20260703-171500-a4c438e8
 - Orden: order-***
-- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cliente: registrado y oculto
 - Cuenta: 45***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -129,11 +129,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:16:41 - order-70572463 - partial
+## 2026-07-03 17:16:41 - order-*** - partial
 
 - Run: 20260703-171554-c25ac5b1
 - Orden: order-***
-- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cliente: registrado y oculto
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -161,11 +161,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:17:28 - order-45257623 - partial
+## 2026-07-03 17:17:28 - order-*** - partial
 
 - Run: 20260703-171641-55b49fce
 - Orden: order-***
-- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cliente: registrado y oculto
 - Cuenta: 45***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -193,11 +193,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:18:20 - order-70572463 - partial
+## 2026-07-03 17:18:20 - order-*** - partial
 
 - Run: 20260703-171728-00d96c47
 - Orden: order-***
-- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cliente: registrado y oculto
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -225,11 +225,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:19:13 - order-45257623 - partial
+## 2026-07-03 17:19:13 - order-*** - partial
 
 - Run: 20260703-171820-a64d7cd9
 - Orden: order-***
-- Cliente: PERCY EDUARDO CHOSEC QUISPE
+- Cliente: registrado y oculto
 - Cuenta: 45***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -257,11 +257,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-03 17:20:02 - order-70572463 - partial
+## 2026-07-03 17:20:02 - order-*** - partial
 
 - Run: 20260703-171914-76935c2d
 - Orden: order-***
-- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cliente: registrado y oculto
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/07/2026
@@ -289,11 +289,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-04 08:48:31 - order-70572463 - partial
+## 2026-07-04 08:48:31 - order-*** - partial
 
 - Run: 20260704-084813-bd516f55
 - Orden: order-***
-- Cliente: MAYRA MARJORI SULLCA CARRILLO
+- Cliente: registrado y oculto
 - Cuenta: 70***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 08/07/2026
@@ -322,11 +322,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-04 13:05:53 - order-76623115 - partial
+## 2026-07-04 13:05:53 - order-*** - partial
 
 - Run: 20260704-130535-c8ad544f
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 06/07/2026
@@ -357,11 +357,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-04 13:06:45 - order-76623115 - partial
+## 2026-07-04 13:06:45 - order-*** - partial
 
 - Run: 20260704-130629-12cb507f
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -392,11 +392,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-04 13:07:35 - order-76623115 - partial
+## 2026-07-04 13:07:35 - order-*** - partial
 
 - Run: 20260704-130721-521493a2
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -427,11 +427,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:21:52 - order-76623115 - partial
+## 2026-07-06 09:21:52 - order-*** - partial
 
 - Run: 20260706-092125-c7504c44
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -462,11 +462,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:22:24 - order-76623115 - partial
+## 2026-07-06 09:22:24 - order-*** - partial
 
 - Run: 20260706-092154-3add598c
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -497,11 +497,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:25:59 - order-76623115 - partial
+## 2026-07-06 09:25:59 - order-*** - partial
 
 - Run: 20260706-092529-8336d91c
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -532,11 +532,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:26:32 - order-76623115 - partial
+## 2026-07-06 09:26:32 - order-*** - partial
 
 - Run: 20260706-092602-fa408640
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -567,11 +567,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:26:44 - order-76623115 - partial
+## 2026-07-06 09:26:44 - order-*** - partial
 
 - Run: 20260706-092634-ca3e4deb
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -602,11 +602,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 09:26:57 - order-76623115 - partial
+## 2026-07-06 09:26:57 - order-*** - partial
 
 - Run: 20260706-092647-1ba25691
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -637,11 +637,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 12:38:11 - order-76623115 - partial
+## 2026-07-06 12:38:11 - order-*** - partial
 
 - Run: 20260706-123801-5e8bca9f
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -673,11 +673,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 12:38:22 - order-76623115 - partial
+## 2026-07-06 12:38:22 - order-*** - partial
 
 - Run: 20260706-123813-d7a19608
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -709,11 +709,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-06 23:39:33 - order-08417773 - partial
+## 2026-07-06 23:39:33 - order-*** - partial
 
 - Run: 20260706-233923-10c78531
 - Orden: order-***
-- Cliente: order-***
+- Cliente: registrado y oculto
 - Cuenta: 08***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 06/07/2026
@@ -742,11 +742,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-06 23:49:42 - order-08417773 - partial
+## 2026-07-06 23:49:42 - order-*** - partial
 
 - Run: 20260706-234929-de9c132f
 - Orden: order-***
-- Cliente: order-***
+- Cliente: registrado y oculto
 - Cuenta: 08***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 06/07/2026
@@ -775,11 +775,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-07 08:28:48 - order-76623115 - partial
+## 2026-07-07 08:28:48 - order-*** - partial
 
 - Run: 20260707-082840-9098db8d
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -810,11 +810,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-07 12:46:28 - order-76623115 - partial
+## 2026-07-07 12:46:28 - order-*** - partial
 
 - Run: 20260707-124617-bfdbde06
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 14/07/2026
@@ -845,11 +845,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-07 12:55:15 - order-76623115 - partial
+## 2026-07-07 12:55:15 - order-*** - partial
 
 - Run: 20260707-125504-5265d89d
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 22/07/2026
@@ -880,11 +880,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-07 12:55:31 - order-76623115 - partial
+## 2026-07-07 12:55:31 - order-*** - partial
 
 - Run: 20260707-125521-4befc776
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 22/07/2026
@@ -915,11 +915,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-09 10:26:58 - order-76623115 - partial
+## 2026-07-09 10:26:58 - order-*** - partial
 
 - Run: 20260709-102636-2bc37ab7
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -950,11 +950,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-09 10:58:30 - order-76623115 - partial
+## 2026-07-09 10:58:30 - order-*** - partial
 
 - Run: 20260709-105801-2add2dbf
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 24/07/2026
@@ -985,11 +985,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-09 15:21:15 - order-45573344 - partial
+## 2026-07-09 15:21:15 - order-*** - partial
 
 - Run: 20260709-151932-753390b1
 - Orden: order-***
-- Cliente: SANTOS ALFREDO CAPUÑAY DIAZ | Contacto: Jhuleisi BQ
+- Cliente: registrado y oculto
 - Cuenta: 45***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 15/07/2026
@@ -1018,11 +1018,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
-## 2026-07-11 08:05:20 - order-43905403 - partial
+## 2026-07-11 08:05:20 - order-*** - partial
 
 - Run: 20260711-080455-6cf07fc8
 - Orden: order-***
-- Cliente: EDSON ALBERTO ESTRADA MINAYA | Contacto: franco
+- Cliente: registrado y oculto
 - Cuenta: 43***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 11/07/2026
@@ -1053,11 +1053,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-11 08:08:26 - order-74227139 - partial
+## 2026-07-11 08:08:26 - order-*** - partial
 
 - Run: 20260711-080749-9d88e2ee
 - Orden: order-***
-- Cliente: ARNOLD ZAVALA LEON | Contacto: Valentina
+- Cliente: registrado y oculto
 - Cuenta: 74***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 11/07/2026
@@ -1088,11 +1088,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-11 09:18:29 - order-4533563928614-e42b7af400a8b1fa - partial
+## 2026-07-11 09:18:29 - order-*** - partial
 
 - Run: 20260711-091807-a68dc6b8
-- Orden: order-4533563928614-e42b7af400a8b1fa
-- Cliente: ANGGELA SARA GARCIA | Exp: 28614 | Placa: CZU668 | Contacto: sara
+- Orden: order-***
+- Cliente: registrado y oculto
 - Cuenta: 45***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 31/07/2026
@@ -1117,17 +1117,17 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.454s
   - Seleccion fecha/hora: 1.704s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-091807-order-4533563928614-f69cfc-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-091807-order-4533563928614-f69cfc-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-091807-order-4533563928614-5e3811.png
+  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-091807-order-***-original.png
+  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-091807-order-***-original.png
+  - Screenshot adicional: screenshots\11-07-2026\cupo-091807-order-***.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
-## 2026-07-11 10:22:20 - order-76623115 - partial
+## 2026-07-11 10:22:20 - order-*** - partial
 
 - Run: 20260711-102200-ad537ebb
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 31/07/2026
@@ -1158,11 +1158,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-11 12:14:02 - order-76623115 - partial
+## 2026-07-11 12:14:02 - order-*** - partial
 
 - Run: 20260711-121323-0a4c4a71
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 31/07/2026
@@ -1193,11 +1193,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-13 10:23:48 - order-76623115 - partial
+## 2026-07-13 10:23:48 - order-*** - partial
 
 - Run: 20260713-102341-49ecdcda
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 04/08/2026
@@ -1228,11 +1228,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-13 13:41:40 - order-76623115 - partial
+## 2026-07-13 13:41:40 - order-*** - partial
 
 - Run: 20260713-134116-ecdfe78e
 - Orden: order-***
-- Cliente: DIANA CAROLINA AGUILAR OSSIO
+- Cliente: registrado y oculto
 - Cuenta: 76***5
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 05/08/2026
@@ -1263,11 +1263,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 08:56:08 - order-41654824 - partial
+## 2026-07-14 08:56:08 - order-*** - partial
 
 - Run: 20260714-085542-d752e25f
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/08/2026
@@ -1298,11 +1298,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 09:21:03 - order-41654824 - partial
+## 2026-07-14 09:21:03 - order-*** - partial
 
 - Run: 20260714-092020-a9f80323
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 05/08/2026
@@ -1333,11 +1333,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 09:51:54 - order-44005224 - partial
+## 2026-07-14 09:51:54 - order-*** - partial
 
 - Run: 20260714-095146-5b9128fe
 - Orden: order-***
-- Cliente: FIORELLA NATALIA GUTIERREZ LONGA | Contacto: selegal jurisconsulto
+- Cliente: registrado y oculto
 - Cuenta: 44***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -1368,11 +1368,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 09:53:36 - order-41654824 - partial
+## 2026-07-14 09:53:36 - order-*** - partial
 
 - Run: 20260714-095302-e5636de5
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -1403,11 +1403,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 10:41:00 - order-41654824 - partial
+## 2026-07-14 10:41:00 - order-*** - partial
 
 - Run: 20260714-104053-665986d5
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 22/07/2026
@@ -1438,11 +1438,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-14 13:09:38 - order-44096258 - partial
+## 2026-07-14 13:09:38 - order-*** - partial
 
 - Run: 20260714-130915-5b38ab5e
 - Orden: order-***
-- Cliente: CRISTHIAN ANDRE HUAMAN ATO | Contacto: Analiz
+- Cliente: registrado y oculto
 - Cuenta: 44***8
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -1473,11 +1473,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-15 08:45:19 - order-44096258 - partial
+## 2026-07-15 08:45:19 - order-*** - partial
 
 - Run: 20260715-084434-4b0d2038
 - Orden: order-***
-- Cliente: CRISTHIAN ANDRE HUAMAN ATO | Contacto: Analiz
+- Cliente: registrado y oculto
 - Cuenta: 44***8
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 24/07/2026
@@ -1508,11 +1508,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-15 09:39:32 - order-41654824 - partial
+## 2026-07-15 09:39:32 - order-*** - partial
 
 - Run: 20260715-093923-b0fbcc0f
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 05/08/2026
@@ -1543,11 +1543,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-15 09:41:18 - order-09265081 - partial
+## 2026-07-15 09:41:18 - order-*** - partial
 
 - Run: 20260715-094051-5a0ef969
 - Orden: order-***
-- Cliente: DOIRA LUZ HUALPA GALLEGOS | Contacto: Willangel
+- Cliente: registrado y oculto
 - Cuenta: 09***1
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 20/07/2026
@@ -1578,11 +1578,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-15 14:20:00 - order-41654824 - partial
+## 2026-07-15 14:20:00 - order-*** - partial
 
 - Run: 20260715-141926-7a7273e8
 - Orden: order-***
-- Cliente: MARIO CALEB MATIAS VEGAS | Contacto: Hilda
+- Cliente: registrado y oculto
 - Cuenta: 41***4
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 07/08/2026
@@ -1613,11 +1613,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-17 08:52:41 - order-09806339 - partial
+## 2026-07-17 08:52:41 - order-*** - partial
 
 - Run: 20260717-085233-1f623673
 - Orden: order-***
-- Cliente: MIRIAM YRIS GUTIERREZ MAYHUASCA | Contacto: Valeria gutierrez
+- Cliente: registrado y oculto
 - Cuenta: 09***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 10/08/2026
@@ -1648,11 +1648,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
-## 2026-07-17 10:42:42 - order-72452392 - partial
+## 2026-07-17 10:42:42 - order-*** - partial
 
 - Run: 20260717-104218-8a2acf37
 - Orden: order-***
-- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cliente: registrado y oculto
 - Cuenta: 72***2
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -1682,11 +1682,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-17 10:44:12 - order-72452392 - partial
+## 2026-07-17 10:44:12 - order-*** - partial
 
 - Run: 20260717-104337-01d985ff
 - Orden: order-***
-- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cliente: registrado y oculto
 - Cuenta: 72***2
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/07/2026
@@ -1716,11 +1716,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-17 12:33:36 - order-72452392 - partial
+## 2026-07-17 12:33:36 - order-*** - partial
 
 - Run: 20260717-123329-81c9d48e
 - Orden: order-***
-- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cliente: registrado y oculto
 - Cuenta: 72***2
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 31/07/2026
@@ -1750,11 +1750,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-17 12:49:23 - order-72452392 - partial
+## 2026-07-17 12:49:23 - order-*** - partial
 
 - Run: 20260717-124843-654f2dfb
 - Orden: order-***
-- Cliente: PEDRO ALEJANDRO DEL CARPIO CARDENAS | Contacto: Pedro del Carpio
+- Cliente: registrado y oculto
 - Cuenta: 72***2
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 31/07/2026
@@ -1784,11 +1784,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-17 17:00:26 - order-74207543 - partial
+## 2026-07-17 17:00:26 - order-*** - partial
 
 - Run: 20260717-165945-4cd206d1
 - Orden: order-***
-- Cliente: JOHAN GIOMAR CRUZ MONDRAGON | Contacto: Johan giomar cruz Mondragón
+- Cliente: registrado y oculto
 - Cuenta: 74***3
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 11/08/2026
@@ -1819,11 +1819,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
-## 2026-07-22 13:12:56 - order-009059550 - partial
+## 2026-07-22 13:12:56 - order-*** - partial
 
 - Run: 20260722-131211-a40ef75b
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/08/2026
@@ -1853,11 +1853,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-24 10:49:21 - order-009059550 - partial
+## 2026-07-24 10:49:21 - order-*** - partial
 
 - Run: 20260724-104846-c2450d88
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 19/08/2026
@@ -1887,11 +1887,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-24 11:30:12 - order-009059550 - partial
+## 2026-07-24 11:30:12 - order-*** - partial
 
 - Run: 20260724-112934-f7f4b25d
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 21/08/2026
@@ -1921,11 +1921,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-24 12:17:31 - order-009059550 - partial
+## 2026-07-24 12:17:31 - order-*** - partial
 
 - Run: 20260724-121721-cfbb9b70
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/08/2026
@@ -1955,11 +1955,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-24 13:45:19 - order-009059550 - partial
+## 2026-07-24 13:45:19 - order-*** - partial
 
 - Run: 20260724-134426-412e678a
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 19/08/2026
@@ -1989,11 +1989,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-24 14:31:52 - order-009059550 - partial
+## 2026-07-24 14:31:52 - order-*** - partial
 
 - Run: 20260724-143143-ec0dc07f
 - Orden: order-***
-- Cliente: JUAN JOSE ELWART | Contacto: Jorge
+- Cliente: registrado y oculto
 - Cuenta: 00***0
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 19/08/2026
@@ -2023,11 +2023,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-27 10:05:56 - order-09612178 - partial
+## 2026-07-27 10:05:56 - order-*** - partial
 
 - Run: 20260727-100507-c37260da
 - Orden: order-***
-- Cliente: ALEX TOMAS CARNERO REYES | Contacto: Alex Carnero
+- Cliente: registrado y oculto
 - Cuenta: 09***8
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 27/07/2026
@@ -2057,11 +2057,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-30 13:46:41 - order-73074947 - partial
+## 2026-07-30 13:46:41 - order-*** - partial
 
 - Run: 20260730-134632-c125dc80
 - Orden: order-***
-- Cliente: ANDRES GALLEGOS LUQUE | Contacto: Andres Gallegos Luque
+- Cliente: registrado y oculto
 - Cuenta: 73***7
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 22/08/2026
@@ -2092,11 +2092,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
-## 2026-07-31 11:47:58 - order-47553469 - partial
+## 2026-07-31 11:47:58 - order-*** - partial
 
 - Run: 20260731-114737-49cc9fe6
 - Orden: order-***
-- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cliente: registrado y oculto
 - Cuenta: 47***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/08/2026
@@ -2126,11 +2126,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-31 13:20:25 - order-47553469 - partial
+## 2026-07-31 13:20:25 - order-*** - partial
 
 - Run: 20260731-131946-b10145d4
 - Orden: order-***
-- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cliente: registrado y oculto
 - Cuenta: 47***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 24/08/2026
@@ -2160,11 +2160,11 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
-## 2026-07-31 14:58:10 - order-47553469 - partial
+## 2026-07-31 14:58:10 - order-*** - partial
 
 - Run: 20260731-145801-8abeb768
 - Orden: order-***
-- Cliente: HELEN CRISTINA ANTAURCO MANCILLA | Contacto: jose oliver cuyo
+- Cliente: registrado y oculto
 - Cuenta: 47***9
 - Sede: LIMA-LA VICTORIA
 - Fecha detectada: 03/08/2026

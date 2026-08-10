@@ -1,5 +1,8 @@
 # Validación manual de evidencias por WhatsApp — 23-07-2026
 
+> Evidencia historica de validacion manual. El estado vigente esta en
+> `docs/project-status.md`.
+
 ## Objetivo
 
 Validar con el número personal del operador el mismo flujo Playwright que usa

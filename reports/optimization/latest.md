@@ -1,5 +1,9 @@
 # Linea base observacional de optimizacion
 
+> Baseline historica promovida para comparacion. Las decisiones operativas de
+> esta fecha fueron sustituidas por `OBS-006` y `OBS-007`; consultar
+> `docs/optimization.md` y `docs/roadmap/README.md`.
+
 - Rango: `2026-07-06` a `2026-07-12` (America/Lima, inclusivo).
 - Runs: 4416.
 - Intentos compatibles: 37.

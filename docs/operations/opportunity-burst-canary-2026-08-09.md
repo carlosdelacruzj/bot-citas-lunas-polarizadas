@@ -3,6 +3,11 @@
 Estado: ampliada y cargada mediante reinicio controlado el `2026-08-09`;
 pendiente de la primera disponibilidad real posterior al despliegue.
 
+Limitacion conocida: la implementacion actual agrega metricas por ventana pero
+no conserva durablemente `burst_id` ni el detalle de cada auxiliar. La primera
+prioridad de `docs/roadmap/README.md` cierra esa brecha antes de usar el canario
+para decidir un escalamiento.
+
 ## Objetivo
 
 Aprovechar una liberación de varios cupos procesando la mayor cantidad posible

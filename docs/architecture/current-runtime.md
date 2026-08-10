@@ -4,6 +4,9 @@ Este documento describe el comportamiento vigente despues de completar la
 migracion interna hasta el paso 9.7. Debe usarse como referencia de
 compatibilidad, no como lista de trabajo futuro.
 
+Los entrypoints y fronteras son normativos; cualquier listado de endpoints en
+este documento es orientativo y debe contrastarse con los routers del codigo.
+
 ## Entrypoints
 
 - `appointment-bot-worker` apunta a `appointment_bot.worker.host:main`.

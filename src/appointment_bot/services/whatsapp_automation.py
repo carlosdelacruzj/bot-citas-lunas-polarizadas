@@ -223,7 +223,7 @@ class WhatsAppAutomationDispatcher:
             message_id=message_id,
             error_message=sanitize_text(message),
         )
-        self._notify_failure(job, final_status, message)
+        self._notify_failure(job, final_status, message, result=result)
 
     def _send_reservation_album(
         self,
@@ -338,6 +338,8 @@ class WhatsAppAutomationDispatcher:
         job: WhatsAppAutomationJob,
         status: str,
         message: str,
+        *,
+        result: dict[str, object] | None = None,
     ) -> None:
         flow = (
             "evidencia y cobro"
@@ -357,6 +359,26 @@ class WhatsAppAutomationDispatcher:
             if job["order_id"] is not None
             else f"Fecha: {job['report_date']}"
         )
+        component_lines: list[str] = []
+        if job["job_kind"] == "daily_slot_summary" and result is not None:
+            components = result.get("delivery_components")
+            if isinstance(components, dict):
+                labels = {
+                    "summary": "Resumen",
+                    "images": "Imágenes",
+                    "publication": "Publicación TikTok",
+                }
+                states = {
+                    "confirmed": "confirmado",
+                    "skipped": "omitidas porque no había archivos",
+                    "uncertain": "no confirmado automáticamente",
+                    "not_attempted": "no intentado",
+                }
+                for key in ("summary", "images", "publication"):
+                    value = str(components.get(key) or "not_attempted")
+                    component_lines.append(
+                        f"{labels[key]}: {states.get(value, value)}"
+                    )
         send_telegram_message(
             self.settings,
             "\n".join(
@@ -365,6 +387,7 @@ class WhatsAppAutomationDispatcher:
                     target,
                     f"Flujo: {flow}",
                     f"Estado: {status}",
+                    *component_lines,
                     f"Detalle: {sanitize_text(message)}",
                     "No se realizará otro intento automático. Revisar desde el dashboard.",
                 ]

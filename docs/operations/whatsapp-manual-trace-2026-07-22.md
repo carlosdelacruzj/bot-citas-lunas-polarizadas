@@ -1,5 +1,8 @@
 # Trazado manual de WhatsApp Web — 22-07-2026
 
+> Evidencia historica del flujo inicial. El contrato actual es automatico y
+> durable; consultar `docs/contracts/order-lifecycle.md`.
+
 ## Objetivo
 
 Comprobar el flujo real de WhatsApp Web con una sesión Playwright visible,

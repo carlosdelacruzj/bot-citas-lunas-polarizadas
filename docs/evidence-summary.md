@@ -1,5 +1,11 @@
 # Resumen digerido de evidencia
 
+> Snapshot generado con cobertura observada entre `2026-06-30` y
+> `2026-08-08`. No representa el estado vivo ni reemplaza
+> `docs/project-status.md`. Sus totales deben compararse solo dentro de ese
+> corte; el indice puede contener rutas sanitizadas cuyo artefacto ya no esta
+> retenido.
+
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales

@@ -1,5 +1,8 @@
 # Hoja de ruta de rendimiento - 22-07-2026
 
+> Documento historico ejecutado. No contiene trabajo pendiente vigente; usar
+> `docs/roadmap/README.md` para prioridades actuales.
+
 ## Objetivo
 
 Mejorar progresivamente la detección y reserva de cupos sin perder estabilidad,

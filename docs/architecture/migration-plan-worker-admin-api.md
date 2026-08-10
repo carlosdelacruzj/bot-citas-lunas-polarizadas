@@ -1,5 +1,8 @@
 # Plan de migracion: worker, admin API y dashboard Angular
 
+> Migracion completada. Se conserva como historial de decisiones; la topologia
+> vigente esta en `docs/operations/deployment-topology.md`.
+
 Este documento guia la migracion hacia una arquitectura mas profesional sin
 afectar el flujo actual de reservas. La regla principal es avanzar por fases
 pequenas, validar despues de cada fase y mantener funcionando el worker actual

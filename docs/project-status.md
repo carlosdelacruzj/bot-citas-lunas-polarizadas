@@ -18,13 +18,13 @@ Estado verificado el `2026-08-09`:
 
 | Área                  | Estado                   | Lectura actual                                                                                            |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Worker de reservas    | Operativo fuera de horario | Reinicio controlado aplicado; volvió saludable con `worker_running=true`, fase `outside_hot_window` y sin orden activa. |
+| Worker de reservas    | Corte diario normal       | El supervisor sigue vivo; el proceso terminó con código `0` a las 18:00 y espera el siguiente arranque de las 07:30. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v49` aplicado con identidad de trámite y mensajes post-cita.            |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
 | CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo                | Build correcto; bundle inicial de `513.45 kB`, Post-cita paginado y fechas de Órdenes cronológicas.       |
+| Dashboard             | Operativo con deuda de seguridad | Build correcto; bundle inicial de `514.19 kB`. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -35,8 +35,8 @@ Datos consultados en PostgreSQL al `2026-08-09`:
 | --------------------- | ------: | -------------------: | -----: | --------------: |
 | Junio 2026            |       9 |                    4 |      3 |          S/ 120 |
 | Julio 2026            |      89 |                   83 |     78 |        S/ 3,105 |
-| Agosto 2026, días 1-8 |      18 |                   21 |     20 |          S/ 930 |
-| **Acumulado**         | **116** |              **108** | **101** |   **S/ 4,155** |
+| Agosto 2026, días 1-9 |      19 |                   21 |     20 |          S/ 930 |
+| **Acumulado**         | **117** |              **108** | **101** |   **S/ 4,155** |
 
 - Ticket promedio de julio: `S/ 39.81`; agosto al corte: `S/ 46.50`.
 - Pagos pendientes actuales: `2`, con saldo total de `S/ 70`.
@@ -131,7 +131,7 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Implementado el `2026-08-01`: cada orden observada conserva el modal abierto y
   ejecuta hasta `15` consultas ligeras de sede. Después de la primera consulta,
   cada intento fuerza `vacío -> LIMA-LA VICTORIA`, espera el postback completo y
-  descansa un valor aleatorio entre `2` y `4` segundos. Solo se hace un
+  descansa un valor aleatorio entre `1` y `2` segundos. Solo se hace un
   `reload_probe` completo después del
   intento `8`; al terminar el intento `15` se cierra esa sesión y se rota al
   siguiente cliente con un contexto Playwright nuevo.
@@ -303,6 +303,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   preflight, `document_type`, el contrato de restricciones vigente entonces y muestreo CAPTCHA
   sombra. Se actualizaron únicamente las pruebas; no fue necesario relajar ni
   modificar código productivo. La suite completa quedó en `59 passed`.
+- Consolidado documentalmente el `2026-08-09`: se revisaron los `40` archivos
+  existentes bajo `docs/`, se reescribió el roadmap como única cola futura y
+  se clasificaron contratos, runbooks, snapshots e historia. No se eliminó
+  evidencia única. El inventario vive en
+  [`history/documentation-audit-2026-08-09.md`](history/documentation-audit-2026-08-09.md).
 
 ### Control remoto
 
@@ -506,8 +511,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   estructuras soportadas y usa evidencias únicas por trabajo. Solo
   `daily_slot_summary:2026-08-07` pasó a `sent`; no hubo reenvío ni se alteraron
   los días anteriores.
-- El corte de PostgreSQL del `2026-08-09` conserva `69` trabajos automáticos:
-  `50 sent`, `3 failed` y `16 uncertain`; no existe un estado `blocked` en ese
+- Corregido el `2026-08-09`: el resumen dominical sin imágenes confirmó el
+  texto de cierre, pero clasificó el trabajo completo como `uncertain` cuando
+  no reconoció automáticamente la nueva burbuja de la publicación de TikTok.
+  La captura durable y la confirmación del operador muestran ambos textos con
+  doble check azul. `daily_slot_summary:2026-08-09` se reconcilió a `sent` con
+  `attempt_count=1`, sin reenvío. El detector acepta ahora la marca de
+  enviado/entregado/leído del contenedor genérico y Telegram informa por
+  separado resumen, imágenes y publicación. Una ambigüedad real sigue siendo
+  terminal y nunca genera reintento automático.
+- El corte de PostgreSQL del `2026-08-09` conserva `71` trabajos automáticos:
+  `52 sent`, `3 failed` y `16 uncertain`; no existe un trabajo activo en ese
   corte. Es un inventario durable, no una tasa de entrega actual: incluye
   ambigüedades históricas de resúmenes diarios y no autoriza reintentos. Por
   tipo hay `21/2/2` álbumes de reserva `sent/failed/uncertain`, `22/1/2`
@@ -540,7 +554,8 @@ muestra confirma que existe una oportunidad para reducir el tiempo entre
 clientes, pero todavía es demasiado pequeña para demostrar que la concurrencia
 producirá más reservas netas.
 
-La tabla `runs` conserva actualmente información desde el 11 de julio. Para
+La tabla `runs` conserva actualmente información desde el 27 de julio por la
+retención de `14` días. Para
 periodos anteriores deben usarse los reportes y documentos versionados; no se
 debe reconstruir una comparación histórica únicamente desde la base viva.
 
@@ -595,6 +610,17 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     disponibilidad. Su riesgo vigente es sumar carga durante una tanda; debe
     medirse recuperación, duración, CAPTCHA, defensas y cierre de intentos. Un
     `reservation_unconfirmed` nunca entra en esta ruta.
+12. La telemetría de ventana actual no conserva todos los detalles producidos
+    por `OBS-006`: `burst_id`, candidatos, posiciones y resultados auxiliares
+    no pueden reconstruirse de forma completa desde PostgreSQL. Debe corregirse
+    antes de usar el primer caso real para decidir continuidad o escalamiento.
+13. El Resumen mensual mezcla eventos del periodo, cohortes de alta y una
+    fotografía actual de pendientes. También compara mes parcial contra mes
+    completo y considera faltante un contacto válido por `@usuario`. Estas
+    tarjetas no deben gobernar decisiones comerciales hasta separar sus
+    universos y fechas de corte.
+14. No existe todavía un backup cifrado durable fuera de la PC ni monitoreo que
+    sobreviva a la caída completa del equipo operativo.
 
 ## Validación del corte
 
@@ -627,6 +653,16 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 - `python -m compileall -q src`: correcto.
 - `npm run build`: correcto.
 - `python -m pytest -q`: `59 passed`.
+- Auditoría documental integral: `40` archivos clasificados, roadmap
+  reorganizado por fases, índices actualizados y cero enlaces Markdown locales
+  rotos en el inventario revisado.
+- Evidencia versionada: el árbol actual fue saneado para retirar nombres,
+  `order_id` completos y respuestas CAPTCHA de las bitácoras históricas. Los
+  commits anteriores aún pueden contener esos valores; reescribir el historial
+  Git requiere una operación separada y autorizada.
+- Dependencias Angular: `npm audit --omit=dev` reportó seis paquetes de
+  severidad alta en `20.3.26`; el upgrade correctivo queda priorizado en la
+  Fase 4 del roadmap.
 - Dashboard no bloqueante: el build Angular quedó correcto con bundle inicial
   de `504.46 kB`; no quedan llamadas `await this.showToast(...)` y el cierre
   manual se controla por `session_id`. La validación fue de código y build: no
@@ -661,10 +697,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   CUDA para eventos nuevos, con v3 como referencia visual; `/health` y
   `/v1/models` confirmaron ambos después del reinicio aislado y el historial de
   los modelos retirados continúa consultable.
-- Corte CAPTCHA prospectivo consultado directamente en la base sombra:
-  `126/500` muestras revisadas; v3 `119/126`, sin eventos nuevos después del
-  `2026-08-05`. El servicio fue reiniciado y está saludable desde el
-  `2026-08-06`, pero todavía no recibió otra muestra.
+- El corte prospectivo posterior a v3 conserva `126` muestras revisadas y v3
+  obtuvo `119/126`; esa cohorte precede a la congelación de v6 y no cuenta para
+  su gate. Al cierre documental, v6 permanece en `0/500` muestras frescas
+  post-congelación; el servicio está saludable, pero todavía no recibió un
+  evento nuevo que permita iniciar la comparación v6 contra v3.
 - PostgreSQL v46 aplicado: una deuda histórica vencida y sin destinatario quedó
   archivada como `uncollectible/written_off`; otro pago conserva `S/20`
   abonados sobre `S/40`. El resumen mensual devuelve `2` cobros accionables por
@@ -682,15 +719,21 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   observación y `observation_no_progress`.
   El barrido inicial posterior cubrió `108/108` órdenes. Los últimos registros
   conservan `92` accesos correctos y `16` credenciales rechazadas. El segundo
-  barrido dirigido almacenó los textos de las `6` observaciones. Macario quedó
-  corregido a `completed` al abrir `27199/CKJ799`; sus seis etapas figuran
-  `Atendido`. El padre sin reserva de Anggela quedó archivado como contenedor y
-  sus dos subtrámites confirmados permanecen separados como `28600/BWS839` y
-  `28614/CZU668`, ambos con `access_lost` por credenciales cambiadas.
+  barrido dirigido almacenó los textos de las `6` observaciones. Un caso quedó
+  corregido a `completed` al abrir `*****/******`; sus seis etapas figuran
+  `Atendido`. Otro padre sin reserva quedó archivado como contenedor y sus dos
+  subtrámites confirmados permanecen separados con identidad enmascarada, ambos
+  con `access_lost` por credenciales cambiadas.
 - WhatsApp del `2026-08-08`: `compileall`, Ruff, dashboard y `59` pruebas
   correctos. Admin API fue recuperada por su supervisor y sirve el bundle
   `main-IPC33IQD.js`; PostgreSQL conserva el resumen del 7 de agosto como
   `sent`. No se realizó ningún envío de prueba.
+- Confirmación diaria del `2026-08-09`: la simulación aislada reconoció un
+  contenedor con doble check y produjo el detalle Telegram por componentes.
+  `compileall`, Ruff, `59 passed` y `git diff --check` quedaron correctos. Admin
+  API se reinició aisladamente con cero trabajos WhatsApp `running` y volvió
+  saludable en `8766`; no se reinició el worker ni se envió contenido durante
+  la validación o reconciliación.
 - Telegram del `2026-08-08`: el notificador diferido ya no publica evidencia
   CAPTCHA de cupos incompatibles; la validación fue local y no realizó envíos
   de prueba. Falta observar el próximo caso real bloqueado para confirmar la

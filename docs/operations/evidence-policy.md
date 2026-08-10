@@ -2,13 +2,16 @@
 
 ## Orden de lectura
 
-1. `docs/evidence-summary.md`: resumen vigente.
+1. `docs/evidence-summary.md`: snapshot generado; leer su fecha de corte.
 2. `docs/evidence-index.csv`: indice compacto y filtrable.
 3. `reports/evidence/`: salidas fechadas regenerables.
 4. HTML y screenshots: solo para investigar un evento concreto.
 
-`docs/` conserva la lectura vigente; `reports/evidence/` conserva resultados
-fechados. No copiar el mismo artefacto pesado entre ambos.
+`docs/project-status.md` conserva el estado vigente. `docs/evidence-summary.md`
+y `docs/evidence-index.csv` son snapshots generados; deben declarar fecha de
+generacion, cobertura real y faltantes antes de usarse para comparar periodos.
+`reports/evidence/` conserva resultados fechados. No copiar el mismo artefacto
+pesado entre ambos.
 
 ## Retencion
 
@@ -35,8 +38,12 @@ fechados. No copiar el mismo artefacto pesado entre ambos.
 
 ## Datos compartibles
 
-- Documento, WhatsApp, cuentas, tokens y passwords deben estar enmascarados.
+- Nombres, apellidos, documento, placa, expediente, WhatsApp, identificadores
+  completos de orden, cuentas, tokens, passwords y respuestas CAPTCHA deben
+  estar enmascarados en todo archivo versionado.
 - Los generadores pasan texto por sanitizacion antes de escribir CSV/Markdown.
+- Una ruta sanitizada del indice no prueba que el artefacto siga retenido. Todo
+  indice nuevo debe distinguir `path_available` o `artifact_retained`.
 - Antes de compartir, revisar el resumen y el indice; nunca compartir dumps,
   `.env`, cookies, HTML crudo o screenshots sin inspeccion.
 

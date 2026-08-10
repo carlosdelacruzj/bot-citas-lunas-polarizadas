@@ -1,5 +1,9 @@
 # Reporte semanal de operacion
 
+> Corte historico generado, no estado de runtime. La etiqueta de alertas de
+> este reporte no cubre todavia todas las defensas contabilizadas; esa mejora
+> esta planificada en `docs/roadmap/README.md`.
+
 - Rango actual: `2026-08-01` a `2026-08-08` (America/Lima, inclusivo).
 - Rango comparable anterior: `2026-07-24` a `2026-07-31`.
 - Runs medidos: 5299 actuales; 4234 anteriores.

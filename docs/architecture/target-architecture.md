@@ -1,5 +1,9 @@
 # Arquitectura alcanzada
 
+> Snapshot de la arquitectura alcanzada durante la migracion. Para operacion y
+> riesgos actuales usar `docs/operations/deployment-topology.md` y
+> `docs/project-status.md`.
+
 La arquitectura alcanzada mantiene un solo repositorio, pero separa
 responsabilidades por modulos y procesos. El objetivo es que el worker se
 enfoque en reservar y que el dashboard/admin API se enfoque en administracion.

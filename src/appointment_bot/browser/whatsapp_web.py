@@ -753,6 +753,15 @@ def _send_daily_slot_summary(
             screenshot_name="whatsapp-daily-summary-chat-not-ready",
         )
 
+    attachments = [
+        Path(str(path)).resolve()
+        for path in list(draft.get("attachment_paths") or [])
+    ]
+    delivery_components = {
+        "summary": "not_attempted",
+        "images": "not_attempted" if attachments else "skipped",
+        "publication": "not_attempted",
+    }
     message_text = str(draft["message_text"])
     if message_text:
         text_sent = _send_plain_text_message(
@@ -761,6 +770,7 @@ def _send_daily_slot_summary(
             evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-summary",
         )
         if not text_sent:
+            delivery_components["summary"] = "uncertain"
             context.close()
             return _result(
                 "send_uncertain",
@@ -771,12 +781,12 @@ def _send_daily_slot_summary(
                     f".runtime/whatsapp-daily-summary-{evidence_id}-summary-"
                     "text-send-uncertain.png"
                 ),
+                delivery_components=delivery_components,
             )
+        delivery_components["summary"] = "confirmed"
+    else:
+        delivery_components["summary"] = "skipped"
 
-    attachments = [
-        Path(str(path)).resolve()
-        for path in list(draft.get("attachment_paths") or [])
-    ]
     if attachments:
         if not all(path.is_file() for path in attachments):
             raise FileNotFoundError(
@@ -803,12 +813,15 @@ def _send_daily_slot_summary(
                 ),
             )
         except WhatsAppSendUncertain as exc:
+            delivery_components["images"] = "uncertain"
             context.close()
             return _result(
                 "send_uncertain",
                 str(exc),
                 message_id=message_id,
+                delivery_components=delivery_components,
             )
+        delivery_components["images"] = "confirmed"
         _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-images-sent")
 
     publication_sent = _send_plain_text_message(
@@ -817,6 +830,7 @@ def _send_daily_slot_summary(
         evidence_prefix=f"whatsapp-daily-summary-{evidence_id}-publication",
     )
     if not publication_sent:
+        delivery_components["publication"] = "uncertain"
         context.close()
         return _result(
             "send_uncertain",
@@ -827,7 +841,9 @@ def _send_daily_slot_summary(
                 f".runtime/whatsapp-daily-summary-{evidence_id}-publication-"
                 "text-send-uncertain.png"
             ),
+            delivery_components=delivery_components,
         )
+    delivery_components["publication"] = "confirmed"
     _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-sent")
     context.close()
     return _result(
@@ -838,6 +854,7 @@ def _send_daily_slot_summary(
         ),
         message_id=message_id,
         sent=True,
+        delivery_components=delivery_components,
     )
 
 
@@ -1801,6 +1818,8 @@ def _message_container_signature(message) -> str:
 
 
 def _message_container_is_outgoing(message) -> bool:
+    if _message_container_has_confirmed_status(message):
+        return True
     labels = message.locator("[aria-label]")
     for index in range(labels.count()):
         label = (_safe_get_attribute(labels.nth(index), "aria-label") or "").strip()
@@ -2164,6 +2183,7 @@ def _result(
     qr_image_data_url: str | None = None,
     delivery_phase: str | None = None,
     evidence_path: str | None = None,
+    delivery_components: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     result = {
         "status": status,
@@ -2180,4 +2200,6 @@ def _result(
         result["delivery_phase"] = delivery_phase
     if evidence_path is not None:
         result["evidence_path"] = evidence_path
+    if delivery_components is not None:
+        result["delivery_components"] = dict(delivery_components)
     return result

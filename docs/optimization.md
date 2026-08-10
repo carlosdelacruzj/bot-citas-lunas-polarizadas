@@ -4,9 +4,10 @@
 
 ## Limite acordado
 
-La etapa actual mide sin modificar clics, esperas, proveedor CAPTCHA,
-reintentos, orden, concurrencia, leases, sesiones ni confirmacion. Un cambio
-funcional requiere revisar primero la evidencia con el usuario.
+La etapa actual mide los cambios ya autorizados `OBS-006` y `OBS-007` sin
+introducir simultaneamente otros cambios de clics, esperas, proveedor CAPTCHA,
+orden, leases o confirmacion. Cualquier variacion adicional requiere revisar
+primero la evidencia con el usuario.
 
 El objetivo es aumentar `registered / intentos compatibles`, no reducir tiempo
 aisladamente. `blocked_by_order_rule` y `priority_deferred` no cuentan como
@@ -45,7 +46,8 @@ appointment-bot-client optimization-observation `
    segundos terminaron en 13 `slot_lost` y 25 `registered`.
 3. Secuencia: las tandas se agrupan por sede/fecha/hora y se separan cuando hay
    más de cinco minutos entre eventos. La cifra es un proxy, no inventario del
-   portal. La concurrencia sigue desactivada.
+   portal. La rafaga `OBS-006` esta activa con maximo dos sesiones, pero sigue
+   pendiente de su primera validacion con disponibilidad real.
 4. `fetch_probe`: permanece observacional y nunca autoriza una reserva.
 5. Calendario: el bot no realiza búsquedas los domingos.
 

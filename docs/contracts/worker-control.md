@@ -5,8 +5,10 @@ admin API separado.
 
 ## Estado actual
 
-Hoy `continuous_host.py` crea `ContinuousWorker` y la API local en el mismo
-proceso. Por eso estos endpoints llaman metodos del objeto en memoria:
+La topologia principal ejecuta `appointment-bot-worker` y
+`appointment-bot-admin-api` como procesos independientes. La API embebida de
+`8765` permanece como compatibilidad de rollback y, solo en ese modo, llama
+metodos del objeto `ContinuousWorker` en memoria:
 
 - `POST /api/v1/worker/pause`
 - `POST /api/v1/worker/resume`

@@ -1,5 +1,8 @@
 # Incidente de backoff por fechas fuera de rango del 24-07-2026
 
+> Postmortem historico. La restriccion horaria descrita en el corte fue retirada
+> posteriormente; solo el roadmap vigente puede mantener trabajo pendiente.
+
 ## Estado
 
 Incidente diagnosticado. Mejora implementada y cargada en el worker el
@@ -12,7 +15,7 @@ comportamiento que se queria corregir de las protecciones que deben conservarse.
 
 ## Resumen
 
-La orden `order-009059550`, correspondiente a Juan Jose Elwart, permitia citas
+La orden `order-***`, correspondiente a un cliente identificado y oculto, permitia citas
 desde el 05-08-2026 hasta el 18-08-2026.
 
 El 24-07-2026 a las 16:52 hora Lima, el portal mostro fechas y horas disponibles,

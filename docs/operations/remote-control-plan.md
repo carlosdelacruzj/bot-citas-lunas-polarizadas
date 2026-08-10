@@ -1,5 +1,7 @@
 # Plan de control remoto por Telegram
 
+> Plan completado y conservado como historial. No funciona como roadmap.
+
 Estado general: Fase 4 completada y validada en operacion real.
 
 Revisión vigente `2026-08-07`: la interfaz conserva el alta manual autorizada,

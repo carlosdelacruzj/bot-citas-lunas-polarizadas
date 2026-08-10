@@ -2,6 +2,11 @@
 
 Fecha de inicio: 21 de julio de 2026.
 
+Estado actual al 9 de agosto de 2026: el runtime carga `v3_selected` y
+`v6_sequence_candidate`; 2Captcha sigue siendo la unica autoridad enviada al
+portal. Los modelos, benchmarks y muestras anteriores se conservan como
+historia y no cuentan para el gate prospectivo V6 de `500/>99%`.
+
 Contrato fuente:
 `C:\Users\CARLOS\Desktop\Codex\test-captcha\INTEGRACION_SERVICIO_SOMBRA.md`.
 
@@ -147,8 +152,8 @@ Las dos imágenes afectadas se reprocesaron desde la evidencia conservada:
 
 | Evento | Respuesta 2Captcha | `v2_selected` | Inferencia | Solicitud completa |
 | --- | --- | --- | ---: | ---: |
-| Reserva confirmada de las 14:14 | `E9UHM` | `E9UHM` | 8.543 ms | 532.048 ms en la primera llamada |
-| Cupo perdido de las 14:15 | `9M9FH` | `9M9FH` | 5.448 ms | 44.859 ms con modelos calientes |
+| Reserva confirmada de las 14:14 | `oculto` | `oculto` | 8.543 ms | 532.048 ms en la primera llamada |
+| Cupo perdido de las 14:15 | `oculto` | `oculto` | 5.448 ms | 44.859 ms con modelos calientes |
 
 La primera respuesta tiene referencia confirmada por el portal. En la segunda, el modelo
 seleccionado y 2Captcha coincidieron, pero `portal_accepted` permanece `null` porque el cupo se

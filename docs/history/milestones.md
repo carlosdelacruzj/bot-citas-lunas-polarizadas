@@ -16,7 +16,7 @@ por fecha. No es un roadmap; el estado actual vive en `../project-status.md`.
 
 ## 30 de junio de 2026 - Primera reserva automatica efectiva
 
-- Orden: `order-42334486`.
+- Orden: `order-***`.
 - Cita: `15/07/2026 11:00`, `LIMA-LA VICTORIA`.
 - El bot detecto, selecciono, resolvio CAPTCHA y pulso `Reservar`.
 - La corrida inmediata termino `reservation_unconfirmed` porque no vio

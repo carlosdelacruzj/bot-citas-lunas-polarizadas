@@ -1,5 +1,8 @@
 # Incidente de validacion de identidad del 15-07-2026
 
+> Postmortem historico cerrado. Sus acciones pendientes, si existieran, solo
+> son vigentes cuando aparecen en `docs/roadmap/README.md`.
+
 ## Resultado del analisis
 
 Las ordenes de Bryanha Rubinos y Ken Escobedo iniciaron sesiones Playwright separadas,

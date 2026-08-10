@@ -1,5 +1,8 @@
 # Trazado del dashboard de WhatsApp — 22-07-2026
 
+> Evidencia historica del dashboard inicial. No describe por si sola el flujo
+> automatico vigente.
+
 ## Objetivo
 
 Validar el simulacro **Probar post-pago** desde el dashboard local, usando el

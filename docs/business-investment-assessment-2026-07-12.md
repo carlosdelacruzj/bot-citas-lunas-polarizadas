@@ -1,5 +1,8 @@
 # Diagnostico tecnico del negocio e inversiones
 
+> Analisis historico con corte cerrado. Sus cifras y recomendaciones no
+> gobiernan el estado ni el roadmap actuales.
+
 Fecha de corte: `2026-07-12` (America/Lima).
 
 Este documento resume el negocio, su sistema operativo, los resultados economicos

@@ -217,13 +217,15 @@ Estados internos adicionales:
   notificacion diferida de Telegram; si la revision falla, se conserva la captura
   original como respaldo. Es posprocesamiento: nunca se ejecuta entre intentos ni
   cuando la cola se detuvo por pausa, limite, incertidumbre o error.
-- WhatsApp es un flujo asistido y no forma parte del camino critico de reserva.
-  Solo una reserva `confirmed` con orden `reserved_payment_pending`, pago pendiente,
-  monto, contacto internacional y constancia segura puede preparar confirmacion y
-  cobro.
-- Preparar o abrir el chat deja el mensaje en `prepared`. Solo la confirmacion
-  explicita del operador lo cambia a `sent`; ese cambio no marca el pago como
-  cobrado. Los paquetes `test_mode=true` no cambian ordenes, reservas ni pagos.
+- WhatsApp es un flujo automatico durable posterior a la reserva y no forma
+  parte del camino critico de reserva. Solo una reserva `confirmed` con orden
+  `reserved_payment_pending`, pago pendiente, monto, contacto internacional y
+  constancia segura puede encolar confirmacion y cobro.
+- `whatsapp_automation_jobs` gobierna `queued`, `blocked`, `running`, `sent`,
+  `failed` y `uncertain`. Un `sent` exige evidencia segura; una entrega ambigua
+  queda `uncertain` y nunca se reintenta automaticamente. Ese estado no marca
+  el pago como cobrado. Los paquetes `test_mode=true` no cambian ordenes,
+  reservas ni pagos.
 - La bandeja operativa no considera pendiente a toda orden pagada. El estado
   accionable combina evidencia real `sent` y el trabajo durable de
   `whatsapp_automation_jobs`:

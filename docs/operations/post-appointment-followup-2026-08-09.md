@@ -141,14 +141,14 @@ portal ni se activó la parada por tres fallos técnicos consecutivos.
 | Esperando actualización | 4 |
 | Revisión manual requerida | 0 |
 
-Acceso al portal: `92` correctos y `16` credenciales rechazadas. Macario fue
+Acceso al portal: `92` correctos y `16` credenciales rechazadas. Un caso fue
 corregido de `review_required` a `completed` al abrir expresamente el expediente
-`27199`, placa `CKJ799`: las seis etapas figuran `Atendido`.
+`*****`, placa `******`: las seis etapas figuran `Atendido`.
 
 El esquema `v49` también reconcilió de forma determinista las reservas antiguas
-que tenían un único trámite históricamente `PENDIENTE`. El padre de Anggela
+que tenían un único trámite históricamente `PENDIENTE`. Otro padre
 quedó `archived` como contenedor sin reserva propia; sus dos subtrámites siguen
-separados y confirmados como `28600/BWS839` y `28614/CZU668`. Ambos conservan
+separados y confirmados con expediente y placa enmascarados. Ambos conservan
 `access_lost` porque sus credenciales actuales ya no permiten una nueva lectura.
 
 ## Rollback de la identidad de trámite
@@ -159,5 +159,5 @@ anterior y ocultar expediente, placa y agrupación del dashboard. Las columnas
 `post_appointment_stage_snapshots.message_text` pueden permanecer sin afectar
 la reserva. No vaciar esos campos: son la trazabilidad que permite saber qué
 trámite fue gestionado. Si se revierte únicamente la clasificación visual del
-padre de Anggela, puede restaurarse manualmente su estado `paused`, pero no debe
+padre archivado, puede restaurarse manualmente su estado `paused`, pero no debe
 reactivarse en la cola mientras existan sus dos subtrámites.

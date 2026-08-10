@@ -1,5 +1,8 @@
 # Ajuste controlado del observer - 22-07-2026
 
+> Documento historico de un ajuste ya aplicado. La configuracion y riesgos
+> vigentes estan en `docs/project-status.md` y `docs/roadmap/README.md`.
+
 ## Objetivo
 
 Aumentar las consultas realizadas dentro de una misma sesión autenticada sin

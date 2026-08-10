@@ -1,6 +1,13 @@
 # Contrato del dashboard de CAPTCHA sombra
 
-Fecha de referencia: 21 de julio de 2026.
+Fecha de referencia original: 21 de julio de 2026.
+
+> Estado actual al 9 de agosto de 2026: el runtime sombra carga solamente
+> `v3_selected` y `v6_sequence_candidate`. Las tablas de tres modelos y las
+> cifras de julio son evidencia historica de la implementacion inicial, no el
+> gate vigente. `2Captcha` sigue siendo la autoridad de reserva; V6 necesita
+> 500 muestras frescas posteriores al freeze y etiquetadas manualmente antes de
+> poder reconsiderar esa frontera.
 
 ## Objetivo
 
@@ -105,7 +112,7 @@ Implementado y activado el 21 de julio de 2026:
 - API confirmó dos eventos, tres predicciones por evento y ambas imágenes disponibles;
 - filtro `Coinciden` devolvió dos eventos;
 - filtro de portal `Aceptados` devolvió un evento;
-- búsqueda `9M9FH` devolvió el evento esperado;
+- una búsqueda por respuesta sanitizada devolvió el evento esperado;
 - tiempos históricos de 2Captcha visibles: 1374 ms y 12617 ms;
 - worker reiniciado con captura futura de `external_solve_ms` activa;
 - dispatcher durable reiniciado con `pending=0`.
