@@ -517,6 +517,115 @@ export interface MonthlySummary {
   };
 }
 
+export interface MetricRatio {
+  value: number;
+  numerator: number;
+  denominator: number;
+}
+
+export interface MetricPeriod {
+  start: string;
+  end_exclusive: string;
+  coverage_end_exclusive: string;
+  is_closed: boolean;
+}
+
+export interface MonthlyEventMetrics {
+  orders_created: number;
+  confirmed_reservation_events: number;
+  orders_reserved: number;
+  payments_received: number;
+  revenue_collected: number;
+  average_ticket: MetricRatio;
+  daily_revenue: Array<{ date: string; amount: number; payments: number }>;
+}
+
+export interface MonthlyPeriodMetrics extends MonthlyEventMetrics {
+  period: MetricPeriod;
+}
+
+export interface MonthlySummaryV2 {
+  contract_version: '2.0';
+  month: string;
+  as_of: string;
+  period_metrics: MonthlyPeriodMetrics;
+  cohort_metrics: {
+    cohort: {
+      created_from: string;
+      created_to_exclusive: string;
+      outcomes_observed_as_of: string;
+    };
+    orders_created: number;
+    orders_ever_reserved: number;
+    orders_ever_paid: number;
+    revenue_ever_collected: number;
+    reservation_conversion_rate: MetricRatio;
+    payment_conversion_rate: MetricRatio;
+    funnel: {
+      validated: {
+        orders_created: number;
+        orders_ever_reserved: number;
+        orders_ever_paid: number;
+      };
+      legacy_not_required: {
+        orders_created: number;
+        orders_ever_reserved: number;
+        orders_ever_paid: number;
+      };
+      note: string;
+    };
+    sources: Array<{
+      source: string;
+      orders_created: number;
+      order_creation_source_orders: number;
+      historical_backfill_source_orders: number;
+      orders_ever_reserved: number;
+      orders_ever_paid: number;
+      revenue_ever_collected: number;
+    }>;
+    source_semantics: {
+      preferred: string;
+      historical_backfill: string;
+      historical_fallback: string;
+      frozen_storage_available: boolean;
+    };
+  };
+  current_attention_snapshot: {
+    as_of: string;
+    active_orders: number;
+    missing_contact_count: number;
+    valid_contact_rule: string;
+    pending_payments: number;
+    pending_amount: number;
+    pending_payment_items: Array<{
+      order_id: string;
+      name: string;
+      source: string;
+      pending_amount: number;
+      reservation_date: string | null;
+      reservation_hour: string | null;
+    }>;
+    aged_active_orders: Array<{
+      order_id: string;
+      name: string;
+      status: string;
+      created_date: string;
+    }>;
+    list_limit: number;
+  };
+  comparisons: {
+    same_day_window: {
+      elapsed_days: number;
+      selected: { period: MetricPeriod; metrics: MonthlyEventMetrics };
+      previous: { period: MetricPeriod; metrics: MonthlyEventMetrics };
+    } | null;
+    closed_months: {
+      selected: { period: MetricPeriod; metrics: MonthlyEventMetrics };
+      previous: { period: MetricPeriod; metrics: MonthlyEventMetrics };
+    };
+  };
+}
+
 export interface FinanceCategory {
   category_code: string;
   display_name: string;
@@ -585,11 +694,85 @@ export interface FinanceSummary {
   unconverted_entries: number;
   active_entries: number;
   is_complete: boolean;
+  conversion_complete?: boolean;
+  cost_capture_complete?: null;
+  completeness_semantics?: string;
   by_category: Array<{
     category_code: string;
     category_name: string;
     recognized_cost: number;
   }>;
+}
+
+export type PaymentResolutionType = 'discount' | 'waiver' | 'correction';
+
+export interface FinanceDataQualitySummary {
+  month: string;
+  data_quality: Record<FinanceDataQuality, {
+    entry_count: number;
+    amount_pen: number;
+    unconverted_count: number;
+  }>;
+  unconverted_entries: Array<{
+    entry_id: string;
+    occurred_on: string;
+    entry_kind: FinanceEntryKind;
+    category_code: string;
+    description: string;
+    amount_original: number;
+    currency: string;
+    data_quality: FinanceDataQuality;
+  }>;
+  paid_amount_mismatches: Array<{
+    payment_id: string;
+    order_id: string;
+    amount_agreed: number | null;
+    amount_paid: number | null;
+    difference: number | null;
+    currency: string;
+    paid_at: string | null;
+    reconciliation: {
+      resolution_type: PaymentResolutionType;
+      reason: string;
+      reconciled_by: string;
+      reconciled_at: string;
+    } | null;
+  }>;
+  unreconciled_paid_amount_mismatch_count: number;
+}
+
+export interface FinanceMonthClosure {
+  month: string;
+  closure: {
+    opening_prepaid_balance: number | null;
+    closing_prepaid_balance: number | null;
+    status: 'draft' | 'reconciled';
+    reconciled_at: string | null;
+    reconciled_by: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  movements: {
+    prepaid_topups: number;
+    prepaid_consumption: number;
+    refunds: number;
+    prepaid_refunds: number;
+    pending_entries: number;
+    unconverted_entries: number;
+    estimated_entries: number;
+  };
+  expected_closing_prepaid_balance: number | null;
+  balance_difference: number | null;
+}
+
+export interface FinanceMonthClosurePayload {
+  month: string;
+  opening_prepaid_balance: string | null;
+  closing_prepaid_balance: string | null;
+  status: 'draft' | 'reconciled';
+  reconciled_by: string | null;
+  notes: string | null;
 }
 
 export interface ApiActionResponse {
@@ -908,6 +1091,13 @@ export class AppointmentApiService {
     );
   }
 
+  async getMonthlySummaryV2(month: string, scope?: RequestScope): Promise<MonthlySummaryV2> {
+    return this.read<MonthlySummaryV2>(
+      `/api/v2/monthly-summary?month=${encodeURIComponent(month)}`,
+      scope,
+    );
+  }
+
   async getFinanceCategories(scope?: RequestScope): Promise<FinanceCategory[]> {
     const response = await this.read<{ categories: FinanceCategory[] }>(
       '/api/v1/finance/categories',
@@ -928,6 +1118,45 @@ export class AppointmentApiService {
     return this.read<FinanceSummary>(
       `/api/v1/finance/summary?month=${encodeURIComponent(month)}`,
       scope,
+    );
+  }
+
+  async getFinanceDataQuality(
+    month: string,
+    scope?: RequestScope,
+  ): Promise<FinanceDataQualitySummary> {
+    return this.read<FinanceDataQualitySummary>(
+      `/api/v1/finance/data-quality?month=${encodeURIComponent(month)}`,
+      scope,
+    );
+  }
+
+  async getFinanceMonthClosure(
+    month: string,
+    scope?: RequestScope,
+  ): Promise<FinanceMonthClosure> {
+    return this.read<FinanceMonthClosure>(
+      `/api/v1/finance/month-closure?month=${encodeURIComponent(month)}`,
+      scope,
+    );
+  }
+
+  async saveFinanceMonthClosure(
+    payload: FinanceMonthClosurePayload,
+  ): Promise<FinanceMonthClosure & { status: string }> {
+    return this.post<FinanceMonthClosure & { status: string }>(
+      '/api/v1/finance/month-closure',
+      payload,
+    );
+  }
+
+  async reconcileFinancePaymentAmount(
+    paymentId: string,
+    payload: { resolution_type: PaymentResolutionType; reason: string; reconciled_by: string },
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/finance/payments/${encodeURIComponent(paymentId)}/reconcile-amount`,
+      payload,
     );
   }
 

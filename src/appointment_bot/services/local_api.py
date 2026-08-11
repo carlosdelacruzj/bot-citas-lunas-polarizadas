@@ -29,10 +29,15 @@ from appointment_bot.services.api.captcha_shadow_routes import (
 from appointment_bot.services.api.finance_routes import (
     create_finance_entry_payload,
     finance_categories_payload,
+    finance_data_quality_payload,
     finance_entries_payload,
     finance_entry_action_path,
+    finance_month_closure_payload,
+    finance_payment_reconciliation_path,
     finance_summary_payload,
+    reconcile_payment_amount_payload,
     update_finance_entry_payload,
+    upsert_finance_month_closure_payload,
     void_finance_entry_payload,
 )
 from appointment_bot.services.api.http import (
@@ -51,6 +56,7 @@ from appointment_bot.services.api.manual_session_routes import (
     open_manual_session_payload,
 )
 from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
+from appointment_bot.services.api.monthly_dashboard_v2_routes import monthly_dashboard_v2_payload
 from appointment_bot.services.api.opportunity_routes import (
     opportunity_burst_id,
     opportunity_burst_payload,
@@ -271,6 +277,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
 
+        if path == "/api/v2/monthly-summary":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = monthly_dashboard_v2_payload(query)
+            self._send_json(status, payload)
+            return
+
         if path == "/api/v1/finance/categories":
             if not self._require_authorized(strict=True):
                 return
@@ -288,6 +301,20 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = finance_summary_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/finance/data-quality":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = finance_data_quality_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/finance/month-closure":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = finance_month_closure_payload(query)
             self._send_json(status, payload)
             return
 
@@ -564,6 +591,24 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = void_finance_entry_payload(finance_void_id, self._read_json())
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/finance/month-closure":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = upsert_finance_month_closure_payload(self._read_json())
+            self._send_json(status, payload)
+            return
+
+        finance_payment_id = finance_payment_reconciliation_path(path)
+        if finance_payment_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = reconcile_payment_amount_payload(
+                finance_payment_id,
+                self._read_json(),
+            )
             self._send_json(status, payload)
             return
 

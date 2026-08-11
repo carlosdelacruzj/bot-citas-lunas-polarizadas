@@ -20,11 +20,11 @@ Estado verificado el `2026-08-10`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Corte diario normal       | El supervisor sigue vivo; el proceso terminó con código `0` a las 18:00 y espera el siguiente arranque de las 07:30. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v51` aplicado con control durable de autoridad CAPTCHA.                  |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v54` aplicado con autoridad CAPTCHA, calidad financiera, cierres y fuente de captación preservada. |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
 | CAPTCHA local         | Canario activo           | V6 tiene hasta `20` decisiones con umbrales `0.60/0.60`; V3 queda en sombra y 2Captcha es fallback automático. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo con deuda de seguridad | Build correcto; bundle inicial de `521.65 kB`. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
+| Dashboard             | Operativo con deuda de seguridad | Build Fase 2 correcto; bundle inicial de `527.23 kB`. La vista principal prioriza cobros, reservas, pendientes y evolución diaria; el análisis y cierre quedan plegados. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -274,6 +274,25 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `Página X de Y` y sus cabeceras ordenables exponen `aria-sort`.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
+- Implementado el `2026-08-10` en paralelo con la muestra pasiva de Fase 1: el
+  contrato comercial v2 separa eventos del periodo, cohorte de altas y atención
+  viva. MTD se compara contra los mismos días del mes anterior y los meses
+  cerrados se comparan por separado. Cada tasa conserva numerador, denominador,
+  cobertura y corte; el endpoint v1 permanece como rollback.
+- PostgreSQL `v54` conserva `acquisition_source` en la orden. Las altas nuevas
+  congelan la fuente recibida al crearse; `113` órdenes históricas se marcaron
+  explícitamente como `historical_backfill` y `6` continúan sin fuente, por lo
+  que esa migración no se presenta como prueba del origen original.
+- El contacto comercial requiere ausencia simultánea de teléfono y username
+  para figurar como faltante. El centro de calidad financiera separa datos
+  reales, estimados y pendientes, conversiones faltantes y pagos con diferencia
+  contra lo acordado. El único caso actual de `S/10` permanece sin clasificar:
+  la API exige descuento, condonación o corrección con motivo y responsable.
+- El cierre financiero mensual conserva saldos, recargas, consumo, reembolsos,
+  conciliación y responsable. Bloquea meses actuales/futuros, datos pendientes,
+  pagos sin resolver y balances inconsistentes. `is_complete` solo significa
+  conversión monetaria completa; costos unitarios, margen porcentual, CAC y
+  ROAS continúan ocultos hasta reconciliar captura y atribución.
 - Retirado el `2026-08-07`: el registro por invitaciones dejó de formar parte
   del dashboard, Admin API, Telegram y arranque. PostgreSQL v43 elimina su tabla
   local; el alta manual de clientes permanece disponible.
@@ -670,15 +689,41 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
     desde PostgreSQL, pero todavía no existe la muestra productiva mínima de
     `10` ráfagas y `30` auxiliares. No debe decidirse continuidad o escalamiento
     antes de completar y comparar ese corte.
-13. El Resumen mensual mezcla eventos del periodo, cohortes de alta y una
-    fotografía actual de pendientes. También compara mes parcial contra mes
-    completo y considera faltante un contacto válido por `@usuario`. Estas
-    tarjetas no deben gobernar decisiones comerciales hasta separar sus
-    universos y fechas de corte.
+13. El Resumen v1 todavía mezcla eventos, cohortes y atención actual, por lo que
+    se conserva solo como rollback. El dashboard comercial usa el contrato v2;
+    queda pendiente completar la conciliación histórica de costos y fuentes
+    antes de habilitar margen porcentual, costos unitarios, CAC o ROAS.
 14. No existe todavía un backup cifrado durable fuera de la PC ni monitoreo que
     sobreviva a la caída completa del equipo operativo.
 
 ## Validación del corte
+
+- Fase 2 técnica del `2026-08-10`: PostgreSQL migró aditivamente de `v51` a
+  `v54`; una creación limpia del esquema y `_validate_current_schema` pasaron
+  dentro de una transacción revertida sin dejar schemas temporales. Los cinco
+  endpoints de lectura v1/v2/finanzas respondieron `200` después de reiniciar
+  únicamente Admin API con cero trabajos WhatsApp activos. Dos POST inválidos
+  comprobaron el enrutado de cierre y reconciliación con `400` sin escribir
+  datos. `compileall`, Ruff, `59 passed`, build Angular de `527.23 kB` sin
+  warnings y `git diff --check` quedaron correctos.
+- Ajuste de interfaz del `2026-08-10`: la semántica y controles de Fase 2 se
+  conservaron, pero el Resumen volvió a una lectura operativa breve con cuatro
+  cifras, gráfico de cobros diarios y cobros pendientes. Cohortes, fuentes,
+  comparaciones ampliadas, calidad financiera y cierre mensual quedan plegados
+  por defecto para evitar aglomeración visual.
+- Simplificación adicional del `2026-08-10`: la vista normal ya no muestra
+  cohortes ni vocabulario de auditoría. CAPTCHA, ráfagas, soporte, movimientos y
+  revisión financiera aparecen como bloques cerrados que el operador abre solo
+  cuando necesita cambiar o corregir algo.
+- La revisión de Fase 2 confirmó `119` órdenes, `112` órdenes con reserva,
+  `105` pagos y `S/4,355` cobrados acumulados. Agosto MTD separa `S/1,130` de
+  eventos cobrados frente a `S/930` atribuibles a la cohorte creada en agosto.
+  El único pago `paid != agreed` conserva diferencia `-S/10` sin causa y no fue
+  modificado. No existe evidencia reconciliada suficiente para mostrar costo
+  CAPTCHA por reserva, margen porcentual, CAC o ROAS.
+- La inspección visual automatizada no pudo ejecutarse porque el navegador
+  integrado no expuso ninguna instancia. El build, bundle servido y contratos
+  HTTP están validados, pero no se afirma aprobación visual humana.
 
 - Fase 1 técnica del `2026-08-10`: migración PostgreSQL `v49 -> v50` aplicada
   sin borrar datos; verificadas las cinco tablas nuevas y el control inicial

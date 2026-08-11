@@ -189,7 +189,7 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                reservation_price,
+                reservation_price, acquisition_source, acquisition_source_origin,
                 minimum_hour, minimum_date, maximum_date, allowed_weekdays,
                 excluded_date_ranges,
                 parent_order_id, program_expediente, program_plate,
@@ -197,13 +197,21 @@ def create_service_order(
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
                 priority = excluded.priority,
                 charge_required = excluded.charge_required,
+                acquisition_source = COALESCE(
+                    service_orders.acquisition_source,
+                    excluded.acquisition_source
+                ),
+                acquisition_source_origin = COALESCE(
+                    service_orders.acquisition_source_origin,
+                    excluded.acquisition_source_origin
+                ),
                 minimum_hour = NULL,
                 minimum_date = COALESCE(excluded.minimum_date, service_orders.minimum_date),
                 maximum_date = COALESCE(excluded.maximum_date, service_orders.maximum_date),
@@ -239,6 +247,8 @@ def create_service_order(
                 priority,
                 charge_required,
                 effective_reservation_price,
+                _optional_clean_text(contact_source),
+                "order_creation" if _optional_clean_text(contact_source) else None,
                 None,
                 parsed_minimum_date,
                 parsed_maximum_date,

@@ -35,14 +35,18 @@ import {
   ExcludedDateRange,
   FinanceCategory,
   FinanceDataQuality,
+  FinanceDataQualitySummary,
   FinanceEntry,
   FinanceEntryKind,
   FinanceEntryPayload,
   FinanceSummary,
+  FinanceMonthClosure,
   HealthPayload,
   ManualSession,
   ManualSessionMode,
-  MonthlySummary,
+  MetricPeriod,
+  MonthlySummaryV2,
+  PaymentResolutionType,
   OpportunityBurst,
   OpportunityControl,
   OpportunityControlAction,
@@ -506,12 +510,22 @@ export class App implements OnDestroy {
   protected readonly manualSessions = signal<ManualSession[]>([]);
   protected readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
   protected readonly selectedMonth = signal(INITIAL_MONTH);
-  protected readonly monthlySummary = signal<MonthlySummary | null>(null);
+  protected readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
   protected readonly monthlyLoading = signal(false);
   protected readonly financeCategories = signal<FinanceCategory[]>([]);
   protected readonly financeEntries = signal<FinanceEntry[]>([]);
   protected readonly financeSummary = signal<FinanceSummary | null>(null);
+  protected readonly financeQuality = signal<FinanceDataQualitySummary | null>(null);
+  protected readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
   protected readonly financeLoading = signal(false);
+  protected readonly financeClosureOpeningBalance = signal('');
+  protected readonly financeClosureClosingBalance = signal('');
+  protected readonly financeClosureReconciledBy = signal('');
+  protected readonly financeClosureNotes = signal('');
+  protected readonly financeMismatchPaymentId = signal('');
+  protected readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
+  protected readonly financeMismatchReason = signal('');
+  protected readonly financeMismatchReconciledBy = signal('');
   protected readonly editingFinanceEntryId = signal('');
   protected readonly financeOccurredOn = signal(INITIAL_DATE);
   protected readonly financeEntryKind = signal<FinanceEntryKind>('expense');
@@ -749,14 +763,17 @@ export class App implements OnDestroy {
         order.status === 'reserved_payment_pending' &&
         order.reservation_status === 'confirmed' &&
         order.payment_status === 'pending';
-      if (hasPendingReservationPayment && !order.contact_whatsapp_masked) {
+      const hasOperationalContact = Boolean(
+        order.contact_whatsapp_masked || order.contact_whatsapp_username_masked,
+      );
+      if (hasPendingReservationPayment && !hasOperationalContact) {
         tasks.push({
           key: `contact-${order.order_id}`,
           kind: 'contact',
           order,
-          title: 'Completar WhatsApp del cliente',
+          title: 'Completar contacto del cliente',
           description:
-            'La reserva está confirmada, pero falta un WhatsApp válido para contactar al cliente.',
+            'La reserva está confirmada, pero falta un teléfono o @usuario válido.',
           label: 'Contacto',
           actionLabel: 'Corregir contacto',
           icon: '@',
@@ -1447,7 +1464,7 @@ export class App implements OnDestroy {
       ] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getRuns(scope),
-        this.api.getMonthlySummary(this.selectedMonth(), scope),
+        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
         this.api.getCaptchaSamplingControl(scope),
         this.api.getCaptchaAuthorityControl(scope),
         this.api.getOpportunityControl(scope),
@@ -1466,14 +1483,27 @@ export class App implements OnDestroy {
       const categoriesRequest = this.financeCategories().length
         ? Promise.resolve(this.financeCategories())
         : this.api.getFinanceCategories(scope);
-      const [financeCategories, financeEntries, financeSummary] = await Promise.all([
+      const [
+        financeCategories,
+        financeEntries,
+        financeSummary,
+        financeQuality,
+        financeMonthClosure,
+        monthlySummary,
+      ] = await Promise.all([
         categoriesRequest,
         this.api.getFinanceEntries(this.selectedMonth(), scope),
         this.api.getFinanceSummary(this.selectedMonth(), scope),
+        this.api.getFinanceDataQuality(this.selectedMonth(), scope),
+        this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
+        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
       ]);
       this.financeCategories.set(financeCategories);
       this.financeEntries.set(financeEntries);
       this.financeSummary.set(financeSummary);
+      this.financeQuality.set(financeQuality);
+      this.applyFinanceMonthClosure(financeMonthClosure);
+      this.monthlySummary.set(monthlySummary);
       return;
     }
     if (view === 'orders') {
@@ -2100,14 +2130,20 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     try {
       if (view === 'summary') {
-        this.monthlySummary.set(await this.api.getMonthlySummary(month));
+        this.monthlySummary.set(await this.api.getMonthlySummaryV2(month));
       } else {
-        const [entries, financeSummary] = await Promise.all([
+        const [entries, financeSummary, financeQuality, financeMonthClosure, monthlySummary] = await Promise.all([
           this.api.getFinanceEntries(month),
           this.api.getFinanceSummary(month),
+          this.api.getFinanceDataQuality(month),
+          this.api.getFinanceMonthClosure(month),
+          this.api.getMonthlySummaryV2(month),
         ]);
         this.financeEntries.set(entries);
         this.financeSummary.set(financeSummary);
+        this.financeQuality.set(financeQuality);
+        this.applyFinanceMonthClosure(financeMonthClosure);
+        this.monthlySummary.set(monthlySummary);
       }
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -2153,6 +2189,13 @@ export class App implements OnDestroy {
     this.financeNotes.set(entry.notes ?? '');
     this.financeDataQuality.set(entry.data_quality);
     this.openModal('finance-entry');
+  }
+
+  protected openEditFinanceEntryById(entryId: string): void {
+    const entry = this.financeEntries().find((item) => item.entry_id === entryId);
+    if (entry) {
+      this.openEditFinanceEntry(entry);
+    }
   }
 
   protected requestSaveFinanceEntry(): void {
@@ -2219,8 +2262,121 @@ export class App implements OnDestroy {
     return labels[kind];
   }
 
+  protected financeConversionComplete(summary: FinanceSummary): boolean {
+    return summary.conversion_complete ?? summary.is_complete;
+  }
+
   protected formatOriginalMoney(entry: FinanceEntry): string {
     return `${entry.currency} ${entry.amount_original.toFixed(entry.currency === 'PEN' ? 2 : 4)}`;
+  }
+
+  protected startFinanceMismatchResolution(paymentId: string): void {
+    this.financeMismatchPaymentId.set(paymentId);
+    this.financeMismatchResolution.set('discount');
+    this.financeMismatchReason.set('');
+    this.financeMismatchReconciledBy.set('');
+  }
+
+  protected cancelFinanceMismatchResolution(): void {
+    this.financeMismatchPaymentId.set('');
+    this.financeMismatchReason.set('');
+    this.financeMismatchReconciledBy.set('');
+  }
+
+  protected requestReconcileFinancePayment(paymentId: string): void {
+    const reason = this.financeMismatchReason().trim();
+    const reconciledBy = this.financeMismatchReconciledBy().trim();
+    if (reason.length < 3 || !reconciledBy) {
+      this.errorMessage.set('Indica una causa de al menos 3 caracteres y el responsable.');
+      return;
+    }
+    const resolution = this.financeMismatchResolution();
+    void this.setPendingAction({
+      title: 'Conciliar diferencia de pago',
+      message: `Registrar ${this.financeResolutionLabel(resolution).toLowerCase()} como causa explícita. El importe original no se reescribe.`,
+      execute: () =>
+        this.api.reconcileFinancePaymentAmount(paymentId, {
+          resolution_type: resolution,
+          reason,
+          reconciled_by: reconciledBy,
+        }),
+      successMessage: 'Diferencia de pago conciliada',
+      onSuccess: () => this.cancelFinanceMismatchResolution(),
+    });
+  }
+
+  protected financeResolutionLabel(resolution: PaymentResolutionType): string {
+    return {
+      discount: 'Descuento',
+      waiver: 'Condonación',
+      correction: 'Corrección',
+    }[resolution];
+  }
+
+  protected requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
+    const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
+    const closing = String(this.financeClosureClosingBalance() ?? '').trim();
+    const reconciledBy = this.financeClosureReconciledBy().trim();
+    if (status === 'reconciled' && (!opening || !closing || !reconciledBy)) {
+      this.errorMessage.set('Para conciliar, completa saldo inicial, saldo final y responsable.');
+      return;
+    }
+    void this.setPendingAction({
+      title: status === 'reconciled' ? 'Cerrar mes financiero' : 'Guardar borrador de cierre',
+      message:
+        status === 'reconciled'
+          ? 'El cierre solo se guardará si no quedan movimientos pendientes, conversiones faltantes ni diferencias de pago sin conciliar.'
+          : 'Se guardarán los saldos y notas sin declarar el mes conciliado.',
+      execute: () =>
+        this.api.saveFinanceMonthClosure({
+          month: this.selectedMonth(),
+          opening_prepaid_balance: opening || null,
+          closing_prepaid_balance: closing || null,
+          status,
+          reconciled_by: status === 'reconciled' ? reconciledBy : null,
+          notes: this.financeClosureNotes().trim() || null,
+        }),
+      successMessage: status === 'reconciled' ? 'Mes financiero conciliado' : 'Borrador de cierre guardado',
+    });
+  }
+
+  protected financeClosureCanReconcile(): boolean {
+    const closure = this.financeMonthClosure();
+    const quality = this.financeQuality();
+    return Boolean(
+      closure &&
+        quality &&
+        this.financeSelectedMonthIsClosed() &&
+        closure.movements.pending_entries === 0 &&
+        closure.movements.unconverted_entries === 0 &&
+        quality.unreconciled_paid_amount_mismatch_count === 0,
+    );
+  }
+
+  protected financeSelectedMonthIsClosed(): boolean {
+    return this.selectedMonth() < INITIAL_MONTH;
+  }
+
+  protected missingAcquisitionSourceOrders(): number {
+    return (
+      this.monthlySummary()?.cohort_metrics.sources.find((source) => source.source === 'sin_fuente')
+        ?.orders_created ?? 0
+    );
+  }
+
+  protected financeReviewIssueCount(): number {
+    const quality = this.financeQuality();
+    if (!quality) {
+      return 0;
+    }
+    return (
+      quality.unreconciled_paid_amount_mismatch_count +
+      quality.unconverted_entries.length +
+      quality.data_quality.estimated.entry_count +
+      quality.data_quality.pending.entry_count +
+      (this.monthlySummary()?.current_attention_snapshot.missing_contact_count ?? 0) +
+      this.missingAcquisitionSourceOrders()
+    );
   }
 
   protected formatMoney(value: number): string {
@@ -2282,27 +2438,53 @@ export class App implements OnDestroy {
     return limits.length ? limits.join(' · ') : 'Sin restricciones de fecha';
   }
 
-  protected revenueComparison(summary: MonthlySummary): string {
-    const previous = summary.previous.revenue_collected;
-    if (!previous) {
-      return summary.metrics.revenue_collected > 0 ? 'Sin cobros en el mes anterior' : 'Sin cambio';
+  protected metricPeriodLabel(period: MetricPeriod): string {
+    if (period.coverage_end_exclusive <= period.start) {
+      return 'Sin cobertura todavía';
     }
-    const change = summary.metrics.revenue_collected / previous - 1;
-    return `${change >= 0 ? '+' : ''}${this.formatPercent(change)} frente al mes anterior`;
+    const start = this.formatDate(period.start);
+    const end = new Date(`${period.coverage_end_exclusive}T12:00:00`);
+    end.setDate(end.getDate() - 1);
+    return `${start} – ${this.formatDate(end.toISOString().slice(0, 10))}`;
   }
 
-  protected revenueComparisonTone(summary: MonthlySummary): string {
-    return summary.metrics.revenue_collected >= summary.previous.revenue_collected ? 'good' : 'bad';
+  protected selectedMonthLabel(): string {
+    const [year, month] = this.selectedMonth().split('-').map(Number);
+    return new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric' }).format(
+      new Date(year, month - 1, 1),
+    );
   }
 
-  protected dailyRevenueWidth(summary: MonthlySummary, amount: number): number {
-    const maximum = Math.max(...summary.daily_revenue.map((item) => item.amount), 0);
+  protected monthlyRevenueComparison(
+    comparison: NonNullable<MonthlySummaryV2['comparisons']['same_day_window']>,
+  ): string {
+    return this.revenueDeltaLabel(
+      comparison.selected.metrics.revenue_collected,
+      comparison.previous.metrics.revenue_collected,
+    );
+  }
+
+  protected closedMonthRevenueComparison(summary: MonthlySummaryV2): string {
+    return this.revenueDeltaLabel(
+      summary.comparisons.closed_months.selected.metrics.revenue_collected,
+      summary.comparisons.closed_months.previous.metrics.revenue_collected,
+    );
+  }
+
+  protected dailyRevenueWidth(summary: MonthlySummaryV2, amount: number): number {
+    const maximum = Math.max(
+      ...summary.period_metrics.daily_revenue.map((item) => item.amount),
+      0,
+    );
     return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
   }
 
-  protected sourceRevenueWidth(summary: MonthlySummary, amount: number): number {
-    const maximum = Math.max(...summary.sources.map((item) => item.revenue_collected), 0);
-    return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
+  private revenueDeltaLabel(current: number, previous: number): string {
+    if (!previous) {
+      return current > 0 ? `${this.formatMoney(current)} · sin cobros comparables previos` : 'Sin cobros en ambos rangos';
+    }
+    const change = current / previous - 1;
+    return `${this.formatMoney(current)} · ${change >= 0 ? '+' : ''}${this.formatPercent(change)}`;
   }
 
   protected openInboxCaptchaReview(): void {
@@ -4723,6 +4905,24 @@ export class App implements OnDestroy {
     this.financeNotes.set('');
     this.financeDataQuality.set('actual');
     this.formDirty.set(false);
+  }
+
+  private applyFinanceMonthClosure(payload: FinanceMonthClosure): void {
+    this.financeMonthClosure.set(payload);
+    this.financeClosureOpeningBalance.set(
+      payload.closure?.opening_prepaid_balance === null ||
+        payload.closure?.opening_prepaid_balance === undefined
+        ? ''
+        : String(payload.closure.opening_prepaid_balance),
+    );
+    this.financeClosureClosingBalance.set(
+      payload.closure?.closing_prepaid_balance === null ||
+        payload.closure?.closing_prepaid_balance === undefined
+        ? ''
+        : String(payload.closure.closing_prepaid_balance),
+    );
+    this.financeClosureReconciledBy.set(payload.closure?.reconciled_by ?? '');
+    this.financeClosureNotes.set(payload.closure?.notes ?? '');
   }
 
   private formatClock(date: Date): string {

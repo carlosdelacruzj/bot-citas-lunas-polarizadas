@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 51
+SCHEMA_VERSION = 54
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -94,6 +94,12 @@ def create_current_schema(connection: Connection) -> None:
             charge_required boolean NOT NULL DEFAULT true,
             reservation_price numeric(12, 2) NOT NULL DEFAULT 50.00 CHECK (
                 reservation_price > 0
+            ),
+            acquisition_source text,
+            acquisition_source_origin text CHECK (
+                acquisition_source_origin IS NULL OR acquisition_source_origin IN (
+                    'order_creation', 'historical_backfill'
+                )
             ),
             minimum_hour integer CHECK (
                 minimum_hour IS NULL OR (minimum_hour >= 0 AND minimum_hour <= 23)
@@ -330,6 +336,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_worker_commands_schema(connection)
     _create_remote_control_audit_schema(connection)
     _create_finance_schema(connection)
+    _create_finance_month_closure_schema(connection)
     _create_whatsapp_messages_schema(connection)
     _create_whatsapp_followup_messages_schema(connection)
     _create_whatsapp_automation_jobs_schema(connection)
@@ -891,6 +898,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "remote_control_audit",
         "finance_categories",
         "finance_entries",
+        "finance_month_closures",
+        "payment_amount_reconciliations",
         "whatsapp_messages",
         "whatsapp_followup_messages",
         "whatsapp_automation_jobs",
@@ -921,6 +930,8 @@ def _validate_current_schema(connection: Connection) -> None:
         ("portal_accounts", "document_type"),
         ("service_orders", "status"),
         ("service_orders", "reservation_price"),
+        ("service_orders", "acquisition_source"),
+        ("service_orders", "acquisition_source_origin"),
         ("service_orders", "minimum_hour"),
         ("service_orders", "minimum_date"),
         ("service_orders", "maximum_date"),
@@ -968,6 +979,16 @@ def _validate_current_schema(connection: Connection) -> None:
         ("finance_entries", "amount_original"),
         ("finance_entries", "amount_pen"),
         ("finance_entries", "status"),
+        ("finance_month_closures", "month_start"),
+        ("finance_month_closures", "opening_prepaid_balance"),
+        ("finance_month_closures", "closing_prepaid_balance"),
+        ("finance_month_closures", "status"),
+        ("finance_month_closures", "reconciled_at"),
+        ("finance_month_closures", "reconciled_by"),
+        ("payment_amount_reconciliations", "payment_id"),
+        ("payment_amount_reconciliations", "resolution_type"),
+        ("payment_amount_reconciliations", "reason"),
+        ("payment_amount_reconciliations", "reconciled_by"),
         ("whatsapp_messages", "message_id"),
         ("whatsapp_messages", "recipient_phone"),
         ("whatsapp_messages", "recipient_username"),
@@ -1085,6 +1106,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_opportunity_runtime_control_circuit",
         "ck_captcha_authority_circuit",
         "ck_captcha_authority_decision_resolution",
+        "ck_finance_month_closure_reconciliation",
+        "ck_payment_amount_reconciliation_reason",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -1393,6 +1416,59 @@ def _create_finance_schema(connection: Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_finance_entries_active_month
         ON finance_entries(occurred_on, entry_kind, category_code)
         WHERE status = 'active'
+        """
+    )
+
+
+def _create_finance_month_closure_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS finance_month_closures (
+            month_start date PRIMARY KEY CHECK (date_trunc('month', month_start) = month_start),
+            opening_prepaid_balance numeric(12, 2) CHECK (
+                opening_prepaid_balance IS NULL OR opening_prepaid_balance >= 0
+            ),
+            closing_prepaid_balance numeric(12, 2) CHECK (
+                closing_prepaid_balance IS NULL OR closing_prepaid_balance >= 0
+            ),
+            status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'reconciled')),
+            reconciled_at timestamptz,
+            reconciled_by text,
+            notes text,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT ck_finance_month_closure_reconciliation CHECK (
+                (
+                    status = 'draft'
+                    AND reconciled_at IS NULL
+                    AND reconciled_by IS NULL
+                )
+                OR (
+                    status = 'reconciled'
+                    AND opening_prepaid_balance IS NOT NULL
+                    AND closing_prepaid_balance IS NOT NULL
+                    AND reconciled_at IS NOT NULL
+                    AND length(btrim(reconciled_by)) > 0
+                )
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS payment_amount_reconciliations (
+            payment_id text PRIMARY KEY REFERENCES payments(payment_id) ON DELETE CASCADE,
+            resolution_type text NOT NULL CHECK (
+                resolution_type IN ('discount', 'waiver', 'correction')
+            ),
+            reason text NOT NULL,
+            reconciled_by text NOT NULL,
+            reconciled_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT ck_payment_amount_reconciliation_reason CHECK (
+                length(btrim(reason)) >= 3 AND length(btrim(reconciled_by)) > 0
+            )
+        )
         """
     )
 
@@ -2377,6 +2453,60 @@ def migrate_database(connection: Connection) -> None:
             (51,),
         )
         current_version = 51
+    if current_version == 51:
+        _create_finance_month_closure_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (52,),
+        )
+        current_version = 52
+    if current_version == 52:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN acquisition_source text
+            """
+        )
+        connection.execute(
+            """
+            UPDATE service_orders so
+            SET acquisition_source = NULLIF(BTRIM(wc.contact_source), '')
+            FROM applicant_contacts ac
+            JOIN whatsapp_contacts wc ON wc.contact_id = ac.contact_id
+            WHERE ac.applicant_id = so.applicant_id
+              AND ac.is_primary = true
+              AND so.acquisition_source IS NULL
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (53,),
+        )
+        current_version = 53
+    if current_version == 53:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN acquisition_source_origin text CHECK (
+                acquisition_source_origin IS NULL OR acquisition_source_origin IN (
+                    'order_creation', 'historical_backfill'
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            UPDATE service_orders
+            SET acquisition_source_origin = 'historical_backfill'
+            WHERE acquisition_source IS NOT NULL
+              AND acquisition_source_origin IS NULL
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (54,),
+        )
+        current_version = 54
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

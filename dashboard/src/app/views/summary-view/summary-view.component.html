@@ -1,9 +1,9 @@
-<section class="panel monthly-dashboard" aria-labelledby="monthly-dashboard-title">
+<section class="panel monthly-dashboard phase-two-summary" aria-labelledby="monthly-dashboard-title">
   <div class="panel-header monthly-header">
     <div>
-      <p class="eyebrow">Resumen mensual</p>
-      <h2 id="monthly-dashboard-title">Resultados del negocio</h2>
-      <p>Ingresos cobrados separados de pendientes y actividad operativa.</p>
+      <p class="eyebrow">Resumen del negocio</p>
+      <h2 id="monthly-dashboard-title">Lo importante del mes</h2>
+      <p>Cobros, reservas y pendientes en una lectura rápida.</p>
     </div>
     <label class="filter month-filter">
       Mes
@@ -20,133 +20,81 @@
   @if (dashboard.monthlyLoading()) {
     <p class="monthly-loading">Actualizando resumen mensual...</p>
   } @else if (dashboard.monthlySummary(); as summary) {
-    <div class="monthly-kpis">
-      <article class="monthly-kpi primary-kpi">
+    <div class="summary-glance">
+      <article class="summary-hero">
         <span>Ingresos cobrados</span>
-        <strong>{{ dashboard.formatMoney(summary.metrics.revenue_collected) }}</strong>
-        <small class="{{ dashboard.revenueComparisonTone(summary) }}">
-          {{ dashboard.revenueComparison(summary) }}
+        <strong>{{ dashboard.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+        <small>
+          {{ summary.period_metrics.payments_received }} pagos ·
+          {{ dashboard.metricPeriodLabel(summary.period_metrics.period) }}
         </small>
+        @if (summary.comparisons.same_day_window; as comparison) {
+          <p>{{ dashboard.monthlyRevenueComparison(comparison) }}</p>
+        }
       </article>
-      <article class="monthly-kpi">
-        <span>Reservas confirmadas</span>
-        <strong>{{ summary.metrics.reservations_confirmed }}</strong>
-        <small>{{ summary.metrics.orders_created }} órdenes creadas</small>
-      </article>
-      <article class="monthly-kpi warn-kpi">
-        <button type="button" class="metric-action" (click)="dashboard.showPendingPayments()">
-          <span>Pendiente por cobrar</span>
-          <strong>{{ dashboard.formatMoney(summary.metrics.pending_amount) }}</strong>
-          <small
-            >{{ summary.metrics.pending_payments }} reservas pendientes · Ver cobros</small
-          >
-        </button>
-      </article>
-      <article class="monthly-kpi">
-        <span>Órdenes activas</span>
-        <strong>{{ summary.metrics.active_orders }}</strong>
-        <small>Esperando atención o reserva</small>
-      </article>
-      <article class="monthly-kpi">
-        <span>Ticket promedio</span>
-        <strong>{{ dashboard.formatMoney(summary.metrics.average_ticket) }}</strong>
-        <small>{{ summary.metrics.payments_received }} pagos recibidos</small>
-      </article>
-      <article class="monthly-kpi">
-        <span>Conversión</span>
-        <strong>{{ dashboard.formatPercent(summary.metrics.conversion_rate) }}</strong>
-        <small>Órdenes creadas que alcanzaron reserva</small>
-      </article>
+      <div class="summary-mini-metrics">
+        <article>
+          <span>Reservas</span>
+          <strong>{{ summary.period_metrics.orders_reserved }}</strong>
+          <small>órdenes reservadas</small>
+        </article>
+        <article>
+          <span>Nuevas órdenes</span>
+          <strong>{{ summary.period_metrics.orders_created }}</strong>
+          <small>creadas en el mes</small>
+        </article>
+        <article [class.needs-attention]="summary.current_attention_snapshot.pending_payments > 0">
+          <span>Por cobrar ahora</span>
+          <strong>{{ dashboard.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong>
+          <small>{{ summary.current_attention_snapshot.pending_payments }} reservas pendientes</small>
+        </article>
+      </div>
     </div>
 
-    <div class="monthly-grid">
-      <article class="monthly-card revenue-chart">
+    <div class="monthly-grid simple-summary-grid">
+      <article class="monthly-card daily-revenue-card">
         <div class="monthly-card-header">
           <div>
-            <h3>Ingresos por día</h3>
-            <p>Solo pagos realmente cobrados.</p>
+            <h3>Cobros por día</h3>
+            <p>Cuándo ingresó el dinero durante el periodo.</p>
           </div>
         </div>
-        @if (summary.daily_revenue.length) {
+        @if (summary.period_metrics.daily_revenue.length) {
           <div class="bar-list">
-            @for (day of summary.daily_revenue; track day.date) {
+            @for (day of summary.period_metrics.daily_revenue; track day.date) {
               <div class="bar-row">
-                <span>{{ dashboard.formatDate(day.date) }}</span>
+                <strong>{{ dashboard.formatDate(day.date) }}</strong>
                 <div class="bar-track" aria-hidden="true">
                   <span [style.width.%]="dashboard.dailyRevenueWidth(summary, day.amount)"></span>
                 </div>
-                <strong>{{ dashboard.formatMoney(day.amount) }}</strong>
-                <small>{{ day.payments }} pagos</small>
+                <small>{{ dashboard.formatMoney(day.amount) }} · {{ day.payments }} pago{{ day.payments === 1 ? '' : 's' }}</small>
               </div>
             }
           </div>
         } @else {
-          <p class="empty compact-empty">No se registraron cobros en este mes.</p>
+          <p class="empty compact-empty">Todavía no hay cobros en este periodo.</p>
         }
       </article>
 
-      <article class="monthly-card source-chart">
+      <article class="monthly-card quick-pending-card">
         <div class="monthly-card-header">
           <div>
-            <h3>Resultados por fuente</h3>
-            <p>Contactos, reservas e ingresos del periodo.</p>
+            <h3>Pendientes de cobro</h3>
+            <p>Estado actual · {{ dashboard.formatDateTime(summary.current_attention_snapshot.as_of) }}</p>
           </div>
         </div>
-        @if (summary.sources.length) {
-          <div class="source-list">
-            @for (source of summary.sources; track source.source) {
-              <div class="source-row">
-                <div>
-                  <strong>{{ source.source }}</strong>
-                  <small>
-                    {{ source.orders_created }} altas ·
-                    {{ source.reservations_confirmed }} reservas
-                  </small>
-                </div>
-                <div class="bar-track" aria-hidden="true">
-                  <span
-                    [style.width.%]="dashboard.sourceRevenueWidth(summary, source.revenue_collected)"
-                  ></span>
-                </div>
-                <strong>{{ dashboard.formatMoney(source.revenue_collected) }}</strong>
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="empty compact-empty">No hay actividad por fuente para este mes.</p>
-        }
-      </article>
-    </div>
-
-    <div class="attention-grid">
-      <article class="monthly-card attention-card">
-        <div class="monthly-card-header">
-          <div>
-            <h3>Reservas pendientes de cobro</h3>
-            <p>{{ summary.attention.pending_payments.length }} visibles</p>
-          </div>
-        </div>
-        @if (summary.attention.pending_payments.length) {
+        @if (summary.current_attention_snapshot.pending_payment_items.length) {
           <div class="attention-list">
-            @for (item of summary.attention.pending_payments; track item.order_id) {
+            @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
               <div class="attention-action-row">
                 <button type="button" (click)="dashboard.openOrderFromSummary(item.order_id)">
                   <span>
                     <strong>{{ item.name }}</strong>
-                    <small>
-                      {{ dashboard.formatDate(item.reservation_date, 'sin fecha') }}
-                      {{ dashboard.formatTime(item.reservation_hour) }} · {{ item.source }}
-                    </small>
+                    <small>{{ dashboard.formatDate(item.reservation_date, 'sin fecha') }} {{ dashboard.formatTime(item.reservation_hour) }}</small>
                   </span>
-                  <strong>{{ dashboard.formatMoney(item.amount_agreed) }}</strong>
+                  <strong>{{ dashboard.formatMoney(item.pending_amount) }}</strong>
                 </button>
-                <button
-                  type="button"
-                  class="primary compact-action"
-                  (click)="dashboard.openPaymentFromSummary(item.order_id)"
-                >
-                  Cobrar
-                </button>
+                <button type="button" class="primary compact-action" (click)="dashboard.openPaymentFromSummary(item.order_id)">Cobrar</button>
               </div>
             }
           </div>
@@ -154,36 +102,210 @@
           <p class="empty compact-empty">No hay reservas pendientes de cobro.</p>
         }
       </article>
+    </div>
 
-      <article class="monthly-card attention-card">
-        <div class="monthly-card-header">
-          <div>
-            <h3>Órdenes que requieren revisión</h3>
-            <p>
-              {{ summary.attention.aged_active_orders.length }} antiguas ·
-              {{ summary.attention.missing_contact_count }} sin WhatsApp
-            </p>
-          </div>
-        </div>
-        @if (summary.attention.aged_active_orders.length) {
-          <div class="attention-list">
-            @for (item of summary.attention.aged_active_orders; track item.order_id) {
-              <button type="button" (click)="dashboard.openOrderFromSummary(item.order_id)">
-                <span>
-                  <strong>{{ item.name }}</strong>
-                  <small>Desde {{ dashboard.formatDate(item.created_date) }}</small>
-                </span>
-                <span class="badge {{ dashboard.statusTone(item.status) }}">{{
-                  dashboard.statusLabel(item.status)
-                }}</span>
-              </button>
-            }
-          </div>
-        } @else {
-          <p class="empty compact-empty">No hay órdenes activas con más de siete días.</p>
-        }
+    <details class="summary-analysis" hidden>
+      <summary>
+        <span>Ver análisis del mes</span>
+        <small>Comparaciones, conversión, fuentes y órdenes antiguas</small>
+      </summary>
+      <div class="summary-analysis-body">
+    <div class="universe-ribbon" aria-label="Universos del resumen">
+      <article>
+        <span class="universe-code">01 · Periodo</span>
+        <strong>{{ dashboard.metricPeriodLabel(summary.period_metrics.period) }}</strong>
+        <small>Eventos ocurridos dentro del rango cubierto.</small>
+      </article>
+      <article>
+        <span class="universe-code">02 · Cohorte</span>
+        <strong>Altas de {{ dashboard.selectedMonthLabel() }}</strong>
+        <small>Su conversión se observa hasta {{ dashboard.formatDateTime(summary.as_of) }}.</small>
+      </article>
+      <article>
+        <span class="universe-code">03 · Estado vivo</span>
+        <strong>Corte {{ dashboard.formatDateTime(summary.current_attention_snapshot.as_of) }}</strong>
+        <small>No cambia de significado al consultar otro mes.</small>
       </article>
     </div>
+
+    <section class="universe-section" aria-labelledby="period-results-title">
+      <div class="universe-heading">
+        <div>
+          <p class="eyebrow">Eventos del periodo</p>
+          <h3 id="period-results-title">Lo que ocurrió en el rango</h3>
+        </div>
+        <span class="badge neutral">{{ dashboard.metricPeriodLabel(summary.period_metrics.period) }}</span>
+      </div>
+      <div class="monthly-kpis phase-two-kpis">
+        <article class="monthly-kpi primary-kpi">
+          <span>Ingresos cobrados</span>
+          <strong>{{ dashboard.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+          <small>{{ summary.period_metrics.payments_received }} pagos del periodo</small>
+        </article>
+        <article class="monthly-kpi">
+          <span>Reservas confirmadas</span>
+          <strong>{{ summary.period_metrics.confirmed_reservation_events }}</strong>
+          <small>{{ summary.period_metrics.orders_reserved }} órdenes distintas</small>
+        </article>
+        <article class="monthly-kpi">
+          <span>Órdenes creadas</span>
+          <strong>{{ summary.period_metrics.orders_created }}</strong>
+          <small>Altas ocurridas dentro del rango</small>
+        </article>
+        <article class="monthly-kpi">
+          <span>Ticket promedio</span>
+          <strong>{{ dashboard.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
+          <small>
+            {{ dashboard.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
+            {{ summary.period_metrics.average_ticket.denominator }} pagos
+          </small>
+        </article>
+      </div>
+
+      <div class="comparison-grid">
+        @if (summary.comparisons.same_day_window; as comparison) {
+          <article class="monthly-card comparison-card">
+            <span class="universe-code">Comparación MTD justa</span>
+            <strong>{{ dashboard.monthlyRevenueComparison(comparison) }}</strong>
+            <p>
+              {{ dashboard.metricPeriodLabel(comparison.selected.period) }} frente a
+              {{ dashboard.metricPeriodLabel(comparison.previous.period) }}.
+            </p>
+            <small>Mismos {{ comparison.elapsed_days }} días; ingresos cobrados contra ingresos cobrados.</small>
+          </article>
+        } @else {
+          <article class="monthly-card comparison-card">
+            <span class="universe-code">Comparación MTD</span>
+            <strong>No aplica a un mes cerrado</strong>
+            <p>La comparación parcial solo aparece para el mes actual.</p>
+          </article>
+        }
+        <article class="monthly-card comparison-card">
+          <span class="universe-code">Mes cerrado contra mes cerrado</span>
+          <strong>{{ dashboard.closedMonthRevenueComparison(summary) }}</strong>
+          <p>
+            {{ dashboard.metricPeriodLabel(summary.comparisons.closed_months.selected.period) }} frente a
+            {{ dashboard.metricPeriodLabel(summary.comparisons.closed_months.previous.period) }}.
+          </p>
+          <small>Ambos rangos contienen meses completos.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="universe-section cohort-section" aria-labelledby="cohort-results-title">
+      <div class="universe-heading">
+        <div>
+          <p class="eyebrow">Cohorte de altas</p>
+          <h3 id="cohort-results-title">Qué pasó con las órdenes creadas en el mes</h3>
+        </div>
+        <span class="badge neutral">Resultados observados hasta el corte</span>
+      </div>
+      <div class="cohort-layout">
+        <div class="cohort-funnel-stack">
+          <div class="funnel-track" aria-label="Funnel de órdenes con validación">
+            <span class="universe-code">Preflight validado</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.validated.orders_created }}</strong><small>validadas</small></div>
+            <span aria-hidden="true">→</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.validated.orders_ever_reserved }}</strong><small>con reserva</small></div>
+            <span aria-hidden="true">→</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.validated.orders_ever_paid }}</strong><small>con pago</small></div>
+          </div>
+          <div class="funnel-track legacy-funnel" aria-label="Funnel histórico sin preflight requerido">
+            <span class="universe-code">Histórico · no requerido</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.legacy_not_required.orders_created }}</strong><small>altas</small></div>
+            <span aria-hidden="true">→</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.legacy_not_required.orders_ever_reserved }}</strong><small>con reserva</small></div>
+            <span aria-hidden="true">→</span>
+            <div><strong>{{ summary.cohort_metrics.funnel.legacy_not_required.orders_ever_paid }}</strong><small>con pago</small></div>
+          </div>
+          <small class="funnel-note">Preflight representa el estado final o actual disponible; no una serie histórica completa de eventos.</small>
+        </div>
+        <article class="monthly-card source-chart">
+          <div class="monthly-card-header">
+            <div>
+              <h3>Fuente al crear la orden</h3>
+              <p>Universo: solo órdenes creadas en {{ dashboard.selectedMonthLabel() }}.</p>
+            </div>
+          </div>
+          @if (summary.cohort_metrics.sources.length) {
+            <div class="source-list">
+              @for (source of summary.cohort_metrics.sources; track source.source) {
+                <div class="source-row phase-two-source-row">
+                  <div>
+                    <strong>{{ source.source }}</strong>
+                    <small>{{ source.orders_created }} altas · {{ source.orders_ever_reserved }} reservas · {{ source.orders_ever_paid }} pagos</small>
+                    <small>
+                      {{ source.order_creation_source_orders }} con fuente guardada al alta ·
+                      {{ source.historical_backfill_source_orders }} con fuente preservada al migrar historial
+                    </small>
+                  </div>
+                  <strong>{{ dashboard.formatMoney(source.revenue_ever_collected) }}</strong>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty compact-empty">No hay altas en esta cohorte.</p>
+          }
+          @if (!summary.cohort_metrics.source_semantics.frozen_storage_available) {
+            <p class="notice warn compact-notice">Las altas históricas usan la fuente actual del contacto porque todavía no tenían una fuente congelada.</p>
+          }
+          <small class="source-semantics-note">
+            Las fuentes migradas del historial preservan el valor disponible durante la migración;
+            no demuestran cuál fue la fuente original.
+          </small>
+        </article>
+      </div>
+    </section>
+
+    <section class="universe-section attention-section" aria-labelledby="attention-results-title">
+      <div class="universe-heading">
+        <div>
+          <p class="eyebrow">Estado vivo</p>
+          <h3 id="attention-results-title">Lo que requiere atención ahora</h3>
+        </div>
+        <span class="badge {{ summary.current_attention_snapshot.missing_contact_count ? 'warn' : 'good' }}">
+          {{ summary.current_attention_snapshot.missing_contact_count }} sin teléfono ni @usuario
+        </span>
+      </div>
+      <div class="attention-snapshot-metrics">
+        <article><span>Órdenes activas</span><strong>{{ summary.current_attention_snapshot.active_orders }}</strong></article>
+        <article><span>Cobros pendientes</span><strong>{{ summary.current_attention_snapshot.pending_payments }}</strong></article>
+        <article><span>Saldo por cobrar</span><strong>{{ dashboard.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong></article>
+      </div>
+      <div class="attention-grid">
+        <article class="monthly-card attention-card">
+          <div class="monthly-card-header"><div><h3>Reservas pendientes de cobro</h3><p>{{ summary.current_attention_snapshot.pending_payment_items.length }} visibles</p></div></div>
+          @if (summary.current_attention_snapshot.pending_payment_items.length) {
+            <div class="attention-list">
+              @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
+                <div class="attention-action-row">
+                  <button type="button" (click)="dashboard.openOrderFromSummary(item.order_id)">
+                    <span><strong>{{ item.name }}</strong><small>{{ dashboard.formatDate(item.reservation_date, 'sin fecha') }} {{ dashboard.formatTime(item.reservation_hour) }} · {{ item.source }}</small></span>
+                    <strong>{{ dashboard.formatMoney(item.pending_amount) }}</strong>
+                  </button>
+                  <button type="button" class="primary compact-action" (click)="dashboard.openPaymentFromSummary(item.order_id)">Cobrar</button>
+                </div>
+              }
+            </div>
+          } @else { <p class="empty compact-empty">No hay reservas pendientes de cobro.</p> }
+        </article>
+        <article class="monthly-card attention-card">
+          <div class="monthly-card-header"><div><h3>Órdenes antiguas activas</h3><p>Más de siete días en estado activo.</p></div></div>
+          @if (summary.current_attention_snapshot.aged_active_orders.length) {
+            <div class="attention-list">
+              @for (item of summary.current_attention_snapshot.aged_active_orders; track item.order_id) {
+                <button type="button" (click)="dashboard.openOrderFromSummary(item.order_id)">
+                  <span><strong>{{ item.name }}</strong><small>Desde {{ dashboard.formatDate(item.created_date) }}</small></span>
+                  <span class="badge {{ dashboard.statusTone(item.status) }}">{{ dashboard.statusLabel(item.status) }}</span>
+                </button>
+              }
+            </div>
+          } @else { <p class="empty compact-empty">No hay órdenes activas antiguas.</p> }
+        </article>
+      </div>
+    </section>
+      </div>
+    </details>
   }
 </section>
 
@@ -193,23 +315,23 @@
 </div>
 <section class="metrics" aria-label="Estado general">
   <article>
-    <span>API local</span>
+    <span>Sistema</span>
     <strong [class]="dashboard.statusTone(dashboard.health()?.status)">{{
-      dashboard.health()?.status ?? 'sin datos'
+      dashboard.health()?.status === 'ok' ? 'funcionando' : 'revisar'
     }}</strong>
-    <small>{{ dashboard.health()?.reason ?? 'health pendiente' }}</small>
+    <small>Panel y datos</small>
   </article>
   <article>
-    <span>Worker</span>
+    <span>Bot de reservas</span>
     <strong
       [class]="dashboard.statusTone(dashboard.worker()?.worker_running ?? dashboard.health()?.worker_running ?? null)"
     >
-      {{ dashboard.worker()?.worker_running || dashboard.health()?.worker_running ? 'activo' : 'sin confirmar' }}
+      {{ dashboard.worker()?.worker_running || dashboard.health()?.worker_running ? 'activo' : 'detenido' }}
     </strong>
     <small>{{ dashboard.phaseLabel(dashboard.worker()?.phase ?? dashboard.health()?.reason) }}</small>
   </article>
   <article>
-    <span>Ordenes ready</span>
+    <span>Clientes listos</span>
     <strong>{{ dashboard.readyOrders() }}</strong>
     <small>{{ dashboard.filteredOrders().length }} visibles</small>
   </article>
@@ -224,13 +346,12 @@
   </article>
 </section>
 
-<section class="panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
-  <div class="panel-header">
-    <div>
-      <p class="eyebrow">Recolección para entrenamiento</p>
-      <h2 id="captcha-sampling-title">Capturas CAPTCHA</h2>
-      <p>Elige entre priorizar la reserva o guardar más imágenes para mejorar el modelo.</p>
-    </div>
+<details class="panel settings-panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
+  <summary class="settings-summary">
+    <span>
+      <strong id="captcha-sampling-title">Capturas CAPTCHA</strong>
+      <small>Abre para cambiar cantidad o resolutor</small>
+    </span>
     <div class="captcha-control-badges" aria-label="Estado de los controles CAPTCHA">
       <span class="badge {{ dashboard.captchaSamplingEnabled() ? 'warn' : 'good' }}">
         {{ dashboard.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
@@ -239,7 +360,8 @@
         {{ dashboard.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
       </span>
     </div>
-  </div>
+  </summary>
+  <div class="settings-body">
 
   <div class="notice neutral captcha-sampling-intro" role="note">
     La cantidad de capturas y el resolutor final son controles independientes. Las restricciones
@@ -472,7 +594,8 @@
       }}
     </button>
   </div>
-</section>
+  </div>
+</details>
 
 <section class="split">
   <div class="panel-stack">
@@ -538,7 +661,17 @@
     </div>
     </article>
 
-    <article class="panel opportunity-control-panel" aria-labelledby="opportunity-control-title">
+    <details class="panel settings-panel opportunity-control-panel" aria-labelledby="opportunity-control-title">
+      <summary class="settings-summary">
+        <span>
+          <strong id="opportunity-control-title">Ráfagas de reserva</strong>
+          <small>Abre solo para activar, detener o revisar una protección</small>
+        </span>
+        <span class="badge {{ dashboard.opportunityCanaryTone() }}">
+          {{ dashboard.opportunityCanaryLabel() }}
+        </span>
+      </summary>
+      <div class="settings-body">
       <div class="panel-header">
         <div>
           <h2 id="opportunity-control-title">Canario de oportunidades</h2>
@@ -672,10 +805,18 @@
           confirmar una revisión vigente.
         </p>
       }
-    </article>
+      </div>
+    </details>
   </div>
 
-  <article class="panel">
+  <details class="panel settings-panel technical-snapshot-panel">
+    <summary class="settings-summary">
+      <span>
+        <strong>Información para soporte</strong>
+        <small>Solo es útil al investigar un problema</small>
+      </span>
+    </summary>
+    <div class="settings-body">
     <div class="panel-header">
       <div>
         <h2>Lectura segura</h2>
@@ -703,5 +844,6 @@
         <dd>{{ dashboard.copiedLabel() ?? 'no' }}</dd>
       </div>
     </dl>
-  </article>
+    </div>
+  </details>
 </section>

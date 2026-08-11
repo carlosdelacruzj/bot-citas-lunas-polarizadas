@@ -8,10 +8,14 @@ from urllib.parse import unquote
 
 from appointment_bot.db.finance import (
     create_finance_entry,
+    finance_data_quality,
+    finance_month_closure,
     finance_month_summary,
     list_finance_categories,
     list_finance_entries,
+    reconcile_payment_amount,
     update_finance_entry,
+    upsert_finance_month_closure,
     void_finance_entry,
 )
 from appointment_bot.services.api.http import error_payload
@@ -19,6 +23,7 @@ from appointment_bot.services.api.monthly_dashboard_routes import LIMA_TZ, _shif
 
 ENTRY_KINDS = {"expense", "prepaid_topup", "prepaid_consumption", "refund"}
 DATA_QUALITIES = {"actual", "estimated", "pending"}
+PAYMENT_RESOLUTION_TYPES = {"discount", "waiver", "correction"}
 
 
 def finance_categories_payload() -> dict[str, Any]:
@@ -51,6 +56,70 @@ def finance_summary_payload(
         return parsed
     month_start, next_month_start = parsed
     return HTTPStatus.OK, finance_month_summary(month_start, next_month_start)
+
+
+def finance_data_quality_payload(
+    query: dict[str, list[str]],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    parsed = _month_range(query)
+    if isinstance(parsed, tuple) and len(parsed) == 2 and isinstance(parsed[0], HTTPStatus):
+        return parsed
+    month_start, next_month_start = parsed
+    return HTTPStatus.OK, finance_data_quality(month_start, next_month_start)
+
+
+def finance_month_closure_payload(
+    query: dict[str, list[str]],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    parsed = _month_range(query)
+    if isinstance(parsed, tuple) and len(parsed) == 2 and isinstance(parsed[0], HTTPStatus):
+        return parsed
+    month_start, next_month_start = parsed
+    return HTTPStatus.OK, finance_month_closure(month_start, next_month_start)
+
+
+def upsert_finance_month_closure_payload(
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    parsed = _month_range({"month": [str(payload.get("month") or "").strip()]})
+    if isinstance(parsed, tuple) and len(parsed) == 2 and isinstance(parsed[0], HTTPStatus):
+        return parsed
+    month_start, next_month_start = parsed
+    try:
+        values = _normalize_month_closure(payload)
+        closure = upsert_finance_month_closure(
+            month_start, next_month_start, values
+        )
+    except ValueError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    return HTTPStatus.OK, {"status": "saved", **closure}
+
+
+def reconcile_payment_amount_payload(
+    payment_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    resolution_type = str(payload.get("resolution_type") or "").strip()
+    reason = str(payload.get("reason") or "").strip()
+    reconciled_by = str(payload.get("reconciled_by") or "").strip()
+    if resolution_type not in PAYMENT_RESOLUTION_TYPES:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "resolution_type must be discount, waiver or correction."
+        )
+    if len(reason) < 3 or not reconciled_by:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request", "reason and reconciled_by are required."
+        )
+    try:
+        reconciliation = reconcile_payment_amount(
+            payment_id,
+            resolution_type=resolution_type,
+            reason=reason,
+            reconciled_by=reconciled_by,
+        )
+    except ValueError as exc:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
+    return HTTPStatus.OK, {"status": "reconciled", "reconciliation": reconciliation}
 
 
 def create_finance_entry_payload(
@@ -103,6 +172,15 @@ def finance_entry_action_path(path: str, action: str) -> str | None:
         return None
     entry_id = unquote(path[len(prefix) : -len(suffix)]).strip()
     return entry_id or None
+
+
+def finance_payment_reconciliation_path(path: str) -> str | None:
+    prefix = "/api/v1/finance/payments/"
+    suffix = "/reconcile-amount"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    payment_id = unquote(path[len(prefix) : -len(suffix)]).strip()
+    return payment_id or None
 
 
 def _month_range(
@@ -170,6 +248,32 @@ def _normalize_entry(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _normalize_month_closure(payload: dict[str, Any]) -> dict[str, Any]:
+    status = str(payload.get("status") or "draft").strip()
+    if status not in {"draft", "reconciled"}:
+        raise ValueError("status must be draft or reconciled.")
+    opening = _optional_non_negative_decimal(
+        payload.get("opening_prepaid_balance"), "opening_prepaid_balance"
+    )
+    closing = _optional_non_negative_decimal(
+        payload.get("closing_prepaid_balance"), "closing_prepaid_balance"
+    )
+    reconciled_by = _optional_text(payload.get("reconciled_by"))
+    if status == "reconciled" and (
+        opening is None or closing is None or reconciled_by is None
+    ):
+        raise ValueError(
+            "A reconciled close requires opening and closing balances and reconciled_by."
+        )
+    return {
+        "opening_prepaid_balance": opening,
+        "closing_prepaid_balance": closing,
+        "status": status,
+        "reconciled_by": reconciled_by,
+        "notes": _optional_text(payload.get("notes")),
+    }
+
+
 def _positive_decimal(value: Any, field: str, quantum: str = "0.000001") -> Decimal:
     try:
         parsed = Decimal(str(value)).quantize(Decimal(quantum))
@@ -184,6 +288,18 @@ def _optional_positive_decimal(value: Any, field: str) -> Decimal | None:
     if value in {None, ""}:
         return None
     return _positive_decimal(value, field)
+
+
+def _optional_non_negative_decimal(value: Any, field: str) -> Decimal | None:
+    if value in {None, ""}:
+        return None
+    try:
+        parsed = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be a valid number.") from exc
+    if parsed < 0:
+        raise ValueError(f"{field} must be zero or greater.")
+    return parsed
 
 
 def _optional_text(value: Any) -> str | None:

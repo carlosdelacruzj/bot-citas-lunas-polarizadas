@@ -35,6 +35,7 @@ GET  /api/v1/worker
 GET  /api/v1/service-orders
 GET  /api/v1/service-orders/{order_id}
 GET  /api/v1/monthly-summary?month=YYYY-MM
+GET  /api/v2/monthly-summary?month=YYYY-MM
 GET  /api/v1/post-appointment-followups
 POST /api/v1/service-orders
 POST /api/v1/service-orders/{order_id}/validate
@@ -179,6 +180,23 @@ administrativa. Un rechazo de credenciales se informa como
 
 El ingreso cobrado nunca incluye pagos pendientes ni proyecciones. La respuesta
 no expone documentos, WhatsApp, credenciales ni evidencia cruda.
+
+`GET /api/v2/monthly-summary?month=YYYY-MM` es el contrato comercial vigente
+para decisiones. Mantiene el endpoint v1 como rollback y separa:
+
+- `period_metrics`: eventos ocurridos dentro del periodo, con cobertura, corte
+  y `daily_revenue` para la evolución gráfica de cobros;
+- `cohort_metrics`: órdenes creadas en el mes y su conversión posterior, con
+  numerador y denominador;
+- `current_attention_snapshot`: pendientes actuales con `as_of`, sin
+  convertirlos en historia del mes seleccionado;
+- MTD contra los mismos días del mes anterior y, por separado, mes cerrado
+  contra mes cerrado.
+
+Un contacto operativo es válido si tiene teléfono o nombre de usuario de
+WhatsApp. La fuente de captación se conserva en `service_orders`; los valores
+copiados durante la migración histórica se identifican como backfill y no se
+presentan como prueba del origen original.
 
 ## Detalles de endpoints administrativos
 

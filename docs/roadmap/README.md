@@ -150,6 +150,9 @@ Detalle vigente:
 
 Prioridad: **P0/P1**.
 
+Estado: **implementacion tecnica completada el 2026-08-10 en paralelo con la
+muestra pasiva de Fase 1; cierre operativo pendiente de conciliacion de datos**.
+
 Objetivo: impedir que el dashboard muestre cifras correctas individualmente
 pero engañosas al mezclarlas en un mismo periodo o denominador.
 
@@ -185,6 +188,31 @@ pero engañosas al mezclarlas en un mismo periodo o denominador.
 Cada KPI muestra periodo, fecha de corte, numerador y denominador; cambiar de
 mes no arrastra pendientes actuales como si fueran historicos; un contacto por
 username no aparece como faltante.
+
+### Implementado el 2026-08-10
+
+- contrato autenticado `/api/v2/monthly-summary`, conservando v1 como rollback;
+- separación de eventos del periodo, cohorte de altas y atención viva con
+  `as_of`, cobertura, numeradores y denominadores;
+- comparación MTD contra los mismos días del mes anterior y mes cerrado contra
+  mes cerrado;
+- contacto operativo válido por teléfono o `@usuario`;
+- fuente de captación preservada en la orden para altas nuevas y backfill
+  histórico marcado sin presentarlo como evidencia original;
+- funnel de cohorte separado entre preflight validado y legado
+  `not_required`;
+- centro financiero de calidad, reconciliación explícita de diferencias de
+  pago y cierre mensual durable con balance obligatorio;
+- presentación operativa simplificada: resultado, reservas, altas, pendiente y
+  gráfico diario visibles; comparaciones, cohortes, fuentes, calidad y cierre
+  quedan fuera de la lectura normal; configuración CAPTCHA, ráfagas, soporte,
+  movimientos y revisión financiera se abren solo cuando hace falta;
+- CAC/ROAS, margen porcentual y costos unitarios bloqueados mientras la captura
+  de costos o atribución no esté conciliada.
+
+Permanece pendiente clasificar manualmente la diferencia histórica de `S/10` y
+registrar saldos/costos suficientes para cerrar meses reales; no se inferirá la
+causa ni se presentará margen neto antes de contar con esa evidencia.
 
 ### Rollback
 

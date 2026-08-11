@@ -36,9 +36,13 @@ excluyen de todos los calculos. Solo los registros activos pueden editarse.
 GET  /api/v1/finance/categories
 GET  /api/v1/finance/entries?month=YYYY-MM&include_voided=1
 GET  /api/v1/finance/summary?month=YYYY-MM
+GET  /api/v1/finance/data-quality?month=YYYY-MM
+GET  /api/v1/finance/month-closure?month=YYYY-MM
 POST /api/v1/finance/entries
 POST /api/v1/finance/entries/{entry_id}/edit
 POST /api/v1/finance/entries/{entry_id}/void
+POST /api/v1/finance/payments/{payment_id}/reconcile-amount
+POST /api/v1/finance/month-closure
 ```
 
 Crear y editar reciben el movimiento completo. Campos obligatorios:
@@ -47,6 +51,30 @@ opcionales incluyen proveedor, tipo de cambio, cantidad/unidad, canal/campana, o
 evidencia y notas.
 
 No guardar tokens, credenciales ni datos personales dentro de evidencia o notas.
+
+## Calidad y cierre mensual
+
+`is_complete` se conserva por compatibilidad y significa únicamente que todos
+los movimientos activos del periodo tienen conversión monetaria a PEN. No
+certifica captura completa de costos, utilidad neta ni conciliación contable.
+
+El centro de calidad separa movimientos `actual`, `estimated` y `pending`,
+importes sin conversión y pagos `paid` cuyo monto difiere de `amount_agreed`.
+Estos últimos requieren una clasificación humana explícita: `discount`,
+`waiver` o `correction`, además de motivo y responsable. La API nunca infiere
+la causa.
+
+`finance_month_closures` conserva saldo prepago inicial/final, recargas,
+consumo, reembolsos, notas, estado, fecha de conciliación y responsable. Un mes
+actual o futuro no puede cerrarse. Tampoco puede marcarse `reconciled` mientras
+existan movimientos pendientes o sin conversión, diferencias de pago sin
+resolver, o si el saldo final no coincide con:
+
+`saldo inicial + recargas - consumo + reembolsos prepagos`.
+
+El margen porcentual, costo por reserva, costo CAPTCHA por reserva, CAC y ROAS
+permanecen ocultos mientras la captura de costos o atribución no esté
+conciliada.
 
 ## Categorias iniciales
 
