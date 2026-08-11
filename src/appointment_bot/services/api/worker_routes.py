@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import asdict
 from http import HTTPStatus
 from typing import Any
 
-from appointment_bot.config import load_settings
+from appointment_bot.config import Settings, load_settings
+from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.db.worker_commands import (
     enqueue_worker_command,
     list_worker_commands,
 )
 from appointment_bot.db.worker_state import get_worker_state, is_worker_lease_active
 from appointment_bot.services.api.http import error_payload
+
+logger = logging.getLogger(__name__)
 
 PUBLIC_WORKER_FIELDS = {
     "phase",
@@ -72,10 +76,17 @@ def enqueue_worker_command_payload(
     try:
         queued = enqueue_worker_command(
             command,
-            requested_by=_requested_by(requested_by),
+            requested_by=normalize_worker_actor(requested_by),
         )
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    record_worker_control_audit(
+        command=queued.command,
+        requested_by=queued.requested_by,
+        status="accepted",
+        operation_id=queued.command_id,
+        detail="control_path=persisted_command",
+    )
     return HTTPStatus.ACCEPTED, {
         "status": "queued",
         "command_id": queued.command_id,
@@ -84,13 +95,37 @@ def enqueue_worker_command_payload(
     }
 
 
-def _requested_by(value: str | None) -> str:
+def normalize_worker_actor(value: str | None) -> str:
     normalized = (value or "").strip()
     if not normalized:
         return "admin_api"
     if len(normalized) > 64 or re.fullmatch(r"[A-Za-z0-9:_-]+", normalized) is None:
         return "admin_api"
     return normalized
+
+
+def record_worker_control_audit(
+    *,
+    command: str,
+    requested_by: str | None,
+    status: str,
+    operation_id: str | None = None,
+    detail: str | None = None,
+    settings: Settings | None = None,
+) -> None:
+    try:
+        record_remote_control_audit(
+            actor=normalize_worker_actor(requested_by),
+            action=command,
+            status=status,
+            target_type="worker",
+            target_id="continuous_worker",
+            operation_id=operation_id,
+            detail=detail,
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("Could not persist worker control audit for %s", command)
 
 
 def list_worker_commands_payload(query: dict[str, list[str]]) -> dict[str, Any]:

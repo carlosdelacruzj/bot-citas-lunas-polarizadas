@@ -42,9 +42,9 @@ worker ante errores o solicitudes controladas. `scripts/start-runtime.pyw` inici
 el supervisor `scripts/start-runtime.ps1` mediante la tarea programada instalada por
 `scripts/install-startup-task.ps1`. Si otro host ya tiene el lease del worker, el proceso sale con un
 reinicio controlado y el script espera antes de intentar de nuevo. El script tambien evita
-iniciar un segundo `appointment_bot.services.continuous_host` local si ya hay uno corriendo.
+iniciar un segundo `appointment_bot.worker.host` local si ya hay uno corriendo.
 El supervisor raiz permanece activo y recupera por separado worker, Admin API, Telegram o
-CAPTCHA sombra cuando desaparece su supervisor.
+el servicio CAPTCHA local cuando desaparece su supervisor.
 
 Administrar ordenes:
 
@@ -74,14 +74,16 @@ corte, permite que termine junto con cualquier cola de reserva derivada de ella 
 cierra el worker y su API. La revision final de ordenes listas se conserva, pero ya no se
 genera una imagen de reporte general.
 
-El worker mantiene una sola sesion observadora y solo hace revisiones densas dentro de
-`OBSERVER_HOT_WINDOWS` (por defecto `08:15-08:50,09:30-10:00,11:40-12:40,15:55-16:30`,
-hora de Lima). Fuera de esas ventanas espera entre `OUTSIDE_HOT_WINDOW_MIN_SECONDS` y
-`OUTSIDE_HOT_WINDOW_MAX_SECONDS` (recomendado: 20 a 40 minutos), o hasta la siguiente
-ventana si esta mas cerca. Cada
-orden en el worker continuo revisa disponibilidad por `OBSERVER_SESSION_SECONDS=120`
-segundos como maximo, con `OBSERVER_MAX_ATTEMPTS=4` y pausas de `25` a `35` segundos,
-para rotar mas rapido entre clientes durante ventanas con cupos breves.
+La configuracion productiva vigente concentra las revisiones densas en
+`OBSERVER_HOT_WINDOWS=07:10-18:00`, hora de Lima. Fuera de esa ventana espera entre
+`OUTSIDE_HOT_WINDOW_MIN_SECONDS=1200` y
+`OUTSIDE_HOT_WINDOW_MAX_SECONDS=2400`, o hasta la siguiente ventana si esta mas cerca.
+Cada orden conserva su propia sesion Playwright. Con el toggle ligero activo ejecuta hasta
+`OBSERVER_SITE_TOGGLE_ATTEMPTS=15` consultas de sede, con una pausa aleatoria nueva de
+`1-2` segundos en cada lectura y un unico `reload_probe` despues del intento `8`; al
+terminar rota al siguiente cliente. `OBSERVER_SESSION_SECONDS=120` sigue siendo el limite
+de la sesion observadora y los valores base `OBSERVER_MAX_ATTEMPTS` e
+`OBSERVER_INTERVAL_MIN/MAX_SECONDS` quedan para el recorrido que no usa el toggle ligero.
 `OBSERVER_REQUIRED_SITE=LIMA-LA VICTORIA` fija la unica sede valida; si el portal no la
 ofrece, el bot falla con un mensaje claro en vez de seleccionar otra sede. El worker
 continuo no envia Telegram por resultados rutinarios `Sin Cupos`; Telegram queda reservado
@@ -112,10 +114,13 @@ appointment-bot-client evidence-summary --days 7 --output-dir reports/evidence
 
 En modo recuperacion se recomienda `AUTO_RESERVE=false`, `QUEUE_MAX_RESERVATIONS_PER_RUN=1`
 y Telegram activo para que una persona confirme manualmente cuando aparezca una alerta. Si
-se activa `AUTO_RESERVE=true`, la cola multi-cliente solo debe correr despues de una
-disponibilidad real y se mantiene limitada por `QUEUE_MAX_RESERVATIONS_PER_RUN`. La cuenta
-que detecta fecha y hora intenta reservar en su misma sesion; solo despues de confirmar
-`Programado` se inicia la cola por prioridad con una sesion nueva por orden.
+se activa `AUTO_RESERVE=true`, la cadena multi-cliente solo nace de una disponibilidad real
+y respeta `QUEUE_MAX_RESERVATIONS_PER_RUN` (`0` permite recorrer todos los candidatos del
+lote). La cuenta detectora intenta reservar en su misma sesion. Con `OBS-006` activo, una
+fecha y hora seleccionables pueden abrir en paralelo una unica sesion auxiliar compatible
+mientras el detector continua; nunca hay mas de dos sesiones concurrentes. Cada posicion
+que termina en `registered` puede tomar el siguiente candidato mediante un contexto
+Playwright nuevo y aislado.
 
 Si el worker acumula `UNAVAILABLE_STREAK_LIMIT` resultados seguidos de `Sin Cupos`, o si
 detecta senales de defensa del portal como CAPTCHA inesperado, HTTP 403/429 o sesion

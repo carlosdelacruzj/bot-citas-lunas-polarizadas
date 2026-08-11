@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral y documental: `2026-08-10`.
+Última revisión integral y documental: `2026-08-11`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -14,17 +14,17 @@ prioriza órdenes, monitorea el portal, realiza reservas con confirmación
 estricta, conserva evidencia, permite administración local y remota, registra
 pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
 
-Estado verificado el `2026-08-10`:
+Estado verificado el `2026-08-11`:
 
 | Área                  | Estado                   | Lectura actual                                                                                            |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Worker de reservas    | Corte diario normal       | El supervisor sigue vivo; el proceso terminó con código `0` a las 18:00 y espera el siguiente arranque de las 07:30. |
+| Worker de reservas    | Operativo                | `127.0.0.1:8765/health` responde `ok`, con `worker_running=true`; el reinicio controlado ya no hereda una pausa y sus controles dejan auditoría durable. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v54` aplicado con autoridad CAPTCHA, calidad financiera, cierres y fuente de captación preservada. |
-| Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v55` aplicado con autoridad CAPTCHA, calidad financiera, cierres, fuente de captación y outbox Telegram preservados. |
+| Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
 | CAPTCHA local         | Canario activo           | V6 tiene hasta `20` decisiones con umbrales `0.60/0.60`; V3 queda en sombra y 2Captcha es fallback automático. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo con deuda de seguridad | Build Fase 2 correcto; bundle inicial de `527.23 kB`. La vista principal prioriza cobros, reservas, pendientes y evolución diaria; el análisis y cierre quedan plegados. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
+| Dashboard             | Operativo                | Angular `20.3.27`, build correcto y `npm audit --omit=dev` sin vulnerabilidades. La vista principal prioriza cobros, reservas, pendientes y evolución diaria; el análisis y cierre quedan plegados. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -64,6 +64,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   trámite; si ese mensaje falta, la etapa `Programado` conserva la validación
   secundaria. Esta decisión operativa evita añadir latencia a la ruta exitosa.
 - Registro durable de `reservation_attempts`, submission pendiente y heartbeat.
+- Desde el `2026-08-11`, la ruta productiva ya no genera la captura de página
+  completa `preenvio` entre el llenado del CAPTCHA y el clic en **Reservar**.
+  El intento durable conserva en su lugar la selección validada, el origen del
+  resolutor, el `decision_id` y la hora UTC del último gate, sin persistir la
+  respuesta CAPTCHA. Las capturas históricas no se eliminan; siguen vigentes la
+  evidencia `cupo`, la imagen CAPTCHA usada y la respuesta posterior del portal.
+- La alerta urgente de disponibilidad ya no espera la red de Telegram antes de
+  resolver el CAPTCHA o enviar la reserva. El callback persiste un payload
+  allowlisted en `telegram_alert_outbox`; un dispatcher separado conserva la
+  hora real de envío, deduplica por cupo y realiza hasta tres intentos. Una
+  caída posterior a la aceptación de Telegram pero anterior al `sent` puede
+  producir un duplicado, pero nunca debe frenar el submit.
 - Prioridad, prioridad exclusiva y restricciones por fecha, día y rangos
   excluidos.
 - Implementado el `2026-08-02`: el horario dejó de ser una restricción
@@ -121,6 +133,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   IDs del CAPTCHA final y de entrenamiento. Los HTTP `400` permanentes se
   descartan del outbox conservando el error; se reconciliaron `12` colisiones
   históricas verificadas y el pendiente volvió a cero.
+- Corregido el `2026-08-11`: `cupos-unicos` tomaba la primera imagen de una
+  ejecución OBS-007 pero la nombraba con la fecha y hora del resultado final.
+  Cada intento y reobservación ahora transporta una asociación explícita entre
+  cupo y captura, y archiva todos los cupos distintos de la secuencia. Se
+  repararon los dos nombres/contenidos inconsistentes del `2026-08-10` sin
+  borrar las capturas originales.
 - Implementado el `2026-08-10`: PostgreSQL `schema v50` conserva cada ráfaga
   OBS-006 con `burst_id`, candidatos, detector, auxiliares, posiciones, lease,
   primera lectura, tiempos de reserva allowlisted, resultados y causa de
@@ -359,6 +377,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Alta manual y edición guiada de cuatro restricciones de fecha y prioridad;
   consultar credenciales existentes dejó de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
+- Corregido el `2026-08-11`: el reinicio embebido y el comando persistido
+  comparten una sola transición que cancela y detiene el ciclo con
+  `paused=false`. El proceso nuevo ya no puede heredar como pausa la detención
+  temporal usada para reiniciar.
+- Desde el `2026-08-11`, pausa, reanudación y reinicio dejan una entrada
+  sanitizada en `remote_control_audit`. Los comandos diferidos enlazan la
+  auditoría con su `command_id`; el control embebido registra el canal local.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
 - Simplificado el `2026-08-01`: se retiró el etiquetado antiguo de CAPTCHA que
@@ -418,6 +443,24 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   V6. El primer `captcha_invalid`, un resultado ambiguo o un fallo local abre el
   circuito; el rollback persistente es `mode=2captcha` y aplica al siguiente
   CAPTCHA sin editar `.env`.
+- Corregido el `2026-08-11`: las dos primeras decisiones productivas V6
+  resolvieron localmente, pero el adaptador intentó leer los atributos
+  inexistentes `request_ms` e `inference_ms` al devolver el resultado. Dos
+  oportunidades compatibles terminaron en `error` antes de escribir el CAPTCHA
+  o pulsar **Reservar**, sin `reservation_attempts` ni submits pendientes. El
+  adaptador usa ahora `local_request_ms` y `local_inference_ms`; ambas decisiones
+  quedaron cerradas como
+  `not_submitted_internal_error`, sin contarlas como aceptación o rechazo. El
+  worker se reinició de forma controlada. La tercera decisión V6 recorrió la
+  ruta corregida, llegó al submit y el portal respondió `slot_lost`, sin
+  fallback, `captcha_invalid` ni apertura del circuito. La cuarta decisión
+  resolvió localmente en `0.141 s`, fue aceptada por el portal y terminó en la
+  primera reserva confirmada con autoridad V6. El canario queda en `4/20`, con
+  `16` decisiones locales restantes, una confirmación, un `slot_lost`, dos
+  errores internos previos al submit y cero fallbacks. La ruta pasa
+  `compileall`, Ruff, `59 passed` y validación productiva del adaptador; la
+  efectividad del modelo continúa bajo revisión durante las primeras `20`
+  decisiones.
 - Actualizado el dashboard el `2026-08-10`: **Capturas CAPTCHA** separa ahora
   cantidad de muestras, validación de restricciones y autoridad final. Muestra
   resolutor efectivo, progreso `V6/20`, confirmaciones, rechazos, fallbacks,
@@ -463,8 +506,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   frente a `v2_selected` subió de `90/98` a `93/98` en la misma prueba temporal disponible,
   de `143/150` a `147/150` en el holdout humano y de `76/78` a `77/78` en el
   corte sombra independiente. El servicio carga cuatro modelos y el dashboard
-  identifica a v3 como seleccionado, pero 2Captcha conserva toda la autoridad
-  operativa.
+  identificaba a v3 como seleccionado; en ese corte histórico 2Captcha
+  conservaba toda la autoridad operativa. El estado vigente es el canario V6
+  descrito arriba.
 - Las 78 imágenes del corte sombra excluido del entrenamiento se reprocesaron
   con v3 para mostrarlas en Calidad. Las 157 imágenes usadas para entrenarlo no
   se reprocesaron, evitando presentar exactitud de entrenamiento como evidencia
@@ -479,8 +523,9 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   cada uno resolvió correctamente uno, mientras ambos fallaron juntos en seis.
 - Los cuatro modelos coincidieron correctamente en las `15/15` referencias
   confirmadas por el portal dentro de ese corte, una muestra insuficiente para
-  diferenciarlos. El resultado prospectivo no confirma la ventaja histórica de
-  v3 y mantiene a 2Captcha como única autoridad operativa.
+  diferenciarlos. Ese resultado prospectivo no confirmó la ventaja histórica
+  de v3 y entonces mantuvo a 2Captcha como única autoridad; fue supersedido
+  por el canario V6 acotado y con fallback descrito arriba.
 - Corregido el `2026-08-08`: los CAPTCHA capturados únicamente para documentar
   un cupo incompatible (`blocked_by_order_rule` o `priority_deferred`) se
   conservan en disco, historial y CAPTCHA sombra, pero dejaron de enviarse por
@@ -698,6 +743,21 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 
 ## Validación del corte
 
+- Optimización de alerta urgente del `2026-08-11`: la notificación inmediata
+  pasó de `urlopen` síncrono a un outbox PostgreSQL `v55` y dispatcher propio.
+  El payload durable excluye nombre, cuenta e identificadores del cliente; se
+  conservan sede, fecha, hora y cupos. Observador general y órdenes activas usan
+  el mismo formato breve, sin etiqueta de origen ni instrucciones extra. El muestreo CAPTCHA
+  no fue modificado: continúa bajo el control manual existente, incluidos los
+  tiempos adicionales cuando el operador lo activa. No se envió un Telegram
+  de prueba.
+- Mantenimiento integral del `2026-08-11`: se corrigió la transición de
+  reinicio y la auditoría de controles, se retiraron tres miembros internos
+  sin consumidores, se alinearon README y runbook con `15/1-2/8`, OBS-006 y la
+  autoridad canaria V6, y n8n quedó limitado a `127.0.0.1:5678` conservando su
+  volumen y el workflow activo. Angular se actualizó de `20.3.26` a `20.3.27`
+  y `npm audit --omit=dev` quedó en cero vulnerabilidades. No se cambiaron
+  intervalos, concurrencia, `.env`, reglas de reserva ni autoridad CAPTCHA.
 - Fase 2 técnica del `2026-08-10`: PostgreSQL migró aditivamente de `v51` a
   `v54`; una creación limpia del esquema y `_validate_current_schema` pasaron
   dentro de una transacción revertida sin dejar schemas temporales. Los cinco
@@ -783,9 +843,11 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   `order_id` completos y respuestas CAPTCHA de las bitácoras históricas. Los
   commits anteriores aún pueden contener esos valores; reescribir el historial
   Git requiere una operación separada y autorizada.
-- Dependencias Angular: `npm audit --omit=dev` reportó seis paquetes de
-  severidad alta en `20.3.26`; el upgrade correctivo queda priorizado en la
-  Fase 4 del roadmap.
+- Dependencias Angular: las seis alertas altas del corte `20.3.26` quedaron
+  cerradas con Angular `20.3.27`; la auditoría productiva devuelve cero. La
+  auditoría completa conserva tres alertas moderadas exclusivas de desarrollo
+  en la cadena CLI/MCP/Hono; npm solo propone Angular CLI 21, por lo que no se
+  aplicó ese salto mayor dentro de este mantenimiento compatible.
 - Dashboard no bloqueante: el build Angular quedó correcto con bundle inicial
   de `504.46 kB`; no quedan llamadas `await this.showToast(...)` y el cierre
   manual se controla por `session_id`. La validación fue de código y build: no

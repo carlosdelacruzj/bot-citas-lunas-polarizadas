@@ -21,21 +21,21 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^20.3.0",
-    "@angular/compiler": "^20.3.0",
-    "@angular/core": "^20.3.0",
-    "@angular/forms": "^20.3.0",
-    "@angular/platform-browser": "^20.3.0",
-    "@angular/router": "^20.3.0",
+    "@angular/common": "^20.3.27",
+    "@angular/compiler": "^20.3.27",
+    "@angular/core": "^20.3.27",
+    "@angular/forms": "^20.3.27",
+    "@angular/platform-browser": "^20.3.27",
+    "@angular/router": "^20.3.27",
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.26.25",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "^20.3.32",
-    "@angular/cli": "^20.3.32",
-    "@angular/compiler-cli": "^20.3.0",
+    "@angular/build": "^20.3.33",
+    "@angular/cli": "^20.3.33",
+    "@angular/compiler-cli": "^20.3.27",
     "typescript": "~5.9.2"
   }
 }

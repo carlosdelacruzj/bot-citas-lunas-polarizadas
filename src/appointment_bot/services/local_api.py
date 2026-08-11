@@ -117,6 +117,7 @@ from appointment_bot.services.api.worker_routes import (
     enqueue_worker_command_payload,
     health_payload,
     list_worker_commands_payload,
+    record_worker_control_audit,
     worker_payload,
 )
 
@@ -714,6 +715,15 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 self._send_json(status, payload)
                 return
             controller.prepare_restart()
+            controller_settings = getattr(controller, "settings", None)
+            if controller_settings is not None:
+                record_worker_control_audit(
+                    command="restart",
+                    requested_by=self.headers.get("X-Appointment-Actor"),
+                    status="accepted",
+                    detail="control_path=embedded_api",
+                    settings=controller_settings,
+                )
             self._send_json(
                 HTTPStatus.ACCEPTED,
                 {"status": "restarting", "message": "Controlled restart requested."},
@@ -758,7 +768,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             )
             self._send_json(status, payload)
             return
-        payload = controller.pause() if path.endswith("/pause") else controller.resume()
+        command = "pause" if path.endswith("/pause") else "resume"
+        payload = controller.pause() if command == "pause" else controller.resume()
+        controller_settings = getattr(controller, "settings", None)
+        if controller_settings is not None:
+            record_worker_control_audit(
+                command=command,
+                requested_by=self.headers.get("X-Appointment-Actor"),
+                status="applied",
+                detail="control_path=embedded_api",
+                settings=controller_settings,
+            )
         self._send_json(HTTPStatus.OK, payload)
 
     def log_message(self, format: str, *args) -> None:

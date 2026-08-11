@@ -161,14 +161,7 @@ class ContinuousWorker:
 
     def prepare_restart(self) -> dict[str, object]:
         with self._guard:
-            # Detiene el ciclo actual sin persistir una pausa para el proceso nuevo.
-            self._paused = True
-            self._cancel_event.set()
-            self._update_state(
-                phase="restarting",
-                paused=False,
-                next_check_at=None,
-            )
+            self._prepare_restart_state()
         return self.status()
 
     def stop(self) -> None:
@@ -685,17 +678,22 @@ class ContinuousWorker:
             return False
         if command == "restart":
             with self._guard:
-                self._shutdown_reason = "restart_requested"
-                self._paused = True
-                self._cancel_event.set()
-                self._stop_event.set()
-                self._update_state(
-                    phase="restarting",
-                    paused=False,
-                    next_check_at=None,
-                )
+                self._prepare_restart_state()
             return True
         raise ValueError(f"Unsupported worker command: {command}")
+
+    def _prepare_restart_state(self) -> None:
+        self._shutdown_reason = "restart_requested"
+        # El reinicio cancela y detiene el ciclo actual, pero no debe convertirse
+        # en una pausa persistida que herede el proceso nuevo.
+        self._paused = False
+        self._cancel_event.set()
+        self._stop_event.set()
+        self._update_state(
+            phase="restarting",
+            paused=False,
+            next_check_at=None,
+        )
 
     def _set_session_state(
         self,

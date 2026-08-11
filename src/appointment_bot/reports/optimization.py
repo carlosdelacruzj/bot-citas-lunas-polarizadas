@@ -196,6 +196,7 @@ def _entry_for_report(
     details = report.details or {}
     timing = details.get(TIMING_DETAILS_KEY)
     timing = timing if isinstance(timing, dict) else {}
+    captcha_solver_label = _captcha_solver_label(details)
     slots_text = _text(details.get("cupos") or details.get("slots")) or "no registrado"
     title_time = _format_lima_datetime(report.finished_at) or "hora no registrada"
     heading = (
@@ -217,7 +218,7 @@ def _entry_for_report(
         f"  - Cupo detectado -> fin reserva: {_duration(timing, 'total_from_available_seconds')}\n",
         f"  - Seleccion fecha/hora: {_duration(timing, 'selection_seconds')}\n",
         f"  - Imagen CAPTCHA: {_duration(timing, 'captcha_image_seconds')}\n",
-        f"  - 2captcha: {_duration(timing, 'captcha_solver_seconds')}\n",
+        f"  - {captcha_solver_label}: {_duration(timing, 'captcha_solver_seconds')}\n",
         f"  - Llenar CAPTCHA -> click: {_duration(timing, 'captcha_fill_to_click_seconds')}\n",
         f"  - Click -> respuesta portal: {_duration(timing, 'click_to_portal_response_seconds')}\n",
         "  - Click -> screenshot confirmacion: "
@@ -241,7 +242,10 @@ def _entry_for_report(
     if details.get("captcha_solution_sent"):
         lines.append("  - CAPTCHA enviado: registrado y oculto\n")
     if details.get("captcha_image_path"):
-        lines.append(f"  - Imagen enviada a 2captcha: {_text(details.get('captcha_image_path'))}\n")
+        lines.append(
+            f"  - Imagen usada por {captcha_solver_label}: "
+            f"{_text(details.get('captcha_image_path'))}\n"
+        )
     captcha_attempts = details.get("captcha_attempts")
     if isinstance(captcha_attempts, list):
         for item in captcha_attempts:
@@ -368,7 +372,7 @@ def _post_confirmation(details: dict[str, Any]) -> str:
 def _technical_observation(report: RunReport, timing: dict[str, Any]) -> str:
     details = report.details or {}
     origin = detection_origin(details)
-    slowest = _slowest_timing(timing)
+    slowest = _slowest_timing(timing, captcha_solver_label=_captcha_solver_label(details))
     notes: list[str] = []
     if origin == "normal":
         notes.append("El flujo normal detecto el cupo; reload_probe no fue necesario.")
@@ -383,11 +387,24 @@ def _technical_observation(report: RunReport, timing: dict[str, Any]) -> str:
     return " ".join(notes) or "Caso guardado por alcanzar un resultado util para optimizacion."
 
 
-def _slowest_timing(timing: dict[str, Any]) -> str | None:
+def _captcha_solver_label(details: dict[str, Any]) -> str:
+    source = str(details.get("captcha_solver_source") or "").strip().casefold()
+    if source == "v6":
+        return "V6 local"
+    if source == "2captcha":
+        return "2Captcha"
+    return "Resolutor CAPTCHA"
+
+
+def _slowest_timing(
+    timing: dict[str, Any],
+    *,
+    captcha_solver_label: str = "Resolutor CAPTCHA",
+) -> str | None:
     labels = {
         "selection_seconds": "seleccion fecha/hora",
         "captcha_image_seconds": "imagen CAPTCHA",
-        "captcha_solver_seconds": "2captcha",
+        "captcha_solver_seconds": captcha_solver_label,
         "captcha_fill_to_click_seconds": "llenar CAPTCHA -> click",
         "click_to_portal_response_seconds": "click -> respuesta portal",
         "click_to_confirmation_screenshot_seconds": "click -> screenshot confirmacion",

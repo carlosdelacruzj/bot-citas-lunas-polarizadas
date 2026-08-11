@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-10`.
+Ultima priorizacion: `2026-08-11`.
 
 Esta es la unica lista de trabajo futuro y su orden de ejecucion. El estado de
 lo construido, validado y activo vive en
@@ -26,11 +26,10 @@ crear colas paralelas.
 
 1. Reunir la muestra productiva de cierre de la **Fase 1** sin cambiar sus
    parametros: `10` rafagas y `30` auxiliares reconstruibles.
-2. Corregir en la **Fase 2** los falsos pendientes y la mezcla temporal del
-   Resumen; no tomar decisiones comerciales desde la comparacion actual de mes
-   parcial contra mes completo.
+2. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
+   diferencia de `S/10` y reunir saldos/costos suficientes para cierres reales.
 3. Incorporar controles seguros y salud compuesta en la **Fase 3**.
-4. Cerrar backup externo, watchdogs y dependencias vulnerables en la **Fase 4**.
+4. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
 5. Reorganizar flujos y datos del dashboard antes del rediseño visual.
 6. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
 
@@ -116,8 +115,22 @@ usar sus resultados para decidir continuidad o escalamiento.
 - correlacion CAPTCHA corregida para que el segundo intento OBS-007 use su
   `reobservation_id`; doce colisiones sombra previas quedaron cerradas como
   descartes terminales, sin borrar imagenes, etiquetas ni eventos;
+- archivo `cupos-unicos` corregido para conservar por separado todos los cupos
+  del intento inicial y de la reobservación, cada uno con su propia fecha y
+  hora; dos evidencias históricas del 10 de agosto fueron reparadas desde sus
+  capturas originales;
 - panel CAPTCHA alineado con la autoridad real: ruta muestras -> reglas ->
   resolutor final, estado `V6/20`, circuito, fallback y rollback confirmado;
+- adaptador V6 corregido despues de dos oportunidades del `2026-08-11` que
+  fallaron antes del submit por leer `request_ms` e `inference_ms` en lugar de
+  `local_request_ms` y `local_inference_ms`; V6 conserva autoridad en modo
+  `canary`, las decisiones se cerraron como `not_submitted_internal_error`, el
+  worker fue reiniciado y la tercera decision V6 llego al submit productivo con
+  resultado `slot_lost`, sin fallback, rechazo CAPTCHA ni breaker. La cuarta
+  decision resolvio en `0.141 s`, fue aceptada por el portal y termino en la
+  primera reserva confirmada bajo autoridad V6. El canario queda en `4/20`, con
+  una confirmacion, un `slot_lost`, dos errores internos previos al submit y
+  cero fallbacks; la efectividad sigue abierta hasta completar el corte;
 - migracion viva `v49 -> v51`, `compileall`, Ruff, `59 passed`, build Angular y
   `git diff --check` correctos.
 
@@ -250,6 +263,25 @@ controlar el runtime sin arriesgar una reserva activa.
 El estado nocturno no genera falsa alarma; un proceso vivo pero bloqueado se
 detecta; reinicio y drenaje son auditables y no interrumpen submissions.
 
+### Implementado el 2026-08-11
+
+- pausa, reanudacion y reinicio quedan auditados tanto por comando persistido
+  como por el API embebido;
+- el reinicio comparte una unica transicion con `paused=false`, cancelacion y
+  detencion explicitas, evitando que el proceso nuevo herede una pausa;
+- la alerta urgente de disponibilidad sale de la ruta critica: PostgreSQL
+  `v55` la deduplica y conserva, mientras un dispatcher Telegram separado la
+  envia con hasta tres intentos. Queda pendiente incorporar sus contadores y
+  frescura a la salud compuesta;
+- se retiro de la ruta critica la captura `preenvio` de pagina completa. El
+  checkpoint durable anterior al clic conserva seleccion, resolutor,
+  `decision_id`, validacion y hora, mientras `cupo`, CAPTCHA y respuesta del
+  portal mantienen la cadena visual. Los archivos historicos permanecen
+  intactos.
+
+Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
+reinicio inseguro y heartbeats funcionales de los servicios.
+
 ## Fase 4 - Resiliencia y seguridad
 
 Prioridad: **P1**.
@@ -263,14 +295,12 @@ y reducir riesgos de dependencias y exposicion local.
    checksum y alarma por antiguedad.
 2. Restauracion mensual probada de PostgreSQL y metadatos necesarios; documentar
    recuperacion de Docker, perfiles y configuracion operativa.
-3. Monitor externo real; mientras n8n permanezca local, limitar `5678` a
-   loopback y no publicar dashboard/Admin API.
+3. Monitor externo real; n8n local ya queda limitado a loopback y dashboard y
+   Admin API deben permanecer sin publicar.
 4. Rotar logs por fecha y tamaño; mostrar espacio libre y crecimiento.
-5. Actualizar Angular desde `20.3.26` a una version corregida `20.3.27+`, con
-   build y auditoria posterior.
-6. Definir retencion por finalidad para mensajes, jobs WhatsApp, Post-cita,
+5. Definir retencion por finalidad para mensajes, jobs WhatsApp, Post-cita,
    capturas y telemetria detallada.
-7. Minimizar permanencia de credenciales reveladas en Telegram sin romper el
+6. Minimizar permanencia de credenciales reveladas en Telegram sin romper el
    comprobante autorizado del alta.
 
 ### Criterio de aceptacion
@@ -278,6 +308,15 @@ y reducir riesgos de dependencias y exposicion local.
 Existe un backup externo reciente, una restauracion completa documentada y una
 alerta que sobrevive a la caida de la PC operativa; npm no reporta la
 vulnerabilidad Angular identificada en este corte.
+
+### Implementado el 2026-08-11
+
+- n8n fue recreado sobre el mismo volumen durable con bind exclusivo
+  `127.0.0.1:5678`; el health y el workflow activo regresaron correctamente;
+- Angular `20.3.27` y herramientas `20.3.33` reemplazaron el corte vulnerable
+  `20.3.26`; build y `npm audit --omit=dev` quedaron correctos. Tres alertas
+  moderadas de herramientas de desarrollo requieren evaluar Angular CLI 21 en
+  un cambio mayor separado, no afectan el bundle productivo actual.
 
 ## Fase 5 - Flujos funcionales del dashboard
 

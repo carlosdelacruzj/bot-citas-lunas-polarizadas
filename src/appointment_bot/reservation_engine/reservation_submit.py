@@ -36,7 +36,6 @@ from appointment_bot.services.captcha_shadow import (
     enqueue_shadow_external_result,
     enqueue_shadow_prediction,
 )
-from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ def solve_reservation_captcha_and_click_reserve(
     can_solve_captcha: Callable[[], bool] | None = None,
     expected_details: dict[str, Any] | None = None,
     expected_person_name: str | None = None,
-    on_submission_intent: Callable[[], None] | None = None,
+    on_submission_intent: Callable[[dict[str, Any]], None] | None = None,
     on_submission_started: Callable[[], None] | None = None,
     captcha_audit: dict[str, Any] | None = None,
     attempt_number: int = 1,
@@ -207,14 +206,6 @@ def solve_reservation_captcha_and_click_reserve(
     reservation_field.fill(captcha_solution, timeout=15_000)
     if timing is not None:
         timing.mark("captcha_filled")
-    if captcha_audit is not None:
-        pre_submit_path = save_screenshot(
-            page,
-            settings,
-            f"05-reserva-antes-de-enviar-intento-{attempt_number}",
-        )
-        if pre_submit_path is not None:
-            captcha_audit["pre_submit_screenshot_path"] = str(pre_submit_path)
 
     logger.info("Clicking reservation button")
     if cancel_event is not None and cancel_event.is_set():
@@ -226,7 +217,21 @@ def solve_reservation_captcha_and_click_reserve(
     reserve_button.scroll_into_view_if_needed(timeout=15_000)
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     if on_submission_intent is not None:
-        on_submission_intent()
+        submission_details = dict(expected_details or {})
+        submission_details.update(
+            {
+                "captcha_field_filled": True,
+                "captcha_solver_source": effective_captcha_audit.get(
+                    "captcha_solver_source"
+                ),
+                "captcha_authority_decision_id": effective_captcha_audit.get(
+                    "captcha_authority_decision_id"
+                ),
+                "pre_submit_validation": "passed",
+                "pre_submit_validated_at_utc": datetime.now(UTC).isoformat(),
+            }
+        )
+        on_submission_intent(submission_details)
     try:
         if timing is not None:
             timing.mark("reserve_click_started")

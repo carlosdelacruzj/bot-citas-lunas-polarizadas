@@ -352,19 +352,6 @@ class AdminApiClient:
             actor=actor,
         )
 
-    def get_opportunity_bursts(self) -> list[dict[str, Any]]:
-        payload = self._request("GET", "/api/v1/opportunity-bursts")
-        bursts = payload.get("bursts", [])
-        if not isinstance(bursts, list):
-            raise TelegramControlError("Admin API returned an invalid opportunity burst list.")
-        return [item for item in bursts if isinstance(item, dict)]
-
-    def get_opportunity_burst(self, burst_id: str) -> dict[str, Any]:
-        return self._request(
-            "GET",
-            f"/api/v1/opportunity-bursts/{quote(burst_id, safe='')}",
-        )
-
     def _request(
         self,
         method: str,
@@ -2289,11 +2276,6 @@ def _short_text(value: Any, limit: int) -> str:
 def _display_text(value: Any, limit: int) -> str:
     text = " ".join(str(value).split())
     return text if len(text) <= limit else f"{text[: limit - 1]}…"
-
-
-def _phone_digits(value: Any) -> str:
-    digits = "".join(character for character in str(value or "") if character.isdigit())
-    return digits[-9:] if len(digits) >= 9 else digits
 
 
 def _applicant_display_name(order: dict[str, Any]) -> str:

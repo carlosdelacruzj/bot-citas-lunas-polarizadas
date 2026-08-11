@@ -13,7 +13,7 @@ from appointment_bot.core.models import (
     ServiceOrderCandidate,
     ServiceOrderRuntime,
 )
-from appointment_bot.services.notifier import notify_immediate_availability
+from appointment_bot.services.telegram_alerts import enqueue_immediate_availability
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.worker.execution import continuous_order_settings
 
@@ -122,9 +122,9 @@ class WorkerStateCallbacks:
         signature = _availability_result_signature(result)
         if signature in self._availability_alert_signatures:
             return
-        self._availability_alert_signatures.add(signature)
         self._extend_hot_window_after_availability()
-        notify_immediate_availability(result, self.settings)
+        if enqueue_immediate_availability(result, dedupe_key=signature):
+            self._availability_alert_signatures.add(signature)
 
 
 def _availability_result_signature(result: AvailabilityResult) -> str:

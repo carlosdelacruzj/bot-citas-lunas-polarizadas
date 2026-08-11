@@ -11,6 +11,7 @@ from appointment_bot.services.captcha_shadow import configure_captcha_shadow
 from appointment_bot.services.daily_slot_summary import enqueue_daily_slot_summary
 from appointment_bot.services.local_api import create_local_api_server
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.telegram_alerts import configure_telegram_alerts
 from appointment_bot.worker.continuous_worker import (
     DAILY_CUTOFF_REASON,
     LEASE_UNAVAILABLE_REASON,
@@ -39,6 +40,8 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     )
     captcha_shadow_dispatcher = configure_captcha_shadow(settings)
     captcha_shadow_dispatcher.start()
+    telegram_alert_dispatcher = configure_telegram_alerts(settings)
+    telegram_alert_dispatcher.start()
     worker_failure: list[BaseException] = []
     health_failure = False
     daily_cutoff_review_completed = False
@@ -69,6 +72,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         stop_event.set()
         worker_thread.join(timeout=5)
         captcha_shadow_dispatcher.stop()
+        telegram_alert_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker did not become ready before timeout.")
@@ -77,9 +81,11 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         server.server_close()
         worker_thread.join(timeout=5)
         captcha_shadow_dispatcher.stop()
+        telegram_alert_dispatcher.stop()
         return LEASE_UNAVAILABLE_EXIT_CODE
     if not worker.is_running and worker.shutdown_reason != DAILY_CUTOFF_REASON:
         captcha_shadow_dispatcher.stop()
+        telegram_alert_dispatcher.stop()
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker stopped during startup.")
@@ -137,6 +143,7 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         server.server_close()
         server_thread.join(timeout=10)
         captcha_shadow_dispatcher.stop()
+        telegram_alert_dispatcher.stop()
         if worker_thread.is_alive():
             raise RuntimeError("Continuous worker did not stop within operation timeouts.")
     if worker_failure:

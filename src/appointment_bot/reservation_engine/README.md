@@ -15,6 +15,12 @@ El observador conserva además cinco muestras consecutivas del CAPTCHA original
 extraído del HTML. Esas muestras son evidencia independiente y no generan cinco
 capturas del modal ni se sustituyen por recortes de pantalla.
 
+Una reobservación posterior a `slot_lost` puede producir más de un cupo dentro
+de la misma ejecución. Cada captura debe conservar su propia fecha y hora antes
+de archivar; nunca se debe nombrar la imagen del primer intento con los datos
+del intento recuperado. Todos los cupos distintos de esa secuencia participan
+en el archivo compartido y mantienen la misma deduplicación por fecha y hora.
+
 Estructura futura para el motor de reservas: Playwright, login, lectura de
 cupos, seleccion de fecha/hora, CAPTCHA, envio y confirmacion.
 

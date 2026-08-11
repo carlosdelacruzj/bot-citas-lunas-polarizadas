@@ -150,11 +150,11 @@ def send_telegram_message(
 
 
 def notify_immediate_availability(result: AvailabilityResult, settings: Settings) -> bool:
-    if not _should_send_immediate_availability(result):
+    if not should_send_immediate_availability(result):
         return False
     return send_telegram_message(
         settings,
-        _format_immediate_availability_message(result),
+        format_immediate_availability_message(result),
         timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
     )
 
@@ -274,7 +274,7 @@ def _send_deferred_result_notification(
     settings: Settings,
     screenshot_paths: list[Path],
 ) -> bool:
-    if _should_send_immediate_availability(result):
+    if should_send_immediate_availability(result):
         if screenshot_paths:
             return _send_telegram_photos(
                 settings,
@@ -299,8 +299,8 @@ def _send_registered_contact_notification(
 
 
 def _format_telegram_result_message(result: AvailabilityResult) -> str:
-    if _should_send_immediate_availability(result):
-        return _format_immediate_availability_message(result)
+    if should_send_immediate_availability(result):
+        return format_immediate_availability_message(result)
     return _format_result_message(result)
 
 
@@ -366,7 +366,7 @@ def _is_blocked_diagnostic_evidence(result: AvailabilityResult) -> bool:
     )
 
 
-def _should_send_immediate_availability(result: AvailabilityResult) -> bool:
+def should_send_immediate_availability(result: AvailabilityResult) -> bool:
     if result.status == "available":
         return True
     if result.status != "partial":
@@ -512,31 +512,21 @@ def _format_result_message(result: AvailabilityResult) -> str:
     return f"Revision completada con estado {result.status}.\n\nDetalle: {result.message}{details}"
 
 
-def _format_immediate_availability_message(result: AvailabilityResult) -> str:
+def format_immediate_availability_message(result: AvailabilityResult) -> str:
     details = result.details or {}
-    general_observer = not any(
-        details.get(key) for key in ("orden", "order_id", "cliente", "client_name")
-    )
     date, hour = _appointment_datetime_details(details)
     date_options = _join_options(details.get("date_options"))
     hour_options = _join_options(details.get("hour_options"))
     slots = _format_slots(details.get("cupos") or details.get("slots"))
     sent_at = datetime.now(TELEGRAM_TIMEZONE).strftime("%H:%M:%S")
     lines = [
-        ("CUPO DETECTADO - OBSERVADOR GENERAL" if general_observer else "CUPO DETECTADO"),
+        "CUPO DETECTADO",
         f"Enviado: {sent_at} Lima",
         f"Sede: {_format_availability_field(details.get('sede'))}",
         f"Fechas: {_format_availability_field(date or date_options)}",
         f"Horas: {_format_availability_field(hour or hour_options)}",
         f"Cupos: {slots}",
     ]
-    if general_observer:
-        lines.extend(
-            [
-                "Contexto: detección general sin orden de cliente asociada.",
-                "Antes de actuar: validar las restricciones de las órdenes activas.",
-            ]
-        )
     return "\n".join(lines)
 
 

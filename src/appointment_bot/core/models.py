@@ -35,6 +35,7 @@ class RunReport(_NormalizedResultStatus):
     details: dict[str, Any] | None = None
     screenshot_path: str | None = None
     screenshot_paths: list[str] | None = None
+    unique_slot_evidence: list[dict[str, str]] | None = None
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 54
+SCHEMA_VERSION = 55
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -341,6 +341,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_followup_messages_schema(connection)
     _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
+    _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
     _create_captcha_authority_schema(connection)
     _create_post_appointment_schema(connection)
@@ -904,6 +905,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_followup_messages",
         "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
+        "telegram_alert_outbox",
         "captcha_sampling_control",
         "captcha_authority_control",
         "captcha_authority_decisions",
@@ -1026,6 +1028,11 @@ def _validate_current_schema(connection: Connection) -> None:
         ("captcha_shadow_outbox", "sequence"),
         ("captcha_shadow_outbox", "status"),
         ("captcha_shadow_outbox", "next_attempt_at"),
+        ("telegram_alert_outbox", "dedupe_key"),
+        ("telegram_alert_outbox", "payload"),
+        ("telegram_alert_outbox", "status"),
+        ("telegram_alert_outbox", "attempt_count"),
+        ("telegram_alert_outbox", "next_attempt_at"),
         ("captcha_sampling_control", "enabled"),
         ("captcha_sampling_control", "sample_limit"),
         ("captcha_sampling_control", "updated_at"),
@@ -1154,6 +1161,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("uq_whatsapp_automation_jobs_running")
     if "idx_captcha_shadow_outbox_pending" not in indexes:
         missing.append("idx_captcha_shadow_outbox_pending")
+    if "idx_telegram_alert_outbox_pending" not in indexes:
+        missing.append("idx_telegram_alert_outbox_pending")
     if "idx_captcha_authority_decisions_created" not in indexes:
         missing.append("idx_captcha_authority_decisions_created")
     if "idx_post_appointment_reviews_order_finished" not in indexes:
@@ -1706,6 +1715,33 @@ def _create_captcha_shadow_outbox_schema(connection: Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_captcha_shadow_outbox_pending
         ON captcha_shadow_outbox(next_attempt_at, created_at)
+        WHERE status = 'pending'
+        """
+    )
+
+
+def _create_telegram_alert_outbox_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS telegram_alert_outbox (
+            dedupe_key text PRIMARY KEY,
+            payload jsonb NOT NULL,
+            status text NOT NULL DEFAULT 'pending' CHECK (
+                status IN ('pending', 'sent', 'failed')
+            ),
+            attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+            next_attempt_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_error text,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            sent_at timestamptz
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_telegram_alert_outbox_pending
+        ON telegram_alert_outbox(next_attempt_at, created_at)
         WHERE status = 'pending'
         """
     )
@@ -2507,6 +2543,13 @@ def migrate_database(connection: Connection) -> None:
             (54,),
         )
         current_version = 54
+    if current_version == 54:
+        _create_telegram_alert_outbox_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (55,),
+        )
+        current_version = 55
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

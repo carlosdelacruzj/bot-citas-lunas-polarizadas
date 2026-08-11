@@ -183,9 +183,9 @@ def complete_available_reservation(
 
     try:
 
-        def mark_submission_intent() -> None:
+        def mark_submission_intent(submission_details: dict[str, object]) -> None:
             if on_submission_intent is not None:
-                on_submission_intent(result.details)
+                on_submission_intent(submission_details)
 
         for captcha_attempt in range(1, max_captcha_attempts + 1):
             attempt_started = time.monotonic()
@@ -254,11 +254,6 @@ def complete_available_reservation(
                 "captcha_images",
                 captcha_audit.get("captcha_screenshot_image_path"),
             )
-            pre_submit_path = captcha_audit.get("pre_submit_screenshot_path")
-            _add_diagnostic_artifact(diagnostic_artifacts, "screenshots", pre_submit_path)
-            if pre_submit_path:
-                additional_screenshot_paths.append(Path(str(pre_submit_path)))
-
             submission_outcome = wait_for_reservation_submission_outcome(page)
             confirmation_text_detected = submission_outcome == "confirmed"
             portal_text = read_visible_page_text(page)

@@ -61,9 +61,10 @@ Cuando `phase` empieza por `monitoring_observer` y `current_order_id` esta vacio
 el dashboard debe mostrar `Observador general activo`: la cuenta esta buscando
 cupos, pero no representa una orden de cliente.
 
-Las alertas de disponibilidad sin orden o cliente asociado deben identificarse
-en Telegram como `CUPO DETECTADO - OBSERVADOR GENERAL` y recordar que el cupo
-todavia debe validarse contra las restricciones de las ordenes activas.
+El origen de la deteccion no cambia la alerta urgente de Telegram. Tanto el
+observador general como una orden activa usan el mismo formato breve:
+`CUPO DETECTADO`, hora de envio, sede, fechas, horas y cupos. El mensaje no
+incluye etiquetas del observador ni instrucciones adicionales.
 
 ## Comandos actuales
 

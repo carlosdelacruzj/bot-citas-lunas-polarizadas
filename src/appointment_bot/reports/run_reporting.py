@@ -16,7 +16,7 @@ from appointment_bot.reports.optimization import (
 )
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import (
-    archive_unique_slot_screenshot,
+    archive_unique_slot_screenshots,
     normalize_screenshot_paths,
 )
 
@@ -46,7 +46,8 @@ def report_from_result(
     )
     if exit_code is not None:
         effective_exit_code = exit_code
-    details = result.details or {}
+    details = dict(result.details or {})
+    unique_slot_evidence = details.pop("_unique_slot_evidence", None)
     submission_outcome = str(details.get("submission_outcome") or "").strip()
     return RunReport(
         status=result.status,
@@ -65,9 +66,14 @@ def report_from_result(
             )
         ),
         reservation_confirmed=result.status == ResultStatus.REGISTERED,
-        details=result.details,
+        details=details or None,
         screenshot_path=str(all_screenshot_paths[0]) if all_screenshot_paths else None,
         screenshot_paths=[str(path) for path in all_screenshot_paths] or None,
+        unique_slot_evidence=(
+            [dict(item) for item in unique_slot_evidence]
+            if isinstance(unique_slot_evidence, list)
+            else None
+        ),
     )
 
 
@@ -118,7 +124,7 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
     screenshot_paths = report.screenshot_paths or []
     if report.screenshot_path and report.screenshot_path not in screenshot_paths:
         screenshot_paths = [report.screenshot_path, *screenshot_paths]
-    archive_unique_slot_screenshot(settings, report)
+    archive_unique_slot_screenshots(settings, report)
     try:
         person_name = str((report.details or {}).get("nombre") or "").strip() or None
         record_run_outcome(

@@ -179,16 +179,12 @@ class ReservationCaptchaTests(unittest.TestCase):
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
-                patch(
-                    "appointment_bot.reservation_engine.reservation_submit.save_screenshot",
-                    return_value=None,
-                ),
             ):
                 solve_reservation_captcha_and_click_reserve(
                     _Page(),
                     settings,
                     can_submit=lambda: True,
-                    on_submission_intent=lambda: events.append("intent"),
+                    on_submission_intent=lambda details: events.append("intent"),
                     on_submission_started=lambda: events.append("started"),
                     captcha_audit=captcha_audit,
                 )
@@ -226,10 +222,6 @@ class ReservationCaptchaTests(unittest.TestCase):
                 ) as solve_captcha,
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
-                ),
-                patch(
-                    "appointment_bot.reservation_engine.reservation_submit.save_screenshot",
-                    return_value=None,
                 ),
             ):
                 solve_reservation_captcha_and_click_reserve(

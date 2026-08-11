@@ -117,21 +117,50 @@ def archive_unique_slot_screenshot(
     settings: Settings,
     report: RunReport,
 ) -> Path | None:
-    slot_key = _unique_slot_key(report.details or {})
-    if slot_key is None:
-        return None
+    archived = archive_unique_slot_screenshots(settings, report)
+    return archived[0] if archived else None
 
-    source = next(
-        (
-            path
-            for path in report_screenshot_paths(report)
-            if _is_slot_screenshot(path) and path.is_file()
-        ),
-        None,
-    )
-    if source is None:
-        return None
 
+def archive_unique_slot_screenshots(
+    settings: Settings,
+    report: RunReport,
+) -> list[Path]:
+    candidates: list[tuple[dict, Path]] = []
+    for evidence in report.unique_slot_evidence or []:
+        source = Path(str(evidence.get("screenshot_path") or ""))
+        if _unique_slot_key(evidence) is not None and source.is_file():
+            candidates.append((evidence, source))
+
+    if not candidates:
+        source = next(
+            (
+                path
+                for path in report_screenshot_paths(report)
+                if _is_slot_screenshot(path) and path.is_file()
+            ),
+            None,
+        )
+        if source is not None:
+            candidates.append((report.details or {}, source))
+
+    archived: list[Path] = []
+    seen_keys: set[str] = set()
+    for details, source in candidates:
+        slot_key = _unique_slot_key(details)
+        if slot_key is None or slot_key in seen_keys:
+            continue
+        seen_keys.add(slot_key)
+        destination = _archive_unique_slot_candidate(settings, slot_key, source)
+        if destination is not None:
+            archived.append(destination)
+    return archived
+
+
+def _archive_unique_slot_candidate(
+    settings: Settings,
+    slot_key: str,
+    source: Path,
+) -> Path | None:
     destination = screenshot_artifact_dir(settings, "cupos-unicos") / f"{slot_key}.png"
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():

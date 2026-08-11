@@ -2,7 +2,7 @@
 
 Estado: **vigente**.
 
-Ultima verificacion: `2026-08-09`.
+Ultima verificacion: `2026-08-11`.
 
 Este documento contiene el camino diario de operacion y recuperacion. El estado
 general vive en [`../project-status.md`](../project-status.md) y todo trabajo
@@ -24,11 +24,18 @@ PostgreSQL 16 en Docker
   |-- worker de reservas: 127.0.0.1:8765
   |-- Admin API + dashboard: 127.0.0.1:8766
   |-- Telegram control -> Admin API
-  `-- CAPTCHA sombra: 127.0.0.1:8787
+  `-- CAPTCHA local/sombra: 127.0.0.1:8787
 ```
 
 Los pares `.venv/python.exe -> Python312/python.exe` son el redirector normal
 del entorno virtual en Windows, no procesos funcionales duplicados.
+
+n8n `2.22.4` permanece local, fuera del camino crítico y sobre el volumen
+durable `n8n_data`. Su puerto debe publicarse exclusivamente como
+`127.0.0.1:5678:5678`; un bind vacío o `0.0.0.0:5678` vuelve a exponerlo en la
+red. Si se recrea el contenedor, conservar el volumen y comprobar `/healthz` y
+la activación de `Appointment Bot - Monitor continuo` antes de retirar el
+contenedor anterior.
 
 ## Arranque
 
@@ -81,7 +88,7 @@ supervisor sigue vivo, no hay lease/submission y el corte quedo registrado.
 - `OBS-007`: reobservacion unica despues de `slot_lost` explicito;
 - V6 opera en canario de hasta `20` decisiones; 2Captcha es fallback automático.
 
-El canario y su rollback estan en
+El canario operativo OBS-006/007 y su rollback estan en
 [`opportunity-burst-canary-2026-08-09.md`](opportunity-burst-canary-2026-08-09.md).
 Los planes de rendimiento de julio son historia y no describen configuracion
 actual.
@@ -146,18 +153,26 @@ decisiones y trazas actuales estan en:
 - [`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md);
 - [`whatsapp-daily-slot-summary-2026-07-30.md`](whatsapp-daily-slot-summary-2026-07-30.md).
 
-## CAPTCHA sombra
+## CAPTCHA local y sombra
 
 Runtime residente actual:
 
-- control: `v3_selected`;
-- candidata: `v6_sequence_candidate`;
-- autoridad del portal: 2Captcha.
+- autoridad canaria: `v6_sequence_candidate`, hasta `20` decisiones reales;
+- control en sombra: `v3_selected`;
+- fallback del portal: 2Captcha.
 
-V1, V2, V4 y V5 se conservan solo como historia. V6 requiere mas de `99%` en
-al menos `500` muestras frescas posteriores a su congelacion. Desacuerdo,
-servicio no saludable, baja confianza o timeout siempre mantienen/fuerzan
-2Captcha.
+V6 solo responde al portal si `min_char_confidence >= 0.60` y
+`sequence_confidence_product >= 0.60`, con timeout de `500 ms`. Formato
+invalido, baja confianza, timeout, servicio no saludable, circuito abierto o
+limite agotado fuerzan 2Captcha. El primer `captcha_invalid`, un resultado
+ambiguo o un fallo local abre el circuito; el rollback persistente cambia a
+`mode=2captcha` sin editar `.env`. V3 sigue generando evidencia de sombra y no
+responde al portal.
+
+V1, V2, V4 y V5 se conservan solo como historia y no consumen GPU. El corte
+prospectivo de `500` muestras sigue siendo una revision para decidir si el
+canario se amplia o se cierra; no es el estado de autoridad actual ni elimina
+el fallback.
 
 El muestreo adicional esta desactivado por defecto y puede agregar cerca de
 `0.4 s` por muestra. La integracion completa vive en

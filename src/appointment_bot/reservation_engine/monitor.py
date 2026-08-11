@@ -819,6 +819,25 @@ def _merge_recovered_reservation(
             ),
         }
     ]
+    unique_slot_evidence: list[dict[str, str]] = []
+    original_slot_screenshot = _first_slot_screenshot(
+        original_screenshot_paths,
+        original_screenshot_path,
+    )
+    if original_slot_screenshot is not None:
+        unique_slot_evidence.append(
+            _slot_evidence(original_result, original_slot_screenshot)
+        )
+    recovered_slot_screenshot = _first_slot_screenshot(
+        recovered_screenshot_paths,
+        recovered_screenshot_path,
+    )
+    if recovered_slot_screenshot is not None:
+        unique_slot_evidence.append(
+            _slot_evidence(recovered_result, recovered_slot_screenshot)
+        )
+    if unique_slot_evidence:
+        details["_unique_slot_evidence"] = unique_slot_evidence
     _record_reobservation_event(
         reobservation_id,
         len(observations) + 3,
@@ -967,6 +986,28 @@ def _unique_paths(*groups: list[Path]) -> list[Path]:
             seen.add(key)
             paths.append(path)
     return paths
+
+
+def _first_slot_screenshot(paths: list[Path], fallback: Path | None) -> Path | None:
+    candidates = _unique_paths(paths, [fallback] if fallback is not None else [])
+    return next(
+        (
+            path
+            for path in candidates
+            if path.name.startswith(("cupo-", "observer-cupo-"))
+        ),
+        None,
+    )
+
+
+def _slot_evidence(result: AvailabilityResult, screenshot_path: Path) -> dict[str, str]:
+    details = result.details or {}
+    return {
+        "sede": str(details.get("sede") or ""),
+        "fecha": str(details.get("fecha") or ""),
+        "hora": str(details.get("hora") or ""),
+        "screenshot_path": str(screenshot_path),
+    }
 
 
 def _appointment_panel_is_visible(page) -> bool:
