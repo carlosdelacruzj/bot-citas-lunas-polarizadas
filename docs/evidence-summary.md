@@ -1,35 +1,30 @@
 # Resumen digerido de evidencia
 
-> Snapshot generado con cobertura observada entre `2026-06-30` y
-> `2026-08-08`. No representa el estado vivo ni reemplaza
-> `docs/project-status.md`. Sus totales deben compararse solo dentro de ese
-> corte; el indice puede contener rutas sanitizadas cuyo artefacto ya no esta
-> retenido.
-
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 849
-- Reservas registradas: 87
+- Eventos indexados: 872
+- Reservas registradas: 91
 - Reservas no confirmadas: 5
 - Disponibilidades completas: 423
-- Disponibilidades parciales: 173
+- Disponibilidades parciales: 190
 - Senales de defensa: 8
 
 ## Origen de deteccion
-- normal: 849
+- normal: 869
+- slot_lost_reobservation: 3
 
 ## Ultimos eventos utiles
-- 2026-08-08 11:08:13 | order-*** | unavailable | normal | 22/08/2026 10:00 | slot_lost
-- 2026-08-08 11:07:24 | order-*** | unavailable | normal | 13/08/2026 09:00 | slot_lost
-- 2026-08-08 11:05:13 | order-*** | unavailable | normal | 29/08/2026 09:00 | slot_lost
-- 2026-08-08 10:39:00 | order-*** | unavailable | normal | 31/08/2026 12:00 | slot_lost
-- 2026-08-08 10:36:30 | order-*** | unavailable | normal | 31/08/2026 11:00 | slot_lost
-- 2026-08-08 10:35:28 | order-*** | unavailable | normal | 31/08/2026 08:00 | slot_lost
-- 2026-08-08 10:19:00 | order-*** | unavailable | normal | 10/08/2026 12:00 | slot_lost
-- 2026-08-08 10:06:43 | order-*** | unavailable | normal | 31/08/2026 09:00 | slot_lost
-- 2026-08-08 10:05:21 | order-*** | partial | normal | 31/08/2026 12:00 | blocked_by_order_rule
-- 2026-08-08 10:03:18 | order-*** | partial | normal | 31/08/2026 11:00 | blocked_by_order_rule
+- 2026-08-10 15:05:11 | order-*** | partial | normal | 22/08/2026 10:00 | blocked_by_order_rule
+- 2026-08-10 15:04:41 | order-*** | partial | normal | 22/08/2026 11:00 | blocked_by_order_rule
+- 2026-08-10 15:03:48 | order-*** | partial | normal | 26/08/2026 09:00 | blocked_by_order_rule
+- 2026-08-10 15:02:35 | order-*** | partial | normal | 26/08/2026 08:00 | blocked_by_order_rule
+- 2026-08-10 13:28:23 | order-*** | partial | normal | 01/09/2026 12:00 | blocked_by_order_rule
+- 2026-08-10 13:27:54 | order-*** | partial | normal | 01/09/2026 12:00 | blocked_by_order_rule
+- 2026-08-10 13:27:22 | order-*** | partial | normal | 01/09/2026 11:00 | blocked_by_order_rule
+- 2026-08-10 13:26:52 | order-*** | partial | normal | 01/09/2026 11:00 | blocked_by_order_rule
+- 2026-08-10 13:26:41 | order-*** | partial | normal | 01/09/2026 11:00 | blocked_by_order_rule
+- 2026-08-10 13:26:30 | order-*** | partial | normal | 01/09/2026 11:00 | blocked_by_order_rule
 
 ## Senales de defensa
 - 2026-08-07 16:11:51 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

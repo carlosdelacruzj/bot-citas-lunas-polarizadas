@@ -231,14 +231,58 @@
       <h2 id="captcha-sampling-title">Capturas CAPTCHA</h2>
       <p>Elige entre priorizar la reserva o guardar más imágenes para mejorar el modelo.</p>
     </div>
-    <span class="badge {{ dashboard.captchaSamplingEnabled() ? 'warn' : 'good' }}">
-      {{ dashboard.captchaSamplingEnabled() ? 'recolección activa' : 'modo normal' }}
-    </span>
+    <div class="captcha-control-badges" aria-label="Estado de los controles CAPTCHA">
+      <span class="badge {{ dashboard.captchaSamplingEnabled() ? 'warn' : 'good' }}">
+        {{ dashboard.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
+      </span>
+      <span class="badge {{ dashboard.captchaAuthorityUsesV6() ? 'good' : 'neutral' }}">
+        {{ dashboard.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
+      </span>
+    </div>
   </div>
 
   <div class="notice neutral captcha-sampling-intro" role="note">
-    2Captcha sigue resolviendo el CAPTCHA final. Esta opción solo decide si antes se guardan
-    imágenes adicionales.
+    La cantidad de capturas y el resolutor final son controles independientes. Las restricciones
+    de la orden siempre se validan antes de resolver o enviar un CAPTCHA.
+  </div>
+
+  <div class="captcha-operation-path" aria-label="Ruta operativa del CAPTCHA">
+    <article class="captcha-path-stage">
+      <span class="captcha-stage-index">A</span>
+      <div>
+        <span class="captcha-stage-label">Captura</span>
+        <strong>{{ dashboard.captchaSamplingEffectiveLimit() }} por oportunidad</strong>
+        <small>
+          {{
+            dashboard.captchaSamplingEnabled()
+              ? 'Guarda imágenes para revisión humana.'
+              : 'Sin muestras adicionales.'
+          }}
+        </small>
+      </div>
+    </article>
+    <article class="captcha-path-stage captcha-rules-stage">
+      <span class="captcha-stage-index">B</span>
+      <div>
+        <span class="captcha-stage-label">Reglas de la orden</span>
+        <strong>Fecha compatible</strong>
+        <small>Si no cumple, solo guarda evidencia: no resuelve ni consume canario.</small>
+      </div>
+    </article>
+    <article class="captcha-path-stage captcha-authority-stage">
+      <span class="captcha-stage-index">C</span>
+      <div>
+        <span class="captcha-stage-label">CAPTCHA final</span>
+        <strong>{{ dashboard.captchaAuthorityUsesV6() ? 'V6 canario' : '2Captcha' }}</strong>
+        <small>
+          {{
+            dashboard.captchaAuthorityUsesV6()
+              ? 'V6 responde si supera confianza; 2Captcha cubre cualquier duda.'
+              : 'V6 sigue comparando en sombra.'
+          }}
+        </small>
+      </div>
+    </article>
   </div>
 
   <div class="split captcha-sampling-options">
@@ -306,15 +350,85 @@
 
   @if (dashboard.captchaSamplingEnabled()) {
     <div class="notice warn captcha-sampling-result" role="status">
-      En el siguiente intento normal se guardarán
-      <strong>{{ dashboard.captchaSamplingLimit() - 1 }} muestras</strong> y luego se enviará
-      <strong>1 CAPTCHA final</strong> a 2Captcha. Demora adicional estimada:
+      En la siguiente oportunidad se guardarán
+      <strong>{{ dashboard.captchaSamplingLimit() - 1 }} muestras</strong> y quedará
+      <strong>1 CAPTCHA final</strong>. Si la fecha cumple las reglas, lo resolverá
+      <strong>{{ dashboard.captchaAuthorityUsesV6() ? 'V6' : '2Captcha' }}</strong>.
+      Si no cumple, no se resolverá. Demora adicional estimada:
       <strong>+{{ dashboard.captchaSamplingEstimatedSeconds() }} s</strong>.
     </div>
   } @else {
     <div class="notice good captcha-sampling-result" role="status">
-      En el siguiente intento se usará <strong>1 CAPTCHA</strong>, sin demora por recolección.
+      Se capturará <strong>1 CAPTCHA</strong>. Solo una fecha compatible llegará al resolutor
+      final, sin demora por recolección adicional.
     </div>
+  }
+
+  @if (dashboard.captchaAuthorityControl(); as authority) {
+    <article
+      class="captcha-authority-card"
+      [class.is-open]="authority.circuit_state === 'open'"
+      aria-labelledby="captcha-authority-title"
+    >
+      <div class="captcha-authority-copy">
+        <p class="eyebrow">Autoridad del CAPTCHA final</p>
+        <h3 id="captcha-authority-title">
+          {{ dashboard.captchaAuthorityUsesV6() ? 'V6 con red de seguridad' : '2Captcha activo' }}
+        </h3>
+        <p>
+          @if (dashboard.captchaAuthorityUsesV6()) {
+            V6 resuelve solo con confianza mínima
+            {{ authority.min_char_confidence }} / {{ authority.sequence_confidence_product }}.
+            Una baja confianza, timeout o circuito abierto deriva a 2Captcha.
+          } @else if (authority.circuit_state === 'open') {
+            El circuito detuvo V6: {{ authority.circuit_reason ?? 'causa pendiente de revisión' }}.
+          } @else {
+            V6 continúa registrando predicciones, pero no llena el CAPTCHA final.
+          }
+        </p>
+      </div>
+
+      <div class="captcha-authority-progress">
+        <div class="captcha-progress-heading">
+          <span>Canario productivo</span>
+          <strong>{{ authority.local_decisions }}/{{ authority.canary_limit }}</strong>
+        </div>
+        <div
+          class="captcha-progress-track"
+          role="progressbar"
+          aria-label="Decisiones V6 consumidas"
+          [attr.aria-valuemin]="0"
+          [attr.aria-valuemax]="authority.canary_limit"
+          [attr.aria-valuenow]="authority.local_decisions"
+        >
+          <span
+            [style.width.%]="(authority.local_decisions / authority.canary_limit) * 100"
+          ></span>
+        </div>
+        <div class="captcha-authority-counts">
+          <span><strong>{{ authority.local_confirmed }}</strong> confirmadas</span>
+          <span><strong>{{ authority.local_rejected }}</strong> rechazadas</span>
+          <span><strong>{{ authority.fallback_decisions }}</strong> fallback</span>
+        </div>
+      </div>
+
+      <div class="captcha-authority-actions">
+        @if (dashboard.captchaAuthorityUsesV6()) {
+          <button type="button" class="secondary" (click)="dashboard.requestCaptchaAuthorityFallback()">
+            Volver a 2Captcha
+          </button>
+        } @else if (authority.remaining_local_decisions === 0) {
+          <button type="button" class="secondary" (click)="dashboard.requestCaptchaAuthorityFallback()">
+            Cerrar canario en 2Captcha
+          </button>
+        } @else {
+          <button type="button" class="primary" (click)="dashboard.requestCaptchaAuthorityCanary()">
+            {{ authority.circuit_state === 'open' ? 'Reactivar V6' : 'Activar V6' }}
+          </button>
+        }
+        <small>El cambio aplica al siguiente CAPTCHA compatible.</small>
+      </div>
+    </article>
   }
 
   <dl class="summary-list compact captcha-sampling-facts">
@@ -327,12 +441,12 @@
       <dd>{{ dashboard.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
     </div>
     <div>
-      <dt>Ordenes listas</dt>
-      <dd>{{ dashboard.readyOrders() }}</dd>
+      <dt>Resolutor guardado</dt>
+      <dd>{{ dashboard.captchaAuthorityControl()?.mode === 'canary' ? 'V6 canario' : '2Captcha' }}</dd>
     </div>
     <div>
-      <dt>Modo rapido</dt>
-      <dd>Siempre 1 CAPTCHA</dd>
+      <dt>Regla incompatible</dt>
+      <dd>Solo evidencia</dd>
     </div>
   </dl>
 

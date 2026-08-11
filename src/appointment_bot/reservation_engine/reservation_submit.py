@@ -31,6 +31,7 @@ from appointment_bot.reservation_engine.reservation_controls import (
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.services.captcha import solve_normal_captcha
+from appointment_bot.services.captcha_authority import solve_reservation_captcha
 from appointment_bot.services.captcha_shadow import (
     enqueue_shadow_external_result,
     enqueue_shadow_prediction,
@@ -56,6 +57,7 @@ def solve_reservation_captcha_and_click_reserve(
     timing: ReservationTiming | None = None,
     run_id: str | None = None,
     order_id: str | None = None,
+    captcha_event_context: str | None = None,
 ) -> Page:
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
@@ -78,6 +80,7 @@ def solve_reservation_captcha_and_click_reserve(
         attempt_number=attempt_number,
         run_id=run_id,
         order_id=order_id,
+        event_context=captcha_event_context,
     )
     captcha_path = save_reservation_captcha_image(
         page,
@@ -104,15 +107,20 @@ def solve_reservation_captcha_and_click_reserve(
             "Reserva diferida porque hay una orden de mayor prioridad lista.",
             dict(captcha_audit or {}),
         )
+    shadow_event_id: str | None = None
+    shadow_metadata: dict[str, Any] = {}
     if run_id:
-        shadow_event_id = (
-            f"{run_id}:{order_id or 'observer'}:captcha-{attempt_number}"
+        event_namespace = (
+            f"{run_id}:{order_id or 'observer'}"
+            f"{f':{captcha_event_context}' if captcha_event_context else ''}"
         )
+        shadow_event_id = f"{event_namespace}:captcha-{attempt_number}"
         shadow_metadata = {
             "run_id": run_id,
             "order_id": order_id,
             "observer": int(order_id is None),
             "attempt": attempt_number,
+            "event_context": captcha_event_context,
             "captured_at_utc": datetime.now(UTC).isoformat(),
             "source_image_kind": effective_captcha_audit.get("captcha_sent_source"),
             "detection_origin": (expected_details or {}).get("detection_origin"),
@@ -130,7 +138,17 @@ def solve_reservation_captcha_and_click_reserve(
         if timing is not None:
             timing.mark("captcha_solver_started")
         captcha_solver_started = time.monotonic()
-        captcha_solution = solve_normal_captcha(captcha_path_for_solver, settings)
+        authority_result = solve_reservation_captcha(
+            captcha_path_for_solver,
+            settings,
+            event_id=shadow_event_id,
+            run_id=run_id,
+            order_id=order_id,
+            attempt_number=attempt_number,
+            metadata=shadow_metadata,
+            fallback_solver=solve_normal_captcha,
+        )
+        captcha_solution = authority_result.answer
         captcha_solver_duration_ms = round(
             max(time.monotonic() - captcha_solver_started, 0.0) * 1000,
             3,
@@ -138,6 +156,28 @@ def solve_reservation_captcha_and_click_reserve(
         if captcha_audit is not None:
             captcha_audit["captcha_solution_sent"] = captcha_solution
             captcha_audit["captcha_solver_duration_ms"] = captcha_solver_duration_ms
+            captcha_audit["captcha_solver_source"] = authority_result.source
+            captcha_audit["captcha_authority_decision_id"] = (
+                authority_result.decision_id
+            )
+            captcha_audit["captcha_authority_fallback_reason"] = (
+                authority_result.fallback_reason
+            )
+            captcha_audit["captcha_local_request_ms"] = (
+                authority_result.local_request_ms
+            )
+            captcha_audit["captcha_local_inference_ms"] = (
+                authority_result.local_inference_ms
+            )
+            captcha_audit["captcha_v6_mean_confidence"] = (
+                authority_result.mean_confidence
+            )
+            captcha_audit["captcha_v6_min_char_confidence"] = (
+                authority_result.min_char_confidence
+            )
+            captcha_audit["captcha_v6_sequence_confidence_product"] = (
+                authority_result.sequence_confidence_product
+            )
             shadow_event_id = captcha_audit.get("captcha_shadow_event_id")
             if shadow_event_id:
                 captcha_audit["captcha_shadow_external_enqueued"] = (
@@ -146,12 +186,13 @@ def solve_reservation_captcha_and_click_reserve(
                         external_answer=captcha_solution,
                         portal_accepted=None,
                         external_solve_ms=captcha_solver_duration_ms,
+                        answer_source=authority_result.source,
                     )
                 )
         if timing is not None:
             timing.mark("captcha_solver_finished")
     finally:
-        logger.info("Preserved captcha image sent to 2captcha: %s", captcha_path_for_solver)
+        logger.info("Preserved captcha image used for submission: %s", captcha_path_for_solver)
     if cancel_event is not None and cancel_event.is_set():
         raise AppointmentWorkflowCancelled(
             "La pausa se aplico antes de enviar el captcha de reserva."

@@ -100,6 +100,25 @@ def mark_captcha_shadow_event_processed(
         )
 
 
+def mark_captcha_shadow_event_discarded(
+    event_key: str,
+    *,
+    error: str,
+    settings: Settings,
+) -> None:
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        connection.execute(
+            """
+            UPDATE captcha_shadow_outbox
+            SET status = 'processed', processed_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP, last_error = %s
+            WHERE event_key = %s
+            """,
+            (f"discarded: {error}"[:1000], event_key),
+        )
+
+
 def defer_captcha_shadow_event(
     event_key: str,
     *,

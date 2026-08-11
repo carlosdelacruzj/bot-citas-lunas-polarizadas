@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 50
+SCHEMA_VERSION = 51
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -335,6 +335,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_automation_jobs_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
+    _create_captcha_authority_schema(connection)
     _create_post_appointment_schema(connection)
     _create_reservation_program_identity_schema(connection)
     _create_opportunity_observability_schema(connection)
@@ -524,6 +525,89 @@ def _create_captcha_sampling_control_schema(connection: Connection) -> None:
         ON CONFLICT DO NOTHING
         """,
         (datetime.now(UTC),),
+    )
+
+
+def _create_captcha_authority_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS captcha_authority_control (
+            id integer PRIMARY KEY CHECK (id = 1),
+            mode text NOT NULL DEFAULT '2captcha' CHECK (
+                mode IN ('2captcha', 'canary')
+            ),
+            canary_limit integer NOT NULL DEFAULT 20 CHECK (
+                canary_limit BETWEEN 1 AND 100
+            ),
+            local_decisions integer NOT NULL DEFAULT 0 CHECK (local_decisions >= 0),
+            local_confirmed integer NOT NULL DEFAULT 0 CHECK (local_confirmed >= 0),
+            local_rejected integer NOT NULL DEFAULT 0 CHECK (local_rejected >= 0),
+            fallback_decisions integer NOT NULL DEFAULT 0 CHECK (
+                fallback_decisions >= 0
+            ),
+            min_char_confidence double precision NOT NULL DEFAULT 0.60 CHECK (
+                min_char_confidence BETWEEN 0 AND 1
+            ),
+            sequence_confidence_product double precision NOT NULL DEFAULT 0.60 CHECK (
+                sequence_confidence_product BETWEEN 0 AND 1
+            ),
+            timeout_ms integer NOT NULL DEFAULT 500 CHECK (timeout_ms BETWEEN 100 AND 2000),
+            circuit_state text NOT NULL DEFAULT 'closed' CHECK (
+                circuit_state IN ('closed', 'open')
+            ),
+            circuit_reason text,
+            circuit_opened_at timestamptz,
+            updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_by text NOT NULL DEFAULT 'migration',
+            activated_at timestamptz,
+            CONSTRAINT ck_captcha_authority_circuit CHECK (
+                circuit_state = 'closed'
+                OR (circuit_reason IS NOT NULL AND circuit_opened_at IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO captcha_authority_control (id)
+        VALUES (1)
+        ON CONFLICT DO NOTHING
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS captcha_authority_decisions (
+            decision_id text PRIMARY KEY,
+            event_id text NOT NULL UNIQUE,
+            run_id text,
+            order_id text REFERENCES service_orders(order_id) ON DELETE SET NULL,
+            attempt_number integer NOT NULL CHECK (attempt_number > 0),
+            source text NOT NULL CHECK (source IN ('v6', '2captcha')),
+            fallback_reason text,
+            prediction_sha256 text CHECK (
+                prediction_sha256 IS NULL OR prediction_sha256 ~ '^[a-f0-9]{64}$'
+            ),
+            mean_confidence double precision,
+            min_char_confidence double precision,
+            sequence_confidence_product double precision,
+            inference_ms double precision,
+            request_ms double precision,
+            portal_outcome text,
+            portal_accepted boolean,
+            created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at timestamptz,
+            CONSTRAINT ck_captcha_authority_decision_resolution CHECK (
+                (resolved_at IS NULL AND portal_outcome IS NULL)
+                OR (resolved_at IS NOT NULL AND portal_outcome IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_captcha_authority_decisions_created
+        ON captcha_authority_decisions(created_at DESC)
+        """
     )
 
 
@@ -812,6 +896,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_automation_jobs",
         "captcha_shadow_outbox",
         "captcha_sampling_control",
+        "captcha_authority_control",
+        "captcha_authority_decisions",
         "post_appointment_reviews",
         "post_appointment_stage_snapshots",
         "opportunity_bursts",
@@ -923,6 +1009,13 @@ def _validate_current_schema(connection: Connection) -> None:
         ("captcha_sampling_control", "sample_limit"),
         ("captcha_sampling_control", "updated_at"),
         ("captcha_sampling_control", "updated_by"),
+        ("captcha_authority_control", "mode"),
+        ("captcha_authority_control", "canary_limit"),
+        ("captcha_authority_control", "local_decisions"),
+        ("captcha_authority_control", "circuit_state"),
+        ("captcha_authority_decisions", "event_id"),
+        ("captcha_authority_decisions", "source"),
+        ("captcha_authority_decisions", "portal_outcome"),
         ("post_appointment_reviews", "order_id"),
         ("post_appointment_reviews", "access_status"),
         ("post_appointment_reviews", "outcome"),
@@ -990,6 +1083,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_opportunity_burst_execution_finished",
         "ck_opportunity_burst_execution_timestamps",
         "ck_opportunity_runtime_control_circuit",
+        "ck_captcha_authority_circuit",
+        "ck_captcha_authority_decision_resolution",
     }
     constraint_rows = connection.execute(
         "SELECT conname, convalidated FROM pg_constraint "
@@ -1036,6 +1131,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("uq_whatsapp_automation_jobs_running")
     if "idx_captcha_shadow_outbox_pending" not in indexes:
         missing.append("idx_captcha_shadow_outbox_pending")
+    if "idx_captcha_authority_decisions_created" not in indexes:
+        missing.append("idx_captcha_authority_decisions_created")
     if "idx_post_appointment_reviews_order_finished" not in indexes:
         missing.append("idx_post_appointment_reviews_order_finished")
     for index_name in (
@@ -2273,6 +2370,13 @@ def migrate_database(connection: Connection) -> None:
             (50,),
         )
         current_version = 50
+    if current_version == 50:
+        _create_captcha_authority_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (51,),
+        )
+        current_version = 51
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

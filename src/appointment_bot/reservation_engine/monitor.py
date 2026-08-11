@@ -683,6 +683,7 @@ def _reobserve_after_slot_lost(
                     expected_person_name,
                     run_id=run_id,
                     order_id=order_id,
+                    captcha_event_context=reobservation_id,
                 )
                 return _merge_recovered_reservation(
                     original_completed_result,

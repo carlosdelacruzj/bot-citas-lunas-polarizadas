@@ -7,6 +7,7 @@ import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
   selector: 'app-summary-view',
   imports: [FormsModule],
   templateUrl: './summary-view.component.html',
+  styleUrl: './summary-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

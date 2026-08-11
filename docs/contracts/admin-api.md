@@ -69,6 +69,8 @@ POST /api/v1/worker/resume
 POST /api/v1/worker/restart
 GET  /api/v1/runtime-controls/opportunity
 POST /api/v1/runtime-controls/opportunity
+GET  /api/v1/runtime-controls/captcha-authority
+POST /api/v1/runtime-controls/captcha-authority
 GET  /api/v1/opportunity-bursts?limit=20&status=closed
 GET  /api/v1/opportunity-bursts/{burst_id}
 GET  /api/v1/manual-sessions
@@ -79,6 +81,34 @@ POST /api/v1/manual-session/close
 En `appointment-bot-admin-api`, los endpoints `worker/pause`, `worker/resume` y
 `worker/restart` encolan comandos persistidos en `worker_commands`. La API
 embebida del worker mantiene control directo por compatibilidad.
+
+## Control de autoridad CAPTCHA
+
+`GET /api/v1/runtime-controls/captcha-authority` devuelve el modo efectivo,
+límite y contadores de la cohorte, decisiones restantes, umbrales, timeout,
+estado/causa del circuito y actor de la última mutación. No devuelve respuestas
+CAPTCHA ni credenciales.
+
+`POST /api/v1/runtime-controls/captcha-authority` acepta el estado completo o
+los valores vigentes omitidos, salvo `mode`, que es obligatorio:
+
+```json
+{
+  "mode": "canary",
+  "canary_limit": 20,
+  "min_char_confidence": 0.60,
+  "sequence_confidence_product": 0.60,
+  "timeout_ms": 500,
+  "reset_circuit": false,
+  "reset_counters": false
+}
+```
+
+`mode=2captcha` es el rollback inmediato. `reset_circuit=true` exige una
+revisión operativa previa de la causa. `reset_counters=true` inicia una cohorte
+nueva sin borrar `captcha_authority_decisions`; no debe usarse para ocultar un
+rechazo. Los cambios aplican desde el siguiente CAPTCHA y no requieren editar
+`.env` ni reiniciar el worker.
 
 ## Control de OBS-006 y OBS-007
 

@@ -6308,3 +6308,581 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-08-10 08:48:30 - order-*** - partial
+
+- Run: 20260810-084820-df43405d
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 71***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 10/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 32
+- Opciones fecha: 10/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.201s
+  - Seleccion fecha/hora: 1.969s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 08:49:08 - order-*** - partial
+
+- Run: 20260810-084830-620687b0
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 71***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 10/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 34
+- Opciones fecha: 10/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 38.067s
+  - Seleccion fecha/hora: 1.984s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 12:21:51 - order-*** - partial
+
+- Run: 20260810-122140-d0f3cb64
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 09:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 09:00, 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 11.008s
+  - Seleccion fecha/hora: 2.000s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 12:22:02 - order-*** - partial
+
+- Run: 20260810-122151-f105d92e
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.675s
+  - Seleccion fecha/hora: 2.016s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 12:22:12 - order-*** - partial
+
+- Run: 20260810-122202-f91e0b1e
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.598s
+  - Seleccion fecha/hora: 2.016s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 12:22:23 - order-*** - partial
+
+- Run: 20260810-122213-4867c9aa
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.036s
+  - Seleccion fecha/hora: 2.000s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 12:22:33 - order-*** - partial
+
+- Run: 20260810-122223-b5768fc7
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.300s
+  - Seleccion fecha/hora: 2.015s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:26:30 - order-*** - partial
+
+- Run: 20260810-132618-f80e4539
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 11:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 11:00, 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 12.166s
+  - Seleccion fecha/hora: 2.062s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:26:41 - order-*** - partial
+
+- Run: 20260810-132630-486bac14
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 11:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 11:00, 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.703s
+  - Seleccion fecha/hora: 2.031s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:26:52 - order-*** - partial
+
+- Run: 20260810-132641-780441c6
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 11:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 11:00, 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 10.649s
+  - Seleccion fecha/hora: 2.062s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:27:22 - order-*** - partial
+
+- Run: 20260810-132652-af60072f
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 11:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 11:00, 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 30.737s
+  - Seleccion fecha/hora: 2.015s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:27:54 - order-*** - partial
+
+- Run: 20260810-132723-73f38420
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 12:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 31.070s
+  - Seleccion fecha/hora: 2.141s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 13:28:23 - order-*** - partial
+
+- Run: 20260810-132754-22910448
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 01/09/2026
+- Hora detectada: 12:00
+- Cupos observados: 20
+- Opciones fecha: 01/09/2026
+- Opciones hora: 12:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 29.129s
+  - Seleccion fecha/hora: 2.359s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 15:02:35 - order-*** - partial
+
+- Run: 20260810-150124-b9e409a6
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 26/08/2026
+- Hora detectada: 08:00
+- Cupos observados: 15
+- Opciones fecha: 26/08/2026
+- Opciones hora: 08:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 71.092s
+  - Seleccion fecha/hora: 2.000s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 15:03:48 - order-*** - partial
+
+- Run: 20260810-150235-f0be861f
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 26/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 15
+- Opciones fecha: 26/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 72.959s
+  - Seleccion fecha/hora: 2.047s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 15:04:41 - order-*** - partial
+
+- Run: 20260810-150348-71ceb891
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 22/08/2026
+- Hora detectada: 11:00
+- Cupos observados: 18
+- Opciones fecha: 22/08/2026
+- Opciones hora: 11:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 53.085s
+  - Seleccion fecha/hora: 2.016s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+
+## 2026-08-10 15:05:11 - order-*** - partial
+
+- Run: 20260810-150441-edc2fd96
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 73***0
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 22/08/2026
+- Hora detectada: 10:00
+- Cupos observados: 20
+- Opciones fecha: 22/08/2026
+- Opciones hora: 10:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: no registrado
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 29.389s
+  - Seleccion fecha/hora: 2.047s
+- Evidencia:
+  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
+  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

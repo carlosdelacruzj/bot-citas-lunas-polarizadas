@@ -13,8 +13,9 @@ crear colas paralelas.
 1. Trabajar una sola fase o experimento de comportamiento a la vez.
 2. No mezclar refactor, cambios visuales y cambios del motor de reservas.
 3. No modificar `.env` sin autorizacion explicita.
-4. No usar CAPTCHA local como autoridad de reserva: 2Captcha permanece como
-   unica respuesta enviada al portal hasta cerrar el gate prospectivo.
+4. El CAPTCHA local solo puede tener autoridad dentro del canario V6 persistido:
+   maximo `20`, umbrales `0.60/0.60`, timeout `500 ms`, breaker y fallback a
+   2Captcha. No ampliar ni retirar el fallback sin una nueva decision explicita.
 5. No reintentar automaticamente un submit o envio de WhatsApp ambiguo.
 6. Antes de reiniciar, comprobar submissions, leases, sesiones y trabajos
    WhatsApp activos.
@@ -85,7 +86,7 @@ usar sus resultados para decidir continuidad o escalamiento.
 ### Fuera de alcance
 
 - cambiar intervalos `15/1-2/8`;
-- modificar seleccion de sede, CAPTCHA o confirmacion;
+- modificar seleccion de sede o confirmacion;
 - promover modelos locales;
 - rediseñar el dashboard.
 
@@ -109,8 +110,21 @@ usar sus resultados para decidir continuidad o escalamiento.
   pasan exclusivamente por Admin API;
 - reconciliacion de rafagas incompletas al tomar un nuevo lease y limite duro de
   dos sesiones;
-- migracion viva `v49 -> v50`, `compileall`, Ruff, `59 passed`, build Angular y
+- primera muestra productiva: `2/10` rafagas y `4/30` auxiliares, con cuatro
+  reservas confirmadas, cinco submits `slot_lost`, cero `captcha_invalid`, cero
+  perdida de lease y cero defensas `403/429`;
+- correlacion CAPTCHA corregida para que el segundo intento OBS-007 use su
+  `reobservation_id`; doce colisiones sombra previas quedaron cerradas como
+  descartes terminales, sin borrar imagenes, etiquetas ni eventos;
+- panel CAPTCHA alineado con la autoridad real: ruta muestras -> reglas ->
+  resolutor final, estado `V6/20`, circuito, fallback y rollback confirmado;
+- migracion viva `v49 -> v51`, `compileall`, Ruff, `59 passed`, build Angular y
   `git diff --check` correctos.
+
+El canario CAPTCHA V6 autorizado despues de esta primera muestra cambia la
+latencia del submit. Las `2` rafagas y `4` auxiliares anteriores se conservan
+como evidencia pre-canario, pero no deben mezclarse con la cohorte comparable
+posterior al calcular rendimiento de la Fase 1.
 
 No se marca la fase como cerrada porque todavia faltan `10` rafagas reales y
 `30` auxiliares. Durante esa muestra no se deben cambiar intervalos, orden,
@@ -383,7 +397,8 @@ aparezca el evento natural:
   diario, preservando `uncertain` sin reintento;
 - siguiente cierre diario: confirmar por separado resumen, imagenes y
   publicacion;
-- cada 100 CAPTCHA frescos: registrar avance v6 sin reentrenar el corte;
+- primeras `20` decisiones V6: revisar cada resultado y conservar 2Captcha como
+  fallback; cada 100 CAPTCHA frescos, registrar avance sin reentrenar;
 - siguiente reinicio de Windows: tarea, supervisor raiz, Docker, Admin API,
   worker, Telegram, CAPTCHA y perfiles.
 
@@ -394,7 +409,7 @@ aparezca el evento natural:
 - Cloudinary para evidencia publica: diseño documentado, pero su despliegue no
   esta autorizado en esta fase.
 - Tres sesiones concurrentes: no autorizado.
-- CAPTCHA local como autoridad: no autorizado hasta superar el gate prospectivo
-  de mas de `99%` sobre al menos `500` muestras frescas.
+- CAPTCHA local sin limite, breaker o fallback: no autorizado. El unico alcance
+  vigente es el canario V6 `20` con umbrales `0.60/0.60` y 2Captcha de respaldo.
 - Reescritura del historial Git para borrar datos antiguos: requiere una
   operacion separada, respaldo y autorizacion explicita.

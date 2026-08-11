@@ -2,23 +2,25 @@
 
 Fecha de inicio: 21 de julio de 2026.
 
-Estado actual al 9 de agosto de 2026: el runtime carga `v3_selected` y
-`v6_sequence_candidate`; 2Captcha sigue siendo la unica autoridad enviada al
-portal. Los modelos, benchmarks y muestras anteriores se conservan como
-historia y no cuentan para el gate prospectivo V6 de `500/>99%`.
+Estado actual al 10 de agosto de 2026: el runtime carga `v3_selected` y
+`v6_sequence_candidate`. V6 opera en un canario persistido de hasta `20`
+decisiones; v3 queda solo en sombra y 2Captcha es fallback obligatorio. Los
+modelos, benchmarks y muestras anteriores se conservan como historia.
 
 Contrato fuente:
 `C:\Users\CARLOS\Desktop\Codex\test-captcha\INTEGRACION_SERVICIO_SOMBRA.md`.
 
 ## Objetivo
 
-Registrar en segundo plano las predicciones de los modelos locales y compararlas con la
-respuesta de 2Captcha y la evidencia explícita del portal, sin cambiar la respuesta operativa ni
-añadir espera de red al hilo de Playwright.
+Registrar predicciones locales, compararlas contra revisión humana y evidencia
+del portal, y operar el canario V6 sin perder la reversión inmediata a
+2Captcha. El dispatcher de evidencia sigue fuera del hilo de Playwright; la
+inferencia V6 usada como autoridad tiene un timeout propio de `500 ms`.
 
 ## Decisiones cerradas
 
-- 2Captcha continúa siendo la única fuente operativa.
+- V6 solo tiene autoridad dentro del canario `20`; 2Captcha es fallback y
+  autoridad exclusiva fuera de ese alcance.
 - La integración queda desactivada por defecto.
 - El productor usa `put_nowait()` sobre una cola FIFO acotada.
 - Un único consumidor realiza las llamadas HTTP con `urllib.request`.
@@ -260,11 +262,10 @@ dashboard. La ruta ahora propaga ese contexto y encola también el CAPTCHA final
 2Captcha ni el submit. Se reprocesaron los 20 archivos originales existentes: quedaron 20
 eventos pendientes de revisión humana y 60 predicciones, tres por evento.
 
-La futura resolución híbrida permanece documentada, no implementada. Antes de otorgar
-autoridad local se deben evaluar prospectivamente al menos 500 CAPTCHA frescos y sostener más
-de 99% con una regla fijada previamente. El diseño candidato exige formato válido, unanimidad,
-confianza aprobada y timeout local de `300-500 ms`; cualquier desacuerdo, baja confianza, caída
-o timeout deriva a 2Captcha. No se añadirá una espera fija de tres segundos.
+Esta fue la regla previa al canario. El operador autorizó el `2026-08-10`
+adelantar una implementación híbrida limitada después de `474/475` aciertos V6.
+El gate de `500/>99%` sigue vigente para ampliar el alcance o reducir el
+fallback, no como requisito retroactivo del canario de `20`.
 
 ## Actualización v3 del 2 de agosto de 2026
 
@@ -334,6 +335,94 @@ fallback de lectura para eventos antiguos que no tengan una predicción v3. La
 reducción solo afecta imágenes nuevas. Tampoco cambia la autoridad: 2Captcha
 continúa siendo la única respuesta enviada al portal hasta que v6 supere más de
 99% en al menos 500 CAPTCHA frescos posteriores a su congelación.
+
+## Corte prospectivo y correlación OBS-007 del 10 de agosto de 2026
+
+La consulta por eventos posteriores al freeze, deduplicada por `image_sha256` y
+comparada exclusivamente contra revisión humana vigente, produjo:
+
+| Modelo | Aciertos | Exactitud |
+| --- | ---: | ---: |
+| `v6_sequence_candidate` | `474/475` | `99.79%` |
+| `v3_selected` | `460/475` | `96.84%` |
+
+Las `475` imágenes son únicas y fueron recibidas entre
+`2026-08-10T13:48:26Z` y `2026-08-10T20:05:11Z`: `451` muestras de
+entrenamiento, `17` evidencias bloqueadas y `7` CAPTCHA finales. Es un resultado
+prometedor, pero todavía no cumple el mínimo de `500`: cubre `23` runs y cinco
+órdenes en una sola jornada, con `430/475` imágenes concentradas en una orden.
+Esta limitación motivó mantener el canario en `20` y conservar 2Captcha como
+fallback.
+
+V3 y V6 coincidieron en `459/475` casos (`96.63%` de cobertura) y esas
+`459/459` respuestas fueron correctas contra etiqueta humana. Las `16`
+discrepancias contienen el único error de V6, por lo que la unanimidad lo habría
+derivado correctamente a 2Captcha. Esta medición favorece el diseño híbrido;
+no prueba que V6 deba operar sin fallback.
+
+La misma revisión detectó que el segundo submit de OBS-007 reiniciaba el número
+interno de CAPTCHA dentro del mismo `run_id`. El portal y 2Captcha usaban
+archivos independientes, pero CAPTCHA sombra reutilizaba
+`run_id:order_id:captcha-1`: conservaba la primera imagen y recibía después la
+respuesta externa del segundo intento. Desde esta corrección, el
+`reobservation_id` integra el namespace del CAPTCHA final y de todas sus
+muestras. Un HTTP `400` de validación es terminal para el outbox, porque repetir
+el mismo payload no puede resolver un conflicto de identidad. Se verificaron y
+cerraron `12` colisiones existentes; no se eliminaron imágenes, etiquetas ni
+eventos del servicio.
+
+Por decisión explícita del operador no se esperó a `500` para iniciar el diseño
+híbrido. Esto no equivale a retirar 2Captcha: el corte de `500` se mantiene para
+decidir si se amplía el canario.
+
+## Canario de autoridad V6 del 10 de agosto de 2026
+
+PostgreSQL `v51` incorpora `captcha_authority_control` y
+`captcha_authority_decisions`. El estado productivo inicial es:
+
+| Control | Valor |
+| --- | ---: |
+| Modo | `canary` |
+| Decisiones V6 máximas | `20` |
+| Confianza mínima por carácter | `0.60` |
+| Producto de confianza de secuencia | `0.60` |
+| Timeout local | `500 ms` |
+| Circuito | `closed` |
+
+Sobre las `475` etiquetas frescas, ambos umbrales habrían admitido `473`
+imágenes y ninguna de ellas era el único error V6. Cada decisión persiste
+fuente (`v6` o `2captcha`), motivo de fallback, hash de la predicción,
+confianzas, latencias y resultado del portal. La respuesta en texto no se
+guarda en PostgreSQL.
+
+V6 se descarta y se llama a 2Captcha cuando ocurre cualquiera de estos casos:
+
+- formato distinto de cinco caracteres `A-Z/0-9`;
+- confianza bajo cualquiera de los dos umbrales;
+- servicio o modelo ausente, error HTTP, timeout o respuesta inválida;
+- circuito abierto o veinte decisiones locales ya consumidas.
+
+El primer `captcha_invalid` de una respuesta V6 incrementa el rechazo y abre el
+circuito antes del reintento. Un resultado `unknown` también lo abre; `slot_lost`
+no se clasifica como error del modelo. Un fallo local abre el circuito y la
+misma reserva continúa con 2Captcha.
+
+Estado y rollback se administran por endpoints autenticados:
+
+```text
+GET  /api/v1/runtime-controls/captcha-authority
+POST /api/v1/runtime-controls/captcha-authority
+```
+
+Rollback inmediato, aplicable al siguiente CAPTCHA:
+
+```json
+{ "mode": "2captcha" }
+```
+
+No requiere editar `.env` ni reiniciar el worker. `reset_circuit` solo debe
+usarse después de revisar su causa; `reset_counters` inicia una cohorte nueva y
+no borra decisiones históricas.
 
 ## Historial de entregas publicadas
 

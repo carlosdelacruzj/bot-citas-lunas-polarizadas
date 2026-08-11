@@ -104,6 +104,28 @@ export interface CaptchaSamplingControl {
   source: 'database' | 'environment_fallback';
 }
 
+export interface CaptchaAuthorityControl {
+  mode: '2captcha' | 'canary';
+  canary_limit: number;
+  local_decisions: number;
+  local_confirmed: number;
+  local_rejected: number;
+  fallback_decisions: number;
+  remaining_local_decisions: number;
+  local_admission_open: boolean;
+  min_char_confidence: number;
+  sequence_confidence_product: number;
+  timeout_ms: number;
+  circuit_state: 'closed' | 'open';
+  circuit_reason: string | null;
+  circuit_opened_at: string | null;
+  activated_at: string | null;
+  updated_at: string;
+  updated_by: string;
+  applies_from: 'next_reservation_captcha';
+  rollback: { mode: '2captcha' };
+}
+
 export interface ServiceOrder {
   order_id: string;
   applicant_id: string;
@@ -745,6 +767,23 @@ export class AppointmentApiService {
     return this.post<CaptchaSamplingControl>('/api/v1/runtime-controls/captcha-sampling', {
       enabled,
       sample_limit: sampleLimit,
+    });
+  }
+
+  async getCaptchaAuthorityControl(scope?: RequestScope): Promise<CaptchaAuthorityControl> {
+    return this.read<CaptchaAuthorityControl>(
+      '/api/v1/runtime-controls/captcha-authority',
+      scope,
+    );
+  }
+
+  async updateCaptchaAuthorityControl(
+    mode: CaptchaAuthorityControl['mode'],
+    resetCircuit = false,
+  ): Promise<CaptchaAuthorityControl> {
+    return this.post<CaptchaAuthorityControl>('/api/v1/runtime-controls/captcha-authority', {
+      mode,
+      reset_circuit: resetCircuit,
     });
   }
 

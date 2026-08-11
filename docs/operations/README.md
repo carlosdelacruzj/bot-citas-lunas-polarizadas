@@ -79,7 +79,7 @@ supervisor sigue vivo, no hay lease/submission y el corte quedo registrado.
 - nueva sesion Playwright por cliente;
 - `OBS-006`: maximo dos sesiones concurrentes;
 - `OBS-007`: reobservacion unica despues de `slot_lost` explicito;
-- 2Captcha conserva toda la autoridad de reserva.
+- V6 opera en canario de hasta `20` decisiones; 2Captcha es fallback automático.
 
 El canario y su rollback estan en
 [`opportunity-burst-canary-2026-08-09.md`](opportunity-burst-canary-2026-08-09.md).

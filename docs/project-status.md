@@ -14,17 +14,17 @@ prioriza órdenes, monitorea el portal, realiza reservas con confirmación
 estricta, conserva evidencia, permite administración local y remota, registra
 pagos y automatiza seguimientos por WhatsApp sin bloquear el motor de citas.
 
-Estado verificado el `2026-08-09`:
+Estado verificado el `2026-08-10`:
 
 | Área                  | Estado                   | Lectura actual                                                                                            |
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Corte diario normal       | El supervisor sigue vivo; el proceso terminó con código `0` a las 18:00 y espera el siguiente arranque de las 07:30. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v50` aplicado con telemetría durable y control de OBS-006/OBS-007.       |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v51` aplicado con control durable de autoridad CAPTCHA.                  |
 | Telegram remoto       | Operativo sin prueba     | Permanece bajo Admin API; esta revisión no envió mensajes de prueba.                                      |
-| CAPTCHA sombra        | Operativo                | `127.0.0.1:8787/health` responde `ok` en CUDA con v3 y v6; 2Captcha conserva autoridad.                  |
+| CAPTCHA local         | Canario activo           | V6 tiene hasta `20` decisiones con umbrales `0.60/0.60`; V3 queda en sombra y 2Captcha es fallback automático. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
-| Dashboard             | Operativo con deuda de seguridad | Build correcto; bundle inicial de `514.19 kB`. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
+| Dashboard             | Operativo con deuda de seguridad | Build correcto; bundle inicial de `521.65 kB`. `npm audit --omit=dev` reporta seis paquetes Angular altos en `20.3.26`, con corrección disponible. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
 
 ## Resultado comercial acumulado
@@ -99,7 +99,10 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   tercer intento.
   Claims, heartbeats, navegadores, CAPTCHA e intentos permanecen aislados por
   orden. `OPPORTUNITY_BURST_ENABLED=false` restaura la cadena secuencial sin
-  migración ni reversión de datos. Falta la primera validación con cupos reales.
+  migración ni reversión de datos. La primera jornada con cupos reales produjo
+  dos ráfagas, cuatro auxiliares y cuatro reservas confirmadas; el segundo lote
+  confirmó tres clientes en unos `33 s`. La aceptación continúa abierta hasta
+  reunir `10` ráfagas y `30` auxiliares.
 - Implementado el `2026-08-09`: después de un `slot_lost` explícito, la misma
   sesión autenticada ejecuta una única reobservación de hasta `12` segundos,
   cinco lecturas y un `reload_probe` en la tercera. No consume otro CAPTCHA
@@ -108,7 +111,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   como `rejected`. El segundo resultado siempre termina la ventana, por lo que
   no existen reobservaciones recursivas ni reintentos de resultados ambiguos.
   `SLOT_LOST_REOBSERVATION_ENABLED=false` restaura el cierre inmediato sin
-  migración. Falta validarlo en el próximo `slot_lost` real.
+  migración. El `2026-08-10` tres `slot_lost` reales iniciaron la reobservación:
+  las tres recuperaron disponibilidad, dos segundos intentos volvieron a perder
+  el cupo y uno terminó en reserva confirmada.
+- Corregido el `2026-08-10`: el segundo intento OBS-007 reutilizaba
+  `run_id:order_id:captcha-1` y mezclaba en CAPTCHA sombra la primera imagen con
+  la respuesta externa posterior, aunque las sesiones y respuestas enviadas al
+  portal permanecían separadas. El `reobservation_id` ahora forma parte de los
+  IDs del CAPTCHA final y de entrenamiento. Los HTTP `400` permanentes se
+  descartan del outbox conservando el error; se reconciliaron `12` colisiones
+  históricas verificadas y el pendiente volvió a cero.
 - Implementado el `2026-08-10`: PostgreSQL `schema v50` conserva cada ráfaga
   OBS-006 con `burst_id`, candidatos, detector, auxiliares, posiciones, lease,
   primera lectura, tiempos de reserva allowlisted, resultados y causa de
@@ -358,13 +370,43 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   opción con sus modelos asociados; **Escribir otra respuesta**, **Omitir** y
   **Salir** cubren los demás casos. Antes de guardar se exige que el evento siga
   sin etiqueta para no pisar una revisión realizada desde la otra interfaz.
-- El modelo local no participa en la decisión de reserva; 2Captcha sigue siendo
-  la respuesta enviada al portal.
+- Desde el `2026-08-10`, V6 participa en un canario acotado de `20` decisiones
+  reales. V3 sigue solo en sombra. 2Captcha permanece como fallback ante baja
+  confianza, formato inválido, timeout, servicio no saludable, circuito abierto
+  o límite agotado; no se autorizó un reemplazo total sin fallback.
 - Implementado el `2026-08-09`: el servicio sombra residente ejecuta únicamente
   `v3_selected` como control y `v6_sequence_candidate` como candidata sobre
   CAPTCHA nuevos. V1, las dos variantes V2, V4 y V5 dejaron de consumir GPU,
   pero sus checkpoints, métricas y predicciones históricas permanecen intactos.
   El dashboard y Telegram siguen leyendo eventos antiguos de forma dinámica.
+- Corte prospectivo V6 revisado el `2026-08-10`: `475` imágenes únicas,
+  frescas y etiquetadas manualmente posteriores al freeze. V6 obtuvo `474/475`
+  (`99.79%`) y v3 `460/475` (`96.84%`). Las muestras cubren una sola jornada y
+  cinco órdenes, pero `430/475` pertenecen a una sola orden. Por autorización
+  explícita del operador, esa evidencia se consideró suficiente para un canario
+  híbrido limitado, no para retirar 2Captcha.
+  V3 y V6 coincidieron en `459/475`; las `459/459` coincidencias fueron
+  correctas y las `16` discrepancias incluyen el único error de V6. Esta
+  cobertura observada de `96.63%` favorece el fallback por unanimidad, no el
+  reemplazo total.
+  Al llegar a `500` debe recalcularse por `image_sha256` contra etiqueta humana;
+  ese corte decidirá la ampliación o cierre del canario, no elimina el fallback.
+- Activado el `2026-08-10`: PostgreSQL `v51` persiste modo, límite, umbrales,
+  contadores, fuente elegida, resultado del portal y circuito. V6 se admite solo
+  con `min_char_confidence >= 0.60` y
+  `sequence_confidence_product >= 0.60`, con timeout de `500 ms`. En la cohorte
+  de 475, esos umbrales habrían admitido `473/475` sin incluir el único error de
+  V6. El primer `captcha_invalid`, un resultado ambiguo o un fallo local abre el
+  circuito; el rollback persistente es `mode=2captcha` y aplica al siguiente
+  CAPTCHA sin editar `.env`.
+- Actualizado el dashboard el `2026-08-10`: **Capturas CAPTCHA** separa ahora
+  cantidad de muestras, validación de restricciones y autoridad final. Muestra
+  resolutor efectivo, progreso `V6/20`, confirmaciones, rechazos, fallbacks,
+  circuito y acciones confirmadas para activar V6 o volver a 2Captcha. El texto
+  anterior que afirmaba que 2Captcha siempre resolvía el final fue retirado.
+  Los estilos exclusivos de esta vista se cargan con el componente lazy de
+  Resumen; el presupuesto inicial de aviso pasó de `520` a `525 kB` y el build
+  queda en `521.65 kB` sin warnings.
 - Implementado el `2026-08-01`: el flujo real admite muestreo CAPTCHA opcional
   mediante `RESERVATION_CAPTCHA_SAMPLE_LIMIT`. Desde el `2026-08-08`, el
   dashboard permite activarlo o desactivarlo y conservar un total entre `2` y
@@ -592,7 +634,7 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    vigilar latencia sostenida, cierres de sesión y señales `403/429`.
 6. La operación depende de una PC Windows, red local, Docker y perfiles
    persistentes de navegador.
-7. El CAPTCHA local todavía no tiene evidencia suficiente para sustituir a
+7. El CAPTCHA local todavía no tiene evidencia suficiente para retirar a
    2Captcha.
    El muestreo opcional de reservas reales aumenta los datos disponibles, pero
    también retrasa el submit unos `0.4 s` por muestra adicional y puede elevar
@@ -600,8 +642,9 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
    El corte prospectivo de v3 cerró como evidencia insuficiente y produjo la
    arquitectura v6. V6 alcanzó `487/490` (`99.39%`) en regresión protegida, pero
    ese resultado retrospectivo no autoriza producción. Debe superar más de 99%
-   sobre al menos 500 CAPTCHA frescos posteriores a su congelación; hasta cerrar
-   ese corte, v3 y v6 permanecen solo en sombra y 2Captcha conserva autoridad.
+   sobre al menos 500 CAPTCHA frescos posteriores a su congelación. Con `475`
+   muestras se habilitó únicamente un canario V6 de `20` decisiones, con breaker
+   en el primer rechazo/ambigüedad y fallback inmediato a 2Captcha.
 8. La evidencia versionada está sanitizada, pero sigue siendo telemetría
    operacional y debe revisarse antes de compartir.
 9. Kaspersky puede clasificar lanzadores ocultos y persistentes como amenaza.
@@ -732,11 +775,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   CUDA para eventos nuevos, con v3 como referencia visual; `/health` y
   `/v1/models` confirmaron ambos después del reinicio aislado y el historial de
   los modelos retirados continúa consultable.
-- El corte prospectivo posterior a v3 conserva `126` muestras revisadas y v3
-  obtuvo `119/126`; esa cohorte precede a la congelación de v6 y no cuenta para
-  su gate. Al cierre documental, v6 permanece en `0/500` muestras frescas
-  post-congelación; el servicio está saludable, pero todavía no recibió un
-  evento nuevo que permita iniciar la comparación v6 contra v3.
+- El corte prospectivo V6 alcanzó `474/475` (`99.79%`) contra revisión humana;
+  v3 obtuvo `460/475`. El servicio residente sigue saludable en CUDA y el
+  control productivo V6 inició en `0/20`, con circuito cerrado y 2Captcha como
+  fallback.
 - PostgreSQL v46 aplicado: una deuda histórica vencida y sin destinatario quedó
   archivada como `uncollectible/written_off`; otro pago conserva `S/20`
   abonados sobre `S/40`. El resumen mensual devuelve `2` cobros accionables por
@@ -785,9 +827,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   por oportunidades, reobservación posterior a `slot_lost` y sus rollbacks,
   backoff por reglas, CAPTCHA rechazado y entregas de WhatsApp según el tipo de
   evento observado.
-- **Cada 100 CAPTCHA frescos revisados:** registrar avance de v6 contra v3 sin
-  reentrenar con el corte. La decisión de autoridad solo ocurre al llegar a
-  `500` y superar la regla prospectiva fijada de más de `99%`.
+- **Durante las primeras 20 decisiones V6:** revisar fuente, confianza, resultado
+  del portal y breaker después de cada reserva; no resetear el circuito sin
+  explicar su causa. Cada 100 CAPTCHA frescos se mantiene el corte V6 contra v3
+  sin reentrenar.
 - **El primer día hábil de cada mes:** actualizar resultado comercial, cobros
   pendientes y dependencia de intervención humana.
 - **Después del próximo reinicio de Windows:** comprobar tarea programada,

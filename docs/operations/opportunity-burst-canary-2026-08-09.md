@@ -82,8 +82,8 @@ termina su confirmación o reconciliación aunque ese plazo se cumpla.
 - Cada orden usa navegador, contexto, credenciales, owner token de claim,
   heartbeat, `run_id` e intento de reserva independientes.
 - Dos órdenes con las mismas credenciales nunca participan simultáneamente.
-- Los auxiliares fuerzan una sola muestra CAPTCHA y 2Captcha conserva la
-  autoridad.
+- Los auxiliares fuerzan una sola muestra CAPTCHA. La autoridad sigue el
+  control V6 global: canario limitado o fallback automático a 2Captcha.
 - `reservation_unconfirmed`, error técnico, `403`, `429`, defensa o pérdida de
   coordinación detienen reemplazos nuevos. Las sesiones ya enviadas terminan
   su reconciliación y no se repite un submit ambiguo.

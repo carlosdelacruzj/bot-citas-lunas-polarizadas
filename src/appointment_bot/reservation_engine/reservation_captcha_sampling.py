@@ -37,6 +37,7 @@ def collect_reservation_captcha_training_samples(
     attempt_number: int,
     run_id: str | None,
     order_id: str | None,
+    event_context: str | None = None,
 ) -> None:
     sample_limit = _resolve_sample_limit(settings)
     extra_sample_count = sample_limit - 1
@@ -83,8 +84,12 @@ def collect_reservation_captcha_training_samples(
 
         sample_paths.append(str(sample_path))
         if run_id:
+            event_namespace = (
+                f"{run_id}:{order_id or 'observer'}"
+                f"{f':{event_context}' if event_context else ''}"
+            )
             event_id = (
-                f"{run_id}:{order_id or 'observer'}:captcha-{attempt_number}"
+                f"{event_namespace}:captcha-{attempt_number}"
                 f"-training-{sample_number}"
             )
             try:
@@ -96,6 +101,7 @@ def collect_reservation_captcha_training_samples(
                         "order_id": order_id,
                         "observer": 0,
                         "attempt": attempt_number,
+                        "event_context": event_context,
                         "training_sample": sample_number,
                         "training_sample_limit": (
                             sample_limit

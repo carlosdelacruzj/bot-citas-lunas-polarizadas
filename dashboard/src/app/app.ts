@@ -17,6 +17,7 @@ import { Subscription, filter } from 'rxjs';
 import {
   ApiActionResponse,
   AppointmentApiService,
+  CaptchaAuthorityControl,
   CaptchaEvent,
   CaptchaEventsPage,
   CaptchaPrediction,
@@ -447,6 +448,7 @@ export class App implements OnDestroy {
   protected readonly worker = signal<WorkerStatus | null>(null);
   protected readonly opportunityControl = signal<OpportunityControl | null>(null);
   protected readonly opportunityBursts = signal<OpportunityBurst[]>([]);
+  protected readonly captchaAuthorityControl = signal<CaptchaAuthorityControl | null>(null);
   protected readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
   protected readonly captchaSamplingEnabled = signal(false);
   protected readonly captchaSamplingLimit = signal(10);
@@ -715,6 +717,14 @@ export class App implements OnDestroy {
   protected readonly captchaSamplingEstimatedSeconds = computed(() =>
     Math.round(Math.max(this.captchaSamplingEffectiveLimit() - 1, 0) * 4) / 10,
   );
+  protected readonly captchaAuthorityUsesV6 = computed(() => {
+    const control = this.captchaAuthorityControl();
+    return Boolean(
+      control?.mode === 'canary' &&
+        control.circuit_state === 'closed' &&
+        control.remaining_local_decisions > 0,
+    );
+  });
   protected readonly pendingPaymentOrders = computed(
     () => this.orders().filter((order) => order.payment_status === 'pending').length,
   );
@@ -1431,6 +1441,7 @@ export class App implements OnDestroy {
         runs,
         monthlySummary,
         captchaSamplingControl,
+        captchaAuthorityControl,
         opportunityControl,
         opportunityBursts,
       ] = await Promise.all([
@@ -1438,6 +1449,7 @@ export class App implements OnDestroy {
         this.api.getRuns(scope),
         this.api.getMonthlySummary(this.selectedMonth(), scope),
         this.api.getCaptchaSamplingControl(scope),
+        this.api.getCaptchaAuthorityControl(scope),
         this.api.getOpportunityControl(scope),
         this.api.getOpportunityBursts(scope),
       ]);
@@ -1445,6 +1457,7 @@ export class App implements OnDestroy {
       this.runs.set(runs);
       this.monthlySummary.set(monthlySummary);
       this.applyCaptchaSamplingControl(captchaSamplingControl);
+      this.captchaAuthorityControl.set(captchaAuthorityControl);
       this.opportunityControl.set(opportunityControl);
       this.opportunityBursts.set(opportunityBursts.bursts);
       return;
@@ -3774,6 +3787,38 @@ export class App implements OnDestroy {
       this.captchaSamplingEnabled.set(control.enabled);
       this.captchaSamplingLimit.set(control.sample_limit);
     }
+  }
+
+  protected requestCaptchaAuthorityFallback(): void {
+    this.setPendingAction({
+      title: 'Usar 2Captcha como autoridad',
+      message:
+        'V6 seguirá comparando en sombra, pero desde el siguiente CAPTCHA final la respuesta se pedirá a 2Captcha.',
+      execute: async () => {
+        this.captchaAuthorityControl.set(
+          await this.api.updateCaptchaAuthorityControl('2captcha'),
+        );
+        return { status: 'ok' };
+      },
+      successMessage: '2Captcha quedó como autoridad del CAPTCHA final',
+    });
+  }
+
+  protected requestCaptchaAuthorityCanary(): void {
+    const resetCircuit = this.captchaAuthorityControl()?.circuit_state === 'open';
+    this.setPendingAction({
+      title: resetCircuit ? 'Reactivar canario V6' : 'Activar canario V6',
+      message: resetCircuit
+        ? 'Se cerrará el circuito después de tu revisión. V6 volverá a resolver únicamente dentro del límite restante y con fallback a 2Captcha.'
+        : 'V6 resolverá dentro del límite restante y con los umbrales guardados. 2Captcha seguirá disponible como fallback.',
+      execute: async () => {
+        this.captchaAuthorityControl.set(
+          await this.api.updateCaptchaAuthorityControl('canary', resetCircuit),
+        );
+        return { status: 'ok' };
+      },
+      successMessage: 'Canario V6 activo para el siguiente CAPTCHA compatible',
+    });
   }
 
   protected requestManualSession(): void {

@@ -16,6 +16,7 @@ from appointment_bot.config import Settings
 from appointment_bot.db.captcha_shadow_outbox import (
     captcha_shadow_outbox_status,
     defer_captcha_shadow_event,
+    mark_captcha_shadow_event_discarded,
     mark_captcha_shadow_event_processed,
     next_pending_captcha_shadow_event,
     persist_captcha_shadow_event,
@@ -187,6 +188,26 @@ class CaptchaShadowDispatcher:
             self._send(event)
         except (HTTPError, URLError, TimeoutError, OSError) as exc:
             self._increment("failed")
+            if (
+                isinstance(exc, HTTPError)
+                and exc.code == 400
+                and self.settings is not None
+                and event.event_key
+            ):
+                mark_captcha_shadow_event_discarded(
+                    event.event_key,
+                    error=str(exc),
+                    settings=self.settings,
+                )
+                self._increment("discarded")
+                logger.warning(
+                    "captcha_shadow_request_discarded endpoint=%s event_id=%s "
+                    "error=%s",
+                    event.endpoint,
+                    event.payload.get("event_id", "<missing>"),
+                    exc,
+                )
+                return
             if self.settings is not None and event.event_key:
                 delay = defer_captcha_shadow_event(
                     event.event_key,
@@ -339,8 +360,16 @@ def enqueue_shadow_external_result(
     portal_accepted: bool | None,
     external_solve_ms: float | None = None,
     final_result: bool = False,
+    answer_source: str = "2captcha",
 ) -> bool:
     normalized_answer = external_answer.strip().upper()
+    if answer_source not in {"2captcha", "v6"}:
+        logger.warning(
+            "captcha_shadow_invalid_external_source event_id=%s source=%s",
+            event_id,
+            answer_source,
+        )
+        return False
     if not CAPTCHA_ANSWER_PATTERN.fullmatch(normalized_answer):
         logger.warning(
             "captcha_shadow_invalid_external_answer event_id=%s",
@@ -351,6 +380,7 @@ def enqueue_shadow_external_result(
         "event_id": event_id,
         "external_answer": normalized_answer,
         "portal_accepted": portal_accepted,
+        "external_source": answer_source,
     }
     if external_solve_ms is not None:
         payload["external_solve_ms"] = round(max(external_solve_ms, 0.0), 3)

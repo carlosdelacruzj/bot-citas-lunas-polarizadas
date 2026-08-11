@@ -9,6 +9,7 @@ from pathlib import Path
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.db.captcha_authority import resolve_captcha_authority_decision
 from appointment_bot.reservation_engine.appointments import (
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
@@ -46,12 +47,23 @@ logger = logging.getLogger(__name__)
 
 def _enqueue_shadow_portal_result(
     captcha_audit: dict[str, object],
-    portal_accepted: bool | None,
+    submission_outcome: str,
 ) -> None:
     event_id = captcha_audit.get("captcha_shadow_event_id")
     external_answer = captcha_audit.get("captcha_solution_sent")
     if not event_id or not external_answer:
         return
+    portal_accepted = (
+        True
+        if submission_outcome == "confirmed"
+        else False
+        if submission_outcome == "captcha_invalid"
+        else None
+    )
+    resolve_captcha_authority_decision(
+        str(event_id),
+        portal_outcome=submission_outcome,
+    )
     captcha_audit["captcha_shadow_portal_accepted"] = portal_accepted
     captcha_audit["captcha_shadow_result_enqueued"] = enqueue_shadow_external_result(
         event_id=str(event_id),
@@ -61,6 +73,7 @@ def _enqueue_shadow_portal_result(
             captcha_audit.get("captcha_solver_duration_ms")
         ),
         final_result=True,
+        answer_source=str(captcha_audit.get("captcha_solver_source") or "2captcha"),
     )
 
 
@@ -134,6 +147,7 @@ def complete_available_reservation(
     expected_person_name: str | None = None,
     run_id: str | None = None,
     order_id: str | None = None,
+    captcha_event_context: str | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
     confirmation_source = "unconfirmed"
@@ -192,6 +206,7 @@ def complete_available_reservation(
                     timing=timing,
                     run_id=run_id,
                     order_id=order_id,
+                    captcha_event_context=captcha_event_context,
                 )
             except ReservationDeferredForPriority as exc:
                 if timing is not None:
@@ -256,16 +271,7 @@ def complete_available_reservation(
                 }
             )
             captcha_audit["submission_outcome"] = submission_outcome
-            _enqueue_shadow_portal_result(
-                captcha_audit,
-                (
-                    True
-                    if submission_outcome == "confirmed"
-                    else False
-                    if submission_outcome == "captcha_invalid"
-                    else None
-                ),
-            )
+            _enqueue_shadow_portal_result(captcha_audit, submission_outcome)
             captcha_audit["duration_seconds"] = round(
                 max(time.monotonic() - attempt_started, 0.0),
                 3,
@@ -448,7 +454,7 @@ def complete_available_reservation(
     if submission_error:
         details["confirmacion_error"] = submission_error
     if programmed_stage is not None:
-        _enqueue_shadow_portal_result(latest_captcha_audit, True)
+        _enqueue_shadow_portal_result(latest_captcha_audit, "confirmed")
         if captcha_attempts:
             captcha_attempts[-1] = dict(latest_captcha_audit)
         details = reservation_details()
