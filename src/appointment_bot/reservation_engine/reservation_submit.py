@@ -40,6 +40,33 @@ from appointment_bot.services.captcha_shadow import (
 logger = logging.getLogger(__name__)
 
 
+def _validate_reservation_selection(
+    page: Page,
+    settings: Settings,
+    *,
+    expected_details: dict[str, Any] | None,
+    expected_person_name: str | None,
+    timing: ReservationTiming | None,
+    timing_prefix: str,
+    captcha_audit: dict[str, Any],
+) -> dict[str, Any]:
+    if timing is not None:
+        timing.mark(f"{timing_prefix}_started")
+    try:
+        validation = validate_selected_appointment(
+            page,
+            expected_details,
+            expected_person_name=expected_person_name,
+            use_atomic_dom=settings.appointment_atomic_validation_enabled,
+        )
+    finally:
+        if timing is not None:
+            timing.mark(f"{timing_prefix}_finished")
+    audit_entry = {"phase": timing_prefix, **validation}
+    captcha_audit.setdefault("selection_validation_audits", []).append(audit_entry)
+    return audit_entry
+
+
 def solve_reservation_captcha_and_click_reserve(
     page: Page,
     settings: Settings,
@@ -58,12 +85,20 @@ def solve_reservation_captcha_and_click_reserve(
     order_id: str | None = None,
     captcha_event_context: str | None = None,
 ) -> Page:
+    effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
-    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
+    _validate_reservation_selection(
+        page,
+        settings,
+        expected_details=expected_details,
+        expected_person_name=expected_person_name,
+        timing=timing,
+        timing_prefix="initial_validation",
+        captcha_audit=effective_captcha_audit,
+    )
     if timing is not None:
         timing.mark("captcha_image_started")
-    effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
     collect_reservation_captcha_training_samples(
         page,
         settings,
@@ -73,6 +108,7 @@ def solve_reservation_captcha_and_click_reserve(
             page,
             expected_details,
             expected_person_name=expected_person_name,
+            use_atomic_dom=settings.appointment_atomic_validation_enabled,
         ),
         detection_origin=(expected_details or {}).get("detection_origin"),
         captcha_audit=effective_captcha_audit,
@@ -125,14 +161,8 @@ def solve_reservation_captcha_and_click_reserve(
             "detection_origin": (expected_details or {}).get("detection_origin"),
             "portal_stage": "reservation_captcha",
         }
-        shadow_enqueued = enqueue_shadow_prediction(
-            event_id=shadow_event_id,
-            image_path=str(captcha_path_for_solver.resolve()),
-            metadata=shadow_metadata,
-        )
         if captcha_audit is not None:
             captcha_audit["captcha_shadow_event_id"] = shadow_event_id
-            captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_enqueued
     try:
         if timing is not None:
             timing.mark("captcha_solver_started")
@@ -152,6 +182,21 @@ def solve_reservation_captcha_and_click_reserve(
             max(time.monotonic() - captcha_solver_started, 0.0) * 1000,
             3,
         )
+        shadow_prediction_enqueued = False
+        shadow_external_enqueued = False
+        if shadow_event_id:
+            shadow_prediction_enqueued = enqueue_shadow_prediction(
+                event_id=shadow_event_id,
+                image_path=str(captcha_path_for_solver.resolve()),
+                metadata=shadow_metadata,
+            )
+            shadow_external_enqueued = enqueue_shadow_external_result(
+                event_id=shadow_event_id,
+                external_answer=captcha_solution,
+                portal_accepted=None,
+                external_solve_ms=captcha_solver_duration_ms,
+                answer_source=authority_result.source,
+            )
         if captcha_audit is not None:
             captcha_audit["captcha_solution_sent"] = captcha_solution
             captcha_audit["captcha_solver_duration_ms"] = captcha_solver_duration_ms
@@ -177,16 +222,28 @@ def solve_reservation_captcha_and_click_reserve(
             captcha_audit["captcha_v6_sequence_confidence_product"] = (
                 authority_result.sequence_confidence_product
             )
-            shadow_event_id = captcha_audit.get("captcha_shadow_event_id")
+            captcha_audit["captcha_local_queue_wait_ms"] = (
+                authority_result.local_queue_wait_ms
+            )
+            captcha_audit["captcha_local_preprocess_ms"] = (
+                authority_result.local_preprocess_ms
+            )
+            captcha_audit["captcha_local_persist_ms"] = (
+                authority_result.local_persist_ms
+            )
+            captcha_audit["captcha_local_service_total_ms"] = (
+                authority_result.local_service_total_ms
+            )
+            captcha_audit["captcha_local_cached"] = authority_result.local_cached
+            captcha_audit["captcha_local_coalesced"] = (
+                authority_result.local_coalesced
+            )
             if shadow_event_id:
+                captcha_audit["captcha_shadow_prediction_enqueued"] = (
+                    shadow_prediction_enqueued
+                )
                 captcha_audit["captcha_shadow_external_enqueued"] = (
-                    enqueue_shadow_external_result(
-                        event_id=str(shadow_event_id),
-                        external_answer=captcha_solution,
-                        portal_accepted=None,
-                        external_solve_ms=captcha_solver_duration_ms,
-                        answer_source=authority_result.source,
-                    )
+                    shadow_external_enqueued
                 )
         if timing is not None:
             timing.mark("captcha_solver_finished")
@@ -198,9 +255,19 @@ def solve_reservation_captcha_and_click_reserve(
         )
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de enviar la reserva.")
-    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
+    _validate_reservation_selection(
+        page,
+        settings,
+        expected_details=expected_details,
+        expected_person_name=expected_person_name,
+        timing=timing,
+        timing_prefix="post_solver_validation",
+        captcha_audit=effective_captcha_audit,
+    )
 
     logger.info("Filling reservation captcha field")
+    if timing is not None:
+        timing.mark("captcha_field_fill_started")
     reservation_field = page.locator(RESERVATION_FIELD_SELECTOR).first
     reservation_field.wait_for(state="visible", timeout=15_000)
     reservation_field.fill(captcha_solution, timeout=15_000)
@@ -215,7 +282,15 @@ def solve_reservation_captcha_and_click_reserve(
     reserve_button = page.locator(RESERVATION_BUTTON_SELECTOR).first
     reserve_button.wait_for(state="visible", timeout=15_000)
     reserve_button.scroll_into_view_if_needed(timeout=15_000)
-    validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
+    final_validation = _validate_reservation_selection(
+        page,
+        settings,
+        expected_details=expected_details,
+        expected_person_name=expected_person_name,
+        timing=timing,
+        timing_prefix="pre_click_validation",
+        captcha_audit=effective_captcha_audit,
+    )
     if on_submission_intent is not None:
         submission_details = dict(expected_details or {})
         submission_details.update(
@@ -228,10 +303,18 @@ def solve_reservation_captcha_and_click_reserve(
                     "captcha_authority_decision_id"
                 ),
                 "pre_submit_validation": "passed",
+                "pre_submit_validation_mode": final_validation.get("mode"),
+                "pre_submit_validation_ms": final_validation.get("duration_ms"),
                 "pre_submit_validated_at_utc": datetime.now(UTC).isoformat(),
             }
         )
-        on_submission_intent(submission_details)
+        if timing is not None:
+            timing.mark("submission_intent_started")
+        try:
+            on_submission_intent(submission_details)
+        finally:
+            if timing is not None:
+                timing.mark("submission_intent_finished")
     try:
         if timing is not None:
             timing.mark("reserve_click_started")

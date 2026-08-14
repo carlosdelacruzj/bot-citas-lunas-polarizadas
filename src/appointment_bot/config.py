@@ -191,6 +191,8 @@ class Settings:
     captcha_shadow_timeout_seconds: int = 2
     reservation_captcha_sample_limit: int = 1
     reservation_captcha_runtime_control_enabled: bool = True
+    appointment_selection_event_driven_enabled: bool = True
+    appointment_atomic_validation_enabled: bool = True
 
     @property
     def safe_username(self) -> str:
@@ -565,6 +567,14 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("CAPTCHA_SHADOW_TIMEOUT_SECONDS"),
             default=2,
             minimum=1,
+        ),
+        appointment_selection_event_driven_enabled=_parse_bool(
+            os.getenv("APPOINTMENT_SELECTION_EVENT_DRIVEN_ENABLED"),
+            default=True,
+        ),
+        appointment_atomic_validation_enabled=_parse_bool(
+            os.getenv("APPOINTMENT_ATOMIC_VALIDATION_ENABLED"),
+            default=True,
         ),
     )
 

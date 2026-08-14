@@ -37,6 +37,21 @@ class ReservationTiming:
             "captcha_solver_seconds": self._duration(
                 "captcha_solver_started", "captcha_solver_finished"
             ),
+            "initial_validation_seconds": self._duration(
+                "initial_validation_started", "initial_validation_finished"
+            ),
+            "post_solver_validation_seconds": self._duration(
+                "post_solver_validation_started", "post_solver_validation_finished"
+            ),
+            "captcha_field_fill_seconds": self._duration(
+                "captcha_field_fill_started", "captcha_filled"
+            ),
+            "pre_click_validation_seconds": self._duration(
+                "pre_click_validation_started", "pre_click_validation_finished"
+            ),
+            "submission_intent_seconds": self._duration(
+                "submission_intent_started", "submission_intent_finished"
+            ),
             "captcha_fill_to_click_seconds": self._duration(
                 "captcha_filled", "reserve_click_started"
             ),

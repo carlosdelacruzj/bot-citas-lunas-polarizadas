@@ -101,6 +101,11 @@ de inmediato y no recorre fechas adicionales solo para completar el inventario.
 Si queda bloqueada por reglas, conserva todas las combinaciones encontradas en
 el recorrido ya necesario.
 
+Desde el canario del `2026-08-11`, `selection_observation` conserva además el
+modo de estabilización (`event_atomic`, `legacy_fallback` o `legacy`), espera de
+señal, causa/duración de fallback y cantidad de snapshots atómicos. Estos campos
+son telemetría: no cambian las reglas de compatibilidad ni autorizan un submit.
+
 Después de una detección, la cadena de oportunidades evalúa tanto órdenes
 abiertas como restringidas. Solo excluye a quien no sea compatible con ninguna
 fecha observada. El orden es:

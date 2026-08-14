@@ -55,6 +55,10 @@ CSV_FIELDS = (
     "total_from_available_seconds",
     "selection_seconds",
     "captcha_solver_seconds",
+    "captcha_field_fill_seconds",
+    "pre_click_validation_seconds",
+    "submission_intent_seconds",
+    "selection_stabilization_mode",
     "click_to_portal_response_seconds",
     "screenshot_path",
     "evidence_paths",
@@ -140,6 +144,7 @@ def append_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
     rows = [row for row in rows if _is_useful_evidence_row(row)]
     if not rows:
         return
+    _ensure_current_csv_header(path)
     existing_ids = _existing_run_ids(path)
     new_rows = [row for row in rows if row.get("run_id") not in existing_ids]
     if not new_rows:
@@ -151,6 +156,16 @@ def append_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
         if write_header:
             writer.writeheader()
         writer.writerows(_normalized_row(row) for row in new_rows)
+
+
+def _ensure_current_csv_header(path: Path) -> None:
+    if not path.exists() or path.stat().st_size == 0:
+        return
+    with path.open("r", encoding="utf-8", newline="") as file:
+        header = next(csv.reader(file), [])
+    if tuple(header) == CSV_FIELDS:
+        return
+    write_evidence_rows(path, read_evidence_rows(path))
 
 
 def write_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
@@ -231,6 +246,16 @@ def _evidence_row(
         "total_from_available_seconds": _number_text(timing.get("total_from_available_seconds")),
         "selection_seconds": _number_text(timing.get("selection_seconds")),
         "captcha_solver_seconds": _number_text(timing.get("captcha_solver_seconds")),
+        "captcha_field_fill_seconds": _number_text(
+            timing.get("captcha_field_fill_seconds")
+        ),
+        "pre_click_validation_seconds": _number_text(
+            timing.get("pre_click_validation_seconds")
+        ),
+        "submission_intent_seconds": _number_text(
+            timing.get("submission_intent_seconds")
+        ),
+        "selection_stabilization_mode": _selection_stabilization_mode(details),
         "click_to_portal_response_seconds": _number_text(
             timing.get("click_to_portal_response_seconds")
         ),
@@ -238,6 +263,16 @@ def _evidence_row(
         "evidence_paths": _evidence_paths(details, screenshot_paths or []),
         "message": sanitize_text(message),
     }
+
+
+def _selection_stabilization_mode(details: dict[str, Any]) -> str:
+    observation = details.get("selection_observation")
+    if not isinstance(observation, dict):
+        return ""
+    modes = observation.get("hour_stabilization_modes")
+    if not isinstance(modes, list):
+        return detail_text(modes)
+    return "|".join(detail_text(mode) for mode in modes if detail_text(mode))
 
 
 def _is_evidence_case(

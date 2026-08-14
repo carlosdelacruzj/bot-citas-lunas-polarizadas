@@ -21,6 +21,13 @@ de archivar; nunca se debe nombrar la imagen del primer intento con los datos
 del intento recuperado. Todos los cupos distintos de esa secuencia participan
 en el archivo compartido y mantienen la misma deduplicación por fecha y hora.
 
+La selección compatible usa un canario event-driven: espera la señal ASP.NET y
+dos snapshots DOM estables, con fallback automático a las esperas `500/750 ms`.
+Las validaciones pre-submit leen la selección de forma atómica y conservan la
+relectura estable de identidad. Ambos cambios tienen kill switch independiente;
+el runbook vigente está en
+`docs/operations/reservation-critical-path-canary-2026-08-11.md`.
+
 Estructura futura para el motor de reservas: Playwright, login, lectura de
 cupos, seleccion de fecha/hora, CAPTCHA, envio y confirmacion.
 

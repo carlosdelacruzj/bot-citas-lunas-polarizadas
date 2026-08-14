@@ -302,6 +302,9 @@ def _try_reservation_from_availability(
     selected_result = select_available_appointment(
         page,
         is_allowed_appointment=is_allowed_appointment,
+        event_driven_stabilization=(
+            settings.appointment_selection_event_driven_enabled
+        ),
         timeout=settings.postback_timeout_seconds * 1_000,
     )
     timing.mark("selection_finished")
@@ -632,6 +635,9 @@ def _reobserve_after_slot_lost(
             selected_result = select_available_appointment(
                 page,
                 is_allowed_appointment=is_allowed_appointment,
+                event_driven_stabilization=(
+                    settings.appointment_selection_event_driven_enabled
+                ),
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
             timing.mark("selection_finished")

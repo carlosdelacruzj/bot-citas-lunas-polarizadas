@@ -219,6 +219,9 @@ def _entry_for_report(
         f"  - Seleccion fecha/hora: {_duration(timing, 'selection_seconds')}\n",
         f"  - Imagen CAPTCHA: {_duration(timing, 'captcha_image_seconds')}\n",
         f"  - {captcha_solver_label}: {_duration(timing, 'captcha_solver_seconds')}\n",
+        f"  - Rellenar campo CAPTCHA: {_duration(timing, 'captcha_field_fill_seconds')}\n",
+        f"  - Validacion final DOM: {_duration(timing, 'pre_click_validation_seconds')}\n",
+        f"  - Persistir intencion: {_duration(timing, 'submission_intent_seconds')}\n",
         f"  - Llenar CAPTCHA -> click: {_duration(timing, 'captcha_fill_to_click_seconds')}\n",
         f"  - Click -> respuesta portal: {_duration(timing, 'click_to_portal_response_seconds')}\n",
         "  - Click -> screenshot confirmacion: "
@@ -231,6 +234,18 @@ def _entry_for_report(
         f"  - Refresco sede cambio opciones: {_bool_text(details.get('site_refresh_changed'))}\n",
         f"  - Refresco sede elapsed: {_milliseconds(details.get('site_refresh_elapsed_ms'))}\n",
     ]
+    selection_observation = details.get("selection_observation")
+    if isinstance(selection_observation, dict):
+        lines.extend(
+            [
+                "  - Estabilizacion hora: "
+                f"{_text(selection_observation.get('hour_stabilization_modes'))}\n",
+                "  - Espera senal seleccion: "
+                f"{_text(selection_observation.get('hour_signal_seconds'))}\n",
+                "  - Fallback seleccion: "
+                f"{_text(selection_observation.get('hour_fallback_reasons'))}\n",
+            ]
+        )
     if switch_context:
         lines.append(f"  - Cambio de usuario: {switch_context}\n")
     lines.extend(
@@ -405,6 +420,9 @@ def _slowest_timing(
         "selection_seconds": "seleccion fecha/hora",
         "captcha_image_seconds": "imagen CAPTCHA",
         "captcha_solver_seconds": captcha_solver_label,
+        "captcha_field_fill_seconds": "rellenar campo CAPTCHA",
+        "pre_click_validation_seconds": "validacion final DOM",
+        "submission_intent_seconds": "persistir intencion",
         "captcha_fill_to_click_seconds": "llenar CAPTCHA -> click",
         "click_to_portal_response_seconds": "click -> respuesta portal",
         "click_to_confirmation_screenshot_seconds": "click -> screenshot confirmacion",

@@ -237,6 +237,130 @@ def read_appointment_snapshot(page: Page):
     )
 
 
+def read_atomic_appointment_snapshot(page: Page):
+    from appointment_bot.reservation_engine.appointments import (
+        DATE_SELECTOR,
+        HOUR_SELECTOR,
+        SITE_SELECTOR,
+        AppointmentSnapshot,
+    )
+
+    payload = page.evaluate(
+        """selectors => {
+            const text = value => (value || "").trim();
+            const key = value => text(value).toLowerCase();
+            const selectState = selector => {
+                const element = document.querySelector(selector);
+                if (!element) return { options: [], selected: "" };
+                const selected = element.options[element.selectedIndex];
+                return {
+                    options: Array.from(element.options).map(option => text(option.innerText)),
+                    selected: selected ? text(selected.innerText) : "",
+                };
+            };
+            const readSlots = () => {
+                const directLabel = document.getElementById("MainContent_idUcitas_lblcupos");
+                if (directLabel && text(directLabel.textContent)) {
+                    return text(directLabel.textContent);
+                }
+                const directInput = Array.from(document.querySelectorAll("input")).find(input => {
+                    const inputKey = key(`${input.id} ${input.name}`);
+                    return inputKey.includes("cupo") && text(input.value);
+                });
+                if (directInput) return text(directInput.value);
+                const labels = Array.from(document.querySelectorAll("label, span, th, td, div"));
+                const cuposLabel = labels.find(element => key(element.innerText) === "cupos");
+                if (!cuposLabel) return "";
+                const container = cuposLabel.closest("tr, .row, div, fieldset, table")
+                    || document.body;
+                const nearbyInput = Array.from(container.querySelectorAll("input"))
+                    .find(input => text(input.value));
+                if (nearbyInput) return text(nearbyInput.value);
+                return Array.from(container.querySelectorAll("span, label, div, td"))
+                    .map(element => text(element.textContent))
+                    .find(value => /^\\d+$/.test(value)) || "";
+            };
+            const readPerson = () => {
+                const visibleValue = element => {
+                    const value = text(element.value || element.innerText || element.textContent);
+                    return value && value.length <= 120 ? value : "";
+                };
+                const controls = Array.from(document.querySelectorAll("input, textarea"))
+                    .filter(element => ![
+                        "hidden", "password", "submit", "button", "image"
+                    ].includes(key(element.type)));
+                const fieldKey = element => key([
+                    element.id,
+                    element.name,
+                    element.placeholder,
+                    element.getAttribute("aria-label"),
+                ].join(" "));
+                const findValue = parts => {
+                    const control = controls.find(element => {
+                        const controlKey = fieldKey(element);
+                        return parts.some(part => controlKey.includes(part))
+                            && visibleValue(element);
+                    });
+                    return control ? visibleValue(control) : "";
+                };
+                const names = findValue(["nombres", "nombre"]);
+                const paternal = findValue(["paterno"]);
+                const maternal = findValue(["materno"]);
+                const surname = findValue(["apellidos", "apellido"]);
+                const controlName = [names, paternal || surname, maternal]
+                    .filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+                if (controlName) return controlName;
+                const candidates = Array.from(document.querySelectorAll(
+                    "span, label, td, th, div, strong"
+                ));
+                for (const label of candidates) {
+                    const labelText = key(label.textContent);
+                    if (!labelText.includes("nombre") || labelText.length > 80) continue;
+                    const container = label.closest("tr, .row, fieldset, table, div")
+                        || label.parentElement;
+                    if (!container) continue;
+                    const values = Array.from(container.querySelectorAll(
+                        "input, textarea, span, label, td, th, strong"
+                    )).map(visibleValue).filter(Boolean);
+                    const candidate = values.find(value => {
+                        const normalized = key(value);
+                        return normalized !== labelText
+                            && !normalized.startsWith("nombre")
+                            && /[a-záéíóúñ]/i.test(value);
+                    });
+                    if (candidate) return candidate;
+                }
+                return "";
+            };
+            const site = selectState(selectors.site);
+            const date = selectState(selectors.date);
+            const hour = selectState(selectors.hour);
+            return {
+                siteOptions: site.options,
+                dateOptions: date.options,
+                hourOptions: hour.options,
+                site: site.selected,
+                date: date.selected,
+                hour: hour.selected,
+                slots: readSlots(),
+                personName: readPerson(),
+            };
+        }""",
+        {"site": SITE_SELECTOR, "date": DATE_SELECTOR, "hour": HOUR_SELECTOR},
+    )
+    data = dict(payload or {})
+    return AppointmentSnapshot(
+        site_options=[str(value) for value in data.get("siteOptions") or []],
+        date_options=[str(value) for value in data.get("dateOptions") or []],
+        hour_options=[str(value) for value in data.get("hourOptions") or []],
+        site=str(data.get("site") or ""),
+        date=str(data.get("date") or ""),
+        hour=str(data.get("hour") or ""),
+        slots=str(data.get("slots") or ""),
+        person_name=str(data.get("personName") or ""),
+    )
+
+
 def snapshot_details(
     snapshot,
     *,
