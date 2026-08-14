@@ -472,6 +472,7 @@ export class App implements OnDestroy {
   protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
   protected readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
   protected readonly captchaReviewTotal = signal(0);
+  protected readonly captchaPendingTotal = signal(0);
   protected readonly captchaReviewPosition = signal(0);
   protected readonly captchaWorkspaceMode = signal<CaptchaWorkspaceMode>('review');
   protected readonly captchaHistoryFiltersOpen = signal(false);
@@ -1438,7 +1439,7 @@ export class App implements OnDestroy {
       const [orders, pendingCaptchas] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getCaptchaEvents(
-          1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', scope,
+          1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
         ).catch((error: unknown) => {
           if (isRequestCancelled(error)) {
             throw error;
@@ -1560,7 +1561,7 @@ export class App implements OnDestroy {
           this.loadCaptchaQuality(activeScope),
         ]);
         this.captchaSummary.set(summary);
-        this.captchaReviewTotal.set(
+        this.captchaPendingTotal.set(
           Math.max(0, summary.stats.events - summary.stats.human_labeled),
         );
         this.captchaState.set('ready');
@@ -1577,13 +1578,17 @@ export class App implements OnDestroy {
           this.captchaSource(),
           this.captchaReviewStatus(),
           'newest',
+          'all',
           activeScope,
         ),
         this.api.getCaptchaEvents(
-          1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority', activeScope,
+          1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', activeScope,
         ),
       ]);
       this.captchaSummary.set(summary);
+      this.captchaPendingTotal.set(
+        Math.max(0, summary.stats.events - summary.stats.human_labeled),
+      );
       this.applyCaptchaPage(page);
       this.captchaReviewQueue.set(reviewPage.events);
       this.captchaReviewTotal.set(reviewPage.pagination.total);
@@ -1747,6 +1752,12 @@ export class App implements OnDestroy {
         void this.loadCaptchaData(mode === 'quality');
       }
     }
+  }
+
+  protected showAllPendingCaptchas(): void {
+    this.captchaReviewStatus.set('pending');
+    this.captchaPage.set(1);
+    this.showCaptchaWorkspace('history');
   }
 
   protected toggleCaptchaHistoryFilters(): void {
@@ -1971,6 +1982,16 @@ export class App implements OnDestroy {
       return 'Coincidencia parcial';
     }
     return event.predictions.length ? `${event.predictions.length} respuestas` : 'Sin consenso';
+  }
+
+  protected captchaReviewReasonLabel(event: CaptchaEvent): string {
+    const labels: Record<string, string> = {
+      canary_v6: 'Canario V6',
+      anomaly: 'Anomalía',
+      model_disagreement: 'Desacuerdo V3/V6',
+      control_sample: 'Muestra de control',
+    };
+    return labels[event.review_priority_reason ?? ''] ?? 'Revisión dirigida';
   }
 
   protected captchaModelLabel(modelName: string): string {

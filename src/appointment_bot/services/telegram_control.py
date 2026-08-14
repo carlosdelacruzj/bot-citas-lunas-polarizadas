@@ -233,13 +233,19 @@ class AdminApiClient:
     def get_captcha_summary(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/captcha-shadow/summary")
 
-    def get_pending_captcha_events(self, *, page: int = 1) -> dict[str, Any]:
+    def get_pending_captcha_events(
+        self,
+        *,
+        page: int = 1,
+        targeted: bool = True,
+    ) -> dict[str, Any]:
         query = urlencode(
             {
                 "page": page,
                 "page_size": 48,
                 "review_status": "pending",
-                "sort": "oldest",
+                "review_scope": "targeted" if targeted else "all",
+                "sort": "review_priority" if targeted else "oldest",
             }
         )
         return self._request("GET", f"/api/v1/captcha-shadow/events?{query}")
@@ -995,7 +1001,11 @@ def _send_next_captcha_review(
     if event is None:
         conversations.pop(chat_id, None)
         if pending == 0:
-            message = "ETIQUETADO COMPLETO\n\nNo quedan CAPTCHA pendientes."
+            message = (
+                "REVISION PRIORITARIA COMPLETA\n\n"
+                "No quedan CAPTCHA del canario V6, anomalias, desacuerdos ni "
+                "muestras de control pendientes. El resto permanece guardado en Historial."
+            )
         else:
             message = (
                 "No quedan CAPTCHA sin revisar en esta sesion.\n\n"
@@ -1041,8 +1051,9 @@ def _send_next_captcha_review(
     total = max(0, int(stats.get("events") or 0))
     labeled = max(0, int(stats.get("human_labeled") or 0))
     caption = (
-        "ETIQUETAR CAPTCHA\n\n"
-        f"Validados: {labeled}/{total} | Pendientes: {pending}\n"
+        "ETIQUETAR CAPTCHA PRIORITARIO\n\n"
+        f"Motivo: {_captcha_review_reason(event)}\n"
+        f"Validados: {labeled}/{total} | Prioritarios: {pending}\n"
         "Elige una respuesta de los modelos o escribe la tuya.\n"
         "La sesion vence despues de 10 minutos sin actividad."
     )
@@ -1054,6 +1065,15 @@ def _send_next_captcha_review(
         content_type=content_type or mimetypes.types_map.get(".png", "image/png"),
         reply_markup=_captcha_review_markup(conversation, choices),
     )
+
+
+def _captcha_review_reason(event: dict[str, Any]) -> str:
+    return {
+        "canary_v6": "decision del canario V6",
+        "anomaly": "anomalia o baja confianza",
+        "model_disagreement": "desacuerdo V3/V6",
+        "control_sample": "muestra aleatoria de control",
+    }.get(str(event.get("review_priority_reason") or ""), "revision dirigida")
 
 
 def _next_pending_captcha(

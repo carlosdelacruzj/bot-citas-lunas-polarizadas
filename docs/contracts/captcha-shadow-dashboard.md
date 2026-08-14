@@ -1,6 +1,7 @@
 # Contrato del dashboard de CAPTCHA sombra
 
-Fecha de referencia original: 21 de julio de 2026.
+Fecha de referencia original: 21 de julio de 2026. Actualizado el 13 de agosto
+de 2026 con la cola de revisión dirigida.
 
 > Estado actual al 9 de agosto de 2026: el runtime sombra carga solamente
 > `v3_selected` y `v6_sequence_candidate`. Las tablas de tres modelos y las
@@ -36,7 +37,7 @@ Angular consume únicamente rutas del mismo origen y autenticadas por la sesión
 
 ```text
 GET /api/v1/captcha-shadow/summary
-GET /api/v1/captcha-shadow/events?page=1&page_size=12&q=&agreement=all&portal_status=all
+GET /api/v1/captcha-shadow/events?page=1&page_size=12&q=&agreement=all&portal_status=all&review_scope=all
 GET /api/v1/captcha-shadow/events/{event_id}/image
 ```
 
@@ -64,6 +65,15 @@ Los filtros permitidos son:
 
 - `agreement=all|match|mismatch|pending`;
 - `portal_status=all|accepted|rejected|unverified`.
+- `review_status=all|validated|pending`;
+- `review_scope=all|targeted`.
+
+`review_scope=targeted` se usa únicamente con pendientes y orden
+`review_priority`. Incluye, en este orden, decisiones cuya respuesta operativa
+fue V6, anomalías o confianza V6 bajo `0.60/0.60`, discrepancias con la
+referencia externa, desacuerdos V3/V6 y una muestra estable del `6.25%` de los
+acuerdos seleccionada por el primer byte del SHA-256. Cada evento devuelve
+`review_priority_reason`; `review_scope=all` conserva la consulta completa.
 
 ## Tiempos
 

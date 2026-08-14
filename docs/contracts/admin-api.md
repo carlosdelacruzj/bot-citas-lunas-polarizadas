@@ -652,6 +652,11 @@ Rutas del dashboard servido por el admin API:
 | `/finanzas?month=YYYY-MM` | control financiero |
 | `/captchas?mode=review\|history` | revisión o historial CAPTCHA |
 
+La vista `review` solicita `review_status=pending`,
+`review_scope=targeted` y `sort=review_priority`. La vista `history` conserva
+`review_scope=all`, incluido el filtro explícito **Pendientes**, para que la
+priorización nunca oculte ni elimine evidencia.
+
 Cada vista se entrega como un chunk Angular diferido. El servidor debe mantener
 el fallback de rutas desconocidas hacia `index.html`; el admin API incorporado
 ya aplica este comportamiento.

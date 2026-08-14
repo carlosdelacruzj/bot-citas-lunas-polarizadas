@@ -90,6 +90,9 @@ supervisor sigue vivo, no hay lease/submission y el corte quedo registrado.
 
 El canario operativo OBS-006/007 y su rollback estan en
 [`opportunity-burst-canary-2026-08-09.md`](opportunity-burst-canary-2026-08-09.md).
+La seleccion event-driven, sus mediciones y los dos kill switches de rollback
+estan en
+[`reservation-critical-path-canary-2026-08-11.md`](reservation-critical-path-canary-2026-08-11.md).
 Los planes de rendimiento de julio son historia y no describen configuracion
 actual.
 

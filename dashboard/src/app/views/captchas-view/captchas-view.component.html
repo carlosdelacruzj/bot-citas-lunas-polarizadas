@@ -9,6 +9,13 @@
       <button
         type="button"
         class="secondary"
+        (click)="dashboard.showAllPendingCaptchas()"
+      >
+        Todos los pendientes
+      </button>
+      <button
+        type="button"
+        class="secondary"
         [disabled]="dashboard.captchaState() === 'loading'"
         (click)="dashboard.loadCaptchaData()"
       >
@@ -25,8 +32,9 @@
       <strong>{{ summary.stats.events }} total</strong>
       <span>{{ summary.stats.human_labeled }} validados</span>
       <span class="{{ dashboard.captchaReviewTotal() ? 'warn' : 'good' }}">
-        {{ dashboard.captchaReviewTotal() }} pendientes
+        {{ dashboard.captchaReviewTotal() }} prioritarios
       </span>
+      <span>{{ dashboard.captchaPendingTotal() }} pendientes guardados</span>
       <small
         >{{ summary.models.length }} modelos · {{ summary.outbox.pending }} entregas en
         cola</small
@@ -78,7 +86,11 @@
       <div class="captcha-review-progress">
         <div>
           <strong>{{ dashboard.captchaReviewPosition() + 1 }} de {{ dashboard.captchaReviewTotal() }}</strong>
-          <span>{{ dashboard.captchaChoiceLabel(event) }} · {{ dashboard.captchaSourceLabel(event) }}</span>
+          <span
+            >{{ dashboard.captchaReviewReasonLabel(event) }} ·
+            {{ dashboard.captchaChoiceLabel(event) }} ·
+            {{ dashboard.captchaSourceLabel(event) }}</span
+          >
         </div>
         <small>Atajos: 1–4 elegir · Enter confirmar consenso · ← → navegar</small>
       </div>
@@ -97,7 +109,7 @@
               dashboard.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
             }}</span>
           </div>
-          <span class="badge warn">{{ dashboard.captchaChoiceLabel(event) }}</span>
+          <span class="badge warn">{{ dashboard.captchaReviewReasonLabel(event) }}</span>
         </div>
 
         <div class="captcha-focus-layout">
@@ -233,10 +245,13 @@
     } @else {
       <section class="panel captcha-empty-review">
         <span aria-hidden="true">✓</span>
-        <h3>Todo validado</h3>
-        <p>No hay CAPTCHA pendientes. Puedes consultar o corregir etiquetas en Historial.</p>
-        <button type="button" class="secondary" (click)="dashboard.showCaptchaWorkspace('history')">
-          Ver historial
+        <h3>Revisión prioritaria completa</h3>
+        <p>
+          No quedan decisiones V6, anomalías, desacuerdos ni muestras de control pendientes.
+          Los demás CAPTCHA permanecen guardados.
+        </p>
+        <button type="button" class="secondary" (click)="dashboard.showAllPendingCaptchas()">
+          Ver todos los pendientes
         </button>
       </section>
     }

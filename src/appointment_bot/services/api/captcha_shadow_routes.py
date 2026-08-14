@@ -30,6 +30,7 @@ ALLOWED_AGREEMENTS = {"all", "match", "mismatch", "pending"}
 ALLOWED_PORTAL_STATUSES = {"all", "accepted", "rejected", "unverified"}
 ALLOWED_SOURCES = {"all", "reservation", "observer"}
 ALLOWED_REVIEW_STATUSES = {"all", "validated", "pending"}
+ALLOWED_REVIEW_SCOPES = {"all", "targeted"}
 ALLOWED_SORTS = {"newest", "oldest", "review_priority"}
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 QUALITY_CASE_PAGE_SIZES = {12, 24, 48}
@@ -81,12 +82,14 @@ def captcha_shadow_events_payload(
     portal_status = _query_value(query, "portal_status", "all")
     source = _query_value(query, "source", "all")
     review_status = _query_value(query, "review_status", "all")
+    review_scope = _query_value(query, "review_scope", "all")
     sort = _query_value(query, "sort", "newest")
     if (
         agreement not in ALLOWED_AGREEMENTS
         or portal_status not in ALLOWED_PORTAL_STATUSES
         or source not in ALLOWED_SOURCES
         or review_status not in ALLOWED_REVIEW_STATUSES
+        or review_scope not in ALLOWED_REVIEW_SCOPES
         or sort not in ALLOWED_SORTS
     ):
         return HTTPStatus.BAD_REQUEST, error_payload(
@@ -104,6 +107,7 @@ def captcha_shadow_events_payload(
             "portal_status": portal_status,
             "source": source,
             "review_status": review_status,
+            "review_scope": review_scope,
             "sort": sort,
         }
     )
@@ -152,6 +156,7 @@ def captcha_shadow_events_payload(
             "portal_status": portal_status,
             "source": source,
             "review_status": review_status,
+            "review_scope": review_scope,
             "sort": sort,
         },
     }
@@ -476,7 +481,9 @@ def _sanitize_event(
         "external_answer": external_answer,
         "external_solve_ms": external_timings.get(event_id),
         "portal_accepted": event.get("portal_accepted"),
+        "external_source": event.get("external_source"),
         "human_label": event.get("human_label"),
+        "review_priority_reason": event.get("review_priority_reason"),
         "metadata": {
             key: metadata.get(key)
             for key in (

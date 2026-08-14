@@ -289,8 +289,15 @@ export interface CaptchaEvent {
   image_sha256: string;
   received_at_utc: string;
   external_answer: string | null;
+  external_source: '2captcha' | 'v6' | null;
   external_solve_ms: number | null;
   portal_accepted: boolean | null;
+  review_priority_reason:
+    | 'canary_v6'
+    | 'anomaly'
+    | 'model_disagreement'
+    | 'control_sample'
+    | null;
   human_label: {
     review_id: number;
     event_id: string;
@@ -353,6 +360,7 @@ export interface CaptchaEventsPage {
     portal_status: string;
     source: string;
     review_status: string;
+    review_scope: string;
     sort: string;
   };
 }
@@ -1014,6 +1022,7 @@ export class AppointmentApiService {
     source: string,
     reviewStatus: string,
     sort: string,
+    reviewScope: 'all' | 'targeted',
     scope?: RequestScope,
   ): Promise<CaptchaEventsPage> {
     const params = new URLSearchParams({
@@ -1024,6 +1033,7 @@ export class AppointmentApiService {
       portal_status: portalStatus,
       source,
       review_status: reviewStatus,
+      review_scope: reviewScope,
       sort,
     });
     return this.read<CaptchaEventsPage>(
