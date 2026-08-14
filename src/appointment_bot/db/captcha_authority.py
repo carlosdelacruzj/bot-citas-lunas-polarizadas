@@ -313,6 +313,36 @@ def trip_captcha_authority_circuit(
         )
 
 
+def count_consecutive_captcha_authority_failures(
+    reasons: set[str],
+    *,
+    limit: int,
+    settings: Settings | None = None,
+) -> int:
+    if limit < 1:
+        raise ValueError("limit must be positive")
+    if not reasons:
+        return 0
+    resolved = _settings(settings)
+    init_database(resolved)
+    with _connection(_database_url(resolved)) as connection:
+        rows = connection.execute(
+            """
+            SELECT fallback_reason
+            FROM captcha_authority_decisions
+            ORDER BY created_at DESC, decision_id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        ).fetchall()
+    consecutive = 0
+    for row in rows:
+        if row["fallback_reason"] not in reasons:
+            break
+        consecutive += 1
+    return consecutive
+
+
 def _control(row) -> CaptchaAuthorityControl:
     return CaptchaAuthorityControl(
         mode=str(row["mode"]),

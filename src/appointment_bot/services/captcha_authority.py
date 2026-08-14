@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 from appointment_bot.config import Settings
 from appointment_bot.db.captcha_authority import (
+    count_consecutive_captcha_authority_failures,
     get_captcha_authority_control,
     record_captcha_authority_decision,
     trip_captcha_authority_circuit,
@@ -23,6 +24,15 @@ logger = logging.getLogger(__name__)
 
 V6_MODEL_NAME = "v6_sequence_candidate"
 CAPTCHA_ANSWER_PATTERN = re.compile(r"[A-Z0-9]{5}")
+TRANSIENT_LOCAL_FAILURES = {
+    "local_http_500",
+    "local_http_502",
+    "local_http_503",
+    "local_http_504",
+    "local_solver_failure",
+    "local_unavailable_or_timeout",
+}
+TRANSIENT_FAILURE_LIMIT = 3
 
 
 @dataclass(frozen=True)
@@ -36,6 +46,12 @@ class CaptchaAuthorityResult:
     mean_confidence: float | None = None
     min_char_confidence: float | None = None
     sequence_confidence_product: float | None = None
+    local_queue_wait_ms: float | None = None
+    local_preprocess_ms: float | None = None
+    local_persist_ms: float | None = None
+    local_service_total_ms: float | None = None
+    local_cached: bool | None = None
+    local_coalesced: bool | None = None
 
 
 def solve_reservation_captcha(
@@ -102,7 +118,6 @@ def solve_reservation_captcha(
             reason,
             exc,
         )
-        trip_captcha_authority_circuit(reason, settings=settings)
         decision = record_captcha_authority_decision(
             event_id=event_id,
             run_id=run_id,
@@ -117,6 +132,25 @@ def solve_reservation_captcha(
             fallback_reason=reason,
             settings=settings,
         )
+        if reason in TRANSIENT_LOCAL_FAILURES:
+            consecutive_failures = count_consecutive_captcha_authority_failures(
+                TRANSIENT_LOCAL_FAILURES,
+                limit=TRANSIENT_FAILURE_LIMIT,
+                settings=settings,
+            )
+            logger.warning(
+                "captcha_authority_transient_failure event_id=%s consecutive=%s limit=%s",
+                event_id,
+                consecutive_failures,
+                TRANSIENT_FAILURE_LIMIT,
+            )
+            if consecutive_failures >= TRANSIENT_FAILURE_LIMIT:
+                trip_captcha_authority_circuit(
+                    f"{reason}_x{TRANSIENT_FAILURE_LIMIT}",
+                    settings=settings,
+                )
+        else:
+            trip_captcha_authority_circuit(reason, settings=settings)
         return _solve_with_fallback(
             image_path,
             settings,
@@ -164,6 +198,12 @@ def solve_reservation_captcha(
         mean_confidence=prediction.mean_confidence,
         min_char_confidence=prediction.min_char_confidence,
         sequence_confidence_product=prediction.sequence_confidence_product,
+        local_queue_wait_ms=prediction.local_queue_wait_ms,
+        local_preprocess_ms=prediction.local_preprocess_ms,
+        local_persist_ms=prediction.local_persist_ms,
+        local_service_total_ms=prediction.local_service_total_ms,
+        local_cached=prediction.local_cached,
+        local_coalesced=prediction.local_coalesced,
     )
 
 
@@ -188,6 +228,14 @@ def _solve_with_fallback(
         sequence_confidence_product=(
             prediction.sequence_confidence_product if prediction else None
         ),
+        local_queue_wait_ms=prediction.local_queue_wait_ms if prediction else None,
+        local_preprocess_ms=prediction.local_preprocess_ms if prediction else None,
+        local_persist_ms=prediction.local_persist_ms if prediction else None,
+        local_service_total_ms=(
+            prediction.local_service_total_ms if prediction else None
+        ),
+        local_cached=prediction.local_cached if prediction else None,
+        local_coalesced=prediction.local_coalesced if prediction else None,
     )
 
 
@@ -207,7 +255,7 @@ def _predict_v6(
         }
     ).encode("utf-8")
     request = Request(
-        f"{settings.captcha_shadow_url.rstrip('/')}/v1/predict",
+        f"{settings.captcha_shadow_url.rstrip('/')}/v1/predict/authority",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -219,6 +267,9 @@ def _predict_v6(
     event = result.get("event")
     if not isinstance(event, dict):
         raise ValueError("local_response_missing_event")
+    telemetry = result.get("telemetry")
+    if not isinstance(telemetry, dict):
+        telemetry = {}
     predictions = event.get("predictions")
     if not isinstance(predictions, list):
         raise ValueError("local_response_missing_predictions")
@@ -247,6 +298,12 @@ def _predict_v6(
         sequence_confidence_product=_required_confidence(
             selected, "sequence_confidence_product"
         ),
+        local_queue_wait_ms=_optional_float(telemetry, "queue_wait_ms"),
+        local_preprocess_ms=_optional_float(telemetry, "preprocess_ms"),
+        local_persist_ms=_optional_float(telemetry, "persist_ms"),
+        local_service_total_ms=_optional_float(telemetry, "service_total_ms"),
+        local_cached=_optional_bool(result, "cached"),
+        local_coalesced=_optional_bool(result, "coalesced"),
     )
 
 
@@ -268,6 +325,17 @@ def _required_confidence(payload: dict[str, Any], field: str) -> float:
     if number > 1:
         raise ValueError(f"v6_{field}_invalid")
     return number
+
+
+def _optional_float(payload: dict[str, Any], field: str) -> float | None:
+    if field not in payload:
+        return None
+    return _required_float(payload, field)
+
+
+def _optional_bool(payload: dict[str, Any], field: str) -> bool | None:
+    value = payload.get(field)
+    return value if isinstance(value, bool) else None
 
 
 def _local_failure_reason(exc: Exception) -> str:
