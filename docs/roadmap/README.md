@@ -26,12 +26,14 @@ crear colas paralelas.
 
 1. Reunir la muestra productiva de cierre de la **Fase 1** sin cambiar sus
    parametros: `10` rafagas y `30` auxiliares reconstruibles.
-2. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
+2. Revisar las primeras `10` selecciones del canario de ruta critica: estrategia,
+   fallback, seleccion preservada y tiempos pre-click, sin contar entrenamiento.
+3. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
    diferencia de `S/10` y reunir saldos/costos suficientes para cierres reales.
-3. Incorporar controles seguros y salud compuesta en la **Fase 3**.
-4. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
-5. Reorganizar flujos y datos del dashboard antes del rediseño visual.
-6. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
+4. Incorporar controles seguros y salud compuesta en la **Fase 3**.
+5. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
+6. Reorganizar flujos y datos del dashboard antes del rediseño visual.
+7. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
 
 ## Fase 0 - Consolidacion documental
 
@@ -131,6 +133,19 @@ usar sus resultados para decidir continuidad o escalamiento.
   primera reserva confirmada bajo autoridad V6. El canario queda en `4/20`, con
   una confirmacion, un `slot_lost`, dos errores internos previos al submit y
   cero fallbacks; la efectividad sigue abierta hasta completar el corte;
+- ruta crítica V6 corregida el `2026-08-13`: una sola llamada síncrona ejecuta
+  únicamente V6 mediante `/v1/predict/authority`; V3 se completa después por el
+  outbox durable, sin repetir V6. El servicio deduplica por `event_id`, separa
+  telemetría de cola/preproceso/inferencia/persistencia/total y retiró el cálculo
+  global de estadísticas de la respuesta crítica. El timeout permanece en
+  `500 ms`; un fallo técnico aislado cae a 2Captcha y el circuito abre tras tres
+  fallos técnicos consecutivos, mientras una respuesta inválida o un resultado
+  ambiguo conserva el breaker inmediato;
+- revisión humana CAPTCHA dirigida desde el `2026-08-13`: etiquetar primero
+  todas las decisiones del canario V6, anomalías, baja confianza y desacuerdos
+  V3/V6; usar una muestra SHA-256 determinista del `6.25%` de acuerdos como
+  control. El resto permanece consultable sin formar parte de la cola diaria y
+  no autoriza reentrenamiento automático;
 - migracion viva `v49 -> v51`, `compileall`, Ruff, `59 passed`, build Angular y
   `git diff --check` correctos.
 
@@ -138,6 +153,10 @@ El canario CAPTCHA V6 autorizado despues de esta primera muestra cambia la
 latencia del submit. Las `2` rafagas y `4` auxiliares anteriores se conservan
 como evidencia pre-canario, pero no deben mezclarse con la cohorte comparable
 posterior al calcular rendimiento de la Fase 1.
+Las observaciones anteriores al despliegue de la ruta V6 única tampoco deben
+mezclarse con las posteriores al comparar latencia del resolutor. La siguiente
+muestra debe revisar `local_request_ms`, `queue_wait_ms`, `preprocess_ms`,
+`inference_ms`, `persist_ms`, `service_total_ms`, `cached` y `coalesced`.
 
 No se marca la fase como cerrada porque todavia faltan `10` rafagas reales y
 `30` auxiliares. Durante esa muestra no se deben cambiar intervalos, orden,
@@ -277,7 +296,12 @@ detecta; reinicio y drenaje son auditables y no interrumpen submissions.
   checkpoint durable anterior al clic conserva seleccion, resolutor,
   `decision_id`, validacion y hora, mientras `cupo`, CAPTCHA y respuesta del
   portal mantienen la cadena visual. Los archivos historicos permanecen
-  intactos.
+  intactos;
+- la seleccion de hora incorpora un canario event-driven con dos snapshots DOM
+  estables y fallback automatico al algoritmo `500/750 ms`. Las validaciones
+  atomicas conservan la relectura independiente de identidad y tambien vuelven
+  a las lecturas anteriores ante fallo. Dos kill switches permiten rollback
+  separado; faltan `10` selecciones reales para aceptar el cambio.
 
 Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
 reinicio inseguro y heartbeats funcionales de los servicios.
@@ -460,10 +484,12 @@ aparezca el evento natural:
 - siguiente `captcha_invalid`: cooldown solo por orden y continuidad de cola;
 - siguiente cupo incompatible: `partial / blocked_by_order_rule` sin backoff
   general ni ruido CAPTCHA por Telegram;
-- siguientes trabajos WhatsApp: album, postpago, aviso de registro y resumen
-  diario, preservando `uncertain` sin reintento;
-- siguiente cierre diario: confirmar por separado resumen, imagenes y
-  publicacion;
+- siguientes trabajos WhatsApp: album, postpago y aviso de registro,
+  preservando `uncertain` sin reintento; el resumen real del `2026-08-13` ya
+  validó paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
+- siguiente cierre diario: confirmar en tráfico real la regla simplificada de
+  compositor validado antes del clic y burbuja saliente nueva confirmada
+  después, sin comparar nuevamente texto ni emojis;
 - primeras `20` decisiones V6: revisar cada resultado y conservar 2Captcha como
   fallback; cada 100 CAPTCHA frescos, registrar avance sin reentrenar;
 - siguiente reinicio de Windows: tarea, supervisor raiz, Docker, Admin API,

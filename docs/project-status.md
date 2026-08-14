@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral y documental: `2026-08-11`.
+Última revisión integral y documental: `2026-08-13`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -76,6 +76,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   hora real de envío, deduplica por cupo y realiza hasta tres intentos. Una
   caída posterior a la aceptación de Telegram pero anterior al `sent` puede
   producir un duplicado, pero nunca debe frenar el submit.
+- Implementado el `2026-08-11`: la estabilización de fecha/hora usa como canario
+  el `endRequest` de ASP.NET, cambios DOM y dos snapshots atómicos separados por
+  `150 ms`. Si la señal no llega en `750 ms` o las lecturas difieren, vuelve en
+  la misma sesión a las esperas anteriores `500/750 ms`. Las tres validaciones
+  anteriores al submit permanecen; sede, fecha, hora y cupos se leen juntos y
+  la identidad conserva su relectura estable. Dos banderas independientes
+  restauran completamente ambos comportamientos anteriores tras reinicio.
+  `selection_observation` y `reservation_timing` separan estrategia, fallback,
+  llenado, validación final y persistencia. La aceptación real queda abierta
+  hasta revisar `10` selecciones compatibles sin contar muestreo de entrenamiento.
+  Las dos banderas cargan con valor efectivo `true`; el worker cerró normalmente
+  por el corte diario de las `18:00` y el supervisor las cargará en su siguiente
+  inicio programado de las `07:30`, sin forzar una sesión fuera de horario.
 - Prioridad, prioridad exclusiva y restricciones por fecha, día y rangos
   excluidos.
 - Implementado el `2026-08-02`: el horario dejó de ser una restricción
@@ -414,6 +427,14 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   opción con sus modelos asociados; **Escribir otra respuesta**, **Omitir** y
   **Salir** cubren los demás casos. Antes de guardar se exige que el evento siga
   sin etiqueta para no pisar una revisión realizada desde la otra interfaz.
+- Desde el `2026-08-13`, **Etiquetar CAPTCHA** y `/captchas` ya no presentan los
+  pendientes de forma exhaustiva. La cola dirigida prioriza toda decisión del
+  canario V6, anomalías o baja confianza, desacuerdos V3/V6 y una muestra de
+  control determinista del `6.25%` de los acuerdos por prefijo SHA-256. Los
+  demás eventos no se borran: permanecen en **Historial > Pendientes**. En el
+  corte de activación se redujo la tarea manual de `1,015` pendientes a `84`
+  prioritarios: `2` decisiones V6, `8` desacuerdos y `74` controles, sin
+  anomalías pendientes. Esta selección no reentrena ni promociona modelos.
 - Desde el `2026-08-10`, V6 participa en un canario acotado de `20` decisiones
   reales. V3 sigue solo en sombra. 2Captcha permanece como fallback ante baja
   confianza, formato inválido, timeout, servicio no saludable, circuito abierto
@@ -440,9 +461,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   con `min_char_confidence >= 0.60` y
   `sequence_confidence_product >= 0.60`, con timeout de `500 ms`. En la cohorte
   de 475, esos umbrales habrían admitido `473/475` sin incluir el único error de
-  V6. El primer `captcha_invalid`, un resultado ambiguo o un fallo local abre el
-  circuito; el rollback persistente es `mode=2captcha` y aplica al siguiente
-  CAPTCHA sin editar `.env`.
+  V6. El primer `captcha_invalid`, una respuesta local inválida o un resultado
+  ambiguo abre el circuito. Un timeout o fallo transitorio aislado usa 2Captcha
+  solo para ese intento; tres fallos técnicos consecutivos abren el circuito.
+  El rollback persistente es `mode=2captcha` y aplica al siguiente CAPTCHA sin
+  editar `.env`.
 - Corregido el `2026-08-11`: las dos primeras decisiones productivas V6
   resolvieron localmente, pero el adaptador intentó leer los atributos
   inexistentes `request_ms` e `inference_ms` al devolver el resultado. Dos
@@ -461,6 +484,24 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `compileall`, Ruff, `59 passed` y validación productiva del adaptador; la
   efectividad del modelo continúa bajo revisión durante las primeras `20`
   decisiones.
+- Corregido el `2026-08-13`: el timeout observado el día anterior no correspondió
+  a una inferencia V6 lenta. La inferencia registrada fue `13.403 ms`, pero el
+  request superó `500 ms` porque el flujo encolaba `/v1/predict` y luego hacía
+  otra llamada síncrona con el mismo `event_id`; ambas podían competir por el
+  lock global y repetir V6, además de esperar V3, persistencia y el recálculo de
+  estadísticas. La autoridad usa ahora `/v1/predict/authority`, que ejecuta y
+  persiste solo `v6_sequence_candidate`; al recibir el resultado, el outbox
+  durable completa únicamente el modelo sombra faltante. El servicio aplica
+  single-flight por evento, no recalcula estadísticas en la respuesta crítica y
+  devuelve tiempos separados de cola, preprocesamiento, inferencia,
+  persistencia y total. Se conserva el timeout de `500 ms`, el fallback inmediato
+  a 2Captcha y el breaker inmediato para resultados inválidos; los fallos
+  técnicos transitorios requieren tres eventos consecutivos. El canario conserva
+  `4/20`, circuito cerrado y sin cambio de umbrales. Los cinco fallbacks
+  persistidos desde el incidente corresponden al timeout inicial y a cuatro
+  decisiones posteriores con `circuit_open`; esas cuatro terminaron confirmadas
+  por el portal mediante 2Captcha. No son rechazos de V6 ni consumen nuevas
+  admisiones locales.
 - Actualizado el dashboard el `2026-08-10`: **Capturas CAPTCHA** separa ahora
   cantidad de muestras, validación de restricciones y autoridad final. Muestra
   resolutor efectivo, progreso `V6/20`, confirmaciones, rechazos, fallbacks,
@@ -548,6 +589,49 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `uncertain`; ahora se exige confirmar cada imagen saliente antes de cerrar.
   El reintento manual autorizado terminó `sent` con las cuatro imágenes
   confirmadas.
+- Corregido el `2026-08-13`: el resumen atrasado del 12 de agosto confirmó el
+  texto, pero dos intentos de su álbum de 21 imágenes quedaron en la vista
+  previa sin accionar el botón de envío. La ruta de álbum ahora prioriza el
+  botón semántico `Enviar/Send` ya usado por los textos, vuelve a intentarlo
+  mientras la vista previa siga abierta, usa `Enter` si el clic no la cierra y
+  conserva el clic por coordenadas solo como fallback. El intento con `Enter`
+  cerró la vista previa y dejó imágenes con doble check azul, pero el detector
+  no pudo contar las 21 por la virtualización del historial y conservó
+  `uncertain`; requiere confirmación del operador antes de reconciliar o enviar
+  únicamente la publicación pendiente. Los intentos anteriores permanecen
+  `uncertain`.
+- Implementado el `2026-08-13`: los resúmenes diarios dividen sus imágenes en
+  paquetes secuenciales de hasta cuatro. Cada paquete debe quedar confirmado
+  antes de adjuntar el siguiente; el último puede contener menos de cuatro. Si
+  un paquete queda ambiguo, el trabajo se detiene como `uncertain` e informa el
+  número de paquete y cuántas imágenes anteriores estaban confirmadas. La
+  publicación de TikTok solo se intenta después de confirmar todos los
+  paquetes. La confirmación identifica mensajes nuevos por firma durable para
+  tolerar que WhatsApp virtualice imágenes anteriores del historial.
+- Validado y ajustado el `2026-08-13`: el primer cierre real con paquetes envió
+  `10` imágenes como `4 + 4 + 2`; los tres paquetes quedaron confirmados y la
+  publicación se intentó solo después del último. El texto final llegó completo
+  y la evidencia muestra doble check azul, pero esa marca apareció en el límite
+  de los `15` segundos y el trabajo terminó como falso `uncertain`. La espera de
+  texto ahora es de `30` segundos, seguida por `3` segundos de gracia y una
+  relectura adicional después de guardar la captura final. Si aun así no existe
+  una burbuja saliente nueva y confirmada, se conserva `uncertain` sin reintento.
+- Pruebas deliberadas del `2026-08-13`: `retry-5` partió por error del trabajo
+  parcial `retry-4`, cuyo `message_text` estaba vacío para no repetir el resumen;
+  por eso envió las `21` imágenes y TikTok, pero no el encabezado. La confirmación
+  del operador corrigió ese registro de `sent` a `uncertain`. `retry-6` se creó
+  desde el trabajo original y envió el texto exacto **Resumen de cupos únicos
+  hoy 12 de agosto de 2026**, seguido de seis paquetes
+  `4 + 4 + 4 + 4 + 4 + 1` y la publicación. Las capturas muestran el resumen y
+  TikTok como burbujas nuevas con doble check azul. La inspección DOM confirmó
+  que el estado `Leído` sí se reconocía; el falso `uncertain` ocurría porque
+  WhatsApp renderiza los `17` emojis del texto como imágenes y `text_content()`
+  los omitía. La verificación posterior al clic ya no vuelve a comparar los
+  `749` caracteres: el contenido completo se valida en el compositor antes de
+  enviar y luego solo se exige compositor vacío más una burbuja saliente nueva
+  con estado enviado, entregado o leído. Se conserva la espera `30 + 3` y
+  `uncertain` sin reintento si falta cualquiera de esas señales. `retry-6` se
+  reconcilió a `sent` por evidencia, sin otro reenvío.
 - Corregido el `2026-08-07`: el álbum automático posterior a una reserva ya no
   considera suficiente que desaparezca la vista previa. Espera hasta `60`
   segundos por las dos imágenes salientes confirmadas por WhatsApp; si no
@@ -743,6 +827,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
 
 ## Validación del corte
 
+- Canario de ruta crítica del `2026-08-11`: espera event-driven y lectura DOM
+  atómica incorporadas con fallback automático, kill switches separados y
+  telemetría durable. Procedimiento y rollback:
+  [`operations/reservation-critical-path-canary-2026-08-11.md`](operations/reservation-critical-path-canary-2026-08-11.md).
 - Optimización de alerta urgente del `2026-08-11`: la notificación inmediata
   pasó de `urlopen` síncrono a un outbox PostgreSQL `v55` y dispatcher propio.
   El payload durable excluye nombre, cuenta e identificadores del cliente; se
