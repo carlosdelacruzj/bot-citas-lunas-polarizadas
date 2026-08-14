@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-11`.
+Ultima priorizacion: `2026-08-14`.
 
 Esta es la unica lista de trabajo futuro y su orden de ejecucion. El estado de
 lo construido, validado y activo vive en
@@ -13,9 +13,11 @@ crear colas paralelas.
 1. Trabajar una sola fase o experimento de comportamiento a la vez.
 2. No mezclar refactor, cambios visuales y cambios del motor de reservas.
 3. No modificar `.env` sin autorizacion explicita.
-4. El CAPTCHA local solo puede tener autoridad dentro del canario V6 persistido:
-   maximo `20`, umbrales `0.60/0.60`, timeout `500 ms`, breaker y fallback a
-   2Captcha. No ampliar ni retirar el fallback sin una nueva decision explicita.
+4. El CAPTCHA gráfico local solo puede tener autoridad dentro del canario V6
+   persistido: maximo `20`, umbrales `0.60/0.60`, timeout `500 ms`, breaker y
+   fallback a 2Captcha. La suma HTML del portal usa un resolutor local estricto
+   independiente y no alimenta V3/V6. No ampliar ni retirar el fallback del
+   CAPTCHA gráfico sin una nueva decision explicita.
 5. No reintentar automaticamente un submit o envio de WhatsApp ambiguo.
 6. Antes de reiniciar, comprobar submissions, leases, sesiones y trabajos
    WhatsApp activos.
@@ -141,6 +143,23 @@ usar sus resultados para decidir continuidad o escalamiento.
   `500 ms`; un fallo técnico aislado cae a 2Captcha y el circuito abre tras tres
   fallos técnicos consecutivos, mientras una respuesta inválida o un resultado
   ambiguo conserva el breaker inmediato;
+- rollback operativo aplicado el `2026-08-14`: `mode=2captcha` vuelve a ser la
+  autoridad desde el siguiente CAPTCHA, sin reinicio ni reinicio de contadores.
+  El canario queda pausado con `5` decisiones locales, `2` confirmaciones, cero
+  rechazos y `5` fallbacks preservados. Los dos fallos inmediatamente anteriores
+  ocurrieron antes de invocar V6 o 2Captcha porque la imagen CAPTCHA del portal
+  no cargó ni pudo capturarse; por tanto, una recurrencia bajo 2Captcha exige
+  diagnosticar ese paso anterior al resolutor y no atribuirla al modelo local;
+- compatibilidad con el nuevo CAPTCHA HTML implementada el `2026-08-14`: parser
+  estricto de suma, cálculo local, firma de expresión, guarda de honeypot,
+  evidencia visual y refresco por cambio de firma. La ruta gráfica anterior
+  conserva 2Captcha y la suma queda excluida de muestreo, modelos y eventos
+  shadow. Las validaciones locales pasan, pero la aceptación productiva queda
+  pendiente porque los cupos desaparecieron durante la sesión aislada sin
+  submit. La captura de disponibilidad también quedó desacoplada del CAPTCHA y
+  se archiva en `cupos-unicos` inmediatamente después de estabilizar fecha y
+  hora, con fallback a página completa; revisar ambas evidencias en el próximo
+  cupo real antes de declarar aceptado el cambio;
 - revisión humana CAPTCHA dirigida desde el `2026-08-13`: etiquetar primero
   todas las decisiones del canario V6, anomalías, baja confianza y desacuerdos
   V3/V6; usar una muestra SHA-256 determinista del `6.25%` de acuerdos como
@@ -282,12 +301,19 @@ controlar el runtime sin arriesgar una reserva activa.
 El estado nocturno no genera falsa alarma; un proceso vivo pero bloqueado se
 detecta; reinicio y drenaje son auditables y no interrumpen submissions.
 
-### Implementado el 2026-08-11
+### Implementado el 2026-08-11 y ampliado el 2026-08-14
 
 - pausa, reanudacion y reinicio quedan auditados tanto por comando persistido
   como por el API embebido;
 - el reinicio comparte una unica transicion con `paused=false`, cancelacion y
   detencion explicitas, evitando que el proceso nuevo herede una pausa;
+- el dashboard mantiene el reinicio normal como opcion predeterminada y permite
+  solicitar **Reiniciar y reintentar** de forma explicita. Esa variante libera
+  unicamente el `next_allowed_at` de ordenes `ready` cuyo ultimo error no llego
+  a intentar una reserva, sin submission activo, resultado de submit ni señal
+  de defensa. El comando de reinicio sigue siendo persistido, la respuesta
+  informa liberados/protegidos y la operacion queda auditada. No se liberan
+  `reservation_unconfirmed`, `captcha_invalid`, `403/429` ni estados ambiguos;
 - la alerta urgente de disponibilidad sale de la ruta critica: PostgreSQL
   `v55` la deduplica y conserva, mientras un dispatcher Telegram separado la
   envia con hasta tres intentos. Queda pendiente incorporar sus contadores y
@@ -490,8 +516,9 @@ aparezca el evento natural:
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;
-- primeras `20` decisiones V6: revisar cada resultado y conservar 2Captcha como
-  fallback; cada 100 CAPTCHA frescos, registrar avance sin reentrenar;
+- si se reactiva el canario V6, continuar desde sus contadores preservados,
+  revisar cada resultado y conservar 2Captcha como fallback; cada 100 CAPTCHA
+  frescos, registrar avance sin reentrenar;
 - siguiente reinicio de Windows: tarea, supervisor raiz, Docker, Admin API,
   worker, Telegram, CAPTCHA y perfiles.
 

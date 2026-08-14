@@ -121,6 +121,19 @@ def archive_unique_slot_screenshot(
     return archived[0] if archived else None
 
 
+def archive_unique_slot_capture(
+    settings: Settings,
+    details: dict,
+    source: Path,
+) -> Path | None:
+    if not source.is_file():
+        return None
+    slot_key = _unique_slot_key(details)
+    if slot_key is None:
+        return None
+    return _archive_unique_slot_candidate(settings, slot_key, source)
+
+
 def archive_unique_slot_screenshots(
     settings: Settings,
     report: RunReport,
@@ -150,7 +163,7 @@ def archive_unique_slot_screenshots(
         if slot_key is None or slot_key in seen_keys:
             continue
         seen_keys.add(slot_key)
-        destination = _archive_unique_slot_candidate(settings, slot_key, source)
+        destination = archive_unique_slot_capture(settings, details, source)
         if destination is not None:
             archived.append(destination)
     return archived

@@ -22,6 +22,10 @@ from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
     save_reservation_captcha_image,
 )
+from appointment_bot.reservation_engine.reservation_captcha_math import (
+    ensure_reservation_honeypot_empty,
+    validate_reservation_math_captcha,
+)
 from appointment_bot.reservation_engine.reservation_captcha_sampling import (
     collect_reservation_captcha_training_samples,
 )
@@ -31,7 +35,10 @@ from appointment_bot.reservation_engine.reservation_controls import (
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.services.captcha import solve_normal_captcha
-from appointment_bot.services.captcha_authority import solve_reservation_captcha
+from appointment_bot.services.captcha_authority import (
+    CaptchaAuthorityResult,
+    solve_reservation_captcha,
+)
 from appointment_bot.services.captcha_shadow import (
     enqueue_shadow_external_result,
     enqueue_shadow_prediction,
@@ -132,8 +139,9 @@ def solve_reservation_captcha_and_click_reserve(
         captcha_audit["captcha_image_path"] = str(captcha_path_for_solver)
         if captcha_path.exists():
             captcha_audit["captcha_screenshot_image_path"] = str(captcha_path)
-        captcha_audit["captcha_sent_source"] = (
-            "original_html" if captcha_path_for_solver != captcha_path else "screenshot"
+        captcha_audit.setdefault(
+            "captcha_sent_source",
+            "original_html" if captcha_path_for_solver != captcha_path else "screenshot",
         )
     if timing is not None:
         timing.mark("captcha_image_finished")
@@ -144,7 +152,8 @@ def solve_reservation_captcha_and_click_reserve(
         )
     shadow_event_id: str | None = None
     shadow_metadata: dict[str, Any] = {}
-    if run_id:
+    captcha_kind = str(effective_captcha_audit.get("captcha_kind") or "image")
+    if run_id and captcha_kind != "html_math":
         event_namespace = (
             f"{run_id}:{order_id or 'observer'}"
             f"{f':{captcha_event_context}' if captcha_event_context else ''}"
@@ -167,16 +176,33 @@ def solve_reservation_captcha_and_click_reserve(
         if timing is not None:
             timing.mark("captcha_solver_started")
         captcha_solver_started = time.monotonic()
-        authority_result = solve_reservation_captcha(
-            captcha_path_for_solver,
-            settings,
-            event_id=shadow_event_id,
-            run_id=run_id,
-            order_id=order_id,
-            attempt_number=attempt_number,
-            metadata=shadow_metadata,
-            fallback_solver=solve_normal_captcha,
-        )
+        if captcha_kind == "html_math":
+            expected_math_signature = str(
+                effective_captcha_audit.get("captcha_math_expression_sha256") or ""
+            )
+            if not expected_math_signature:
+                raise RuntimeError("The reservation math captcha signature is missing.")
+            math_challenge = validate_reservation_math_captcha(
+                page,
+                expected_signature=expected_math_signature,
+            )
+            authority_result = CaptchaAuthorityResult(
+                answer=math_challenge.answer,
+                source="local_math",
+                decision_id=None,
+                fallback_reason="html_math",
+            )
+        else:
+            authority_result = solve_reservation_captcha(
+                captcha_path_for_solver,
+                settings,
+                event_id=shadow_event_id,
+                run_id=run_id,
+                order_id=order_id,
+                attempt_number=attempt_number,
+                metadata=shadow_metadata,
+                fallback_solver=solve_normal_captcha,
+            )
         captcha_solution = authority_result.answer
         captcha_solver_duration_ms = round(
             max(time.monotonic() - captcha_solver_started, 0.0) * 1000,
@@ -198,7 +224,10 @@ def solve_reservation_captcha_and_click_reserve(
                 answer_source=authority_result.source,
             )
         if captcha_audit is not None:
-            captcha_audit["captcha_solution_sent"] = captcha_solution
+            if captcha_kind == "html_math":
+                captcha_audit["captcha_solution_format"] = "numeric_1_3"
+            else:
+                captcha_audit["captcha_solution_sent"] = captcha_solution
             captcha_audit["captcha_solver_duration_ms"] = captcha_solver_duration_ms
             captcha_audit["captcha_solver_source"] = authority_result.source
             captcha_audit["captcha_authority_decision_id"] = (
@@ -264,6 +293,15 @@ def solve_reservation_captcha_and_click_reserve(
         timing_prefix="post_solver_validation",
         captcha_audit=effective_captcha_audit,
     )
+    if captcha_kind == "html_math":
+        validate_reservation_math_captcha(
+            page,
+            expected_signature=str(
+                effective_captcha_audit["captcha_math_expression_sha256"]
+            ),
+        )
+    else:
+        ensure_reservation_honeypot_empty(page)
 
     logger.info("Filling reservation captcha field")
     if timing is not None:
@@ -291,6 +329,15 @@ def solve_reservation_captcha_and_click_reserve(
         timing_prefix="pre_click_validation",
         captcha_audit=effective_captcha_audit,
     )
+    if captcha_kind == "html_math":
+        validate_reservation_math_captcha(
+            page,
+            expected_signature=str(
+                effective_captcha_audit["captcha_math_expression_sha256"]
+            ),
+        )
+    else:
+        ensure_reservation_honeypot_empty(page)
     if on_submission_intent is not None:
         submission_details = dict(expected_details or {})
         submission_details.update(

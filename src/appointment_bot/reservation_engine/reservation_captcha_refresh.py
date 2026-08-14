@@ -8,8 +8,12 @@ from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
 from appointment_bot.reservation_engine.appointments import APPOINTMENT_PANEL_SCREENSHOT_SELECTORS
+from appointment_bot.reservation_engine.reservation_captcha_math import (
+    read_reservation_math_captcha,
+)
 from appointment_bot.reservation_engine.reservation_controls import (
     CAPTCHA_MEDIA_SELECTOR,
+    RESERVATION_CAPTCHA_REFRESH_SELECTOR,
     RESERVATION_FIELD_SELECTOR,
 )
 
@@ -82,6 +86,12 @@ def ensure_reservation_captcha_loaded(panel, *, timeout: int = 15_000) -> bool:
 
 def _captcha_signature(panel) -> str:
     try:
+        math_challenge = read_reservation_math_captcha(panel)
+    except RuntimeError:
+        return "html_math:invalid"
+    if math_challenge is not None:
+        return f"html_math:{math_challenge.signature}"
+    try:
         return str(
             panel.locator(CAPTCHA_MEDIA_SELECTOR).evaluate_all(
                 """elements => elements
@@ -107,6 +117,10 @@ def _captcha_signature(panel) -> str:
 
 
 def _click_panel_captcha_refresh(panel) -> bool:
+    direct_refresh = panel.locator(RESERVATION_CAPTCHA_REFRESH_SELECTOR).first
+    if direct_refresh.count() == 1:
+        direct_refresh.click(timeout=5_000)
+        return True
     return bool(
         panel.evaluate(
             """element => {
@@ -185,6 +199,11 @@ def _reload_panel_captcha_images(panel, *, cache_buster: str) -> bool:
 
 
 def _panel_has_loaded_captcha(panel) -> bool:
+    try:
+        if read_reservation_math_captcha(panel) is not None:
+            return True
+    except RuntimeError:
+        return False
     return bool(
         panel.locator("img, canvas").evaluate_all(
             """elements => elements.some(element => {

@@ -13,10 +13,16 @@ from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
 from appointment_bot.reservation_engine.appointments import APPOINTMENT_PANEL_SCREENSHOT_SELECTORS
+from appointment_bot.reservation_engine.reservation_captcha_math import (
+    read_reservation_math_captcha,
+)
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     ensure_reservation_captcha_loaded,
 )
-from appointment_bot.reservation_engine.reservation_controls import CAPTCHA_MEDIA_SELECTOR
+from appointment_bot.reservation_engine.reservation_controls import (
+    CAPTCHA_MEDIA_SELECTOR,
+    RESERVATION_MATH_CAPTCHA_CONTAINER_SELECTOR,
+)
 from appointment_bot.utils.screenshots import artifact_filename, screenshot_artifact_dir
 
 logger = logging.getLogger(__name__)
@@ -41,6 +47,49 @@ def save_reservation_captcha_image(
                 continue
 
             with _revealed_panel(panel):
+                math_challenge = read_reservation_math_captcha(panel)
+                if math_challenge is not None:
+                    math_captcha = panel.locator(
+                        RESERVATION_MATH_CAPTCHA_CONTAINER_SELECTOR
+                    ).first
+                    if math_captcha.count() != 1:
+                        raise RuntimeError(
+                            "The reservation math captcha container is missing."
+                        )
+                    math_captcha.scroll_into_view_if_needed(timeout=5_000)
+                    math_captcha.screenshot(path=str(captcha_path), timeout=10_000)
+                    _record_png_dimensions(
+                        captcha_path,
+                        captcha_audit,
+                        width_key="captcha_image_width",
+                        height_key="captcha_image_height",
+                    )
+                    if captcha_audit is not None:
+                        bounds = math_captcha.bounding_box()
+                        captcha_audit.update(
+                            {
+                                "captcha_kind": "html_math",
+                                "captcha_sent_source": "html_math_screenshot",
+                                "captcha_math_expression_sha256": (
+                                    math_challenge.signature
+                                ),
+                                "captcha_media_tag": "DIV",
+                            }
+                        )
+                        if bounds is not None:
+                            captcha_audit["captcha_element_css_width"] = round(
+                                float(bounds["width"]), 3
+                            )
+                            captcha_audit["captcha_element_css_height"] = round(
+                                float(bounds["height"]), 3
+                            )
+                    logger.info(
+                        "Saved reservation math captcha evidence: %s using selector %s",
+                        captcha_path,
+                        selector,
+                    )
+                    return captcha_path
+
                 if not ensure_reservation_captcha_loaded(
                     panel,
                     timeout=settings.read_timeout_seconds * 1_000,
@@ -56,6 +105,8 @@ def save_reservation_captcha_image(
                     continue
                 captcha_media.scroll_into_view_if_needed(timeout=5_000)
                 _record_captcha_render_metrics(captcha_media, captcha_audit)
+                if captcha_audit is not None:
+                    captcha_audit["captcha_kind"] = "image"
                 original_path = _save_original_captcha_data_uri(
                     captcha_media,
                     captcha_path,

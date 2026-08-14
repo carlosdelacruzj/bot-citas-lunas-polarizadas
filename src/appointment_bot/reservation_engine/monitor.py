@@ -26,15 +26,13 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site,
 )
 from appointment_bot.reservation_engine.programs import click_program_action
-from appointment_bot.reservation_engine.reservation_captcha_refresh import (
-    ensure_reservation_captcha_loaded,
-)
 from appointment_bot.reservation_engine.reservation_flow import (
     capture_blocked_captcha_evidence,
     complete_available_reservation,
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.utils.screenshots import (
+    archive_unique_slot_capture,
     save_centered_modal_screenshot,
     save_result_screenshot,
     save_revealed_centered_modal_screenshot,
@@ -319,6 +317,15 @@ def _try_reservation_from_availability(
         selected_screenshot_path = save_available_appointment_snapshot(page, settings)
         if selected_screenshot_path is not None:
             screenshot_path = selected_screenshot_path
+            archived_path = archive_unique_slot_capture(
+                settings,
+                selected_result.details or {},
+                selected_screenshot_path,
+            )
+            if archived_path is None:
+                logger.warning(
+                    "Could not archive selected appointment screenshot immediately"
+                )
     if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
         if on_check is not None:
             on_check(selected_result, attempt, None)
@@ -1169,13 +1176,14 @@ def save_relevant_result_snapshot(page, settings: Settings, status: str) -> Path
 
 
 def save_available_appointment_snapshot(page, settings: Settings) -> Path | None:
-    return save_revealed_centered_modal_screenshot(
+    label = "03-modal-reserva-citas-cupo-disponible"
+    path = save_revealed_centered_modal_screenshot(
         page,
         settings,
-        "03-modal-reserva-citas-cupo-disponible",
+        label,
         APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
-        ready_check=lambda panel: ensure_reservation_captcha_loaded(
-            panel,
-            timeout=settings.read_timeout_seconds * 1_000,
-        ),
     )
+    if path is not None:
+        return path
+    logger.warning("Falling back to a full-page screenshot for available appointment")
+    return save_screenshot(page, settings, label)

@@ -7,6 +7,10 @@ from http import HTTPStatus
 from typing import Any
 
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.db.order_state import (
+    list_pending_order_backoffs,
+    release_order_backoffs,
+)
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.db.worker_commands import (
     enqueue_worker_command,
@@ -14,6 +18,7 @@ from appointment_bot.db.worker_commands import (
 )
 from appointment_bot.db.worker_state import get_worker_state, is_worker_lease_active
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.worker.recovery import portal_defense_signal
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +98,82 @@ def enqueue_worker_command_payload(
         "command": queued.command,
         "message": "Worker command queued for the continuous worker.",
     }
+
+
+def enqueue_restart_with_safe_backoff_release_payload(
+    *,
+    requested_by: str | None = None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    status, payload = enqueue_worker_command_payload(
+        "restart",
+        requested_by=requested_by,
+    )
+    if status != HTTPStatus.ACCEPTED:
+        return status, payload
+
+    settings = load_settings(require_login=False)
+    command_id = str(payload.get("command_id") or "")
+    try:
+        pending = list_pending_order_backoffs(settings=settings)
+        eligible_order_ids = tuple(
+            str(row["order_id"])
+            for row in pending
+            if _safe_technical_backoff(row)
+        )
+        released_order_ids = release_order_backoffs(
+            eligible_order_ids,
+            settings=settings,
+        )
+    except Exception as exc:
+        logger.exception("Could not release safe technical order backoffs")
+        record_remote_control_audit(
+            actor=normalize_worker_actor(requested_by),
+            action="release_safe_backoffs",
+            status="failed",
+            target_type="worker",
+            target_id="continuous_worker",
+            operation_id=command_id or None,
+            detail=f"restart_queued=true error={type(exc).__name__}",
+            settings=settings,
+        )
+        return HTTPStatus.INTERNAL_SERVER_ERROR, error_payload(
+            "backoff_release_failed",
+            "El reinicio fue solicitado, pero no se pudieron liberar los backoffs seguros.",
+            command_id=command_id or None,
+            command="restart",
+        )
+
+    protected_count = max(0, len(pending) - len(released_order_ids))
+    record_remote_control_audit(
+        actor=normalize_worker_actor(requested_by),
+        action="release_safe_backoffs",
+        status="applied",
+        target_type="worker",
+        target_id="continuous_worker",
+        operation_id=command_id or None,
+        detail=f"released={len(released_order_ids)} protected={protected_count}",
+        settings=settings,
+    )
+    payload.update(
+        {
+            "message": "Reinicio solicitado con liberacion de backoffs tecnicos seguros.",
+            "released_backoff_count": len(released_order_ids),
+            "protected_backoff_count": protected_count,
+        }
+    )
+    return status, payload
+
+
+def _safe_technical_backoff(row: dict[str, Any]) -> bool:
+    if str(row.get("last_status") or "").strip().lower() != "error":
+        return False
+    if str(row.get("latest_run_status") or "").strip().lower() != "error":
+        return False
+    if bool(row.get("reservation_attempted")) or bool(row.get("has_active_attempt")):
+        return False
+    if str(row.get("submission_outcome") or "").strip():
+        return False
+    return portal_defense_signal(str(row.get("last_message") or "")) is None
 
 
 def normalize_worker_actor(value: str | None) -> str:

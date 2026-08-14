@@ -175,7 +175,7 @@ type PendingAction = {
   title: string;
   message: string;
   execute: () => Promise<ApiActionResponse>;
-  successMessage?: string;
+  successMessage?: string | ((response: ApiActionResponse) => string);
   containsSecret?: boolean;
   onSuccess?: (response: ApiActionResponse) => void;
   afterRefresh?: (response: ApiActionResponse) => void | Promise<void>;
@@ -508,6 +508,7 @@ export class App implements OnDestroy {
   protected readonly runDetailState = signal<LoadState>('idle');
   protected readonly runDetailError = signal<string | null>(null);
   protected readonly workerCommands = signal<WorkerCommand[]>([]);
+  protected readonly releaseSafeBackoffsOnRestart = signal(false);
   protected readonly manualSessions = signal<ManualSession[]>([]);
   protected readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
   protected readonly selectedMonth = signal(INITIAL_MONTH);
@@ -3162,6 +3163,7 @@ export class App implements OnDestroy {
   }
 
   protected openWorkerRestart(): void {
+    this.releaseSafeBackoffsOnRestart.set(false);
     this.openModal('worker-restart');
   }
 
@@ -3930,10 +3932,21 @@ export class App implements OnDestroy {
   }
 
   protected requestRestartWorker(): void {
+    const releaseSafeBackoffs = this.releaseSafeBackoffsOnRestart();
     this.setPendingAction({
-      title: 'Reiniciar worker',
-      message: 'Solicitar reinicio controlado del worker.',
-      execute: () => this.api.restartWorker(),
+      title: releaseSafeBackoffs ? 'Reiniciar y reintentar' : 'Reiniciar worker',
+      message: releaseSafeBackoffs
+        ? 'Reiniciar el worker y quitar solo los backoffs técnicos que no llegaron a intentar una reserva.'
+        : 'Solicitar reinicio controlado del worker conservando todos los backoffs.',
+      execute: () => this.api.restartWorker(releaseSafeBackoffs),
+      successMessage: (response) => {
+        if (!releaseSafeBackoffs) {
+          return 'Reinicio controlado solicitado';
+        }
+        const released = response.released_backoff_count ?? 0;
+        const protectedCount = response.protected_backoff_count ?? 0;
+        return `Reinicio solicitado: ${released} backoff(s) liberado(s), ${protectedCount} protegido(s)`;
+      },
       onSuccess: () => this.activeModal.set(null),
     });
   }
@@ -4498,7 +4511,11 @@ export class App implements OnDestroy {
       action.onSuccess?.(response);
       await this.refreshAll();
       await action.afterRefresh?.(response);
-      this.showToast(action.successMessage ?? `${action.title}: completado`);
+      const successMessage =
+        typeof action.successMessage === 'function'
+          ? action.successMessage(response)
+          : action.successMessage;
+      this.showToast(successMessage ?? `${action.title}: completado`);
     } catch (error) {
       const message = this.readError(error);
       this.errorMessage.set(message);

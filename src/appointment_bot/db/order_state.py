@@ -300,6 +300,81 @@ def order_backoff_seconds(order_id: str, *, settings: Settings | None = None) ->
     return max(0, int((next_allowed_at - datetime.now(UTC)).total_seconds()))
 
 
+def list_pending_order_backoffs(
+    *,
+    settings: Settings | None = None,
+) -> list[dict[str, Any]]:
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            SELECT so.order_id, os.last_status, os.last_message, os.next_allowed_at,
+                   latest_run.status AS latest_run_status,
+                   latest_run.reservation_attempted,
+                   latest_run.submission_outcome,
+                   EXISTS (
+                       SELECT 1
+                       FROM reservation_attempts ra
+                       WHERE ra.order_id = so.order_id
+                         AND ra.status IN ('intent', 'pending', 'unknown')
+                   ) AS has_active_attempt
+            FROM service_orders so
+            JOIN order_state os ON os.order_id = so.order_id
+            LEFT JOIN LATERAL (
+                SELECT r.status, r.reservation_attempted,
+                       r.details_json->>'submission_outcome' AS submission_outcome
+                FROM runs r
+                WHERE r.order_id = so.order_id
+                ORDER BY r.created_at DESC, r.run_id DESC
+                LIMIT 1
+            ) latest_run ON true
+            WHERE so.status = 'ready'
+              AND os.next_allowed_at > CURRENT_TIMESTAMP
+            ORDER BY os.next_allowed_at, so.created_at, so.order_id
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def release_order_backoffs(
+    order_ids: Iterable[str],
+    *,
+    settings: Settings | None = None,
+) -> tuple[str, ...]:
+    normalized_order_ids = tuple(dict.fromkeys(str(order_id).strip() for order_id in order_ids))
+    normalized_order_ids = tuple(order_id for order_id in normalized_order_ids if order_id)
+    if not normalized_order_ids:
+        return ()
+    settings = _settings(settings)
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        rows = connection.execute(
+            """
+            UPDATE order_state os
+            SET next_allowed_at = NULL
+            WHERE os.order_id = ANY(%s)
+              AND os.next_allowed_at > CURRENT_TIMESTAMP
+              AND EXISTS (
+                  SELECT 1
+                  FROM service_orders so
+                  WHERE so.order_id = os.order_id
+                    AND so.status = 'ready'
+              )
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM reservation_attempts ra
+                  WHERE ra.order_id = os.order_id
+                    AND ra.status IN ('intent', 'pending', 'unknown')
+              )
+            RETURNING os.order_id
+            """,
+            (list(normalized_order_ids),),
+        ).fetchall()
+    released = {str(row["order_id"]) for row in rows}
+    return tuple(order_id for order_id in normalized_order_ids if order_id in released)
+
+
 def order_reservation_pending(order_id: str, *, settings: Settings | None = None) -> bool:
     settings = _settings(settings)
     init_database(settings)

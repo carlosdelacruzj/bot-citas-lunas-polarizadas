@@ -114,6 +114,7 @@ from appointment_bot.services.api.whatsapp_routes import (
     whatsapp_message_path,
 )
 from appointment_bot.services.api.worker_routes import (
+    enqueue_restart_with_safe_backoff_release_payload,
     enqueue_worker_command_payload,
     health_payload,
     list_worker_commands_payload,
@@ -704,6 +705,23 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
         if path == "/api/v1/worker/restart":
             if not self._require_authorized(strict=True):
+                return
+            request_payload = self._read_json()
+            release_safe_backoffs = request_payload.get("release_safe_backoffs", False)
+            if not isinstance(release_safe_backoffs, bool):
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    error_payload(
+                        "bad_request",
+                        "release_safe_backoffs must be a boolean.",
+                    ),
+                )
+                return
+            if release_safe_backoffs:
+                status, payload = enqueue_restart_with_safe_backoff_release_payload(
+                    requested_by=self.headers.get("X-Appointment-Actor"),
+                )
+                self._send_json(status, payload)
                 return
             controller = getattr(self.server, "worker_controller", None)
             restart_callback = getattr(self.server, "restart_callback", None)

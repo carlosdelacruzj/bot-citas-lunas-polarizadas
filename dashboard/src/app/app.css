@@ -1284,6 +1284,30 @@ td span {
   margin-top: 14px;
 }
 
+.restart-backoff-option {
+  margin-top: 14px;
+  border: 1px solid #f0c98d;
+  border-radius: 8px;
+  background: #fff9ed;
+  padding: 12px;
+}
+
+.restart-backoff-option .check-row {
+  margin: 0;
+}
+
+.restart-backoff-option strong,
+.restart-backoff-option small {
+  display: block;
+}
+
+.restart-backoff-option small {
+  margin-top: 3px;
+  color: #65737d;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .modal-actions-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 14px 0;

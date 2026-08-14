@@ -27,12 +27,15 @@ from appointment_bot.reservation_engine.programs import click_program_action
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     save_reservation_captcha_image,
 )
+from appointment_bot.reservation_engine.reservation_captcha_math import (
+    has_reservation_math_captcha,
+)
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
-    ensure_reservation_captcha_loaded,
     refresh_reservation_captcha,
 )
 from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
 from appointment_bot.utils.screenshots import (
+    archive_unique_slot_capture,
     save_result_screenshot,
     save_revealed_centered_modal_screenshot,
     save_screenshot,
@@ -202,6 +205,16 @@ def _monitor_observer(
                         details=details,
                     )
                 screenshot_path = _save_available_observer_screenshot(page, settings)
+                if screenshot_path is not None:
+                    archived_path = archive_unique_slot_capture(
+                        settings,
+                        result.details or {},
+                        screenshot_path,
+                    )
+                    if archived_path is None:
+                        logger.warning(
+                            "Could not archive observer slot screenshot immediately"
+                        )
                 if on_check is not None:
                     on_check(result, screenshot_path, attempt, None)
                 return result, screenshot_path
@@ -303,18 +316,16 @@ def _save_sanitized_observer_screenshot(
 
 
 def _save_available_observer_screenshot(page, settings: Settings) -> Path | None:
+    label = "observer-cupo-disponible"
     path = save_revealed_centered_modal_screenshot(
         page,
         settings,
-        "observer-cupo-disponible",
+        label,
         APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
-        ready_check=lambda panel: ensure_reservation_captcha_loaded(
-            panel,
-            timeout=settings.read_timeout_seconds * 1_000,
-        ),
     )
     if path is None:
-        logger.warning("Skipping observer evidence because the panel or CAPTCHA was not ready")
+        logger.warning("Falling back to a full-page observer availability screenshot")
+        return save_screenshot(page, settings, label)
     return path
 
 
@@ -329,6 +340,9 @@ def _collect_observer_captcha_samples(
 ) -> tuple[list[Path], list[str]]:
     captcha_paths: list[Path] = []
     shadow_event_ids: list[str] = []
+    if has_reservation_math_captcha(page):
+        logger.info("Skipping observer model sampling for HTML math captcha")
+        return captcha_paths, shadow_event_ids
     sample_limit = settings.observer_captcha_sample_limit
     for sample_number in range(1, sample_limit + 1):
         if cancel_event is not None and cancel_event.is_set():

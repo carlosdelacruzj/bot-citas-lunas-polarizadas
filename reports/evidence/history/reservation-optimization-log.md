@@ -2206,7 +2206,6 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot principal: screenshots\13-07-2026\etapas-101626-order-***-d04d05.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
-
 ## 2026-07-13 10:18:23 - order-*** - registered
 
 - Run: 20260713-101747-404e632d
@@ -10606,3 +10605,34 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\13-08-2026\cupo-133851-order-***-99b8fe.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (0.672s).
+## 2026-08-14 10:00:11 - order-*** - completed
+
+- Run: 20260814-100005-d773eb0e
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 08/09/2026 08:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - Resolutor CAPTCHA: no registrado
+  - Rellenar campo CAPTCHA: no registrado
+  - Validacion final DOM: no registrado
+  - Persistir intencion: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\14-08-2026\etapas-100005-order-***-e5c8a0.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.

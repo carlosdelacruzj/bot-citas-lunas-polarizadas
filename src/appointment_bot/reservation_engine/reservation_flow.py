@@ -560,7 +560,11 @@ def capture_blocked_captcha_evidence(
         if captcha_audit.get("captcha_image_path")
         else None
     )
-    if run_id and captcha_path is not None:
+    if (
+        run_id
+        and captcha_path is not None
+        and captcha_audit.get("captcha_kind") != "html_math"
+    ):
         shadow_event_id = f"{run_id}:{order_id or 'observer'}:captcha-1"
         shadow_enqueued = enqueue_shadow_prediction(
             event_id=shadow_event_id,

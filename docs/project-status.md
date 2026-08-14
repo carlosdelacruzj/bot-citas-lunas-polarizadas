@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral y documental: `2026-08-13`.
+Última revisión integral y documental: `2026-08-14`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -22,7 +22,7 @@ Estado verificado el `2026-08-11`:
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
 | PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v55` aplicado con autoridad CAPTCHA, calidad financiera, cierres, fuente de captación y outbox Telegram preservados. |
 | Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
-| CAPTCHA local         | Canario activo           | V6 tiene hasta `20` decisiones con umbrales `0.60/0.60`; V3 queda en sombra y 2Captcha es fallback automático. |
+| CAPTCHA local         | Rollback a 2Captcha      | 2Captcha volvió a ser la autoridad persistente desde el siguiente CAPTCHA; V6 queda fuera de admisión con sus contadores y evidencia preservados. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Angular `20.3.27`, build correcto y `npm audit --omit=dev` sin vulnerabilidades. La vista principal prioriza cobros, reservas, pendientes y evolución diaria; el análisis y cierre quedan plegados. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
@@ -397,6 +397,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Desde el `2026-08-11`, pausa, reanudación y reinicio dejan una entrada
   sanitizada en `remote_control_audit`. Los comandos diferidos enlazan la
   auditoría con su `command_id`; el control embebido registra el canal local.
+- Implementado el `2026-08-14`: el modal **Reiniciar worker** conserva por
+  defecto todos los backoffs y ofrece una opción explícita para liberar solo
+  errores técnicos seguros. La variante siempre usa el comando persistido de
+  reinicio y elimina únicamente `order_state.next_allowed_at` cuando la orden
+  sigue `ready`, el último run terminó `error` sin intento de reserva, no existe
+  un `reservation_attempt` activo, no hubo resultado de submit y el mensaje no
+  contiene una señal de defensa del portal. `reservation_unconfirmed`,
+  `captcha_invalid`, `403/429`, submissions ambiguos y otros estados protegidos
+  conservan su espera. El error y sus contadores permanecen disponibles para
+  diagnóstico; la respuesta y `remote_control_audit` registran cuántos
+  backoffs se liberaron y cuántos siguieron protegidos.
 - Expiración de conversaciones, botones obsoletos rechazados y un solo flujo
   guiado por chat.
 - Simplificado el `2026-08-01`: se retiró el etiquetado antiguo de CAPTCHA que
@@ -502,6 +513,47 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   decisiones posteriores con `circuit_open`; esas cuatro terminaron confirmadas
   por el portal mediante 2Captcha. No son rechazos de V6 ni consumen nuevas
   admisiones locales.
+- Aplicado el `2026-08-14`: el operador solicitó volver a 2Captcha y el control
+  persistente quedó en `mode=2captcha`, efectivo desde el siguiente CAPTCHA,
+  sin reiniciar el worker ni resetear el circuito o los contadores. El corte se
+  conserva en `5` decisiones locales, `2` confirmaciones locales, cero rechazos
+  locales y `5` fallbacks. Antes del cambio se comprobó que no existían una
+  sesión Playwright activa, submissions vivas de órdenes operativas ni ráfagas
+  en ejecución. Una fila `unknown` del 3 de julio pertenece a una orden ya
+  archivada y se preservó sin modificación.
+- El rollback de autoridad no corrige el incidente que lo precedió: dos cupos
+  reales del `2026-08-14` (`17/08/2026 12:00` y `31/08/2026 09:00`) fallaron
+  antes de invocar cualquier resolutor porque la imagen CAPTCHA del panel no
+  terminó de cargar ni pudo capturarse tras dos intentos. Ambas corridas
+  terminaron `error`, sin clic en **Reservar** ni filas nuevas en
+  `reservation_attempts`, y la segunda activó el backoff general configurado de
+  `1800` segundos. Debe diagnosticarse la carga/captura del CAPTCHA del portal
+  por separado si vuelve a ocurrir bajo 2Captcha.
+- Corregido en código el `2026-08-14`: el portal reemplazó el CAPTCHA gráfico
+  por una suma renderizada como texto HTML en
+  `#MainContent_idUcitas_lblCaptchaOperacion`; ya no existe una imagen CAPTCHA
+  descargable en ese panel. El flujo reconoce exclusivamente el formato
+  estricto `N + N = ?`, calcula la suma localmente, conserva una captura de
+  `.captcha-suma` como evidencia y valida otra vez la firma del desafío y el
+  honeypot vacío inmediatamente antes del submit. Un DOM ambiguo, una expresión
+  distinta o un cambio de firma bloquean el envío. El CAPTCHA gráfico heredado
+  conserva 2Captcha como autoridad; las sumas HTML no pasan por V3/V6, 2Captcha
+  ni el dataset sombra de cinco caracteres. El refresco compara la firma de la
+  expresión nueva. `compileall`, Ruff, `59 passed` y `git diff --check` quedan
+  correctos. La comprobación aislada posterior no envió el formulario porque
+  los cupos desaparecieron antes de seleccionar fecha; falta observar el flujo
+  completo hasta el pre-submit en el próximo cupo real. El worker se pausó sin
+  sesión ni intento activo, se reinició de forma controlada para cargar el
+  cambio y quedó reanudado con un lease nuevo. La revisión posterior de los dos
+  cupos que dispararon el incidente confirmó además que la captura `cupo` nunca
+  se creó: su gate esperaba una imagen CAPTCHA y rechazó la suma HTML antes del
+  screenshot. La evidencia de disponibilidad queda ahora desacoplada del
+  CAPTCHA, tiene fallback a página completa y se archiva inmediatamente en
+  `cupos-unicos` al estabilizar fecha y hora, antes de resolver o enviar. Un
+  error posterior ya no puede impedir ese archivo único. Falta comprobar el
+  resultado visual con el siguiente cupo real. El worker se pausó al terminar
+  una sesión `Sin Cupos`, se reinició con frontera segura y quedó reanudado con
+  un lease nuevo; las sesiones manuales del Admin API permanecieron intactas.
 - Actualizado el dashboard el `2026-08-10`: **Capturas CAPTCHA** separa ahora
   cantidad de muestras, validación de restricciones y autoridad final. Muestra
   resolutor efectivo, progreso `V6/20`, confirmaciones, rechazos, fallbacks,
@@ -1022,10 +1074,10 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   por oportunidades, reobservación posterior a `slot_lost` y sus rollbacks,
   backoff por reglas, CAPTCHA rechazado y entregas de WhatsApp según el tipo de
   evento observado.
-- **Durante las primeras 20 decisiones V6:** revisar fuente, confianza, resultado
-  del portal y breaker después de cada reserva; no resetear el circuito sin
-  explicar su causa. Cada 100 CAPTCHA frescos se mantiene el corte V6 contra v3
-  sin reentrenar.
+- **Si se reactiva el canario V6:** continuar desde los contadores preservados,
+  revisar fuente, confianza, resultado del portal y breaker después de cada
+  reserva, y no resetear el circuito sin explicar su causa. Cada 100 CAPTCHA
+  frescos se mantiene el corte V6 contra v3 sin reentrenar.
 - **El primer día hábil de cada mes:** actualizar resultado comercial, cobros
   pendientes y dependencia de intervención humana.
 - **Después del próximo reinicio de Windows:** comprobar tarea programada,

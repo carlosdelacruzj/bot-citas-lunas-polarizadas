@@ -17,6 +17,9 @@ from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
     save_reservation_captcha_image,
 )
+from appointment_bot.reservation_engine.reservation_captcha_math import (
+    has_reservation_math_captcha,
+)
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     refresh_reservation_captcha,
 )
@@ -39,6 +42,13 @@ def collect_reservation_captcha_training_samples(
     order_id: str | None,
     event_context: str | None = None,
 ) -> None:
+    if has_reservation_math_captcha(page):
+        captcha_audit["captcha_training_sample_limit"] = 1
+        captcha_audit["captcha_training_samples_collected"] = 0
+        captcha_audit["captcha_training_skipped_reason"] = "html_math"
+        logger.info("Skipping five-character CAPTCHA sampling for HTML math captcha")
+        return
+
     sample_limit = _resolve_sample_limit(settings)
     extra_sample_count = sample_limit - 1
     if extra_sample_count <= 0:

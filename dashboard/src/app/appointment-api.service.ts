@@ -788,6 +788,8 @@ export interface ApiActionResponse {
   message?: string;
   command_id?: string;
   command?: string;
+  released_backoff_count?: number;
+  protected_backoff_count?: number;
   session_id?: string;
   mode?: ManualSessionMode;
   order_status?: string;
@@ -1341,8 +1343,10 @@ export class AppointmentApiService {
     );
   }
 
-  async restartWorker(): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>('/api/v1/worker/restart', {});
+  async restartWorker(releaseSafeBackoffs = false): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/worker/restart', {
+      release_safe_backoffs: releaseSafeBackoffs,
+    });
   }
 
   async openManualSession(
