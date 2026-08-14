@@ -26,6 +26,11 @@ class WhatsAppSendUncertain(RuntimeError):
     pass
 
 
+DAILY_SUMMARY_IMAGE_BATCH_SIZE = 4
+PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS = 30
+PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS = 3
+
+
 @dataclass
 class _DraftCommand:
     draft: dict[str, object]
@@ -614,45 +619,23 @@ def _send_album(
         raise RuntimeError(
             "WhatsApp no mantuvo todas las miniaturas antes del envio."
         )
-    outgoing_image_count = len(_outgoing_image_message_states(page))
+    initial_image_signatures = {
+        signature for signature, _state in _outgoing_image_message_records(page)
+    }
     viewport = page.viewport_size or {"width": 0, "height": 0}
     if not viewport["width"] or not viewport["height"]:
         raise RuntimeError("WhatsApp no informo el tamaño de la ventana para enviar el album.")
-    candidates = page.locator("button, [role='button']")
-    bottom_right_target = None
-    bottom_right_score = -1.0
-    for index in range(candidates.count()):
-        candidate = candidates.nth(index)
-        if not candidate.is_visible():
-            continue
-        box = candidate.bounding_box()
-        if not box:
-            continue
-        center_x = box["x"] + box["width"] / 2
-        center_y = box["y"] + box["height"] / 2
-        if (
-            center_x < viewport["width"] * 0.75
-            or center_y < viewport["height"] * 0.70
-            or not 36 <= box["width"] <= 100
-            or not 36 <= box["height"] <= 100
-        ):
-            continue
-        score = center_x + center_y
-        if score > bottom_right_score:
-            bottom_right_target = candidate
-            bottom_right_score = score
-    if bottom_right_target is not None:
-        bottom_right_target.click(timeout=2_000, force=True)
-    else:
+    if not _click_visible_send_button(page):
         page.mouse.click(viewport["width"] - 48, viewport["height"] - 50)
     deadline = time.monotonic() + 30
+    next_send_retry_at = time.monotonic() + 2
     while time.monotonic() < deadline:
         if not _album_thumbnails(page) and _normal_chat_composer_visible(page):
             page.wait_for_timeout(1_000)
             if not _album_thumbnails(page):
                 if not _wait_until_outgoing_images_uploaded(
                     page,
-                    initial_count=outgoing_image_count,
+                    initial_signatures=initial_image_signatures,
                     expected_count=expected_count,
                 ):
                     _save_whatsapp_debug_screenshot(
@@ -664,9 +647,15 @@ def _send_album(
                         "la carga de todas las imagenes."
                     )
                 return
+        elif time.monotonic() >= next_send_retry_at:
+            if not _click_visible_send_button(page):
+                page.keyboard.press("Enter")
+            elif _album_thumbnails(page):
+                page.keyboard.press("Enter")
+            next_send_retry_at = time.monotonic() + 2
         page.wait_for_timeout(500)
     _save_whatsapp_debug_screenshot(page, "whatsapp-album-send-not-confirmed")
-    raise RuntimeError(
+    raise WhatsAppSendUncertain(
         "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles."
     )
 
@@ -674,17 +663,20 @@ def _send_album(
 def _wait_until_outgoing_images_uploaded(
     page: Page,
     *,
-    initial_count: int,
+    initial_signatures: set[str],
     expected_count: int,
 ) -> bool:
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
-        states = _outgoing_image_message_states(page)
-        required_count = initial_count + expected_count
-        if len(states) < required_count:
+        new_records = [
+            (signature, state)
+            for signature, state in _outgoing_image_message_records(page)
+            if signature not in initial_signatures
+        ]
+        if len(new_records) < expected_count:
             page.wait_for_timeout(500)
             continue
-        batch_states = states[initial_count:required_count]
+        batch_states = [state for _signature, state in new_records[-expected_count:]]
         if all(state == "confirmed" for state in batch_states):
             page.wait_for_timeout(1_000)
             return True
@@ -693,13 +685,17 @@ def _wait_until_outgoing_images_uploaded(
 
 
 def _outgoing_image_message_states(page: Page) -> list[str]:
+    return [state for _signature, state in _outgoing_image_message_records(page)]
+
+
+def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
     messages = page.locator("div.message-out")
     require_marker = False
     if not messages.count():
         messages = page.locator("[data-testid='msg-container']")
         require_marker = True
 
-    states: list[str] = []
+    records: list[tuple[str, str]] = []
     for index in range(messages.count()):
         message = messages.nth(index)
         if require_marker and not _message_container_is_outgoing(message):
@@ -712,12 +708,13 @@ def _outgoing_image_message_states(page: Page) -> list[str]:
             "[aria-label*='Leído' i], [aria-label*='Sent' i], "
             "[aria-label*='Delivered' i], [aria-label*='Read' i]"
         ).count():
-            states.append("confirmed")
+            state = "confirmed"
         elif message.locator("[data-icon='msg-time']").count():
-            states.append("pending")
+            state = "pending"
         else:
-            states.append("unknown")
-    return states
+            state = "unknown"
+        records.append((_message_container_signature(message), state))
+    return records
 
 
 def _message_container_has_large_image(message) -> bool:
@@ -793,36 +790,56 @@ def _send_daily_slot_summary(
                 "Una de las imagenes del resumen diario ya no esta disponible."
             )
 
-        _attach_image(page, attachments)
-        page.wait_for_timeout(1_000)
-        if len(_album_thumbnails(page)) != len(attachments):
+        batches = [
+            attachments[index : index + DAILY_SUMMARY_IMAGE_BATCH_SIZE]
+            for index in range(0, len(attachments), DAILY_SUMMARY_IMAGE_BATCH_SIZE)
+        ]
+        confirmed_image_count = 0
+        for batch_number, batch in enumerate(batches, start=1):
+            batch_evidence_id = f"{evidence_id}-batch-{batch_number}-of-{len(batches)}"
+            _attach_image(page, batch)
+            page.wait_for_timeout(1_000)
+            if len(_album_thumbnails(page)) != len(batch):
+                _save_whatsapp_debug_screenshot(
+                    page,
+                    f"whatsapp-daily-summary-images-not-ready-{batch_evidence_id}",
+                )
+                raise RuntimeError(
+                    "WhatsApp no mostro todas las imagenes del paquete "
+                    f"{batch_number} de {len(batches)}."
+                )
             _save_whatsapp_debug_screenshot(
                 page,
-                "whatsapp-daily-summary-images-not-ready",
+                f"whatsapp-daily-summary-before-send-{batch_evidence_id}",
             )
-            raise RuntimeError(
-                "WhatsApp no mostro todas las imagenes del resumen diario."
-            )
-        _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-before-send")
-        try:
-            _send_album(
+            try:
+                _send_album(
+                    page,
+                    expected_count=len(batch),
+                    uncertain_screenshot_name=(
+                        "whatsapp-daily-summary-upload-uncertain-"
+                        f"{batch_evidence_id}"
+                    ),
+                )
+            except WhatsAppSendUncertain as exc:
+                delivery_components["images"] = "uncertain"
+                context.close()
+                return _result(
+                    "send_uncertain",
+                    (
+                        f"{exc} Paquete {batch_number} de {len(batches)}; "
+                        f"{confirmed_image_count} de {len(attachments)} "
+                        "imagenes confirmadas antes de detener el envio."
+                    ),
+                    message_id=message_id,
+                    delivery_components=delivery_components,
+                )
+            confirmed_image_count += len(batch)
+            _save_whatsapp_debug_screenshot(
                 page,
-                expected_count=len(attachments),
-                uncertain_screenshot_name=(
-                    f"whatsapp-daily-summary-upload-uncertain-{evidence_id}"
-                ),
-            )
-        except WhatsAppSendUncertain as exc:
-            delivery_components["images"] = "uncertain"
-            context.close()
-            return _result(
-                "send_uncertain",
-                str(exc),
-                message_id=message_id,
-                delivery_components=delivery_components,
+                f"whatsapp-daily-summary-images-sent-{batch_evidence_id}",
             )
         delivery_components["images"] = "confirmed"
-        _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-images-sent")
 
     publication_sent = _send_plain_text_message(
         page,
@@ -1731,13 +1748,21 @@ def _send_plain_text_message(
     if not _plain_text_ready(page, text):
         _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-not-ready")
         raise RuntimeError("WhatsApp no dejo listo el mensaje de texto.")
-    outgoing_signatures = _matching_confirmed_outgoing_text_signatures(page, text)
+    outgoing_signatures = _outgoing_message_signatures(page)
     _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-before-text-send")
     if not _click_visible_send_button(page):
         page.keyboard.press("Enter")
     if not _wait_until_plain_text_send_finishes(page, text, outgoing_signatures):
-        _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-send-uncertain")
-        return False
+        _save_whatsapp_debug_screenshot(
+            page,
+            f"{evidence_prefix}-text-confirmation-final-check",
+        )
+        if not _plain_text_send_is_confirmed(page, text, outgoing_signatures):
+            _save_whatsapp_debug_screenshot(
+                page,
+                f"{evidence_prefix}-text-send-uncertain",
+            )
+            return False
     _save_whatsapp_debug_screenshot(page, f"{evidence_prefix}-text-sent")
     logger.info("WhatsApp Web follow-up text message sent")
     return True
@@ -1748,32 +1773,45 @@ def _wait_until_plain_text_send_finishes(
     expected: str,
     outgoing_signatures: set[str],
 ) -> bool:
-    deadline = time.monotonic() + 15
+    deadline = time.monotonic() + PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
-        current_signatures = _matching_confirmed_outgoing_text_signatures(
-            page,
-            expected,
-        )
-        if (
-            not _plain_text_ready(page, expected)
-            and bool(current_signatures - outgoing_signatures)
-        ):
+        if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
             page.wait_for_timeout(750)
             return True
         page.wait_for_timeout(500)
+    page.wait_for_timeout(PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS * 1_000)
+    if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
+        page.wait_for_timeout(750)
+        return True
     return False
 
 
-def _matching_confirmed_outgoing_text_signatures(
+def _plain_text_send_is_confirmed(
     page: Page,
     expected: str,
+    outgoing_signatures: set[str],
+) -> bool:
+    confirmed_signatures = _outgoing_message_signatures(
+        page,
+        confirmed_only=True,
+    )
+    return (
+        not _plain_text_ready(page, expected)
+        and bool(confirmed_signatures - outgoing_signatures)
+    )
+
+
+def _outgoing_message_signatures(
+    page: Page,
+    *,
+    confirmed_only: bool = False,
 ) -> set[str]:
     selectors = (
         ("div.message-out", False),
         ("div[data-id^='true_']", False),
         ("[data-testid='msg-container']", True),
     )
-    matches: set[str] = set()
+    signatures: set[str] = set()
     for selector, requires_outgoing_marker in selectors:
         messages = page.locator(selector)
         if not messages.count():
@@ -1782,19 +1820,20 @@ def _matching_confirmed_outgoing_text_signatures(
             message = messages.nth(index)
             if requires_outgoing_marker and not _message_container_is_outgoing(message):
                 continue
-            actual = _safe_text_content(message)
-            if (
-                _message_contains_expected_text(actual, expected)
-                and _message_container_has_confirmed_status(message)
-            ):
-                matches.add(_message_container_signature(message))
-    return matches
+            if confirmed_only and not _message_container_has_confirmed_status(message):
+                continue
+            signatures.add(_message_container_signature(message))
+    return signatures
 
 
 def _message_container_has_confirmed_status(message) -> bool:
     return bool(
         message.locator(
             "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
+            "[data-icon^='msg-check-'], [data-icon^='msg-dblcheck-'], "
+            "[data-icon*='dblcheck'], "
+            "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
+            "[class*='wds-ic-sent'], "
             "[aria-label*='Enviado' i], [aria-label*='Entregado' i], "
             "[aria-label*='Leído' i], [aria-label*='Sent' i], "
             "[aria-label*='Delivered' i], [aria-label*='Read' i]"
@@ -1830,20 +1869,6 @@ def _message_container_is_outgoing(message) -> bool:
         marker in metadata
         for marker in ("wds-ic-read", "wds-ic-delivered", "wds-ic-sent")
     )
-
-
-def _message_contains_expected_text(actual: str, expected: str) -> bool:
-    def normalize(value: str) -> str:
-        comparable = re.sub(r"[^\w]+", " ", value.replace("\u200b", " "))
-        return " ".join(comparable.casefold().split())
-
-    actual_normalized = normalize(actual)
-    expected_normalized = normalize(expected)
-    if expected_normalized and expected_normalized in actual_normalized:
-        return True
-    actual_compact = _compact_alphanumeric_text(actual)
-    expected_compact = _compact_alphanumeric_text(expected)
-    return bool(expected_compact and expected_compact in actual_compact)
 
 
 def _click_and_replace_text(page: Page, editor, text: str) -> None:
