@@ -882,7 +882,7 @@ td span {
 }
 
 .row-actions {
-  display: block;
+  display: grid;
 }
 
 .row-actions button {
@@ -1049,7 +1049,7 @@ td {
 }
 
 .order-table :is(th, td):last-child {
-  width: 150px;
+  width: 270px;
 }
 
 .order-table .restriction-cell {

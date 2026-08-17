@@ -34,6 +34,26 @@ def _parse_int(value: str | None, *, default: int, minimum: int | None = None) -
     return parsed
 
 
+def _parse_float(
+    value: str | None,
+    *,
+    default: float,
+    minimum: float | None = None,
+) -> float:
+    if value is None or value == "":
+        return default
+
+    try:
+        parsed = float(value)
+    except ValueError as exc:
+        raise ValueError(f"Invalid numeric value: {value!r}") from exc
+
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"Numeric value must be greater than or equal to {minimum}: {value!r}")
+
+    return parsed
+
+
 def _parse_int_list(value: str | None, *, default: tuple[int, ...]) -> tuple[int, ...]:
     if value is None or value.strip() == "":
         return default
@@ -193,6 +213,8 @@ class Settings:
     reservation_captcha_runtime_control_enabled: bool = True
     appointment_selection_event_driven_enabled: bool = True
     appointment_atomic_validation_enabled: bool = True
+    reservation_math_pre_submit_delay_min_seconds: float = 1.0
+    reservation_math_pre_submit_delay_max_seconds: float = 2.0
 
     @property
     def safe_username(self) -> str:
@@ -576,6 +598,16 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("APPOINTMENT_ATOMIC_VALIDATION_ENABLED"),
             default=True,
         ),
+        reservation_math_pre_submit_delay_min_seconds=_parse_float(
+            os.getenv("RESERVATION_MATH_PRE_SUBMIT_DELAY_MIN_SECONDS"),
+            default=1.0,
+            minimum=0.0,
+        ),
+        reservation_math_pre_submit_delay_max_seconds=_parse_float(
+            os.getenv("RESERVATION_MATH_PRE_SUBMIT_DELAY_MAX_SECONDS"),
+            default=2.0,
+            minimum=0.0,
+        ),
     )
 
     if settings.monitor_interval_max_seconds < settings.monitor_interval_min_seconds:
@@ -587,6 +619,15 @@ def load_settings(*, require_login: bool = True) -> Settings:
     if settings.queue_delay_max_seconds < settings.queue_delay_min_seconds:
         raise ValueError(
             "QUEUE_DELAY_MAX_SECONDS must be greater than or equal to QUEUE_DELAY_MIN_SECONDS"
+        )
+
+    if (
+        settings.reservation_math_pre_submit_delay_max_seconds
+        < settings.reservation_math_pre_submit_delay_min_seconds
+    ):
+        raise ValueError(
+            "RESERVATION_MATH_PRE_SUBMIT_DELAY_MAX_SECONDS must be greater than or equal "
+            "to RESERVATION_MATH_PRE_SUBMIT_DELAY_MIN_SECONDS"
         )
 
     if settings.continuous_interval_max_seconds < settings.continuous_interval_min_seconds:

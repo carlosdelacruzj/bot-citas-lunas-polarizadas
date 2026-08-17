@@ -82,6 +82,15 @@
           <button
             type="button"
             class="secondary"
+            [disabled]="view.actionBusy()"
+            title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+            (click)="view.requestDiagnosticSession()"
+          >
+            Medir flujo manual
+          </button>
+          <button
+            type="button"
+            class="secondary"
             [disabled]="order.status !== 'ready'"
             (click)="view.requestSplitPrograms()"
           >

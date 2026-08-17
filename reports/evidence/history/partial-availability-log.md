@@ -7600,3 +7600,38 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
+## 2026-08-17 07:52:21 - order-*** - partial
+
+- Run: 20260817-075155-c855c579
+- Orden: order-***
+- Cliente: registrado y oculto
+- Cuenta: 76***2
+- Sede: LIMA-LA VICTORIA
+- Fecha detectada: 17/08/2026
+- Hora detectada: 09:00
+- Cupos observados: 30
+- Opciones fecha: 17/08/2026
+- Opciones hora: 09:00
+- Origen deteccion: normal
+- Resultado: Se encontro un horario disponible, pero no cumple la regla de reserva de la orden.
+- Reglas/decision:
+  - Bloqueado por regla: si
+  - Seleccionado solo para evidencia: si
+  - Outcome: blocked_by_order_rule
+  - Fecha del dia actual bloqueada: probable
+- Contexto tecnico:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Fetch probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Duracion corrida: 26.195s
+  - Seleccion fecha/hora: 0.953s
+- Evidencia:
+  - Screenshot principal: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+- Observacion tecnica:
+  - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
+

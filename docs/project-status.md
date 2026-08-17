@@ -1,6 +1,6 @@
 # Estado maestro del proyecto
 
-Última revisión integral y documental: `2026-08-14`.
+Última revisión integral y documental: `2026-08-17`.
 
 Este archivo es la fuente principal para entender dónde está el proyecto. Debe
 actualizarse cuando se termina, valida o descarta un cambio relevante. Las
@@ -26,6 +26,17 @@ Estado verificado el `2026-08-11`:
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
 | Dashboard             | Operativo                | Angular `20.3.27`, build correcto y `npm audit --omit=dev` sin vulnerabilidades. La vista principal prioriza cobros, reservas, pendientes y evolución diaria; el análisis y cierre quedan plegados. |
 | Calidad Python        | Operativa                | Último corte completo: Ruff y `compileall` correctos; pytest tiene `59 passed`.                           |
+
+Modo operativo verificado el `2026-08-17`: `AUTO_RESERVE=true`. La activación
+se aplicó en un límite seguro, después de pausar y cerrar la sesión Playwright
+sin cupos, y se cargó mediante reinicio controlado. El worker nuevo quedó
+saludable, no pausado y monitoreando las órdenes `ready`. El primer cupo real
+posterior cerró el canario con dos reservas automáticas confirmadas para
+`01/09/2026 12:00`: detector y sesión auxiliar separada resolvieron suma HTML
+local, aplicaron esperas de `1.004 s` y `1.330 s`, enviaron POST exactos
+`39 / 30 / 9` con honeypot vacío y terminaron tanto en mensaje explícito de
+éxito como en evidencia posterior **Programado**. El burst cerró sin circuito,
+sin pérdida de lease y con ambas corridas `registered`.
 
 ## Resultado comercial acumulado
 
@@ -247,6 +258,28 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   la vista en su posición. El indicador de refresco vive dentro del encabezado
   y ya no inserta ni retira una franja que desplazaba el contenido en cada
   consulta periódica.
+- Implementado el `2026-08-14`: **Medir flujo manual** abre una tercera sesión
+  `diagnostic` desde el portal, antes del modal. Registra de forma incremental
+  cambios de controles, nombres y longitudes de campos, POST y estados HTTP.
+  Solo conserva valores allowlisted de sede, fecha y hora; no guarda password,
+  cookies, respuesta CAPTCHA, tokens ASP.NET completos ni el cuerpo crudo. Si
+  el honeypot contiene datos, bloquea el envío y deja el incidente en el
+  informe local. Las órdenes `ready` exponen además **Abrir con medición**
+  directamente junto a **Abrir sesión** en la tabla; la acción secundaria
+  permanece también dentro de **Más acciones**.
+- Ampliado el `2026-08-15` y verificado el `2026-08-17`: la sesión diagnóstica
+  intercepta las escrituras JavaScript sobre la propiedad y el atributo
+  `value` del honeypot. Conserva
+  únicamente vacío/no vacío, longitudes antes/después y si hubo cambio; cada
+  POST resume además presencia, vacío y longitud realmente serializada. El
+  bloqueo anterior al envío con contenido permanece y el valor nunca se
+  persiste. Las diez sesiones diagnósticas disponibles produjeron `111/111`
+  POST del formulario de citas con el honeypot presente y vacío. Siete fueron
+  POST manuales de **Reservar**: conservaron exactamente los mismos `39`
+  nombres de campo y el mismo patrón `30` con contenido / `9` vacíos, y los
+  siete recibieron HTTP `200`. Ese estado solo confirma la respuesta HTTP; dos
+  de esos envíos ya estaban además correlacionados con evidencia visual del
+  portal en **Programado**.
 - Corregido el `2026-08-09`: los avisos toast son informativos y ya no prolongan
   durante `2.2` segundos los estados de operación del dashboard. Los bloqueos
   globales y específicos terminan al completar la API y el refresco necesario,
@@ -539,12 +572,32 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   distinta o un cambio de firma bloquean el envío. El CAPTCHA gráfico heredado
   conserva 2Captcha como autoridad; las sumas HTML no pasan por V3/V6, 2Captcha
   ni el dataset sombra de cinco caracteres. El refresco compara la firma de la
-  expresión nueva. `compileall`, Ruff, `59 passed` y `git diff --check` quedan
-  correctos. La comprobación aislada posterior no envió el formulario porque
-  los cupos desaparecieron antes de seleccionar fecha; falta observar el flujo
-  completo hasta el pre-submit en el próximo cupo real. El worker se pausó sin
-  sesión ni intento activo, se reinició de forma controlada para cargar el
-  cambio y quedó reanudado con un lease nuevo. La revisión posterior de los dos
+  expresión nueva. El `2026-08-17`, siete POST manuales de **Reservar** cerraron
+  la referencia estructural y confirmaron el honeypot vacío; dos contaban además
+  con correlación visual hasta **Programado**.
+  La ruta automática de suma incorpora desde ese corte una espera aleatoria
+  configurable de `1-2 s` después de llenar la respuesta. Antes, después y en
+  el instante previo al clic vuelve a revisar el formulario; tras la espera
+  repite selección, firma matemática y honeypot. Un campo protegido con datos,
+  un campo nuevo no vacío o la ausencia de sede, fecha, hora, CAPTCHA o botón
+  bloquea el envío. El POST real se observa pasivamente y conserva solo nombres,
+  longitudes, hashes cortos de tokens y valores operativos allowlisted para
+  compararlo con la referencia manual, nunca el cuerpo crudo ni la respuesta.
+  El replay Chromium positivo capturó intent, clic, POST y HTTP `200`; el replay
+  negativo llenó el honeypot durante la espera y bloqueó antes del intent y del
+  POST. `compileall`, Ruff y `59 passed` quedaron correctos; `git diff --check`
+  pasó en el alcance del cambio.
+  El primer canario productivo ocurrió el `2026-08-17` a las `10:57` hora Lima:
+  el detector y una sesión auxiliar independiente reservaron el mismo cupo
+  compatible de `01/09/2026 12:00`. Las tres auditorías de cada orden pasaron,
+  los hashes de tokens permanecieron estables, los dos POST reales coincidieron
+  exactamente con `39 / 30 / 9`, el honeypot tuvo longitud cero y no aparecieron
+  campos inesperados, faltantes ni protegidos con contenido. El portal respondió
+  en `297 ms` y `265 ms`; ambas reservas quedaron `confirmed`, con evidencia
+  posterior exacta en **Programado**. La telemetría persistente usa `field_name`
+  para conservar el nombre técnico de cada control sin habilitar nombres
+  personales ni valores sensibles a través del sanitizador general.
+  La revisión posterior de los dos
   cupos que dispararon el incidente confirmó además que la captura `cupo` nunca
   se creó: su gate esperaba una imagen CAPTCHA y rechazó la suma HTML antes del
   screenshot. La evidencia de disponibilidad queda ahora desacoplada del

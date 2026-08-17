@@ -49,6 +49,12 @@ class ReservationTiming:
             "pre_click_validation_seconds": self._duration(
                 "pre_click_validation_started", "pre_click_validation_finished"
             ),
+            "math_pre_submit_delay_seconds": self._duration(
+                "math_pre_submit_delay_started", "math_pre_submit_delay_finished"
+            ),
+            "post_delay_validation_seconds": self._duration(
+                "post_delay_validation_started", "post_delay_validation_finished"
+            ),
             "submission_intent_seconds": self._duration(
                 "submission_intent_started", "submission_intent_finished"
             ),

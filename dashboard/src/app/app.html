@@ -217,6 +217,20 @@
                 @if (session.status_message) {
                   <small>{{ session.status_message }}</small>
                 }
+                @if (session.mode === 'diagnostic') {
+                  <small class="diagnostic-trace-status">
+                    {{ session.diagnostic_event_count }} eventos protegidos
+                    @if (session.diagnostic_submission_seen) {
+                      · POST de reserva observado
+                    }
+                    @if (session.diagnostic_honeypot_blocked) {
+                      · envio bloqueado por honeypot
+                    }
+                  </small>
+                  @if (session.diagnostic_report_path) {
+                    <small>{{ session.diagnostic_report_path }}</small>
+                  }
+                }
               </div>
               <span class="badge {{ statusTone(session.status) }}">{{
                 statusLabel(session.status)

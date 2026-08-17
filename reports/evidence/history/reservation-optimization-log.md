@@ -10636,3 +10636,184 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot principal: screenshots\14-08-2026\etapas-100005-order-***-e5c8a0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
+## 2026-08-14 13:16:49 - order-*** - completed
+
+- Run: 20260814-131643-eaefc72e
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 22/08/2026 10:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - Resolutor CAPTCHA: no registrado
+  - Rellenar campo CAPTCHA: no registrado
+  - Validacion final DOM: no registrado
+  - Persistir intencion: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\14-08-2026\etapas-131643-order-***-ad7cd7.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.
+
+## 2026-08-15 09:03:07 - order-*** - completed
+
+- Run: 20260815-090300-0bfbafd4
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 07/09/2026 10:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - Resolutor CAPTCHA: no registrado
+  - Rellenar campo CAPTCHA: no registrado
+  - Validacion final DOM: no registrado
+  - Persistir intencion: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\15-08-2026\etapas-090300-order-***-4964b7.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.
+
+## 2026-08-17 07:53:28 - order-*** - completed
+
+- Run: 20260817-075321-e2e717f6
+- Corrida/attempt: no registrado
+- Sede: no registrada
+- Cita observada: 07/09/2026 09:00
+- Cupos observados: no registrado
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por confirmacion del flujo.
+- Confirmacion posterior: Programado detectado en esta corrida.
+- Tiempos:
+  - Cupo detectado -> fin reserva: no registrado
+  - Seleccion fecha/hora: no registrado
+  - Imagen CAPTCHA: no registrado
+  - Resolutor CAPTCHA: no registrado
+  - Rellenar campo CAPTCHA: no registrado
+  - Validacion final DOM: no registrado
+  - Persistir intencion: no registrado
+  - Llenar CAPTCHA -> click: no registrado
+  - Click -> respuesta portal: no registrado
+  - Click -> screenshot confirmacion: no registrado
+- Contexto operativo:
+  - Modo monitoreo: no registrado
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+- Evidencia:
+  - Screenshot principal: screenshots\17-08-2026\etapas-075321-order-***-6e005a.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario.
+
+## 2026-08-17 10:57:58 - order-*** - registered
+
+- Run: 20260817-105720-6065f298
+- Corrida/attempt: 10
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 01/09/2026 12:00
+- Cupos observados: 25
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 3.157s
+  - Seleccion fecha/hora: 0.657s
+  - Imagen CAPTCHA: 0.172s
+  - Resolutor CAPTCHA: 0.031s
+  - Rellenar campo CAPTCHA: 0.015s
+  - Validacion final DOM: 0.000s
+  - Persistir intencion: 0.000s
+  - Llenar CAPTCHA -> click: 1.219s
+  - Click -> respuesta portal: 0.297s
+  - Click -> screenshot confirmacion: 0.563s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Estabilizacion hora: ['event_atomic']
+  - Espera senal seleccion: [0.344]
+  - Fallback seleccion: [None]
+  - Cambio de usuario: order-*** -> order-*** en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-08-2026\portal-1-105720-order-***-c9eed6.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.797s
+    - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
+  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
+  - Diagnostico screenshots: screenshots\17-08-2026\portal-1-105720-order-***-c9eed6.png
+  - Diagnostico dom_snapshots: screenshots\17-08-2026\diagnostics\portal-html-1-105720-order-***-9d9e50.html
+  - Screenshot adicional: screenshots\17-08-2026\cupo-105720-order-***-0945e2.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.219s).
+
+## 2026-08-17 10:58:02 - order-*** - registered
+
+- Run: 20260817-105756-f8dcbaae
+- Corrida/attempt: 1
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 01/09/2026 12:00
+- Cupos observados: 25
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 3.375s
+  - Seleccion fecha/hora: 0.656s
+  - Imagen CAPTCHA: 0.250s
+  - Resolutor CAPTCHA: 0.031s
+  - Rellenar campo CAPTCHA: 0.016s
+  - Validacion final DOM: 0.000s
+  - Persistir intencion: 0.016s
+  - Llenar CAPTCHA -> click: 1.531s
+  - Click -> respuesta portal: 0.265s
+  - Click -> screenshot confirmacion: 0.531s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Estabilizacion hora: ['event_atomic']
+  - Espera senal seleccion: [0.343]
+  - Fallback seleccion: [None]
+  - Cambio de usuario: order-*** -> order-*** en 0.000s
+- Evidencia:
+  - Screenshot principal: screenshots\17-08-2026\portal-1-105756-order-***-5792d8.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.187s
+    - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
+  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
+  - Diagnostico screenshots: screenshots\17-08-2026\portal-1-105756-order-***-5792d8.png
+  - Diagnostico dom_snapshots: screenshots\17-08-2026\diagnostics\portal-html-1-105756-order-***-834af0.html
+  - Screenshot adicional: screenshots\17-08-2026\cupo-105756-order-***-faf8a0.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.531s).

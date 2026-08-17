@@ -539,7 +539,10 @@
               </div>
             </td>
             <td data-label="Acciones">
-              <div class="row-actions">
+              <div
+                class="row-actions"
+                [class.button-row]="order.status === 'ready'"
+              >
                 <button
                   type="button"
                   class="primary row-main-action"
@@ -548,6 +551,17 @@
                 >
                   {{ dashboard.rowPrimaryActionLabel(order) }}
                 </button>
+                @if (order.status === 'ready') {
+                  <button
+                    type="button"
+                    class="secondary"
+                    [disabled]="dashboard.actionBusy()"
+                    title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+                    (click)="$event.stopPropagation(); dashboard.openManualSessionNow(order, 'diagnostic')"
+                  >
+                    Abrir con medición
+                  </button>
+                }
               </div>
             </td>
           </tr>

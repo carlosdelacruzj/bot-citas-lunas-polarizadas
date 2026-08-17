@@ -4,6 +4,7 @@ import logging
 import threading
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from playwright.sync_api import Error as PlaywrightError
@@ -11,6 +12,7 @@ from playwright.sync_api import Error as PlaywrightError
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import ServiceOrderRuntime
+from appointment_bot.manual_session.diagnostics import ManualDiagnosticRecorder
 from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.appointments import (
     open_appointment_panel,
@@ -34,8 +36,12 @@ class ManualSessionHandle:
     started_at: str
     updated_at: str
     close_requested: threading.Event
+    diagnostic_report_path: str | None
+    diagnostic_event_count: int
+    diagnostic_submission_seen: bool
+    diagnostic_honeypot_blocked: bool
 
-    def summary(self) -> dict[str, str | bool | None]:
+    def summary(self) -> dict[str, Any]:
         return {
             "session_id": self.session_id,
             "order_id": self.order_id,
@@ -47,6 +53,10 @@ class ManualSessionHandle:
             "started_at": self.started_at,
             "updated_at": self.updated_at,
             "close_requested": self.close_requested.is_set(),
+            "diagnostic_report_path": self.diagnostic_report_path,
+            "diagnostic_event_count": self.diagnostic_event_count,
+            "diagnostic_submission_seen": self.diagnostic_submission_seen,
+            "diagnostic_honeypot_blocked": self.diagnostic_honeypot_blocked,
         }
 
 
@@ -80,6 +90,10 @@ def open_manual_session_for_order(
         started_at=now,
         updated_at=now,
         close_requested=threading.Event(),
+        diagnostic_report_path=None,
+        diagnostic_event_count=0,
+        diagnostic_submission_seen=False,
+        diagnostic_honeypot_blocked=False,
     )
     with _ACTIVE_SESSION_LOCK:
         _ACTIVE_SESSIONS[session_id] = handle
@@ -125,7 +139,7 @@ def close_manual_session(session_id: str) -> bool:
     return True
 
 
-def list_manual_sessions() -> list[dict[str, str | bool]]:
+def list_manual_sessions() -> list[dict[str, Any]]:
     with _ACTIVE_SESSION_LOCK:
         return [handle.summary() for handle in _ACTIVE_SESSIONS.values()]
 
@@ -136,6 +150,13 @@ def _run_manual_session(
     handle: ManualSessionHandle,
 ) -> None:
     session_id = handle.session_id
+    diagnostic = (
+        ManualDiagnosticRecorder(settings, session_id, order.order_id)
+        if handle.mode == "diagnostic"
+        else None
+    )
+    if diagnostic is not None:
+        _sync_diagnostic_status(session_id, diagnostic)
     session_settings = replace(
         settings_for_order(
             settings,
@@ -157,12 +178,15 @@ def _run_manual_session(
         session_settings.safe_username,
         started_at,
     )
+    diagnostic_error: str | None = None
     try:
         with open_page(
             session_settings,
             headless=False,
             block_heavy_assets=False,
         ) as page:
+            if diagnostic is not None:
+                diagnostic.attach(page)
             try:
                 _prepare_manual_session(
                     page,
@@ -171,7 +195,11 @@ def _run_manual_session(
                     session_id,
                     mode=handle.mode,
                 )
-            except Exception:
+                if diagnostic is not None:
+                    diagnostic.record("portal_ready", path="/lunasoscurecidas/Seguimiento.aspx")
+            except Exception as exc:
+                if diagnostic is not None:
+                    diagnostic.record("preparation_error", error=type(exc).__name__)
                 _set_session_status(
                     session_id,
                     "error",
@@ -183,14 +211,21 @@ def _run_manual_session(
                     session_id,
                     order.order_id,
                 )
-            _wait_until_manual_session_closed(page, handle)
-    except Exception:
+            _wait_until_manual_session_closed(page, handle, diagnostic=diagnostic)
+    except Exception as exc:
+        diagnostic_error = type(exc).__name__
         logger.exception(
             "Manual session failed: session_id=%s order_id=%s",
             session_id,
             order.order_id,
         )
     finally:
+        if diagnostic is not None:
+            diagnostic.finish(
+                state="error" if diagnostic_error else "closed",
+                error=diagnostic_error,
+            )
+            _sync_diagnostic_status(session_id, diagnostic)
         _clear_active_session(session_id)
         logger.info(
             "Manual session closed: session_id=%s order_id=%s",
@@ -199,7 +234,12 @@ def _run_manual_session(
         )
 
 
-def _wait_until_manual_session_closed(page, handle: ManualSessionHandle) -> None:
+def _wait_until_manual_session_closed(
+    page,
+    handle: ManualSessionHandle,
+    *,
+    diagnostic: ManualDiagnosticRecorder | None = None,
+) -> None:
     closed_event = threading.Event()
 
     def mark_closed(*_args) -> None:
@@ -220,6 +260,9 @@ def _wait_until_manual_session_closed(page, handle: ManualSessionHandle) -> None
         try:
             if page.is_closed() or not page.context.pages:
                 break
+            if diagnostic is not None:
+                diagnostic.poll(page)
+                _sync_diagnostic_status(handle.session_id, diagnostic)
         except PlaywrightError:
             break
     logger.info(
@@ -239,11 +282,15 @@ def _prepare_manual_session(
     mode: str,
 ) -> None:
     login(page, settings)
-    if mode == "portal":
+    if mode in {"portal", "diagnostic"}:
         _set_session_status(
             session_id,
             "ready",
-            "Portal abierto en modo de consulta manual.",
+            (
+                "Medicion sanitizada activa desde el inicio del portal."
+                if mode == "diagnostic"
+                else "Portal abierto en modo de consulta manual."
+            ),
         )
         logger.info(
             "Manual portal session ready: session_id=%s order_id=%s order_status=%s",
@@ -294,6 +341,21 @@ def _clear_active_session(session_id: str) -> None:
         session_id,
         active_count,
     )
+
+
+def _sync_diagnostic_status(
+    session_id: str,
+    diagnostic: ManualDiagnosticRecorder,
+) -> None:
+    with _ACTIVE_SESSION_LOCK:
+        handle = _ACTIVE_SESSIONS.get(session_id)
+        if handle is None:
+            return
+        handle.diagnostic_report_path = str(diagnostic.report_path)
+        handle.diagnostic_event_count = diagnostic.event_count
+        handle.diagnostic_submission_seen = diagnostic.submission_seen
+        handle.diagnostic_honeypot_blocked = diagnostic.honeypot_blocked
+        handle.updated_at = datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def _expire_closing_session(session_id: str, expected_handle: ManualSessionHandle) -> None:

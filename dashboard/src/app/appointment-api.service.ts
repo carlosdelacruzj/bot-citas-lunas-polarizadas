@@ -476,9 +476,13 @@ export interface ManualSession {
   started_at: string;
   updated_at: string;
   close_requested: boolean;
+  diagnostic_report_path: string | null;
+  diagnostic_event_count: number;
+  diagnostic_submission_seen: boolean;
+  diagnostic_honeypot_blocked: boolean;
 }
 
-export type ManualSessionMode = 'appointment' | 'portal';
+export type ManualSessionMode = 'appointment' | 'portal' | 'diagnostic';
 
 export interface MonthlySummary {
   month: string;

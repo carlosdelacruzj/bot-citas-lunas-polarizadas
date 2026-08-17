@@ -14,7 +14,7 @@ from appointment_bot.manual_session.session import (
 from appointment_bot.services.api.http import error_payload
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
-MANUAL_SESSION_MODES = {"appointment", "portal"}
+MANUAL_SESSION_MODES = {"appointment", "portal", "diagnostic"}
 
 
 def list_manual_sessions_payload() -> tuple[HTTPStatus, dict[str, Any]]:
@@ -52,7 +52,7 @@ def open_manual_session_payload(
     if mode not in MANUAL_SESSION_MODES:
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request",
-            "Manual session mode must be appointment, portal, or auto.",
+            "Manual session mode must be appointment, portal, diagnostic, or auto.",
         )
     if mode == "appointment" and order.status != "ready":
         return HTTPStatus.CONFLICT, error_payload(
@@ -66,7 +66,11 @@ def open_manual_session_payload(
         "order_id": order.order_id,
         "order_status": order.status,
         "mode": mode,
-        "message": "Manual browser session is opening locally.",
+        "message": (
+            "Sanitized manual diagnostic session is opening locally."
+            if mode == "diagnostic"
+            else "Manual browser session is opening locally."
+        ),
     }
 
 

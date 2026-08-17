@@ -4059,21 +4059,47 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async openManualSessionNow(order: ServiceOrder): Promise<void> {
+  protected requestDiagnosticSession(): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    this.setPendingAction({
+      title: 'Medir flujo manual',
+      message:
+        `Abrir el portal desde el inicio para ${order.order_id}. ` +
+        'Se registraran campos y solicitudes de forma sanitizada; tu controlas el envio final.',
+      execute: () => this.api.openManualSession(order.order_id, 'diagnostic'),
+      onSuccess: (response) => {
+        if (response.session_id) {
+          this.activeManualSessionIds.add(response.session_id);
+        }
+        this.activeModal.set(null);
+      },
+    });
+  }
+
+  protected async openManualSessionNow(
+    order: ServiceOrder,
+    mode: ManualSessionMode = this.manualSessionMode(order),
+  ): Promise<void> {
     if (this.actionBusy()) {
       return;
     }
     this.actionBusy.set(true);
     this.errorMessage.set(null);
     try {
-      const mode = this.manualSessionMode(order);
       const response = await this.api.openManualSession(order.order_id, mode);
       if (response.session_id) {
         this.activeManualSessionIds.add(response.session_id);
       }
       await this.refreshAll();
       this.showToast(
-        mode === 'appointment' ? 'Sesión manual abierta' : 'Portal abierto para consulta',
+        mode === 'diagnostic'
+          ? 'Medición activa'
+          : mode === 'appointment'
+            ? 'Sesión manual abierta'
+            : 'Portal abierto para consulta',
       );
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -4389,6 +4415,9 @@ export class App implements OnDestroy {
   }
 
   protected manualSessionTypeLabel(session: ManualSession): string {
+    if (session.mode === 'diagnostic') {
+      return 'Diagnóstico protegido';
+    }
     return session.mode === 'appointment' ? 'Operativa' : 'Consulta';
   }
 

@@ -28,6 +28,15 @@ relectura estable de identidad. Ambos cambios tienen kill switch independiente;
 el runbook vigente está en
 `docs/operations/reservation-critical-path-canary-2026-08-11.md`.
 
+Para el CAPTCHA de suma HTML, el motor espera un valor aleatorio configurable
+entre `RESERVATION_MATH_PRE_SUBMIT_DELAY_MIN_SECONDS` y
+`RESERVATION_MATH_PRE_SUBMIT_DELAY_MAX_SECONDS`. La espera no se presenta como
+garantía anti-detección: su costo es latencia adicional y por eso después se
+repiten selección, firma del desafío y honeypot. La ruta compara el formulario
+antes, después y justo antes del clic con los dos POST manuales confirmados; un
+campo protegido con datos o un campo nuevo no vacío bloquea el envío. El POST
+real se resume sin guardar cuerpo crudo, CAPTCHA, datos personales ni tokens.
+
 Estructura futura para el motor de reservas: Playwright, login, lectura de
 cupos, seleccion de fecha/hora, CAPTCHA, envio y confirmacion.
 
@@ -51,6 +60,7 @@ Desde el paso 9.5 contiene la implementacion del motor Playwright del portal:
 - `reservation_engine.reservation_captcha_capture`
 - `reservation_engine.reservation_captcha_refresh`
 - `reservation_engine.reservation_controls`
+- `reservation_engine.reservation_post_audit`
 - `reservation_engine.reservation_submit`
 - `reservation_engine.reservation_portal`
 - `reservation_engine.reservation_flow`

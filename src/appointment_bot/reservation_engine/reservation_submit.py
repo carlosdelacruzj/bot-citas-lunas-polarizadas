@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import threading
 import time
 from collections.abc import Callable
@@ -32,6 +33,11 @@ from appointment_bot.reservation_engine.reservation_captcha_sampling import (
 from appointment_bot.reservation_engine.reservation_controls import (
     RESERVATION_BUTTON_SELECTOR,
     RESERVATION_FIELD_SELECTOR,
+)
+from appointment_bot.reservation_engine.reservation_post_audit import (
+    ReservationPostCollector,
+    inspect_reservation_form,
+    validate_reservation_form_audit,
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.services.captcha import solve_normal_captcha
@@ -72,6 +78,87 @@ def _validate_reservation_selection(
     audit_entry = {"phase": timing_prefix, **validation}
     captcha_audit.setdefault("selection_validation_audits", []).append(audit_entry)
     return audit_entry
+
+
+def _wait_for_math_pre_submit_delay(
+    settings: Settings,
+    *,
+    cancel_event: threading.Event | None,
+    captcha_audit: dict[str, Any],
+    timing: ReservationTiming | None,
+) -> None:
+    delay_seconds = random.uniform(
+        settings.reservation_math_pre_submit_delay_min_seconds,
+        settings.reservation_math_pre_submit_delay_max_seconds,
+    )
+    delay_seconds = round(max(delay_seconds, 0.0), 3)
+    captcha_audit["math_pre_submit_delay_seconds"] = delay_seconds
+    captcha_audit["math_pre_submit_delay_range_seconds"] = [
+        settings.reservation_math_pre_submit_delay_min_seconds,
+        settings.reservation_math_pre_submit_delay_max_seconds,
+    ]
+    logger.info(
+        "Waiting %.3f seconds before the local-math reservation submit",
+        delay_seconds,
+    )
+    if timing is not None:
+        timing.mark("math_pre_submit_delay_started")
+    try:
+        if cancel_event is not None:
+            if cancel_event.wait(delay_seconds):
+                raise AppointmentWorkflowCancelled(
+                    "La pausa se aplico durante la espera previa al envio de reserva."
+                )
+        else:
+            time.sleep(delay_seconds)
+    finally:
+        if timing is not None:
+            timing.mark("math_pre_submit_delay_finished")
+
+
+def _compact_form_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: audit.get(key)
+        for key in (
+            "schema_version",
+            "source",
+            "field_count",
+            "nonempty_field_count",
+            "empty_field_count",
+            "manual_field_names_match",
+            "manual_core_field_names_match",
+            "manual_empty_state_match",
+            "manual_empty_state_mismatches",
+            "unexpected_fields",
+            "unexpected_nonempty_fields",
+            "missing_manual_fields",
+            "protected_nonempty_fields",
+            "missing_required_fields",
+            "empty_required_fields",
+            "honeypot_present",
+            "honeypot_empty",
+            "honeypot_value_length",
+            "privacy",
+        )
+    }
+
+
+def _record_and_validate_form_audit(
+    page: Page,
+    captcha_audit: dict[str, Any],
+    *,
+    phase: str,
+) -> dict[str, Any]:
+    form_audit = inspect_reservation_form(page)
+    form_audit["phase"] = phase
+    captcha_audit.setdefault("pre_submit_form_audits", []).append(form_audit)
+    try:
+        validate_reservation_form_audit(form_audit)
+    except RuntimeError:
+        form_audit["validation"] = "blocked"
+        raise
+    form_audit["validation"] = "passed"
+    return form_audit
 
 
 def solve_reservation_captcha_and_click_reserve(
@@ -312,7 +399,7 @@ def solve_reservation_captcha_and_click_reserve(
     if timing is not None:
         timing.mark("captcha_filled")
 
-    logger.info("Clicking reservation button")
+    logger.info("Preparing reservation button click")
     if cancel_event is not None and cancel_event.is_set():
         raise AppointmentWorkflowCancelled(
             "La pausa se aplico antes de pulsar el boton de reserva."
@@ -330,6 +417,11 @@ def solve_reservation_captcha_and_click_reserve(
         captcha_audit=effective_captcha_audit,
     )
     if captcha_kind == "html_math":
+        _record_and_validate_form_audit(
+            page,
+            effective_captcha_audit,
+            phase="before_delay",
+        )
         validate_reservation_math_captcha(
             page,
             expected_signature=str(
@@ -338,6 +430,45 @@ def solve_reservation_captcha_and_click_reserve(
         )
     else:
         ensure_reservation_honeypot_empty(page)
+
+    after_delay_form_audit: dict[str, Any] | None = None
+    if captcha_kind == "html_math":
+        _wait_for_math_pre_submit_delay(
+            settings,
+            cancel_event=cancel_event,
+            captcha_audit=effective_captcha_audit,
+            timing=timing,
+        )
+
+        if cancel_event is not None and cancel_event.is_set():
+            raise AppointmentWorkflowCancelled(
+                "La pausa se aplico antes de la validacion final de reserva."
+            )
+        if can_submit is not None and not can_submit():
+            raise AppointmentWorkflowCancelled(
+                "La orden fue pausada antes de la validacion final de reserva."
+            )
+        final_validation = _validate_reservation_selection(
+            page,
+            settings,
+            expected_details=expected_details,
+            expected_person_name=expected_person_name,
+            timing=timing,
+            timing_prefix="post_delay_validation",
+            captcha_audit=effective_captcha_audit,
+        )
+        after_delay_form_audit = _record_and_validate_form_audit(
+            page,
+            effective_captcha_audit,
+            phase="after_delay",
+        )
+        validate_reservation_math_captcha(
+            page,
+            expected_signature=str(
+                effective_captcha_audit["captcha_math_expression_sha256"]
+            ),
+        )
+
     if on_submission_intent is not None:
         submission_details = dict(expected_details or {})
         submission_details.update(
@@ -355,6 +486,17 @@ def solve_reservation_captcha_and_click_reserve(
                 "pre_submit_validated_at_utc": datetime.now(UTC).isoformat(),
             }
         )
+        if after_delay_form_audit is not None:
+            submission_details.update(
+                {
+                    "math_pre_submit_delay_seconds": effective_captcha_audit.get(
+                        "math_pre_submit_delay_seconds"
+                    ),
+                    "pre_submit_form_audit": _compact_form_audit(
+                        after_delay_form_audit
+                    ),
+                }
+            )
         if timing is not None:
             timing.mark("submission_intent_started")
         try:
@@ -362,30 +504,73 @@ def solve_reservation_captcha_and_click_reserve(
         finally:
             if timing is not None:
                 timing.mark("submission_intent_finished")
+    post_collector: ReservationPostCollector | None = None
+    reservation_post_audit: dict[str, Any] | None = None
+    if captcha_kind == "html_math":
+        _record_and_validate_form_audit(
+            page,
+            effective_captcha_audit,
+            phase="immediate_pre_click",
+        )
+        validate_reservation_math_captcha(
+            page,
+            expected_signature=str(
+                effective_captcha_audit["captcha_math_expression_sha256"]
+            ),
+        )
+        reservation_post_audit = {"request_seen": False}
+        effective_captcha_audit["reservation_post_audit"] = reservation_post_audit
+        post_collector = ReservationPostCollector(reservation_post_audit)
+        post_collector.attach(page)
+    else:
+        ensure_reservation_honeypot_empty(page)
     try:
         if timing is not None:
             timing.mark("reserve_click_started")
-        reserve_button.click(timeout=15_000)
-    except PlaywrightError as exc:
+        try:
+            reserve_button.click(timeout=15_000)
+        except PlaywrightError as exc:
+            if on_submission_started is not None:
+                on_submission_started()
+            raise ReservationSubmissionUncertain(
+                "El click en Reservar pudo haber sido enviado, pero Playwright no pudo "
+                "confirmar la respuesta."
+            ) from exc
         if on_submission_started is not None:
             on_submission_started()
-        raise ReservationSubmissionUncertain(
-            "El click en Reservar pudo haber sido enviado, pero Playwright no pudo "
-            "confirmar la respuesta."
-        ) from exc
-    if on_submission_started is not None:
-        on_submission_started()
-    try:
+        if post_collector is not None:
+            post_collector.wait_for_response(page)
         try:
-            page.wait_for_load_state("domcontentloaded", timeout=15_000)
-        except PlaywrightTimeoutError:
-            logger.info("Reservation click did not trigger domcontentloaded before timeout")
-        logger.info("Current page after reservation click: %s", page.url)
-        if timing is not None:
-            timing.mark("portal_response")
-    except PlaywrightError as exc:
-        raise ReservationSubmissionUncertain(
-            "La solicitud de reserva fue enviada, pero la pagina se desconecto antes "
-            "de iniciar la verificacion."
-        ) from exc
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=15_000)
+            except PlaywrightTimeoutError:
+                logger.info("Reservation click did not trigger domcontentloaded before timeout")
+            logger.info("Current page after reservation click: %s", page.url)
+            if timing is not None:
+                timing.mark("portal_response")
+        except PlaywrightError as exc:
+            raise ReservationSubmissionUncertain(
+                "La solicitud de reserva fue enviada, pero la pagina se desconecto antes "
+                "de iniciar la verificacion."
+            ) from exc
+    finally:
+        if post_collector is not None:
+            post_collector.detach(page)
+    if reservation_post_audit is not None and reservation_post_audit.get(
+        "request_seen"
+    ) and (
+        reservation_post_audit.get("unexpected_nonempty_fields")
+        or reservation_post_audit.get("protected_nonempty_fields")
+    ):
+        logger.error(
+            "Reservation POST differed from protected manual shape: unexpected=%s protected=%s",
+            reservation_post_audit.get("unexpected_nonempty_fields"),
+            reservation_post_audit.get("protected_nonempty_fields"),
+        )
+    elif reservation_post_audit is not None and not reservation_post_audit.get(
+        "request_seen"
+    ):
+        logger.warning(
+            "The reservation click did not expose a POST request to the audit listener"
+        )
     return page
