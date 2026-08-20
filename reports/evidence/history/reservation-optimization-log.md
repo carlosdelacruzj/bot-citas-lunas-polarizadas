@@ -12061,3 +12061,44 @@ flujo sin guardar nombres completos ni credenciales.
   - Screenshot adicional: screenshots\20-08-2026\cupo-103251-order-***-ab5705.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.969s).
+## 2026-08-20 14:07:17 - order-*** - registered
+
+- Run: 20260820-140656-bc85964c
+- Corrida/attempt: 6
+- Sede: LIMA-LA VICTORIA
+- Cita observada: 16/09/2026 12:00
+- Cupos observados: 13
+- Origen deteccion: normal
+- Resultado: Reserva registrada o confirmada por portal_success_text.
+- Confirmacion posterior: Fuente registrada: portal_success_text.
+- Tiempos:
+  - Cupo detectado -> fin reserva: 2.968s
+  - Seleccion fecha/hora: 0.625s
+  - Imagen CAPTCHA: 0.140s
+  - Resolutor CAPTCHA: 0.032s
+  - Rellenar campo CAPTCHA: 0.000s
+  - Validacion final DOM: 0.000s
+  - Persistir intencion: 0.016s
+  - Llenar CAPTCHA -> click: 1.281s
+  - Click -> respuesta portal: 0.297s
+  - Click -> screenshot confirmacion: 0.531s
+- Contexto operativo:
+  - Modo monitoreo: normal
+  - Reload probe: no registrado
+  - Refresco sede confirmado: no registrado
+  - Refresco sede cambio opciones: no registrado
+  - Refresco sede elapsed: no registrado
+  - Estabilizacion hora: ['event_atomic']
+  - Espera senal seleccion: [0.329]
+  - Fallback seleccion: [None]
+- Evidencia:
+  - Screenshot principal: screenshots\20-08-2026\portal-1-140656-order-***-2de1c1.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
+  - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.797s
+    - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
+  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
+  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-140656-order-***-2de1c1.png
+  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-140656-order-***-4268ed.html
+  - Screenshot adicional: screenshots\20-08-2026\cupo-140656-order-***-71fdde.png
+- Observacion tecnica:
+  - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.281s).

@@ -1442,8 +1442,9 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
                 "phase=%s",
                 failure_phase,
             )
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(1_500)
+            if not _wait_for_chat(page):
+                failure_phase = "chat_not_ready_before_attachment_retry"
+                break
         if not _click_attachment_button(page):
             failure_phase = "attach_control_not_found"
             continue

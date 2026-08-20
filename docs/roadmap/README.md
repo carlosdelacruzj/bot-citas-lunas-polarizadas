@@ -521,8 +521,13 @@ aparezca el evento natural:
   solo antes de seleccionar archivos, una segunda búsqueda por `@usuario` solo
   antes de escribir y la barrera que exige cierre de vista previa más dos
   burbujas PDF confirmadas antes del texto. Preservar `uncertain` sin reintento
-  después de un posible envío; el resumen real del `2026-08-13` ya validó
+  después de un posible envío. La segunda apertura del menú ya no usa
+  `Escape` y debe conservar visible el compositor del chat; el resumen real
+  del `2026-08-13` ya validó
   paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
+  el reenvío real de `order-74702632` validó el `2026-08-20` que la segunda
+  apertura conserva el chat y permite enviar el álbum. Mantener pendiente la
+  observación equivalente para postpago y aviso por `@usuario`;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;

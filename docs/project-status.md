@@ -695,9 +695,16 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   abierta. Si ya desapareció pero falta confirmación, el trabajo permanece
   `uncertain` sin otro clic. Las fases de fallo distinguen menú no abierto,
   input sin soporte múltiple y vista previa no cerrada/no confirmada.
+  Tras el primer caso real posterior se retiró el `Escape` previo a la segunda
+  apertura: WhatsApp puede interpretarlo como cierre de la conversación. El
+  segundo intento exige ahora que el compositor del chat continúe visible; si
+  desapareció, termina antes de seleccionar archivos o intentar enviar.
+  El reenvío real de `order-74702632` validó esa corrección a las `15:44`:
+  la primera apertura volvió a no mostrar el menú, la segunda conservó el chat
+  y el álbum de dos elementos quedó `sent`. Esta evidencia acepta el caso del
+  álbum; postpago y búsqueda por usuario conservan su aceptación pendiente.
   `compileall`, Ruff, las `59` pruebas existentes y `git diff --check` quedaron
-  correctos; la aceptación productiva requiere observar los siguientes
-  trabajos reales.
+  correctos para los archivos del cambio.
 - Implementado el `2026-08-17`: recordatorios diarios para las reservas
   confirmadas del dia siguiente. PostgreSQL `v56` normaliza
   `reservations.appointment_day`, conserva un corte diario y crea trabajos
