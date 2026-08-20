@@ -686,6 +686,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Cola durable de trabajos WhatsApp con estados recuperables y auditables.
 - Admin API como único propietario del perfil persistente de WhatsApp Web.
 - Fallos de WhatsApp no bloquean reservas ni Telegram.
+- Endurecido el `2026-08-20` sin cambiar la arquitectura ni los disparadores:
+  el álbum permite una sola segunda apertura segura del menú antes de elegir
+  archivos; la búsqueda por `@usuario` repite una vez únicamente antes de
+  escribir; y el postpago no pasa al texto hasta que desaparece la vista previa
+  y aparecen las dos burbujas salientes confirmadas de los PDF. Un segundo clic
+  de documentos solo es posible si la vista previa continúa demostrablemente
+  abierta. Si ya desapareció pero falta confirmación, el trabajo permanece
+  `uncertain` sin otro clic. Las fases de fallo distinguen menú no abierto,
+  input sin soporte múltiple y vista previa no cerrada/no confirmada.
+  `compileall`, Ruff, las `59` pruebas existentes y `git diff --check` quedaron
+  correctos; la aceptación productiva requiere observar los siguientes
+  trabajos reales.
 - Implementado el `2026-08-17`: recordatorios diarios para las reservas
   confirmadas del dia siguiente. PostgreSQL `v56` normaliza
   `reservations.appointment_day`, conserva un corte diario y crea trabajos

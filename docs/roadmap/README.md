@@ -517,8 +517,12 @@ aparezca el evento natural:
 - siguiente cupo incompatible: `partial / blocked_by_order_rule` sin backoff
   general ni ruido CAPTCHA por Telegram;
 - siguientes trabajos WhatsApp: album, postpago y aviso de registro,
-  preservando `uncertain` sin reintento; el resumen real del `2026-08-13` ya
-  validó paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
+  revisar las guardas acotadas del `2026-08-20`: una segunda apertura del menú
+  solo antes de seleccionar archivos, una segunda búsqueda por `@usuario` solo
+  antes de escribir y la barrera que exige cierre de vista previa más dos
+  burbujas PDF confirmadas antes del texto. Preservar `uncertain` sin reintento
+  después de un posible envío; el resumen real del `2026-08-13` ya validó
+  paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;

@@ -1077,6 +1077,21 @@ def _open_recipient_chat(
     page.wait_for_timeout(700)
     rows = _wait_for_stable_username_chat_results(page)
     if len(rows) != 1:
+        logger.info(
+            "WhatsApp username search retry before send: phase=username_search_retry"
+        )
+        visible_dialogs = _visible_whatsapp_dialogs(page)
+        if visible_dialogs:
+            _dismiss_safe_whatsapp_dialog(page, visible_dialogs)
+        search = _visible_whatsapp_search(page)
+        if search is not None:
+            search.click()
+            search.fill("")
+            page.wait_for_timeout(800)
+            search.fill(username)
+            page.wait_for_timeout(1_200)
+            rows = _wait_for_stable_username_chat_results(page)
+    if len(rows) != 1:
         _save_whatsapp_debug_screenshot(page, screenshot_name)
         status = "recipient_not_found" if not rows else "recipient_ambiguous"
         detail = "no aparecio" if not rows else "aparecio mas de una vez"
@@ -1419,47 +1434,68 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
         if isinstance(attachment, list)
         else [str(attachment)]
     )
-    deadline = time.monotonic() + 10
-    file_input = None
-    attachment_opened = False
-    while time.monotonic() < deadline and file_input is None:
-        if not attachment_opened:
-            if _click_attachment_button(page):
-                attachment_opened = True
-                _wait_for_attachment_menu(page)
-        elif attachment_opened:
-            media_option = page.get_by_text(
-                re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
-            ).last
-            if media_option.count() and media_option.is_visible():
-                container = _attachment_option_container(media_option)
-                option_input = container.locator("input[type='file']")
-                if option_input.count():
-                    try:
-                        option_input.first.set_input_files(files)
-                        page.wait_for_timeout(1_000)
-                        return
-                    except PlaywrightError:
-                        logger.info("Fotos y videos input did not accept the selected files")
+    failure_phase = "attach_control_not_found"
+    for attempt in range(1, 3):
+        if attempt == 2:
+            logger.info(
+                "WhatsApp image attachment safe retry before file selection: "
+                "phase=%s",
+                failure_phase,
+            )
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(1_500)
+        if not _click_attachment_button(page):
+            failure_phase = "attach_control_not_found"
+            continue
+        if not _wait_for_attachment_menu(page):
+            failure_phase = "attach_menu_not_opened"
+            logger.info(
+                "WhatsApp Web attachment menu not ready: attempt=%s phase=%s",
+                attempt,
+                failure_phase,
+            )
+            continue
+
+        media_option = page.get_by_text(
+            re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
+        ).last
+        if media_option.count() and media_option.is_visible():
+            container = _attachment_option_container(media_option)
+            option_input = container.locator("input[type='file']")
+            if option_input.count():
                 try:
-                    with page.expect_file_chooser(timeout=3_000) as chooser_info:
-                        container.click()
-                    chooser_info.value.set_files(files)
+                    option_input.first.set_input_files(files)
                     page.wait_for_timeout(1_000)
                     return
                 except PlaywrightError:
-                    logger.info("Fotos y videos did not open a file chooser")
-            logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
-            file_input = _image_file_input(page, require_multiple=len(files) > 1)
-            if file_input is None:
-                attachment_opened = False
-        page.wait_for_timeout(400)
-    if file_input is None:
-        logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
-        logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
-        raise RuntimeError("No se encontro el control para adjuntar imagenes en WhatsApp Web.")
-    file_input.set_input_files(files)
-    page.wait_for_timeout(1_000)
+                    logger.info("Fotos y videos input did not accept the selected files")
+            try:
+                with page.expect_file_chooser(timeout=3_000) as chooser_info:
+                    container.click()
+                chooser_info.value.set_files(files)
+                page.wait_for_timeout(1_000)
+                return
+            except PlaywrightError:
+                logger.info("Fotos y videos did not open a file chooser")
+
+        logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
+        file_input = _image_file_input(page, require_multiple=len(files) > 1)
+        if file_input is not None:
+            file_input.set_input_files(files)
+            page.wait_for_timeout(1_000)
+            return
+        failure_phase = (
+            "non_multiple_input"
+            if len(files) > 1 and _image_file_input(page) is not None
+            else "media_picker_not_ready"
+        )
+
+    logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
+    logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
+    raise RuntimeError(
+        "No se encontro el control para adjuntar imagenes en WhatsApp Web. "
+        f"Fase: {failure_phase}."
+    )
 
 
 def _click_attachment_button(page: Page) -> bool:
@@ -1729,13 +1765,25 @@ def _fill_caption(
 
 
 def _click_send_button(page: Page, attachments: list[Path]) -> None:
-    if _document_preview_visible(page, [attachment.name for attachment in attachments]):
-        for _ in range(2):
+    attachment_names = [attachment.name for attachment in attachments]
+    outgoing_signatures = _outgoing_message_signatures(page)
+    if _document_preview_visible(page, attachment_names):
+        for attempt in range(2):
             if _click_bottom_right_send_button(page):
                 try:
-                    _wait_until_send_attempt_finishes(page)
+                    _wait_until_send_attempt_finishes(
+                        page,
+                        attachment_names=attachment_names,
+                        outgoing_signatures=outgoing_signatures,
+                        expected_outgoing_count=len(attachments),
+                    )
                     return
                 except RuntimeError:
+                    if (
+                        attempt == 1
+                        or not _attachment_preview_visible(page, attachment_names)
+                    ):
+                        raise
                     page.wait_for_timeout(800)
     selectors = (
         "[data-testid='send']",
@@ -1763,11 +1811,21 @@ def _click_send_button(page: Page, attachments: list[Path]) -> None:
                 target = role_button.first
             _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-send")
             target.click(timeout=2_000, force=True)
-            _wait_until_send_attempt_finishes(page)
+            _wait_until_send_attempt_finishes(
+                page,
+                attachment_names=attachment_names,
+                outgoing_signatures=outgoing_signatures,
+                expected_outgoing_count=len(attachments),
+            )
             return
         page.wait_for_timeout(500)
     if _click_bottom_right_send_button(page):
-        _wait_until_send_attempt_finishes(page)
+        _wait_until_send_attempt_finishes(
+            page,
+            attachment_names=attachment_names,
+            outgoing_signatures=outgoing_signatures,
+            expected_outgoing_count=len(attachments),
+        )
         return
     _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-button-missing")
     raise RuntimeError("No se encontro el boton Enviar de WhatsApp.")
@@ -2003,22 +2061,46 @@ def _click_visible_send_button(page: Page) -> bool:
     return _click_bottom_right_send_button(page)
 
 
-def _wait_until_send_attempt_finishes(page: Page) -> None:
+def _wait_until_send_attempt_finishes(
+    page: Page,
+    *,
+    attachment_names: list[str],
+    outgoing_signatures: set[str],
+    expected_outgoing_count: int,
+) -> None:
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
+        confirmed_signatures = _outgoing_message_signatures(
+            page,
+            confirmed_only=True,
+        )
+        new_confirmed_count = len(confirmed_signatures - outgoing_signatures)
         if (
             _normal_chat_composer_visible(page)
-            and not _attachment_preview_visible(page, [])
+            and not _attachment_preview_visible(page, attachment_names)
+            and new_confirmed_count >= expected_outgoing_count
         ):
             page.wait_for_timeout(1_000)
             return
         page.wait_for_timeout(500)
     _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-not-confirmed")
-    raise RuntimeError("WhatsApp no confirmo el envio; no volvio al chat normal.")
+    logger.warning(
+        "WhatsApp document send confirmation failed: "
+        "phase=document_preview_still_open_or_unconfirmed "
+        "confirmed=%s expected=%s preview_visible=%s",
+        new_confirmed_count,
+        expected_outgoing_count,
+        _attachment_preview_visible(page, attachment_names),
+    )
+    raise RuntimeError(
+        "WhatsApp no confirmo el envio de los documentos; la vista previa no cerro "
+        "o no aparecieron todas las burbujas salientes confirmadas. "
+        "Fase: document_preview_still_open_or_unconfirmed."
+    )
 
 
 def _normal_chat_composer_visible(page: Page) -> bool:
-    composer = page.locator("footer div[contenteditable='true']").last
+    composer = page.locator("div[data-testid='conversation-compose-box-input']").last
     return bool(composer.count() and composer.is_visible())
 
 
