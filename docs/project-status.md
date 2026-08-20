@@ -20,7 +20,7 @@ Estado verificado el `2026-08-11`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Operativo                | `127.0.0.1:8765/health` responde `ok`, con `worker_running=true`; el reinicio controlado ya no hereda una pausa y sus controles dejan auditoría durable. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v55` aplicado con autoridad CAPTCHA, calidad financiera, cierres, fuente de captación y outbox Telegram preservados. |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v57` agrega control persistente y versiones de plantilla para recordatorios, preservando fechas normalizadas, autoridad CAPTCHA, calidad financiera y outbox Telegram. |
 | Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
 | CAPTCHA local         | Rollback a 2Captcha      | 2Captcha volvió a ser la autoridad persistente desde el siguiente CAPTCHA; V6 queda fuera de admisión con sus contadores y evidencia preservados. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
@@ -686,6 +686,45 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Cola durable de trabajos WhatsApp con estados recuperables y auditables.
 - Admin API como único propietario del perfil persistente de WhatsApp Web.
 - Fallos de WhatsApp no bloquean reservas ni Telegram.
+- Implementado el `2026-08-17`: recordatorios diarios para las reservas
+  confirmadas del dia siguiente. PostgreSQL `v56` normaliza
+  `reservations.appointment_day`, conserva un corte diario y crea trabajos
+  idempotentes por reserva/fecha. La cola exige primero un resumen diario
+  existente y terminal; los recordatorios permanecen bloqueados mientras
+  cualquier resumen de esa fecha siga activo. Justo antes de enviar se
+  revalidan fecha Lima, reserva vigente, contacto y texto; un dato obsoleto
+  termina `skipped` sin abrir WhatsApp. Admin API aloja el programador y el
+  dashboard muestra fecha objetivo, barrera y conteos. La capacidad permanece
+  La autoridad operativa ya no depende de las banderas antiguas de `.env`: el
+  control PostgreSQL quedo en `live`, revision `2`, despues de completar el
+  primer lote real. El dry-run previo sobre el `2026-08-18` encontro `8`
+  elegibles, cero contactos faltantes y cero fechas invalidas.
+- Visibilidad ampliada el `2026-08-17`: Resumen conserva un acceso compacto y
+  la nueva pantalla `Seguimiento` separa Proximas citas, Post-cita e Historial.
+  Los ocho elegibles se muestran con busqueda, orden y contacto enmascarado;
+  `/post-cita` sigue funcionando como redireccion. Build Angular correcto con
+  `530.57 kB`; queda pendiente la aprobacion visual real porque no habia un
+  navegador conectado durante esta implementacion.
+  Admin API se reinicio aisladamente en una frontera segura y sirvio el bundle
+  `main-64TD5UPN.js`; el worker continuo saludable y no se enviaron mensajes.
+- Configuracion ampliada el `2026-08-17`: `Seguimiento > Proximas citas`
+  permite editar la plantilla con `{nombre}`, `{fecha}`, `{hora}` y `{sede}`,
+  previsualizarla, restaurar el texto recomendado y guardar los modos
+  `disabled`, `dry_run`, `canary` o `live`. PostgreSQL conserva revision e
+  historial; el canario exige 1 o 2 ordenes elegibles y canario/productivo
+  requieren segunda confirmacion. La migracion parte desactivada y no envia.
+  Validacion viva: schema `v57`, API PID `38408`, bundle `main-4TE6ORXA.js`,
+  `8` candidatos, cero trabajos, `59` pruebas y build `532.65 kB`. La revision
+  visual humana permanece pendiente.
+- Primer lote real de recordatorios completado el `2026-08-17`: el resumen de
+  `16` evidencias termino antes de admitir clientes y los `8/8` recordatorios
+  cerraron `sent`, sin fallos, incertidumbre, omisiones ni duplicados. La
+  revision encontro que el saludo usaba el nombre del contacto de WhatsApp;
+  para lotes futuros `{nombre}` usa exclusivamente el nombre de la persona que
+  asistira al peritaje. Vista previa y backend comparten tambien la misma fecha
+  textual. Los ocho mensajes historicos no se reenvian. Admin API recargo la
+  correccion en PID `30048` y sirve `main-5RIZKUNK.js`; el control permanece
+  `live`, revision `2`.
 - Al corte de las 18:00 se encola un resumen diario idempotente al número
   personal configurado fuera del repositorio: primero envía el texto fechado y
   luego todas las imágenes de `cupos-unicos`. El primer caso real del 30 de
@@ -1027,8 +1066,18 @@ debe reconstruir una comparación histórica únicamente desde la base viva.
   y el worker regresó saludable a la misma fase sin orden activa.
 - `python -m ruff check src tests`: correcto.
 - `python -m compileall -q src`: correcto.
-- `npm run build`: correcto.
+- `npm run build`: correcto, bundle inicial de `529.99 kB` y sin advertencias.
 - `python -m pytest -q`: `59 passed`.
+- Recordatorios de cita del `2026-08-17`: creacion limpia `v56`, migracion
+  transaccional `v55 -> v56` y migracion viva correctas; `125` reservas
+  normalizadas y cero confirmadas sin fecha interpretable. Una simulacion
+  transaccional creo `8/8` trabajos una sola vez, creo `0/8` al repetir, expuso
+  cero recordatorios antes del resumen, priorizo el resumen activo y libero los
+  ocho solo despues de volverlo terminal. El rollback dejo cero trabajos de
+  recordatorio reales. Admin API se reinicio aisladamente con cero sesiones,
+  submissions o trabajos WhatsApp activos; el endpoint nuevo respondio con el
+  modo desactivado/dry-run, `8` elegibles, cero contactos faltantes, cero fechas
+  invalidas y cero trabajos persistidos. El worker permanecio saludable.
 - Auditoría documental integral: `40` archivos clasificados, roadmap
   reorganizado por fases, índices actualizados y cero enlaces Markdown locales
   rotos en el inventario revisado.

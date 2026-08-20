@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-14`.
+Ultima priorizacion: `2026-08-17`.
 
 Esta es la unica lista de trabajo futuro y su orden de ejecucion. El estado de
 lo construido, validado y activo vive en
@@ -32,10 +32,12 @@ crear colas paralelas.
    fallback, seleccion preservada y tiempos pre-click, sin contar entrenamiento.
 3. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
    diferencia de `S/10` y reunir saldos/costos suficientes para cierres reales.
-4. Incorporar controles seguros y salud compuesta en la **Fase 3**.
-5. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
-6. Reorganizar flujos y datos del dashboard antes del rediseño visual.
-7. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
+4. Completar la revision visual humana de `Seguimiento` en escritorio y movil;
+   el primer lote real ya cerro `8/8 sent` despues del resumen diario.
+5. Incorporar controles seguros y salud compuesta en la **Fase 3**.
+6. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
+7. Reorganizar flujos y datos del dashboard antes del rediseño visual.
+8. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
 
 ## Fase 0 - Consolidacion documental
 
@@ -391,6 +393,10 @@ la superficie principal.
    actualizacion de cada fuente.
 8. Cargar Post-cita y textos sensibles de manera progresiva y paginada; evitar
    transportar las 108 historias completas cuando solo se necesita el resumen.
+9. Completar la revision visual humana de `Seguimiento` en `360`, `768`,
+    `1024` y `1440 px`. La separacion funcional entre Proximas citas,
+    Post-cita e Historial ya esta implementada; queda pendiente aprobar su
+    presentacion real en escritorio y movil.
 
 ### Criterio de aceptacion
 

@@ -2,16 +2,25 @@ from __future__ import annotations
 
 import logging
 import threading
+from datetime import date, datetime, timedelta
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from appointment_bot.browser.whatsapp_web import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
+    send_whatsapp_web_appointment_reminder,
     send_whatsapp_web_daily_slot_summary,
     send_whatsapp_web_registration_notice,
     validate_whatsapp_web_session,
 )
 from appointment_bot.config import Settings
+from appointment_bot.db.appointment_reminder_control import (
+    get_appointment_reminder_control,
+)
+from appointment_bot.db.appointment_reminders import (
+    get_current_appointment_reminder_candidate,
+)
 from appointment_bot.db.whatsapp_automation import (
     WhatsAppAutomationJob,
     WhatsAppAutomationStatus,
@@ -21,6 +30,7 @@ from appointment_bot.db.whatsapp_automation import (
     next_waiting_whatsapp_automation_job,
     order_has_sent_whatsapp_message,
     recover_expired_whatsapp_automation_jobs,
+    refresh_running_appointment_reminder_snapshot,
     return_running_whatsapp_job_to_blocked,
 )
 from appointment_bot.db.whatsapp_followup_messages import (
@@ -33,11 +43,13 @@ from appointment_bot.db.whatsapp_messages import (
     mark_whatsapp_message_sent,
     prepare_order_whatsapp_message,
 )
+from appointment_bot.services.appointment_reminders import appointment_reminder_message
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 POLL_SECONDS = 1.0
+LIMA_TIMEZONE = ZoneInfo("America/Lima")
 
 
 def _automation_result_detail(result: dict[str, object]) -> str:
@@ -141,6 +153,21 @@ class WhatsAppAutomationDispatcher:
             order_id or job["report_date"],
             job_kind,
         )
+        if job_kind == "appointment_reminder":
+            refreshed_job, skip_reason = self._revalidate_appointment_reminder(job)
+            if refreshed_job is None:
+                self._finish(
+                    job,
+                    status="skipped",
+                    error_message=sanitize_text(skip_reason),
+                )
+                logger.warning(
+                    "Appointment reminder skipped before send: job_key=%s reason=%s",
+                    job["job_key"],
+                    skip_reason,
+                )
+                return
+            job = refreshed_job
         try:
             if (
                 order_id is not None
@@ -170,6 +197,8 @@ class WhatsAppAutomationDispatcher:
                 message_id, result = self._send_daily_slot_summary(job)
             elif job_kind == "registration_notice":
                 message_id, result = self._send_registration_notice(job)
+            elif job_kind == "appointment_reminder":
+                message_id, result = self._send_appointment_reminder(job)
             else:
                 raise ValueError(f"Tipo de trabajo WhatsApp no soportado: {job_kind}")
         except Exception as exc:
@@ -311,6 +340,78 @@ class WhatsAppAutomationDispatcher:
         )
         return message_id, result
 
+    def _send_appointment_reminder(
+        self,
+        job: WhatsAppAutomationJob,
+    ) -> tuple[str, dict[str, object]]:
+        recipient_phone = job["recipient_phone"]
+        recipient_username = job["recipient_username"]
+        message_text = job["message_text"]
+        if (
+            job["order_id"] is None
+            or job["reservation_id"] is None
+            or not (recipient_phone or recipient_username)
+            or not message_text
+        ):
+            raise ValueError(
+                "El recordatorio no contiene reserva, destinatario o texto."
+            )
+        message_id = job["job_key"]
+        result = send_whatsapp_web_appointment_reminder(
+            message_id=message_id,
+            recipient_phone=recipient_phone,
+            recipient_username=recipient_username,
+            message_text=message_text,
+        )
+        self._stop_event.wait(self.settings.appointment_reminders_send_interval_seconds)
+        return message_id, result
+
+    def _revalidate_appointment_reminder(
+        self,
+        job: WhatsAppAutomationJob,
+    ) -> tuple[WhatsAppAutomationJob | None, str]:
+        reservation_id = job["reservation_id"]
+        appointment_day_raw = job["appointment_day"]
+        if reservation_id is None or appointment_day_raw is None:
+            return None, "El trabajo no conserva reserva o fecha de cita."
+        try:
+            appointment_day = date.fromisoformat(appointment_day_raw)
+        except ValueError:
+            return None, "La fecha normalizada del recordatorio es invalida."
+        expected_day = datetime.now(LIMA_TIMEZONE).date() + timedelta(days=1)
+        if appointment_day != expected_day:
+            return None, (
+                "El recordatorio ya no corresponde al dia siguiente en America/Lima."
+            )
+        candidate = get_current_appointment_reminder_candidate(
+            reservation_id,
+            appointment_day,
+            settings=self.settings,
+        )
+        if candidate is None:
+            return None, "La reserva dejo de ser la cita confirmada vigente de la orden."
+        control = get_appointment_reminder_control(self.settings)
+        order_id = job["order_id"] or ""
+        if not control.allows(order_id):
+            return None, "El control vigente ya no autoriza este recordatorio."
+        try:
+            refreshed = refresh_running_appointment_reminder_snapshot(
+                job["job_key"],
+                owner_token=self.owner_token,
+                recipient_phone=candidate["recipient_phone"],
+                recipient_username=candidate["recipient_username"],
+                message_text=appointment_reminder_message(
+                    candidate,
+                    control.message_template,
+                ),
+                settings=self.settings,
+            )
+        except ValueError as exc:
+            return None, f"El contacto vigente no es utilizable: {exc}"
+        if refreshed is None:
+            return None, "La propiedad del trabajo cambio durante la revalidacion."
+        return refreshed, ""
+
     def _finish(
         self,
         job: WhatsAppAutomationJob,
@@ -350,7 +451,11 @@ class WhatsAppAutomationDispatcher:
                 else (
                     "aviso de registro"
                     if job["job_kind"] == "registration_notice"
-                    else "resumen diario de cupos"
+                    else (
+                        "recordatorio de cita"
+                        if job["job_kind"] == "appointment_reminder"
+                        else "resumen diario de cupos"
+                    )
                 )
             )
         )
@@ -408,7 +513,11 @@ class WhatsAppAutomationDispatcher:
                 else (
                     "aviso de registro"
                     if job["job_kind"] == "registration_notice"
-                    else "resumen diario de cupos"
+                    else (
+                        "recordatorio de cita"
+                        if job["job_kind"] == "appointment_reminder"
+                        else "resumen diario de cupos"
+                    )
                 )
             )
         )

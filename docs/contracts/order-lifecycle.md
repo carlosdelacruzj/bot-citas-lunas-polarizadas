@@ -241,6 +241,37 @@ Estados internos adicionales:
     bandeja, sin borrar sus paquetes ni enviar mensajes retroactivos.
 - Un resultado `uncertain` solo abre la orden para revision; nunca ofrece un
   reintento directo desde la bandeja.
+- Los recordatorios de cita se derivan exclusivamente de la reserva
+  `confirmed` mas reciente de cada orden y de `reservations.appointment_day`.
+  El destinatario procede del contacto administrativo primario; nunca de
+  credenciales, formularios del portal ni campos honeypot.
+- Cada recordatorio usa la clave durable
+  `appointment_reminder:{reservation_id}:{appointment_day}`. Una reconciliacion
+  repetida no crea duplicados y el texto queda persistido antes del intento.
+- El recordatorio se guarda `blocked` y no puede reclamarse hasta que exista el
+  `daily_slot_summary` de la misma fecha operativa y ninguno de sus intentos
+  permanezca `queued`, `blocked` o `running`. El resumen diario conserva
+  prioridad `0`; los recordatorios usan prioridad `100`.
+- La autoridad operativa reside en `appointment_reminder_control`: `disabled`
+  no crea ni permite reclamar trabajos, `dry_run` solo calcula, `canary` limita
+  la admision a 1 o 2 `order_id` elegibles y `live` admite todos dentro del
+  limite diario. Cada cambio usa revision optimista y conserva la plantilla en
+  `appointment_reminder_template_versions`.
+- Solo se aceptan `{nombre}`, `{fecha}`, `{hora}` y `{sede}`; `{fecha}` es
+  obligatoria y los datos ausentes se renderizan como `por confirmar`.
+  `{nombre}` corresponde exclusivamente a `applicants.full_name`, es decir, la
+  persona que asistira al peritaje; nunca usa el nombre administrativo del
+  contacto de WhatsApp. Si el nombre del solicitante falta, se usa `cliente`.
+  La API entrega tambien la etiqueta de fecha renderizada para que la vista
+  previa coincida literalmente con el mensaje final.
+- `GET /api/v1/appointment-reminders` expone tambien los candidatos vigentes
+  para la vista interna de Seguimiento. El detalle limita cada fila a nombre,
+  orden, fecha, hora, sede, destinatario enmascarado y estado; no publica el
+  contacto completo ni credenciales.
+- Despues del claim se revalidan fecha Lima, reserva vigente y contacto. Un
+  trabajo obsoleto termina `skipped` antes de abrir el chat. Si el intento llega
+  al envio, conserva la misma semantica estricta: `sent` exige evidencia de una
+  burbuja saliente, mientras `uncertain` es terminal y no se reintenta.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y
   estado pendiente para evitar doble envio.
 - Una orden bloqueada por regla propia puede quedar en espera o cooldown sin

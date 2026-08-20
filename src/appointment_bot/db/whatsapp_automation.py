@@ -23,13 +23,14 @@ WhatsAppAutomationKind = Literal[
     "post_payment_followup",
     "daily_slot_summary",
     "registration_notice",
+    "appointment_reminder",
 ]
 RegistrationNoticeType = Literal[
     "monitoring_started",
     "no_pending_request",
     "invalid_credentials",
 ]
-WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain"]
+WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain", "skipped"]
 LEASE_SECONDS = 10 * 60
 PREFLIGHT_RETRY_SECONDS = 60
 
@@ -37,8 +38,10 @@ PREFLIGHT_RETRY_SECONDS = 60
 class WhatsAppAutomationJob(TypedDict):
     job_key: str
     order_id: str | None
+    reservation_id: str | None
     job_kind: WhatsAppAutomationKind
     report_date: str | None
+    appointment_day: str | None
     recipient_phone: str | None
     recipient_username: str | None
     message_text: str | None
@@ -102,11 +105,11 @@ def enqueue_daily_slot_summary_job(
             INSERT INTO whatsapp_automation_jobs (
                 job_key, order_id, job_kind, report_date, recipient_phone,
                 message_text, publication_text, attachment_paths, status, attempt_count,
-                next_attempt_at, created_at, updated_at
+                priority, next_attempt_at, created_at, updated_at
             )
             VALUES (
                 %s, NULL, 'daily_slot_summary', %s, %s,
-                %s, %s, %s, 'queued', 0, %s, %s, %s
+                %s, %s, %s, 'queued', 0, 0, %s, %s, %s
             )
             ON CONFLICT(job_key) DO NOTHING
             RETURNING job_key
@@ -118,6 +121,58 @@ def enqueue_daily_slot_summary_job(
                 message_text,
                 publication_text,
                 Jsonb(paths),
+                now,
+                now,
+                now,
+            ),
+        ).fetchone()
+    return row is not None
+
+
+def enqueue_appointment_reminder_job(
+    *,
+    service_date: date,
+    appointment_day: date,
+    reservation_id: str,
+    order_id: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
+    message_text: str,
+    settings: Settings | None = None,
+    _connection_override=None,
+) -> bool:
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    now = datetime.now(UTC)
+    phone, username = resolve_whatsapp_recipient(recipient_phone, recipient_username)
+    if phone is not None:
+        phone = _international_phone(phone)
+    job_key = f"appointment_reminder:{reservation_id}:{appointment_day.isoformat()}"
+    with _operation_connection(effective_settings, _connection_override) as connection:
+        row = connection.execute(
+            """
+            INSERT INTO whatsapp_automation_jobs (
+                job_key, order_id, reservation_id, job_kind, report_date,
+                appointment_day, recipient_phone, recipient_username, message_text,
+                status, attempt_count, priority, next_attempt_at, created_at, updated_at
+            )
+            VALUES (
+                %s, %s, %s, 'appointment_reminder', %s,
+                %s, %s, %s, %s,
+                'blocked', 0, 100, %s, %s, %s
+            )
+            ON CONFLICT(job_key) DO NOTHING
+            RETURNING job_key
+            """,
+            (
+                job_key,
+                order_id,
+                reservation_id,
+                service_date,
+                appointment_day,
+                phone,
+                username,
+                message_text,
                 now,
                 now,
                 now,
@@ -186,13 +241,43 @@ def next_waiting_whatsapp_automation_job(
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
             """
-            SELECT job_key, order_id, job_kind, report_date, recipient_phone,
+            SELECT job_key, order_id, reservation_id, job_kind, report_date,
+                   appointment_day, recipient_phone,
                    recipient_username,
                    message_text, publication_text, attachment_paths,
                    registration_notice_type, preflight_cycle
             FROM whatsapp_automation_jobs
             WHERE status IN ('queued', 'blocked') AND next_attempt_at <= %s
-            ORDER BY created_at
+              AND (
+                    job_kind <> 'appointment_reminder'
+                    OR EXISTS (
+                        SELECT 1 FROM appointment_reminder_control arc
+                        WHERE arc.id = 1
+                          AND (
+                              arc.mode = 'live'
+                              OR (arc.mode = 'canary' AND arc.canary_order_ids ? order_id)
+                          )
+                    )
+              )
+              AND (
+                    job_kind <> 'appointment_reminder'
+                    OR (
+                        EXISTS (
+                            SELECT 1
+                            FROM whatsapp_automation_jobs summary_job
+                            WHERE summary_job.job_kind = 'daily_slot_summary'
+                              AND summary_job.report_date = whatsapp_automation_jobs.report_date
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM whatsapp_automation_jobs active_summary
+                            WHERE active_summary.job_kind = 'daily_slot_summary'
+                              AND active_summary.report_date = whatsapp_automation_jobs.report_date
+                              AND active_summary.status IN ('queued', 'blocked', 'running')
+                        )
+                    )
+              )
+            ORDER BY priority, created_at
             LIMIT 1
             """,
             (now,),
@@ -226,7 +311,41 @@ def claim_whatsapp_automation_job(
                 WHERE job_key = %s
                   AND status IN ('queued', 'blocked')
                   AND next_attempt_at <= %s
-                RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+                  AND (
+                        job_kind <> 'appointment_reminder'
+                        OR EXISTS (
+                            SELECT 1 FROM appointment_reminder_control arc
+                            WHERE arc.id = 1
+                              AND (
+                                  arc.mode = 'live'
+                                  OR (
+                                      arc.mode = 'canary'
+                                      AND arc.canary_order_ids ? order_id
+                                  )
+                              )
+                        )
+                  )
+                  AND (
+                        job_kind <> 'appointment_reminder'
+                        OR (
+                            EXISTS (
+                                SELECT 1
+                                FROM whatsapp_automation_jobs summary_job
+                                WHERE summary_job.job_kind = 'daily_slot_summary'
+                                  AND summary_job.report_date = whatsapp_automation_jobs.report_date
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM whatsapp_automation_jobs active_summary
+                                WHERE active_summary.job_kind = 'daily_slot_summary'
+                                  AND active_summary.report_date =
+                                      whatsapp_automation_jobs.report_date
+                                  AND active_summary.status IN ('queued', 'blocked', 'running')
+                            )
+                        )
+                  )
+                RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+                          appointment_day, recipient_phone,
                           recipient_username,
                           message_text, publication_text, attachment_paths,
                           registration_notice_type, preflight_cycle
@@ -341,7 +460,8 @@ def recover_expired_whatsapp_automation_jobs(
                 finished_at = %s,
                 updated_at = %s
             WHERE status = 'running' AND lease_expires_at < %s
-            RETURNING job_key, order_id, job_kind, report_date, recipient_phone,
+            RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+                      appointment_day, recipient_phone,
                       recipient_username,
                       message_text, publication_text, attachment_paths,
                       registration_notice_type, preflight_cycle
@@ -387,6 +507,42 @@ def finish_whatsapp_automation_job(
             ),
         ).fetchone()
     return row is not None
+
+
+def refresh_running_appointment_reminder_snapshot(
+    job_key: str,
+    *,
+    owner_token: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
+    message_text: str,
+    settings: Settings,
+) -> WhatsAppAutomationJob | None:
+    init_database(settings)
+    phone, username = resolve_whatsapp_recipient(recipient_phone, recipient_username)
+    if phone is not None:
+        phone = _international_phone(phone)
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            UPDATE whatsapp_automation_jobs
+            SET recipient_phone = %s,
+                recipient_username = %s,
+                message_text = %s,
+                updated_at = %s
+            WHERE job_key = %s
+              AND job_kind = 'appointment_reminder'
+              AND status = 'running'
+              AND lease_owner = %s
+            RETURNING job_key, order_id, reservation_id, job_kind, report_date,
+                      appointment_day, recipient_phone, recipient_username,
+                      message_text, publication_text, attachment_paths,
+                      registration_notice_type, preflight_cycle
+            """,
+            (phone, username, message_text, now, job_key, owner_token),
+        ).fetchone()
+    return _job_from_row(row) if row is not None else None
 
 
 def order_has_sent_whatsapp_message(
@@ -441,9 +597,15 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
     return {
         "job_key": str(row["job_key"]),
         "order_id": str(row["order_id"]) if row["order_id"] is not None else None,
+        "reservation_id": (
+            str(row["reservation_id"]) if row["reservation_id"] is not None else None
+        ),
         "job_kind": str(row["job_kind"]),
         "report_date": (
             str(row["report_date"]) if row["report_date"] is not None else None
+        ),
+        "appointment_day": (
+            str(row["appointment_day"]) if row["appointment_day"] is not None else None
         ),
         "recipient_phone": (
             str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
@@ -489,6 +651,7 @@ __all__ = [
     "WhatsAppAutomationKind",
     "block_whatsapp_automation_preflight",
     "claim_whatsapp_automation_job",
+    "enqueue_appointment_reminder_job",
     "enqueue_daily_slot_summary_job",
     "enqueue_registration_notice_job",
     "enqueue_whatsapp_automation_job",
@@ -496,6 +659,7 @@ __all__ = [
     "next_waiting_whatsapp_automation_job",
     "order_has_sent_whatsapp_message",
     "recover_expired_whatsapp_automation_jobs",
+    "refresh_running_appointment_reminder_snapshot",
     "return_running_whatsapp_job_to_blocked",
     "whatsapp_automation_in_progress",
 ]

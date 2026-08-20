@@ -15,6 +15,69 @@ export interface HealthPayload {
   reason: string;
 }
 
+export interface AppointmentReminderStatus {
+  service_date: string;
+  appointment_day: string;
+  current_time: string;
+  scheduler_window_open: boolean;
+  configuration: {
+    enabled: boolean;
+    dry_run: boolean;
+    time: string;
+    summary_grace_minutes: number;
+    reconcile_seconds: number;
+    send_interval_seconds: number;
+    daily_limit: number;
+    timezone: string;
+  };
+  control: {
+    mode: 'disabled' | 'dry_run' | 'canary' | 'live';
+    message_template: string;
+    default_template: string;
+    canary_order_ids: string[];
+    revision: number;
+    updated_at: string;
+    updated_by: string;
+    applies_from: 'next_reconciliation';
+  };
+  allowed_variables: Array<'nombre' | 'fecha' | 'hora' | 'sede'>;
+  day: {
+    status: string;
+    summary_status: string | null;
+    eligible_count: number;
+    queued_count: number;
+    existing_count: number;
+    missing_contact_count: number;
+    invalid_date_count: number;
+    last_error: string | null;
+    summary_alerted_at: string | null;
+    last_reconciled_at: string;
+  } | null;
+  job_counts: Partial<Record<string, number>>;
+  candidates: Array<{
+    order_id: string;
+    applicant_name: string | null;
+    appointment_day: string;
+    appointment_date_label: string;
+    appointment_hour: string | null;
+    site: string | null;
+    recipient: string;
+    status: string;
+  }>;
+  jobs: Array<{
+    job_key: string;
+    order_id: string;
+    appointment_day: string;
+    recipient: string;
+    status: string;
+    error_message: string | null;
+    created_at: string;
+    started_at: string | null;
+    finished_at: string | null;
+    updated_at: string;
+  }>;
+}
+
 export interface WorkerStatus {
   phase?: string;
   paused?: boolean;
@@ -934,6 +997,19 @@ export class AppointmentApiService {
 
   async getWorker(scope?: RequestScope): Promise<WorkerStatus> {
     return this.read<WorkerStatus>('/api/v1/worker', scope);
+  }
+
+  async getAppointmentReminders(scope?: RequestScope): Promise<AppointmentReminderStatus> {
+    return this.read<AppointmentReminderStatus>('/api/v1/appointment-reminders', scope);
+  }
+
+  async updateAppointmentReminders(payload: {
+    mode: AppointmentReminderStatus['control']['mode'];
+    message_template: string;
+    canary_order_ids: string[];
+    expected_revision: number;
+  }): Promise<AppointmentReminderStatus> {
+    return this.post<AppointmentReminderStatus>('/api/v1/appointment-reminders', payload);
   }
 
   async getOpportunityControl(scope?: RequestScope): Promise<OpportunityControl> {

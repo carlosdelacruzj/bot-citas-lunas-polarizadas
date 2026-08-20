@@ -7,6 +7,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from appointment_bot.services.api.appointment_reminder_routes import (
+    appointment_reminders_payload,
+    update_appointment_reminders_payload,
+)
 from appointment_bot.services.api.captcha_authority_routes import (
     captcha_authority_control_payload,
     update_captcha_authority_control_payload,
@@ -181,6 +185,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = opportunity_bursts_payload(query)
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/appointment-reminders":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = appointment_reminders_payload()
             self._send_json(status, payload)
             return
 
@@ -421,6 +432,16 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        if path == "/api/v1/appointment-reminders":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = update_appointment_reminders_payload(
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
+            self._send_json(status, payload)
+            return
 
         if path == "/api/v1/runtime-controls/captcha-sampling":
             if not self._require_authorized(strict=True):

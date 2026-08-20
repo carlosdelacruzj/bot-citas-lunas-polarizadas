@@ -510,6 +510,58 @@
   font-size: 1.15rem;
 }
 
+.appointment-reminder-card {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin: 18px 0;
+  padding: 16px 18px;
+  border: 1px solid #9bcfc8;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f1fbf9, #ffffff 58%);
+}
+
+.appointment-reminder-date {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  align-content: center;
+  border: 1px solid #71b8ae;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #176b73;
+}
+
+.appointment-reminder-date span {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.appointment-reminder-date strong {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.appointment-reminder-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.appointment-reminder-copy h3,
+.appointment-reminder-copy p {
+  margin: 0;
+}
+
+.appointment-reminder-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
 @media (max-width: 760px) {
   .settings-summary {
     align-items: flex-start;
@@ -533,6 +585,22 @@
   .cohort-layout,
   .attention-snapshot-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .appointment-reminder-card {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .appointment-reminder-date {
+    width: 50px;
+    height: 50px;
+  }
+
+  .appointment-reminder-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    justify-items: start;
   }
 
   .universe-ribbon article + article {

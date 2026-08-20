@@ -161,6 +161,13 @@ class Settings:
     continuous_interval_max_seconds: int
     final_ready_review_enabled: bool
     worker_daily_cutoff_time: datetime_time
+    appointment_reminders_enabled: bool
+    appointment_reminders_dry_run: bool
+    appointment_reminders_time: datetime_time
+    appointment_reminders_summary_grace_minutes: int
+    appointment_reminders_reconcile_seconds: int
+    appointment_reminders_send_interval_seconds: int
+    appointment_reminders_daily_limit: int
     session_rotation_seconds: int
     observer_session_seconds: int
     observer_max_attempts: int
@@ -378,6 +385,38 @@ def load_settings(*, require_login: bool = True) -> Settings:
         worker_daily_cutoff_time=_parse_time(
             os.getenv("WORKER_DAILY_CUTOFF_TIME"),
             default=datetime_time(hour=18),
+        ),
+        appointment_reminders_enabled=_parse_bool(
+            os.getenv("APPOINTMENT_REMINDERS_ENABLED"),
+            default=False,
+        ),
+        appointment_reminders_dry_run=_parse_bool(
+            os.getenv("APPOINTMENT_REMINDERS_DRY_RUN"),
+            default=True,
+        ),
+        appointment_reminders_time=_parse_time(
+            os.getenv("APPOINTMENT_REMINDERS_TIME"),
+            default=datetime_time(hour=18),
+        ),
+        appointment_reminders_summary_grace_minutes=_parse_int(
+            os.getenv("APPOINTMENT_REMINDERS_SUMMARY_GRACE_MINUTES"),
+            default=15,
+            minimum=1,
+        ),
+        appointment_reminders_reconcile_seconds=_parse_int(
+            os.getenv("APPOINTMENT_REMINDERS_RECONCILE_SECONDS"),
+            default=60,
+            minimum=10,
+        ),
+        appointment_reminders_send_interval_seconds=_parse_int(
+            os.getenv("APPOINTMENT_REMINDERS_SEND_INTERVAL_SECONDS"),
+            default=5,
+            minimum=0,
+        ),
+        appointment_reminders_daily_limit=_parse_int(
+            os.getenv("APPOINTMENT_REMINDERS_DAILY_LIMIT"),
+            default=100,
+            minimum=1,
         ),
         session_rotation_seconds=_parse_int(
             os.getenv("SESSION_ROTATION_SECONDS"),

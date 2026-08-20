@@ -263,6 +263,27 @@ def send_whatsapp_web_registration_notice(
     )
 
 
+def send_whatsapp_web_appointment_reminder(
+    *,
+    message_id: str,
+    recipient_phone: str | None,
+    recipient_username: str | None,
+    message_text: str,
+) -> dict[str, object]:
+    return _MANAGER.prepare(
+        {
+            "action": "appointment_reminder",
+            "message_id": message_id,
+            "recipient_phone": recipient_phone,
+            "recipient_username": recipient_username,
+            "message_text": message_text,
+            "disable_closed_target_retry": True,
+            "close_on_error": True,
+            "headless": True,
+        }
+    )
+
+
 def _ensure_context(
     playwright,
     context: BrowserContext | None,
@@ -313,6 +334,8 @@ def _prepare_draft(context: BrowserContext, draft: dict[str, object]) -> dict[st
         return _send_daily_slot_summary(context, draft)
     if draft.get("action") == "registration_notice":
         return _send_registration_notice(context, draft)
+    if draft.get("action") == "appointment_reminder":
+        return _send_appointment_reminder(context, draft)
     if draft.get("album_items"):
         return _prepare_album(context, draft)
     if draft.get("document_items"):
@@ -911,6 +934,47 @@ def _send_registration_notice(
     return _result(
         "sent",
         "Aviso automatico de registro enviado.",
+        message_id=message_id,
+        sent=True,
+    )
+
+
+def _send_appointment_reminder(
+    context: BrowserContext,
+    draft: dict[str, object],
+) -> dict[str, object]:
+    page = _fresh_whatsapp_page(context)
+    message_id = str(draft["message_id"])
+    evidence_id = _safe_whatsapp_artifact_name(message_id)
+    recipient_error = _open_recipient_chat(
+        page, draft, message_id, "whatsapp-appointment-reminder-chat-not-ready"
+    )
+    if recipient_error is not None:
+        return recipient_error
+    if not _send_plain_text_message(
+        page,
+        str(draft["message_text"]),
+        evidence_prefix=f"whatsapp-appointment-reminder-{evidence_id}",
+    ):
+        context.close()
+        return _result(
+            "send_uncertain",
+            "WhatsApp no confirmo el recordatorio automatico de cita.",
+            message_id=message_id,
+            delivery_phase="send_attempted",
+            evidence_path=(
+                f".runtime/whatsapp-appointment-reminder-{evidence_id}-"
+                "text-send-uncertain.png"
+            ),
+        )
+    _save_whatsapp_debug_screenshot(
+        page,
+        f"whatsapp-appointment-reminder-sent-{evidence_id}",
+    )
+    context.close()
+    return _result(
+        "sent",
+        "Recordatorio automatico de cita enviado.",
         message_id=message_id,
         sent=True,
     )

@@ -48,6 +48,8 @@ MANUAL_RESERVATION_FIELDS = {
     "ctl00$MainContent$idUcitas$cbosede",
     "ctl00$MainContent$idUcitas$cboFecha",
     "ctl00$MainContent$idUcitas$cboHora",
+    "ctl00$MainContent$TabContainer1$TabPanel2$txtRuc",
+    "ctl00$MainContent$TabContainer1$TabPanel2$txtRazonSocial",
     HONEYPOT_NAME,
     CAPTCHA_NAME,
     "ctl00$MainContent$idUcitas$xzl",

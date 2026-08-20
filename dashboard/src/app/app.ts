@@ -16,6 +16,7 @@ import { Subscription, filter } from 'rxjs';
 
 import {
   ApiActionResponse,
+  AppointmentReminderStatus,
   AppointmentApiService,
   CaptchaAuthorityControl,
   CaptchaEvent,
@@ -151,7 +152,8 @@ type PostAppointmentFilter =
   | 'attention'
   | 'observations'
   | 'access_lost'
-  | 'progressed';
+  | 'progressed'
+  | 'history';
 type PostAppointmentSortKey = 'priority' | 'appointment_date' | 'last_reviewed_at' | 'applicant';
 type ClosureReason =
   | 'completed_by_us'
@@ -316,7 +318,7 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   inbox: { label: 'Pendientes', group: 'Operación' },
   summary: { label: 'Resumen', group: 'Operación' },
   orders: { label: 'Órdenes', group: 'Operación' },
-  followups: { label: 'Seguimiento post-cita', group: 'Operación' },
+  followups: { label: 'Seguimiento', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
@@ -513,6 +515,7 @@ export class App implements OnDestroy {
   protected readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
   protected readonly selectedMonth = signal(INITIAL_MONTH);
   protected readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
+  protected readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
   protected readonly monthlyLoading = signal(false);
   protected readonly financeCategories = signal<FinanceCategory[]>([]);
   protected readonly financeEntries = signal<FinanceEntry[]>([]);
@@ -976,7 +979,7 @@ export class App implements OnDestroy {
       },
       {
         key: 'progressed' as const,
-        label: 'Con avance o cierre',
+        label: 'Con avance',
         count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'progressed')).length,
       },
     ];
@@ -1297,6 +1300,7 @@ export class App implements OnDestroy {
       ordenes: 'orders',
       actividad: 'runs',
       'post-cita': 'followups',
+      seguimiento: 'followups',
       finanzas: 'finance',
       captchas: 'captchas',
     };
@@ -1463,6 +1467,7 @@ export class App implements OnDestroy {
         captchaAuthorityControl,
         opportunityControl,
         opportunityBursts,
+        appointmentReminderStatus,
       ] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getRuns(scope),
@@ -1471,6 +1476,7 @@ export class App implements OnDestroy {
         this.api.getCaptchaAuthorityControl(scope),
         this.api.getOpportunityControl(scope),
         this.api.getOpportunityBursts(scope),
+        this.api.getAppointmentReminders(scope),
       ]);
       this.applyOrders(orders);
       this.runs.set(runs);
@@ -1479,6 +1485,7 @@ export class App implements OnDestroy {
       this.captchaAuthorityControl.set(captchaAuthorityControl);
       this.opportunityControl.set(opportunityControl);
       this.opportunityBursts.set(opportunityBursts.bursts);
+      this.appointmentReminderStatus.set(appointmentReminderStatus);
       return;
     }
     if (view === 'finance') {
@@ -4721,7 +4728,7 @@ export class App implements OnDestroy {
     filter: PostAppointmentFilter,
   ): boolean {
     if (filter === 'active') {
-      return item.outcome !== 'access_lost';
+      return !['upcoming', 'completed', 'access_lost'].includes(item.outcome);
     }
     if (filter === 'attention') {
       return [
@@ -4737,7 +4744,10 @@ export class App implements OnDestroy {
     if (filter === 'access_lost') {
       return item.outcome === 'access_lost';
     }
-    return ['in_progress', 'completed', 'observation_with_progress'].includes(item.outcome);
+    if (filter === 'history') {
+      return ['completed', 'access_lost'].includes(item.outcome);
+    }
+    return ['in_progress', 'observation_with_progress'].includes(item.outcome);
   }
 
   private countOrders(filter: OrderQuickFilter): number {

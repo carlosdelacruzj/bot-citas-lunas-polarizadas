@@ -17,6 +17,49 @@
     </label>
   </div>
 
+  @if (dashboard.appointmentReminderStatus(); as reminders) {
+    <section class="appointment-reminder-card" aria-labelledby="appointment-reminder-title">
+      <div class="appointment-reminder-date" aria-hidden="true">
+        <span>MAÑ</span>
+        <strong>{{ reminders.day?.eligible_count ?? 0 }}</strong>
+      </div>
+      <div class="appointment-reminder-copy">
+        <p class="eyebrow">Próximas citas</p>
+        <h3 id="appointment-reminder-title">
+          {{ reminders.day?.eligible_count ?? 0 }} elegibles para recordatorio
+        </h3>
+        <p>
+          {{ dashboard.formatDate(reminders.appointment_day) }} · WhatsApp desde las
+          {{ reminders.configuration.time }}, después del resumen diario.
+        </p>
+      </div>
+      <div class="appointment-reminder-actions">
+        <span
+          class="badge"
+          [class.good]="reminders.configuration.enabled && !reminders.configuration.dry_run && (reminders.day?.status === 'ready' || reminders.day?.status === 'complete')"
+          [class.warn]="reminders.configuration.enabled && (reminders.day?.status === 'waiting_summary' || reminders.day?.status === 'processing' || reminders.configuration.dry_run)"
+          [class.neutral]="!reminders.configuration.enabled"
+        >
+          @if (!reminders.configuration.enabled) {
+            Desactivado
+          } @else if (reminders.configuration.dry_run) {
+            Solo revisión
+          } @else if (reminders.day?.status === 'waiting_summary') {
+            Esperando evidencias
+          } @else {
+            {{ dashboard.statusLabel(reminders.day?.status ?? 'not_checked') }}
+          }
+        </span>
+        <button type="button" class="secondary" [routerLink]="['/seguimiento']" [queryParams]="{ tab: 'upcoming' }">
+          Ver elegibles
+        </button>
+      </div>
+      @if (reminders.day?.last_error; as error) {
+        <p class="notice warn compact-notice">{{ error }}</p>
+      }
+    </section>
+  }
+
   @if (dashboard.monthlyLoading()) {
     <p class="monthly-loading">Actualizando resumen mensual...</p>
   } @else if (dashboard.monthlySummary(); as summary) {

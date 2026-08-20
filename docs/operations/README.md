@@ -257,6 +257,19 @@ npm audit --omit=dev
 
 El build no sustituye una revision visual real.
 
+## Recordatorios de cita
+
+La implementacion, barrera del resumen diario, configuracion, validaciones y
+estado de activacion se documentan en
+[`appointment-reminders-implementation-2026-08-17.md`](appointment-reminders-implementation-2026-08-17.md).
+El endpoint operativo es `GET /api/v1/appointment-reminders`. Un trabajo
+`uncertain` nunca debe reintentarse automaticamente y los recordatorios no
+pueden adelantarse al resumen diario de evidencias.
+
+El dashboard abre el detalle desde `Resumen -> Ver elegibles` o desde
+`Seguimiento`. La pantalla separa `Proximas citas`, `Post-cita` e `Historial`;
+la ruta anterior `/post-cita` redirige a `/seguimiento`.
+
 ## Reportes y evidencia
 
 ```powershell

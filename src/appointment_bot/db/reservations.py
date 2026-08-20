@@ -7,6 +7,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
+from appointment_bot.core.rules import parse_appointment_date
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
     _connection,
@@ -74,6 +75,9 @@ def _record_reservation_for_order(
     )
     appointment_date_raw, appointment_hour_raw = appointment_datetime_details(details)
     appointment_date = _optional_text_value(appointment_date_raw)
+    appointment_day = (
+        parse_appointment_date(appointment_date) if appointment_date is not None else None
+    )
     appointment_hour = _optional_text_value(appointment_hour_raw)
     status = "confirmed" if is_confirmed else "unconfirmed"
     reservation_id = _id_from_value("reservation", f"{order_id}-{run_id or now}")
@@ -105,15 +109,22 @@ def _record_reservation_for_order(
             """
             INSERT INTO reservations (
                 reservation_id, order_id, run_id, status, site, appointment_date,
-                appointment_hour, slots, evidence_path, details_json,
+                appointment_day, appointment_hour, slots, evidence_path, details_json,
                 program_expediente, program_plate, reserved_at, created_at, updated_at
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s
             )
             ON CONFLICT(reservation_id) DO UPDATE SET
                 status = excluded.status,
+                appointment_date = COALESCE(
+                    excluded.appointment_date, reservations.appointment_date
+                ),
+                appointment_day = COALESCE(excluded.appointment_day, reservations.appointment_day),
+                appointment_hour = COALESCE(
+                    excluded.appointment_hour, reservations.appointment_hour
+                ),
                 evidence_path = excluded.evidence_path,
                 details_json = excluded.details_json,
                 program_expediente = COALESCE(
@@ -129,6 +140,7 @@ def _record_reservation_for_order(
                 status,
                 _detail_text(details, "sede"),
                 appointment_date,
+                appointment_day,
                 appointment_hour,
                 _detail_text(details, "cupos"),
                 evidence_path,
