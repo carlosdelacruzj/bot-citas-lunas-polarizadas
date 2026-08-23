@@ -442,12 +442,21 @@ def _send_programmed_sequence(
     if details is None:
         return False
 
-    first_message = _format_programmed_greeting(details)
-    payment_message = _format_programmed_payment_message(details)
+    first_message = (
+        "TEXTO PARA ENVIAR AL CLIENTE - SALUDO\n\n"
+        + _format_programmed_greeting(details)
+    )
+    payment_message = (
+        "TEXTO PARA ENVIAR AL CLIENTE - COBRO\n\n"
+        + _format_programmed_payment_message(details)
+    )
     delivered = send_telegram_message(settings, first_message)
 
     if screenshot_paths:
-        photo_caption = _format_programmed_photo_caption(details)
+        photo_caption = (
+            "TEXTO PARA ENVIAR AL CLIENTE - EVIDENCIA\n\n"
+            + _format_programmed_photo_caption(details)
+        )
         delivered = send_telegram_photo(settings, screenshot_paths[0], photo_caption) or delivered
         for image_path in screenshot_paths[1:]:
             send_telegram_photo(settings, image_path, "Evidencia adicional.")
@@ -455,7 +464,8 @@ def _send_programmed_sequence(
         delivered = (
             send_telegram_message(
                 settings,
-                _format_programmed_photo_caption(details),
+                "TEXTO PARA ENVIAR AL CLIENTE - EVIDENCIA\n\n"
+                + _format_programmed_photo_caption(details),
             )
             or delivered
         )

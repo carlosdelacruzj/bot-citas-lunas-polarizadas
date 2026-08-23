@@ -4003,16 +4003,32 @@ export class App implements OnDestroy {
     const payload: PaymentPaidPayload = {
       amount_paid: String(this.paymentAmountPaid() ?? '').trim(),
       amount_agreed: this.optionalText(String(this.paymentAmountAgreed() ?? '')),
+      expected_payment_status: order.payment_status,
+      expected_amount_agreed: order.amount_agreed,
+      expected_amount_paid: order.amount_paid ?? '0.00',
     };
     if (!payload.amount_paid) {
       this.errorMessage.set('Ingresa el monto pagado.');
       return;
     }
+    const paid = Number(payload.amount_paid);
+    const agreed = Number(payload.amount_agreed);
+    if (!Number.isFinite(paid) || paid <= 0) {
+      this.errorMessage.set('El total pagado debe ser mayor que cero.');
+      return;
+    }
+    const isPartial = Number.isFinite(agreed) && paid < agreed;
     this.setPendingAction({
-      title: 'Marcar pagado',
-      message: `Registrar pago de ${payload.amount_paid} para ${order.order_id}.`,
-      execute: () => this.api.markPaymentPaid(order.order_id, payload),
-      successMessage: 'Pago registrado; envío automático en proceso',
+      title: isPartial ? 'Registrar abono' : 'Confirmar pago completo',
+      message: isPartial
+        ? `Guardar total acumulado de S/${payload.amount_paid} para ${order.order_id}. El saldo seguirá pendiente.`
+        : `Cerrar como pagado con S/${payload.amount_paid} para ${order.order_id} e iniciar el postpago.`,
+      execute: () => isPartial
+        ? this.api.recordPartialPayment(order.order_id, payload)
+        : this.api.markPaymentPaid(order.order_id, payload),
+      successMessage: isPartial
+        ? 'Abono registrado; el saldo permanece pendiente'
+        : 'Pago completo registrado; envío automático en proceso',
       onSuccess: () => this.activeModal.set(null),
     });
   }

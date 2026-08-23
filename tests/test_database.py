@@ -130,9 +130,15 @@ class DatabaseTests(unittest.TestCase):
                 applicant_name="Test",
                 settings=settings,
             )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = %s",
+                    (result.order_id,),
+                )
             mark_payment_paid(
                 result.order_id,
-                amount_paid=0,
+                amount_paid=40,
                 amount_agreed=40,
                 settings=settings,
             )
@@ -162,9 +168,15 @@ class DatabaseTests(unittest.TestCase):
                 applicant_name="Test",
                 settings=settings,
             )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = %s",
+                    (result.order_id,),
+                )
             mark_payment_paid(
                 result.order_id,
-                amount_paid=0,
+                amount_paid=40,
                 amount_agreed=40,
                 settings=settings,
             )

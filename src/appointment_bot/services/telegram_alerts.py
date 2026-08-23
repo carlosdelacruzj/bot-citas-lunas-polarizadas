@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 import logging
+import re
 import threading
 import time
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
@@ -17,7 +21,6 @@ from appointment_bot.db.telegram_alert_outbox import (
 from appointment_bot.services.notifier import (
     TELEGRAM_URGENT_TIMEOUT_SECONDS,
     format_immediate_availability_message,
-    send_telegram_message,
     should_send_immediate_availability,
 )
 from appointment_bot.utils.sanitization import sanitize_text
@@ -25,6 +28,8 @@ from appointment_bot.utils.sanitization import sanitize_text
 logger = logging.getLogger(__name__)
 _dispatcher_lock = threading.Lock()
 MAX_DELIVERY_ATTEMPTS = 3
+MAX_GENERIC_MESSAGE_LENGTH = 1000
+GENERIC_ALERT_CAPTCHA_PREFIX = "captcha-graphic-returned:"
 PAYLOAD_DETAIL_KEYS = (
     "sede",
     "fecha",
@@ -94,13 +99,27 @@ class TelegramAlertDispatcher:
         )
         return True
 
-    def enqueue_message(self, message: str, *, dedupe_key: str) -> bool:
+    def enqueue_message(
+        self,
+        message: str,
+        *,
+        dedupe_key: str,
+        operator_forward: bool = False,
+        order_id: str | None = None,
+        navigation: str | None = None,
+    ) -> bool:
         if not self.enabled:
             return False
         try:
             enqueue_telegram_alert(
                 dedupe_key=dedupe_key,
-                payload={"message": sanitize_text(message)[:1000]},
+                payload=_generic_alert_payload(
+                    message,
+                    dedupe_key=dedupe_key,
+                    operator_forward=operator_forward,
+                    order_id=order_id,
+                    navigation=navigation,
+                ),
                 settings=self.settings,
             )
         except Exception:
@@ -132,9 +151,10 @@ class TelegramAlertDispatcher:
         payload = dict(row["payload"])
         message = payload.get("message")
         if isinstance(message, str) and message.strip():
-            delivered = send_telegram_message(
+            delivered = _send_alert_message(
                 self.settings,
-                sanitize_text(message)[:1000],
+                _format_generic_alert(payload),
+                reply_markup=_navigation_markup(payload),
                 timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
             )
         else:
@@ -143,9 +163,10 @@ class TelegramAlertDispatcher:
                 message="",
                 details=dict(payload.get("details") or {}),
             )
-            delivered = send_telegram_message(
+            delivered = _send_alert_message(
                 self.settings,
                 format_immediate_availability_message(result),
+                reply_markup=_navigation_markup(payload),
                 timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
             )
         if delivered:
@@ -196,7 +217,113 @@ def _availability_payload(result: AvailabilityResult) -> dict[str, Any]:
         for key in PAYLOAD_DETAIL_KEYS
         if source_details.get(key) is not None
     }
-    return {"status": result.status, "details": details}
+    return {
+        "status": result.status,
+        "details": details,
+        "alert_kind": "availability",
+        "navigation": "status",
+    }
+
+
+def _generic_alert_payload(
+    message: str,
+    *,
+    dedupe_key: str,
+    operator_forward: bool,
+    order_id: str | None,
+    navigation: str | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "message": sanitize_text(message)[:MAX_GENERIC_MESSAGE_LENGTH],
+        "alert_kind": "operator_forward" if operator_forward else "operational",
+    }
+    if dedupe_key.startswith(GENERIC_ALERT_CAPTCHA_PREFIX):
+        payload["alert_kind"] = "captcha_graphic_returned"
+        payload["navigation"] = "status"
+    elif navigation in {"client", "payments", "status"}:
+        payload["navigation"] = navigation
+    if order_id and _valid_order_id(order_id):
+        payload["order_id"] = order_id
+        if navigation is None:
+            payload["navigation"] = "client"
+    return payload
+
+
+def _format_generic_alert(payload: dict[str, Any]) -> str:
+    message = sanitize_text(str(payload.get("message") or "")).strip()
+    kind = str(payload.get("alert_kind") or "operational")
+    if kind == "captcha_graphic_returned":
+        return (
+            "CAMBIO EN EL CAPTCHA DEL PORTAL\n\n"
+            "El portal volvió a mostrar un CAPTCHA gráfico.\n\n"
+            "Reserva: continuará usando 2Captcha.\n"
+            "V3/V6: permanecen en reserva fría.\n\n"
+            "Acción: revisa el cambio antes de reactivar V3/V6."
+        )
+    if kind == "operator_forward":
+        return f"TEXTO PARA ENVIAR AL CLIENTE\n\n{message}"
+    return f"AVISO OPERATIVO - NO REENVIAR\n\n{message}"
+
+
+def _navigation_markup(payload: dict[str, Any]) -> dict[str, Any] | None:
+    navigation = str(payload.get("navigation") or "")
+    order_id = str(payload.get("order_id") or "")
+    if navigation == "client" and _valid_order_id(order_id):
+        button = {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"}
+    elif navigation == "payments":
+        button = {"text": "Cobros pendientes", "callback_data": "ui:payments:1"}
+    elif navigation == "status":
+        button = {"text": "Estado del sistema", "callback_data": "ui:status:show"}
+    else:
+        return None
+    if len(str(button["callback_data"]).encode("utf-8")) > 64:
+        return None
+    return {"inline_keyboard": [[button]]}
+
+
+def _valid_order_id(value: str) -> bool:
+    return re.fullmatch(r"[A-Za-z0-9_-]{1,80}", value) is not None
+
+
+def _send_alert_message(
+    settings: Settings,
+    message: str,
+    *,
+    reply_markup: dict[str, Any] | None,
+    timeout_seconds: int,
+) -> bool:
+    if not settings.telegram_enabled:
+        return False
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    payload: dict[str, Any] = {
+        "chat_id": settings.telegram_chat_id,
+        "text": message,
+        "disable_web_page_preview": True,
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+    request = Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            response_body = response.read().decode("utf-8")
+    except (HTTPError, URLError, TimeoutError) as exc:
+        logger.warning("Could not send Telegram alert: %s", exc)
+        return False
+    try:
+        data = json.loads(response_body)
+    except json.JSONDecodeError:
+        logger.warning("Telegram returned a non-JSON alert response")
+        return False
+    if not data.get("ok"):
+        logger.warning("Telegram rejected alert: %s", data)
+        return False
+    logger.info("Telegram alert sent")
+    return True
 
 
 def _safe_payload_value(value: Any) -> Any:
@@ -232,10 +359,23 @@ def enqueue_immediate_availability(
     return dispatcher.enqueue(result, dedupe_key=dedupe_key)
 
 
-def enqueue_generic_telegram_alert(message: str, *, dedupe_key: str) -> bool:
+def enqueue_generic_telegram_alert(
+    message: str,
+    *,
+    dedupe_key: str,
+    operator_forward: bool = False,
+    order_id: str | None = None,
+    navigation: str | None = None,
+) -> bool:
     with _dispatcher_lock:
         dispatcher = _dispatcher
     if dispatcher is None:
         logger.error("Telegram alert dispatcher is not configured")
         return False
-    return dispatcher.enqueue_message(message, dedupe_key=dedupe_key)
+    return dispatcher.enqueue_message(
+        message,
+        dedupe_key=dedupe_key,
+        operator_forward=operator_forward,
+        order_id=order_id,
+        navigation=navigation,
+    )

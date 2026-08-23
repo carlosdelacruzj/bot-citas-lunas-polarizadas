@@ -16,6 +16,7 @@ from appointment_bot.db.orders import (
     mark_order_done,
     mark_payment_paid,
     mark_service_order_no_charge,
+    record_partial_payment,
     set_order_paused,
     split_service_order_programs,
     update_service_order_credentials,
@@ -433,18 +434,70 @@ def close_service_order_payload(
 def mark_payment_paid_payload(
     order_id: str,
     payload: dict[str, Any],
+    *,
+    requested_by: str | None = None,
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     if payload.get("amount_paid") in {None, ""}:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing amount_paid.")
     try:
-        mark_payment_paid(
+        audit_id = mark_payment_paid(
             order_id,
             amount_paid=payload["amount_paid"],
             amount_agreed=payload.get("amount_agreed"),
+            actor=requested_by or "dashboard-owner",
+            allow_difference=_optional_bool(payload, "allow_difference", default=False),
+            difference_reason=_optional_text(payload, "difference_reason"),
+            expected_payment_status=_optional_text(payload, "expected_payment_status"),
+            expected_amount_agreed=payload.get("expected_amount_agreed"),
+            expected_amount_paid=payload.get("expected_amount_paid"),
         )
     except ValueError as exc:
-        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
-    return HTTPStatus.OK, {"status": "ok"}
+        return _payment_error_payload(exc)
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "payment_status": "paid",
+        "post_payment_queued": True,
+        "audit_id": audit_id,
+    }
+
+
+def record_partial_payment_payload(
+    order_id: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None = None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("amount_paid") in {None, ""}:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing amount_paid.")
+    try:
+        audit_id = record_partial_payment(
+            order_id,
+            amount_paid=payload["amount_paid"],
+            amount_agreed=payload.get("amount_agreed"),
+            actor=requested_by or "dashboard-owner",
+            expected_payment_status=_optional_text(payload, "expected_payment_status"),
+            expected_amount_agreed=payload.get("expected_amount_agreed"),
+            expected_amount_paid=payload.get("expected_amount_paid"),
+        )
+    except ValueError as exc:
+        return _payment_error_payload(exc)
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "payment_status": "pending",
+        "post_payment_queued": False,
+        "audit_id": audit_id,
+    }
+
+
+def _payment_error_payload(exc: ValueError) -> tuple[HTTPStatus, dict[str, Any]]:
+    message = str(exc)
+    conflict_markers = (
+        "changed since it was reviewed",
+        "no longer pending",
+    )
+    if any(marker in message for marker in conflict_markers):
+        return HTTPStatus.CONFLICT, error_payload("conflict", message)
+    return HTTPStatus.BAD_REQUEST, error_payload("bad_request", message)
 
 
 def split_service_order_programs_payload(
@@ -536,6 +589,14 @@ def service_order_action(path: str) -> tuple[str, str] | None:
 def payment_paid_path(path: str) -> str | None:
     prefix = "/api/v1/service-orders/"
     suffix = "/payment/paid"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def payment_partial_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/payment/partial"
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))

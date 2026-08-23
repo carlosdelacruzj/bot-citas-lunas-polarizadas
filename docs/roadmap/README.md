@@ -342,6 +342,16 @@ detecta; reinicio y drenaje son auditables y no interrumpen submissions.
   cobros pendientes. Cada cobro puede pasar a `paid` solo después de mostrar
   montos y recibir confirmación explícita; una relectura previa evita aplicar
   botones obsoletos y la respuesta distingue postpago encolado de envío.
+- desde el `2026-08-23`, el contrato financiero de Admin API separa abono de
+  cierre, impide que un parcial encole postpago y registra mutación y auditoría
+  en una sola transacción. La fotografía esperada permite rechazar un cobro
+  obsoleto con `409`; dashboard y Telegram ya presentan el total acumulado y
+  eligen explícitamente entre abono y cierre completo;
+- el control Telegram del `2026-08-23` agrega bandeja canónica de pendientes,
+  contadores diarios, citas próximas, separación de pausados, prioridades
+  `0/100/200`, navegación contextual y herramientas secundarias. Las mutaciones
+  exigen identidad de usuario en chat privado, la revalidación requiere
+  confirmación y los textos/credenciales sensibles se distinguen y eliminan.
 
 Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
 reinicio inseguro y heartbeats funcionales de los servicios.
@@ -364,8 +374,6 @@ y reducir riesgos de dependencias y exposicion local.
 4. Rotar logs por fecha y tamaño; mostrar espacio libre y crecimiento.
 5. Definir retencion por finalidad para mensajes, jobs WhatsApp, Post-cita,
    capturas y telemetria detallada.
-6. Minimizar permanencia de credenciales reveladas en Telegram sin romper el
-   comprobante autorizado del alta.
 
 ### Criterio de aceptacion
 

@@ -419,24 +419,35 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 
 ### Control remoto
 
-- Menú de Telegram con clientes, alta manual, búsqueda, resumen y estado.
-- Implementado el `2026-08-22`: el menú separa **En cola** y **Faltan pagar**.
-  La segunda vista muestra titular, monto acordado, abonos y saldo, y permite
-  registrar el total pagado con una confirmación explícita. Telegram vuelve a
-  consultar la orden antes de aplicar, exige que continúe como reserva con pago
-  pendiente, verifica después los estados `payment_status=paid` y
-  `service_orders.status=paid`, y deja auditoría con actor hasheado. La misma
-  transacción existente encola `post_payment_followup`; Telegram informa
-  **encolado**, sin confundirlo con envío confirmado o lectura del destinatario.
-  El comando `/pago ORDEN MONTO_TOTAL` cubre diferencias deliberadas frente al
-  monto acordado. Validación local: `compileall`, Ruff, `59 passed` y simulacro
-  aislado de lista, confirmación, escritura por API y verificación posterior;
-  no se registró un pago real ni se envió WhatsApp durante la prueba.
+- Reorganizado el `2026-08-23`: el menú principal se limita a **Pendientes**,
+  **Buscando cupo**, **Por cobrar**, alta, búsqueda, citas/resumen y estado; sus
+  tres listas diarias muestran contadores reales. Historial, errores,
+  oportunidades y CAPTCHA quedan en **Herramientas**, y CAPTCHA solo aparece
+  cuando el runtime lo declara activo. La cola contiene únicamente órdenes
+  `ready`; pausados y bloqueos pasan a **Pendientes**.
+- `GET /api/v1/operator-inbox` centraliza una sola siguiente acción por orden:
+  acceso, pausa, contacto, WhatsApp inicial, cobro o revisión postpago. Telegram
+  muestra los casos ambiguos de WhatsApp pero nunca los reintenta ni resuelve sin
+  la evidencia visual y nota auditada del dashboard.
+- **Por cobrar** muestra cita, contacto enmascarado, acordado, abonado y saldo.
+  **Confirmar pago completo** encola postpago; **Registrar abono** guarda el total
+  acumulado, conserva `pending` y no encola comunicaciones. Ambos usan fotografía
+  esperada y confirmación; Telegram no permite cerrar por debajo de lo acordado.
+- Las prioridades visibles quedaron alineadas con dashboard: Normal `0`,
+  Enfocada `100` y Exclusiva `200`. Las revalidaciones, reglas, prioridades,
+  pagos y controles del sistema requieren confirmación y relectura de estado.
+- Validación del cambio: `compileall`, Ruff, `59 passed`, build Angular,
+  `git diff --check` y `telegram_control --check` correctos. Admin API y el
+  receptor Telegram fueron reiniciados de forma controlada después de comprobar
+  cero submissions, trabajos WhatsApp, sesiones manuales y ráfagas activas;
+  `/api/v1/operator-inbox` respondió en vivo sin enviar mensajes ni registrar pagos.
 - Desde el `2026-08-21`, los registros de WhatsApp aceptan un celular peruano
   de nueve dígitos sin prefijo y lo normalizan a `+51` antes de persistirlo o
   preparar cualquier envío. Los números con código internacional se conservan.
 - Alta manual y edición guiada de cuatro restricciones de fecha y prioridad;
-  consultar credenciales existentes dejó de ser una acción visible.
+  `/credenciales` y `/recientes` fueron retirados del despacho. Las mutaciones
+  exigen chat privado y usuario autorizado mediante `TELEGRAM_CONTROL_USER_IDS`;
+  sin lista separada, el usuario debe coincidir con el chat privado allowlisted.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
 - Corregido el `2026-08-11`: el reinicio embebido y el comando persistido
   comparten una sola transición que cancela y detiene el ciclo con
@@ -467,10 +478,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   inactividad y cada imagen invalida los botones anteriores.
 - `/cliente_nuevo` crea una orden de forma manual. Solicita tipo y número de documento,
   contraseña, contacto, fuente, WhatsApp opcional y permite omitir o configurar
-  las cuatro restricciones de fecha. Por decisión del único operador autorizado, la
-  confirmación y el comprobante posterior muestran todos los datos, incluida la
-  contraseña, para poder detectar errores; el alta también informa el resultado
-  real del preflight cuando termina dentro de la espera.
+  las cuatro restricciones de fecha. La conversación concede tres minutos por
+  paso, permite retroceder y conserva dos minutos para confirmar. La contraseña
+  queda oculta en confirmación/comprobante; Telegram intenta borrar el mensaje
+  de entrada y entrega una revelación separada, borrable y eliminada automáticamente
+  tras dos minutos. El alta informa el resultado real del preflight cuando termina
+  dentro de la espera.
 - Actualizado el `2026-08-20`: la captura de WhatsApp en `/cliente_nuevo` ofrece
   una elección explícita entre **Número**, **Usuario** y **Omitir WhatsApp**.
   Telegram valida únicamente el tipo elegido; para usuario acepta el valor con
@@ -971,6 +984,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Los pagos `pending` admiten un `amount_paid` parcial. El resumen mensual y la
   lista de cobros muestran el saldo `amount_agreed - amount_paid`, mientras los
   ingresos realizados siguen contando exclusivamente pagos con estado `paid`.
+- Endurecido el `2026-08-23`: Admin API separa el abono acumulado
+  `payment/partial` del cierre `payment/paid`. Un abono permanece `pending` y no
+  encola postpago; el cierre exige cubrir lo acordado salvo diferencia inferior
+  explicitamente autorizada y motivada. Ambos caminos bloquean la orden y el
+  pago durante la escritura, admiten una fotografia esperada para rechazar
+  cambios concurrentes con `409`, y guardan la auditoria del actor en la misma
+  transaccion financiera.
 
 ## Rendimiento observado
 

@@ -61,6 +61,7 @@ from appointment_bot.services.api.manual_session_routes import (
 )
 from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
 from appointment_bot.services.api.monthly_dashboard_v2_routes import monthly_dashboard_v2_payload
+from appointment_bot.services.api.operator_inbox_routes import operator_inbox_payload
 from appointment_bot.services.api.opportunity_routes import (
     opportunity_burst_id,
     opportunity_burst_payload,
@@ -83,6 +84,8 @@ from appointment_bot.services.api.service_order_routes import (
     list_service_orders_payload,
     mark_payment_paid_payload,
     payment_paid_path,
+    payment_partial_path,
+    record_partial_payment_payload,
     revalidate_service_order_payload,
     search_service_orders_payload,
     service_order_action,
@@ -278,6 +281,12 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             self._send_json(HTTPStatus.OK, list_service_orders_payload())
+            return
+
+        if path == "/api/v1/operator-inbox":
+            if not self._require_authorized(strict=True):
+                return
+            self._send_json(HTTPStatus.OK, operator_inbox_payload())
             return
 
         if path == "/api/v1/post-appointment-followups":
@@ -725,7 +734,23 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if paid_order_id is not None:
             if not self._require_authorized(strict=True):
                 return
-            status, payload = mark_payment_paid_payload(paid_order_id, self._read_json())
+            status, payload = mark_payment_paid_payload(
+                paid_order_id,
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
+            self._send_json(status, payload)
+            return
+
+        partial_order_id = payment_partial_path(path)
+        if partial_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = record_partial_payment_payload(
+                partial_order_id,
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
             self._send_json(status, payload)
             return
 

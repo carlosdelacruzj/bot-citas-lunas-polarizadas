@@ -16,6 +16,13 @@ al migrar a PostgreSQL v42 permanecen en `S/40`; las nuevas nacen en `S/50`.
 La reserva confirmada copia ese valor al pago pendiente, por lo que cambiar el
 precio general no modifica retroactivamente clientes ya registrados.
 
+Un abono conserva `payments.status=pending` y
+`service_orders.status=reserved_payment_pending`; su `amount_paid` es el total
+acumulado y debe ser menor que `amount_agreed`. Solo un cierre explicito cambia
+ambos estados a `paid` y encola `post_payment_followup`. Un cierre por menos de
+lo acordado requiere una diferencia explicita y motivada; nunca se infiere a
+partir de un abono.
+
 Solo `ready` puede entrar a una cola operativa. La cola normal del worker
 procesa órdenes sin restricciones positivas y también órdenes que únicamente
 tienen `excluded_date_ranges`: una exclusión protege fechas concretas, pero no

@@ -12,6 +12,7 @@ from appointment_bot.db.order_contacts import (
     list_service_order_summaries,
     mark_payment_paid,
     mark_service_order_no_charge,
+    record_partial_payment,
 )
 from appointment_bot.db.order_credentials import (
     create_service_order,

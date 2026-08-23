@@ -17,10 +17,10 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from threading import Event, Lock
+from threading import Event, Lock, Timer
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -43,8 +43,9 @@ RETRY_DELAY_SECONDS = 5
 CONFIRMATION_TTL_SECONDS = 120
 CONVERSATION_TTL_SECONDS = 300
 CAPTCHA_REVIEW_TTL_SECONDS = 600
-NEW_CLIENT_CONVERSATION_TTL_SECONDS = 60
-NEW_CLIENT_CONFIRMATION_TTL_SECONDS = 60
+NEW_CLIENT_CONVERSATION_TTL_SECONDS = 180
+NEW_CLIENT_CONFIRMATION_TTL_SECONDS = 120
+SENSITIVE_MESSAGE_TTL_SECONDS = 120
 WORKER_COMMAND_TIMEOUT_SECONDS = 90
 MAX_TELEGRAM_RESPONSE_BYTES = 1024 * 1024
 CLIENTS_PAGE_SIZE = 8
@@ -64,7 +65,6 @@ MUTATING_COMMANDS = {
 }
 ORDER_TARGET_COMMANDS = {
     "cliente",
-    "credenciales",
     "prioridad",
     "pago",
     "reglas",
@@ -72,27 +72,17 @@ ORDER_TARGET_COMMANDS = {
 }
 HELP_TEXT = """Control remoto disponible:
 
-/estado - Estado real del worker
-/clientes [pagina] - Resumen paginado de la cola
-/cola [pagina] - Usuarios que esperan validacion, cupo o reanudacion
-/cobros [pagina] - Reservas que todavia deben pagar
-/cliente ORDER_ID - Detalle operativo enmascarado
-/pago ORDER_ID MONTO_TOTAL - Registrar pago con confirmacion
-/reglas ORDER_ID - Restricciones de una orden
-/ultimos_errores - Incidentes operativos recientes
-/prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
-/reglas_editar ORDER_ID - Editar restricciones paso a paso
+/pendientes [pagina] - Bandeja de usuarios que requieren seguimiento
+/cola [pagina] - Usuarios que estan buscando cupo
+/cobros [pagina] - Pagos pendientes
+/buscar TEXTO - Buscar cliente u orden
 /cliente_nuevo - Registrar manualmente un cliente
-/captchas - Etiquetar CAPTCHA pendientes
-/pausar - Pausar el worker con confirmacion
-/reanudar - Reanudar el worker con confirmacion
-/reiniciar - Reiniciar el worker con confirmacion
-/oportunidad - Control de admision y breaker de oportunidades
-/ayuda - Mostrar esta ayuda
+/estado - Estado y controles del sistema
 /cancelar - Cancelar la operacion guiada actual
 /menu - Abrir el menu principal con botones
-/buscar TEXTO - Buscar cliente u orden
-/resumen - Resumen operativo del dia
+/ayuda - Mostrar esta ayuda
+
+Historial, errores, CAPTCHA y controles avanzados estan en Herramientas dentro de /menu.
 """
 
 
@@ -108,6 +98,7 @@ class TelegramControlConfig:
     admin_api_token: str
     offset_path: Path
     poll_timeout_seconds: int
+    authorized_user_ids: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -130,6 +121,7 @@ class PendingOrderChange:
     original: dict[str, Any]
     updated: dict[str, Any]
     expires_at: float
+    return_subject: str = "menu"
 
 
 @dataclass
@@ -162,6 +154,9 @@ class PendingClientCreation:
 @dataclass
 class SearchConversation:
     expires_at: float
+    mode: str = "search"
+    order_id: str | None = None
+    return_subject: str = "menu"
 
 
 @dataclass
@@ -195,6 +190,34 @@ class TelegramRateLimiter:
         return True
 
 
+def _callback_is_mutation(data: str) -> bool:
+    if data.startswith(
+        ("wc:", "oc:", "nc:", "pq:", "py:", "wk:", "op:", "cp:", "nf:", "rf:")
+    ):
+        return True
+    if data.startswith(("ui:manual:", "ui:captcha:", "ui:cancel:")):
+        return True
+    if data.startswith("om:"):
+        return data.rsplit(":", maxsplit=1)[-1] in {"validate", "editrules"}
+    return False
+
+
+def _mutation_user_authorized(
+    config: TelegramControlConfig,
+    chat: dict[str, Any],
+    sender: Any,
+) -> bool:
+    if str(chat.get("type") or "") != "private" or not isinstance(sender, dict):
+        return False
+    chat_id = str(chat.get("id") or "")
+    user_id = str(sender.get("id") or "")
+    if not chat_id or not user_id:
+        return False
+    if config.authorized_user_ids:
+        return user_id in config.authorized_user_ids
+    return user_id == chat_id and chat_id in config.authorized_chat_ids
+
+
 class AdminApiClient:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url.rstrip("/")
@@ -203,12 +226,21 @@ class AdminApiClient:
     def get_worker(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/worker")
 
+    def get_health(self) -> dict[str, Any]:
+        return self._request("GET", "/health")
+
     def get_service_orders(self) -> list[dict[str, Any]]:
         payload = self._request("GET", "/api/v1/service-orders")
         orders = payload.get("service_orders", [])
         if not isinstance(orders, list):
             raise TelegramControlError("Admin API returned an invalid service order list.")
         return [item for item in orders if isinstance(item, dict)]
+
+    def get_operator_inbox(self) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/operator-inbox")
+
+    def get_appointment_reminders(self) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/appointment-reminders")
 
     def get_service_order(self, order_id: str) -> dict[str, Any]:
         return self._request("GET", f"/api/v1/service-orders/{quote(order_id, safe='')}")
@@ -219,12 +251,41 @@ class AdminApiClient:
         *,
         amount_paid: str,
         amount_agreed: str,
+        expected_amount_paid: str,
         actor: str,
     ) -> dict[str, Any]:
         return self._request(
             "POST",
             f"/api/v1/service-orders/{quote(order_id, safe='')}/payment/paid",
-            payload={"amount_paid": amount_paid, "amount_agreed": amount_agreed},
+            payload={
+                "amount_paid": amount_paid,
+                "amount_agreed": amount_agreed,
+                "expected_payment_status": "pending",
+                "expected_amount_agreed": amount_agreed,
+                "expected_amount_paid": expected_amount_paid,
+            },
+            actor=actor,
+        )
+
+    def record_partial_payment(
+        self,
+        order_id: str,
+        *,
+        amount_paid: str,
+        amount_agreed: str,
+        expected_amount_paid: str,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/payment/partial",
+            payload={
+                "amount_paid": amount_paid,
+                "amount_agreed": amount_agreed,
+                "expected_payment_status": "pending",
+                "expected_amount_agreed": amount_agreed,
+                "expected_amount_paid": expected_amount_paid,
+            },
             actor=actor,
         )
 
@@ -459,6 +520,26 @@ class TelegramBotApi:
             raise TelegramControlError("Telegram returned an invalid updates list.")
         return [item for item in result if isinstance(item, dict)]
 
+    def set_operator_commands(self) -> None:
+        commands = [
+            {"command": "menu", "description": "Abrir el menu principal"},
+            {"command": "pendientes", "description": "Ver casos que requieren atencion"},
+            {"command": "cola", "description": "Ver clientes buscando cupo"},
+            {"command": "cobros", "description": "Ver pagos pendientes"},
+            {"command": "buscar", "description": "Buscar cliente u orden"},
+            {"command": "cliente_nuevo", "description": "Registrar un cliente"},
+            {"command": "estado", "description": "Ver estado y controles"},
+            {"command": "cancelar", "description": "Cancelar la operacion guiada"},
+            {"command": "ayuda", "description": "Ver ayuda"},
+        ]
+        self._request(
+            "setMyCommands",
+            {
+                "commands": json.dumps(commands),
+                "scope": json.dumps({"type": "all_private_chats"}),
+            },
+        )
+
     def send_message(
         self,
         chat_id: str,
@@ -570,6 +651,11 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
     }
     if not chat_ids:
         raise TelegramControlError("No authorized Telegram chat_id is configured.")
+    user_ids = frozenset(
+        item.strip()
+        for item in os.getenv("TELEGRAM_CONTROL_USER_IDS", "").split(",")
+        if item.strip()
+    )
     admin_api_token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
     if not admin_api_token:
         raise TelegramControlError("APPOINTMENT_BOT_API_TOKEN is required.")
@@ -585,10 +671,28 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
     return TelegramControlConfig(
         bot_token=settings.telegram_bot_token,
         authorized_chat_ids=frozenset(chat_ids),
-        admin_api_url=os.getenv("TELEGRAM_CONTROL_ADMIN_API_URL", DEFAULT_ADMIN_API_URL).strip(),
+        authorized_user_ids=user_ids,
+        admin_api_url=_validated_admin_api_url(
+            os.getenv("TELEGRAM_CONTROL_ADMIN_API_URL", DEFAULT_ADMIN_API_URL)
+        ),
         admin_api_token=admin_api_token,
         offset_path=offset_path,
         poll_timeout_seconds=poll_timeout,
+    )
+
+
+def _validated_admin_api_url(value: str) -> str:
+    normalized = value.strip().rstrip("/")
+    parsed = urlparse(normalized)
+    if parsed.username or parsed.password or not parsed.hostname:
+        raise TelegramControlError("TELEGRAM_CONTROL_ADMIN_API_URL is invalid.")
+    loopback = parsed.hostname.lower() in {"127.0.0.1", "localhost", "::1"}
+    if parsed.scheme == "http" and loopback:
+        return normalized
+    if parsed.scheme == "https":
+        return normalized
+    raise TelegramControlError(
+        "TELEGRAM_CONTROL_ADMIN_API_URL must use loopback HTTP or HTTPS."
     )
 
 
@@ -626,8 +730,8 @@ def run_control(*, check_only: bool = False) -> int:
     rate_limiter = TelegramRateLimiter()
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
+    telegram.set_operator_commands()
     _record_audit_safe(actor="telegram-control", action="receiver", status="started")
-    _send_startup_notice(config, telegram, worker)
     logger.info("Telegram control long polling started.")
     try:
         while not stop_event.is_set():
@@ -729,6 +833,8 @@ def _process_update(
     if not isinstance(chat, dict) or chat.get("id") is None:
         return
     chat_id = str(chat["id"])
+    sender = message.get("from")
+    user_id = str(sender.get("id") or "") if isinstance(sender, dict) else ""
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram update from an unauthorized chat.")
         _record_audit_safe(
@@ -739,7 +845,14 @@ def _process_update(
     if not isinstance(text, str):
         return
     if not text.strip().startswith("/"):
-        if not rate_limiter.allow(chat_id, mutation=True):
+        active_search = search_conversations.get(chat_id)
+        guided_mutation = (
+            chat_id in captcha_conversations
+            or chat_id in new_client_conversations
+            or chat_id in rules_conversations
+            or (active_search is not None and active_search.mode == "payment")
+        )
+        if not rate_limiter.allow(chat_id, mutation=guided_mutation):
             _record_audit_safe(
                 actor=_telegram_actor(chat_id),
                 action="conversation_reply",
@@ -751,6 +864,14 @@ def _process_update(
             )
             return
         search = search_conversations.pop(chat_id, None)
+        if chat_id in captcha_conversations and not _mutation_user_authorized(
+            config, chat, sender
+        ):
+            telegram.send_message(
+                chat_id,
+                "El etiquetado solo se permite al operador autorizado en chat privado.",
+            )
+            return
         if _process_captcha_review_message(
             chat_id,
             text,
@@ -763,11 +884,28 @@ def _process_update(
             if search.expires_at <= time.monotonic():
                 telegram.send_message(
                     chat_id,
-                    "La busqueda vencio. Pulsa Buscar para intentar otra vez.",
+                    (
+                        "El registro del abono vencio. Abre nuevamente el cobro."
+                        if search.mode == "payment"
+                        else "La busqueda vencio. Pulsa Buscar para intentar otra vez."
+                    ),
+                )
+                return
+            if search.mode == "payment" and search.order_id:
+                _request_payment_change(
+                    chat_id,
+                    f"{search.order_id} {text}",
+                    telegram,
+                    admin_api,
+                    pending_order_changes,
+                    confirmation_lock,
+                    return_subject=search.return_subject,
                 )
                 return
             _send_search_results(chat_id, text, telegram, admin_api)
             return
+        new_client = new_client_conversations.get(chat_id)
+        password_message = new_client is not None and new_client.step == 2
         if _process_new_client_message(
             chat_id,
             text,
@@ -776,6 +914,13 @@ def _process_update(
             pending_client_creations,
             confirmation_lock,
         ):
+            if password_message:
+                message_id = message.get("message_id")
+                if isinstance(message_id, int):
+                    try:
+                        telegram.delete_message(chat_id, message_id)
+                    except TelegramControlError:
+                        logger.warning("Could not delete Telegram password input message.")
             return
         if _process_rules_conversation_message(
             chat_id,
@@ -788,8 +933,26 @@ def _process_update(
             return
     command, arguments = _command_parts(text)
     if command is None:
+        telegram.send_message(
+            chat_id,
+            "No entendi ese mensaje. Usa /menu para elegir una opcion o /buscar TEXTO.",
+            reply_markup=_main_menu_markup(),
+        )
         return
     mutation = command in MUTATING_COMMANDS
+    if mutation and not _mutation_user_authorized(config, chat, sender):
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id, user_id),
+            action=command,
+            status="denied",
+            detail="Mutation requires an authorized user in a private chat.",
+        )
+        telegram.send_message(
+            chat_id,
+            "Por seguridad, esta accion solo se permite al operador autorizado "
+            "desde un chat privado.",
+        )
+        return
     if not rate_limiter.allow(chat_id, mutation=mutation):
         _record_audit_safe(
             actor=_telegram_actor(chat_id),
@@ -806,14 +969,14 @@ def _process_update(
         return
     audit_target = _audit_target(arguments) if command in ORDER_TARGET_COMMANDS else None
     _record_audit_safe(
-        actor=_telegram_actor(chat_id),
+        actor=_telegram_actor(chat_id, user_id),
         action=command,
         status="accepted",
         target_type="service_order" if audit_target else None,
         target_id=audit_target,
     )
     if command in {"menu", "start"}:
-        _send_main_menu(chat_id, telegram)
+        _send_main_menu(chat_id, telegram, admin_api)
         return
     if command in {"ayuda", "help"}:
         telegram.send_message(chat_id, HELP_TEXT, reply_markup=_main_menu_markup())
@@ -856,6 +1019,9 @@ def _process_update(
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
         return
+    if command == "pendientes":
+        _send_pending_attention(chat_id, arguments, telegram, admin_api)
+        return
     if command == "cola":
         _send_queue(chat_id, arguments, telegram, admin_api)
         return
@@ -865,13 +1031,21 @@ def _process_update(
     if command == "buscar":
         _send_search_results(chat_id, arguments, telegram, admin_api)
         return
-    if command == "recientes":
-        _send_recent_orders(chat_id, telegram, admin_api, recent_orders)
-        return
     if command == "resumen":
         _send_daily_summary(chat_id, telegram, admin_api)
         return
     if command == "captchas":
+        try:
+            captcha_enabled = bool(admin_api.get_health().get("captcha_shadow_enabled"))
+        except TelegramControlError:
+            captcha_enabled = False
+        if not captcha_enabled:
+            telegram.send_message(
+                chat_id,
+                "El etiquetado CAPTCHA no esta activo en este momento.",
+                reply_markup=_main_menu_markup(),
+            )
+            return
         search_conversations.pop(chat_id, None)
         _cancel_chat_client_state(
             chat_id,
@@ -889,9 +1063,6 @@ def _process_update(
         return
     if command in {"cliente", "reglas"}:
         _send_order_query(chat_id, command, arguments, telegram, admin_api)
-        return
-    if command == "credenciales":
-        _send_credentials(chat_id, arguments, telegram, admin_api)
         return
     if command == "cliente_nuevo":
         search_conversations.pop(chat_id, None)
@@ -973,36 +1144,90 @@ def _process_update(
     telegram.send_message(chat_id, "Comando no reconocido. Usa /ayuda.")
 
 
-def _main_menu_markup() -> dict[str, Any]:
+def _main_menu_markup(counts: dict[str, int] | None = None) -> dict[str, Any]:
+    counts = counts or {}
+    pending_label = "Pendientes"
+    queue_label = "Buscando cupo"
+    payments_label = "Por cobrar"
+    if "pending" in counts:
+        pending_label += f" · {counts['pending']}"
+    if "queue" in counts:
+        queue_label += f" · {counts['queue']}"
+    if "payments" in counts:
+        payments_label += f" · {counts['payments']}"
     return {
         "inline_keyboard": [
             [
-                {"text": "En cola", "callback_data": "ui:queue:1"},
-                {"text": "Faltan pagar", "callback_data": "ui:payments:1"},
+                {"text": pending_label, "callback_data": "ui:pending:1"},
+                {"text": queue_label, "callback_data": "ui:queue:1"},
             ],
             [
-                {"text": "Todos los clientes", "callback_data": "ui:clients:1"},
-                {"text": "Alta manual", "callback_data": "ui:manual:start"},
-            ],
-            [{"text": "Buscar cliente", "callback_data": "ui:search:start"}],
-            [{"text": "Etiquetar CAPTCHA", "callback_data": "ui:captcha:start"}],
-            [
-                {"text": "Estado del bot", "callback_data": "ui:status:show"},
-                {"text": "Resumen de hoy", "callback_data": "ui:summary:show"},
+                {"text": payments_label, "callback_data": "ui:payments:1"},
+                {"text": "Nuevo cliente", "callback_data": "ui:manual:start"},
             ],
             [
-                {"text": "Sistema y errores", "callback_data": "ui:worker:show"},
+                {"text": "Buscar", "callback_data": "ui:search:start"},
+                {"text": "Citas y resumen", "callback_data": "ui:summary:show"},
             ],
-            [{"text": "Oportunidades", "callback_data": "ui:opportunity:show"}],
+            [
+                {"text": "Estado", "callback_data": "ui:status:show"},
+                {"text": "Herramientas", "callback_data": "ui:tools:show"},
+            ],
         ]
     }
 
 
-def _send_main_menu(chat_id: str, telegram: TelegramBotApi) -> None:
+def _send_main_menu(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    counts: dict[str, int] = {}
+    try:
+        inbox = admin_api.get_operator_inbox()
+        summary = inbox.get("summary")
+        if isinstance(summary, dict):
+            counts["pending"] = int(summary.get("total") or 0)
+        orders = admin_api.get_service_orders()
+        counts["queue"] = sum(str(order.get("status") or "") == "ready" for order in orders)
+        counts["payments"] = sum(
+            str(order.get("reservation_status") or "") == "confirmed"
+            and str(order.get("payment_status") or "") == "pending"
+            for order in orders
+        )
+    except (TelegramControlError, TypeError, ValueError):
+        counts = {}
     telegram.send_message(
         chat_id,
-        "MENU PRINCIPAL\n\nElige una accion. No necesitas recordar comandos.",
-        reply_markup=_main_menu_markup(),
+        "OPERACION DIARIA\n\nElige que deseas revisar o hacer.",
+        reply_markup=_main_menu_markup(counts),
+    )
+
+
+def _send_tools_menu(
+    chat_id: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    rows = [
+        [{"text": "Historial de clientes", "callback_data": "ui:clients:1"}],
+        [{"text": "Oportunidades", "callback_data": "ui:opportunity:show"}],
+        [{"text": "Errores recientes", "callback_data": "ui:errors:show"}],
+    ]
+    try:
+        captcha_enabled = bool(admin_api.get_health().get("captcha_shadow_enabled"))
+    except TelegramControlError:
+        captcha_enabled = False
+    if captcha_enabled:
+        rows.insert(
+            1,
+            [{"text": "Etiquetar CAPTCHA", "callback_data": "ui:captcha:start"}],
+        )
+    rows.append([{"text": "Volver", "callback_data": "ui:menu:main"}])
+    telegram.send_message(
+        chat_id,
+        "HERRAMIENTAS\n\nFunciones de revision y control menos frecuentes.",
+        reply_markup={"inline_keyboard": rows},
     )
 
 
@@ -1430,13 +1655,13 @@ def _send_clients(
     keyboard: list[list[dict[str, str]]] = []
     for order in visible:
         order_id = str(order.get("order_id") or "")
-        if not order_id or len(f"om:{order_id}:show".encode()) > 64:
+        if not order_id or len(f"om:{order_id}:show_clients".encode()) > 64:
             continue
         label = _applicant_display_name(order)
         if label == "Titular no identificado por el portal":
             label = str(order.get("contact_name") or order_id)
         keyboard.append(
-            [{"text": _display_text(label, 34), "callback_data": f"om:{order_id}:show"}]
+            [{"text": _display_text(label, 34), "callback_data": f"om:{order_id}:show_clients"}]
         )
     navigation: list[dict[str, str]] = []
     if page > 1:
@@ -1471,7 +1696,7 @@ def _send_queue(
         orders = [
             order
             for order in admin_api.get_service_orders()
-            if str(order.get("status") or "") in {"ready", "validation_pending", "paused"}
+            if str(order.get("status") or "") == "ready"
         ]
     except TelegramControlError as exc:
         logger.warning("Could not list queued service orders: %s", exc)
@@ -1481,10 +1706,113 @@ def _send_queue(
         chat_id,
         page,
         orders,
-        title="COLA OPERATIVA",
-        empty_text="No hay usuarios esperando validacion, cupo o reanudacion.",
+        title="BUSCANDO CUPO",
+        empty_text="No hay usuarios buscando cupo en este momento.",
         callback_subject="queue",
         telegram=telegram,
+    )
+
+
+def _send_pending_attention(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    page = _parse_list_page(arguments, "/pendientes [pagina]", chat_id, telegram)
+    if page is None:
+        return
+    try:
+        payload = admin_api.get_operator_inbox()
+    except TelegramControlError as exc:
+        logger.warning("Could not read operator inbox: %s", exc)
+        telegram.send_message(
+            chat_id,
+            "La bandeja de pendientes aun no esta disponible en el Admin API. "
+            "Actualiza el servicio e intenta nuevamente.",
+            reply_markup={
+                "inline_keyboard": [[{"text": "Menu", "callback_data": "ui:menu:main"}]]
+            },
+        )
+        return
+    raw_items = payload.get("items")
+    summary = payload.get("summary")
+    items = (
+        [item for item in raw_items if isinstance(item, dict)]
+        if isinstance(raw_items, list)
+        else []
+    )
+    summary = summary if isinstance(summary, dict) else {}
+    total_pages = max(1, (len(items) + CLIENTS_PAGE_SIZE - 1) // CLIENTS_PAGE_SIZE)
+    if page > total_pages:
+        telegram.send_message(chat_id, f"La ultima pagina disponible es {total_pages}.")
+        return
+    start = (page - 1) * CLIENTS_PAGE_SIZE
+    visible = items[start : start + CLIENTS_PAGE_SIZE]
+    summary_labels = (
+        ("access", "Acceso"),
+        ("paused", "Pausados"),
+        ("contact", "Contacto"),
+        ("whatsapp", "WhatsApp"),
+        ("payment", "Cobros"),
+        ("postpayment", "Postpago"),
+        ("messages", "Mensajes"),
+    )
+    counts = [
+        f"{label}: {int(summary.get(key) or 0)}"
+        for key, label in summary_labels
+        if int(summary.get(key) or 0) > 0
+    ]
+    lines = [
+        f"PENDIENTES - PAGINA {page}/{total_pages}",
+        "",
+        f"Total: {int(summary.get('total') or len(items))}",
+    ]
+    if counts:
+        lines.append(" | ".join(counts))
+    keyboard: list[list[dict[str, str]]] = []
+    for item in visible:
+        order_id = str(item.get("order_id") or "")
+        title = _display_text(item.get("title") or "Pendiente operativo", 80)
+        description = _display_text(item.get("description") or "Requiere revision.", 180)
+        applicant_name = _display_text(item.get("applicant_name") or order_id, 60)
+        action = str(item.get("action") or "view_order")
+        action_label = _display_text(item.get("action_label") or "Ver orden", 34)
+        lines.extend(["", f"{title}\n{applicant_name}\n{description}"])
+        if not order_id:
+            continue
+        if action in {"mark_payment", "register_payment"}:
+            callback_data = f"py:{order_id}:choose_pending"
+        elif action == "revalidate":
+            callback_data = f"om:{order_id}:validate"
+        else:
+            callback_data = f"om:{order_id}:show_pending"
+            if action not in {"view_order"}:
+                lines.append(
+                    "Accion: revisar en el dashboard; Telegram no enviara ni reintentara."
+                )
+                action_label = "Ver orden"
+        if len(callback_data.encode()) <= 64:
+            keyboard.append([{"text": action_label, "callback_data": callback_data}])
+    if not items:
+        lines.extend(["", "No hay usuarios que requieran seguimiento."])
+    navigation: list[dict[str, str]] = []
+    if page > 1:
+        navigation.append({"text": "Anterior", "callback_data": f"ui:pending:{page - 1}"})
+    if page < total_pages:
+        navigation.append({"text": "Siguiente", "callback_data": f"ui:pending:{page + 1}"})
+    if navigation:
+        keyboard.append(navigation)
+    keyboard.append(
+        [
+            {"text": "Actualizar", "callback_data": f"ui:pending:{page}"},
+            {"text": "Menu", "callback_data": "ui:menu:main"},
+        ]
+    )
+    telegram.send_message(
+        chat_id,
+        "\n\n".join(lines),
+        reply_markup={"inline_keyboard": keyboard},
     )
 
 
@@ -1513,7 +1841,7 @@ def _send_pending_payments(
         chat_id,
         page,
         orders,
-        title=f"FALTAN PAGAR - {len(orders)} | SALDO S/{_money_text(total_balance)}",
+        title=f"PAGOS PENDIENTES - {len(orders)} | SALDO S/{_money_text(total_balance)}",
         empty_text="No hay reservas con pago pendiente.",
         callback_subject="payments",
         telegram=telegram,
@@ -1562,14 +1890,36 @@ def _send_operational_order_list(
         if payment_mode:
             agreed = _money_value(order.get("amount_agreed")) or Decimal("0")
             paid = _money_value(order.get("amount_paid")) or Decimal("0")
+            contact = (
+                order.get("contact_whatsapp_masked")
+                or order.get("contact_whatsapp_username_masked")
+                or "sin contacto operativo"
+            )
+            appointment = " ".join(
+                part
+                for part in (
+                    str(order.get("reservation_date") or "").strip(),
+                    str(order.get("reservation_hour") or "").strip(),
+                )
+                if part
+            ) or "sin fecha"
+            communication_state = str(order.get("whatsapp_message_action_state") or "")
+            communication_note = (
+                "\nAtencion: revisa primero la comunicacion inicial."
+                if communication_state in {"manual_required", "failed", "uncertain"}
+                else ""
+            )
             lines.append(
                 f"{applicant_name}\n"
                 f"Orden: {order_id}\n"
+                f"Cita: {appointment}\n"
+                f"Contacto: {contact}\n"
                 f"Acordado: S/{_money_text(agreed)} | Abonado: S/{_money_text(paid)} | "
                 f"Saldo: S/{_money_text(max(agreed - paid, Decimal('0')))}"
+                f"{communication_note}"
             )
-            callback_data = f"py:{order_id}:default"
-            button_label = f"Registrar pago - {_display_text(applicant_name, 24)}"
+            callback_data = f"py:{order_id}:choose_payments"
+            button_label = f"Gestionar pago - {_display_text(applicant_name, 25)}"
         else:
             lines.append(
                 f"{applicant_name}\n"
@@ -1577,7 +1927,7 @@ def _send_operational_order_list(
                 f"Estado: {_order_status_label(order.get('status'))} | "
                 f"Prioridad: {order.get('priority', 0)}"
             )
-            callback_data = f"om:{order_id}:show"
+            callback_data = f"om:{order_id}:show_{callback_subject}"
             button_label = _display_text(applicant_name, 34)
         if order_id and len(callback_data.encode()) <= 64:
             keyboard.append([{"text": button_label, "callback_data": callback_data}])
@@ -1663,23 +2013,20 @@ def _send_priority_menu(
         return
     current = int(order.get("priority") or 0)
     presets = [
-        ("Baja", 0),
-        ("Normal", 10),
-        ("Alta", 50),
-        ("Urgente", 100),
+        ("Normal", 0),
+        ("Enfocada", 100),
+        ("Exclusiva", 200),
     ]
     telegram.send_message(
         chat_id,
-        f"PRIORIDAD\n\nOrden: {order_id}\nValor actual: {current}\n\nElige un valor:",
+        f"PRIORIDAD\n\nOrden: {order_id}\nValor actual: {current}\n\n"
+        "Normal mantiene la cola general; Enfocada prioriza la orden; "
+        "Exclusiva concentra la busqueda en ella.\n\nElige un valor:",
         reply_markup={
             "inline_keyboard": [
                 [
                     {"text": label, "callback_data": f"pq:{order_id}:{value}"}
-                    for label, value in presets[:2]
-                ],
-                [
-                    {"text": label, "callback_data": f"pq:{order_id}:{value}"}
-                    for label, value in presets[2:]
+                    for label, value in presets
                 ],
                 [{"text": "Volver", "callback_data": f"om:{order_id}:show"}],
             ]
@@ -1828,6 +2175,8 @@ def _send_order_panel(
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
     recent_orders: dict[str, deque[str]],
+    *,
+    return_subject: str = "clients",
 ) -> None:
     try:
         order = admin_api.get_service_order(order_id)
@@ -1855,14 +2204,25 @@ def _send_order_panel(
         and str(order.get("payment_status") or "") == "pending"
     ):
         keyboard.append([{
-            "text": "Registrar pago",
-            "callback_data": f"py:{order_id}:default",
+            "text": "Gestionar pago",
+            "callback_data": f"py:{order_id}:choose_{return_subject}",
         }])
+    return_options = {
+        "pending": ("Pendientes", "ui:pending:1"),
+        "queue": ("Buscando cupo", "ui:queue:1"),
+        "payments": ("Por cobrar", "ui:payments:1"),
+        "summary": ("Citas proximas", "ui:summary:show"),
+        "clients": ("Historial", "ui:clients:1"),
+    }
+    return_label, return_callback = return_options.get(
+        return_subject,
+        ("Menu", "ui:menu:main"),
+    )
     keyboard.extend(
         [
             [{"text": "Actualizar", "callback_data": f"om:{order_id}:show"}],
             [
-                {"text": "Clientes", "callback_data": "ui:clients:1"},
+                {"text": return_label, "callback_data": return_callback},
                 {"text": "Menu", "callback_data": "ui:menu:main"},
             ],
         ]
@@ -1903,10 +2263,10 @@ def _send_search_results(
                 else order.get("contact_name") or order.get("order_id"),
                 36,
             ),
-            "callback_data": f"om:{order.get('order_id')}:show",
+            "callback_data": f"om:{order.get('order_id')}:show_menu",
         }]
         for order in matches
-        if len(f"om:{order.get('order_id')}:show".encode()) <= 64
+        if len(f"om:{order.get('order_id')}:show_menu".encode()) <= 64
     ]
     keyboard.append([{"text": "Menu", "callback_data": "ui:menu:main"}])
     telegram.send_message(
@@ -1917,114 +2277,61 @@ def _send_search_results(
     )
 
 
-def _send_recent_orders(
-    chat_id: str,
-    telegram: TelegramBotApi,
-    admin_api: AdminApiClient,
-    recent_orders: dict[str, deque[str]],
-) -> None:
-    order_ids = list(recent_orders.get(chat_id, ()))
-    if not order_ids:
-        telegram.send_message(
-            chat_id,
-            "Aun no consultaste clientes desde este inicio del receptor.",
-            reply_markup={
-                "inline_keyboard": [[{"text": "Clientes", "callback_data": "ui:clients:1"}]]
-            },
-        )
-        return
-    try:
-        orders = {str(item.get("order_id")): item for item in admin_api.get_service_orders()}
-    except TelegramControlError as exc:
-        logger.warning("Could not read recent service orders: %s", exc)
-        telegram.send_message(chat_id, "No pude consultar los clientes recientes.")
-        return
-    keyboard = []
-    for order_id in order_ids:
-        order = orders.get(order_id, {})
-        label = _applicant_display_name(order) if order else order_id
-        if label == "Titular no identificado por el portal":
-            label = str(order.get("contact_name") or order_id)
-        keyboard.append([
-            {"text": _display_text(label, 36), "callback_data": f"om:{order_id}:show"}
-        ])
-    keyboard.append([{"text": "Menu", "callback_data": "ui:menu:main"}])
-    telegram.send_message(
-        chat_id,
-        "CLIENTES RECIENTES",
-        reply_markup={"inline_keyboard": keyboard},
-    )
-
-
 def _send_daily_summary(
     chat_id: str,
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
 ) -> None:
     try:
-        worker = admin_api.get_worker()
-        orders = admin_api.get_service_orders()
+        reminders = admin_api.get_appointment_reminders()
     except TelegramControlError as exc:
-        logger.warning("Could not prepare daily summary: %s", exc)
-        telegram.send_message(chat_id, "No pude preparar el resumen de hoy.")
+        logger.warning("Could not prepare upcoming appointments: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar las citas proximas.")
         return
-    today = datetime.now(LIMA_TIMEZONE).date().isoformat()
-    reserved_today = sum(1 for order in orders if str(order.get("reservation_date") or "") == today)
-    counts = _order_status_counts(orders)
+    raw_candidates = reminders.get("candidates")
+    candidates = (
+        [item for item in raw_candidates if isinstance(item, dict)]
+        if isinstance(raw_candidates, list)
+        else []
+    )
+    appointment_day = _format_operator_date(reminders.get("appointment_day"))
     lines = [
-        "RESUMEN DE HOY",
+        "CITAS PROXIMAS / RESUMEN",
         "",
-        f"Fecha: {_format_operator_date(today)}",
-        f"Worker: {'activo' if worker.get('worker_running') else 'sin confirmar'}",
-        f"Fase: {worker.get('phase') or 'desconocida'}",
-        f"Clientes activos: {counts['active']}",
-        f"Pausados: {counts['paused']}",
-        f"Reservas de hoy: {reserved_today}",
-        f"Pendientes de pago: {counts['payment_pending']}",
-        f"Errores consecutivos: {worker.get('consecutive_errors') or 0}",
+        f"Fecha: {appointment_day}",
+        f"Citas: {len(candidates)}",
     ]
+    keyboard: list[list[dict[str, str]]] = []
+    for candidate in candidates[:8]:
+        order_id = str(candidate.get("order_id") or "")
+        applicant_name = _display_text(
+            candidate.get("applicant_name") or order_id or "Titular no identificado",
+            60,
+        )
+        date_label = _display_text(
+            candidate.get("appointment_date_label") or appointment_day,
+            40,
+        )
+        hour = _display_text(candidate.get("appointment_hour") or "sin hora", 24)
+        site = _display_text(candidate.get("site") or "sede no registrada", 60)
+        lines.extend(["", f"{applicant_name}\n{date_label} {hour}\n{site}"])
+        callback_data = f"om:{order_id}:show_summary"
+        if order_id and len(callback_data.encode()) <= 64:
+            keyboard.append(
+                [{"text": _display_text(applicant_name, 36), "callback_data": callback_data}]
+            )
+    if not candidates:
+        lines.extend(["", "No hay citas elegibles para el dia siguiente."])
+    keyboard.append(
+        [
+            {"text": "Actualizar", "callback_data": "ui:summary:show"},
+            {"text": "Menu", "callback_data": "ui:menu:main"},
+        ]
+    )
     telegram.send_message(
         chat_id,
         "\n".join(lines),
-        reply_markup={
-            "inline_keyboard": [[
-                {"text": "Actualizar", "callback_data": "ui:summary:show"},
-                {"text": "Menu", "callback_data": "ui:menu:main"},
-            ]]
-        },
-    )
-
-
-def _send_credentials(
-    chat_id: str,
-    arguments: str,
-    telegram: TelegramBotApi,
-    admin_api: AdminApiClient,
-) -> None:
-    order_id = arguments.strip()
-    if not _valid_order_id(order_id):
-        telegram.send_message(chat_id, "Uso: /credenciales ORDER_ID")
-        return
-    try:
-        credentials = admin_api.get_service_order_credentials(order_id)
-    except TelegramControlError as exc:
-        logger.warning("Could not read credentials for order %s: %s", order_id, exc)
-        telegram.send_message(chat_id, "No pude consultar las credenciales de esa orden.")
-        return
-    telegram.send_message(
-        chat_id,
-        "CREDENCIALES DEL PORTAL\n\n"
-        f"Orden: {credentials.get('order_id') or order_id}\n"
-        f"Tipo: {credentials.get('document_type') or 'no disponible'}\n"
-        f"Usuario / documento: {credentials.get('username') or 'no disponible'}\n"
-        f"Contrasena: {credentials.get('password') or 'no disponible'}\n\n"
-        "Mensaje sensible: quedara en el historial de este chat.",
-        reply_markup={
-            "inline_keyboard": [
-                [{"text": "Eliminar este mensaje", "callback_data": "ui:delete:message"}],
-                [{"text": "Volver al cliente", "callback_data": f"om:{order_id}:show"}],
-            ]
-        },
+        reply_markup={"inline_keyboard": keyboard},
     )
 
 
@@ -2051,7 +2358,7 @@ def _start_new_client_conversation(
     conversation = conversations[chat_id]
     message = (
         "ALTA MANUAL\n\nPaso 1: elige el tipo de documento.\n"
-        "Las credenciales quedaran en el historial de este chat. "
+        "La contrasena se ocultara y el mensaje donde la escribas se intentara borrar. "
         "Puedes cancelar con /cancelar."
     )
     telegram.send_message(
@@ -2110,7 +2417,7 @@ def _continue_new_client_conversation(
     if prompt is not None:
         telegram.send_message(
             chat_id,
-            f"{prompt}\nTienes 60 segundos para completar este paso.",
+            f"{prompt}\nTienes 3 minutos para completar este paso.",
             reply_markup=_new_client_prompt_markup(conversation),
         )
         return True
@@ -2203,8 +2510,43 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
         }]]
     else:
         keyboard = []
+    if step > 0:
+        keyboard.append([{"text": "Atras", "callback_data": f"nf:{session_id}:back"}])
     keyboard.append([{"text": "Cancelar", "callback_data": "ui:cancel:guided"}])
     return {"inline_keyboard": keyboard}
+
+
+def _rewind_new_client(conversation: NewClientConversation) -> str:
+    if conversation.step == 5 and conversation.values.pop("_whatsapp_recipient_mode", None):
+        return _manual_client_step_prompt(5) or "Elige el tipo de WhatsApp."
+    target_step = max(0, conversation.step - 1)
+    fields_by_step = {
+        0: ("document_type",),
+        1: ("document_number",),
+        2: ("password",),
+        3: ("contact_name",),
+        4: ("contact_source",),
+        5: ("contact_whatsapp", "contact_whatsapp_username", "_whatsapp_recipient_mode"),
+        6: (
+            "minimum_reservation_date",
+            "maximum_reservation_date",
+            "allowed_weekdays",
+            "excluded_date_ranges",
+        ),
+        7: ("minimum_reservation_date",),
+        8: ("maximum_reservation_date",),
+        9: ("allowed_weekdays",),
+        10: ("excluded_date_ranges",),
+    }
+    for field_name in fields_by_step.get(target_step, ()):
+        conversation.values.pop(field_name, None)
+    conversation.step = target_step
+    conversation.expires_at = time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS
+    return (
+        "Paso 1: elige el tipo de documento."
+        if target_step == 0
+        else _manual_client_step_prompt(target_step) or "Revisa el paso anterior."
+    )
 
 
 def _apply_new_client_value(
@@ -2338,7 +2680,7 @@ def _format_new_client_confirmation(values: dict[str, Any]) -> str:
     return (
         _format_manual_client_details(values, title="CONFIRMAR ALTA MANUAL")
         + "\n\nRevisa todos los datos antes de crear el cliente. "
-        "La confirmacion vence en 60 segundos."
+        "La confirmacion vence en 2 minutos."
     )
 
 
@@ -2356,7 +2698,7 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
             "",
             f"Tipo: {document_type}",
             f"Documento: {values.get('document_number') or 'no disponible'}",
-            f"Contrasena: {values.get('password') or 'no disponible'}",
+            "Contrasena: registrada (oculta por seguridad)",
             f"Contacto: {values.get('contact_name') or 'no disponible'}",
             f"Fuente: {values.get('contact_source') or 'no disponible'}",
             "WhatsApp: "
@@ -2425,13 +2767,13 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Orden: {order.get('order_id') or 'desconocida'}",
         f"Cliente / titular: {applicant_name}",
         f"Tipo de documento: {order.get('document_type') or 'no disponible'}",
-        f"Documento: {order.get('document_number') or 'no disponible'}",
+        f"Documento: {order.get('document_number_masked') or 'no disponible'}",
         "",
         f"Contacto: {contact_name}",
         "WhatsApp: "
         + str(
-            order.get("contact_whatsapp")
-            or order.get("contact_whatsapp_username")
+            order.get("contact_whatsapp_masked")
+            or order.get("contact_whatsapp_username_masked")
             or "no registrado"
         ),
         f"Fuente: {order.get('contact_source') or 'no registrada'}",
@@ -2439,8 +2781,8 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Estado: {_order_status_label(order.get('status'))}",
         f"Validacion: {_preflight_status_label(order.get('preflight_status'))}",
         f"Prioridad: {order.get('priority', 0)}",
-        f"Reserva: {order.get('reservation_status') or 'sin reserva'}",
-        f"Pago: {order.get('payment_status') or 'sin pago'}",
+        f"Reserva: {_reservation_status_label(order.get('reservation_status'))}",
+        f"Pago: {_payment_status_label(order.get('payment_status'))}",
     ]
     if order.get("amount_agreed") is not None:
         agreed = _money_value(order.get("amount_agreed")) or Decimal("0")
@@ -2452,7 +2794,7 @@ def format_order_detail(order: dict[str, Any]) -> str:
     if order.get("reservation_date") or order.get("reservation_hour"):
         lines.append(
             "Cita: "
-            f"{order.get('reservation_date') or 'sin fecha'} "
+            f"{_format_operator_date(order.get('reservation_date'))} "
             f"{order.get('reservation_hour') or 'sin hora'}"
         )
     return "\n".join(lines)
@@ -2518,6 +2860,26 @@ def _preflight_status_label(value: Any) -> str:
         "validated": "Acceso correcto",
         "failed": "Requiere revision",
     }.get(status, status.replace("_", " ") or "Desconocida")
+
+
+def _reservation_status_label(value: Any) -> str:
+    status = str(value or "")
+    return {
+        "pending": "Pendiente",
+        "reserved": "Reservada",
+        "confirmed": "Confirmada",
+        "completed": "Completada",
+        "unconfirmed": "Requiere revision",
+    }.get(status, status.replace("_", " ") or "Sin reserva")
+
+
+def _payment_status_label(value: Any) -> str:
+    status = str(value or "")
+    return {
+        "pending": "Pendiente",
+        "paid": "Pagado",
+        "no_charge": "Sin cobro",
+    }.get(status, status.replace("_", " ") or "Sin pago")
 
 
 def _is_failed_run(run: dict[str, Any]) -> bool:
@@ -2658,6 +3020,54 @@ def _request_priority_change(
     _send_order_change_confirmation(change, telegram)
 
 
+def _send_payment_menu(
+    chat_id: str,
+    order_id: str,
+    return_subject: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    try:
+        order = admin_api.get_service_order(order_id)
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare payment menu: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar ese cobro.")
+        return
+    if (
+        str(order.get("status") or "") != "reserved_payment_pending"
+        or str(order.get("payment_status") or "") != "pending"
+    ):
+        telegram.send_message(chat_id, "Ese cobro ya no esta pendiente. Actualiza la lista.")
+        return
+    agreed = _money_value(order.get("amount_agreed"))
+    paid = _money_value(order.get("amount_paid")) or Decimal("0")
+    if agreed is None or agreed <= 0:
+        telegram.send_message(chat_id, "La orden no tiene un monto acordado valido.")
+        return
+    telegram.send_message(
+        chat_id,
+        "GESTIONAR PAGO\n\n"
+        f"Cliente: {_applicant_display_name(order)}\n"
+        f"Acordado: S/{_money_text(agreed)}\n"
+        f"Abonado: S/{_money_text(paid)}\n"
+        f"Saldo: S/{_money_text(max(agreed - paid, Decimal('0')))}\n\n"
+        "El pago completo encola el postpago. Un abono conserva el cobro pendiente.",
+        reply_markup={
+            "inline_keyboard": [
+                [{
+                    "text": f"Confirmar pago completo · S/{_money_text(agreed)}",
+                    "callback_data": f"py:{order_id}:full_{return_subject}",
+                }],
+                [{
+                    "text": "Registrar abono",
+                    "callback_data": f"py:{order_id}:partial_{return_subject}",
+                }],
+                [{"text": "Cancelar", "callback_data": "ui:cancel:guided"}],
+            ]
+        },
+    )
+
+
 def _request_payment_change(
     chat_id: str,
     arguments: str,
@@ -2665,6 +3075,8 @@ def _request_payment_change(
     admin_api: AdminApiClient,
     pending_order_changes: dict[str, PendingOrderChange],
     confirmation_lock: Lock,
+    *,
+    return_subject: str = "menu",
 ) -> None:
     parts = arguments.split()
     if len(parts) not in {1, 2} or not _valid_order_id(parts[0]):
@@ -2694,21 +3106,30 @@ def _request_payment_change(
     except ValueError as exc:
         telegram.send_message(chat_id, str(exc))
         return
+    previous_paid = _money_value(order.get("amount_paid")) or Decimal("0")
+    if paid <= previous_paid:
+        telegram.send_message(
+            chat_id,
+            f"El total acumulado debe ser mayor que S/{_money_text(previous_paid)}.",
+        )
+        return
+    action = "payment_partial" if paid < agreed else "payment_paid"
     change = PendingOrderChange(
         operation_id=secrets.token_hex(6),
         chat_id=chat_id,
-        action="payment_paid",
+        action=action,
         order_id=parts[0],
         original={
             "applicant_name": _applicant_display_name(order),
             "amount_agreed": _money_text(agreed),
-            "amount_paid": _money_text(_money_value(order.get("amount_paid")) or Decimal("0")),
+            "amount_paid": _money_text(previous_paid),
         },
         updated={
             "amount_agreed": _money_text(agreed),
             "amount_paid": _money_text(paid),
         },
         expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+        return_subject=return_subject,
     )
     _store_order_change(change, pending_order_changes, confirmation_lock)
     _send_order_change_confirmation(change, telegram)
@@ -2936,6 +3357,8 @@ def _rules_prompt_markup(step: int) -> dict[str, Any]:
             {"text": "Sin exclusiones", "callback_data": "rf:value:clear"},
             {"text": "Mantener", "callback_data": "rf:value:keep"},
         ]]
+    if step > 0:
+        rows.append([{"text": "Atras", "callback_data": "rf:nav:back"}])
     rows.append([{"text": "Cancelar", "callback_data": "ui:cancel:guided"}])
     return {"inline_keyboard": rows}
 
@@ -2999,15 +3422,21 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
             f"Prioridad anterior: {change.original['priority']}\n"
             f"Prioridad nueva: {change.updated['priority']}"
         )
-    if change.action == "payment_paid":
+    if change.action in {"payment_paid", "payment_partial"}:
+        consequence = (
+            "Al confirmar, se guardara el abono y el cobro seguira pendiente. "
+            "No se encolara el postpago."
+            if change.action == "payment_partial"
+            else "Al confirmar, el pago pasara a paid y se encolara automaticamente "
+            "el seguimiento postpago por WhatsApp."
+        )
         return (
             f"Cliente / titular: {change.original['applicant_name']}\n"
             f"Orden: {change.order_id}\n"
             f"Monto acordado: S/{change.updated['amount_agreed']}\n"
             f"Registrado anteriormente: S/{change.original['amount_paid']}\n"
             f"Total que quedara pagado: S/{change.updated['amount_paid']}\n\n"
-            "Al confirmar, el pago pasara a paid y se encolara automaticamente "
-            "el seguimiento postpago por WhatsApp."
+            f"{consequence}"
         )
     return "\n".join(
         [
@@ -3196,11 +3625,13 @@ def _process_interface_callback(
     telegram.answer_callback_query(callback_id, "Procesando...")
     if prefix == "ui":
         if subject == "menu":
-            _send_main_menu(chat_id, telegram)
+            _send_main_menu(chat_id, telegram, admin_api)
         elif subject == "status":
             _send_worker_panel(chat_id, telegram, admin_api)
         elif subject == "clients":
             _send_clients(chat_id, action, telegram, admin_api)
+        elif subject == "pending":
+            _send_pending_attention(chat_id, action, telegram, admin_api)
         elif subject == "queue":
             _send_queue(chat_id, action, telegram, admin_api)
         elif subject == "payments":
@@ -3261,10 +3692,10 @@ def _process_interface_callback(
             _start_captcha_review(chat_id, telegram, admin_api, captcha_conversations)
         elif subject == "summary":
             _send_daily_summary(chat_id, telegram, admin_api)
-        elif subject == "recent":
-            _send_recent_orders(chat_id, telegram, admin_api, recent_orders)
         elif subject == "worker":
             _send_worker_panel(chat_id, telegram, admin_api)
+        elif subject == "tools":
+            _send_tools_menu(chat_id, telegram, admin_api)
         elif subject == "opportunity":
             _send_opportunity_panel(chat_id, telegram, admin_api)
         elif subject == "errors":
@@ -3318,41 +3749,56 @@ def _process_interface_callback(
         order_id = subject
         if not _valid_order_id(order_id):
             telegram.send_message(chat_id, "La orden seleccionada no es valida.")
-        elif action == "show":
-            _send_order_panel(chat_id, order_id, telegram, admin_api, recent_orders)
-        elif action == "credentials":
-            _send_credentials(chat_id, order_id, telegram, admin_api)
+        elif action == "show" or action.startswith("show_"):
+            return_subject = action.removeprefix("show_") if action != "show" else "clients"
+            _send_order_panel(
+                chat_id,
+                order_id,
+                telegram,
+                admin_api,
+                recent_orders,
+                return_subject=return_subject,
+            )
         elif action == "rules":
             _send_order_query(chat_id, "reglas", order_id, telegram, admin_api)
         elif action == "priority":
             _send_priority_menu(chat_id, order_id, telegram, admin_api)
         elif action == "validate":
             try:
-                admin_api.revalidate_service_order(
-                    order_id,
-                    actor=_telegram_actor(chat_id),
-                )
+                current = admin_api.get_service_order(order_id)
             except TelegramControlError as exc:
-                logger.warning("Could not revalidate order from Telegram: %s", exc)
-                telegram.send_message(chat_id, "No pude iniciar la validacion.")
-            else:
-                _record_audit_safe(
-                    actor=_telegram_actor(chat_id),
-                    action="order_revalidate",
-                    status="accepted",
-                    target_type="service_order",
-                    target_id=order_id,
-                )
+                logger.warning("Could not review order before revalidation: %s", exc)
+                telegram.send_message(chat_id, "No pude revisar el estado actual.")
+                return True
+            if str(current.get("preflight_status") or "") != "failed":
                 telegram.send_message(
                     chat_id,
-                    "Validacion iniciada. Consulta el cliente en unos segundos.",
-                    reply_markup={
-                        "inline_keyboard": [[
-                            {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"},
-                            {"text": "Menu", "callback_data": "ui:menu:main"},
-                        ]]
-                    },
+                    "La validacion ya no esta fallida. Actualiza el cliente antes de continuar.",
                 )
+                return True
+            operation_id = secrets.token_hex(6)
+            with confirmation_lock:
+                _cancel_chat_confirmations_unlocked(chat_id, pending_confirmations)
+                pending_confirmations[operation_id] = PendingWorkerConfirmation(
+                    operation_id=operation_id,
+                    chat_id=chat_id,
+                    command=f"revalidate:{order_id}",
+                    expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+                    opportunity_target=order_id,
+                )
+            telegram.send_message(
+                chat_id,
+                "CONFIRMAR NUEVA VALIDACION\n\n"
+                f"Orden: {order_id}\n"
+                f"Motivo actual: {current.get('preflight_message') or 'sin detalle'}\n\n"
+                "Se iniciara una nueva comprobacion de acceso.",
+                reply_markup={
+                    "inline_keyboard": [[
+                        {"text": "Volver a validar", "callback_data": f"wc:{operation_id}:yes"},
+                        {"text": "Cancelar", "callback_data": f"wc:{operation_id}:no"},
+                    ]]
+                },
+            )
         elif action == "editrules":
             search_conversations.pop(chat_id, None)
             captcha_conversations.pop(chat_id, None)
@@ -3385,8 +3831,37 @@ def _process_interface_callback(
         )
         return True
     if prefix == "py":
-        if action != "default":
+        action_name, separator, return_subject = action.partition("_")
+        if action == "default":
+            action_name, return_subject = "full", "menu"
+        if (
+            not separator
+            and action != "default"
+            or action_name not in {"choose", "full", "partial"}
+            or return_subject
+            not in {"menu", "pending", "payments", "queue", "summary", "clients"}
+        ):
             telegram.send_message(chat_id, "Opcion de pago no reconocida.")
+        elif action_name == "choose":
+            _send_payment_menu(
+                chat_id,
+                subject,
+                return_subject,
+                telegram,
+                admin_api,
+            )
+        elif action_name == "partial":
+            search_conversations[chat_id] = SearchConversation(
+                expires_at=time.monotonic() + CONVERSATION_TTL_SECONDS,
+                mode="payment",
+                order_id=subject,
+                return_subject=return_subject,
+            )
+            telegram.send_message(
+                chat_id,
+                "REGISTRAR ABONO\n\nEscribe el total acumulado pagado, no solo "
+                "el ultimo abono. Ejemplo: 40.00\n\nPuedes cancelar con /cancelar.",
+            )
         else:
             _request_payment_change(
                 chat_id,
@@ -3395,6 +3870,7 @@ def _process_interface_callback(
                 admin_api,
                 pending_order_changes,
                 confirmation_lock,
+                return_subject=return_subject,
             )
         return True
     if prefix == "wk":
@@ -3414,6 +3890,24 @@ def _process_interface_callback(
         if conversation is None:
             telegram.send_message(chat_id, "La edicion de reglas ya no esta activa.")
             return True
+        if subject == "nav" and action == "back":
+            if conversation.step > 0:
+                conversation.step -= 1
+                field = (
+                    "minimum_reservation_date",
+                    "maximum_reservation_date",
+                    "allowed_weekdays",
+                    "excluded_date_ranges",
+                )[conversation.step]
+                conversation.updated[field] = conversation.original.get(field)
+            conversation.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
+            _clear_captcha_review_buttons(chat_id, message, telegram)
+            telegram.send_message(
+                chat_id,
+                _rules_step_prompt(conversation.step),
+                reply_markup=_rules_prompt_markup(conversation.step),
+            )
+            return True
         values = {
             ("value", "keep"): "igual",
             ("value", "clear"): "quitar",
@@ -3425,6 +3919,7 @@ def _process_interface_callback(
         if value is None:
             telegram.send_message(chat_id, "Opcion de reglas no reconocida.")
             return True
+        _clear_captcha_review_buttons(chat_id, message, telegram)
         _continue_rules_conversation(
             conversation,
             value,
@@ -3454,6 +3949,15 @@ def _process_interface_callback(
             "Ese boton pertenece a otro registro y ya no es valido.",
         )
         return True
+    if action == "back":
+        prompt = _rewind_new_client(conversation)
+        _clear_captcha_review_buttons(chat_id, message, telegram)
+        telegram.send_message(
+            chat_id,
+            f"{prompt}\nTienes 3 minutos para completar este paso.",
+            reply_markup=_new_client_prompt_markup(conversation),
+        )
+        return True
     values = {
         "type_dni": "dni",
         "type_ce": "ce",
@@ -3474,6 +3978,7 @@ def _process_interface_callback(
     if value is None:
         telegram.send_message(chat_id, "Opcion de registro no reconocida.")
         return True
+    _clear_captcha_review_buttons(chat_id, message, telegram)
     _continue_new_client_conversation(
         conversation,
         value,
@@ -3511,14 +4016,28 @@ def _process_callback_query(
     if not isinstance(chat, dict) or chat.get("id") is None:
         return
     chat_id = str(chat["id"])
+    sender = callback_query.get("from")
+    user_id = str(sender.get("id") or "") if isinstance(sender, dict) else ""
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram callback from an unauthorized chat.")
         _record_audit_safe(
             actor=_telegram_actor(chat_id), action="callback", status="denied"
         )
         return
-    is_captcha_review = data.startswith("cp:")
-    if not rate_limiter.allow(chat_id, mutation=not is_captcha_review):
+    mutation = _callback_is_mutation(data)
+    if mutation and not _mutation_user_authorized(config, chat, sender):
+        _record_audit_safe(
+            actor=_telegram_actor(chat_id, user_id),
+            action="callback",
+            status="denied",
+            detail="Mutation requires an authorized user in a private chat.",
+        )
+        telegram.answer_callback_query(
+            callback_id,
+            "Accion permitida solo al operador autorizado en chat privado.",
+        )
+        return
+    if not rate_limiter.allow(chat_id, mutation=mutation):
         _record_audit_safe(
             actor=_telegram_actor(chat_id), action="callback", status="rate_limited"
         )
@@ -3567,6 +4086,7 @@ def _process_callback_query(
         ):
             telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
             return
+        _clear_captcha_review_buttons(chat_id, message, telegram)
         if parts[2] == "no":
             _record_audit_safe(
                 actor=_telegram_actor(chat_id), action="client_create",
@@ -3592,6 +4112,7 @@ def _process_callback_query(
         ):
             telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
             return
+        _clear_captcha_review_buttons(chat_id, message, telegram)
         if parts[2] == "no":
             _record_audit_safe(
                 actor=_telegram_actor(chat_id), action=change.action,
@@ -3618,6 +4139,7 @@ def _process_callback_query(
     ):
         telegram.answer_callback_query(callback_id, "La confirmacion ya vencio.")
         return
+    _clear_captcha_review_buttons(chat_id, message, telegram)
     if parts[2] == "no":
         _record_audit_safe(
             actor=_telegram_actor(chat_id), action=confirmation.command,
@@ -3643,11 +4165,56 @@ def _process_callback_query(
             admin_api,
         )
         return
+    if confirmation.command.startswith("revalidate:"):
+        executor.submit(
+            _execute_order_revalidation,
+            confirmation,
+            telegram,
+            admin_api,
+        )
+        return
     executor.submit(
         _execute_worker_command,
         confirmation,
         telegram,
         admin_api,
+    )
+
+
+def _execute_order_revalidation(
+    confirmation: PendingWorkerConfirmation,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    order_id = confirmation.command.removeprefix("revalidate:")
+    try:
+        current = admin_api.get_service_order(order_id)
+        if str(current.get("preflight_status") or "") != "failed":
+            telegram.send_message(
+                confirmation.chat_id,
+                "La orden cambio antes de confirmar y ya no requiere esa revalidacion.",
+            )
+            return
+        admin_api.revalidate_service_order(
+            order_id,
+            actor=_telegram_actor(confirmation.chat_id),
+        )
+    except TelegramControlError as exc:
+        logger.warning("Could not revalidate order from Telegram: %s", exc)
+        telegram.send_message(
+            confirmation.chat_id,
+            "No pude iniciar la validacion. Revisa el estado y vuelve a intentarlo.",
+        )
+        return
+    telegram.send_message(
+        confirmation.chat_id,
+        f"Validacion iniciada para {order_id}. Consulta el cliente en unos segundos.",
+        reply_markup={
+            "inline_keyboard": [[
+                {"text": "Ver cliente", "callback_data": f"om:{order_id}:show"},
+                {"text": "Menu", "callback_data": "ui:menu:main"},
+            ]]
+        },
     )
 
 
@@ -3660,12 +4227,17 @@ def _execute_order_change(
     actor = _telegram_actor(change.chat_id)
     try:
         if change.action == "priority":
+            current = admin_api.get_service_order(change.order_id)
+            if int(current.get("priority") or 0) != int(change.original["priority"]):
+                raise TelegramControlError(
+                    "Order priority changed since the confirmation was prepared."
+                )
             admin_api.update_order_priority(
                 change.order_id,
                 int(change.updated["priority"]),
                 actor=actor,
             )
-        elif change.action == "payment_paid":
+        elif change.action in {"payment_paid", "payment_partial"}:
             current = admin_api.get_service_order(change.order_id)
             if (
                 str(current.get("status") or "") != "reserved_payment_pending"
@@ -3674,13 +4246,27 @@ def _execute_order_change(
                 raise TelegramControlError(
                     "Order is no longer a reservation with pending payment."
                 )
-            admin_api.mark_payment_paid(
+            payment_method = (
+                admin_api.record_partial_payment
+                if change.action == "payment_partial"
+                else admin_api.mark_payment_paid
+            )
+            payment_method(
                 change.order_id,
                 amount_paid=str(change.updated["amount_paid"]),
                 amount_agreed=str(change.updated["amount_agreed"]),
+                expected_amount_paid=str(change.original["amount_paid"]),
                 actor=actor,
             )
         else:
+            current = admin_api.get_service_order(change.order_id)
+            if not all(
+                current.get(field) == value
+                for field, value in change.original.items()
+            ):
+                raise TelegramControlError(
+                    "Order rules changed since the confirmation was prepared."
+                )
             admin_api.update_order_rules(change.order_id, change.updated, actor=actor)
         verified = admin_api.get_service_order(change.order_id)
         if not _order_change_matches(change, verified):
@@ -3699,16 +4285,31 @@ def _execute_order_change(
             else:
                 detail = verified.get("preflight_message") or "revisa el cliente"
                 validation_text = f"\nValidacion: {preflight}. Detalle: {detail}"
-        if change.action == "payment_paid":
+        if change.action in {"payment_paid", "payment_partial"}:
+            payment_result = (
+                "Abono registrado y verificado.\nPostpago: no encolado; el cobro sigue pendiente."
+                if change.action == "payment_partial"
+                else "Pago registrado y verificado.\nPostpago: encolado automaticamente."
+            )
             success_text = (
-                "Pago registrado y verificado.\n"
+                f"{payment_result}\n"
                 f"Solicitud: {operation_short}\n"
                 f"Orden: {change.order_id}\n"
-                f"Total pagado: S/{change.updated['amount_paid']}\n"
-                "Postpago: encolado automaticamente."
+                f"Total pagado: S/{change.updated['amount_paid']}"
+            )
+            return_options = {
+                "pending": ("Volver a pendientes", "ui:pending:1"),
+                "payments": ("Volver a Por cobrar", "ui:payments:1"),
+                "queue": ("Volver a Buscando cupo", "ui:queue:1"),
+                "summary": ("Volver a Citas", "ui:summary:show"),
+                "clients": ("Volver al historial", "ui:clients:1"),
+            }
+            return_label, return_callback = return_options.get(
+                change.return_subject,
+                ("Ver cobros pendientes", "ui:payments:1"),
             )
             success_keyboard = [
-                [{"text": "Ver cobros pendientes", "callback_data": "ui:payments:1"}],
+                [{"text": return_label, "callback_data": return_callback}],
                 [
                     {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
                     {"text": "Menu", "callback_data": "ui:menu:main"},
@@ -3827,7 +4428,7 @@ def _execute_client_creation(
             credentials = {}
             credentials_note = (
                 "\nNota: no pude releer las credenciales desde la API; "
-                "muestro los valores enviados."
+                "el comprobante usa los valores confirmados durante el alta."
             )
         persisted_values = {
             "document_type": credentials.get("document_type")
@@ -3884,6 +4485,33 @@ def _execute_client_creation(
                 ]
             },
         )
+        persisted_password = str(persisted_values.get("password") or "")
+        if persisted_password:
+            sensitive_message = telegram.send_message(
+                creation.chat_id,
+                "CREDENCIAL TEMPORAL\n\n"
+                f"Contrasena: {persisted_password}\n\n"
+                "Guardala y pulsa Borrar credencial para retirarla del chat.",
+                reply_markup={
+                    "inline_keyboard": [[
+                        {"text": "Borrar credencial", "callback_data": "ui:delete:message"}
+                    ]]
+                },
+            )
+            sensitive_result = sensitive_message.get("result")
+            sensitive_message_id = (
+                sensitive_result.get("message_id")
+                if isinstance(sensitive_result, dict)
+                else None
+            )
+            if isinstance(sensitive_message_id, int):
+                timer = Timer(
+                    SENSITIVE_MESSAGE_TTL_SECONDS,
+                    _delete_sensitive_message,
+                    args=(telegram, creation.chat_id, sensitive_message_id),
+                )
+                timer.daemon = True
+                timer.start()
         logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
         _record_audit_safe(
             actor=actor,
@@ -3934,6 +4562,17 @@ def _execute_client_creation(
             operation_id=creation.operation_id,
             detail=f"confirmation={confirmation}; followup=unexpected_error",
         )
+
+
+def _delete_sensitive_message(
+    telegram: TelegramBotApi,
+    chat_id: str,
+    message_id: int,
+) -> None:
+    try:
+        telegram.delete_message(chat_id, message_id)
+    except TelegramControlError:
+        logger.warning("Could not automatically delete a sensitive Telegram message.")
 
 
 def _recover_persisted_client_creation(
@@ -4053,6 +4692,15 @@ def _wait_for_order_preflight(
 
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
+    if change.action == "payment_partial":
+        return (
+            str(order.get("status") or "") == "reserved_payment_pending"
+            and str(order.get("payment_status") or "") == "pending"
+            and _money_value(order.get("amount_paid"))
+            == _money_value(change.updated.get("amount_paid"))
+            and _money_value(order.get("amount_agreed"))
+            == _money_value(change.updated.get("amount_agreed"))
+        )
     if change.action == "payment_paid":
         return (
             str(order.get("status") or "") == "paid"
@@ -4266,8 +4914,10 @@ def _worker_command_label(command: str) -> str:
     }[command]
 
 
-def _telegram_actor(chat_id: str) -> str:
-    digest = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+def _telegram_actor(chat_id: str, user_id: str | None = None) -> str:
+    effective_user_id = user_id or chat_id
+    identity = f"chat:{chat_id}|user:{effective_user_id}"
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
     return f"telegram:{digest}"
 
 
@@ -4298,26 +4948,6 @@ def _record_audit_safe(
         )
     except Exception:
         logger.warning("Could not persist remote-control audit action=%s", action)
-
-
-def _send_startup_notice(
-    config: TelegramControlConfig,
-    telegram: TelegramBotApi,
-    worker: dict[str, Any],
-) -> None:
-    phase = str(worker.get("phase") or "desconocida")
-    message = (
-        "CONTROL REMOTO DISPONIBLE\n\n"
-        "El receptor de Telegram acaba de iniciar o recuperarse.\n"
-        f"Worker: {'activo' if worker.get('worker_running') else 'sin confirmar'}\n"
-        f"Fase: {phase}\n\n"
-        "Usa /estado para actualizar la informacion."
-    )
-    for chat_id in config.authorized_chat_ids:
-        try:
-            telegram.send_message(chat_id, message, reply_markup=_main_menu_markup())
-        except TelegramControlError:
-            logger.warning("Could not deliver Telegram control startup notice.")
 
 
 def _cancel_chat_confirmations(

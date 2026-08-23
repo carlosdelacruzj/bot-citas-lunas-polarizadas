@@ -33,6 +33,7 @@ debe incorporarse aqui cuando cambie una capacidad publica del dashboard.
 ```text
 GET  /api/v1/worker
 GET  /api/v1/service-orders
+GET  /api/v1/operator-inbox
 GET  /api/v1/service-orders/{order_id}
 GET  /api/v1/monthly-summary?month=YYYY-MM
 GET  /api/v2/monthly-summary?month=YYYY-MM
@@ -44,6 +45,7 @@ POST /api/v1/service-orders/{order_id}/credentials
 POST /api/v1/service-orders/{order_id}/priority
 POST /api/v1/service-orders/{order_id}/restrictions
 POST /api/v1/service-orders/{order_id}/payment/paid
+POST /api/v1/service-orders/{order_id}/payment/partial
 POST /api/v1/service-orders/{order_id}/whatsapp/prepare
 POST /api/v1/whatsapp-messages/test/prepare
 GET  /api/v1/whatsapp-messages/{message_id}/attachment
@@ -474,7 +476,16 @@ no soporte.
 - `done` archiva/completa una orden.
 - `no-charge` marca una orden sin cobro.
 - `close` archiva/cierra una orden con `closure_reason` y `closure_note`.
-- `payment/paid` registra cobro y monto.
+- `payment/paid` cierra el cobro y encola el postpago en la misma transaccion.
+  Exige `amount_paid >= amount_agreed`; una diferencia inferior solo se acepta
+  con `allow_difference=true` y `difference_reason` no vacio.
+- `payment/partial` registra el total acumulado abonado, que debe permanecer por
+  debajo de `amount_agreed`; conserva pago y orden pendientes y nunca encola
+  postpago.
+- Ambos endpoints aceptan la fotografia opcional
+  `expected_payment_status`, `expected_amount_agreed` y
+  `expected_amount_paid`; si ya cambio, responden `409 Conflict`. La escritura
+  financiera y su auditoria con `X-Appointment-Actor` comparten transaccion.
 - `whatsapp/prepare` crea una copia inmutable del saludo, constancia principal y
   cobro para una reserva confirmada; no envia nada por si mismo.
 - `worker/restart` solicita reinicio controlado del worker.

@@ -894,6 +894,9 @@ export interface ReservationRestrictionsUpdatePayload {
 export interface PaymentPaidPayload {
   amount_paid: string;
   amount_agreed?: string | null;
+  expected_payment_status?: string | null;
+  expected_amount_agreed?: string | null;
+  expected_amount_paid?: string | null;
 }
 
 export interface WhatsAppMessagePackage {
@@ -1373,6 +1376,16 @@ export class AppointmentApiService {
   async markPaymentPaid(orderId: string, payload: PaymentPaidPayload): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/paid`,
+      payload,
+    );
+  }
+
+  async recordPartialPayment(
+    orderId: string,
+    payload: PaymentPaidPayload,
+  ): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/payment/partial`,
       payload,
     );
   }

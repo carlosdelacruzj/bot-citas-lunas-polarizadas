@@ -28,6 +28,10 @@
             <dd>{{ view.formatMoney(+view.paymentAmountAgreed()) }}</dd>
           </div>
           <div>
+            <dt>Registrado hasta ahora</dt>
+            <dd>{{ view.formatMoney(+(order.amount_paid || 0)) }}</dd>
+          </div>
+          <div>
             <dt>Reserva</dt>
             <dd>
               {{ view.formatDate(order.reservation_date, 'sin fecha') }}
@@ -37,11 +41,11 @@
         </dl>
 
         <label>
-          Monto recibido
+          Total pagado acumulado
           <input
             name="quickPaymentAmount"
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
             inputmode="decimal"
             [ngModel]="view.paymentAmountPaid()"
@@ -73,11 +77,10 @@
             [disabled]="!view.paymentAmountPaid() || view.actionBusy()"
             (click)="view.requestMarkPaid()"
           >
-            Confirmar pago de S/{{ view.paymentAmountPaid() || '0.00' }}
+            Registrar total S/{{ view.paymentAmountPaid() || '0.00' }}
           </button>
         </div>
       </div>
     </section>
   }
 }
-

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from psycopg import Connection
@@ -28,6 +29,9 @@ from appointment_bot.db.common import (
     _settings,
     _timestamp_text,
     init_database,
+)
+from appointment_bot.db.remote_control_audit import (
+    record_remote_control_audit_in_connection,
 )
 from appointment_bot.db.whatsapp_automation import enqueue_whatsapp_automation_job
 
@@ -225,20 +229,42 @@ def mark_payment_paid(
     *,
     amount_paid: str | float | int,
     amount_agreed: str | float | int | None = None,
+    actor: str = "internal",
+    allow_difference: bool = False,
+    difference_reason: str | None = None,
+    expected_payment_status: str | None = None,
+    expected_amount_agreed: str | float | int | None = None,
+    expected_amount_paid: str | float | int | None = None,
     settings: Settings | None = None,
-) -> None:
+) -> str:
     paid = _decimal_or_none(amount_paid)
     agreed = _decimal_or_none(amount_agreed)
-    if paid is None:
-        raise ValueError("amount_paid must be a valid amount.")
+    if paid is None or paid <= 0:
+        raise ValueError("amount_paid must be a valid positive amount.")
     if agreed is None:
         agreed = paid
+    if agreed < 0:
+        raise ValueError("amount_agreed must be a valid non-negative amount.")
+    normalized_reason = (difference_reason or "").strip()
+    if paid < agreed and (not allow_difference or not normalized_reason):
+        raise ValueError(
+            "A lower final payment requires allow_difference=true and difference_reason."
+        )
     settings = _settings(settings)
     init_database(settings)
     now = _now()
     with _connection(_database_url(settings)) as connection:
-        if _service_order_identity(connection, order_id) is None:
-            raise ValueError(f"Service order not found: {order_id}")
+        current = _lock_payment_state(connection, order_id)
+        _validate_payment_snapshot(
+            current,
+            expected_payment_status=expected_payment_status,
+            expected_amount_agreed=expected_amount_agreed,
+            expected_amount_paid=expected_amount_paid,
+        )
+        if current["order_status"] != "reserved_payment_pending":
+            raise ValueError("Service order is no longer pending payment.")
+        if current["payment_status"] not in {None, "pending"}:
+            raise ValueError("Payment is no longer pending.")
         connection.execute(
             """
             INSERT INTO payments (
@@ -273,6 +299,148 @@ def mark_payment_paid(
             settings=settings,
             _connection_override=connection,
         )
+        return record_remote_control_audit_in_connection(
+            connection,
+            actor=actor,
+            action="payment_paid",
+            status="applied",
+            target_type="service_order",
+            target_id=order_id,
+            detail=(
+                f"amount_agreed={agreed}; amount_paid={paid}; "
+                f"difference_allowed={str(paid < agreed).lower()}; "
+                f"difference_reason={normalized_reason or 'none'}; post_payment=queued"
+            ),
+        )
+
+
+def record_partial_payment(
+    order_id: str,
+    *,
+    amount_paid: str | float | int,
+    amount_agreed: str | float | int | None = None,
+    actor: str = "internal",
+    expected_payment_status: str | None = None,
+    expected_amount_agreed: str | float | int | None = None,
+    expected_amount_paid: str | float | int | None = None,
+    settings: Settings | None = None,
+) -> str:
+    paid = _decimal_or_none(amount_paid)
+    agreed = _decimal_or_none(amount_agreed)
+    if paid is None or paid <= 0:
+        raise ValueError("amount_paid must be a valid positive amount.")
+    settings = _settings(settings)
+    init_database(settings)
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        current = _lock_payment_state(connection, order_id)
+        _validate_payment_snapshot(
+            current,
+            expected_payment_status=expected_payment_status,
+            expected_amount_agreed=expected_amount_agreed,
+            expected_amount_paid=expected_amount_paid,
+        )
+        if current["order_status"] != "reserved_payment_pending":
+            raise ValueError("Service order is no longer pending payment.")
+        if current["payment_status"] not in {None, "pending"}:
+            raise ValueError("Payment is no longer pending.")
+        effective_agreed = agreed if agreed is not None else current["amount_agreed"]
+        if effective_agreed is None or effective_agreed <= 0:
+            raise ValueError("amount_agreed must be a valid positive amount.")
+        if paid >= effective_agreed:
+            raise ValueError(
+                "A partial payment must remain below amount_agreed; use payment/paid instead."
+            )
+        previous_paid = current["amount_paid"] or 0
+        if paid < previous_paid:
+            raise ValueError("A partial payment cannot reduce the accumulated amount paid.")
+        connection.execute(
+            """
+            INSERT INTO payments (
+                payment_id, order_id, status, amount_agreed, amount_paid,
+                currency, paid_at, created_at, updated_at
+            )
+            VALUES (%s, %s, 'pending', %s, %s, 'PEN', NULL, %s, %s)
+            ON CONFLICT(payment_id) DO UPDATE SET
+                status = 'pending',
+                amount_agreed = excluded.amount_agreed,
+                amount_paid = excluded.amount_paid,
+                paid_at = NULL,
+                updated_at = excluded.updated_at
+            """,
+            (
+                _id_from_value("payment", order_id),
+                order_id,
+                effective_agreed,
+                paid,
+                now,
+                now,
+            ),
+        )
+        return record_remote_control_audit_in_connection(
+            connection,
+            actor=actor,
+            action="payment_partial",
+            status="applied",
+            target_type="service_order",
+            target_id=order_id,
+            detail=(
+                f"amount_agreed={effective_agreed}; amount_paid={paid}; "
+                "payment_status=pending; post_payment=not_queued"
+            ),
+        )
+
+
+def _lock_payment_state(connection: Connection, order_id: str) -> dict[str, Any]:
+    order = connection.execute(
+        "SELECT status FROM service_orders WHERE order_id = %s FOR UPDATE",
+        (order_id,),
+    ).fetchone()
+    if order is None:
+        raise ValueError(f"Service order not found: {order_id}")
+    payment = connection.execute(
+        """
+        SELECT status, amount_agreed, amount_paid
+        FROM payments
+        WHERE payment_id = %s
+        FOR UPDATE
+        """,
+        (_id_from_value("payment", order_id),),
+    ).fetchone()
+    return {
+        "order_status": order["status"],
+        "payment_status": payment["status"] if payment is not None else None,
+        "amount_agreed": payment["amount_agreed"] if payment is not None else None,
+        "amount_paid": payment["amount_paid"] if payment is not None else None,
+    }
+
+
+def _validate_payment_snapshot(
+    current: dict[str, Any],
+    *,
+    expected_payment_status: str | None,
+    expected_amount_agreed: str | float | int | None,
+    expected_amount_paid: str | float | int | None,
+) -> None:
+    if (
+        expected_payment_status is not None
+        and current["payment_status"] != expected_payment_status
+    ):
+        raise ValueError("Payment changed since it was reviewed.")
+    for field, expected in (
+        ("amount_agreed", expected_amount_agreed),
+        ("amount_paid", expected_amount_paid),
+    ):
+        if expected is None:
+            continue
+        normalized_expected = _decimal_or_none(expected)
+        if normalized_expected is None:
+            raise ValueError("Expected payment amounts must be valid numbers.")
+        current_value = current[field]
+        if field == "amount_paid" and current_value is None:
+            current_value = Decimal("0")
+        if current_value != normalized_expected:
+            raise ValueError("Payment amounts changed since they were reviewed.")
 
 
 def mark_service_order_no_charge(
