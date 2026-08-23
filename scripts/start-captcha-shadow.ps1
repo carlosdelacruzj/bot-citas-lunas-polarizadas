@@ -14,12 +14,32 @@ $HealthUrl = "http://127.0.0.1:8787/health"
 $LogDir = Join-Path $ProjectRoot "logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $BootstrapLog = Join-Path $LogDir ("captcha-shadow-bootstrap-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
+$EnvPath = Join-Path $ProjectRoot ".env"
 
 function Write-BootstrapLog {
     param([string]$Message)
 
     $line = "{0} | {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Message
     Add-Content -LiteralPath $BootstrapLog -Value $line -Encoding UTF8
+}
+
+function Test-LocalBooleanSetting {
+    param(
+        [string]$Name,
+        [bool]$Default = $false
+    )
+
+    if (-not (Test-Path -LiteralPath $EnvPath)) {
+        return $Default
+    }
+    $match = Get-Content -LiteralPath $EnvPath |
+        Where-Object { $_ -match ("^\s*{0}\s*=" -f [regex]::Escape($Name)) } |
+        Select-Object -Last 1
+    if (-not $match) {
+        return $Default
+    }
+    $value = ($match -split "=", 2)[1].Trim().Trim('"').Trim("'").ToLowerInvariant()
+    return $value -in @("1", "true", "yes", "on")
 }
 
 function Test-CaptchaShadowHealthy {
@@ -66,6 +86,16 @@ function Stop-UnhealthyCaptchaShadow {
     foreach ($match in $matches) {
         Stop-Process -Id $match.ProcessId -Force -ErrorAction SilentlyContinue
     }
+}
+
+if (-not (Test-LocalBooleanSetting -Name "CAPTCHA_SHADOW_SERVICE_ENABLED")) {
+    Write-BootstrapLog "CAPTCHA shadow is in cold standby."
+    if (Test-Path -LiteralPath $StopScript) {
+        & $StopScript *>&1 | ForEach-Object {
+            Write-BootstrapLog ("  {0}" -f $_)
+        }
+    }
+    exit 0
 }
 
 Write-BootstrapLog "CAPTCHA shadow supervisor started."

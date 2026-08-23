@@ -64,9 +64,7 @@ def update_appointment_reminder_control(
     if normalized_mode not in REMINDER_MODES:
         raise ValueError("Unsupported appointment reminder mode.")
     actor = sanitize_text(updated_by.strip())[:120] or "dashboard-owner"
-    normalized_ids = sorted(
-        {sanitize_text(value.strip()) for value in canary_order_ids if value.strip()}
-    )
+    normalized_ids = sorted({value.strip() for value in canary_order_ids if value.strip()})
     resolved = _settings(settings)
     init_database(resolved)
     with _connection(_database_url(resolved)) as connection:

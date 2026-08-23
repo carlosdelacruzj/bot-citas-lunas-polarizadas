@@ -18,13 +18,13 @@ AppointmentBotContinuousWorker (tarea programada)
         |-- scripts/start-worker.ps1
         |-- scripts/start-admin-dashboard.ps1
         |-- scripts/start-telegram-control.ps1
-        `-- scripts/start-captcha-shadow.ps1
+        `-- scripts/start-captcha-shadow.ps1 (solo si está habilitado)
 
 PostgreSQL 16 en Docker
   |-- worker de reservas: 127.0.0.1:8765
   |-- Admin API + dashboard: 127.0.0.1:8766
   |-- Telegram control -> Admin API
-  `-- CAPTCHA local/sombra: 127.0.0.1:8787
+  `-- CAPTCHA local/sombra: 127.0.0.1:8787 (apagado en reserva fría)
 ```
 
 Los pares `.venv/python.exe -> Python312/python.exe` son el redirector normal
@@ -60,6 +60,10 @@ scripts/start-telegram-control.ps1
 scripts/start-captcha-shadow.ps1
 ```
 
+El último comando solo mantiene el servicio residente cuando
+`CAPTCHA_SHADOW_SERVICE_ENABLED=true`; con el valor `false` detiene una copia
+existente y termina.
+
 No iniciar una segunda copia sin comprobar antes la tarea, supervisores,
 procesos hijos y puertos.
 
@@ -70,7 +74,7 @@ procesos hijos y puertos.
 | Worker | `http://127.0.0.1:8765/health` | Vida del proceso durante la ventana operativa. |
 | Estado worker | Dashboard `/api/v1/worker` | Fase, orden, error, pausa y proxima revision. |
 | Admin API | `http://127.0.0.1:8766/health` | `ok/api_only` significa API viva, no worker activo. |
-| CAPTCHA | `http://127.0.0.1:8787/health` | CUDA, modelos residentes y hora de inicio. |
+| CAPTCHA | `http://127.0.0.1:8787/health` | CUDA y modelos cuando está habilitado; conexión rechazada es normal en reserva fría. |
 | PostgreSQL | `docker ps` / healthcheck | Contenedor y esquema operativo. |
 
 El worker consulta de lunes a sabado y termina normalmente a las `18:00` con
@@ -128,6 +132,14 @@ Telegram no ejecuta SQL ni PowerShell y no accede a una segunda fuente de
 datos. El menu permite buscar clientes, crear altas manuales, ajustar prioridad
 y reglas, consultar estado y etiquetar CAPTCHA sombra. Conversaciones y botones
 vencen; los guardados se vuelven a leer antes de anunciar exito.
+
+El menú ofrece **En cola** para órdenes listas, en validación o pausadas, y
+**Faltan pagar** para reservas con `payment_status=pending`. Desde esta última
+vista, **Registrar pago** usa el monto acordado como total final, muestra
+abonos y saldo, y exige confirmación. Para una diferencia deliberada se usa
+`/pago ORDEN MONTO_TOTAL`. La Admin API cambia pago y orden a `paid` y encola el
+postpago en la misma transacción; el mensaje de Telegram solo confirma el
+registro y encolado, no la entrega por WhatsApp.
 
 La consulta de credenciales completas es una excepcion deliberada para el unico
 operador autorizado. Nunca se registran valores en logs o auditoria y debe

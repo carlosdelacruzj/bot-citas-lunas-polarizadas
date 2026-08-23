@@ -65,6 +65,8 @@ import {
   WorkerStatus,
   WhatsAppFollowUpPackage,
   WhatsAppMessagePackage,
+  WhatsAppReviewPayload,
+  WhatsAppReviewResolution,
   WhatsAppWebDraftResponse,
   apiErrorMessage,
 } from './appointment-api.service';
@@ -288,6 +290,7 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   rejected: { label: 'Rechazado', tone: 'bad' },
   reservation_unconfirmed: { label: 'Reserva sin confirmar', tone: 'bad' },
   reserved_payment_pending: { label: 'Reservada, pago pendiente', tone: 'warn' },
+  resolved: { label: 'Conciliado manualmente', tone: 'neutral' },
   running: { label: 'En ejecución', tone: 'warn' },
   sent: { label: 'Enviado', tone: 'good' },
   uncertain: { label: 'Envío incierto', tone: 'bad' },
@@ -493,6 +496,9 @@ export class App implements OnDestroy {
   protected readonly captchaSavingEventId = signal('');
   protected readonly captchaReviewMessage = signal<string | null>(null);
   protected readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
+  protected readonly captchaShadowEnabled = computed(
+    () => this.health()?.captcha_shadow_enabled === true,
+  );
   protected readonly captchaQuality = signal<CaptchaQuality | null>(null);
   protected readonly captchaQualityCases = signal<CaptchaQualityCasesPage | null>(null);
   protected readonly captchaQualityState = signal<LoadState>('idle');
@@ -602,6 +608,9 @@ export class App implements OnDestroy {
   protected readonly whatsappTestRecipient = signal('');
   protected readonly whatsappTestMode = signal(false);
   protected readonly whatsappFollowUpMode = signal(false);
+  protected readonly whatsappReviewMode = signal(false);
+  protected readonly whatsappReview = signal<WhatsAppReviewPayload | null>(null);
+  protected readonly whatsappReviewNote = signal('');
   protected readonly whatsappWebBusy = signal(false);
   protected readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
   protected readonly whatsappManualFallbackOpen = signal(false);
@@ -750,6 +759,9 @@ export class App implements OnDestroy {
   protected readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
     const tasks: InboxOrderTask[] = [];
     for (const order of this.orders()) {
+      if (order.status === 'archived') {
+        continue;
+      }
       if (order.preflight_status === 'failed') {
         tasks.push({
           key: `preflight-${order.order_id}`,
@@ -878,7 +890,9 @@ export class App implements OnDestroy {
       ).length,
   );
   protected readonly inboxPendingTotal = computed(
-    () => this.inboxOrderTasks().length + this.captchaReviewTotal(),
+    () =>
+      this.inboxOrderTasks().length +
+      (this.captchaShadowEnabled() ? this.captchaReviewTotal() : 0),
   );
   protected readonly confirmedOrders = computed(
     () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
@@ -1056,6 +1070,14 @@ export class App implements OnDestroy {
           disabled: false,
         };
       }
+      if (order.whatsapp_followup_action_state === 'resolved') {
+        return {
+          key: 'none',
+          label: 'Post-pago conciliado',
+          description: 'El operador cerró este resultado y ya no requiere atención.',
+          disabled: true,
+        };
+      }
       return {
         key: 'post-payment-whatsapp',
         label:
@@ -1148,7 +1170,7 @@ export class App implements OnDestroy {
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
     }
-    return this.orders().length > 0 || this.captchaReviewTotal() > 0 || state === 'ready';
+    return this.orders().length > 0 || state === 'ready';
   });
   protected readonly activeViewState = computed<ViewStateKind | null>(() => {
     const state = this.loadState();
@@ -1398,10 +1420,19 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     this.viewLoadError.set(null);
     try {
-      await Promise.all([
-        this.refreshCommonData(scope),
-        this.refreshViewData(view, showLoading, scope),
-      ]);
+      if (view === 'inbox' || view === 'captchas') {
+        await this.refreshCommonData(scope);
+        if (view === 'captchas' && !this.captchaShadowEnabled()) {
+          await this.router.navigate(['/resumen'], { replaceUrl: true });
+          return;
+        }
+        await this.refreshViewData(view, showLoading, scope);
+      } else {
+        await Promise.all([
+          this.refreshCommonData(scope),
+          this.refreshViewData(view, showLoading, scope),
+        ]);
+      }
       if (generation !== this.refreshGeneration) {
         return;
       }
@@ -1441,16 +1472,24 @@ export class App implements OnDestroy {
     scope: RequestScope,
   ): Promise<void> {
     if (view === 'inbox') {
+      const ordersRequest = this.api.getServiceOrders(scope);
+      if (!this.captchaShadowEnabled()) {
+        this.applyOrders(await ordersRequest);
+        this.captchaReviewTotal.set(0);
+        return;
+      }
       const [orders, pendingCaptchas] = await Promise.all([
-        this.api.getServiceOrders(scope),
-        this.api.getCaptchaEvents(
-          1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
-        ).catch((error: unknown) => {
-          if (isRequestCancelled(error)) {
-            throw error;
-          }
-          return null;
-        }),
+        ordersRequest,
+        this.api
+          .getCaptchaEvents(
+            1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
+          )
+          .catch((error: unknown) => {
+            if (isRequestCancelled(error)) {
+              throw error;
+            }
+            return null;
+          }),
       ]);
       this.applyOrders(orders);
       if (pendingCaptchas) {
@@ -2545,7 +2584,7 @@ export class App implements OnDestroy {
       return;
     }
     if (task.kind === 'review') {
-      this.openInboxOrder(task.order);
+      void this.openWhatsAppReview(task.order);
       return;
     }
     this.selectOrder(task.order.order_id, false);
@@ -2697,6 +2736,8 @@ export class App implements OnDestroy {
     this.whatsappTestRecipient.set('');
     this.whatsappTestMode.set(true);
     this.whatsappFollowUpMode.set(true);
+    this.whatsappReviewMode.set(false);
+    this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
     this.openModal('whatsapp');
@@ -2708,6 +2749,8 @@ export class App implements OnDestroy {
     this.whatsappTestRecipient.set('');
     this.whatsappTestMode.set(true);
     this.whatsappFollowUpMode.set(false);
+    this.whatsappReviewMode.set(false);
+    this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
     this.openModal('whatsapp');
@@ -2802,6 +2845,8 @@ export class App implements OnDestroy {
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestMode.set(false);
     this.whatsappFollowUpMode.set(false);
+    this.whatsappReviewMode.set(false);
+    this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(false);
     this.openModal('whatsapp');
@@ -2833,6 +2878,8 @@ export class App implements OnDestroy {
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestMode.set(false);
     this.whatsappFollowUpMode.set(true);
+    this.whatsappReviewMode.set(false);
+    this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
     this.openModal('whatsapp');
@@ -2858,6 +2905,87 @@ export class App implements OnDestroy {
     }
   }
 
+  protected async openWhatsAppReview(order: ServiceOrder): Promise<void> {
+    const isFollowUp =
+      this.isPostPaymentWhatsAppCandidate(order) &&
+      ['failed', 'uncertain'].includes(order.whatsapp_followup_action_state);
+    this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
+    this.whatsappTestMode.set(false);
+    this.whatsappFollowUpMode.set(isFollowUp);
+    this.whatsappReviewMode.set(true);
+    this.whatsappReview.set(null);
+    this.whatsappReviewNote.set('');
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(true);
+    this.openModal('whatsapp');
+    this.whatsappFollowUpLoading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const review = await this.api.getWhatsAppReview(
+        order.order_id,
+        isFollowUp ? 'whatsapp-followup' : 'whatsapp',
+      );
+      this.whatsappReview.set(review);
+      this.whatsappFollowUpPackage.set(review.message);
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.whatsappFollowUpLoading.set(false);
+    }
+  }
+
+  protected async resolveWhatsAppReview(resolution: WhatsAppReviewResolution): Promise<void> {
+    const review = this.whatsappReview();
+    if (!review || this.actionBusy()) {
+      return;
+    }
+    const note = this.whatsappReviewNote().trim();
+    if (resolution === 'dismissed' && !note) {
+      this.errorMessage.set('Indica el motivo para cerrar el pendiente sin envío.');
+      return;
+    }
+    const labels: Record<WhatsAppReviewResolution, { title: string; text: string }> = {
+      confirmed_complete: {
+        title: 'Confirmar paquete completo',
+        text: 'Úsalo solo si verificaste en el chat que todo el paquete ya fue enviado.',
+      },
+      completed_missing: {
+        title: 'Confirmar contenido completado',
+        text: 'Confirma solo después de enviar manualmente únicamente lo que faltaba.',
+      },
+      dismissed: {
+        title: 'Cerrar pendiente sin envío',
+        text: 'El intento seguirá registrado como incierto o fallido y se guardará tu motivo.',
+      },
+    };
+    const copy = labels[resolution];
+    const confirmation = await (await this.getSweetAlert()).fire({
+      icon: resolution === 'dismissed' ? 'warning' : 'question',
+      title: copy.title,
+      text: copy.text,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, registrar resolución',
+      cancelButtonText: 'Cancelar',
+      focusCancel: true,
+    });
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+    this.actionBusy.set(true);
+    try {
+      await this.api.resolveWhatsAppReview(review.job.job_key, resolution, note || null);
+      await this.refreshAll();
+      this.actionBusy.set(false);
+      this.closeModal();
+      this.showToast('Pendiente de WhatsApp resuelto y auditado');
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
   protected canPrepareOrderWhatsApp(order: ServiceOrder): boolean {
     const baseEligible =
       order.status === 'reserved_payment_pending' &&
@@ -2868,6 +2996,9 @@ export class App implements OnDestroy {
     if (!baseEligible) {
       return false;
     }
+    if (order.whatsapp_message_action_state === 'resolved') {
+      return false;
+    }
     const detail = this.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return false;
@@ -2876,6 +3007,9 @@ export class App implements OnDestroy {
   }
 
   protected whatsappPreparationHint(order: ServiceOrder): string {
+    if (order.whatsapp_message_action_state === 'resolved') {
+      return 'El resultado fue conciliado y cerrado por el operador.';
+    }
     if (
       order.status !== 'reserved_payment_pending' ||
       order.reservation_status !== 'confirmed' ||
@@ -2901,6 +3035,9 @@ export class App implements OnDestroy {
     if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return false;
     }
+    if (order.whatsapp_followup_action_state === 'resolved') {
+      return false;
+    }
     const detail = this.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return false;
@@ -2911,6 +3048,9 @@ export class App implements OnDestroy {
   protected postPaymentWhatsAppHint(order: ServiceOrder): string {
     if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return 'Requiere reserva confirmada y pago ya registrado.';
+    }
+    if (order.whatsapp_followup_action_state === 'resolved') {
+      return 'El resultado fue conciliado y cerrado por el operador.';
     }
     const detail = this.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
@@ -3161,6 +3301,7 @@ export class App implements OnDestroy {
         status: 'sent',
         sent_at: response.sent_at ?? new Date().toISOString(),
       });
+      await this.refreshAll();
       this.showToast('Seguimiento post-pago registrado');
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -3395,6 +3536,9 @@ export class App implements OnDestroy {
       this.whatsappTestRecipient.set('');
       this.whatsappTestMode.set(false);
       this.whatsappFollowUpMode.set(false);
+      this.whatsappReviewMode.set(false);
+      this.whatsappReview.set(null);
+      this.whatsappReviewNote.set('');
       this.whatsappWebResult.set(null);
       this.whatsappManualFallbackOpen.set(false);
     }
@@ -3416,7 +3560,7 @@ export class App implements OnDestroy {
     } else if (action.key === 'post-payment-whatsapp') {
       void this.openPostPaymentWhatsApp(order);
     } else if (action.key === 'review') {
-      this.openOrderActions(order);
+      void this.openWhatsAppReview(order);
     }
   }
 
@@ -3433,6 +3577,9 @@ export class App implements OnDestroy {
       }
       if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
         return 'Ver seguimiento';
+      }
+      if (order.whatsapp_followup_action_state === 'resolved') {
+        return 'Post-pago conciliado';
       }
       return order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago';
     }
@@ -3455,7 +3602,9 @@ export class App implements OnDestroy {
       order.whatsapp_followup_action_state !== 'not_applicable'
     ) {
       this.selectOrder(order.order_id);
-      if (order.whatsapp_followup_action_state === 'sent') {
+      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
+        void this.openWhatsAppReview(order);
+      } else if (order.whatsapp_followup_action_state === 'sent') {
         void this.openPostPaymentWhatsApp(order);
       }
       return;

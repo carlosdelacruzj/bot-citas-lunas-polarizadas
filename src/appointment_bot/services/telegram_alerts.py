@@ -94,6 +94,22 @@ class TelegramAlertDispatcher:
         )
         return True
 
+    def enqueue_message(self, message: str, *, dedupe_key: str) -> bool:
+        if not self.enabled:
+            return False
+        try:
+            enqueue_telegram_alert(
+                dedupe_key=dedupe_key,
+                payload={"message": sanitize_text(message)[:1000]},
+                settings=self.settings,
+            )
+        except Exception:
+            logger.exception("telegram_alert_outbox_persist_failed")
+            return False
+        self._wake_event.set()
+        logger.info("telegram_generic_alert_queued dedupe_key=%s", dedupe_key[:24])
+        return True
+
     def _run(self) -> None:
         while not self._stop_event.is_set():
             row = self._next_pending()
@@ -114,16 +130,24 @@ class TelegramAlertDispatcher:
     def _deliver(self, row: dict[str, Any]) -> None:
         dedupe_key = str(row["dedupe_key"])
         payload = dict(row["payload"])
-        result = AvailabilityResult(
-            status=str(payload.get("status") or "available"),
-            message="",
-            details=dict(payload.get("details") or {}),
-        )
-        delivered = send_telegram_message(
-            self.settings,
-            format_immediate_availability_message(result),
-            timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
-        )
+        message = payload.get("message")
+        if isinstance(message, str) and message.strip():
+            delivered = send_telegram_message(
+                self.settings,
+                sanitize_text(message)[:1000],
+                timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
+            )
+        else:
+            result = AvailabilityResult(
+                status=str(payload.get("status") or "available"),
+                message="",
+                details=dict(payload.get("details") or {}),
+            )
+            delivered = send_telegram_message(
+                self.settings,
+                format_immediate_availability_message(result),
+                timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
+            )
         if delivered:
             try:
                 mark_telegram_alert_sent(dedupe_key, settings=self.settings)
@@ -206,3 +230,12 @@ def enqueue_immediate_availability(
         logger.error("Telegram alert dispatcher is not configured")
         return False
     return dispatcher.enqueue(result, dedupe_key=dedupe_key)
+
+
+def enqueue_generic_telegram_alert(message: str, *, dedupe_key: str) -> bool:
+    with _dispatcher_lock:
+        dispatcher = _dispatcher
+    if dispatcher is None:
+        logger.error("Telegram alert dispatcher is not configured")
+        return False
+    return dispatcher.enqueue_message(message, dedupe_key=dedupe_key)

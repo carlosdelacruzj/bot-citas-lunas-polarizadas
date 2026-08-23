@@ -389,6 +389,7 @@
   </article>
 </section>
 
+@if (dashboard.captchaShadowEnabled()) {
 <details class="panel settings-panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
   <summary class="settings-summary">
     <span>
@@ -639,6 +640,7 @@
   </div>
   </div>
 </details>
+}
 
 <section class="split">
   <div class="panel-stack">

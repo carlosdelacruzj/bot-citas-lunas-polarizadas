@@ -41,6 +41,7 @@ PUBLIC_WORKER_FIELDS = {
 
 
 def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]:
+    settings = load_settings(require_login=False)
     if worker_controller is None:
         healthy, reason = True, "api_only"
         worker_running = False
@@ -56,6 +57,7 @@ def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]
         ),
         "worker_running": worker_running,
         "reason": reason,
+        "captcha_shadow_enabled": settings.captcha_shadow_enabled,
     }
 
 

@@ -1,0 +1,1373 @@
+<html xmlns="http://www.w3.org/1999/xhtml" data-appointment-modal-css="healthy"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>
+
+</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="scripts_citas/bootstrap.min.css" rel="stylesheet"><link href="Content/font-awesome/css/all.min.css" rel="stylesheet"><link href="Styles/Site.css" rel="stylesheet"><link href="Styles/forms.css" rel="stylesheet">
+    <link href="scripts_citas/grid_moderno.css" rel="stylesheet">
+    <link href="scripts_citas/tab.css" rel="stylesheet">
+    <link href="plugins/sweetAlert2/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="Content/font-awesome/css/all.min.css">
+
+    <style>
+        .modalBackground {
+            background-color: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(3px);
+        }
+
+        .modalBackground2 {
+            background-color: lightgray;
+            filter: alpha(opacity=80);
+            opacity: 0.8;
+        }
+
+        .modal-panel {
+            width: 900px;
+            max-width: 95%;
+            background: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+            animation: modalShow .25s ease;
+        }
+
+        .modal-header-custom {
+            background: linear-gradient(135deg, #104938, #104938);
+            color: white;
+            padding: 20px 30px;
+        }
+
+        .modal-body-custom {
+            padding: 30px;
+            background: #f8f9fc;
+        }
+
+        .modal-footer-custom {
+            padding: 18px 30px;
+            text-align: right;
+            background: white;
+            border-top: 1px solid #eaeaea;
+        }
+
+        @keyframes modalShow {
+            from {
+                opacity: 0;
+                transform: translateY(-15px) scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+
+    <script>
+        function mostrarCertificado() {
+            window.open(
+                'certificadopdf.aspx',
+                'popupPDF',
+                'width=1000,height=900,scrollbars=no,resizable=yes'
+            );
+        }
+    </script>
+    <script type="text/javascript">
+
+
+        function shrinkandgrow(input) {
+            var displayIcon = "img" + input;
+            if ($("#" + displayIcon).attr("src") == "grow.gif") {
+
+                $("#" + displayIcon).closest("tr")
+                    .after("<tr><td></td><td colspan = '100%'>" + $("#" + input)
+                        .html() + "</td></tr>");
+                $("#" + displayIcon).attr("src", "shrink.gif");
+            } else {
+
+                $("#" + displayIcon).closest("tr").next().remove();
+                $("#" + displayIcon).attr("src", "grow.gif");
+            }
+        }
+        function abrirVentanarepo() {
+            window.open("repoprograma.aspx", '_blank', 'height=805,width=1180,top=150,left=450,status=no,toolbar=no,menubar=no,location=no,directories=no,status=no,scrollbars=no,resizable=no,copyhistory=false');
+        }
+        function mensaje() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'error',
+                title: 'No se pudo realizar la operación',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+        function eliminar() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'success',
+                title: 'Se eliminó correctamente el registro',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        function grabar() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'success',
+                title: 'Se grabó correctamente el registro',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        function modificar() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'success',
+                title: 'Se modificó satisfactoriamente el registro',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        function nose() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'error',
+                title: 'No se registró, ya existe la Programación para Reserva',
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+
+        function nosepuede() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'error',
+                title: 'No tiene privilegios para Modificar el registro',
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+
+
+        function sinsedes() {
+            Swal.fire({
+                position: 'button-start',
+                type: 'error',
+                title: 'No Existen Sedes',
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+        function myFunction(valor) {
+            Swal.fire({
+                position: 'button-start',
+                type: 'success',
+                title: valor,
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+        function alertFunc() {
+
+        }
+
+    </script>
+<link href="/lunasoscurecidas/WebResource.axd?d=DSgCKnaJlQjfnXvLWZApAHOq8nMId-Tdy_7R8n3zMNvpIEbfnmh5_FMiekT3JFziVwLsJwcLxtqCo-f0Eg-yNt0aRp9HzcwBTontayFFw4O3Yg0FfZYIpyeiF8dS5TeojAlhnsMcQ0fnhRsOrUWGgA2&amp;t=638995998200000000" type="text/css" rel="stylesheet"><link href="/lunasoscurecidas/WebResource.axd?d=hcXDZhXiidgsQUtEo5iT37JYldd-8ev3mnczcbkW9CNLH7M44mvBrDxfYQe9Dak6lPSOiCTnluSutlfMv32qRB3RcRBXJbFkmlHdtmiW3jifAleu7_nB4WpzMrMmrdT_DfeATpWuOOjnNUdssVij_D05ZhERtC2O7ePHXo0QdGM1&amp;t=638995998200000000" type="text/css" rel="stylesheet"><style>@charset "UTF-8";@-webkit-keyframes swal2-show{0%{-webkit-transform:scale(.7);transform:scale(.7)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}100%{-webkit-transform:scale(1);transform:scale(1)}}@keyframes swal2-show{0%{-webkit-transform:scale(.7);transform:scale(.7)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}100%{-webkit-transform:scale(1);transform:scale(1)}}@-webkit-keyframes swal2-hide{0%{-webkit-transform:scale(1);transform:scale(1);opacity:1}100%{-webkit-transform:scale(.5);transform:scale(.5);opacity:0}}@keyframes swal2-hide{0%{-webkit-transform:scale(1);transform:scale(1);opacity:1}100%{-webkit-transform:scale(.5);transform:scale(.5);opacity:0}}@-webkit-keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.875em;width:1.5625em}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.875em;width:1.5625em}}@-webkit-keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@-webkit-keyframes swal2-rotate-success-circular-line{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}100%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@keyframes swal2-rotate-success-circular-line{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}100%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@-webkit-keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}50%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}80%{margin-top:-.375em;-webkit-transform:scale(1.15);transform:scale(1.15)}100%{margin-top:0;-webkit-transform:scale(1);transform:scale(1);opacity:1}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}50%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}80%{margin-top:-.375em;-webkit-transform:scale(1.15);transform:scale(1.15)}100%{margin-top:0;-webkit-transform:scale(1);transform:scale(1);opacity:1}}@-webkit-keyframes swal2-animate-error-icon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}100%{-webkit-transform:rotateX(0);transform:rotateX(0);opacity:1}}@keyframes swal2-animate-error-icon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}100%{-webkit-transform:rotateX(0);transform:rotateX(0);opacity:1}}body.swal2-toast-shown .swal2-container{background-color:transparent}body.swal2-toast-shown .swal2-container.swal2-shown{background-color:transparent}body.swal2-toast-shown .swal2-container.swal2-top{top:0;right:auto;bottom:auto;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{top:0;right:0;bottom:auto;left:auto}body.swal2-toast-shown .swal2-container.swal2-top-left,body.swal2-toast-shown .swal2-container.swal2-top-start{top:0;right:auto;bottom:auto;left:0}body.swal2-toast-shown .swal2-container.swal2-center-left,body.swal2-toast-shown .swal2-container.swal2-center-start{top:50%;right:auto;bottom:auto;left:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{top:50%;right:auto;bottom:auto;left:50%;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{top:50%;right:0;bottom:auto;left:auto;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-left,body.swal2-toast-shown .swal2-container.swal2-bottom-start{top:auto;right:auto;bottom:0;left:0}body.swal2-toast-shown .swal2-container.swal2-bottom{top:auto;right:auto;bottom:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{top:auto;right:0;bottom:0;left:auto}body.swal2-toast-column .swal2-toast{flex-direction:column;align-items:stretch}body.swal2-toast-column .swal2-toast .swal2-actions{flex:1;align-self:stretch;height:2.2em;margin-top:.3125em}body.swal2-toast-column .swal2-toast .swal2-loading{justify-content:center}body.swal2-toast-column .swal2-toast .swal2-input{height:2em;margin:.3125em auto;font-size:1em}body.swal2-toast-column .swal2-toast .swal2-validation-message{font-size:1em}.swal2-popup.swal2-toast{flex-direction:row;align-items:center;width:auto;padding:.625em;overflow-y:hidden;box-shadow:0 0 .625em #d9d9d9}.swal2-popup.swal2-toast .swal2-header{flex-direction:row}.swal2-popup.swal2-toast .swal2-title{flex-grow:1;justify-content:flex-start;margin:0 .6em;font-size:1em}.swal2-popup.swal2-toast .swal2-footer{margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-popup.swal2-toast .swal2-close{position:initial;width:.8em;height:.8em;line-height:.8}.swal2-popup.swal2-toast .swal2-content{justify-content:flex-start;font-size:1em}.swal2-popup.swal2-toast .swal2-icon{width:2em;min-width:2em;height:2em;margin:0}.swal2-popup.swal2-toast .swal2-icon::before{display:flex;align-items:center;font-size:2em;font-weight:700}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-popup.swal2-toast .swal2-icon::before{font-size:.25em}}.swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-popup.swal2-toast .swal2-actions{height:auto;margin:0 .3125em}.swal2-popup.swal2-toast .swal2-styled{margin:0 .3125em;padding:.3125em .625em;font-size:1em}.swal2-popup.swal2-toast .swal2-styled:focus{box-shadow:0 0 0 .0625em #fff,0 0 0 .125em rgba(50,100,150,.4)}.swal2-popup.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:2em;height:2.8125em;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:50%}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-.25em;left:-.9375em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:2em 2em;transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-.25em;left:.9375em;-webkit-transform-origin:0 2em;transform-origin:0 2em;border-radius:0 4em 4em 0}.swal2-popup.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-popup.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}.swal2-popup.swal2-toast.swal2-show{-webkit-animation:showSweetToast .5s;animation:showSweetToast .5s}.swal2-popup.swal2-toast.swal2-hide{-webkit-animation:hideSweetToast .2s forwards;animation:hideSweetToast .2s forwards}.swal2-popup.swal2-toast .swal2-animate-success-icon .swal2-success-line-tip{-webkit-animation:animate-toast-success-tip .75s;animation:animate-toast-success-tip .75s}.swal2-popup.swal2-toast .swal2-animate-success-icon .swal2-success-line-long{-webkit-animation:animate-toast-success-long .75s;animation:animate-toast-success-long .75s}@-webkit-keyframes showSweetToast{0%{-webkit-transform:translateY(-.625em) rotateZ(2deg);transform:translateY(-.625em) rotateZ(2deg);opacity:0}33%{-webkit-transform:translateY(0) rotateZ(-2deg);transform:translateY(0) rotateZ(-2deg);opacity:.5}66%{-webkit-transform:translateY(.3125em) rotateZ(2deg);transform:translateY(.3125em) rotateZ(2deg);opacity:.7}100%{-webkit-transform:translateY(0) rotateZ(0);transform:translateY(0) rotateZ(0);opacity:1}}@keyframes showSweetToast{0%{-webkit-transform:translateY(-.625em) rotateZ(2deg);transform:translateY(-.625em) rotateZ(2deg);opacity:0}33%{-webkit-transform:translateY(0) rotateZ(-2deg);transform:translateY(0) rotateZ(-2deg);opacity:.5}66%{-webkit-transform:translateY(.3125em) rotateZ(2deg);transform:translateY(.3125em) rotateZ(2deg);opacity:.7}100%{-webkit-transform:translateY(0) rotateZ(0);transform:translateY(0) rotateZ(0);opacity:1}}@-webkit-keyframes hideSweetToast{0%{opacity:1}33%{opacity:.5}100%{-webkit-transform:rotateZ(1deg);transform:rotateZ(1deg);opacity:0}}@keyframes hideSweetToast{0%{opacity:1}33%{opacity:.5}100%{-webkit-transform:rotateZ(1deg);transform:rotateZ(1deg);opacity:0}}@-webkit-keyframes animate-toast-success-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes animate-toast-success-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@-webkit-keyframes animate-toast-success-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}@keyframes animate-toast-success-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto!important}body.swal2-no-backdrop .swal2-shown{top:auto;right:auto;bottom:auto;left:auto;max-width:calc(100% - .625em * 2);background-color:transparent}body.swal2-no-backdrop .swal2-shown>.swal2-modal{box-shadow:0 0 10px rgba(0,0,0,.4)}body.swal2-no-backdrop .swal2-shown.swal2-top{top:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-top-left,body.swal2-no-backdrop .swal2-shown.swal2-top-start{top:0;left:0}body.swal2-no-backdrop .swal2-shown.swal2-top-end,body.swal2-no-backdrop .swal2-shown.swal2-top-right{top:0;right:0}body.swal2-no-backdrop .swal2-shown.swal2-center{top:50%;left:50%;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)}body.swal2-no-backdrop .swal2-shown.swal2-center-left,body.swal2-no-backdrop .swal2-shown.swal2-center-start{top:50%;left:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-center-end,body.swal2-no-backdrop .swal2-shown.swal2-center-right{top:50%;right:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-bottom{bottom:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-bottom-left,body.swal2-no-backdrop .swal2-shown.swal2-bottom-start{bottom:0;left:0}body.swal2-no-backdrop .swal2-shown.swal2-bottom-end,body.swal2-no-backdrop .swal2-shown.swal2-bottom-right{right:0;bottom:0}.swal2-container{display:flex;position:fixed;z-index:1060;top:0;right:0;bottom:0;left:0;flex-direction:row;align-items:center;justify-content:center;padding:.625em;overflow-x:hidden;background-color:transparent;-webkit-overflow-scrolling:touch}.swal2-container.swal2-top{align-items:flex-start}.swal2-container.swal2-top-left,.swal2-container.swal2-top-start{align-items:flex-start;justify-content:flex-start}.swal2-container.swal2-top-end,.swal2-container.swal2-top-right{align-items:flex-start;justify-content:flex-end}.swal2-container.swal2-center{align-items:center}.swal2-container.swal2-center-left,.swal2-container.swal2-center-start{align-items:center;justify-content:flex-start}.swal2-container.swal2-center-end,.swal2-container.swal2-center-right{align-items:center;justify-content:flex-end}.swal2-container.swal2-bottom{align-items:flex-end}.swal2-container.swal2-bottom-left,.swal2-container.swal2-bottom-start{align-items:flex-end;justify-content:flex-start}.swal2-container.swal2-bottom-end,.swal2-container.swal2-bottom-right{align-items:flex-end;justify-content:flex-end}.swal2-container.swal2-bottom-end>:first-child,.swal2-container.swal2-bottom-left>:first-child,.swal2-container.swal2-bottom-right>:first-child,.swal2-container.swal2-bottom-start>:first-child,.swal2-container.swal2-bottom>:first-child{margin-top:auto}.swal2-container.swal2-grow-fullscreen>.swal2-modal{display:flex!important;flex:1;align-self:stretch;justify-content:center}.swal2-container.swal2-grow-row>.swal2-modal{display:flex!important;flex:1;align-content:center;justify-content:center}.swal2-container.swal2-grow-column{flex:1;flex-direction:column}.swal2-container.swal2-grow-column.swal2-bottom,.swal2-container.swal2-grow-column.swal2-center,.swal2-container.swal2-grow-column.swal2-top{align-items:center}.swal2-container.swal2-grow-column.swal2-bottom-left,.swal2-container.swal2-grow-column.swal2-bottom-start,.swal2-container.swal2-grow-column.swal2-center-left,.swal2-container.swal2-grow-column.swal2-center-start,.swal2-container.swal2-grow-column.swal2-top-left,.swal2-container.swal2-grow-column.swal2-top-start{align-items:flex-start}.swal2-container.swal2-grow-column.swal2-bottom-end,.swal2-container.swal2-grow-column.swal2-bottom-right,.swal2-container.swal2-grow-column.swal2-center-end,.swal2-container.swal2-grow-column.swal2-center-right,.swal2-container.swal2-grow-column.swal2-top-end,.swal2-container.swal2-grow-column.swal2-top-right{align-items:flex-end}.swal2-container.swal2-grow-column>.swal2-modal{display:flex!important;flex:1;align-content:center;justify-content:center}.swal2-container:not(.swal2-top):not(.swal2-top-start):not(.swal2-top-end):not(.swal2-top-left):not(.swal2-top-right):not(.swal2-center-start):not(.swal2-center-end):not(.swal2-center-left):not(.swal2-center-right):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-bottom-end):not(.swal2-bottom-left):not(.swal2-bottom-right):not(.swal2-grow-fullscreen)>.swal2-modal{margin:auto}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-container .swal2-modal{margin:0!important}}.swal2-container.swal2-fade{transition:background-color .1s}.swal2-container.swal2-shown{background-color:rgba(0,0,0,.4)}.swal2-popup{display:none;position:relative;box-sizing:border-box;flex-direction:column;justify-content:center;width:32em;max-width:100%;padding:1.25em;border-radius:.3125em;background:#fff;font-family:inherit;font-size:1rem}.swal2-popup:focus{outline:0}.swal2-popup.swal2-loading{overflow-y:hidden}.swal2-header{display:flex;flex-direction:column;align-items:center}.swal2-title{position:relative;max-width:100%;margin:0 0 .4em;padding:0;color:#595959;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;word-wrap:break-word}.swal2-actions{z-index:1;flex-wrap:wrap;align-items:center;justify-content:center;margin:1.25em auto 0}.swal2-actions:not(.swal2-loading) .swal2-styled[disabled]{opacity:.4}.swal2-actions:not(.swal2-loading) .swal2-styled:hover{background-image:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1))}.swal2-actions:not(.swal2-loading) .swal2-styled:active{background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2))}.swal2-actions.swal2-loading .swal2-styled.swal2-confirm{box-sizing:border-box;width:2.5em;height:2.5em;margin:.46875em;padding:0;-webkit-animation:swal2-rotate-loading 1.5s linear 0s infinite normal;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border:.25em solid transparent;border-radius:100%;border-color:transparent;background-color:transparent!important;color:transparent;cursor:default;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.swal2-actions.swal2-loading .swal2-styled.swal2-cancel{margin-right:30px;margin-left:30px}.swal2-actions.swal2-loading :not(.swal2-styled).swal2-confirm::after{content:'';display:inline-block;width:15px;height:15px;margin-left:5px;-webkit-animation:swal2-rotate-loading 1.5s linear 0s infinite normal;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border:3px solid #999;border-radius:50%;border-right-color:transparent;box-shadow:1px 1px 1px #fff}.swal2-styled{margin:.3125em;padding:.625em 2em;box-shadow:none;font-weight:500}.swal2-styled:not([disabled]){cursor:pointer}.swal2-styled.swal2-confirm{border:0;border-radius:.25em;background:initial;background-color:#3085d6;color:#fff;font-size:1.0625em}.swal2-styled.swal2-cancel{border:0;border-radius:.25em;background:initial;background-color:#aaa;color:#fff;font-size:1.0625em}.swal2-styled:focus{outline:0;box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(50,100,150,.4)}.swal2-styled::-moz-focus-inner{border:0}.swal2-footer{justify-content:center;margin:1.25em 0 0;padding:1em 0 0;border-top:1px solid #eee;color:#545454;font-size:1em}.swal2-image{max-width:100%;margin:1.25em auto}.swal2-close{position:absolute;top:0;right:0;justify-content:center;width:1.2em;height:1.2em;padding:0;overflow:hidden;transition:color .1s ease-out;border:none;border-radius:0;outline:initial;background:0 0;color:#ccc;font-family:serif;font-size:2.5em;line-height:1.2;cursor:pointer}.swal2-close:hover{-webkit-transform:none;transform:none;color:#f27474}.swal2-content{z-index:1;justify-content:center;margin:0;padding:0;color:#545454;font-size:1.125em;font-weight:300;line-height:normal;word-wrap:break-word}#swal2-content{text-align:center}.swal2-checkbox,.swal2-file,.swal2-input,.swal2-radio,.swal2-select,.swal2-textarea{margin:1em auto}.swal2-file,.swal2-input,.swal2-textarea{box-sizing:border-box;width:100%;transition:border-color .3s,box-shadow .3s;border:1px solid #d9d9d9;border-radius:.1875em;background:inherit;box-shadow:inset 0 1px 1px rgba(0,0,0,.06);font-size:1.125em}.swal2-file.swal2-inputerror,.swal2-input.swal2-inputerror,.swal2-textarea.swal2-inputerror{border-color:#f27474!important;box-shadow:0 0 2px #f27474!important}.swal2-file:focus,.swal2-input:focus,.swal2-textarea:focus{border:1px solid #b4dbed;outline:0;box-shadow:0 0 3px #c4e6f5}.swal2-file::-webkit-input-placeholder,.swal2-input::-webkit-input-placeholder,.swal2-textarea::-webkit-input-placeholder{color:#ccc}.swal2-file:-ms-input-placeholder,.swal2-input:-ms-input-placeholder,.swal2-textarea:-ms-input-placeholder{color:#ccc}.swal2-file::-ms-input-placeholder,.swal2-input::-ms-input-placeholder,.swal2-textarea::-ms-input-placeholder{color:#ccc}.swal2-file::placeholder,.swal2-input::placeholder,.swal2-textarea::placeholder{color:#ccc}.swal2-range{margin:1em auto;background:inherit}.swal2-range input{width:80%}.swal2-range output{width:20%;font-weight:600;text-align:center}.swal2-range input,.swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}.swal2-input{height:2.625em;padding:0 .75em}.swal2-input[type=number]{max-width:10em}.swal2-file{background:inherit;font-size:1.125em}.swal2-textarea{height:6.75em;padding:.75em}.swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:inherit;color:#545454;font-size:1.125em}.swal2-checkbox,.swal2-radio{align-items:center;justify-content:center;background:inherit}.swal2-checkbox label,.swal2-radio label{margin:0 .6em;font-size:1.125em}.swal2-checkbox input,.swal2-radio input{margin:0 .4em}.swal2-validation-message{display:none;align-items:center;justify-content:center;padding:.625em;overflow:hidden;background:#f0f0f0;color:#666;font-size:1em;font-weight:300}.swal2-validation-message::before{content:'!';display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;zoom:normal;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}@supports (-ms-accelerator:true){.swal2-range input{width:100%!important}.swal2-range output{display:none}}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-range input{width:100%!important}.swal2-range output{display:none}}@-moz-document url-prefix(){.swal2-close:focus{outline:2px solid rgba(50,100,150,.4)}}.swal2-icon{position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:1.25em auto 1.875em;zoom:normal;border:.25em solid transparent;border-radius:50%;line-height:5em;cursor:default;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.swal2-icon::before{display:flex;align-items:center;height:92%;font-size:3.75em}.swal2-icon.swal2-error{border-color:#f27474}.swal2-icon.swal2-error .swal2-x-mark{position:relative;flex-grow:1}.swal2-icon.swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}.swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-icon.swal2-warning{border-color:#facea8;color:#f8bb86}.swal2-icon.swal2-warning::before{content:'!'}.swal2-icon.swal2-info{border-color:#9de0f6;color:#3fc3ee}.swal2-icon.swal2-info::before{content:'i'}.swal2-icon.swal2-question{border-color:#c9dae1;color:#87adbd}.swal2-icon.swal2-question::before{content:'?'}.swal2-icon.swal2-question.swal2-arabic-question-mark::before{content:'؟'}.swal2-icon.swal2-success{border-color:#a5dc86}.swal2-icon.swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:50%}.swal2-icon.swal2-success [class^=swal2-success-circular-line][class$=left]{top:-.4375em;left:-2.0635em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:3.75em 3.75em;transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}.swal2-icon.swal2-success [class^=swal2-success-circular-line][class$=right]{top:-.6875em;left:1.875em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:0 3.75em;transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}.swal2-icon.swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-.25em;left:-.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}.swal2-icon.swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-icon.swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}.swal2-icon.swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.875em;width:1.5625em;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.swal2-icon.swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-progress-steps{align-items:center;margin:0 0 1.25em;padding:0;background:inherit;font-weight:600}.swal2-progress-steps li{display:inline-block;position:relative}.swal2-progress-steps .swal2-progress-step{z-index:20;width:2em;height:2em;border-radius:2em;background:#3085d6;color:#fff;line-height:2em;text-align:center}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#3085d6}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:#add8e6;color:#fff}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:#add8e6}.swal2-progress-steps .swal2-progress-step-line{z-index:10;width:2.5em;height:.4em;margin:0 -1px;background:#3085d6}[class^=swal2]{-webkit-tap-highlight-color:transparent}.swal2-show{-webkit-animation:swal2-show .3s;animation:swal2-show .3s}.swal2-show.swal2-noanimation{-webkit-animation:none;animation:none}.swal2-hide{-webkit-animation:swal2-hide .15s forwards;animation:swal2-hide .15s forwards}.swal2-hide.swal2-noanimation{-webkit-animation:none;animation:none}.swal2-rtl .swal2-close{right:auto;left:0}.swal2-animate-success-icon .swal2-success-line-tip{-webkit-animation:swal2-animate-success-line-tip .75s;animation:swal2-animate-success-line-tip .75s}.swal2-animate-success-icon .swal2-success-line-long{-webkit-animation:swal2-animate-success-line-long .75s;animation:swal2-animate-success-line-long .75s}.swal2-animate-success-icon .swal2-success-circular-line-right{-webkit-animation:swal2-rotate-success-circular-line 4.25s ease-in;animation:swal2-rotate-success-circular-line 4.25s ease-in}.swal2-animate-error-icon{-webkit-animation:swal2-animate-error-icon .5s;animation:swal2-animate-error-icon .5s}.swal2-animate-error-icon .swal2-x-mark{-webkit-animation:swal2-animate-error-x-mark .5s;animation:swal2-animate-error-x-mark .5s}@-webkit-keyframes swal2-rotate-loading{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@keyframes swal2-rotate-loading{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@media print{body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown){overflow-y:scroll!important}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown) .swal2-container{position:initial!important}}</style><style>@charset "UTF-8";@-webkit-keyframes swal2-show{0%{-webkit-transform:scale(.7);transform:scale(.7)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}100%{-webkit-transform:scale(1);transform:scale(1)}}@keyframes swal2-show{0%{-webkit-transform:scale(.7);transform:scale(.7)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}100%{-webkit-transform:scale(1);transform:scale(1)}}@-webkit-keyframes swal2-hide{0%{-webkit-transform:scale(1);transform:scale(1);opacity:1}100%{-webkit-transform:scale(.5);transform:scale(.5);opacity:0}}@keyframes swal2-hide{0%{-webkit-transform:scale(1);transform:scale(1);opacity:1}100%{-webkit-transform:scale(.5);transform:scale(.5);opacity:0}}@-webkit-keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.875em;width:1.5625em}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.875em;width:1.5625em}}@-webkit-keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@-webkit-keyframes swal2-rotate-success-circular-line{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}100%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@keyframes swal2-rotate-success-circular-line{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}100%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@-webkit-keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}50%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}80%{margin-top:-.375em;-webkit-transform:scale(1.15);transform:scale(1.15)}100%{margin-top:0;-webkit-transform:scale(1);transform:scale(1);opacity:1}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}50%{margin-top:1.625em;-webkit-transform:scale(.4);transform:scale(.4);opacity:0}80%{margin-top:-.375em;-webkit-transform:scale(1.15);transform:scale(1.15)}100%{margin-top:0;-webkit-transform:scale(1);transform:scale(1);opacity:1}}@-webkit-keyframes swal2-animate-error-icon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}100%{-webkit-transform:rotateX(0);transform:rotateX(0);opacity:1}}@keyframes swal2-animate-error-icon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}100%{-webkit-transform:rotateX(0);transform:rotateX(0);opacity:1}}body.swal2-toast-shown .swal2-container{background-color:transparent}body.swal2-toast-shown .swal2-container.swal2-shown{background-color:transparent}body.swal2-toast-shown .swal2-container.swal2-top{top:0;right:auto;bottom:auto;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{top:0;right:0;bottom:auto;left:auto}body.swal2-toast-shown .swal2-container.swal2-top-left,body.swal2-toast-shown .swal2-container.swal2-top-start{top:0;right:auto;bottom:auto;left:0}body.swal2-toast-shown .swal2-container.swal2-center-left,body.swal2-toast-shown .swal2-container.swal2-center-start{top:50%;right:auto;bottom:auto;left:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{top:50%;right:auto;bottom:auto;left:50%;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{top:50%;right:0;bottom:auto;left:auto;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-left,body.swal2-toast-shown .swal2-container.swal2-bottom-start{top:auto;right:auto;bottom:0;left:0}body.swal2-toast-shown .swal2-container.swal2-bottom{top:auto;right:auto;bottom:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{top:auto;right:0;bottom:0;left:auto}body.swal2-toast-column .swal2-toast{flex-direction:column;align-items:stretch}body.swal2-toast-column .swal2-toast .swal2-actions{flex:1;align-self:stretch;height:2.2em;margin-top:.3125em}body.swal2-toast-column .swal2-toast .swal2-loading{justify-content:center}body.swal2-toast-column .swal2-toast .swal2-input{height:2em;margin:.3125em auto;font-size:1em}body.swal2-toast-column .swal2-toast .swal2-validation-message{font-size:1em}.swal2-popup.swal2-toast{flex-direction:row;align-items:center;width:auto;padding:.625em;overflow-y:hidden;box-shadow:0 0 .625em #d9d9d9}.swal2-popup.swal2-toast .swal2-header{flex-direction:row}.swal2-popup.swal2-toast .swal2-title{flex-grow:1;justify-content:flex-start;margin:0 .6em;font-size:1em}.swal2-popup.swal2-toast .swal2-footer{margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-popup.swal2-toast .swal2-close{position:initial;width:.8em;height:.8em;line-height:.8}.swal2-popup.swal2-toast .swal2-content{justify-content:flex-start;font-size:1em}.swal2-popup.swal2-toast .swal2-icon{width:2em;min-width:2em;height:2em;margin:0}.swal2-popup.swal2-toast .swal2-icon::before{display:flex;align-items:center;font-size:2em;font-weight:700}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-popup.swal2-toast .swal2-icon::before{font-size:.25em}}.swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-popup.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-popup.swal2-toast .swal2-actions{height:auto;margin:0 .3125em}.swal2-popup.swal2-toast .swal2-styled{margin:0 .3125em;padding:.3125em .625em;font-size:1em}.swal2-popup.swal2-toast .swal2-styled:focus{box-shadow:0 0 0 .0625em #fff,0 0 0 .125em rgba(50,100,150,.4)}.swal2-popup.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:2em;height:2.8125em;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:50%}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-.25em;left:-.9375em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:2em 2em;transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-.25em;left:.9375em;-webkit-transform-origin:0 2em;transform-origin:0 2em;border-radius:0 4em 4em 0}.swal2-popup.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-popup.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-popup.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}.swal2-popup.swal2-toast.swal2-show{-webkit-animation:showSweetToast .5s;animation:showSweetToast .5s}.swal2-popup.swal2-toast.swal2-hide{-webkit-animation:hideSweetToast .2s forwards;animation:hideSweetToast .2s forwards}.swal2-popup.swal2-toast .swal2-animate-success-icon .swal2-success-line-tip{-webkit-animation:animate-toast-success-tip .75s;animation:animate-toast-success-tip .75s}.swal2-popup.swal2-toast .swal2-animate-success-icon .swal2-success-line-long{-webkit-animation:animate-toast-success-long .75s;animation:animate-toast-success-long .75s}@-webkit-keyframes showSweetToast{0%{-webkit-transform:translateY(-.625em) rotateZ(2deg);transform:translateY(-.625em) rotateZ(2deg);opacity:0}33%{-webkit-transform:translateY(0) rotateZ(-2deg);transform:translateY(0) rotateZ(-2deg);opacity:.5}66%{-webkit-transform:translateY(.3125em) rotateZ(2deg);transform:translateY(.3125em) rotateZ(2deg);opacity:.7}100%{-webkit-transform:translateY(0) rotateZ(0);transform:translateY(0) rotateZ(0);opacity:1}}@keyframes showSweetToast{0%{-webkit-transform:translateY(-.625em) rotateZ(2deg);transform:translateY(-.625em) rotateZ(2deg);opacity:0}33%{-webkit-transform:translateY(0) rotateZ(-2deg);transform:translateY(0) rotateZ(-2deg);opacity:.5}66%{-webkit-transform:translateY(.3125em) rotateZ(2deg);transform:translateY(.3125em) rotateZ(2deg);opacity:.7}100%{-webkit-transform:translateY(0) rotateZ(0);transform:translateY(0) rotateZ(0);opacity:1}}@-webkit-keyframes hideSweetToast{0%{opacity:1}33%{opacity:.5}100%{-webkit-transform:rotateZ(1deg);transform:rotateZ(1deg);opacity:0}}@keyframes hideSweetToast{0%{opacity:1}33%{opacity:.5}100%{-webkit-transform:rotateZ(1deg);transform:rotateZ(1deg);opacity:0}}@-webkit-keyframes animate-toast-success-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes animate-toast-success-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@-webkit-keyframes animate-toast-success-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}@keyframes animate-toast-success-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto!important}body.swal2-no-backdrop .swal2-shown{top:auto;right:auto;bottom:auto;left:auto;max-width:calc(100% - .625em * 2);background-color:transparent}body.swal2-no-backdrop .swal2-shown>.swal2-modal{box-shadow:0 0 10px rgba(0,0,0,.4)}body.swal2-no-backdrop .swal2-shown.swal2-top{top:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-top-left,body.swal2-no-backdrop .swal2-shown.swal2-top-start{top:0;left:0}body.swal2-no-backdrop .swal2-shown.swal2-top-end,body.swal2-no-backdrop .swal2-shown.swal2-top-right{top:0;right:0}body.swal2-no-backdrop .swal2-shown.swal2-center{top:50%;left:50%;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)}body.swal2-no-backdrop .swal2-shown.swal2-center-left,body.swal2-no-backdrop .swal2-shown.swal2-center-start{top:50%;left:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-center-end,body.swal2-no-backdrop .swal2-shown.swal2-center-right{top:50%;right:0;-webkit-transform:translateY(-50%);transform:translateY(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-bottom{bottom:0;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}body.swal2-no-backdrop .swal2-shown.swal2-bottom-left,body.swal2-no-backdrop .swal2-shown.swal2-bottom-start{bottom:0;left:0}body.swal2-no-backdrop .swal2-shown.swal2-bottom-end,body.swal2-no-backdrop .swal2-shown.swal2-bottom-right{right:0;bottom:0}.swal2-container{display:flex;position:fixed;z-index:1060;top:0;right:0;bottom:0;left:0;flex-direction:row;align-items:center;justify-content:center;padding:.625em;overflow-x:hidden;background-color:transparent;-webkit-overflow-scrolling:touch}.swal2-container.swal2-top{align-items:flex-start}.swal2-container.swal2-top-left,.swal2-container.swal2-top-start{align-items:flex-start;justify-content:flex-start}.swal2-container.swal2-top-end,.swal2-container.swal2-top-right{align-items:flex-start;justify-content:flex-end}.swal2-container.swal2-center{align-items:center}.swal2-container.swal2-center-left,.swal2-container.swal2-center-start{align-items:center;justify-content:flex-start}.swal2-container.swal2-center-end,.swal2-container.swal2-center-right{align-items:center;justify-content:flex-end}.swal2-container.swal2-bottom{align-items:flex-end}.swal2-container.swal2-bottom-left,.swal2-container.swal2-bottom-start{align-items:flex-end;justify-content:flex-start}.swal2-container.swal2-bottom-end,.swal2-container.swal2-bottom-right{align-items:flex-end;justify-content:flex-end}.swal2-container.swal2-bottom-end>:first-child,.swal2-container.swal2-bottom-left>:first-child,.swal2-container.swal2-bottom-right>:first-child,.swal2-container.swal2-bottom-start>:first-child,.swal2-container.swal2-bottom>:first-child{margin-top:auto}.swal2-container.swal2-grow-fullscreen>.swal2-modal{display:flex!important;flex:1;align-self:stretch;justify-content:center}.swal2-container.swal2-grow-row>.swal2-modal{display:flex!important;flex:1;align-content:center;justify-content:center}.swal2-container.swal2-grow-column{flex:1;flex-direction:column}.swal2-container.swal2-grow-column.swal2-bottom,.swal2-container.swal2-grow-column.swal2-center,.swal2-container.swal2-grow-column.swal2-top{align-items:center}.swal2-container.swal2-grow-column.swal2-bottom-left,.swal2-container.swal2-grow-column.swal2-bottom-start,.swal2-container.swal2-grow-column.swal2-center-left,.swal2-container.swal2-grow-column.swal2-center-start,.swal2-container.swal2-grow-column.swal2-top-left,.swal2-container.swal2-grow-column.swal2-top-start{align-items:flex-start}.swal2-container.swal2-grow-column.swal2-bottom-end,.swal2-container.swal2-grow-column.swal2-bottom-right,.swal2-container.swal2-grow-column.swal2-center-end,.swal2-container.swal2-grow-column.swal2-center-right,.swal2-container.swal2-grow-column.swal2-top-end,.swal2-container.swal2-grow-column.swal2-top-right{align-items:flex-end}.swal2-container.swal2-grow-column>.swal2-modal{display:flex!important;flex:1;align-content:center;justify-content:center}.swal2-container:not(.swal2-top):not(.swal2-top-start):not(.swal2-top-end):not(.swal2-top-left):not(.swal2-top-right):not(.swal2-center-start):not(.swal2-center-end):not(.swal2-center-left):not(.swal2-center-right):not(.swal2-bottom):not(.swal2-bottom-start):not(.swal2-bottom-end):not(.swal2-bottom-left):not(.swal2-bottom-right):not(.swal2-grow-fullscreen)>.swal2-modal{margin:auto}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-container .swal2-modal{margin:0!important}}.swal2-container.swal2-fade{transition:background-color .1s}.swal2-container.swal2-shown{background-color:rgba(0,0,0,.4)}.swal2-popup{display:none;position:relative;box-sizing:border-box;flex-direction:column;justify-content:center;width:32em;max-width:100%;padding:1.25em;border-radius:.3125em;background:#fff;font-family:inherit;font-size:1rem}.swal2-popup:focus{outline:0}.swal2-popup.swal2-loading{overflow-y:hidden}.swal2-header{display:flex;flex-direction:column;align-items:center}.swal2-title{position:relative;max-width:100%;margin:0 0 .4em;padding:0;color:#595959;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;word-wrap:break-word}.swal2-actions{z-index:1;flex-wrap:wrap;align-items:center;justify-content:center;margin:1.25em auto 0}.swal2-actions:not(.swal2-loading) .swal2-styled[disabled]{opacity:.4}.swal2-actions:not(.swal2-loading) .swal2-styled:hover{background-image:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1))}.swal2-actions:not(.swal2-loading) .swal2-styled:active{background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2))}.swal2-actions.swal2-loading .swal2-styled.swal2-confirm{box-sizing:border-box;width:2.5em;height:2.5em;margin:.46875em;padding:0;-webkit-animation:swal2-rotate-loading 1.5s linear 0s infinite normal;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border:.25em solid transparent;border-radius:100%;border-color:transparent;background-color:transparent!important;color:transparent;cursor:default;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.swal2-actions.swal2-loading .swal2-styled.swal2-cancel{margin-right:30px;margin-left:30px}.swal2-actions.swal2-loading :not(.swal2-styled).swal2-confirm::after{content:'';display:inline-block;width:15px;height:15px;margin-left:5px;-webkit-animation:swal2-rotate-loading 1.5s linear 0s infinite normal;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border:3px solid #999;border-radius:50%;border-right-color:transparent;box-shadow:1px 1px 1px #fff}.swal2-styled{margin:.3125em;padding:.625em 2em;box-shadow:none;font-weight:500}.swal2-styled:not([disabled]){cursor:pointer}.swal2-styled.swal2-confirm{border:0;border-radius:.25em;background:initial;background-color:#3085d6;color:#fff;font-size:1.0625em}.swal2-styled.swal2-cancel{border:0;border-radius:.25em;background:initial;background-color:#aaa;color:#fff;font-size:1.0625em}.swal2-styled:focus{outline:0;box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(50,100,150,.4)}.swal2-styled::-moz-focus-inner{border:0}.swal2-footer{justify-content:center;margin:1.25em 0 0;padding:1em 0 0;border-top:1px solid #eee;color:#545454;font-size:1em}.swal2-image{max-width:100%;margin:1.25em auto}.swal2-close{position:absolute;top:0;right:0;justify-content:center;width:1.2em;height:1.2em;padding:0;overflow:hidden;transition:color .1s ease-out;border:none;border-radius:0;outline:initial;background:0 0;color:#ccc;font-family:serif;font-size:2.5em;line-height:1.2;cursor:pointer}.swal2-close:hover{-webkit-transform:none;transform:none;color:#f27474}.swal2-content{z-index:1;justify-content:center;margin:0;padding:0;color:#545454;font-size:1.125em;font-weight:300;line-height:normal;word-wrap:break-word}#swal2-content{text-align:center}.swal2-checkbox,.swal2-file,.swal2-input,.swal2-radio,.swal2-select,.swal2-textarea{margin:1em auto}.swal2-file,.swal2-input,.swal2-textarea{box-sizing:border-box;width:100%;transition:border-color .3s,box-shadow .3s;border:1px solid #d9d9d9;border-radius:.1875em;background:inherit;box-shadow:inset 0 1px 1px rgba(0,0,0,.06);font-size:1.125em}.swal2-file.swal2-inputerror,.swal2-input.swal2-inputerror,.swal2-textarea.swal2-inputerror{border-color:#f27474!important;box-shadow:0 0 2px #f27474!important}.swal2-file:focus,.swal2-input:focus,.swal2-textarea:focus{border:1px solid #b4dbed;outline:0;box-shadow:0 0 3px #c4e6f5}.swal2-file::-webkit-input-placeholder,.swal2-input::-webkit-input-placeholder,.swal2-textarea::-webkit-input-placeholder{color:#ccc}.swal2-file:-ms-input-placeholder,.swal2-input:-ms-input-placeholder,.swal2-textarea:-ms-input-placeholder{color:#ccc}.swal2-file::-ms-input-placeholder,.swal2-input::-ms-input-placeholder,.swal2-textarea::-ms-input-placeholder{color:#ccc}.swal2-file::placeholder,.swal2-input::placeholder,.swal2-textarea::placeholder{color:#ccc}.swal2-range{margin:1em auto;background:inherit}.swal2-range input{width:80%}.swal2-range output{width:20%;font-weight:600;text-align:center}.swal2-range input,.swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}.swal2-input{height:2.625em;padding:0 .75em}.swal2-input[type=number]{max-width:10em}.swal2-file{background:inherit;font-size:1.125em}.swal2-textarea{height:6.75em;padding:.75em}.swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:inherit;color:#545454;font-size:1.125em}.swal2-checkbox,.swal2-radio{align-items:center;justify-content:center;background:inherit}.swal2-checkbox label,.swal2-radio label{margin:0 .6em;font-size:1.125em}.swal2-checkbox input,.swal2-radio input{margin:0 .4em}.swal2-validation-message{display:none;align-items:center;justify-content:center;padding:.625em;overflow:hidden;background:#f0f0f0;color:#666;font-size:1em;font-weight:300}.swal2-validation-message::before{content:'!';display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;zoom:normal;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}@supports (-ms-accelerator:true){.swal2-range input{width:100%!important}.swal2-range output{display:none}}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){.swal2-range input{width:100%!important}.swal2-range output{display:none}}@-moz-document url-prefix(){.swal2-close:focus{outline:2px solid rgba(50,100,150,.4)}}.swal2-icon{position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:1.25em auto 1.875em;zoom:normal;border:.25em solid transparent;border-radius:50%;line-height:5em;cursor:default;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.swal2-icon::before{display:flex;align-items:center;height:92%;font-size:3.75em}.swal2-icon.swal2-error{border-color:#f27474}.swal2-icon.swal2-error .swal2-x-mark{position:relative;flex-grow:1}.swal2-icon.swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}.swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-icon.swal2-warning{border-color:#facea8;color:#f8bb86}.swal2-icon.swal2-warning::before{content:'!'}.swal2-icon.swal2-info{border-color:#9de0f6;color:#3fc3ee}.swal2-icon.swal2-info::before{content:'i'}.swal2-icon.swal2-question{border-color:#c9dae1;color:#87adbd}.swal2-icon.swal2-question::before{content:'?'}.swal2-icon.swal2-question.swal2-arabic-question-mark::before{content:'؟'}.swal2-icon.swal2-success{border-color:#a5dc86}.swal2-icon.swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;-webkit-transform:rotate(45deg);transform:rotate(45deg);border-radius:50%}.swal2-icon.swal2-success [class^=swal2-success-circular-line][class$=left]{top:-.4375em;left:-2.0635em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:3.75em 3.75em;transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}.swal2-icon.swal2-success [class^=swal2-success-circular-line][class$=right]{top:-.6875em;left:1.875em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:0 3.75em;transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}.swal2-icon.swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-.25em;left:-.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}.swal2-icon.swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-icon.swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}.swal2-icon.swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.875em;width:1.5625em;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.swal2-icon.swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal2-progress-steps{align-items:center;margin:0 0 1.25em;padding:0;background:inherit;font-weight:600}.swal2-progress-steps li{display:inline-block;position:relative}.swal2-progress-steps .swal2-progress-step{z-index:20;width:2em;height:2em;border-radius:2em;background:#3085d6;color:#fff;line-height:2em;text-align:center}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#3085d6}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:#add8e6;color:#fff}.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:#add8e6}.swal2-progress-steps .swal2-progress-step-line{z-index:10;width:2.5em;height:.4em;margin:0 -1px;background:#3085d6}[class^=swal2]{-webkit-tap-highlight-color:transparent}.swal2-show{-webkit-animation:swal2-show .3s;animation:swal2-show .3s}.swal2-show.swal2-noanimation{-webkit-animation:none;animation:none}.swal2-hide{-webkit-animation:swal2-hide .15s forwards;animation:swal2-hide .15s forwards}.swal2-hide.swal2-noanimation{-webkit-animation:none;animation:none}.swal2-rtl .swal2-close{right:auto;left:0}.swal2-animate-success-icon .swal2-success-line-tip{-webkit-animation:swal2-animate-success-line-tip .75s;animation:swal2-animate-success-line-tip .75s}.swal2-animate-success-icon .swal2-success-line-long{-webkit-animation:swal2-animate-success-line-long .75s;animation:swal2-animate-success-line-long .75s}.swal2-animate-success-icon .swal2-success-circular-line-right{-webkit-animation:swal2-rotate-success-circular-line 4.25s ease-in;animation:swal2-rotate-success-circular-line 4.25s ease-in}.swal2-animate-error-icon{-webkit-animation:swal2-animate-error-icon .5s;animation:swal2-animate-error-icon .5s}.swal2-animate-error-icon .swal2-x-mark{-webkit-animation:swal2-animate-error-x-mark .5s;animation:swal2-animate-error-x-mark .5s}@-webkit-keyframes swal2-rotate-loading{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@keyframes swal2-rotate-loading{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@media print{body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown){overflow-y:scroll!important}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown) .swal2-container{position:initial!important}}</style><link type="text/css" rel="stylesheet" href="/lunasoscurecidas/WebResource.axd?d=DSgCKnaJlQjfnXvLWZApAHOq8nMId-Tdy_7R8n3zMNvpIEbfnmh5_FMiekT3JFziVwLsJwcLxtqCo-f0Eg-yNt0aRp9HzcwBTontayFFw4O3Yg0FfZYIpyeiF8dS5TeojAlhnsMcQ0fnhRsOrUWGgA2&amp;t=638995998200000000"><link type="text/css" rel="stylesheet" href="/lunasoscurecidas/WebResource.axd?d=hcXDZhXiidgsQUtEo5iT37JYldd-8ev3mnczcbkW9CNLH7M44mvBrDxfYQe9Dak6lPSOiCTnluSutlfMv32qRB3RcRBXJbFkmlHdtmiW3jifAleu7_nB4WpzMrMmrdT_DfeATpWuOOjnNUdssVij_D05ZhERtC2O7ePHXo0QdGM1&amp;t=638995998200000000"></head>
+<body>
+    <form method="post" action="./Seguimiento.aspx" onsubmit="javascript:return WebForm_OnSubmit();" id="form1">
+<div class="aspNetHidden">
+
+
+
+
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/lunasoscurecidas/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZGE5mteniBaihzCM21sMd0TSXx22ylCtyhJlczdnxW8JBN_cTFU_ZHNipmqAT3iCTg2&amp;t=638901356248157332" type="text/javascript"></script>
+
+
+<script src="/lunasoscurecidas/ScriptResource.axd?d=nv7asgRUU0tRmHNR2D6t1I7aUXB-NJF9UCL8HIGLKbMpUDA1LnX3PPPrsI3wFrq-Lc2Zsk3D65CE_APd_5LkkGO3cIIkG1tD52mRWNFNpa0ezQzcUCrCkBuGKEn5egGqtZsjRdpoTti5CpukjaUhzA2&amp;t=ffffffff93d1c106" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=zc7utP8BYx0K_fLPu4cBGHf0CgFv3EDPbl6mGa4Pl-s2osxQQ4uFwrNietJZRZDIgyIv82DmlVbS0-yisJX6Mv5wvFD7FVHZuy8Skvc7FbbwyeMvVVLq6Mg1cEmC_ujpf3fx0oEK3-GrIL8x1pvc04AaJf7PpUu-cTXD1dD2XG01&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=pnfgW_rnL4FVkco8Do2uNSEiqoqSWYObidzPBu5e7TTjZ13FZWxGQN5z0t-CJoqQWZUUduW41EY_RyDLCm4jCdGzT1JIM0jkUcceisMS-vJ3OVoTnun-ijca1d73IXv6rKCO8Gei-ifrsQyHwpmlh-OD5Bt9bbrqE2jZC5tUzS41&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=eE6V8nDbUVn0gtG6hKNX_BEBor52WHWwSAnyMiUN6KKbyEFU4FrprJ_x0BhtXX6bWQkP5onCM_XrGgjSrSFFYFNtnQYxvxi7_66qwaIRuM53OHaTuGssFog2Sri4UmSe0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=r7Burr0wQuBhUAFjce8_02s1RLSFSPxFW6dmdLRr4IJDMZTszHl37euEGfECDC-Gw78uH_RP1DbXbL1KMoDMC3ao1zE3bml6scyvV-XqzQniR50TJ4S72aY-gLvTcmIoS1l0jwqBkTCgXN8oo3B0gQ2&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=mcAASOSteirJeuV-3by3UaSrPaTARxURNbxz-tuMVYu4pgEzfKSNP6jLOygyuA3huBBh897ZSu3dC3uChVFyLVWk-6383HSORVwOtQHPwh41&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=jwf4VSQi7LeShc44FJ-gAab01DVLRNp6BgV9Q901CbrVSDoYVmTb4l6BtNlZJJUEKKqtjx1CZcnGFtgIJeNXqKUo5kTANOsZvzNXtFFeTEi6_8cJSrUWXiXsfuuz8ONf0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=nai7mGcYyE2dix_TwveLDbetjY0LCESdV1Eo7PzFyomybcfqfoisZc1IMWnIyotB9MDkNBO5jI6YJZoMipwUunacRQg60stKIQcwhcKT0LG44cnlcCKE5pjJ4Xxon3OP0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=yDT7ulzE00Yqzs5zd38bJ0xGPqLenpx6uLubAOSZ20O9TE8GU31EbnICqeQMVMtcXrKkEkM8FnrnQDS21GyqevtvQ7Qfu1p6Bc7FxwbZ9p5NIwJwrC-OcZGNhCQlA7Vp0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=HEFpVKbnoeQjkjHkFKu3MEet6ATd8jKBA24GqDua7xae6ic1dTRfjLrizYdqhNbOQjQfEjWy90KceoSvF4e2-GRu_X2JZfovDSfz7JYum5D9M2RCXhuwe8_6Ngciauvn0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=5ib3lCcyinHeLQmkwMF7Er4QiWnUBxSXiHCsK8z6mAlE1rFiraGaVScPzlD71_VkF2BAJrf8wE_99mlz2oqh_cF7yKKoxuhmWVQBxLwzZF7ifl68EqM6aEvPzWVq8wLD0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=iON9Jxe8QCRam1nkdNLgkUP8eWJ4ydgWaVOPASogtdw3pzW4AfKmMVKq7fnGm6dxmk-Kx094bIEZ03uCSmbO4IPDBB3rA6-4SQkJkA2QQ-T3vZrsAvKjt2s_9VViaaYp0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=xGmPTKfsNy0_1Sr5I58kO_Mb9UQH7J7bWmno9u5yiCF_RTAbkXr6HkctoBchSzmCVh7c8XwcF_UKcUzVfi-Thu5BaN43y_Z7FlZNfeckMWIvhahnPAAoOxLdeR24Spcw0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=LQ1q2RBSthBAZhliMjtG_ycu6ehDPnq5gf1z_lfbz7DdHrE1GCdF9bcNN8BrG65NwTYnU8OY6afXee1StlSv4Vx0vjYAYbRUvQ2GD-l_mjfOz3umqSusMN8wVcLI67vR0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=VOYD8Xe7kQA0lniBYXVpAphJZ_zD0bKVUvw7BhrbPqMG0dDb2sPobSOrCa4pnRPG4FcU_RPF4_BE9sStXT7Ju0zsdx8N8IEM2MW4bYuVCHVuRhozeiroDL_HAhPuZOZB0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=hOeJu0xhC-uW6Gf8ooKdXhbNAOdVBc5VIrtpTluk2nuAn3ZZeo5tXKXxxV8gNraJsDtPEW_EzvdW4s3G6WfkxYQxia-SV-9ngzSeEokdOhB61dkdqS9TP73VbIsWzQPi0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/lunasoscurecidas/ScriptResource.axd?d=XlV9GqTk6b5uqDuL38kZ4NB23gZG2l3kv8qUqRspHq7fi4131jEeyyxuxzSupK6EnxP0ORRd_NjjCEYgD7Km9Z_ZV9IJKBXl94S0p17XYyAdvbL4w5ayOQbgvm0q-2rY0&amp;t=7d5986a" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div class="aspNetHidden">
+
+	
+	
+	
+</div>
+        <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager1', 'form1', ['tctl00$MainContent$UpdatePanel1','MainContent_UpdatePanel1','tctl00$MainContent$UpPl_conte','MainContent_UpPl_conte','tctl00$MainContent$UpdatePanel2','MainContent_UpdatePanel2','tctl00$MainContent$UpdatePanel7','MainContent_UpdatePanel7','tctl00$MainContent$idUcitas$UpPl_conte','MainContent_idUcitas_UpPl_conte','tctl00$MainContent$idUcitas$UpdatePanel2','MainContent_idUcitas_UpdatePanel2','tctl00$MainContent$idUcitas$UpdatePanelValida','MainContent_idUcitas_UpdatePanelValida','tctl00$MainContent$UpdatePanelver','MainContent_UpdatePanelver','tctl00$MainContent$UpdatePanel16','MainContent_UpdatePanel16','tctl00$MainContent$UpdatePanel6','MainContent_UpdatePanel6'], [], ['ctl00$MainContent$BtnDescargar','MainContent_BtnDescargar'], 90, 'ctl00');
+//]]>
+</script>
+
+        <div style="text-align: center; background-color: #104938; padding: 5px;">
+            <h2 style="color: #b59e6a; font-size: 25px">Reservas de Citas - Sistema de Lunas Oscurecidas
+            </h2>
+        </div>
+        <div style="border-bottom: 3px double rgba(0,0,0,0.06); margin-bottom: 10px;">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" tabindex="-1">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    
+                    <div class="form-inline my-2 my-lg-0">
+                        <span id="LblUsuario" class="mr-2" style="color:Blue;font-size:Small;">ROCANO PONCE JAIRO HENRY</span>
+                        <input type="submit" name="ctl00$BtnCerrarSesion" value="Cerrar Sesión" id="BtnCerrarSesion" class="btn btn-outline-secondary" tabindex="-1">
+
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div>
+            
+    <div>
+        <div id="MainContent_UpdatePanel1">
+                
+                        <div class="container">
+                            <div class="card border-success  mb-3">
+                                <div class="card-header mb-2">
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <h4>Detalle Seguimiento de Trámite</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                &nbsp;
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <div class="form-group">
+                                                <input type="submit" name="ctl00$MainContent$btnRegresarD" value="&lt; Regresar" id="MainContent_btnRegresarD" class="btn btn-link  mr-3" style="width: 150px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+
+                                    <div id="zone-content" class="w-100">
+
+                                        <div id="MainContent_TabContainer1" class="modernTabs ajax__tab_xp ajax__tab_container ajax__tab_default" style="border-color: silver; border-style: none; width: 100%; visibility: visible;">
+	<div id="MainContent_TabContainer1_header" class="ajax__tab_header">
+		<span id="MainContent_TabContainer1_TabPanelDatosP_tab" class="ajax__tab ajax__tab_active"><span class="ajax__tab_outer"><span class="ajax__tab_inner"><a class="ajax__tab_tab" id="__tab_MainContent_TabContainer1_TabPanelDatosP" href="#" style="text-decoration:none;"><span>Datos Solicitante</span></a></span></span></span><span id="MainContent_TabContainer1_TabPanel1_tab" class="ajax__tab"><span class="ajax__tab_outer"><span class="ajax__tab_inner"><a class="ajax__tab_tab" id="__tab_MainContent_TabContainer1_TabPanel1" href="#" style="text-decoration:none;"><span>Datos Vehículo</span></a></span></span></span><span id="MainContent_TabContainer1_TabPanel4_tab" class="ajax__tab"><span class="ajax__tab_outer"><span class="ajax__tab_inner"><a class="ajax__tab_tab" id="__tab_MainContent_TabContainer1_TabPanel4" href="#" style="text-decoration:none;"><span>Datos Voucher</span></a></span></span></span>
+	</div><div id="MainContent_TabContainer1_body" class="ajax__tab_body ajax__scroll_none" style="display:block;">
+		<div id="MainContent_TabContainer1_TabPanelDatosP" class="ajax__tab_panel" style="visibility: visible;">
+			
+                                                    <div class="card mt-2">
+                                                        <div class="card-body bg-light">
+                                                            <div class="row">
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblTramite" class="font-weight-bold sm" style="font-size:Small;">Tramite</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtTramite" type="text" value="Persona Natural Nacional" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtTramite" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-5">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblMotivo" class="font-weight-bold sm" style="font-size:Small;">Motivo</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtMotivo" type="text" value="Autorización de LO" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtMotivo" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-2">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblNdoc" class="font-weight-bold sm" style="font-size:Small;">DNI</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtdni" type="text" value="72731701" maxlength="8" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtdni" onkeypress="return isNumberKey(event)" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-2">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblnacion" class="font-weight-bold sm" style="font-size:Small;">Nacionalidad</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtNacionalidad" type="text" value="PERU" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtNacionalidad" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblPat" class="font-weight-bold sm" style="font-size:Small;">Paterno</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtPaterno" type="text" value="ROCANO" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtPaterno" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblMat" class="font-weight-bold sm" style="font-size:Small;">Materno</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtMaterno" type="text" value="PONCE" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtMaterno" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanelDatosP_lblNombr" class="font-weight-bold sm" style="font-size:Small;">Nombres</span><input name="ctl00$MainContent$TabContainer1$TabPanelDatosP$txtNombres" type="text" value="JAIRO HENRY" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanelDatosP_txtNombres" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                
+		</div><div id="MainContent_TabContainer1_TabPanel1" class="ajax__tab_panel" style="display:none;visibility:hidden;">
+			
+                                                    <div class="card mt-2">
+                                                        <div class="card-body bg-light">
+                                                            <div class="row">
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lbltve" class="font-weight-bold sm" style="font-size:Small;">Tipo Vehículo</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtTipoV" type="text" value="PARTICULAR" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtTipoV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblPlacaV" class="font-weight-bold sm" style="font-size:Small;">Nro. Placa</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtPlacaV" type="text" value="CDS271" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtPlacaV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblMarcaV" class="font-weight-bold sm" style="font-size:Small;">Marca</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtMarcaV" type="text" value="TOYOTA" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtMarcaV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblModeloV" class="font-weight-bold sm" style="font-size:Small;">Modelo</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtModeloV" type="text" value="COROLLA CROSS HYBRID" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtModeloV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblCarroV" class="font-weight-bold sm" style="font-size:Small;">Carroceria</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtCarroV" type="text" value="SUV" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtCarroV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblSerieV" class="font-weight-bold sm" style="font-size:Small;">Serie</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtSerieV" type="text" value="9BRKZAAG0P0647291" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtSerieV" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblMotorV" class="font-weight-bold sm" style="font-size:Small;">Motor</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtMotorV" type="text" value="2ZR2S63628" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtMotorV" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-3 mb-3">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel1_lblColorV" class="font-weight-bold sm" style="font-size:Small;">Color</span><input name="ctl00$MainContent$TabContainer1$TabPanel1$txtColorV" type="text" value="NEGRO MICA" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel1_txtColorV" class="form-control" placeholder="" style="background-color:White;font-family:Tahoma;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                
+		</div><div id="MainContent_TabContainer1_TabPanel4" class="ajax__tab_panel" style="display:none;visibility:hidden;">
+			
+                                                    <div class="card mt-2">
+                                                        <div class="card-body bg-light">
+                                                            <div class="row">
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel4_Label2" class="font-weight-bold sm" style="font-size:Small;">Número Secuencia</span><input name="ctl00$MainContent$TabContainer1$TabPanel4$txtSecuencia" type="text" value="090399" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel4_txtSecuencia" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel4_Label3" class="font-weight-bold sm" style="font-size:Small;">Fecha Movimiento</span><input name="ctl00$MainContent$TabContainer1$TabPanel4$txtfechamovimiento" type="text" value="1/09/2025 00:00:00" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel4_txtfechamovimiento" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-md-4">
+                                                                    <div class="form-group">
+                                                                        <span id="MainContent_TabContainer1_TabPanel4_Label4" class="font-weight-bold sm" style="font-size:Small;">Codigo de caja</span><input name="ctl00$MainContent$TabContainer1$TabPanel4$txtcodcaja" type="text" value="9199" maxlength="100" readonly="readonly" id="MainContent_TabContainer1_TabPanel4_txtcodcaja" class="form-control" placeholder="" style="background-color:White;font-size:Medium;">
+
+                                                                        
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                
+		</div>
+	</div>
+</div>
+                                    </div>
+
+
+                                </div>
+
+                                <div class="card border-0 shadow-sm rounded-4">
+
+                                    <!-- HEADER -->
+                                    <div class="card-header bg-white border-0 pb-0">
+
+                                        <div class="d-flex justify-content-between align-items-center">
+
+                                            <h5 class="fw-bold text-dark mb-0">
+                                                <i class="fa fa-list-check text-success"></i>
+                                                Etapas del Trámite
+                                            </h5>
+
+                                        </div>
+
+                                    </div>
+
+                                    <!-- BODY -->
+                                    <div class="card-body pt-3">
+
+                                        <div class="table-responsive tabla-etapas">
+
+                                            <div>
+	<table class="table table-hover align-middle mb-0" cellspacing="0" id="MainContent_dgdEtapa" style="width:100%;border-collapse:collapse;">
+		<tbody><tr>
+			<th scope="col">Etapa</th><th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col">Mensaje</th><th scope="col">Acción</th>
+		</tr><tr>
+			<td style="width:20%;">Ingresa Solicitud</td><td align="center" style="width:10%;">10/08/2026</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_0" class="badge bg-success">
+                                                                Atendido
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr><tr>
+			<td style="width:20%;">Proceso de Validación</td><td align="center" style="width:10%;">10/08/2026</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_1" class="badge bg-success">
+                                                                Atendido
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr><tr>
+			<td style="width:20%;">Separa Cita Peritaje</td><td align="center" style="width:10%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_2" class="badge bg-warning text-dark">
+                                                                Pendiente
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr><tr>
+			<td style="width:20%;">Peritaje Vehicular</td><td align="center" style="width:10%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_3" class="badge bg-warning text-dark">
+                                                                Pendiente
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr><tr>
+			<td style="width:20%;">Peritaje Lunas</td><td align="center" style="width:10%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_4" class="badge bg-warning text-dark">
+                                                                Pendiente
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr><tr>
+			<td style="width:20%;">Validación</td><td align="center" style="width:10%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            <span id="MainContent_dgdEtapa_spnEstado_5" class="badge bg-warning text-dark">
+                                                                Pendiente
+                                                            </span>
+
+                                                        </td><td style="width:50%;">&nbsp;</td><td align="center" style="width:10%;">
+
+                                                            
+
+                                                        </td>
+		</tr>
+	</tbody></table>
+</div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                                <div id="MainContent_DivCita" style="left:0px;top:0px;display:normal;">
+                                    <div class="card-body">
+                                        <div class="col-lg-12" id="sectCita" style="padding-top: 0px;">
+                                            <h2><strong class="text-secondary" style="font-size: large; padding-top: 1px;">Reserva Cita Peritaje</strong></h2>
+                                        </div>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-sm-12">
+                                                        <div class="form-group">
+                                                            <textarea name="ctl00$MainContent$TxtMensajeCita" rows="2" cols="20" maxlength="500" readonly="readonly" id="MainContent_TxtMensajeCita" class="form-control input" style="color:Maroon;background-color:White;cursor: pointer">Sr. Solicitante, el expediente a sido validado correctamente, debiendo Ud., programar la fecha de peritaje para la Identificación vehicular y de lunas oscurecidas, debiendo acercarse ese dia a la sede seleccionada</textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row justify-content-center mt-3">
+
+                                                <div class="col-md-4 col-sm-6 text-center">
+                                                    <input type="submit" name="ctl00$MainContent$btnCita" value="Reservar Cita" id="MainContent_btnCita" class="btn btn-pnp btn-lg w-100">
+                                                </div>
+
+                                                <div class="col-md-4 col-sm-6 text-center">
+                                                    <input type="submit" name="ctl00$MainContent$BtnCancelar" value="Cancelar Solicitud" id="MainContent_BtnCancelar" class="btn btn-danger btn-lg w-100">
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="MainContent_DivImpresion" style="left:0px;top:0px;display:none;">
+                                    <div class="row">
+
+                                        <div class="col-sm-12">
+                                            <div class="form-group">
+                                                <div style="text-align: center;">
+                                                    <input type="submit" name="ctl00$MainContent$btnBajar" value="Ver Certificado Digital" id="MainContent_btnBajar" class="btn btn-primary">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div id="MainContent_DivCancelar" style="left: 0px; top: 0px; display: none;">
+                                    <div class="row">
+
+                                        <div class="col-sm-12">
+                                            <div class="form-group">
+                                                <div style="text-align: center;">
+                                                    <input type="submit" name="ctl00$MainContent$btnCancelarTramite" value="Cancelar trámite" id="MainContent_btnCancelarTramite" class="btn btn-primary">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+            </div>
+    </div>
+
+
+    <div id="MainContent_PanelReg" style="overflow: auto; background: white; width: auto; height: auto; display: none; position: fixed; z-index: 10001; left: 632.5px; top: 360px;">
+	
+        <div id="MainContent_UpdatePanel2">
+
+                <div class="modal-header" style="background-color: #ebecef">
+                    <div style="text-align: left">
+                        <h4 id="myModalLabelme" style="text-align: left; color: #000000; font-family: Arial">Registre Respuesta</h4>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-sm-4 col-sm-12">
+                                <div class="form-group">
+                                    <textarea name="ctl00$MainContent$txtRespuestaI" rows="2" cols="20" maxlength="1500" id="MainContent_txtRespuestaI" title="digite respuesta" class="form-control input" placeholder="digite respuesta" style="height:200px;width:550px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-4 col-sm-12">
+                                <div class="form-group">
+                                    <input id="MainContent_ChkTerminos" type="checkbox" name="ctl00$MainContent$ChkTerminos" onclick="javascript:setTimeout('__doPostBack(\'ctl00$MainContent$ChkTerminos\',\'\')', 0)"><label for="MainContent_ChkTerminos">&nbsp;Desea subir archivo ?</label>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <br>
+                        <div id="MainContent_content_mensaje" class="alert alert-danger" style="left: 0px; top: 0px; display: none;">
+                            <span id="MainContent_lblResmensaje" class="font-weight-bold small" style="font-weight:bold;"></span>
+                        </div>
+                        <br>
+                        <div class="row justify-content-center">
+                            <input type="submit" name="ctl00$MainContent$btncancelarRes" value="Cancelar" id="MainContent_btncancelarRes" class="btn btn-secondary mr-3" style="width: 150px;">
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+</div>
+
+
+
+    <input type="submit" name="ctl00$MainContent$btnreg" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$btnreg&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_btnreg" style="display: none" tabindex="-1">
+
+    
+
+
+
+    <div id="MainContent_PanelCitas" class="modal-panel" style="position: fixed; z-index: 10002; left: 182.5px; top: 215px;">
+	
+
+        <div id="MainContent_UpdatePanel7">
+
+                <!-- HEADER -->
+                <div class="modal-header-custom">
+
+                    <h4 class="mb-0">
+                        <i class="fa fa-calendar-check me-2"></i>
+                        Reserva de Citas
+                </h4>
+
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body-custom">
+
+                    
+
+<script type="text/javascript">
+
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode
+        if (charCode > 31 && (charCode < 48 || charCode > 57))
+            return false;
+        return true;
+    }
+
+    function carga() {
+        window.location.href = "Cita.aspx";
+    }
+
+    function grabar() {
+        Swal.fire({
+            position: 'button-start', //permite "top-end"
+            type: 'success',
+            title: 'Su Cita a sido Registrado Satisfactoriamente',
+            showConfirmButton: false,
+            timer: 2000 //el tiempo que dura el mensaje en ms
+        });
+    }
+
+    // ====== Control de inactividad (3 minutos) ======
+    var inactividadTimer = window.inactividadTimer || null;
+    var checadorInactividadTimer = window.checadorInactividadTimer || null;
+    var modalCitasVisible = window.modalCitasVisible || false;
+
+    function reiniciarTimerInactividad() {
+        if (inactividadTimer) {
+            clearTimeout(inactividadTimer);
+        }
+        inactividadTimer = setTimeout(expirarSesionInactiva, 3 * 60 * 1000);
+    }
+
+    function iniciarControlInactividad() {
+        detenerControlInactividad();
+        document.addEventListener('mousemove', reiniciarTimerInactividad);
+        document.addEventListener('mousedown', reiniciarTimerInactividad);
+        document.addEventListener('click', reiniciarTimerInactividad);
+        document.addEventListener('keydown', reiniciarTimerInactividad);
+        document.addEventListener('input', reiniciarTimerInactividad);
+        document.addEventListener('wheel', reiniciarTimerInactividad);
+        document.addEventListener('touchstart', reiniciarTimerInactividad);
+        window.addEventListener('scroll', reiniciarTimerInactividad);
+        reiniciarTimerInactividad();
+    }
+
+    function detenerControlInactividad() {
+        if (inactividadTimer) {
+            clearTimeout(inactividadTimer);
+            inactividadTimer = null;
+        }
+        document.removeEventListener('mousemove', reiniciarTimerInactividad);
+        document.removeEventListener('mousedown', reiniciarTimerInactividad);
+        document.removeEventListener('click', reiniciarTimerInactividad);
+        document.removeEventListener('keydown', reiniciarTimerInactividad);
+        document.removeEventListener('input', reiniciarTimerInactividad);
+        document.removeEventListener('wheel', reiniciarTimerInactividad);
+        document.removeEventListener('touchstart', reiniciarTimerInactividad);
+        window.removeEventListener('scroll', reiniciarTimerInactividad);
+    }
+
+    // Detecta apertura/cierre del modal de citas y arma el timer solo al abrirlo.
+    function chequearModalCitas() {
+        var raiz = document.getElementById('MainContent_idUcitas_UpPl_conte');
+        if (!raiz) { return; }
+        var visible = raiz.offsetParent !== null;
+        if (visible !== modalCitasVisible) {
+            modalCitasVisible = visible;
+            if (visible) {
+                iniciarControlInactividad();
+            }
+        }
+    }
+
+    function iniciarChecadorInactividad() {
+        if (checadorInactividadTimer) { return; }
+        checadorInactividadTimer = setInterval(chequearModalCitas, 1000);
+    }
+
+    function expirarSesionInactiva() {
+        detenerControlInactividad();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tu sesión expiró por inactividad',
+                text: 'Serás redirigido al inicio.',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                confirmButtonColor: '#104938'
+            }).then(function () {
+                window.location.href = 'Solicitud_Menu.aspx';
+            });
+        } else {
+            window.location.href = 'Solicitud_Menu.aspx';
+        }
+    }
+
+    iniciarChecadorInactividad();
+
+</script>
+
+<style>
+    .swal2-container {
+        z-index: 100010 !important;
+    }
+
+    .ddlmoderno {
+        width: 100%;
+        height: 46px;
+        border: 1px solid #d6dbe4;
+        border-radius: 12px;
+        padding: 0 14px;
+        background: white;
+        font-size: 15px;
+        color: #2c3e50;
+        transition: all .2s ease;
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+
+        .ddlmoderno:focus {
+            border-color: #2d8cff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(45,140,255,.15);
+        }
+
+    .lbltitulo {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4f5b6b;
+    }
+
+    .cuposbox {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 46px;
+        border-radius: 12px;
+        background: #f5f7fb;
+        border: 1px solid #d6dbe4;
+        font-weight: bold;
+        font-size: 16px;
+        color: #1877f2;
+    }
+
+    .captcha-suma {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 160px;
+        height: 46px;
+        background:
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.12) 0 2px, transparent 2px 6px),
+            linear-gradient(135deg, #104938, #1c6b53);
+        color: #fff;
+        border-radius: 12px;
+        box-shadow: inset 0 0 12px rgba(0,0,0,0.35);
+        padding: 0 12px;
+    }
+
+    .captcha-suma-txt {
+        display: inline-block;
+        font-weight: bold;
+        font-size: 20px;
+        letter-spacing: 1px;
+        user-select: none;
+        transform: rotate(-3deg);
+        text-shadow: 2px 2px 0 #0a2c22, -1px -1px 0 rgba(255,255,255,0.25);
+    }
+
+    .hp-campo {
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        opacity: 0;
+    }
+</style>
+
+<div id="MainContent_idUcitas_UpPl_conte">
+	
+
+        <div class="container-fluid p-2" style="background-color:white">
+
+            <!-- FILA -->
+            <div class="row g-4">
+
+                <!-- SEDE -->
+                <div class="col-md-3">
+
+                    <label class="lbltitulo">
+                        <i class="fa fa-building me-1 text-primary"></i>
+                        Sede
+                    </label>
+
+                    <select name="ctl00$MainContent$idUcitas$cbosede" onchange="javascript:setTimeout('__doPostBack(\'ctl00$MainContent$idUcitas$cbosede\',\'\')', 0)" id="MainContent_idUcitas_cbosede" class="ddlmoderno">
+		<option value="00">Seleccione la Sede</option>
+		<option selected="selected" value="1">LIMA-LA VICTORIA</option>
+
+	</select>
+
+                </div>
+
+                <!-- FECHA -->
+                <div class="col-md-3">
+
+                    <label class="lbltitulo">
+                        <i class="fa fa-calendar me-1 text-success"></i>
+                        Fecha
+                    </label>
+
+                    <select name="ctl00$MainContent$idUcitas$cboFecha" onchange="javascript:setTimeout('__doPostBack(\'ctl00$MainContent$idUcitas$cboFecha\',\'\')', 0)" id="MainContent_idUcitas_cboFecha" class="ddlmoderno">
+		<option selected="selected" value="0">Sin Cupos</option>
+
+	</select>
+
+                </div>
+
+                <!-- HORA -->
+                <div class="col-md-3">
+
+                    <label class="lbltitulo">
+                        <i class="fa fa-clock me-1 text-warning"></i>
+                        Hora
+                    </label>
+
+                    <select name="ctl00$MainContent$idUcitas$cboHora" onchange="javascript:setTimeout('__doPostBack(\'ctl00$MainContent$idUcitas$cboHora\',\'\')', 0)" id="MainContent_idUcitas_cboHora" class="ddlmoderno">
+		<option selected="selected" value="0">Sin Cupos</option>
+
+	</select>
+
+                </div>
+
+                <!-- CUPOS -->
+                <div class="col-md-3">
+
+                    <label class="lbltitulo">
+                        <i class="fa fa-users me-1 text-danger"></i>
+                        Cupos
+                    </label>
+
+                    <span id="MainContent_idUcitas_lblcupos" class="cuposbox">Sin Cupos</span>
+
+                </div>
+
+            </div>
+
+            <!-- ALERTA -->
+            <div id="MainContent_idUcitas_content_mensaje" class="alert alert-danger text-center mt-4" style="display: none;">
+		
+                No hay cupos disponibles para la fecha seleccionada
+
+            
+	</div>
+
+            <!-- CAPTCHA -->
+            <div id="MainContent_idUcitas_divcontiene2" style="display:none;">
+		
+
+                <!-- HONEYPOT: campo trampa anti-bot (invisible para humanos) -->
+                <div class="hp-campo" aria-hidden="true">
+                    <label for="txtHoneypot">No completar este campo</label>
+                    <input name="ctl00$MainContent$idUcitas$txtHoneypot" type="text" id="MainContent_idUcitas_txtHoneypot" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="captcha-box mt-4">
+
+                    <h5 class="mb-4 fw-bold text-secondary">Validación de Seguridad
+                    </h5>
+
+                    <div class="row justify-content-center align-items-center g-3">
+
+                        <div class="col-auto">
+
+                            <input name="ctl00$MainContent$idUcitas$txtimg" type="text" maxlength="3" id="MainContent_idUcitas_txtimg" class="form-control text-center fw-bold" placeholder="Resultado" style="width:130px;">
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <div class="captcha-suma">
+
+                                <span id="MainContent_idUcitas_lblCaptchaOperacion" class="captcha-suma-txt">64 + 93 = ?</span>
+
+                            </div>
+
+                        </div>
+
+                        <!-- INPUT OCULTO CAPTCHA -->
+                        <div style="display: none;">
+
+                            <input name="ctl00$MainContent$idUcitas$xzl" type="text" id="MainContent_idUcitas_xzl" style="width:1px;">
+
+                        </div>
+                        <div class="col-auto">
+
+                            <input type="image" name="ctl00$MainContent$idUcitas$lbkrefresca1" id="MainContent_idUcitas_lbkrefresca1" title="Actualizar Captcha" class="btn-refresh" src="Images/refre.png" style="height:42px;width:42px;">
+
+                        </div>
+
+                    </div>
+
+                    <div class="text-center mt-3">
+
+                        <span id="MainContent_idUcitas_RequiredFieldValidator1" class="text-danger small" style="visibility:hidden;">Ingrese el resultado de la suma</span>
+
+                    </div>
+
+                    <!-- BOTON -->
+                    <div class="text-center mt-4">
+
+                        <input type="submit" name="ctl00$MainContent$idUcitas$btgSiguiente" value="Reservar Cita" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$idUcitas$btgSiguiente&quot;, &quot;&quot;, true, &quot;CITAS&quot;, &quot;&quot;, false, false))" id="MainContent_idUcitas_btgSiguiente" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+
+                    </div>
+
+                </div>
+
+            
+	</div>
+
+        </div>
+
+    
+</div>
+<div>
+</div>
+<div id="MainContent_idUcitas_PanelMensaje" style="overflow: auto; display: none; background: white; width: auto; height: auto; position: fixed; z-index: 10003; left: 632.5px; top: 360px;">
+	
+    <div id="MainContent_idUcitas_UpdatePanel2">
+		
+            <div class="modal-header" style="background-color: #ebecef">
+                <div style="text-align: left">
+                    <h4 id="myModalLabelirc" style="text-align: left; color: #000000; font-family: Arial">Mensaje</h4>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-4 col-sm-12">
+                            <div class="form-group">
+                                <span id="MainContent_idUcitas_lblmensajess" class="form-control-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row justify-content-center">
+                        <input type="submit" name="ctl00$MainContent$idUcitas$bntcerrarelim" value="Aceptar" id="MainContent_idUcitas_bntcerrarelim" class="btn btn-secondary" style="width: 150px;">
+                    </div>
+                </div>
+            </div>
+        
+	</div>
+
+</div>
+
+<input type="submit" name="ctl00$MainContent$idUcitas$btnbuscaaa" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$idUcitas$btnbuscaaa&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_idUcitas_btnbuscaaa" style="display: none">
+
+
+
+
+
+<div id="MainContent_idUcitas_PanelValidar" style="overflow: auto; background: white; width: auto; height: auto; display: none; position: fixed; z-index: 10003; left: 632.5px; top: 360px;">
+	
+    <div id="MainContent_idUcitas_UpdatePanelValida">
+		
+            <div class="modal-header" style="background-color: #ebecef">
+                <div style="text-align: left">
+                    <h4 id="myModalLabelvalida" style="text-align: left; color: #000000; font-family: Arial">Verifiquemos tu correo electrónico</h4>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-12">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+
+                            <span id="MainContent_idUcitas_lblmensajevalida" class="form-control-lg"></span>
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-2"></div>
+                        <div class="col-sm-8">
+                            <br>
+                            <div id="MainContent_idUcitas_DivError" class="alert alert-danger" style="left: 0px; top: 0px; display: none;">
+                                <span id="MainContent_idUcitas_lblmensajeError" class="font-weight-bold small" style="font-weight:bold;"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-4"></div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <div style="text-align: center;">
+                                    <input name="ctl00$MainContent$idUcitas$txtCodigo" type="text" maxlength="4" id="MainContent_idUcitas_txtCodigo" class="form-control" onkeypress="return isNumberKey(event)" placeholder="" style="font-size:X-Large;font-weight:bold;text-align: center;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4"></div>
+                    </div>
+
+                    <hr>
+                    <div class="row justify-content-center">
+                        <input type="submit" name="ctl00$MainContent$idUcitas$btnValidaAcepta" value="Aceptar y confirmar" id="MainContent_idUcitas_btnValidaAcepta" class="btn btn-primary">
+                        &nbsp; &nbsp;, &nbsp;
+                                <input type="submit" name="ctl00$MainContent$idUcitas$btnValidaCancelar" value="Cancelar" id="MainContent_idUcitas_btnValidaCancelar" class="btn btn-secondary">
+
+                    </div>
+                    <br>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 id="mymensa" style="text-align: center; color: tomato; font-family: Arial">¿No recibiste el correo? Revisa la carpeta de correo no deseado</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+	</div>
+
+</div>
+
+<input type="submit" name="ctl00$MainContent$idUcitas$btnBvalida" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$idUcitas$btnBvalida&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_idUcitas_btnBvalida" style="display: none">
+
+
+
+
+
+
+
+
+
+
+<script src="plugins/sweetAlert2/sweetalert2.all.min.js"></script>
+
+
+
+                <div data-act-control-type="modalPopupBackground" id="btnbuscaPopupExtender1_backgroundElement" class="modalBackground2" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10002; width: 1265px; height: 1208px;"></div><div data-act-control-type="modalPopupBackground" id="btnBvalidaPopupExtender_backgroundElement" class="modalBackground2" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10002; width: 1265px; height: 1208px;"></div></div>
+
+                <!-- FOOTER -->
+                <div class="modal-footer-custom">
+
+                    <input type="submit" name="ctl00$MainContent$btnsalirCitas" value="Cerrar" id="MainContent_btnsalirCitas" class="btn btn-danger px-4">
+
+                </div>
+
+            </div>
+
+    
+</div>
+
+    
+    <input type="submit" name="ctl00$MainContent$btnCitasL" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$btnCitasL&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_btnCitasL" style="display: none" tabindex="-1">
+
+
+
+    <div id="MainContent_Panelver" style="background: white; width: auto; height: auto; display: none; position: fixed; z-index: 10001; left: 632.5px; top: 360px;">
+	
+        <div id="MainContent_UpdatePanelver">
+                <div class="modal-header">
+                    <h5 id="myModalDigital" style="text-align: left">
+                        <span id="MainContent_Label6" class="text-primary">Certificado  Digital</span></h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid well">
+                        <div class="row-fluid">
+                            <div class="span4">
+                                <div class="control-group" style="text-align: center">
+                                    <div id="MainContent_ver" style="width: 900px">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group" style="text-align: left">
+                    <div id="MainContent_Divver" style="width: 100%">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+
+
+                    <input type="submit" name="ctl00$MainContent$btnVerSalir" value="Cerrar" id="MainContent_btnVerSalir" class="btn" data-dismiss="modal" aria-hidden="true">
+                </div>
+            </div>
+    
+</div>
+
+    
+    <input type="submit" name="ctl00$MainContent$btnVver" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$btnVver&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_btnVver" style="display: none" tabindex="-1">
+
+    <div class="modal fade" id="pdfModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Certificado Digital</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" tabindex="-1">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="pdfFrame" src="" width="100%" height="900px" style="border: none;" tabindex="-1"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    
+
+
+    
+    <input type="submit" name="ctl00$MainContent$btnModalCancelar" value="Button" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$btnModalCancelar&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_btnModalCancelar" style="display: none" tabindex="-1">
+
+
+
+
+    
+
+    <input type="submit" name="ctl00$MainContent$Button2" value="Salir" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$MainContent$Button2&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="MainContent_Button2" style="display: none" tabindex="-1">
+
+    
+
+
+
+    <script src="plugins/sweetAlert2/sweetalert2.all.min.js"></script>
+
+        <div data-act-control-type="modalPopupBackground" id="btnregistroExtender_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1265px; height: 1208px;"></div><div data-act-control-type="modalPopupBackground" id="CitasModalPopupExt_backgroundElement" class="modalBackground" style="position: fixed; left: 0px; top: 0px; z-index: 10001; width: 1265px; height: 1208px;"></div><div data-act-control-type="modalPopupBackground" id="btnvverModal_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1265px; height: 1208px;"></div><div id="ModalPopupCancelarSol_foregroundElement" style="display: none; position: fixed; z-index: 10001; left: 632.5px; top: 360px;"><div id="MainContent_PnlCancelar" style="display: none; background: white; width: auto; height: auto">
+	
+        <div id="MainContent_UpdatePanel16">
+                <div class="modal-header">
+                    <h5 id="myModalmsgbocx" style="text-align: left">
+                        <span id="MainContent_Label16" class="text-danger">Mensaje</span></h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid well">
+                        <div class="row-fluid">
+                            <div class="span4">
+                                <div class="control-group" style="text-align: left">
+
+                                    <!-- MENSAJE -->
+                                    <table style="text-align: left; width: 100%">
+                                        <tbody><tr>
+                                            <td>
+                                                <label class="control-label">
+                                                    <strong>
+                                                        <span id="MainContent_Label17">¿Está seguro que desea cancelar la solicitud?</span>
+                                                    </strong>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+
+                                    <!-- OBSERVACIÓN -->
+                                    <div class="mt-3">
+                                        <label class="control-label fw-bold">
+                                            Observación <span class="text-danger">*</span>
+                                        </label>
+
+                                        <textarea name="ctl00$MainContent$txtObservacionCancel" rows="4" cols="20" maxlength="500" id="MainContent_txtObservacionCancel" class="form-control" placeholder="Ingrese el motivo de la cancelación..."></textarea>
+
+                                        <small class="text-muted">Máximo 500 caracteres
+                                        </small>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    <input type="submit" name="ctl00$MainContent$btnCancelarSol" value="Aceptar" id="MainContent_btnCancelarSol" class="btn btn-primary">
+
+                    <input type="submit" name="ctl00$MainContent$btnSalirCancelarSol" value="Salir" id="MainContent_btnSalirCancelarSol" class="btn btn-secondary">
+                </div>
+
+            </div>
+    
+</div></div><div data-act-control-type="modalPopupBackground" id="ModalPopupCancelarSol_backgroundElement" class="ModalPopupCancelarSol" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1265px; height: 1208px;"></div><div id="ModalPopupExtender1_foregroundElement" style="display: none; position: fixed; z-index: 10001; left: 632.5px; top: 360px;"><div id="MainContent_PnlMensaje" class="modal-responsive" style="overflow:auto;display: none; background: white; width: auto; height: auto; cursor: move">
+	
+        <div id="MainContent_UpdatePanel6">
+                <div class="modal-header" style="background-color: #ebecef" id="PopupHeaderMsj">
+                    <div style="text-align: left">
+                        <h4 id="myModalLabeMsj" style="text-align: left; color: #000000; font-family: Arial">Mensaje</h4>
+                    </div>
+                </div>
+
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-sm-4 col-sm-12">
+                                <div class="form-group">
+                                    <span id="MainContent_lblmsj">Label</span>
+
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row justify-content-center">
+                            <input type="submit" name="ctl00$MainContent$btnSalirMsj" value="Salir" id="MainContent_btnSalirMsj" class="btn btn-secondary" style="width: 150px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+</div></div><div data-act-control-type="modalPopupBackground" id="ModalPopupExtender1_backgroundElement" class="modalBackgroundPrueba" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000; width: 1265px; height: 1208px;"></div></div>
+        <div style="text-align: center;" class="mt-4">
+            <p style="font-size: x-small">
+                Dirección de Tecnologías de la Información y Comunicaciones de la PNP<br>
+               DIRTIC PNP - 2026· Versión 2.0
+            </p>
+            <span id="LblVersion" style="color:Blue;font-size:Small;"></span>
+        </div>
+    
+<script type="text/javascript">
+//<![CDATA[
+var Page_Validators =  new Array(document.getElementById("MainContent_idUcitas_RequiredFieldValidator1"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var MainContent_idUcitas_RequiredFieldValidator1 = document.all ? document.all["MainContent_idUcitas_RequiredFieldValidator1"] : document.getElementById("MainContent_idUcitas_RequiredFieldValidator1");
+MainContent_idUcitas_RequiredFieldValidator1.controltovalidate = "MainContent_idUcitas_txtimg";
+MainContent_idUcitas_RequiredFieldValidator1.errormessage = "Ingrese el resultado de la suma";
+MainContent_idUcitas_RequiredFieldValidator1.validationGroup = "CITAS";
+MainContent_idUcitas_RequiredFieldValidator1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+MainContent_idUcitas_RequiredFieldValidator1.initialvalue = "";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Extended.UI.Localization.SetLocale("es");
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"btnregistroExtender","popupControlID":"MainContent_PanelReg"}, null, null, $get("MainContent_btnreg"));
+});
+
+document.getElementById('MainContent_idUcitas_RequiredFieldValidator1').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('MainContent_idUcitas_RequiredFieldValidator1'));
+}
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground2","dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"btnbuscaPopupExtender1","popupControlID":"MainContent_idUcitas_PanelMensaje"}, null, null, $get("MainContent_idUcitas_btnbuscaaa"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground2","dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"btnBvalidaPopupExtender","popupControlID":"MainContent_idUcitas_PanelValidar"}, null, null, $get("MainContent_idUcitas_btnBvalida"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"CitasModalPopupExt","popupControlID":"MainContent_PanelCitas"}, null, null, $get("MainContent_btnCitasL"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"btnvverModal","popupControlID":"MainContent_Panelver"}, null, null, $get("MainContent_btnVver"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"ModalPopupCancelarSol","dropShadow":true,"dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"ModalPopupCancelarSol","popupControlID":"MainContent_PnlCancelar"}, null, null, $get("MainContent_btnModalCancelar"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackgroundPrueba","drag":true,"dropShadow":true,"dynamicServicePath":"/lunasoscurecidas/Seguimiento.aspx","id":"ModalPopupExtender1","popupControlID":"MainContent_PnlMensaje","popupDragHandleControlID":"MainContent_PnlMensaje"}, null, null, $get("MainContent_Button2"));
+});
+//]]>
+</script>
+<span style="display: none !important;"><input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value=""></span><span style="display: none !important;"><input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value=""></span><span style="display: none !important;"><input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value=""></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="vgqS6rKBWP+OUQlWF9tUdqbOJLZh1ZKVlLmFmmJ6wIXaK4IwaQNImwBQBu1OVjq920/46ml2/qqjM1CyWv4r0vLI9ELxthBkC+wRd14T1vS2dLgcLPFBTcd5raTWRhGcgln5+LaUWLTO09ty8xw5Ofypdryre3zx4cmQGUNPVILMgL2bEuKXdQ2xk6MmDdy/XL2R9c3mAKGCn3Mgivfgnxu+e6RvfzmzWrqmg8Zvi7cY1swiKTgrmHsKuJUma+jYuA7hJm0aLhtCbf6y4iAL9m38eT3tIdSVBtm5Yfhxh76289N1DnlMHxR1ntZzbveH3/QJFoJmEe2Vw7Xf+n3UsFsI2MgCgZhAxn8qQyeGW4ckgfszH3qUd0k7mPECS2wA8LuaUTIZuOYWBCEAPerlUFXG3EMMP/kH5NObwDZPU4OEXQ3TsS8Udeayf0MsmS/xR1ESZwNdR4VhBS0y2PCi8ThJhTUJkSfXBpVB25TQ5OJKlEST/NsDdVmyqebxiLkWpbxOvZlwqLPNVFL7mal+z3dVjzA6gj3Edq9yejFk+uy+thehyPv7mZ49+7pOAmX6SqjFJIHrwoKmaAarlumk6DG7gH97vR4noXbF0MXHYvyzjhtCpDhA5nqI15nk9SIB4FgdPDxRGFVKsfP650N4uOaJCGPn3bHPyfLRBObSYjM9+k81q21mY6tkEwqMzCdTwAEvTL+ZfdZJ5lZJjRfNt12c5dZpn4TZmgk+1tmLulOFTuJApRPldrI6FJDZYQBC3UpZ7Ocv4slc5HzYb8mEiRW8th/A9mDjmgI1yQ5sKEK2AdUrjZFmhr5alhPLUw1ooqkoZz+HIV4UuBGT5eabMsVIuDKk5tAV0AlryinKI9bebSvh3D1pCUjdFmf1OfyKk30JJd6RdLFGLlsqVef2zLUfK0bXWAgxDaxZ438so8XdwNIsx+ItH+c6THrHQm98P2n20v0QNIWtc4P8v8qT1h6BuUxtHLsi3Mh88nQglZGl6jBn64PCxkTPEzUXWz1IwEMZvlPXufRgpsb/POgTfko+RDtHOst2LLatF7hwAHaP1Mc7YtqbDzITeJwA78TEREQPifhM8iBJw38sbMmxBEkIosiNMU/Nrcdf3TmIRALWS7Koz1RWdV/9tWSy516ZPFEj/8nLtYBqImvSf6260mhSQJ56MOKhlKsPwfUoAzXkvbDvysLewNeoCWxEHjt1Cv/NqRf9JaTE5RAfdN2IB7h1EDCaHlO06B5FZw/jzL3J9dxOEE2KliTCpTndCfHhJF5litDOoSS1wlAR1csBXNBnlphTZUHLG9lf+oRJagl3X2fKRU23CHC0mFRL5jUGKuqDo1cP3c+bDHbnv9xjZiupWUavuASK3kFmg3Be9tAtUZMuiWH3SrBCKYnw43YUWoRCg1UBFx9U4kJJfPO7iQSMzfAdIA3BUKyIRoTpOB6gucKBMVTx2+V7Nd0mv4zdDcv+zwMBwMlhPiUH+LXksGyZyaxuZZjVeuNtig8Rowj5MU7BrQTgL/AyY0RQOUZcQFHNowWSxuY3Kpaj3debtedwbMC2ciKELAckIn+nkMDL1YY+r4/h2sqT7VO2n5S+M+isN4WNgAqTFQZFnyCWIkcTjXull0hkwEoPem2K8oMcfH2/gUu2xr+BMpmPfIhVgQkuG21rNQ0Z9SpSFBRMJIBtTGGulILZCOjgNsDRgcCgRWjLTUKbofyniazEpMvQjr/X0X89Qd4YTx932S5J1Au2/syWgwpFkl0UyloV23u+Qnm/2eR8dIf9iSMVK9eyyzooxhw6h5nMgcgJsFOAwUbD9GEGcV4UU6YW9wH4jvljEWPP/r7AwF9VpkCKk39hof0Qp3HGKhTQyfrAIoXsXBm45oKFFXbHBzacKsw0RZe7f2tkrAhIKaVk1124PRHRy9QCj9hIubG9BMZYwy/tisUB+H6OhMpmn0RGKe7WnXYPtl+3jxmjBTMuvofAUyajJ4srLvq46djbRjQg2ZtB7PGyK2PnxGo4z74gERxKZqSzZ2hsLvTdqX3RAma5K7fchRQ8fI81ZgIFIIooI0nKXWjaNEK9xtUTpmf2c58vD/2NCxw0ftoyKThMBJb7yXKEkqMQrcM2JHsUXeB7wMvO8yD+LZyaofs8z92aVujDtM9oSmEPydweIdivk466zEapEvZxDim9xpEQVWVninZQL3oDolArz/wut07jd0agUAghp6IF5FBzrn1iaqu9m3kIZ0jUWuwCiu9dhhprabUpK7Qm2oiUZmQzEPZlRcIpIkYexycDxHtYpOkn/OuMHeOTzTx03tiv7OHoi5mkR2FV8p500VkoV+l4n62l8oPD6T9S+Ix0NTxhmqZs4MkkKeYNavcrUbWVRsVvLZLRFX7EoB/tNzP9TO7ixWPilv08oT4/rZ35ijn7Bth5kPnjNT8vrkNe/x3e6OpQjBegKRAFLP05HYDlKUrjH6zMHS8fLP5baX0ym/otTwvK9LIl38TZSpiq9xJGQAR1HG9sHMlKThUeGcs2rYrP4OC8F9asKVhuq7vONfNKLL+GZSS5wr5gOCT2y3aWlNIgM8O/ZW5l9ojX84/hEMGAGwetC62O4AQgUZITYriHfhQh085c+FkCvFS5DsB6Sf+Wz7BhQl7owW6FwzzGWbbw/h2oAd6oxrjasFZNMLFiygb+r7KiHW5db/3exzzKs3z1Cdk8uMAS4Y/3oYRdTus48lUu+Gn+yd/QWlaJfds9KMNUqUp5lglTNHBEFcSLVsZ6h6mPKoCqsgEApPzPYQ6xriGBAvgop8hjBj5JBGYuvr1G/XTbrde/XGg9PHHVOPU9gtuVkJ+YqHSjtBUUEcHxsedmeQoU+HqYKMZvXNOLFZlQXyKg+vOZ/ch+syKmNdgPz6tChMiaHImuoPCtTSWdguTZTn8E7i+RyA9AkeQ1p5pulGJcjiZ9hERIulahjVB+A8r+xIcEbP7o3uKjBCZJa7bvkIrfmbK2VkkY9IhefednA9gsRoQmpgKQjYjyTf2H2yopdGgzD0o2ca9XX+XwqIy2TMYoA8/Cpqn/mbbqjH4dJ7PXWdvvHPTT1UXcruzZh3+PG0Os3pMttcQFBgXqicqxhyKDsRRTR+dPCqST5RyNuCKA9zU1+MMVH0xlyL5AFpvfwbvl6JDXwPMokXKAIRypKE3LTtANHyOm8uerRUWSmeBvNyaKr0y8wr/0H/TSmEG4K2MJJx7R/9FoYwoiEHVvhTbEuhXHdomFG6qBxc4Hc7ObH1IIbe8yfL+t/LRTiRzCfEiqtKDkldNVPsSCeyaUkxjbI0KI3lHqewbe6BNmomXzbXnGygTIyPP9Pk9AEtgHdHtEvI0+wfEaegOt1DkYlWaDwxSLdUVL6cxkMMC8xSVTOqfCIpuAyiGKpt3noKysVabkgBziKKeMiFUwbnNYqunlM6MXWEHU1F2smpKPEH4XSjUDqd9ezFacgBhVmevIu9SIXa7nWiqossLGxoN+YjrP2qpmBeVRXbpbiq5hIWuZ05pIDUln84Mhy7o5fpvt5PDn0w1kiMjkUPLw2cnvuQrKIIaDkOfnjp+IHD0Bn5ie4hzI/P6ggST8v+xAngB9+7XiKjk1nnEhvRiCzmvgTaxsBRL5UVkvnfLQk+gcOPgOTCw0LieyehhT9lnCTMUFJJvmiqGYjRsgzROVmnewgZfUnfdjEcWmhhbF9hdsE54nCWJBUHlR+t/v3xvSzlfS+bagUgOc87r1C0VndXKi65rdpZ3S+P49jWHY0OuNf9vfpd+vTuh9lhQN2cHZ65jrbnIF9BlPcog+QKXyCWtRrHxlw6Jfc9Gr/cYgzB/CJPlbR35Se0WlitAT8Fh/pFqFNLZa3HEicKlWWKPFZ58bQ4mb+HR7lY0EMuI+58NTabgBN7LtfjiSbW2WRv/iAEHu6Y/eMEpGh42+kzZDuvwKpVYJXT19I2/fyoBNgAnm+EWTROfooqum8g+4ZR64UJAfEj549K8+AG8vuucjjllV+XS1kgagxicuDfDBfMHWi9GH0K3S5vp7sQPu8fnHIBhi0/Penh+8CcHov872vqGgZHyH9cEK3Mc0t+YJT54Mwxgf01wwpHKauyChslFtvlucgX8iY9Bskg3tXry7D+KFMLOftq0Eh21qFSw3ChMy0dqM/cGJIFEvzdb/LgeTrq4uYm2eEdc9zCTgf2LD3jIUt6oHflDyu7jfoVmxoig2TbbSUVZn0qbG/7QC0NR9rz7MtTvpeo/wSu6r3kmVvs5/Gf89WShv7JPfO5PVH0fbkeX1164HFDDmqAwfESzEkPQIKcJJZWu9F0G42dlYTd2YkMPFZTYxhIZPafIfxm+o+y4q+RnvZQjTQ8v8XH2V67B+JL0N43B/XD9YfQlnzXWNnF00oCCrYcKtCJsL5p7sKc4YyuZwiEmGu/oz24gukOvmsXegWvFSAaCaDdoP1aeF4oo1zjIS1RhAsAEmX9O7s/MYM422BwCUWsqcTk+MYFGRlnGs0gi4SjPJhwDn6a9BiTJfbWGl1y+pPniq2x8Em4YeH5IVfFBP96BfTR2yl85UTUevEleHNC5WJnKdRVggE3FnOcGVBNFNmsBDv60NJfL4MvF8Vu51wUMw2ik4L1bG5OUFFj/M7tDxai16lqCrXFszEJG1HQeLxZ6gCRtA1hZU0nUV+6fJRJd2YnSzEF3zd/Hlwpwd+BTacaCf7xEld5Em4bf+wiI72s8LeoBaIfeZP/q7NlBx466obxcJSagFcaa7Yf4sfj8NA6x/n40HGuJY0uGOh9vuJsEI7xpdv7OcM4+cIc1jwvDoO3lmkwI+YwZt1lCw9Mi6AIct+u7ak8O369ralIXPfwEDyCZE9Xd2aO9dxGQXwo6WU7Ljj4Eh3XflZQtrcri3/07xIUaJJ8GMCZ3vtE4dWhMB3uNgmyQwRKlylHxmfVdNVONqms8xfHm0LYZiYImdetWc370F/R6KiP7/ObFjBmG+N2DQ+ep7Vafi+bfsUzaX14QLzVqYKBiyHqORzh+ssPEnyhMcAd4JIenkFWqpi9deCH4qjVdczJxVK6iJJ+PZkP3UNZFhzxoljr6SiHIkQELhk/x4fdUmgZSbRRBxzm1AxmZIJJkYUfS6ArFMnlHI6INsWac2JBB3qIYsbMCszX/EXrZ6jUUP+UlAL27/ZfOuYlrMmJEhMRq787gq8kFVepu011N/vQbKr3zkKJ3s6jw/tkwuwOsMnXfKMUX8K3Ak5hlOg6BHWtAQZasPb2ejuqSlRY6zbeTaGU+CNaiuJRfBefSSr4YUWTwnDjVeZKoCOyY4nYEOjZiF0j+6FVyaWVFuFMciHsakEA=="></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="269E1F25"></span><span style="display: none !important;"><input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="KxSYaPGqSu4Md8BeqZwjkv30IcVVKXcu0CyG0AxzZ/ELJdAg/MvGAEGJqFhlp1QyXcMDd9NJISv9sLPEx4OTphFggVNb9ba4vM4OIjpw40cg8wA2iVMBmImBxYk3lFbQ42HDyIrDDZz+dzw6SGbHTKZ2wgLzkO5xpFCxtXwIaLmHMWjtWFuiQLNwglGRo8aHYQx/smK3HtOtDqffL47QX0T+GLDXzaPkOVZzxcJ84jQyNbMFhRZqgLZUzhblllKWgStTuk1gtqKOxSp/CxKAvgZ09Ytz/+kEAo31Ups67+speiBgJFY1iiccUQSvSoQljpcVw54lwRKw+rUx/UuKVBiBR+f+etDtfNesWWLOKUAVeyCszLEUb8R/ScRm0KNjNcrBRSsZzXLvgpkPGhganGJiLQOhsxSUy8bQRH7bUhyrZXjJMqzGwv+B9GCke7C3nom/+YCezY+U8sn11OyiiUmi0P9cIzeSF+N+l13fSe5do9z1lnfCPoq9ojicV+GHxfcXh3v8MCv069uvRyNX0XTQaPSx0pvGTQOOeTn/tWHfNYBwEa6on56NJdcjylTZk5kb9Yi1SEWwOxYC0V2nSoglQH7CbWLtibKakYwrcFrg8n8ni2ROYfu1bFNKxtipIAN7LsLcZuAqpG7c7EQDtHfNZXRTVofnN7tYbL4v9CJvU8KHMcCtxqEH10dbCKfabCVwx4L4pbrDdW6WNt2gITzzk0gVy+MLO8tyitUzvC/v/dbmC2rlDmdQ+ssLNBAuqKsonWa8dVnYorUmpHJMGai2Gi+C3tBZH4uiv9aHIjOb5ulSZsr/E/ug4pV2QJtK+RzxXU8h8GA2tTJ1ii8QXkobdSeoPOU4T152BlQe4Ne/896I4joXvw20X/PDpjva0A315rUt4ZS6YAPaHG6gwpWy2qVpEs6gmEujUIPAwxxpZ3kuq/+MqZp3tuz57PQvMYUouOsUIZSwwheQSwq7N8fJf5xmR8TiND/Yp7TPCbsWwv6NsS+RjTvvjBCbw+bfhGSNrIr9+bFNORW36U2Y2GqTduEXBCfvT2BxBo/k4/hWAN7nCJhPR6ENpegSB/lOC6n8cccxa9btUGMSH9fPbMD49JnNU67zPmFwFRc/7Mr2C/aTYZ7yLPW31L57L/Pl02c2Fjs7tOALd2KbwURTVvAg8YGwAcwt96M4h5mfbP1hcul3qG5ukp2NaqWXlpeRrjJlmDvgxxhWmDdsnC27VLx5tdII2Ku1G2TtK5ZEzo6qRfWpJkgvq2sD8A+ZkT8RXnbcYClbDHnHnW9PKU17HQDUG1LOlsg6VpMFEcgcjXw="></span><span style="display: none !important;"><input type="hidden" name="MainContent_TabContainer1_ClientState" id="MainContent_TabContainer1_ClientState" value="{&quot;ActiveTabIndex&quot;:0,&quot;TabEnabledState&quot;:[true,true,true,true,true],&quot;TabWasLoadedOnceState&quot;:[true,false,false,false,false]}"></span><span style="display: none !important;"><input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value=""></span></form>
+
+
+    <script src="scripts_citas/jquery-3.2.1.min.js"></script>
+    
+    <script src="scripts_citas/bootstrap.min.js"></script>
+
+
+</body></html>

@@ -51,17 +51,19 @@ En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
 ejecuta `scripts/start-runtime.pyw` con `pythonw.exe` al iniciar sesion. Ese host
 sin consola ejecuta `scripts/start-runtime.ps1`, que inicia
 el bootstrap del worker, `scripts/start-admin-dashboard.ps1`,
-`scripts/start-telegram-control.ps1` y `scripts/start-captcha-shadow.ps1` en
-segundo plano. Cada bootstrap supervisa y reinicia su proceso sin compartir
-memoria con los demas.
+`scripts/start-telegram-control.ps1` y, solo cuando
+`CAPTCHA_SHADOW_SERVICE_ENABLED=true`, `scripts/start-captcha-shadow.ps1` en
+segundo plano. Cada bootstrap habilitado supervisa y reinicia su proceso sin
+compartir memoria con los demás.
 
 La tarea se crea o recupera con `scripts/install-startup-task.ps1`. Este diseno
 no usa Windows Script Host, VBS ni `ExecutionPolicy Bypass`, y no deja una
 ventana de `cmd` o PowerShell abierta en el escritorio.
-El lanzador permanece como supervisor raiz de los cuatro procesos independientes
-y comprueba su presencia cada 15 segundos. Si un supervisor desaparece, inicia
-solo ese componente. La tarea programada permanece `Running` y sus reglas de
-reinicio vuelven a ser efectivas si el propio supervisor raiz termina.
+El lanzador permanece como supervisor raíz de tres procesos obligatorios y del
+CAPTCHA opcional, y comprueba su presencia cada 15 segundos. Si un supervisor
+habilitado desaparece, inicia solo ese componente. La tarea programada permanece
+`Running` y sus reglas de reinicio vuelven a ser efectivas si el propio
+supervisor raíz termina.
 
 ## Procesos administrativos
 
@@ -77,7 +79,7 @@ scripts/start-admin-dashboard.ps1
 # Terminal 3
 scripts/start-telegram-control.ps1
 
-# Terminal 4
+# Terminal 4, solo con CAPTCHA_SHADOW_SERVICE_ENABLED=true
 scripts/start-captcha-shadow.ps1
 ```
 

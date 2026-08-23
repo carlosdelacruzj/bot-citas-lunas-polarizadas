@@ -2,7 +2,7 @@
   <div>
     <p class="eyebrow">Bandeja de trabajo</p>
     <h2 id="inbox-title">Lo que requiere tu atención</h2>
-    <p>Solo aparecen tareas pendientes. Cuando completas una, desaparece de esta lista.</p>
+    <p>Solo aparecen tareas operativas. Cuando completas una, desaparece de esta lista.</p>
   </div>
   <div class="inbox-total" [class.clear]="dashboard.inboxPendingTotal() === 0">
     <strong>{{ dashboard.inboxPendingTotal() }}</strong>
@@ -26,18 +26,20 @@
     <strong>{{ dashboard.inboxMessageCount() }}</strong>
     <small>WhatsApp o contacto</small>
   </article>
-  <article class="metric-card">
-    <span>CAPTCHA</span>
-    <strong>{{ dashboard.captchaReviewTotal() }}</strong>
-    <small>Etiquetas por validar</small>
-  </article>
+  @if (dashboard.captchaShadowEnabled()) {
+    <article class="metric-card">
+      <span>CAPTCHA</span>
+      <strong>{{ dashboard.captchaReviewTotal() }}</strong>
+      <small>Etiquetas por validar</small>
+    </article>
+  }
 </section>
 
 @if (dashboard.inboxPendingTotal() === 0) {
   <app-view-state
     state="empty"
     title="Todo está al día"
-    message="No hay pagos, accesos, mensajes ni CAPTCHA esperando intervención."
+    message="No hay pagos, accesos ni mensajes esperando intervención."
   />
 } @else {
   <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
@@ -49,7 +51,7 @@
     </div>
 
     <div class="inbox-list">
-      @if (dashboard.captchaReviewTotal() > 0) {
+      @if (dashboard.captchaShadowEnabled() && dashboard.captchaReviewTotal() > 0) {
         <article class="inbox-row warn">
           <div class="inbox-row-icon" aria-hidden="true">A9</div>
           <div class="inbox-row-copy">

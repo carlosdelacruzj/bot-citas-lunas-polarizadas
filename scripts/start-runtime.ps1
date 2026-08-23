@@ -9,6 +9,7 @@ $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $PowerShellExecutable = Join-Path $PSHOME "powershell.exe"
 $LogDir = Join-Path $ProjectRoot "logs"
 $BootstrapLog = Join-Path $LogDir ("runtime-bootstrap-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
+$EnvPath = Join-Path $ProjectRoot ".env"
 
 Set-Location $ProjectRoot
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
@@ -34,6 +35,25 @@ function Test-BootstrapRunning {
             ) -ge 0
         }
     return $null -ne $running
+}
+
+function Test-LocalBooleanSetting {
+    param(
+        [string]$Name,
+        [bool]$Default = $false
+    )
+
+    if (-not (Test-Path -LiteralPath $EnvPath)) {
+        return $Default
+    }
+    $match = Get-Content -LiteralPath $EnvPath |
+        Where-Object { $_ -match ("^\s*{0}\s*=" -f [regex]::Escape($Name)) } |
+        Select-Object -Last 1
+    if (-not $match) {
+        return $Default
+    }
+    $value = ($match -split "=", 2)[1].Trim().Trim('"').Trim("'").ToLowerInvariant()
+    return $value -in @("1", "true", "yes", "on")
 }
 
 function Start-Bootstrap {
@@ -74,14 +94,26 @@ $bootstrapDefinitions = @(
         ScriptPath = Join-Path $PSScriptRoot "start-telegram-control.ps1"
     },
     @{
-        Name = "CAPTCHA shadow"
-        ScriptPath = Join-Path $PSScriptRoot "start-captcha-shadow.ps1"
-    },
-    @{
         Name = "worker"
         ScriptPath = Join-Path $PSScriptRoot "start-worker.ps1"
     }
 )
+
+$captchaShadowServiceEnabled = Test-LocalBooleanSetting `
+    -Name "CAPTCHA_SHADOW_SERVICE_ENABLED"
+if ($captchaShadowServiceEnabled) {
+    $bootstrapDefinitions = @(
+        $bootstrapDefinitions[0],
+        $bootstrapDefinitions[1],
+        @{
+            Name = "CAPTCHA shadow"
+            ScriptPath = Join-Path $PSScriptRoot "start-captcha-shadow.ps1"
+        },
+        $bootstrapDefinitions[2]
+    )
+} else {
+    Write-BootstrapLog "CAPTCHA shadow is in cold standby; supervisor will not be started."
+}
 
 try {
     foreach ($definition in $bootstrapDefinitions) {

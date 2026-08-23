@@ -20,7 +20,7 @@ Estado verificado el `2026-08-11`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Operativo                | `127.0.0.1:8765/health` responde `ok`, con `worker_running=true`; el reinicio controlado ya no hereda una pausa y sus controles dejan auditoría durable. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v57` agrega control persistente y versiones de plantilla para recordatorios, preservando fechas normalizadas, autoridad CAPTCHA, calidad financiera y outbox Telegram. |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v58` agrega conciliación durable de trabajos WhatsApp ambiguos, preservando recordatorios, fechas normalizadas, autoridad CAPTCHA, calidad financiera y outbox Telegram. |
 | Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
 | CAPTCHA local         | Rollback a 2Captcha      | 2Captcha volvió a ser la autoridad persistente desde el siguiente CAPTCHA; V6 queda fuera de admisión con sus contadores y evidencia preservados. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
@@ -420,6 +420,21 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 ### Control remoto
 
 - Menú de Telegram con clientes, alta manual, búsqueda, resumen y estado.
+- Implementado el `2026-08-22`: el menú separa **En cola** y **Faltan pagar**.
+  La segunda vista muestra titular, monto acordado, abonos y saldo, y permite
+  registrar el total pagado con una confirmación explícita. Telegram vuelve a
+  consultar la orden antes de aplicar, exige que continúe como reserva con pago
+  pendiente, verifica después los estados `payment_status=paid` y
+  `service_orders.status=paid`, y deja auditoría con actor hasheado. La misma
+  transacción existente encola `post_payment_followup`; Telegram informa
+  **encolado**, sin confundirlo con envío confirmado o lectura del destinatario.
+  El comando `/pago ORDEN MONTO_TOTAL` cubre diferencias deliberadas frente al
+  monto acordado. Validación local: `compileall`, Ruff, `59 passed` y simulacro
+  aislado de lista, confirmación, escritura por API y verificación posterior;
+  no se registró un pago real ni se envió WhatsApp durante la prueba.
+- Desde el `2026-08-21`, los registros de WhatsApp aceptan un celular peruano
+  de nueve dígitos sin prefijo y lo normalizan a `+51` antes de persistirlo o
+  preparar cualquier envío. Los números con código internacional se conservan.
 - Alta manual y edición guiada de cuatro restricciones de fecha y prioridad;
   consultar credenciales existentes dejó de ser una acción visible.
 - Pausa, reanudación y reinicio mediante Admin API y comandos persistidos.
@@ -456,6 +471,22 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   confirmación y el comprobante posterior muestran todos los datos, incluida la
   contraseña, para poder detectar errores; el alta también informa el resultado
   real del preflight cuando termina dentro de la espera.
+- Actualizado el `2026-08-20`: la captura de WhatsApp en `/cliente_nuevo` ofrece
+  una elección explícita entre **Número**, **Usuario** y **Omitir WhatsApp**.
+  Telegram valida únicamente el tipo elegido; para usuario acepta el valor con
+  o sin `@` y lo normaliza antes de crear la orden. Un error recuperable renueva
+  el tiempo del paso sin guardar el valor rechazado.
+- Corregido el `2026-08-22`: un timeout local después de persistir el alta ya no
+  convierte la operación en un falso `failed`. El POST de creación dispone de
+  `15` segundos y, si su respuesta queda ambigua, Telegram busca la orden por el
+  documento, exige una única orden principal y vuelve a comprobar credenciales,
+  contacto y restricciones antes de continuar. Si la orden ya existe registra
+  `applied` con `confirmation=recovered_after_*`; si falla únicamente el
+  seguimiento posterior informa que el alta quedó registrada y prohíbe repetirla.
+  La auditoría conserva etapa y causa sanitizada sin contraseña ni documento.
+  La simulación local confirmó recuperación tras timeout y rechazo HTTP real;
+  `compileall`, Ruff, las `59` pruebas existentes y `telegram_control --check`
+  quedaron correctos.
 
 ### Evidencia y CAPTCHA
 
@@ -607,6 +638,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   resultado visual con el siguiente cupo real. El worker se pausó al terminar
   una sesión `Sin Cupos`, se reinició con frontera segura y quedó reanudado con
   un lease nuevo; las sesiones manuales del Admin API permanecieron intactas.
+- Puesta en reserva fría el `2026-08-20`: el CAPTCHA matemático continúa con
+  cálculo local, firma y honeypot, mientras el productor sombra y el supervisor
+  CUDA quedan apagados mediante controles separados. V3/V6, los checkpoints
+  anteriores, los `3,177` eventos y sus etiquetas se preservan sin ejecutar
+  inferencia nueva. El dashboard oculta CAPTCHA y lo excluye de **Pendientes**
+  cuando la capacidad está apagada; la ruta directa vuelve a **Resumen**. Si el
+  portal recupera el CAPTCHA gráfico, 2Captcha conserva la reserva y una alerta
+  Telegram mensual deduplicada informa que la sombra requiere reactivación
+  explícita.
 - Actualizado el dashboard el `2026-08-10`: **Capturas CAPTCHA** separa ahora
   cantidad de muestras, validación de restricciones y autoridad final. Muestra
   resolutor efectivo, progreso `V6/20`, confirmaciones, rechazos, fallbacks,
@@ -686,6 +726,22 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Cola durable de trabajos WhatsApp con estados recuperables y auditables.
 - Admin API como único propietario del perfil persistente de WhatsApp Web.
 - Fallos de WhatsApp no bloquean reservas ni Telegram.
+- Implementado el `2026-08-20`: **Pendientes** ya no usa `Revisar orden` como
+  navegación sin efecto. Los trabajos de álbum o postpago `failed/uncertain`
+  abren una conciliación de solo lectura que conserva el error técnico y el
+  paquete previamente preparado sin abrir WhatsApp ni iniciar otro intento.
+  El operador puede confirmar que el paquete ya estaba completo, completar
+  manualmente solo el texto o PDF faltante y confirmarlo, o cerrar sin envío
+  con una nota obligatoria. PostgreSQL `v58` guarda resolución, nota, actor y
+  fecha aparte del estado técnico original; la bandeja se refresca al cerrar y
+  las órdenes archivadas ya no reaparecen por un preflight fallido antiguo.
+  Una resolución manual queda en auditoría central. No se conciliaron ni
+  reenviaron automáticamente los casos históricos durante el despliegue.
+  Validación viva: schema `v58`, Admin API aislada saludable, bundle
+  `main-5C222H75.js`, los tres postpagos pendientes recuperables con `4` pasos,
+  `2` PDF y texto completo, ruta inválida `400` sin escritura, `compileall`,
+  Ruff, `59 passed`, build Angular y `git diff --check`. No había navegador
+  conectado para la aprobación visual interactiva.
 - Endurecido el `2026-08-20` sin cambiar la arquitectura ni los disparadores:
   el álbum permite una sola segunda apertura segura del menú antes de elegir
   archivos; la búsqueda por `@usuario` repite una vez únicamente antes de
@@ -735,6 +791,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   Validacion viva: schema `v57`, API PID `38408`, bundle `main-4TE6ORXA.js`,
   `8` candidatos, cero trabajos, `59` pruebas y build `532.65 kB`. La revision
   visual humana permanece pendiente.
+- Corregido el `2026-08-21`: el canario de recordatorios validaba correctamente
+  una o dos ordenes, pero al persistirlas aplicaba el ocultamiento de datos al
+  `order_id` y guardaba `order-***`, por lo que ninguna seleccion coincidia en
+  la conciliacion. El identificador interno se conserva ahora integro y la
+  pantalla muestra el detalle devuelto por la API si un guardado es rechazado.
 - Primer lote real de recordatorios completado el `2026-08-17`: el resumen de
   `16` evidencias termino antes de admitir clientes y los `8/8` recordatorios
   cerraron `sent`, sin fallos, incertidumbre, omisiones ni duplicados. La
@@ -863,6 +924,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   WhatsApp cambió las burbujas a `msg-container`. La confirmación reconoce esa
   estructura solo cuando contiene el texto completo y una marca saliente; el
   caso comprobado se reconcilió a `sent` sin reenviar.
+- Corregido y validado el `2026-08-21`: la primera guarda contra un segundo clic
+  trató la presencia del compositor como prueba de que la vista previa había
+  cerrado, pero WhatsApp también muestra ese compositor debajo de la vista previa
+  de documentos. El flujo reconoce ahora los controles visibles de la vista
+  previa, realiza un solo clic y nunca repite el envío; la confirmación exige el
+  compositor y todas las burbujas salientes nuevas. El reenvío autorizado de
+  `order-72687222` confirmó en tráfico real `3/3` PDF y el texto completo para
+  `@AlvaFigueroa`; PostgreSQL guardó el nuevo mensaje `sent` y el intento técnico
+  original quedó `uncertain / completed_missing` con nota y auditoría. Pasaron
+  `compileall`, Ruff, `59` pruebas y `git diff --check` sobre los archivos del
+  cambio.
 - La bandeja cruza evidencia `sent` y trabajos automáticos durables antes de
   pedir intervención. Dejó fuera `54` seguimientos históricos sin trabajo
   automático y reconoció como resueltos `2` fallos con envío posterior. Los

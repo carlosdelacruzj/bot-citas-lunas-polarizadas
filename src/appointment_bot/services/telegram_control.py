@@ -10,10 +10,12 @@ import re
 import secrets
 import signal
 import time
+import unicodedata
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from threading import Event, Lock
 from typing import Any
@@ -23,6 +25,11 @@ from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.core.contacts import (
+    ContactValidationError,
+    normalize_contact_whatsapp,
+    normalize_contact_whatsapp_username,
+)
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.utils.sanitization import sanitize_text
@@ -53,11 +60,13 @@ MUTATING_COMMANDS = {
     "reglas_editar",
     "reiniciar",
     "oportunidad",
+    "pago",
 }
 ORDER_TARGET_COMMANDS = {
     "cliente",
     "credenciales",
     "prioridad",
+    "pago",
     "reglas",
     "reglas_editar",
 }
@@ -65,7 +74,10 @@ HELP_TEXT = """Control remoto disponible:
 
 /estado - Estado real del worker
 /clientes [pagina] - Resumen paginado de la cola
+/cola [pagina] - Usuarios que esperan validacion, cupo o reanudacion
+/cobros [pagina] - Reservas que todavia deben pagar
 /cliente ORDER_ID - Detalle operativo enmascarado
+/pago ORDER_ID MONTO_TOTAL - Registrar pago con confirmacion
 /reglas ORDER_ID - Restricciones de una orden
 /ultimos_errores - Incidentes operativos recientes
 /prioridad ORDER_ID VALOR - Cambiar prioridad con confirmacion
@@ -201,6 +213,21 @@ class AdminApiClient:
     def get_service_order(self, order_id: str) -> dict[str, Any]:
         return self._request("GET", f"/api/v1/service-orders/{quote(order_id, safe='')}")
 
+    def mark_payment_paid(
+        self,
+        order_id: str,
+        *,
+        amount_paid: str,
+        amount_agreed: str,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/payment/paid",
+            payload={"amount_paid": amount_paid, "amount_agreed": amount_agreed},
+            actor=actor,
+        )
+
     def search_service_orders(self, query: str) -> list[dict[str, Any]]:
         payload = self._request(
             "POST", "/api/v1/service-orders/search", payload={"query": query}
@@ -221,6 +248,7 @@ class AdminApiClient:
             "/api/v1/service-orders",
             payload=values,
             actor=actor,
+            request_timeout=15,
         )
 
     def get_runs(self, *, limit: int = 50) -> list[dict[str, Any]]:
@@ -365,6 +393,7 @@ class AdminApiClient:
         *,
         payload: dict[str, Any] | None = None,
         actor: str | None = None,
+        request_timeout: int = 5,
     ) -> dict[str, Any]:
         headers = {"Authorization": f"Bearer {self.token}"}
         if actor:
@@ -380,7 +409,7 @@ class AdminApiClient:
             method=method,
         )
         try:
-            with urlopen(request, timeout=5) as response:
+            with urlopen(request, timeout=request_timeout) as response:
                 return _read_json_response(response)
         except HTTPError as exc:
             raise TelegramControlError(
@@ -827,6 +856,12 @@ def _process_update(
     if command == "clientes":
         _send_clients(chat_id, arguments, telegram, admin_api)
         return
+    if command == "cola":
+        _send_queue(chat_id, arguments, telegram, admin_api)
+        return
+    if command == "cobros":
+        _send_pending_payments(chat_id, arguments, telegram, admin_api)
+        return
     if command == "buscar":
         _send_search_results(chat_id, arguments, telegram, admin_api)
         return
@@ -886,6 +921,16 @@ def _process_update(
             confirmation_lock,
         )
         return
+    if command == "pago":
+        _request_payment_change(
+            chat_id,
+            arguments,
+            telegram,
+            admin_api,
+            pending_order_changes,
+            confirmation_lock,
+        )
+        return
     if command == "reglas_editar":
         search_conversations.pop(chat_id, None)
         captcha_conversations.pop(chat_id, None)
@@ -932,7 +977,11 @@ def _main_menu_markup() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [
-                {"text": "Clientes", "callback_data": "ui:clients:1"},
+                {"text": "En cola", "callback_data": "ui:queue:1"},
+                {"text": "Faltan pagar", "callback_data": "ui:payments:1"},
+            ],
+            [
+                {"text": "Todos los clientes", "callback_data": "ui:clients:1"},
                 {"text": "Alta manual", "callback_data": "ui:manual:start"},
             ],
             [{"text": "Buscar cliente", "callback_data": "ui:search:start"}],
@@ -1409,6 +1458,155 @@ def _send_clients(
     )
 
 
+def _send_queue(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    page = _parse_list_page(arguments, "/cola [pagina]", chat_id, telegram)
+    if page is None:
+        return
+    try:
+        orders = [
+            order
+            for order in admin_api.get_service_orders()
+            if str(order.get("status") or "") in {"ready", "validation_pending", "paused"}
+        ]
+    except TelegramControlError as exc:
+        logger.warning("Could not list queued service orders: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar la cola en este momento.")
+        return
+    _send_operational_order_list(
+        chat_id,
+        page,
+        orders,
+        title="COLA OPERATIVA",
+        empty_text="No hay usuarios esperando validacion, cupo o reanudacion.",
+        callback_subject="queue",
+        telegram=telegram,
+    )
+
+
+def _send_pending_payments(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+) -> None:
+    page = _parse_list_page(arguments, "/cobros [pagina]", chat_id, telegram)
+    if page is None:
+        return
+    try:
+        orders = [
+            order
+            for order in admin_api.get_service_orders()
+            if str(order.get("status") or "") == "reserved_payment_pending"
+            and str(order.get("payment_status") or "") == "pending"
+        ]
+    except TelegramControlError as exc:
+        logger.warning("Could not list pending payments: %s", exc)
+        telegram.send_message(chat_id, "No pude consultar los cobros en este momento.")
+        return
+    total_balance = sum((_payment_balance(order) for order in orders), Decimal("0"))
+    _send_operational_order_list(
+        chat_id,
+        page,
+        orders,
+        title=f"FALTAN PAGAR - {len(orders)} | SALDO S/{_money_text(total_balance)}",
+        empty_text="No hay reservas con pago pendiente.",
+        callback_subject="payments",
+        telegram=telegram,
+        payment_mode=True,
+    )
+
+
+def _parse_list_page(
+    arguments: str,
+    usage: str,
+    chat_id: str,
+    telegram: TelegramBotApi,
+) -> int | None:
+    try:
+        page = int(arguments) if arguments else 1
+        if page < 1:
+            raise ValueError
+    except ValueError:
+        telegram.send_message(chat_id, f"Uso: {usage}")
+        return None
+    return page
+
+
+def _send_operational_order_list(
+    chat_id: str,
+    page: int,
+    orders: list[dict[str, Any]],
+    *,
+    title: str,
+    empty_text: str,
+    callback_subject: str,
+    telegram: TelegramBotApi,
+    payment_mode: bool = False,
+) -> None:
+    total_pages = max(1, (len(orders) + CLIENTS_PAGE_SIZE - 1) // CLIENTS_PAGE_SIZE)
+    if page > total_pages:
+        telegram.send_message(chat_id, f"La ultima pagina disponible es {total_pages}.")
+        return
+    start = (page - 1) * CLIENTS_PAGE_SIZE
+    visible = orders[start : start + CLIENTS_PAGE_SIZE]
+    lines = [f"{title} - PAGINA {page}/{total_pages}", ""]
+    keyboard: list[list[dict[str, str]]] = []
+    for order in visible:
+        order_id = str(order.get("order_id") or "")
+        applicant_name = _applicant_display_name(order)
+        if payment_mode:
+            agreed = _money_value(order.get("amount_agreed")) or Decimal("0")
+            paid = _money_value(order.get("amount_paid")) or Decimal("0")
+            lines.append(
+                f"{applicant_name}\n"
+                f"Orden: {order_id}\n"
+                f"Acordado: S/{_money_text(agreed)} | Abonado: S/{_money_text(paid)} | "
+                f"Saldo: S/{_money_text(max(agreed - paid, Decimal('0')))}"
+            )
+            callback_data = f"py:{order_id}:default"
+            button_label = f"Registrar pago - {_display_text(applicant_name, 24)}"
+        else:
+            lines.append(
+                f"{applicant_name}\n"
+                f"Orden: {order_id}\n"
+                f"Estado: {_order_status_label(order.get('status'))} | "
+                f"Prioridad: {order.get('priority', 0)}"
+            )
+            callback_data = f"om:{order_id}:show"
+            button_label = _display_text(applicant_name, 34)
+        if order_id and len(callback_data.encode()) <= 64:
+            keyboard.append([{"text": button_label, "callback_data": callback_data}])
+    if not visible:
+        lines.append(empty_text)
+    navigation: list[dict[str, str]] = []
+    if page > 1:
+        navigation.append(
+            {"text": "Anterior", "callback_data": f"ui:{callback_subject}:{page - 1}"}
+        )
+    if page < total_pages:
+        navigation.append(
+            {"text": "Siguiente", "callback_data": f"ui:{callback_subject}:{page + 1}"}
+        )
+    if navigation:
+        keyboard.append(navigation)
+    keyboard.append(
+        [
+            {"text": "Actualizar", "callback_data": f"ui:{callback_subject}:{page}"},
+            {"text": "Menu", "callback_data": "ui:menu:main"},
+        ]
+    )
+    telegram.send_message(
+        chat_id,
+        "\n\n".join(lines),
+        reply_markup={"inline_keyboard": keyboard},
+    )
+
+
 def _send_order_query(
     chat_id: str,
     command: str,
@@ -1651,6 +1849,14 @@ def _send_order_panel(
         keyboard.append([{
             "text": "Reintentar validacion",
             "callback_data": f"om:{order_id}:validate",
+        }])
+    if (
+        str(order.get("status") or "") == "reserved_payment_pending"
+        and str(order.get("payment_status") or "") == "pending"
+    ):
+        keyboard.append([{
+            "text": "Registrar pago",
+            "callback_data": f"py:{order_id}:default",
         }])
     keyboard.extend(
         [
@@ -1897,6 +2103,7 @@ def _continue_new_client_conversation(
     try:
         prompt = _apply_new_client_value(conversation, value)
     except ValueError as exc:
+        conversation.expires_at = time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS
         telegram.send_message(chat_id, str(exc))
         return True
     conversation.expires_at = time.monotonic() + NEW_CLIENT_CONVERSATION_TTL_SECONDS
@@ -1950,10 +2157,24 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
             [{"text": "WhatsApp", "callback_data": f"nf:{session_id}:source_whatsapp"}],
         ]
     elif step == 5:
-        keyboard = [[{
-            "text": "Omitir WhatsApp",
-            "callback_data": f"nf:{session_id}:phone_omit",
-        }]]
+        keyboard = [
+            [
+                {
+                    "text": "Numero",
+                    "callback_data": f"nf:{session_id}:phone_number",
+                },
+                {
+                    "text": "Usuario",
+                    "callback_data": f"nf:{session_id}:phone_username",
+                },
+            ],
+            [
+                {
+                    "text": "Omitir WhatsApp",
+                    "callback_data": f"nf:{session_id}:phone_omit",
+                }
+            ],
+        ]
     elif step == 6:
         keyboard = [[
             {"text": "Sin restricciones", "callback_data": f"nf:{session_id}:rules_none"},
@@ -2031,18 +2252,43 @@ def _apply_manual_client_value(
             raise ValueError("Elige TikTok, Facebook o WhatsApp.")
         conversation.values["contact_source"] = source
     elif step == 5:
-        if normalized.lower() not in {"omitir", "sin whatsapp"}:
-            if normalized.startswith("@"):
-                if not re.fullmatch(r"@\S{1,99}", normalized):
-                    raise ValueError("Usuario invalido. Usa el formato @usuario.")
-                conversation.values["contact_whatsapp_username"] = normalized
-            else:
-                phone = re.sub(r"[\s()-]", "", normalized)
-                if not re.fullmatch(r"\+?\d{8,15}", phone):
-                    raise ValueError(
-                        "WhatsApp invalido. Usa un numero, @usuario o elige Omitir."
+        mode = conversation.values.get("_whatsapp_recipient_mode")
+        choice = normalized.casefold().replace(" ", "_")
+        if mode is None:
+            if choice in {"numero", "número", "whatsapp_numero"}:
+                conversation.values["_whatsapp_recipient_mode"] = "phone"
+                return "Paso 6: escribe el numero de WhatsApp."
+            if choice in {"usuario", "whatsapp_usuario"}:
+                conversation.values["_whatsapp_recipient_mode"] = "username"
+                return "Paso 6: escribe el usuario de WhatsApp, con o sin @."
+            if choice not in {"omitir", "sin_whatsapp"}:
+                raise ValueError("Elige Numero, Usuario u Omitir WhatsApp.")
+        else:
+            try:
+                if mode == "phone":
+                    if not normalized:
+                        raise ValueError("Escribe el numero de WhatsApp.")
+                    conversation.values["contact_whatsapp"] = (
+                        normalize_contact_whatsapp(normalized)
                     )
-                conversation.values["contact_whatsapp"] = phone
+                else:
+                    username = unicodedata.normalize("NFKC", normalized)
+                    username = "".join(
+                        character
+                        for character in username
+                        if unicodedata.category(character) != "Cf"
+                    ).strip()
+                    username = f"@{username.lstrip('@')}"
+                    conversation.values["contact_whatsapp_username"] = (
+                        normalize_contact_whatsapp_username(username)
+                    )
+            except ContactValidationError as exc:
+                raise ValueError(str(exc)) from exc
+            finally:
+                if "contact_whatsapp" in conversation.values or (
+                    "contact_whatsapp_username" in conversation.values
+                ):
+                    conversation.values.pop("_whatsapp_recipient_mode", None)
     elif step == 6:
         choice = normalized.lower().replace(" ", "_")
         if choice == "sin_restricciones":
@@ -2075,7 +2321,7 @@ def _manual_client_step_prompt(step: int) -> str | None:
         2: "Paso 3: escribe la contrasena del portal.",
         3: "Paso 4: escribe el nombre de la persona de contacto.",
         4: "Paso 5: elige de donde llego el cliente.",
-        5: "Paso 6: escribe el numero de WhatsApp, @usuario o elige Omitir.",
+        5: "Paso 6: elige si registrarás un numero o un usuario de WhatsApp.",
         6: "Paso 7: indica si deseas configurar restricciones ahora.",
         7: "Restriccion 1 de 4: fecha minima en DD-MM-YYYY o Sin limite.",
         8: "Restriccion 2 de 4: fecha maxima en DD-MM-YYYY o Sin limite.",
@@ -2196,6 +2442,13 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Reserva: {order.get('reservation_status') or 'sin reserva'}",
         f"Pago: {order.get('payment_status') or 'sin pago'}",
     ]
+    if order.get("amount_agreed") is not None:
+        agreed = _money_value(order.get("amount_agreed")) or Decimal("0")
+        paid = _money_value(order.get("amount_paid")) or Decimal("0")
+        lines.append(
+            f"Cobro: acordado S/{_money_text(agreed)} | abonado S/{_money_text(paid)} | "
+            f"saldo S/{_money_text(max(agreed - paid, Decimal('0')))}"
+        )
     if order.get("reservation_date") or order.get("reservation_hour"):
         lines.append(
             "Cita: "
@@ -2318,6 +2571,35 @@ def _valid_order_id(value: str) -> bool:
     return re.fullmatch(r"[A-Za-z0-9_-]{1,80}", value) is not None
 
 
+def _money_value(value: Any) -> Decimal | None:
+    if value in {None, ""}:
+        return None
+    try:
+        amount = Decimal(str(value).strip().replace(",", "."))
+    except (InvalidOperation, ValueError):
+        return None
+    return amount if amount.is_finite() else None
+
+
+def _validated_payment_amount(value: Any) -> Decimal:
+    amount = _money_value(value)
+    if amount is None or amount <= 0 or amount > Decimal("99999.99"):
+        raise ValueError("El monto total debe ser mayor que cero y menor que S/100000.")
+    if amount.as_tuple().exponent < -2:
+        raise ValueError("El monto total admite como maximo dos decimales.")
+    return amount.quantize(Decimal("0.01"))
+
+
+def _money_text(value: Decimal) -> str:
+    return f"{value.quantize(Decimal('0.01')):.2f}"
+
+
+def _payment_balance(order: dict[str, Any]) -> Decimal:
+    agreed = _money_value(order.get("amount_agreed")) or Decimal("0")
+    paid = _money_value(order.get("amount_paid")) or Decimal("0")
+    return max(agreed - paid, Decimal("0"))
+
+
 def _weekday_name(value: Any) -> str:
     names = {
         1: "lunes",
@@ -2370,6 +2652,62 @@ def _request_priority_change(
         order_id=parts[0],
         original={"priority": original_priority},
         updated={"priority": priority},
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+    )
+    _store_order_change(change, pending_order_changes, confirmation_lock)
+    _send_order_change_confirmation(change, telegram)
+
+
+def _request_payment_change(
+    chat_id: str,
+    arguments: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+) -> None:
+    parts = arguments.split()
+    if len(parts) not in {1, 2} or not _valid_order_id(parts[0]):
+        telegram.send_message(chat_id, "Uso: /pago ORDER_ID MONTO_TOTAL")
+        return
+    try:
+        order = admin_api.get_service_order(parts[0])
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare payment registration: %s", exc)
+        telegram.send_message(chat_id, "No pude encontrar o consultar esa orden.")
+        return
+    if (
+        str(order.get("status") or "") != "reserved_payment_pending"
+        or str(order.get("payment_status") or "") != "pending"
+    ):
+        telegram.send_message(
+            chat_id,
+            "La orden ya no figura como reserva con pago pendiente. Actualiza Cobros.",
+        )
+        return
+    agreed = _money_value(order.get("amount_agreed"))
+    if agreed is None or agreed <= 0:
+        telegram.send_message(chat_id, "La orden no tiene un monto acordado valido.")
+        return
+    try:
+        paid = _validated_payment_amount(parts[1] if len(parts) == 2 else agreed)
+    except ValueError as exc:
+        telegram.send_message(chat_id, str(exc))
+        return
+    change = PendingOrderChange(
+        operation_id=secrets.token_hex(6),
+        chat_id=chat_id,
+        action="payment_paid",
+        order_id=parts[0],
+        original={
+            "applicant_name": _applicant_display_name(order),
+            "amount_agreed": _money_text(agreed),
+            "amount_paid": _money_text(_money_value(order.get("amount_paid")) or Decimal("0")),
+        },
+        updated={
+            "amount_agreed": _money_text(agreed),
+            "amount_paid": _money_text(paid),
+        },
         expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
     )
     _store_order_change(change, pending_order_changes, confirmation_lock)
@@ -2661,6 +2999,16 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
             f"Prioridad anterior: {change.original['priority']}\n"
             f"Prioridad nueva: {change.updated['priority']}"
         )
+    if change.action == "payment_paid":
+        return (
+            f"Cliente / titular: {change.original['applicant_name']}\n"
+            f"Orden: {change.order_id}\n"
+            f"Monto acordado: S/{change.updated['amount_agreed']}\n"
+            f"Registrado anteriormente: S/{change.original['amount_paid']}\n"
+            f"Total que quedara pagado: S/{change.updated['amount_paid']}\n\n"
+            "Al confirmar, el pago pasara a paid y se encolara automaticamente "
+            "el seguimiento postpago por WhatsApp."
+        )
     return "\n".join(
         [
             f"Orden: {change.order_id}",
@@ -2840,7 +3188,9 @@ def _process_interface_callback(
     confirmation_lock: Lock,
 ) -> bool:
     parts = data.split(":")
-    if len(parts) != 3 or parts[0] not in {"ui", "om", "op", "pq", "wk", "nf", "rf"}:
+    if len(parts) != 3 or parts[0] not in {
+        "ui", "om", "op", "pq", "py", "wk", "nf", "rf"
+    }:
         return False
     prefix, subject, action = parts
     telegram.answer_callback_query(callback_id, "Procesando...")
@@ -2851,6 +3201,10 @@ def _process_interface_callback(
             _send_worker_panel(chat_id, telegram, admin_api)
         elif subject == "clients":
             _send_clients(chat_id, action, telegram, admin_api)
+        elif subject == "queue":
+            _send_queue(chat_id, action, telegram, admin_api)
+        elif subject == "payments":
+            _send_pending_payments(chat_id, action, telegram, admin_api)
         elif subject == "manual":
             search_conversations.pop(chat_id, None)
             captcha_conversations.pop(chat_id, None)
@@ -3030,6 +3384,19 @@ def _process_interface_callback(
             confirmation_lock,
         )
         return True
+    if prefix == "py":
+        if action != "default":
+            telegram.send_message(chat_id, "Opcion de pago no reconocida.")
+        else:
+            _request_payment_change(
+                chat_id,
+                subject,
+                telegram,
+                admin_api,
+                pending_order_changes,
+                confirmation_lock,
+            )
+        return True
     if prefix == "wk":
         if subject not in {"pause", "resume", "restart"}:
             telegram.send_message(chat_id, "Accion de worker no reconocida.")
@@ -3093,6 +3460,8 @@ def _process_interface_callback(
         "source_tiktok": "tiktok",
         "source_facebook": "facebook",
         "source_whatsapp": "whatsapp",
+        "phone_number": "WHATSAPP_NUMERO",
+        "phone_username": "WHATSAPP_USUARIO",
         "phone_omit": "OMITIR",
         "rules_none": "SIN_RESTRICCIONES",
         "rules_yes": "CON_RESTRICCIONES",
@@ -3296,6 +3665,21 @@ def _execute_order_change(
                 int(change.updated["priority"]),
                 actor=actor,
             )
+        elif change.action == "payment_paid":
+            current = admin_api.get_service_order(change.order_id)
+            if (
+                str(current.get("status") or "") != "reserved_payment_pending"
+                or str(current.get("payment_status") or "") != "pending"
+            ):
+                raise TelegramControlError(
+                    "Order is no longer a reservation with pending payment."
+                )
+            admin_api.mark_payment_paid(
+                change.order_id,
+                amount_paid=str(change.updated["amount_paid"]),
+                amount_agreed=str(change.updated["amount_agreed"]),
+                actor=actor,
+            )
         else:
             admin_api.update_order_rules(change.order_id, change.updated, actor=actor)
         verified = admin_api.get_service_order(change.order_id)
@@ -3315,21 +3699,38 @@ def _execute_order_change(
             else:
                 detail = verified.get("preflight_message") or "revisa el cliente"
                 validation_text = f"\nValidacion: {preflight}. Detalle: {detail}"
+        if change.action == "payment_paid":
+            success_text = (
+                "Pago registrado y verificado.\n"
+                f"Solicitud: {operation_short}\n"
+                f"Orden: {change.order_id}\n"
+                f"Total pagado: S/{change.updated['amount_paid']}\n"
+                "Postpago: encolado automaticamente."
+            )
+            success_keyboard = [
+                [{"text": "Ver cobros pendientes", "callback_data": "ui:payments:1"}],
+                [
+                    {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ],
+            ]
+        else:
+            success_text = (
+                "Cambio aplicado y verificado.\n"
+                f"Solicitud: {operation_short}\n"
+                f"Orden: {change.order_id}"
+                f"{validation_text}"
+            )
+            success_keyboard = [
+                [
+                    {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
+                    {"text": "Menu", "callback_data": "ui:menu:main"},
+                ]
+            ]
         telegram.send_message(
             change.chat_id,
-            "Cambio aplicado y verificado.\n"
-            f"Solicitud: {operation_short}\n"
-            f"Orden: {change.order_id}"
-            f"{validation_text}",
-            reply_markup={
-                "inline_keyboard": [
-                    [{"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"}],
-                    [
-                        {"text": "Ver cliente", "callback_data": f"om:{change.order_id}:show"},
-                        {"text": "Menu", "callback_data": "ui:menu:main"},
-                    ],
-                ]
-            },
+            success_text,
+            reply_markup={"inline_keyboard": success_keyboard},
         )
         logger.info(
             "Applied Telegram order change action=%s actor=%s order_id=%s",
@@ -3370,11 +3771,48 @@ def _execute_client_creation(
     admin_api: AdminApiClient,
 ) -> None:
     actor = _telegram_actor(creation.chat_id)
+    confirmation = "direct"
     try:
         created = admin_api.create_service_order(creation.values, actor=actor)
         order_id = str(created.get("order_id") or "")
         if not order_id:
             raise TelegramControlError("Admin API did not return an order_id.")
+    except TelegramControlError as exc:
+        reason = _client_creation_error_reason(exc)
+        recovered = (
+            _recover_persisted_client_creation(admin_api, creation.values)
+            if reason in {
+                "admin_api_timeout",
+                "admin_api_unreachable",
+                "admin_api_invalid_response",
+            }
+            else None
+        )
+        if recovered is None:
+            logger.warning("Telegram manual client creation failed: %s", exc)
+            _send_client_creation_message_safe(
+                telegram,
+                creation.chat_id,
+                "No pude confirmar el alta. Consulta Clientes antes de volver a intentarlo.",
+            )
+            _record_audit_safe(
+                actor=actor,
+                action="client_create",
+                status="failed",
+                operation_id=creation.operation_id,
+                detail=f"stage=create; reason={reason}",
+            )
+            return
+        created = recovered
+        order_id = str(recovered["order_id"])
+        confirmation = f"recovered_after_{reason}"
+        logger.warning(
+            "Recovered persisted Telegram client creation after %s order_id=%s",
+            reason,
+            order_id,
+        )
+
+    try:
         telegram.send_message(
             creation.chat_id,
             f"CLIENTE CREADO\n\nOrden: {order_id}\nValidando el acceso al portal...",
@@ -3454,23 +3892,147 @@ def _execute_client_creation(
             target_type="service_order",
             target_id=order_id,
             operation_id=creation.operation_id,
-            detail=f"preflight_status={preflight}",
+            detail=f"preflight_status={preflight}; confirmation={confirmation}",
         )
     except TelegramControlError as exc:
-        logger.warning("Telegram manual client creation failed: %s", exc)
-        telegram.send_message(
+        reason = _client_creation_error_reason(exc)
+        logger.warning(
+            "Telegram client creation persisted but follow-up failed: %s",
+            exc,
+        )
+        _send_client_creation_message_safe(
+            telegram,
             creation.chat_id,
-            "No pude confirmar el alta. Consulta Clientes antes de volver a intentarlo.",
+            f"El alta quedo registrada como {order_id}, pero no pude completar "
+            "la comprobacion posterior. Consulta Clientes; no repitas el alta.",
         )
         _record_audit_safe(
             actor=actor,
             action="client_create",
-            status="failed",
+            status="applied",
+            target_type="service_order",
+            target_id=order_id,
             operation_id=creation.operation_id,
-            detail="Admin API manual client creation could not be confirmed.",
+            detail=(
+                f"confirmation={confirmation}; followup=incomplete; reason={reason}"
+            ),
         )
     except Exception:
         logger.exception("Unexpected Telegram manual client creation failure")
+        _send_client_creation_message_safe(
+            telegram,
+            creation.chat_id,
+            f"El alta quedo registrada como {order_id}, pero ocurrio un error "
+            "durante la comprobacion posterior. Consulta Clientes; no repitas el alta.",
+        )
+        _record_audit_safe(
+            actor=actor,
+            action="client_create",
+            status="applied",
+            target_type="service_order",
+            target_id=order_id,
+            operation_id=creation.operation_id,
+            detail=f"confirmation={confirmation}; followup=unexpected_error",
+        )
+
+
+def _recover_persisted_client_creation(
+    admin_api: AdminApiClient,
+    values: dict[str, Any],
+) -> dict[str, Any] | None:
+    document_number = str(values.get("document_number") or "").strip()
+    if not document_number:
+        return None
+    try:
+        candidates = admin_api.search_service_orders(document_number)
+    except TelegramControlError as exc:
+        logger.warning("Could not verify persisted Telegram client creation: %s", exc)
+        return None
+
+    matches: list[dict[str, Any]] = []
+    for candidate in candidates:
+        if str(candidate.get("document_number") or "").strip() != document_number:
+            continue
+        if candidate.get("parent_order_id") or candidate.get("program_expediente"):
+            continue
+        if candidate.get("program_plate"):
+            continue
+        order_id = str(candidate.get("order_id") or "").strip()
+        if not order_id:
+            continue
+        try:
+            credentials = admin_api.get_service_order_credentials(order_id)
+        except TelegramControlError as exc:
+            logger.warning(
+                "Could not verify credentials for recovered order_id=%s: %s",
+                order_id,
+                exc,
+            )
+            continue
+        if not _persisted_client_creation_matches(values, candidate, credentials):
+            continue
+        matches.append(candidate)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _persisted_client_creation_matches(
+    values: dict[str, Any],
+    order: dict[str, Any],
+    credentials: dict[str, Any],
+) -> bool:
+    expected_credentials = {
+        "username": str(values.get("document_number") or "").strip(),
+        "document_type": str(values.get("document_type") or "").strip(),
+        "password": str(values.get("password") or ""),
+    }
+    if any(credentials.get(field) != expected for field, expected in expected_credentials.items()):
+        return False
+
+    comparable_fields = (
+        "contact_name",
+        "contact_source",
+        "contact_whatsapp",
+        "contact_whatsapp_username",
+        "minimum_reservation_date",
+        "maximum_reservation_date",
+        "allowed_weekdays",
+        "excluded_date_ranges",
+    )
+    return all(
+        field not in values
+        or values[field] is None
+        or order.get(field) == values[field]
+        for field in comparable_fields
+    )
+
+
+def _client_creation_error_reason(exc: TelegramControlError) -> str:
+    if str(exc).startswith("Telegram "):
+        return "telegram_delivery_error"
+    cause = exc.__cause__
+    nested_reason = getattr(cause, "reason", None)
+    if isinstance(cause, TimeoutError) or isinstance(nested_reason, TimeoutError):
+        return "admin_api_timeout"
+    if isinstance(cause, HTTPError):
+        return f"admin_api_http_{cause.code}"
+    if isinstance(cause, URLError):
+        return "admin_api_unreachable"
+    if "did not return an order_id" in str(exc) or "invalid JSON" in str(exc):
+        return "admin_api_invalid_response"
+    return "admin_api_confirmation_error"
+
+
+def _send_client_creation_message_safe(
+    telegram: TelegramBotApi,
+    chat_id: str,
+    message: str,
+) -> bool:
+    try:
+        telegram.send_message(chat_id, message)
+    except TelegramControlError as exc:
+        logger.warning("Could not send Telegram client creation status: %s", exc)
+        return False
+    return True
 
 
 def _wait_for_order_preflight(
@@ -3491,6 +4053,15 @@ def _wait_for_order_preflight(
 
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
+    if change.action == "payment_paid":
+        return (
+            str(order.get("status") or "") == "paid"
+            and str(order.get("payment_status") or "") == "paid"
+            and _money_value(order.get("amount_paid"))
+            == _money_value(change.updated.get("amount_paid"))
+            and _money_value(order.get("amount_agreed"))
+            == _money_value(change.updated.get("amount_agreed"))
+        )
     return all(order.get(field) == value for field, value in change.updated.items())
 
 

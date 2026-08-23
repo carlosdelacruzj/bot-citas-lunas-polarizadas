@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 import {
+  apiErrorMessage,
   AppointmentApiService,
   AppointmentReminderStatus,
 } from '../../appointment-api.service';
@@ -245,9 +246,7 @@ export class FollowupsViewComponent {
       this.syncReminderEditor(updated);
       this.reminderSaveSuccess.set('Configuración guardada. Se aplicará en la próxima revisión.');
     } catch (error) {
-      this.reminderSaveError.set(
-        error instanceof Error ? error.message : 'No se pudo guardar la configuración.',
-      );
+      this.reminderSaveError.set(apiErrorMessage(error));
     } finally {
       this.reminderSaving.set(false);
       this.reminderActivationReview.set(false);

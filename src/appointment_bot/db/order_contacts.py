@@ -83,6 +83,7 @@ def list_service_order_summaries(
                              AND sent_wm.test_mode = false
                              AND sent_wm.status = 'sent'
                        ) THEN 'sent'
+                       WHEN waj.review_resolution IS NOT NULL THEN 'resolved'
                        WHEN waj.status IS NOT NULL THEN waj.status
                        WHEN so.status = 'reserved_payment_pending'
                          AND r.status = 'confirmed'
@@ -100,6 +101,7 @@ def list_service_order_summaries(
                              AND sent_wfm.test_mode = false
                              AND sent_wfm.status = 'sent'
                        ) THEN 'sent'
+                       WHEN wfaj.review_resolution IS NOT NULL THEN 'resolved'
                        WHEN wfaj.status IS NOT NULL THEN wfaj.status
                        ELSE 'not_applicable'
                    END AS whatsapp_followup_action_state,

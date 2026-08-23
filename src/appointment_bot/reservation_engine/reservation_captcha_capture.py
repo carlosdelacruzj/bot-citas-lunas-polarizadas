@@ -5,6 +5,7 @@ import binascii
 import logging
 import struct
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from appointment_bot.reservation_engine.reservation_controls import (
     CAPTCHA_MEDIA_SELECTOR,
     RESERVATION_MATH_CAPTCHA_CONTAINER_SELECTOR,
 )
+from appointment_bot.services.telegram_alerts import enqueue_generic_telegram_alert
 from appointment_bot.utils.screenshots import artifact_filename, screenshot_artifact_dir
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,16 @@ def save_reservation_captcha_image(
                 if captcha_media is None:
                     logger.warning("No captcha image was found using selector %s", selector)
                     continue
+                if not settings.captcha_shadow_enabled:
+                    enqueue_generic_telegram_alert(
+                        "⚠️ El portal volvió a mostrar un CAPTCHA gráfico. "
+                        "La reserva seguirá usando 2Captcha; V3/V6 permanecen "
+                        "en reserva fría hasta una reactivación explícita.",
+                        dedupe_key=(
+                            "captcha-graphic-returned:"
+                            f"{datetime.now(UTC).strftime('%Y-%m')}"
+                        ),
+                    )
                 captcha_media.scroll_into_view_if_needed(timeout=5_000)
                 _record_captcha_render_metrics(captcha_media, captcha_audit)
                 if captcha_audit is not None:

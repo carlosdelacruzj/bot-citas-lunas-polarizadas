@@ -13,6 +13,8 @@
             {{
               view.whatsappTestMode()
                 ? 'Prueba post-pago'
+                : view.whatsappReviewMode()
+                  ? 'Resolver pendiente de WhatsApp'
                 : view.whatsappFollowUpMode()
                   ? 'Seguimiento post-pago'
                   : 'Confirmación y cobro'
@@ -21,7 +23,9 @@
           <p>
             {{
               view.whatsappFollowUpMode()
-                ? 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
+                ? view.whatsappReviewMode()
+                  ? 'Revisa la evidencia sin provocar otro intento automático.'
+                  : 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
                 : 'Preparar el borrador no registra un envío hasta que lo confirmes manualmente.'
             }}
           </p>
@@ -79,6 +83,17 @@
         <p class="empty">Preparando mensajes post-pago...</p>
       }
 
+      @if (view.whatsappReview(); as review) {
+        <section class="admin-block action-card">
+          <p class="eyebrow">Intento técnico conservado</p>
+          <h3>{{ view.statusLabel(review.job.status) }}</h3>
+          <p>{{ review.job.error_message ?? 'El envío terminó sin confirmación suficiente.' }}</p>
+          <small>
+            Trabajo {{ review.job.job_key }} · {{ view.formatDateTime(review.job.finished_at) }}
+          </small>
+        </section>
+      }
+
       @if (view.whatsappFollowUpPackage(); as message) {
         <section class="whatsapp-package-summary">
           <div>
@@ -100,6 +115,17 @@
             <p class="eyebrow">Contenido preparado</p>
             <h3>Revisa los textos y documentos antes de enviar</h3>
           </div>
+          @if (view.whatsappReviewMode()) {
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="primary"
+                (click)="view.copyWhatsAppText(message.combined_text, 'texto post-pago completo')"
+              >
+                Copiar el texto completo que faltó
+              </button>
+            </div>
+          }
           <div class="whatsapp-followup-steps">
             @for (step of message.steps; track $index; let stepIndex = $index) {
               <article class="whatsapp-followup-step">
@@ -108,6 +134,17 @@
                   <strong>{{ step.title }}</strong>
                 </div>
                 <textarea readonly [value]="step.text"></textarea>
+                @if (view.whatsappReviewMode()) {
+                  <div class="modal-actions">
+                    <button
+                      type="button"
+                      class="secondary"
+                      (click)="view.copyWhatsAppText(step.text, step.title)"
+                    >
+                      Copiar solo este texto
+                    </button>
+                  </div>
+                }
                 @if (step.attachment_urls.length) {
                   <div class="whatsapp-document-list">
                     @for (
@@ -118,10 +155,12 @@
                       <a
                         class="button-link secondary"
                         [href]="attachmentUrl"
-                        target="_blank"
-                        rel="noreferrer"
+                        [attr.download]="view.whatsappReviewMode() ? '' : null"
+                        [attr.target]="view.whatsappReviewMode() ? null : '_blank'"
+                        [attr.rel]="view.whatsappReviewMode() ? null : 'noreferrer'"
                       >
-                        Revisar PDF {{ attachmentIndex + 1 }}
+                        {{ view.whatsappReviewMode() ? 'Descargar' : 'Revisar' }} PDF
+                        {{ attachmentIndex + 1 }}
                       </a>
                     }
                   </div>
@@ -131,7 +170,8 @@
           </div>
         </section>
 
-        <section class="admin-block whatsapp-web-preparation">
+        @if (!view.whatsappReviewMode()) {
+          <section class="admin-block whatsapp-web-preparation">
           <p class="eyebrow">Envío automático · WhatsApp Web local</p>
           <h3>
             {{
@@ -166,21 +206,78 @@
               {{ webResult.message }}
             </p>
           }
-        </section>
+          </section>
 
-        <section class="whatsapp-confirmation">
+          <section class="whatsapp-confirmation">
+            <p>
+              Si el envío automático no termina, puedes confirmar manualmente solo después de
+              enviarlo en WhatsApp.
+            </p>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="message.status === 'sent' || view.actionBusy()"
+              (click)="view.confirmWhatsAppFollowUpSent()"
+            >
+              {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
+            </button>
+          </section>
+        }
+      }
+
+      @if (view.whatsappReview(); as review) {
+        <section class="admin-block action-card">
+          <p class="eyebrow">Resolución del operador</p>
+          <h3>¿Qué comprobaste en el chat?</h3>
           <p>
-            Si el envío automático no termina, puedes confirmar manualmente solo después de
-            enviarlo en WhatsApp.
+            Si falta algo, abre WhatsApp y usa los controles superiores para enviar únicamente
+            ese texto o PDF. Esta pantalla nunca reintenta por sí sola.
           </p>
-          <button
-            type="button"
-            class="primary"
-            [disabled]="message.status === 'sent' || view.actionBusy()"
-            (click)="view.confirmWhatsAppFollowUpSent()"
-          >
-            {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
-          </button>
+          <div class="modal-actions">
+            <a
+              class="button-link secondary"
+              href="https://web.whatsapp.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Abrir WhatsApp sin preparar envío
+            </a>
+          </div>
+          <label>
+            Nota de conciliación
+            <textarea
+              name="whatsappReviewNote"
+              placeholder="Ej. Los dos PDFs ya estaban enviados; completé únicamente el texto."
+              [ngModel]="view.whatsappReviewNote()"
+              (ngModelChange)="view.whatsappReviewNote.set($event)"
+            ></textarea>
+          </label>
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="view.actionBusy() || !review.job.message_id"
+              (click)="view.resolveWhatsAppReview('confirmed_complete')"
+            >
+              Ya estaba completo
+            </button>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="view.actionBusy() || !review.job.message_id"
+              (click)="view.resolveWhatsAppReview('completed_missing')"
+            >
+              Ya completé lo faltante
+            </button>
+            <button
+              type="button"
+              class="danger"
+              [disabled]="view.actionBusy() || !view.whatsappReviewNote().trim()"
+              (click)="view.resolveWhatsAppReview('dismissed')"
+            >
+              Cerrar sin envío
+            </button>
+          </div>
         </section>
       }
 

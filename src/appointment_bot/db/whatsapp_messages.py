@@ -9,7 +9,10 @@ from uuid import uuid4
 from playwright.sync_api import sync_playwright
 
 from appointment_bot.config import Settings
-from appointment_bot.core.contacts import resolve_whatsapp_recipient
+from appointment_bot.core.contacts import (
+    normalize_contact_whatsapp,
+    resolve_whatsapp_recipient,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -398,13 +401,10 @@ def _insert_message(
 
 
 def _international_phone(value: str) -> str:
-    normalized = "".join(character for character in value.strip() if character.isdigit())
-    if not value.strip().startswith("+") or not 8 <= len(normalized) <= 15:
-        raise ValueError(
-            "El WhatsApp debe usar formato internacional con + y código de país, "
-            "por ejemplo +51987654321."
-        )
-    return f"+{normalized}"
+    normalized = normalize_contact_whatsapp(value)
+    if normalized is None:
+        raise ValueError("El numero de WhatsApp es obligatorio.")
+    return normalized
 
 
 def _select_safe_evidence(values: list[object]) -> Path:

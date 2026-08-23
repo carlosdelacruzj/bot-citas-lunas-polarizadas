@@ -140,6 +140,32 @@ consiste en volver a `CAPTCHA_SHADOW_ENABLED=false` y reiniciar el worker.
 
 `.env` no se versiona ni se publica porque puede contener credenciales reales.
 
+## Reserva fría reversible
+
+Desde el `2026-08-20`, el portal usa una suma HTML que no pertenece al dataset
+visual de cinco caracteres. La configuración operativa recomendada es:
+
+```text
+CAPTCHA_SHADOW_ENABLED=false
+CAPTCHA_SHADOW_SERVICE_ENABLED=false
+```
+
+El primer control impide que el worker produzca eventos sombra. El segundo hace
+que `scripts/start-runtime.ps1` omita el supervisor y que
+`scripts/start-captcha-shadow.ps1` detenga cualquier servicio residente antes de
+salir. Los modelos, eventos, imágenes, estadísticas y etiquetas no se eliminan.
+
+Con la reserva fría activa, `/health` publica `captcha_shadow_enabled=false`; el
+dashboard oculta CAPTCHA, no consulta el servicio `8787`, excluye sus revisiones
+de **Pendientes** y redirige `/captchas` a **Resumen**. Si reaparece una imagen
+CAPTCHA, la reserva continúa con 2Captcha y se encola una alerta Telegram
+deduplicada por mes.
+
+Para reactivar, establecer ambos controles en `true`, iniciar nuevamente el
+runtime, comprobar `http://127.0.0.1:8787/health` y `/v1/models`, y verificar que
+solo `v3_selected` y `v6_sequence_candidate` estén cargados antes de aceptar un
+evento nuevo. La suma HTML continúa excluida aunque la sombra esté habilitada.
+
 ## Corrección posterior a los primeros intentos reales
 
 Los primeros dos intentos posteriores a la activación revelaron que el productor enviaba la

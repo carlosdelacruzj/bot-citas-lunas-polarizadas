@@ -50,7 +50,16 @@ def normalize_contact_whatsapp(value: str | None) -> str | None:
             "contact_whatsapp",
             "El WhatsApp debe tener entre 8 y 15 digitos.",
         )
-    return f"+{digits}" if normalized.startswith("+") else digits
+    if normalized.startswith("+"):
+        return f"+{digits}"
+    if len(digits) == 9 and digits.startswith("9"):
+        return f"+51{digits}"
+    if 10 <= len(digits) <= 15:
+        return f"+{digits}"
+    raise ContactValidationError(
+        "contact_whatsapp",
+        "Ingresa un celular peruano de 9 digitos o incluye el codigo de pais.",
+    )
 
 
 def normalize_contact_whatsapp_username(value: str | None) -> str | None:

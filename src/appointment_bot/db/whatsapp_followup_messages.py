@@ -179,6 +179,60 @@ def mark_followup_message_sent(
     }
 
 
+def get_followup_message(
+    message_id: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, object]:
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    with _connection(_database_url(effective_settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT message_id, order_id, recipient_phone, recipient_username,
+                   steps, status, test_mode, prepared_at, sent_at
+            FROM whatsapp_followup_messages
+            WHERE message_id = %s
+            """,
+            (message_id,),
+        ).fetchone()
+    if row is None:
+        raise ValueError(f"WhatsApp follow-up message not found: {message_id}")
+    steps = _load_steps(row["steps"])
+    enriched_steps: list[dict[str, object]] = []
+    for step_index, step in enumerate(steps):
+        enriched_steps.append(
+            {
+                "title": str(step.get("title") or ""),
+                "text": str(step.get("text") or ""),
+                "attachment_urls": [
+                    prepare_followup_attachment_path(
+                        str(row["message_id"]), step_index, attachment_index
+                    )
+                    for attachment_index, _ in enumerate(_step_attachments(step))
+                ],
+            }
+        )
+    recipient_phone = (
+        str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
+    )
+    recipient_username = row["recipient_username"]
+    return {
+        "message_id": str(row["message_id"]),
+        "order_id": row["order_id"],
+        "test_mode": bool(row["test_mode"]),
+        "status": str(row["status"]),
+        "recipient_phone": recipient_phone,
+        "recipient_phone_masked": _mask_phone(recipient_phone),
+        "recipient_username": recipient_username,
+        "recipient_label": recipient_phone or recipient_username,
+        "steps": enriched_steps,
+        "combined_text": _combined_followup_text(steps),
+        "prepared_at": str(row["prepared_at"]),
+        "sent_at": str(row["sent_at"]) if row["sent_at"] is not None else None,
+    }
+
+
 def get_followup_attachment(
     message_id: str,
     step_index: int,
@@ -452,6 +506,7 @@ def _insert_followup_message(
         "recipient_username": recipient_username,
         "recipient_label": recipient_phone or recipient_username,
         "steps": enriched_steps,
+        "combined_text": _combined_followup_text(steps),
         "prepared_at": now,
         "sent_at": None,
     }
@@ -500,6 +555,7 @@ def _step_attachments(step: dict[str, object]) -> list[str]:
 
 __all__ = [
     "get_followup_attachment",
+    "get_followup_message",
     "get_followup_web_draft",
     "mark_followup_message_sent",
     "prepare_post_payment_whatsapp_message",

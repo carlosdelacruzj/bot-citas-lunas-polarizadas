@@ -1769,23 +1769,14 @@ def _click_send_button(page: Page, attachments: list[Path]) -> None:
     attachment_names = [attachment.name for attachment in attachments]
     outgoing_signatures = _outgoing_message_signatures(page)
     if _document_preview_visible(page, attachment_names):
-        for attempt in range(2):
-            if _click_bottom_right_send_button(page):
-                try:
-                    _wait_until_send_attempt_finishes(
-                        page,
-                        attachment_names=attachment_names,
-                        outgoing_signatures=outgoing_signatures,
-                        expected_outgoing_count=len(attachments),
-                    )
-                    return
-                except RuntimeError:
-                    if (
-                        attempt == 1
-                        or not _attachment_preview_visible(page, attachment_names)
-                    ):
-                        raise
-                    page.wait_for_timeout(800)
+        if _click_bottom_right_send_button(page):
+            _wait_until_send_attempt_finishes(
+                page,
+                attachment_names=attachment_names,
+                outgoing_signatures=outgoing_signatures,
+                expected_outgoing_count=len(attachments),
+            )
+            return
     selectors = (
         "[data-testid='send']",
         "button[aria-label*='Enviar' i]",
@@ -1820,7 +1811,10 @@ def _click_send_button(page: Page, attachments: list[Path]) -> None:
             )
             return
         page.wait_for_timeout(500)
-    if _click_bottom_right_send_button(page):
+    if _attachment_preview_visible(
+        page,
+        attachment_names,
+    ) and _click_bottom_right_send_button(page):
         _wait_until_send_attempt_finishes(
             page,
             attachment_names=attachment_names,
@@ -2078,7 +2072,6 @@ def _wait_until_send_attempt_finishes(
         new_confirmed_count = len(confirmed_signatures - outgoing_signatures)
         if (
             _normal_chat_composer_visible(page)
-            and not _attachment_preview_visible(page, attachment_names)
             and new_confirmed_count >= expected_outgoing_count
         ):
             page.wait_for_timeout(1_000)
@@ -2106,21 +2099,26 @@ def _normal_chat_composer_visible(page: Page) -> bool:
 
 
 def _document_preview_visible(page: Page, names: list[str]) -> bool:
-    if page.locator("[data-icon='media-document']").count():
+    document_icons = page.locator("[data-icon='media-document']")
+    if any(document_icons.nth(index).is_visible() for index in range(document_icons.count())):
         return True
     for name in names:
         preview_text = page.get_by_text(name, exact=True)
-        if preview_text.count() and preview_text.first.is_visible():
+        if any(preview_text.nth(index).is_visible() for index in range(preview_text.count())):
             return True
     return False
 
 
 def _attachment_preview_visible(page: Page, names: list[str]) -> bool:
-    if _document_preview_visible(page, names):
-        return True
-    if page.locator("[data-icon='x-alt']").count() and page.locator("[data-icon='send']").count():
-        return True
-    return False
+    close_icons = page.locator("[data-icon='x-alt']")
+    send_icons = page.locator("[data-icon='send']")
+    close_visible = any(
+        close_icons.nth(index).is_visible() for index in range(close_icons.count())
+    )
+    send_visible = any(
+        send_icons.nth(index).is_visible() for index in range(send_icons.count())
+    )
+    return close_visible and send_visible and _document_preview_visible(page, names)
 
 
 def _fresh_whatsapp_page(context: BrowserContext) -> Page:

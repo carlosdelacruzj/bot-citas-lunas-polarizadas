@@ -8,7 +8,10 @@ from psycopg.errors import UniqueViolation
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
-from appointment_bot.core.contacts import resolve_whatsapp_recipient
+from appointment_bot.core.contacts import (
+    normalize_contact_whatsapp,
+    resolve_whatsapp_recipient,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -17,6 +20,7 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
+from appointment_bot.utils.sanitization import sanitize_text
 
 WhatsAppAutomationKind = Literal[
     "reservation_album",
@@ -33,6 +37,11 @@ RegistrationNoticeType = Literal[
 WhatsAppAutomationStatus = Literal["sent", "failed", "uncertain", "skipped"]
 LEASE_SECONDS = 10 * 60
 PREFLIGHT_RETRY_SECONDS = 60
+WHATSAPP_REVIEW_RESOLUTIONS = {
+    "confirmed_complete",
+    "completed_missing",
+    "dismissed",
+}
 
 
 class WhatsAppAutomationJob(TypedDict):
@@ -592,6 +601,142 @@ def whatsapp_automation_in_progress(
     return row is not None
 
 
+def get_order_whatsapp_review(
+    order_id: str,
+    job_kind: WhatsAppAutomationKind,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, object]:
+    if job_kind not in {"reservation_album", "post_payment_followup"}:
+        raise ValueError("Unsupported WhatsApp review kind.")
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    with _connection(_database_url(effective_settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT job_key, order_id, job_kind, status, message_id, error_message,
+                   review_resolution, review_note, reviewed_at, reviewed_by,
+                   started_at, finished_at, updated_at
+            FROM whatsapp_automation_jobs
+            WHERE order_id = %s AND job_kind = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (order_id, job_kind),
+        ).fetchone()
+    if row is None:
+        raise ValueError(f"WhatsApp automation job not found: {order_id}")
+    return {
+        key: (str(row[key]) if row[key] is not None else None)
+        for key in (
+            "job_key",
+            "order_id",
+            "job_kind",
+            "status",
+            "message_id",
+            "error_message",
+            "review_resolution",
+            "review_note",
+            "reviewed_at",
+            "reviewed_by",
+            "started_at",
+            "finished_at",
+            "updated_at",
+        )
+    }
+
+
+def resolve_whatsapp_automation_review(
+    job_key: str,
+    *,
+    resolution: str,
+    note: str | None,
+    reviewed_by: str,
+    settings: Settings | None = None,
+) -> dict[str, object]:
+    normalized_resolution = resolution.strip().casefold()
+    if normalized_resolution not in WHATSAPP_REVIEW_RESOLUTIONS:
+        raise ValueError("Unsupported WhatsApp review resolution.")
+    safe_note = sanitize_text(" ".join(str(note or "").split()))[:500] or None
+    if normalized_resolution == "dismissed" and safe_note is None:
+        raise ValueError("Indica el motivo para cerrar el pendiente sin envio.")
+    actor = sanitize_text(" ".join(reviewed_by.split()))[:80] or "dashboard-owner"
+    effective_settings = _settings(settings)
+    init_database(effective_settings)
+    now = _now()
+    with _connection(_database_url(effective_settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT job_key, order_id, job_kind, status, message_id,
+                   review_resolution, review_note, reviewed_at, reviewed_by
+            FROM whatsapp_automation_jobs
+            WHERE job_key = %s
+            FOR UPDATE
+            """,
+            (job_key,),
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"WhatsApp automation job not found: {job_key}")
+        if row["job_kind"] not in {"reservation_album", "post_payment_followup"}:
+            raise ValueError("This WhatsApp job cannot be reconciled from the dashboard.")
+        if row["status"] not in {"failed", "uncertain"}:
+            raise ValueError("Only failed or uncertain WhatsApp jobs require reconciliation.")
+        if row["review_resolution"] is not None:
+            if str(row["review_resolution"]) != normalized_resolution:
+                raise ValueError("This WhatsApp job already has a different resolution.")
+            return {
+                "job_key": str(row["job_key"]),
+                "order_id": str(row["order_id"]),
+                "status": str(row["status"]),
+                "resolution": str(row["review_resolution"]),
+                "note": row["review_note"],
+                "reviewed_at": str(row["reviewed_at"]),
+                "reviewed_by": str(row["reviewed_by"]),
+            }
+        if normalized_resolution in {"confirmed_complete", "completed_missing"}:
+            if row["message_id"] is None:
+                raise ValueError("The WhatsApp job has no prepared message to confirm.")
+            message_table = (
+                "whatsapp_messages"
+                if row["job_kind"] == "reservation_album"
+                else "whatsapp_followup_messages"
+            )
+            updated = connection.execute(
+                f"""
+                UPDATE {message_table}
+                SET status = 'sent', sent_at = COALESCE(sent_at, %s), updated_at = %s
+                WHERE message_id = %s
+                RETURNING message_id
+                """,
+                (now, now, row["message_id"]),
+            ).fetchone()
+            if updated is None:
+                raise ValueError("The prepared WhatsApp message no longer exists.")
+        reviewed = connection.execute(
+            """
+            UPDATE whatsapp_automation_jobs
+            SET review_resolution = %s,
+                review_note = %s,
+                reviewed_at = %s,
+                reviewed_by = %s,
+                updated_at = %s
+            WHERE job_key = %s
+            RETURNING job_key, order_id, status, review_resolution,
+                      review_note, reviewed_at, reviewed_by
+            """,
+            (normalized_resolution, safe_note, now, actor, now, job_key),
+        ).fetchone()
+    return {
+        "job_key": str(reviewed["job_key"]),
+        "order_id": str(reviewed["order_id"]),
+        "status": str(reviewed["status"]),
+        "resolution": str(reviewed["review_resolution"]),
+        "note": reviewed["review_note"],
+        "reviewed_at": str(reviewed["reviewed_at"]),
+        "reviewed_by": str(reviewed["reviewed_by"]),
+    }
+
+
 def _job_from_row(row) -> WhatsAppAutomationJob:
     raw_paths = row["attachment_paths"]
     return {
@@ -640,10 +785,10 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
 
 
 def _international_phone(value: str) -> str:
-    digits = "".join(character for character in value if character.isdigit())
-    if len(digits) < 10 or len(digits) > 15:
-        raise ValueError("El WhatsApp debe incluir codigo de pais y entre 10 y 15 digitos.")
-    return f"+{digits}"
+    normalized = normalize_contact_whatsapp(value)
+    if normalized is None:
+        raise ValueError("El numero de WhatsApp es obligatorio.")
+    return normalized
 
 
 __all__ = [
@@ -656,10 +801,12 @@ __all__ = [
     "enqueue_registration_notice_job",
     "enqueue_whatsapp_automation_job",
     "finish_whatsapp_automation_job",
+    "get_order_whatsapp_review",
     "next_waiting_whatsapp_automation_job",
     "order_has_sent_whatsapp_message",
     "recover_expired_whatsapp_automation_jobs",
     "refresh_running_appointment_reminder_snapshot",
     "return_running_whatsapp_job_to_blocked",
+    "resolve_whatsapp_automation_review",
     "whatsapp_automation_in_progress",
 ]

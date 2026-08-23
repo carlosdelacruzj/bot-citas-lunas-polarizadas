@@ -13,6 +13,7 @@ export interface HealthPayload {
   message: string;
   worker_running: boolean;
   reason: string;
+  captcha_shadow_enabled: boolean;
 }
 
 export interface AppointmentReminderStatus {
@@ -248,6 +249,7 @@ export type WhatsAppActionState =
   | 'sent'
   | 'failed'
   | 'uncertain'
+  | 'resolved'
   | 'not_applicable';
 
 export interface ServiceOrderDetail extends ServiceOrder {
@@ -929,8 +931,43 @@ export interface WhatsAppFollowUpPackage {
   recipient_username: string | null;
   recipient_label: string;
   steps: WhatsAppFollowUpStep[];
+  combined_text: string;
   prepared_at: string;
   sent_at: string | null;
+}
+
+export type WhatsAppReviewResolution =
+  | 'confirmed_complete'
+  | 'completed_missing'
+  | 'dismissed';
+
+export interface WhatsAppReviewJob {
+  job_key: string;
+  order_id: string;
+  job_kind: 'reservation_album' | 'post_payment_followup';
+  status: 'failed' | 'uncertain';
+  message_id: string | null;
+  error_message: string | null;
+  review_resolution: WhatsAppReviewResolution | null;
+  review_note: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  updated_at: string;
+}
+
+export interface WhatsAppReviewPayload {
+  job: WhatsAppReviewJob;
+  message: WhatsAppFollowUpPackage | null;
+}
+
+export interface WhatsAppReviewResponse extends ApiActionResponse {
+  job_key: string;
+  resolution: WhatsAppReviewResolution;
+  note: string | null;
+  reviewed_at: string;
+  reviewed_by: string;
 }
 
 export interface WhatsAppWebDraftResponse {
@@ -1369,6 +1406,26 @@ export class AppointmentApiService {
     return this.post<WhatsAppFollowUpPackage>(
       `/api/v1/service-orders/${encodeURIComponent(orderId)}/whatsapp-followup/prepare`,
       { allow_resend: allowResend },
+    );
+  }
+
+  async getWhatsAppReview(
+    orderId: string,
+    kind: 'whatsapp' | 'whatsapp-followup',
+  ): Promise<WhatsAppReviewPayload> {
+    return this.read<WhatsAppReviewPayload>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/${kind}/review`,
+    );
+  }
+
+  async resolveWhatsAppReview(
+    jobKey: string,
+    resolution: WhatsAppReviewResolution,
+    note: string | null,
+  ): Promise<WhatsAppReviewResponse> {
+    return this.post<WhatsAppReviewResponse>(
+      `/api/v1/whatsapp-automation-jobs/${encodeURIComponent(jobKey)}/resolve`,
+      { resolution, note },
     );
   }
 

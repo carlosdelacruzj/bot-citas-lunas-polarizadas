@@ -106,6 +106,7 @@ from appointment_bot.services.api.whatsapp_routes import (
     mark_sent_payload,
     order_followup_prepare_path,
     order_prepare_path,
+    order_whatsapp_review_path,
     payment_attachment_payload,
     prepare_followup_payload,
     prepare_followup_test_payload,
@@ -113,9 +114,12 @@ from appointment_bot.services.api.whatsapp_routes import (
     prepare_order_payload,
     prepare_test_payload,
     prepare_web_payload,
+    resolve_whatsapp_review_payload,
     validate_whatsapp_session_payload,
     whatsapp_followup_message_path,
     whatsapp_message_path,
+    whatsapp_review_job_path,
+    whatsapp_review_payload,
 )
 from appointment_bot.services.api.worker_routes import (
     enqueue_restart_with_safe_backoff_release_payload,
@@ -388,6 +392,24 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/v1/service-orders/"):
             if not self._require_authorized(strict=True):
                 return
+            followup_review_order_id = order_whatsapp_review_path(
+                path, "whatsapp-followup"
+            )
+            if followup_review_order_id is not None:
+                status, payload = whatsapp_review_payload(
+                    followup_review_order_id,
+                    job_kind="post_payment_followup",
+                )
+                self._send_json(status, payload)
+                return
+            message_review_order_id = order_whatsapp_review_path(path, "whatsapp")
+            if message_review_order_id is not None:
+                status, payload = whatsapp_review_payload(
+                    message_review_order_id,
+                    job_kind="reservation_album",
+                )
+                self._send_json(status, payload)
+                return
             credentials_result = get_service_order_credentials_payload(path)
             if credentials_result is not None:
                 status, payload = credentials_result
@@ -591,6 +613,18 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = mark_followup_sent_payload(whatsapp_followup_message_id)
+            self._send_json(status, payload)
+            return
+
+        whatsapp_review_job_key = whatsapp_review_job_path(path)
+        if whatsapp_review_job_key is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = resolve_whatsapp_review_payload(
+                whatsapp_review_job_key,
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
+            )
             self._send_json(status, payload)
             return
 

@@ -167,6 +167,10 @@ usar sus resultados para decidir continuidad o escalamiento.
   V3/V6; usar una muestra SHA-256 determinista del `6.25%` de acuerdos como
   control. El resto permanece consultable sin formar parte de la cola diaria y
   no autoriza reentrenamiento automático;
+- reserva fría aplicada el `2026-08-20`: preservar modelos, eventos y etiquetas,
+  pero no cargar CUDA, producir sombra ni mostrar CAPTCHA en el dashboard
+  mientras el portal use la suma HTML. La reactivación queda condicionada al
+  regreso comprobado del CAPTCHA gráfico y mantiene 2Captcha como autoridad;
 - migracion viva `v49 -> v51`, `compileall`, Ruff, `59 passed`, build Angular y
   `git diff --check` correctos.
 
@@ -330,6 +334,14 @@ detecta; reinicio y drenaje son auditables y no interrumpen submissions.
   atomicas conservan la relectura independiente de identidad y tambien vuelven
   a las lecturas anteriores ante fallo. Dos kill switches permiten rollback
   separado; faltan `10` selecciones reales para aceptar el cambio.
+- el alta manual de Telegram distingue desde el `2026-08-22` un rechazo real de
+  una respuesta ambigua: amplía únicamente el timeout del POST de creación,
+  verifica la persistencia y los valores por Admin API antes de recuperar el
+  resultado, y audita por separado creación aplicada y seguimiento incompleto.
+- el control Telegram separa desde el `2026-08-22` la cola operativa de los
+  cobros pendientes. Cada cobro puede pasar a `paid` solo después de mostrar
+  montos y recibir confirmación explícita; una relectura previa evita aplicar
+  botones obsoletos y la respuesta distingue postpago encolado de envío.
 
 Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
 reinicio inseguro y heartbeats funcionales de los servicios.
@@ -383,8 +395,12 @@ la superficie principal.
 2. Mostrar antiguedad, vencimiento, responsable y siguiente accion.
 3. Mover pruebas de WhatsApp a `Diagnostico de comunicaciones`, con destinatario
    y alcance visibles.
-4. Implementar reconciliacion guiada: `recibido`, `no recibido`, `sigue
-   incierto`; solo `no recibido` permite preparar un reenvio deliberado.
+4. Extender la conciliacion guiada ya implementada para álbum y postpago a los
+   demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
+   `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo
+   faltante` o `cerrar sin envio`; la revisión nunca reintenta y conserva el
+   resultado técnico original. Falta cubrir resúmenes diarios, avisos de
+   registro y recordatorios con la misma superficie.
 5. Sacar configuracion CAPTCHA avanzada de Resumen; dejar una franja cuando el
    muestreo este activo.
 6. Mantener IDs, `details_json`, estados crudos y copiar snapshot dentro de
@@ -527,10 +543,16 @@ aparezca el evento natural:
   paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
   el reenvío real de `order-74702632` validó el `2026-08-20` que la segunda
   apertura conserva el chat y permite enviar el álbum. Mantener pendiente la
-  observación equivalente para postpago y aviso por `@usuario`;
+  observación equivalente para aviso por `@usuario`. En postpago, el reenvío
+  autorizado de `order-72687222` validó el `2026-08-21` la regla de un solo clic:
+  la vista previa coexistió con el compositor y después aparecieron `3/3`
+  burbujas PDF y el texto completo, sin segundo clic;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;
+- siguiente timeout natural de un alta por Telegram: comprobar que la orden
+  persistida termina `applied` con `confirmation=recovered_after_*`, que el
+  operador recibe su `order_id` y que no se genera un segundo alta;
 - si se reactiva el canario V6, continuar desde sus contadores preservados,
   revisar cada resultado y conservar 2Captcha como fallback; cada 100 CAPTCHA
   frescos, registrar avance sin reentrenar;

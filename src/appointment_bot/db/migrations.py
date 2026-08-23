@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 57
+SCHEMA_VERSION = 58
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -1021,6 +1021,10 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "next_attempt_at"),
         ("whatsapp_automation_jobs", "preflight_error"),
         ("whatsapp_automation_jobs", "preflight_alerted_at"),
+        ("whatsapp_automation_jobs", "review_resolution"),
+        ("whatsapp_automation_jobs", "review_note"),
+        ("whatsapp_automation_jobs", "reviewed_at"),
+        ("whatsapp_automation_jobs", "reviewed_by"),
         ("whatsapp_automation_jobs", "report_date"),
         ("whatsapp_automation_jobs", "recipient_phone"),
         ("whatsapp_automation_jobs", "recipient_username"),
@@ -1118,6 +1122,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_whatsapp_messages_recipient",
         "ck_whatsapp_followup_messages_sent",
         "ck_whatsapp_followup_messages_recipient",
+        "ck_whatsapp_automation_job_review",
         "ck_whatsapp_automation_job_status",
         "ck_whatsapp_automation_job_attempt",
         "ck_whatsapp_automation_job_kind",
@@ -1605,6 +1610,16 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
             lease_owner text,
             lease_expires_at timestamptz,
             error_message text,
+            review_resolution text CHECK (
+                review_resolution IS NULL OR review_resolution IN (
+                    'confirmed_complete',
+                    'completed_missing',
+                    'dismissed'
+                )
+            ),
+            review_note text,
+            reviewed_at timestamptz,
+            reviewed_by text,
             next_attempt_at timestamptz NOT NULL,
             preflight_error text,
             preflight_alerted_at timestamptz,
@@ -1691,6 +1706,19 @@ def _create_whatsapp_automation_jobs_schema(connection: Connection) -> None:
                     AND lease_owner IS NULL
                     AND lease_expires_at IS NULL
                     AND finished_at IS NOT NULL
+                )
+            ),
+            CONSTRAINT ck_whatsapp_automation_job_review CHECK (
+                (
+                    review_resolution IS NULL
+                    AND review_note IS NULL
+                    AND reviewed_at IS NULL
+                    AND reviewed_by IS NULL
+                )
+                OR (
+                    review_resolution IS NOT NULL
+                    AND reviewed_at IS NOT NULL
+                    AND reviewed_by IS NOT NULL
                 )
             )
         )
@@ -2851,6 +2879,40 @@ def migrate_database(connection: Connection) -> None:
             (57,),
         )
         current_version = 57
+    if current_version == 57:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD COLUMN review_resolution text CHECK (
+                review_resolution IS NULL OR review_resolution IN (
+                    'confirmed_complete',
+                    'completed_missing',
+                    'dismissed'
+                )
+            ),
+            ADD COLUMN review_note text,
+            ADD COLUMN reviewed_at timestamptz,
+            ADD COLUMN reviewed_by text,
+            ADD CONSTRAINT ck_whatsapp_automation_job_review CHECK (
+                (
+                    review_resolution IS NULL
+                    AND review_note IS NULL
+                    AND reviewed_at IS NULL
+                    AND reviewed_by IS NULL
+                )
+                OR (
+                    review_resolution IS NOT NULL
+                    AND reviewed_at IS NOT NULL
+                    AND reviewed_by IS NOT NULL
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (58,),
+        )
+        current_version = 58
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "
