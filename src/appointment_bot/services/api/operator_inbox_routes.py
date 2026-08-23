@@ -53,6 +53,10 @@ def _order_task(order: ServiceOrderSummary) -> dict[str, Any] | None:
     if order.status == "archived":
         return None
     if order.preflight_status == "failed":
+        preflight_details = order.preflight_details or {}
+        invalid_credentials = (
+            str(preflight_details.get("error_type") or "") == "invalid_credentials"
+        )
         return _task(
             order,
             key_prefix="preflight",
@@ -61,8 +65,8 @@ def _order_task(order: ServiceOrderSummary) -> dict[str, Any] | None:
             description=order.preflight_message
             or "Vuelve a comprobar el acceso al portal.",
             label="Bloqueo",
-            action="revalidate",
-            action_label="Volver a validar",
+            action="correct_credentials" if invalid_credentials else "revalidate",
+            action_label="Corregir acceso" if invalid_credentials else "Volver a validar",
             tone="bad",
             state=order.preflight_status,
         )

@@ -351,7 +351,13 @@ detecta; reinicio y drenaje son auditables y no interrumpen submissions.
   contadores diarios, citas próximas, separación de pausados, prioridades
   `0/100/200`, navegación contextual y herramientas secundarias. Las mutaciones
   exigen identidad de usuario en chat privado, la revalidación requiere
-  confirmación y los textos/credenciales sensibles se distinguen y eliminan.
+  confirmación y los textos/credenciales sensibles se distinguen y eliminan;
+- las credenciales rechazadas ya se corrigen directamente desde la fila de
+  **Pendientes** o desde el panel contextual de la orden en Telegram: la nueva
+  contraseña se borra del chat, requiere confirmación,
+  aplica una guarda contra cambios concurrentes y dispara el preflight automático.
+  El reintento simple queda reservado para fallos que no son
+  `invalid_credentials`.
 
 Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
 reinicio inseguro y heartbeats funcionales de los servicios.

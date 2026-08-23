@@ -198,7 +198,11 @@ def _callback_is_mutation(data: str) -> bool:
     if data.startswith(("ui:manual:", "ui:captcha:", "ui:cancel:")):
         return True
     if data.startswith("om:"):
-        return data.rsplit(":", maxsplit=1)[-1] in {"validate", "editrules"}
+        return data.rsplit(":", maxsplit=1)[-1] in {
+            "access",
+            "validate",
+            "editrules",
+        }
     return False
 
 
@@ -301,6 +305,26 @@ class AdminApiClient:
     def get_service_order_credentials(self, order_id: str) -> dict[str, Any]:
         return self._request(
             "GET", f"/api/v1/service-orders/{quote(order_id, safe='')}/credentials"
+        )
+
+    def update_service_order_credentials(
+        self,
+        order_id: str,
+        *,
+        document_number: str,
+        document_type: str,
+        password: str,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/credentials",
+            payload={
+                "document_number": document_number,
+                "document_type": document_type,
+                "password": password,
+            },
+            actor=actor,
         )
 
     def create_service_order(self, values: dict[str, Any], *, actor: str) -> dict[str, Any]:
@@ -850,7 +874,10 @@ def _process_update(
             chat_id in captcha_conversations
             or chat_id in new_client_conversations
             or chat_id in rules_conversations
-            or (active_search is not None and active_search.mode == "payment")
+            or (
+                active_search is not None
+                and active_search.mode in {"credentials", "payment"}
+            )
         )
         if not rate_limiter.allow(chat_id, mutation=guided_mutation):
             _record_audit_safe(
@@ -863,7 +890,7 @@ def _process_update(
                 "Estas respondiendo demasiado rapido. Espera un minuto para continuar.",
             )
             return
-        search = search_conversations.pop(chat_id, None)
+        search = search_conversations.get(chat_id)
         if chat_id in captcha_conversations and not _mutation_user_authorized(
             config, chat, sender
         ):
@@ -882,16 +909,51 @@ def _process_update(
             return
         if search is not None:
             if search.expires_at <= time.monotonic():
+                search_conversations.pop(chat_id, None)
                 telegram.send_message(
                     chat_id,
                     (
-                        "El registro del abono vencio. Abre nuevamente el cobro."
+                        "La correccion de acceso vencio. Abre nuevamente el cliente."
+                        if search.mode == "credentials"
+                        else "El registro del abono vencio. Abre nuevamente el cobro."
                         if search.mode == "payment"
                         else "La busqueda vencio. Pulsa Buscar para intentar otra vez."
                     ),
                 )
                 return
+            if search.mode == "credentials" and search.order_id:
+                if not _mutation_user_authorized(config, chat, sender):
+                    telegram.send_message(
+                        chat_id,
+                        "La contrasena solo se puede corregir por el operador autorizado "
+                        "desde un chat privado.",
+                    )
+                    return
+                if not 1 <= len(text) <= 200:
+                    search.expires_at = time.monotonic() + CONVERSATION_TTL_SECONDS
+                    telegram.send_message(
+                        chat_id,
+                        "La contrasena debe tener entre 1 y 200 caracteres. Intenta otra vez.",
+                    )
+                    _delete_message_safe(telegram, chat_id, message.get("message_id"))
+                    return
+                search_conversations.pop(chat_id, None)
+                try:
+                    _request_credentials_change(
+                        chat_id,
+                        search.order_id,
+                        text,
+                        telegram,
+                        admin_api,
+                        pending_order_changes,
+                        confirmation_lock,
+                        return_subject=search.return_subject,
+                    )
+                finally:
+                    _delete_message_safe(telegram, chat_id, message.get("message_id"))
+                return
             if search.mode == "payment" and search.order_id:
+                search_conversations.pop(chat_id, None)
                 _request_payment_change(
                     chat_id,
                     f"{search.order_id} {text}",
@@ -902,6 +964,7 @@ def _process_update(
                     return_subject=search.return_subject,
                 )
                 return
+            search_conversations.pop(chat_id, None)
             _send_search_results(chat_id, text, telegram, admin_api)
             return
         new_client = new_client_conversations.get(chat_id)
@@ -1783,6 +1846,8 @@ def _send_pending_attention(
             continue
         if action in {"mark_payment", "register_payment"}:
             callback_data = f"py:{order_id}:choose_pending"
+        elif action == "correct_credentials":
+            callback_data = f"om:{order_id}:access"
         elif action == "revalidate":
             callback_data = f"om:{order_id}:validate"
         else:
@@ -1793,7 +1858,8 @@ def _send_pending_attention(
                 )
                 action_label = "Ver orden"
         if len(callback_data.encode()) <= 64:
-            keyboard.append([{"text": action_label, "callback_data": callback_data}])
+            button_label = _display_text(f"{action_label} - {applicant_name}", 56)
+            keyboard.append([{"text": button_label, "callback_data": callback_data}])
     if not items:
         lines.extend(["", "No hay usuarios que requieran seguimiento."])
     navigation: list[dict[str, str]] = []
@@ -2195,10 +2261,22 @@ def _send_order_panel(
         ],
     ]
     if str(order.get("preflight_status") or "") == "failed":
-        keyboard.append([{
-            "text": "Reintentar validacion",
-            "callback_data": f"om:{order_id}:validate",
-        }])
+        preflight_details = order.get("preflight_details")
+        error_type = (
+            str(preflight_details.get("error_type") or "")
+            if isinstance(preflight_details, dict)
+            else ""
+        )
+        if error_type == "invalid_credentials":
+            keyboard.append([{
+                "text": "Corregir acceso",
+                "callback_data": f"om:{order_id}:access",
+            }])
+        else:
+            keyboard.append([{
+                "text": "Reintentar validacion",
+                "callback_data": f"om:{order_id}:validate",
+            }])
     if (
         str(order.get("status") or "") == "reserved_payment_pending"
         and str(order.get("payment_status") or "") == "pending"
@@ -3020,6 +3098,76 @@ def _request_priority_change(
     _send_order_change_confirmation(change, telegram)
 
 
+def _request_credentials_change(
+    chat_id: str,
+    order_id: str,
+    password: str,
+    telegram: TelegramBotApi,
+    admin_api: AdminApiClient,
+    pending_order_changes: dict[str, PendingOrderChange],
+    confirmation_lock: Lock,
+    *,
+    return_subject: str,
+) -> None:
+    try:
+        order = admin_api.get_service_order(order_id)
+        credentials = admin_api.get_service_order_credentials(order_id)
+    except TelegramControlError as exc:
+        logger.warning("Could not prepare Telegram credential correction: %s", exc)
+        telegram.send_message(
+            chat_id,
+            "No pude preparar la correccion. La contrasena no fue modificada.",
+        )
+        return
+    preflight_details = order.get("preflight_details")
+    error_type = (
+        str(preflight_details.get("error_type") or "")
+        if isinstance(preflight_details, dict)
+        else ""
+    )
+    if (
+        str(order.get("preflight_status") or "") != "failed"
+        or error_type != "invalid_credentials"
+    ):
+        telegram.send_message(
+            chat_id,
+            "El acceso ya no figura como credenciales rechazadas. "
+            "No se guardo la contrasena.",
+        )
+        return
+    document_number = str(credentials.get("username") or "").strip()
+    document_type = str(credentials.get("document_type") or "").strip()
+    current_password = str(credentials.get("password") or "")
+    if not document_number or not document_type or not current_password:
+        telegram.send_message(
+            chat_id,
+            "No pude verificar el acceso protegido actual. No se realizo ningun cambio.",
+        )
+        return
+    change = PendingOrderChange(
+        operation_id=secrets.token_hex(6),
+        chat_id=chat_id,
+        action="credentials",
+        order_id=order_id,
+        original={
+            "applicant_name": order.get("applicant_name") or "sin nombre",
+            "document_number": document_number,
+            "document_type": document_type,
+            "password_sha256": hashlib.sha256(current_password.encode("utf-8")).hexdigest(),
+            "preflight_cycle": int(order.get("preflight_cycle") or 0),
+        },
+        updated={
+            "document_number": document_number,
+            "document_type": document_type,
+            "password": password,
+        },
+        expires_at=time.monotonic() + CONFIRMATION_TTL_SECONDS,
+        return_subject=return_subject,
+    )
+    _store_order_change(change, pending_order_changes, confirmation_lock)
+    _send_order_change_confirmation(change, telegram)
+
+
 def _send_payment_menu(
     chat_id: str,
     order_id: str,
@@ -3422,6 +3570,14 @@ def _format_order_change_comparison(change: PendingOrderChange) -> str:
             f"Prioridad anterior: {change.original['priority']}\n"
             f"Prioridad nueva: {change.updated['priority']}"
         )
+    if change.action == "credentials":
+        return (
+            f"Cliente / titular: {change.original['applicant_name']}\n"
+            f"Orden: {change.order_id}\n"
+            "Cambio: reemplazar la contrasena del portal.\n\n"
+            "La contrasena no se mostrara. La cuenta y sus subordenes quedaran "
+            "pausadas hasta terminar una validacion automatica con el nuevo acceso."
+        )
     if change.action in {"payment_paid", "payment_partial"}:
         consequence = (
             "Al confirmar, se guardara el abono y el cobro seguira pendiente. "
@@ -3763,6 +3919,58 @@ def _process_interface_callback(
             _send_order_query(chat_id, "reglas", order_id, telegram, admin_api)
         elif action == "priority":
             _send_priority_menu(chat_id, order_id, telegram, admin_api)
+        elif action == "access":
+            try:
+                current = admin_api.get_service_order(order_id)
+            except TelegramControlError as exc:
+                logger.warning("Could not prepare Telegram credential correction: %s", exc)
+                telegram.send_message(chat_id, "No pude revisar el acceso de ese cliente.")
+                return True
+            preflight_details = current.get("preflight_details")
+            error_type = (
+                str(preflight_details.get("error_type") or "")
+                if isinstance(preflight_details, dict)
+                else ""
+            )
+            if (
+                str(current.get("preflight_status") or "") != "failed"
+                or error_type != "invalid_credentials"
+            ):
+                telegram.send_message(
+                    chat_id,
+                    "El acceso ya no figura como credenciales rechazadas. "
+                    "Actualiza el cliente antes de continuar.",
+                )
+                return True
+            _cancel_chat_client_state(
+                chat_id,
+                new_client_conversations,
+                pending_client_creations,
+                confirmation_lock,
+            )
+            _cancel_chat_order_state(
+                chat_id,
+                pending_order_changes,
+                rules_conversations,
+                confirmation_lock,
+            )
+            captcha_conversations.pop(chat_id, None)
+            search_conversations[chat_id] = SearchConversation(
+                expires_at=time.monotonic() + CONVERSATION_TTL_SECONDS,
+                mode="credentials",
+                order_id=order_id,
+                return_subject="pending",
+            )
+            telegram.send_message(
+                chat_id,
+                "CORREGIR ACCESO\n\n"
+                f"Cliente: {current.get('applicant_name') or 'sin nombre'}\n"
+                f"Orden: {order_id}\n"
+                f"Motivo: {current.get('preflight_message') or 'credenciales rechazadas'}\n\n"
+                "Escribe la nueva contrasena del portal. El mensaje se intentara borrar "
+                "inmediatamente y nada cambiara hasta que confirmes.\n\n"
+                "Puedes cancelar con /cancelar.",
+            )
         elif action == "validate":
             try:
                 current = admin_api.get_service_order(order_id)
@@ -4225,6 +4433,7 @@ def _execute_order_change(
 ) -> None:
     operation_short = change.operation_id[:8]
     actor = _telegram_actor(change.chat_id)
+    credentials_saved = False
     try:
         if change.action == "priority":
             current = admin_api.get_service_order(change.order_id)
@@ -4237,6 +4446,53 @@ def _execute_order_change(
                 int(change.updated["priority"]),
                 actor=actor,
             )
+        elif change.action == "credentials":
+            current = admin_api.get_service_order(change.order_id)
+            current_details = current.get("preflight_details")
+            current_error_type = (
+                str(current_details.get("error_type") or "")
+                if isinstance(current_details, dict)
+                else ""
+            )
+            current_credentials = admin_api.get_service_order_credentials(change.order_id)
+            current_password = str(current_credentials.get("password") or "")
+            current_password_sha256 = hashlib.sha256(
+                current_password.encode("utf-8")
+            ).hexdigest()
+            if (
+                str(current.get("preflight_status") or "") != "failed"
+                or current_error_type != "invalid_credentials"
+                or int(current.get("preflight_cycle") or 0)
+                != int(change.original["preflight_cycle"])
+                or str(current_credentials.get("username") or "")
+                != str(change.original["document_number"])
+                or str(current_credentials.get("document_type") or "")
+                != str(change.original["document_type"])
+                or current_password_sha256 != change.original["password_sha256"]
+            ):
+                raise TelegramControlError(
+                    "Order access changed since the confirmation was prepared."
+                )
+            admin_api.update_service_order_credentials(
+                change.order_id,
+                document_number=str(change.updated["document_number"]),
+                document_type=str(change.updated["document_type"]),
+                password=str(change.updated["password"]),
+                actor=actor,
+            )
+            persisted_credentials = admin_api.get_service_order_credentials(change.order_id)
+            if (
+                str(persisted_credentials.get("username") or "")
+                != str(change.updated["document_number"])
+                or str(persisted_credentials.get("document_type") or "")
+                != str(change.updated["document_type"])
+                or str(persisted_credentials.get("password") or "")
+                != str(change.updated["password"])
+            ):
+                raise TelegramControlError(
+                    "Saved credentials do not match the requested change."
+                )
+            credentials_saved = True
         elif change.action in {"payment_paid", "payment_partial"}:
             current = admin_api.get_service_order(change.order_id)
             if (
@@ -4272,7 +4528,23 @@ def _execute_order_change(
         if not _order_change_matches(change, verified):
             raise TelegramControlError("Saved order values do not match the requested change.")
         validation_text = ""
-        if change.action == "rules" and str(verified.get("preflight_status") or "") != "validated":
+        if change.action == "credentials":
+            verified = _wait_for_order_preflight(admin_api, change.order_id)
+            preflight = str(verified.get("preflight_status") or "pending")
+            if preflight == "validated":
+                validation_text = "\nAcceso validado y cuenta activada."
+            elif preflight == "failed":
+                detail = verified.get("preflight_message") or "revisa el acceso"
+                validation_text = f"\nEl nuevo acceso fue rechazado. Detalle: {detail}"
+            else:
+                validation_text = (
+                    "\nLa nueva contrasena fue guardada. La validacion sigue en curso; "
+                    "consulta el cliente en unos segundos."
+                )
+        elif (
+            change.action == "rules"
+            and str(verified.get("preflight_status") or "") != "validated"
+        ):
             telegram.send_message(
                 change.chat_id,
                 "Restricciones guardadas. Validando ahora el acceso del cliente...",
@@ -4349,6 +4621,23 @@ def _execute_order_change(
         )
     except TelegramControlError as exc:
         logger.warning("Order change %s failed: %s", change.action, exc)
+        if change.action == "credentials" and credentials_saved:
+            telegram.send_message(
+                change.chat_id,
+                "La nueva contrasena fue guardada, pero no pude confirmar el resultado "
+                "de la validacion. Abre nuevamente el cliente antes de intentar otro cambio.\n"
+                f"Solicitud: {operation_short}\nOrden: {change.order_id}",
+            )
+            _record_audit_safe(
+                actor=actor,
+                action=change.action,
+                status="applied",
+                target_type="service_order",
+                target_id=change.order_id,
+                operation_id=change.operation_id,
+                detail="Credentials saved; preflight follow-up could not be verified.",
+            )
+            return
         telegram.send_message(
             change.chat_id,
             f"No pude verificar la solicitud {operation_short}. No confirmo el cambio.",
@@ -4575,6 +4864,19 @@ def _delete_sensitive_message(
         logger.warning("Could not automatically delete a sensitive Telegram message.")
 
 
+def _delete_message_safe(
+    telegram: TelegramBotApi,
+    chat_id: str,
+    message_id: Any,
+) -> None:
+    if not isinstance(message_id, int):
+        return
+    try:
+        telegram.delete_message(chat_id, message_id)
+    except TelegramControlError:
+        logger.warning("Could not delete Telegram password input message.")
+
+
 def _recover_persisted_client_creation(
     admin_api: AdminApiClient,
     values: dict[str, Any],
@@ -4692,6 +4994,13 @@ def _wait_for_order_preflight(
 
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
+    if change.action == "credentials":
+        return (
+            int(order.get("preflight_cycle") or 0)
+            > int(change.original.get("preflight_cycle") or 0)
+            and str(order.get("preflight_status") or "")
+            in {"pending", "running", "validated", "failed"}
+        )
     if change.action == "payment_partial":
         return (
             str(order.get("status") or "") == "reserved_payment_pending"

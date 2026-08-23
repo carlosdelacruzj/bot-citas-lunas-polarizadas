@@ -436,6 +436,20 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Las prioridades visibles quedaron alineadas con dashboard: Normal `0`,
   Enfocada `100` y Exclusiva `200`. Las revalidaciones, reglas, prioridades,
   pagos y controles del sistema requieren confirmación y relectura de estado.
+- Implementado el `2026-08-23`: una orden pendiente cuyo preflight clasifica
+  `invalid_credentials` ofrece **Corregir acceso** directamente en la bandeja
+  **Pendientes** y en su panel contextual de Telegram. El bot solicita solo la
+  nueva contraseña en chat privado autorizado,
+  intenta borrar inmediatamente ese mensaje, vuelve a comprobar que el acceso no
+  haya cambiado, exige confirmación y reutiliza el contrato de Admin API que pausa
+  la cuenta y sus subórdenes mientras ejecuta un nuevo preflight automático. Para
+  otros fallos se conserva **Reintentar validación**; no se presenta ese reintento
+  cuando repetir las mismas credenciales rechazadas sería inútil. Admin API y el
+  receptor se recargaron de forma aislada a las `11:45-11:46`; health, polling y
+  check local regresaron correctos sin reiniciar el worker ni enviar mensajes de
+  prueba.
+  Cada botón de la bandeja incluye además el nombre del cliente para que varias
+  acciones del mismo tipo no resulten ambiguas.
 - Validación del cambio: `compileall`, Ruff, `59 passed`, build Angular,
   `git diff --check` y `telegram_control --check` correctos. Admin API y el
   receptor Telegram fueron reiniciados de forma controlada después de comprobar
