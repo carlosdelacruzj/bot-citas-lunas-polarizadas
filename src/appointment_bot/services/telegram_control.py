@@ -2561,16 +2561,47 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
             ],
         ]
     elif step == 6:
+        keyboard = [
+            [{
+                "text": "Estandar - S/50",
+                "callback_data": f"nf:{session_id}:service_standard",
+            }],
+            [{
+                "text": "Dia elegido - S/70",
+                "callback_data": f"nf:{session_id}:service_weekday",
+            }],
+            [{
+                "text": "Monto personalizado",
+                "callback_data": f"nf:{session_id}:service_custom",
+            }],
+        ]
+    elif step == 8:
+        keyboard = [
+            [
+                {"text": "Lunes", "callback_data": f"nf:{session_id}:weekday_1"},
+                {"text": "Martes", "callback_data": f"nf:{session_id}:weekday_2"},
+            ],
+            [
+                {"text": "Miercoles", "callback_data": f"nf:{session_id}:weekday_3"},
+                {"text": "Jueves", "callback_data": f"nf:{session_id}:weekday_4"},
+            ],
+            [
+                {"text": "Viernes", "callback_data": f"nf:{session_id}:weekday_5"},
+                {"text": "Sabado", "callback_data": f"nf:{session_id}:weekday_6"},
+            ],
+            [{"text": "Domingo", "callback_data": f"nf:{session_id}:weekday_7"}],
+        ]
+    elif step == 9:
         keyboard = [[
             {"text": "Sin restricciones", "callback_data": f"nf:{session_id}:rules_none"},
             {"text": "Configurar", "callback_data": f"nf:{session_id}:rules_yes"},
         ]]
-    elif step in {7, 8}:
+    elif step in {10, 11}:
         keyboard = [[{
             "text": "Sin limite",
             "callback_data": f"nf:{session_id}:value_clear",
         }]]
-    elif step == 9:
+    elif step == 12:
         keyboard = [
             [
                 {"text": "Lun-Vie", "callback_data": f"nf:{session_id}:days_mon_fri"},
@@ -2581,7 +2612,7 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
                 {"text": "Todos", "callback_data": f"nf:{session_id}:value_clear"},
             ],
         ]
-    elif step == 10:
+    elif step == 13:
         keyboard = [[{
             "text": "Sin exclusiones",
             "callback_data": f"nf:{session_id}:value_clear",
@@ -2597,7 +2628,17 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
 def _rewind_new_client(conversation: NewClientConversation) -> str:
     if conversation.step == 5 and conversation.values.pop("_whatsapp_recipient_mode", None):
         return _manual_client_step_prompt(5) or "Elige el tipo de WhatsApp."
-    target_step = max(0, conversation.step - 1)
+    if conversation.step in {7, 8}:
+        target_step = 6
+    elif conversation.step == 9:
+        target_step = 7 if conversation.values.get("service_type") == "custom" else 6
+    elif (
+        conversation.step == 13
+        and conversation.values.get("service_type") == "selected_weekday"
+    ):
+        target_step = 11
+    else:
+        target_step = max(0, conversation.step - 1)
     fields_by_step = {
         0: ("document_type",),
         1: ("document_number",),
@@ -2605,16 +2646,24 @@ def _rewind_new_client(conversation: NewClientConversation) -> str:
         3: ("contact_name",),
         4: ("contact_source",),
         5: ("contact_whatsapp", "contact_whatsapp_username", "_whatsapp_recipient_mode"),
-        6: (
+        6: ("service_type", "reservation_price"),
+        7: ("reservation_price",),
+        8: (
             "minimum_reservation_date",
             "maximum_reservation_date",
             "allowed_weekdays",
             "excluded_date_ranges",
         ),
-        7: ("minimum_reservation_date",),
-        8: ("maximum_reservation_date",),
-        9: ("allowed_weekdays",),
-        10: ("excluded_date_ranges",),
+        9: (
+            "minimum_reservation_date",
+            "maximum_reservation_date",
+            "allowed_weekdays",
+            "excluded_date_ranges",
+        ),
+        10: ("minimum_reservation_date",),
+        11: ("maximum_reservation_date",),
+        12: ("allowed_weekdays",),
+        13: ("excluded_date_ranges",),
     }
     for field_name in fields_by_step.get(target_step, ()):
         conversation.values.pop(field_name, None)
@@ -2710,9 +2759,44 @@ def _apply_manual_client_value(
                 ):
                     conversation.values.pop("_whatsapp_recipient_mode", None)
     elif step == 6:
+        choice = normalized.casefold().replace(" ", "_")
+        if choice in {"servicio_estandar", "estandar", "estándar"}:
+            conversation.values.update(
+                {"service_type": "standard", "reservation_price": "50.00"}
+            )
+            conversation.step = 8
+        elif choice in {"servicio_dia_elegido", "dia_elegido", "día_elegido"}:
+            conversation.values.update(
+                {"service_type": "selected_weekday", "reservation_price": "70.00"}
+            )
+            conversation.step = 7
+        elif choice in {"servicio_personalizado", "personalizado"}:
+            conversation.values["service_type"] = "custom"
+        else:
+            raise ValueError("Elige Estandar, Dia elegido o Monto personalizado.")
+    elif step == 7:
+        if conversation.values.get("service_type") != "custom":
+            raise ValueError("El monto manual solo corresponde al servicio personalizado.")
+        conversation.values["reservation_price"] = _money_text(
+            _validated_payment_amount(normalized)
+        )
+        conversation.step = 8
+    elif step == 8:
+        if conversation.values.get("service_type") != "selected_weekday":
+            raise ValueError("El dia solo corresponde al servicio Dia elegido.")
+        selected_weekday = _parse_single_weekday(normalized)
+        conversation.values.update(
+            {
+                "minimum_reservation_date": None,
+                "maximum_reservation_date": None,
+                "allowed_weekdays": [selected_weekday],
+                "excluded_date_ranges": [],
+            }
+        )
+    elif step == 9:
         choice = normalized.lower().replace(" ", "_")
         if choice == "sin_restricciones":
-            conversation.step += 1
+            conversation.step = 13
             return None
         if choice not in {"con_restricciones", "configurar"}:
             raise ValueError("Elige Sin restricciones o Configurar.")
@@ -2720,16 +2804,22 @@ def _apply_manual_client_value(
             {
                 "minimum_reservation_date": None,
                 "maximum_reservation_date": None,
-                "allowed_weekdays": None,
+                "allowed_weekdays": (
+                    conversation.values.get("allowed_weekdays")
+                    if conversation.values.get("service_type") == "selected_weekday"
+                    else None
+                ),
                 "excluded_date_ranges": [],
             }
         )
     else:
-        field, parsed_value = _parse_rules_step(step - 7, normalized, conversation.values)
+        field, parsed_value = _parse_rules_step(step - 10, normalized, conversation.values)
         conversation.values[field] = parsed_value
-        if step == 8:
+        if step == 11:
             _validate_rules_payload(conversation.values)
-        if step == 10:
+            if conversation.values.get("service_type") == "selected_weekday":
+                conversation.step = 12
+        if step == 13:
             _validate_rules_payload(conversation.values)
     conversation.step += 1
     return _manual_client_step_prompt(conversation.step)
@@ -2742,12 +2832,15 @@ def _manual_client_step_prompt(step: int) -> str | None:
         3: "Paso 4: escribe el nombre de la persona de contacto.",
         4: "Paso 5: elige de donde llego el cliente.",
         5: "Paso 6: elige si registrarás un numero o un usuario de WhatsApp.",
-        6: "Paso 7: indica si deseas configurar restricciones ahora.",
-        7: "Restriccion 1 de 4: fecha minima en DD-MM-YYYY o Sin limite.",
-        8: "Restriccion 2 de 4: fecha maxima en DD-MM-YYYY o Sin limite.",
-        9: "Restriccion 3 de 4: elige los dias permitidos o escribe 1,2,...7.",
-        10: (
-            "Restriccion 4 de 4: fechas excluidas en DD-MM-YYYY al DD-MM-YYYY; "
+        6: "Paso 7: elige el servicio y precio acordados.",
+        7: "Paso 8: escribe el monto personalizado total en soles.",
+        8: "Paso 8: elige un dia de la semana para buscar siempre ese dia.",
+        9: "Paso 8: indica si deseas configurar restricciones ahora.",
+        10: "Fecha minima: escribe DD-MM-YYYY o elige Sin limite.",
+        11: "Fecha maxima: escribe DD-MM-YYYY o elige Sin limite.",
+        12: "Dias permitidos: elige una opcion o escribe 1,2,...7.",
+        13: (
+            "Fechas excluidas en DD-MM-YYYY al DD-MM-YYYY; "
             "separa varios rangos con ; o elige Sin exclusiones."
         ),
     }
@@ -2786,6 +2879,10 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
                 or "no registrado"
             ),
             "",
+            f"Servicio: {_service_type_label(values.get('service_type'))}",
+            f"Precio acordado: S/{values.get('reservation_price') or '50.00'}",
+            "Alcance: " + _service_scope_text(values),
+            "",
             "Fecha minima: "
             + _format_operator_date(values.get("minimum_reservation_date")),
             "Fecha maxima: "
@@ -2795,6 +2892,22 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
             + _format_excluded_date_ranges(values.get("excluded_date_ranges")),
         ]
     )
+
+
+def _service_type_label(value: Any) -> str:
+    return {
+        "standard": "Estandar",
+        "selected_weekday": "Dia elegido",
+        "custom": "Personalizado",
+    }.get(str(value or "standard"), "Estandar")
+
+
+def _service_scope_text(values: dict[str, Any]) -> str:
+    if values.get("service_type") != "selected_weekday":
+        return "fecha compatible segun las restricciones indicadas"
+    weekdays = values.get("allowed_weekdays") or []
+    selected_weekday = _weekday_name(weekdays[0]) if weekdays else "dia indicado"
+    return f"solo en {selected_weekday}; no reservar otro dia de la semana"
 
 
 def _send_recent_errors(
@@ -2859,6 +2972,8 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Estado: {_order_status_label(order.get('status'))}",
         f"Validacion: {_preflight_status_label(order.get('preflight_status'))}",
         f"Prioridad: {order.get('priority', 0)}",
+        f"Servicio: {_service_type_label(order.get('service_type'))}",
+        f"Precio acordado: S/{order.get('reservation_price') or '50.00'}",
         f"Reserva: {_reservation_status_label(order.get('reservation_status'))}",
         f"Pago: {_payment_status_label(order.get('payment_status'))}",
     ]
@@ -3054,6 +3169,33 @@ def _weekday_name(value: Any) -> str:
         return names.get(int(value), str(value))
     except (TypeError, ValueError):
         return "desconocido"
+
+
+def _parse_single_weekday(value: str) -> int:
+    normalized = unicodedata.normalize("NFKD", value.strip().casefold())
+    normalized = "".join(
+        character for character in normalized if not unicodedata.combining(character)
+    )
+    weekdays = {
+        "1": 1,
+        "lunes": 1,
+        "2": 2,
+        "martes": 2,
+        "3": 3,
+        "miercoles": 3,
+        "4": 4,
+        "jueves": 4,
+        "5": 5,
+        "viernes": 5,
+        "6": 6,
+        "sabado": 6,
+        "7": 7,
+        "domingo": 7,
+    }
+    weekday = weekdays.get(normalized)
+    if weekday is None:
+        raise ValueError("Elige un dia entre lunes y domingo.")
+    return weekday
 
 
 def _request_priority_change(
@@ -4175,12 +4317,22 @@ def _process_interface_callback(
         "phone_number": "WHATSAPP_NUMERO",
         "phone_username": "WHATSAPP_USUARIO",
         "phone_omit": "OMITIR",
+        "service_standard": "SERVICIO_ESTANDAR",
+        "service_weekday": "SERVICIO_DIA_ELEGIDO",
+        "service_custom": "SERVICIO_PERSONALIZADO",
         "rules_none": "SIN_RESTRICCIONES",
         "rules_yes": "CON_RESTRICCIONES",
         "value_clear": "quitar",
         "days_mon_fri": "1,2,3,4,5",
         "days_mon_sat": "1,2,3,4,5,6",
         "days_sat": "6",
+        "weekday_1": "1",
+        "weekday_2": "2",
+        "weekday_3": "3",
+        "weekday_4": "4",
+        "weekday_5": "5",
+        "weekday_6": "6",
+        "weekday_7": "7",
     }
     value = values.get(action)
     if value is None:
@@ -4735,6 +4887,10 @@ def _execute_client_creation(
             or creation.values.get("contact_whatsapp"),
             "contact_whatsapp_username": order.get("contact_whatsapp_username")
             or creation.values.get("contact_whatsapp_username"),
+            "service_type": order.get("service_type")
+            or creation.values.get("service_type"),
+            "reservation_price": order.get("reservation_price")
+            or creation.values.get("reservation_price"),
             "minimum_reservation_date": order.get("minimum_reservation_date")
             if "minimum_reservation_date" in order
             else creation.values.get("minimum_reservation_date"),
@@ -4934,6 +5090,8 @@ def _persisted_client_creation_matches(
         "contact_source",
         "contact_whatsapp",
         "contact_whatsapp_username",
+        "service_type",
+        "reservation_price",
         "minimum_reservation_date",
         "maximum_reservation_date",
         "allowed_weekdays",

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 58
+SCHEMA_VERSION = 60
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -92,8 +92,12 @@ def create_current_schema(connection: Connection) -> None:
                 ON DELETE CASCADE,
             priority integer NOT NULL DEFAULT 0 CHECK (priority >= 0),
             charge_required boolean NOT NULL DEFAULT true,
+            service_type text NOT NULL DEFAULT 'standard',
             reservation_price numeric(12, 2) NOT NULL DEFAULT 50.00 CHECK (
                 reservation_price > 0
+            ),
+            CONSTRAINT ck_service_orders_service_type CHECK (
+                service_type IN ('standard', 'selected_weekday', 'custom')
             ),
             acquisition_source text,
             acquisition_source_origin text CHECK (
@@ -936,6 +940,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("portal_accounts", "password"),
         ("portal_accounts", "document_type"),
         ("service_orders", "status"),
+        ("service_orders", "service_type"),
         ("service_orders", "reservation_price"),
         ("service_orders", "acquisition_source"),
         ("service_orders", "acquisition_source_origin"),
@@ -2913,6 +2918,60 @@ def migrate_database(connection: Connection) -> None:
             (58,),
         )
         current_version = 58
+    if current_version == 58:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN service_type text NOT NULL DEFAULT 'standard' CHECK (
+                service_type IN ('standard', 'selected_date', 'custom')
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (59,),
+        )
+        current_version = 59
+    if current_version == 59:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            DROP CONSTRAINT IF EXISTS service_orders_service_type_check
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            DROP CONSTRAINT IF EXISTS ck_service_orders_service_type
+            """
+        )
+        connection.execute(
+            """
+            UPDATE service_orders
+            SET service_type = 'selected_weekday',
+                allowed_weekdays = ARRAY[
+                    EXTRACT(ISODOW FROM minimum_date)::smallint
+                ],
+                minimum_date = NULL,
+                maximum_date = NULL
+            WHERE service_type = 'selected_date'
+              AND minimum_date IS NOT NULL
+              AND minimum_date = maximum_date
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD CONSTRAINT ck_service_orders_service_type CHECK (
+                service_type IN ('standard', 'selected_weekday', 'custom')
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (60,),
+        )
+        current_version = 60
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

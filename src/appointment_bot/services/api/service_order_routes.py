@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import unquote
@@ -38,6 +39,8 @@ PUBLIC_SERVICE_ORDER_FIELDS = (
     "contact_source",
     "priority",
     "charge_required",
+    "service_type",
+    "reservation_price",
     "status",
     "reservation_status",
     "reservation_site",
@@ -179,6 +182,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             },
         )
     try:
+        reservation_price = _optional_reservation_price(payload.get("reservation_price"))
         result = create_service_order(
             document_number=str(payload["document_number"]).strip(),
             document_type=str(payload["document_type"]).strip(),
@@ -192,6 +196,8 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             contact_source=_optional_text(payload, "contact_source"),
             applicant_name=_optional_text(payload, "applicant_name"),
             charge_required=_optional_bool(payload, "charge_required", default=True),
+            service_type=str(payload.get("service_type") or "standard"),
+            reservation_price=reservation_price,
             minimum_reservation_hour=None,
             minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
             maximum_reservation_date=_optional_text(payload, "maximum_reservation_date"),
@@ -217,6 +223,20 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
         "validation_scheduled": scheduled,
         **asdict(result),
     }
+
+
+def _optional_reservation_price(value: Any) -> Decimal | None:
+    if value in {None, ""}:
+        return None
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("reservation_price must be a valid amount.") from exc
+    if not amount.is_finite() or amount <= 0 or amount > Decimal("99999.99"):
+        raise ValueError("reservation_price must be greater than zero and below 100000.")
+    if amount.as_tuple().exponent < -2:
+        raise ValueError("reservation_price accepts at most two decimals.")
+    return amount.quantize(Decimal("0.01"))
 
 
 def revalidate_service_order_payload(order_id: str) -> tuple[HTTPStatus, dict[str, Any]]:

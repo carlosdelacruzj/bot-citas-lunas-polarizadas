@@ -509,7 +509,6 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                 f"{_safe_whatsapp_artifact_name(message_id)}"
             ),
         )
-        context.close()
         if not text_sent:
             logger.warning(
                 "WhatsApp Web follow-up documents were sent but the text message "
@@ -532,6 +531,7 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                     f"{_safe_whatsapp_artifact_name(message_id)}-text-send-uncertain.png"
                 ),
             )
+        context.close()
         logger.info(
             "WhatsApp Web follow-up sent automatically: message_id=%s documents=%s",
             message_id,
@@ -725,15 +725,10 @@ def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
             continue
         if not _message_container_has_large_image(message):
             continue
-        if message.locator(
-            "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
-            "[aria-label*='Enviado' i], [aria-label*='Entregado' i], "
-            "[aria-label*='Leído' i], [aria-label*='Sent' i], "
-            "[aria-label*='Delivered' i], [aria-label*='Read' i]"
-        ).count():
-            state = "confirmed"
-        elif message.locator("[data-icon='msg-time']").count():
+        if _message_container_has_pending_status(message):
             state = "pending"
+        elif _message_container_has_confirmed_status(message):
+            state = "confirmed"
         else:
             state = "unknown"
         records.append((_message_container_signature(message), state))
@@ -791,7 +786,6 @@ def _send_daily_slot_summary(
         )
         if not text_sent:
             delivery_components["summary"] = "uncertain"
-            context.close()
             return _result(
                 "send_uncertain",
                 "WhatsApp no confirmo el mensaje del resumen diario.",
@@ -871,7 +865,6 @@ def _send_daily_slot_summary(
     )
     if not publication_sent:
         delivery_components["publication"] = "uncertain"
-        context.close()
         return _result(
             "send_uncertain",
             "WhatsApp no confirmo la publicacion diaria para TikTok.",
@@ -915,7 +908,6 @@ def _send_registration_notice(
         str(draft["message_text"]),
         evidence_prefix=f"whatsapp-registration-notice-{evidence_id}",
     ):
-        context.close()
         return _result(
             "send_uncertain",
             "WhatsApp no confirmo el aviso automatico de registro.",
@@ -956,7 +948,6 @@ def _send_appointment_reminder(
         str(draft["message_text"]),
         evidence_prefix=f"whatsapp-appointment-reminder-{evidence_id}",
     ):
-        context.close()
         return _result(
             "send_uncertain",
             "WhatsApp no confirmo el recordatorio automatico de cita.",
@@ -1944,16 +1935,24 @@ def _outgoing_message_signatures(
 
 
 def _message_container_has_confirmed_status(message) -> bool:
+    if _message_container_has_pending_status(message):
+        return False
     return bool(
         message.locator(
             "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
             "[data-icon^='msg-check-'], [data-icon^='msg-dblcheck-'], "
             "[data-icon*='dblcheck'], "
             "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
-            "[class*='wds-ic-sent'], "
-            "[aria-label*='Enviado' i], [aria-label*='Entregado' i], "
-            "[aria-label*='Leído' i], [aria-label*='Sent' i], "
-            "[aria-label*='Delivered' i], [aria-label*='Read' i]"
+            "[class*='wds-ic-sent']"
+        ).count()
+    )
+
+
+def _message_container_has_pending_status(message) -> bool:
+    return bool(
+        message.locator(
+            "[data-icon='msg-time'], [data-icon^='msg-time-'], "
+            "[class*='wds-ic-time']"
         ).count()
     )
 

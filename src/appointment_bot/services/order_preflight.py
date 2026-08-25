@@ -277,6 +277,12 @@ def _queue_notice(
             recipient_username=order.contact_whatsapp_username,
             display_name=display_name,
             settings=settings,
+            service_type=order.service_type,
+            reservation_price=order.reservation_price,
+            minimum_reservation_date=order.minimum_reservation_date,
+            maximum_reservation_date=order.maximum_reservation_date,
+            allowed_weekdays=order.allowed_weekdays,
+            excluded_date_ranges=order.excluded_date_ranges,
         )
     except Exception as exc:
         logger.exception("Could not enqueue registration notice for %s", order.order_id)

@@ -498,6 +498,27 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   de entrada y entrega una revelación separada, borrable y eliminada automáticamente
   tras dos minutos. El alta informa el resultado real del preflight cuando termina
   dentro de la espera.
+- Implementado el `2026-08-25`: `/cliente_nuevo` exige elegir el servicio antes
+  de activar el monitoreo. **Estándar - S/50** conserva las restricciones
+  habituales; **Día elegido - S/70** solicita un único día de la semana y lo
+  persiste en `allowed_weekdays`, por lo que el motor solo puede reservar lunes,
+  martes, miércoles, jueves, viernes, sábado o domingo, según lo elegido. Esa
+  regla se combina con fecha mínima, fecha máxima y fechas excluidas opcionales:
+  el motor busca únicamente el día elegido dentro de esos límites;
+  **Monto personalizado** permite una excepción explícita. El comprobante de
+  Telegram muestra servicio, precio y alcance, PostgreSQL `v60`
+  conserva `service_type` y `reservation_price`, y el aviso inicial de WhatsApp
+  usa una sola plantilla para todos los servicios: muestra servicio, precio,
+  condiciones de búsqueda y fechas excluidas cuando existan, además de advertir
+  que la disponibilidad depende de la PNP. El precio se
+  fija antes de reservar, se copia al pago y se preserva si la orden ya está
+  reservada o pagada. `compileall`, Ruff, las `59` pruebas existentes, una
+  creación aislada en schema temporal, los tres recorridos locales de Telegram
+  y el build Angular quedaron correctos; el build conserva un warning de
+  presupuesto inicial de `2.42 kB`. Tras esperar el cierre de dos sesiones
+  manuales, PostgreSQL quedó en `v60`, Admin API regresó saludable y el receptor
+  Telegram pasó `--check`. No se reinició el worker, no se crearon clientes
+  reales ni se enviaron comunicaciones.
 - Actualizado el `2026-08-20`: la captura de WhatsApp en `/cliente_nuevo` ofrece
   una elección explícita entre **Número**, **Usuario** y **Omitir WhatsApp**.
   Telegram valida únicamente el tipo elegido; para usuario acepta el valor con
@@ -900,6 +921,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `uncertain` es terminal y nunca produce un reintento automático. Un preflight
   que quedó `running` al reiniciar pasa a fallo técnico y requiere revalidación
   manual, evitando un segundo intento de acceso dentro del mismo ciclo.
+- Corregido el `2026-08-25`: una burbuja de texto con reloj `msg-time` podía
+  coincidir a la vez con una etiqueta accesible genérica y cerrar como falso
+  `sent`. El reloj tiene ahora prioridad absoluta, la confirmación positiva
+  exige un icono real de enviado, entregado o leído, y el contexto de WhatsApp
+  permanece abierto si vence la espera para no abortar el mensaje localmente
+  pendiente. El trabajo termina `uncertain`, conserva captura y no se reintenta
+  automáticamente. Una reproducción DOM aislada cubrió reloj con etiqueta
+  genérica, check real y reloj más check; `compileall`, Ruff, las `59` pruebas
+  existentes y `git diff --check` quedaron correctos. Admin API se reinició de
+  forma aislada con cola WhatsApp, submissions, sesiones manuales y ráfagas en
+  cero; regresó saludable sin reiniciar worker o Telegram ni enviar mensajes.
+  El caso real que motivó el cambio no fue reenviado.
 - Corregido el `2026-08-08`: un diálogo de WhatsApp bloqueó el primer aviso
   real dirigido por `@usuario` antes de abrir el chat. La ruta ahora guarda
   captura única, cierra solamente controles seguros, vuelve a resolver el mismo

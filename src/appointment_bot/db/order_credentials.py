@@ -45,6 +45,7 @@ def create_service_order(
     contact_source: str | None = None,
     applicant_name: str | None = None,
     charge_required: bool = True,
+    service_type: str = "standard",
     reservation_price: Decimal | None = None,
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
@@ -67,6 +68,9 @@ def create_service_order(
     document_type = normalize_document_type(document_type)
     if priority < 0:
         raise ValueError("priority must be non-negative.")
+    service_type = service_type.strip().lower()
+    if service_type not in {"standard", "selected_weekday", "custom"}:
+        raise ValueError("service_type must be standard, selected_weekday or custom.")
     effective_reservation_price = (
         DEFAULT_RESERVATION_AMOUNT if reservation_price is None else reservation_price
     )
@@ -76,13 +80,17 @@ def create_service_order(
         raise ValueError("Las restricciones horarias ya no se aceptan.")
     parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
     parsed_maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
+    parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
+    if service_type == "selected_weekday" and (
+        parsed_allowed_weekdays is None or len(parsed_allowed_weekdays) != 1
+    ):
+        raise ValueError("selected_weekday requires exactly one allowed weekday.")
     if (
         parsed_minimum_date is not None
         and parsed_maximum_date is not None
         and parsed_maximum_date < parsed_minimum_date
     ):
         raise ValueError("maximum_reservation_date cannot be before minimum_reservation_date.")
-    parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
     parsed_excluded_date_ranges = _parse_excluded_date_ranges(excluded_date_ranges)
 
     now = _now()
@@ -189,7 +197,7 @@ def create_service_order(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                reservation_price, acquisition_source, acquisition_source_origin,
+                service_type, reservation_price, acquisition_source, acquisition_source_origin,
                 minimum_hour, minimum_date, maximum_date, allowed_weekdays,
                 excluded_date_ranges,
                 parent_order_id, program_expediente, program_plate,
@@ -197,13 +205,23 @@ def create_service_order(
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
                 portal_account_id = excluded.portal_account_id,
                 priority = excluded.priority,
                 charge_required = excluded.charge_required,
+                service_type = CASE
+                    WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
+                        THEN service_orders.service_type
+                    ELSE excluded.service_type
+                END,
+                reservation_price = CASE
+                    WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
+                        THEN service_orders.reservation_price
+                    ELSE excluded.reservation_price
+                END,
                 acquisition_source = COALESCE(
                     service_orders.acquisition_source,
                     excluded.acquisition_source
@@ -246,6 +264,7 @@ def create_service_order(
                 portal_account_id,
                 priority,
                 charge_required,
+                service_type,
                 effective_reservation_price,
                 _optional_clean_text(contact_source),
                 "order_creation" if _optional_clean_text(contact_source) else None,
@@ -535,7 +554,7 @@ def split_service_order_programs(
     with _connection(_database_url(settings)) as connection:
         parent = connection.execute(
             """
-            SELECT priority, charge_required, reservation_price,
+            SELECT priority, charge_required, service_type, reservation_price,
                    minimum_hour, minimum_date, maximum_date,
                    allowed_weekdays, excluded_date_ranges
             FROM service_orders
@@ -564,6 +583,7 @@ def split_service_order_programs(
                 priority=int(parent["priority"]),
                 applicant_name=runtime.name,
                 charge_required=bool(parent["charge_required"]),
+                service_type=str(parent["service_type"]),
                 reservation_price=parent["reservation_price"],
                 minimum_reservation_hour=None,
                 minimum_reservation_date=parent["minimum_date"],
@@ -610,7 +630,10 @@ def get_service_order_runtime(
                    pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.username AS contact_username,
                    wc.contact_source,
-                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.priority, so.status, so.service_type, so.reservation_price,
+                   so.minimum_date, so.maximum_date, so.allowed_weekdays,
+                   so.excluded_date_ranges,
+                   so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -640,7 +663,10 @@ def get_claimed_service_order_runtime(
                    pa.username, pa.document_type, pa.password, wc.display_name AS contact_name,
                    wc.phone AS contact_phone, wc.username AS contact_username,
                    wc.contact_source,
-                   so.priority, so.status, so.created_at, so.updated_at,
+                   so.priority, so.status, so.service_type, so.reservation_price,
+                   so.minimum_date, so.maximum_date, so.allowed_weekdays,
+                   so.excluded_date_ranges,
+                   so.created_at, so.updated_at,
                    so.parent_order_id, so.program_expediente, so.program_plate
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
@@ -674,4 +700,25 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         parent_order_id=row.get("parent_order_id"),
         program_expediente=row.get("program_expediente"),
         program_plate=row.get("program_plate"),
+        service_type=str(row.get("service_type") or "standard"),
+        reservation_price=f"{row.get('reservation_price'):.2f}",
+        minimum_reservation_date=(
+            str(row["minimum_date"]) if row.get("minimum_date") is not None else None
+        ),
+        maximum_reservation_date=(
+            str(row["maximum_date"]) if row.get("maximum_date") is not None else None
+        ),
+        allowed_weekdays=(
+            tuple(int(day) for day in row["allowed_weekdays"])
+            if row.get("allowed_weekdays")
+            else None
+        ),
+        excluded_date_ranges=tuple(
+            {
+                "start_date": str(item["start_date"]),
+                "end_date": str(item["end_date"]),
+            }
+            for item in (row.get("excluded_date_ranges") or [])
+            if isinstance(item, dict) and item.get("start_date") and item.get("end_date")
+        ),
     )

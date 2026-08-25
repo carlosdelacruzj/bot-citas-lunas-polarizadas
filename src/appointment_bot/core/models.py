@@ -91,6 +91,12 @@ class ServiceOrderRuntime:
     parent_order_id: str | None = None
     program_expediente: str | None = None
     program_plate: str | None = None
+    service_type: str = "standard"
+    reservation_price: str = "50.00"
+    minimum_reservation_date: str | None = None
+    maximum_reservation_date: str | None = None
+    allowed_weekdays: tuple[int, ...] | None = None
+    excluded_date_ranges: tuple[dict[str, str], ...] = ()
 
     @property
     def notification_name(self) -> str:
@@ -125,6 +131,8 @@ class ServiceOrderSummary:
     contact_source: str | None
     priority: int
     charge_required: bool
+    service_type: str
+    reservation_price: str
     status: str
     reservation_status: str | None
     reservation_site: str | None

@@ -358,6 +358,13 @@ detecta; reinicio y drenaje son auditables y no interrumpen submissions.
   aplica una guarda contra cambios concurrentes y dispara el preflight automático.
   El reintento simple queda reservado para fallos que no son
   `invalid_credentials`.
+- desde el `2026-08-25`, el alta guiada registra el tipo de servicio y el precio
+  antes del monitoreo: Estándar S/50, Día elegido S/70 con un único día de la
+  semana permitido —combinable con fecha mínima, máxima y exclusiones—, o un
+  monto personalizado. El aviso de registro validado usa una plantilla única y
+  explicita servicio, precio, condiciones y exclusiones. El pago y los mensajes consumen ese
+  valor persistido; falta medir el piloto comercial sin cambiar automáticamente
+  precios de órdenes existentes.
 
 Permanecen pendientes la salud compuesta, readiness, drenaje seguro, `409` ante
 reinicio inseguro y heartbeats funcionales de los servicios.
@@ -560,7 +567,10 @@ aparezca el evento natural:
   observación equivalente para aviso por `@usuario`. En postpago, el reenvío
   autorizado de `order-72687222` validó el `2026-08-21` la regla de un solo clic:
   la vista previa coexistió con el compositor y después aparecieron `3/3`
-  burbujas PDF y el texto completo, sin segundo clic;
+  burbujas PDF y el texto completo, sin segundo clic. Desde el `2026-08-25`,
+  una burbuja con reloj veta `sent`, solo un check real confirma el texto y el
+  contexto no se cierra mientras el resultado queda pendiente; validar esta
+  guarda con el siguiente aviso natural, sin crear un reenvío de prueba;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;

@@ -202,6 +202,8 @@ export interface ServiceOrder {
   contact_source: string | null;
   priority: number;
   charge_required: boolean;
+  service_type: 'standard' | 'selected_weekday' | 'custom';
+  reservation_price: string;
   status: string;
   reservation_status: string | null;
   reservation_site: string | null;
@@ -1001,6 +1003,8 @@ export interface CreateServiceOrderPayload {
   contact_whatsapp_username?: string | null;
   applicant_name?: string | null;
   charge_required?: boolean;
+  service_type?: 'standard' | 'selected_weekday' | 'custom';
+  reservation_price?: string;
   minimum_reservation_date?: string | null;
   maximum_reservation_date?: string | null;
   allowed_weekdays?: number[] | null;
