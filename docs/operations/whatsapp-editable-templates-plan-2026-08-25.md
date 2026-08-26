@@ -2,8 +2,8 @@
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
 de revisión visual, Etapas 3-7 implementadas y pendientes de observación
-natural, Etapa 8A implementada técnicamente, y Etapa 8B condicionada a la
-aceptación natural de cada flujo**.
+natural, y Etapas 8A-8B implementadas técnicamente; Etapa 8C permanece fuera
+del alcance actual**.
 
 Fecha: `2026-08-25`.
 
@@ -818,7 +818,9 @@ Cierre: operación preparada para aceptar casos naturales sin perder el rollback
 
 ### Etapa 8B - Retiro condicionado de respaldos
 
-Estado: **pendiente; se ejecuta por flujo después de su aceptación natural**.
+Estado: **implementada técnicamente el 2026-08-26 por autorización explícita del
+operador y con evidencia real disponible; observación natural por variante aún
+abierta**.
 
 Objetivo: retirar duplicación únicamente donde la entrega real ya fue comprobada.
 
@@ -829,6 +831,32 @@ Objetivo: retirar duplicación únicamente donde la entrega real ya fue comproba
 - no borrar respaldos de otros flujos todavía pendientes.
 
 Cierre: no existen dos fuentes de texto para cada flujo ya aceptado.
+
+Resultado del `2026-08-26`:
+
+- registro dejó de construir primero un texto hardcodeado que se sobrescribía
+  inmediatamente con la revisión de PostgreSQL. Se retiraron esa rama muerta,
+  su constructor y sus helpers exclusivos;
+- recordatorios ya no tienen un argumento default con texto hardcodeado. Tanto
+  la conciliación como la revalidación previa al envío deben pasar
+  explícitamente la plantilla vigente;
+- postpago exige `message_text` persistido en todo paquete que tenga
+  `template_key` o `template_revision`. El derivador anterior quedó aislado y
+  nombrado como lector `legacy` únicamente para los `145` históricos sin
+  trazabilidad, que continúan legibles;
+- reserva/cobro ya no tenía fallback activo después de la Etapa 5. El
+  formateador que permanece en `services/reservation_messages.py` pertenece a
+  Telegram y no es una segunda fuente de WhatsApp;
+- `_build_followup_steps` permanece porque conserva el orden de componentes y
+  las rutas de PDF, no porque el texto comercial nuevo dependa de él;
+- la base viva mostraba `2` avisos de registro trazados `sent`, `5` paquetes de
+  reserva/cobro trazados `sent`, `2` postpagos trazados `sent` y `7`
+  recordatorios recientes `sent`. La matriz natural sigue abierta para las dos
+  variantes de registro aún no trazadas y para distinguir recuperación manual
+  de un próximo álbum completamente automático;
+- una lectura controlada confirmó que un postpago histórico sin trazabilidad y
+  uno nuevo con `post_payment_confirmation:1` siguen devolviendo su texto. No se
+  creó ni envió ningún mensaje durante esta limpieza.
 
 ### Etapa 8C - Evaluaciones separadas
 

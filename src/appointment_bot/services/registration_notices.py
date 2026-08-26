@@ -38,16 +38,6 @@ def enqueue_registration_notice(
 ) -> bool:
     if not recipient_phone and not recipient_username:
         return False
-    message_text = registration_notice_text(
-        notice_type,
-        display_name,
-        service_type=service_type,
-        reservation_price=reservation_price,
-        minimum_reservation_date=minimum_reservation_date,
-        maximum_reservation_date=maximum_reservation_date,
-        allowed_weekdays=allowed_weekdays,
-        excluded_date_ranges=excluded_date_ranges,
-    )
     template_key = REGISTRATION_NOTICE_TEMPLATE_KEYS[notice_type]
     template = get_whatsapp_message_template(template_key, settings)
     definition = whatsapp_template_definition(template_key)
@@ -82,93 +72,6 @@ def enqueue_registration_notice(
         template_revision=template.revision,
         settings=settings,
     )
-
-
-def registration_notice_text(
-    notice_type: RegistrationNoticeType,
-    display_name: str | None,
-    *,
-    service_type: str = "standard",
-    reservation_price: str = "50.00",
-    minimum_reservation_date: str | None = None,
-    maximum_reservation_date: str | None = None,
-    allowed_weekdays: tuple[int, ...] | None = None,
-    excluded_date_ranges: tuple[dict[str, str], ...] = (),
-) -> str:
-    greeting = _greeting(display_name)
-    if notice_type == "monitoring_started":
-        return "\n\n".join(
-            [
-                greeting,
-                "Pudimos ingresar correctamente y verificar tu solicitud ✅",
-                "Tu solicitud quedó registrada y desde ahora comenzaremos con el monitoreo.",
-                _service_summary_text(
-                    service_type,
-                    reservation_price,
-                    minimum_reservation_date,
-                    maximum_reservation_date,
-                    allowed_weekdays,
-                    excluded_date_ranges,
-                ),
-                "Buscaremos únicamente citas que cumplan estas condiciones. "
-                "No reservaremos una fecha fuera de ellas.",
-                "La disponibilidad depende de la PNP y no podemos garantizar que "
-                "aparezca un cupo. Te escribiremos apenas consigamos la cita.",
-            ]
-        )
-    if notice_type == "no_pending_request":
-        return "\n\n".join(
-            [
-                greeting,
-                "Pudimos ingresar correctamente, pero no encontramos una solicitud "
-                "pendiente para reservar.",
-                "Por favor, revisa si el trámite fue registrado y confírmanos cuando "
-                "aparezca. Luego realizaremos una nueva validación.",
-            ]
-        )
-    if notice_type == "invalid_credentials":
-        return "\n\n".join(
-            [
-                greeting,
-                "No pudimos validar el acceso con los datos registrados.",
-                "Por seguridad realizamos un solo intento para evitar el bloqueo "
-                "temporal de tu cuenta.",
-                "Por favor, revisa el tipo y número de documento y la contraseña, y "
-                "confírmanos los datos correctos para volver a validar.",
-            ]
-        )
-    raise ValueError(f"Unsupported registration notice type: {notice_type}")
-
-
-def _greeting(display_name: str | None) -> str:
-    name = " ".join((display_name or "").split())
-    return f"Hola, {name} 👋" if name else "Hola 👋"
-
-
-def _service_summary_text(
-    service_type: str,
-    reservation_price: str,
-    minimum_reservation_date: str | None,
-    maximum_reservation_date: str | None,
-    allowed_weekdays: tuple[int, ...] | None,
-    excluded_date_ranges: tuple[dict[str, str], ...],
-) -> str:
-    amount = str(reservation_price or "50.00")
-    label = _service_label(service_type)
-    lines = [
-        f"Servicio: {label}",
-        f"Precio acordado: S/{amount}",
-        "Condiciones de búsqueda: "
-        + _search_conditions_text(
-            minimum_reservation_date,
-            maximum_reservation_date,
-            allowed_weekdays,
-        ),
-    ]
-    exclusions = _excluded_dates_text(excluded_date_ranges)
-    if exclusions:
-        lines.append(f"Fechas excluidas: {exclusions}")
-    return "\n".join(lines)
 
 
 def _monitoring_started_context(
@@ -273,5 +176,4 @@ def _display_date(value: str) -> str:
 __all__ = [
     "REGISTRATION_NOTICE_TEMPLATE_KEYS",
     "enqueue_registration_notice",
-    "registration_notice_text",
 ]

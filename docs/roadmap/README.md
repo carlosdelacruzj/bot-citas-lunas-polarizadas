@@ -473,9 +473,15 @@ la superficie principal.
    recordatorio. Falta la revisión visual por ausencia de navegador conectado y
    observar el próximo caso natural. La Etapa 8 quedó separada: 8A ya aporta
    trazabilidad visible, auditoría de edición/restauración y un runbook de
-   aceptación sin retirar respaldos; 8B eliminará constructores por flujo solo
-   después de su caso natural, y 8C deja resumen diario/TikTok como evaluación
-   independiente.
+   aceptación; 8C deja resumen diario/TikTok como evaluación independiente. La
+   Etapa 8B quedó implementada técnicamente el `2026-08-26`
+   por autorización explícita del operador: retiró el constructor de registro
+   que ya era una rama muerta, eliminó el default hardcodeado del recordatorio y
+   limitó el derivador postpago anterior a históricos sin trazabilidad. Los
+   paquetes nuevos trazados deben conservar su `message_text`; Telegram y los
+   `145` postpagos históricos mantienen sus contratos independientes. La matriz
+   de observación natural sigue abierta por variante y para el próximo álbum
+   enviado completamente por el dispatcher.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

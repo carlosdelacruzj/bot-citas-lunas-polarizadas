@@ -114,3 +114,11 @@ evidencia anterior, se puede retirar únicamente su constructor hardcodeado y
 validar de nuevo el proyecto. Hasta entonces, los constructores permanecen como
 rollback; no son una segunda fuente activa mientras el consumidor use la
 plantilla de PostgreSQL.
+
+La Etapa 8B se ejecutó técnicamente el `2026-08-26` con autorización explícita
+del operador y sin enviar mensajes: se retiraron las ramas hardcodeadas activas
+de registro y recordatorio, y el fallback postpago quedó bloqueado para paquetes
+trazados. Se conserva únicamente el derivador `legacy` requerido para leer los
+históricos sin clave/revisión. El formateador de reserva que continúa en código
+es un consumidor de Telegram, no un fallback de WhatsApp. Esta limpieza no
+cierra por sí sola las observaciones naturales pendientes de la tabla anterior.

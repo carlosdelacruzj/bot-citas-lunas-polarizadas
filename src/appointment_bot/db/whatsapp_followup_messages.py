@@ -247,9 +247,7 @@ def get_followup_message(
         str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
     )
     recipient_username = row["recipient_username"]
-    message_text = str(row["message_text"] or "").strip() or _combined_followup_text(
-        steps
-    )
+    message_text = _stored_or_legacy_followup_text(row, steps)
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -327,9 +325,7 @@ def get_followup_web_draft(
     ]
     if not attachment_paths:
         raise ValueError("El seguimiento post-pago no tiene PDFs adjuntos.")
-    message_text = str(row["message_text"] or "").strip() or _combined_followup_text(
-        steps
-    )
+    message_text = _stored_or_legacy_followup_text(row, steps)
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -605,7 +601,19 @@ def _load_steps(value: object) -> list[dict[str, object]]:
     raise ValueError("El paquete de seguimiento post-pago esta corrupto.")
 
 
-def _combined_followup_text(steps: list[dict[str, object]]) -> str:
+def _stored_or_legacy_followup_text(
+    row: object,
+    steps: list[dict[str, object]],
+) -> str:
+    message_text = str(row["message_text"] or "").strip()
+    if message_text:
+        return message_text
+    if row["template_key"] is not None or row["template_revision"] is not None:
+        raise ValueError("El paquete trazado no conserva el texto post-pago preparado.")
+    return _legacy_combined_followup_text(steps)
+
+
+def _legacy_combined_followup_text(steps: list[dict[str, object]]) -> str:
     full_text = "\n\n".join(str(step.get("text") or "").strip() for step in steps)
     reservation = _extract_followup_line(full_text, "Reserva")
     site = _extract_followup_line(full_text, "Sede")

@@ -51,11 +51,6 @@ MONTH_NAMES = (
     "diciembre",
 )
 APPOINTMENT_REMINDER_TEMPLATE_KEY = "appointment_reminder"
-DEFAULT_REMINDER_TEMPLATE = (
-    "Hola, {nombre}. Te recordamos que mañana, {fecha}, tienes tu cita de "
-    "lunas polarizadas. Hora: {hora}. Sede: {sede}. Si tu cita fue "
-    "modificada recientemente, por favor comunícate con nosotros."
-)
 
 
 class AppointmentReminderScheduler:
@@ -261,7 +256,7 @@ def validate_reminder_template(message_template: str) -> dict[str, str]:
 
 def appointment_reminder_message(
     candidate: AppointmentReminderCandidate,
-    message_template: str = DEFAULT_REMINDER_TEMPLATE,
+    message_template: str,
 ) -> str:
     appointment_day = candidate["appointment_day"]
     name = str(candidate.get("applicant_name") or "").strip()

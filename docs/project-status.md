@@ -1085,6 +1085,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   8B queda condicionada a retirar cada constructor hardcodeado solo después de
   observar su caso real; 8C mantiene resumen diario y TikTok fuera del alcance
   actual. No se retiró ningún rollback ni se envió WhatsApp.
+- Implementada técnicamente el `2026-08-26` por autorización explícita del
+  operador: la Etapa 8B retiró únicamente respaldos activos ya sustituidos por
+  el registro de plantillas. Registro ya no calcula un constructor hardcodeado
+  antes de sobrescribirlo; recordatorios requieren siempre la plantilla vigente
+  como argumento; y postpago rechaza un paquete trazado sin `message_text` en
+  vez de reconstruirlo silenciosamente con el texto anterior. El derivador
+  postpago `legacy` permanece exclusivamente para leer los `145` históricos sin
+  clave/revisión, y el formateador de reserva que permanece pertenece a
+  Telegram, no a WhatsApp. Una lectura controlada confirmó texto legible para un
+  histórico y para un paquete `post_payment_confirmation:1`. No se modificaron
+  trabajos, mensajes, destinatarios, disparadores ni estados ambiguos, y no se
+  envió WhatsApp durante la limpieza. La observación natural continúa abierta
+  por variante y para el próximo álbum completamente automático.
 
 ### Destinatarios de WhatsApp por usuario
 
