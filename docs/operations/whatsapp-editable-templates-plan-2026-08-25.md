@@ -1,7 +1,8 @@
 # Plan de plantillas editables de WhatsApp
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
-de revisión visual, Etapas 3-8 pendientes**.
+de revisión visual, Etapa 3 implementada como piloto y pendiente de observación
+natural, Etapas 4-8 pendientes**.
 
 Fecha: `2026-08-25`.
 
@@ -547,6 +548,8 @@ Resultado técnico del `2026-08-25`:
 
 ### Etapa 3 - Piloto de registro exitoso
 
+Estado: **implementada como piloto el 2026-08-25; pendiente de observación natural**.
+
 Objetivo: conectar únicamente `registration_monitoring_started`.
 
 - renderizar la plantilla al encolar;
@@ -556,6 +559,30 @@ Objetivo: conectar únicamente `registration_monitoring_started`.
 - verificar WhatsApp, job, captura y ausencia de alerta Telegram falsa.
 
 Cierre: primer aviso natural confirmado y reconstruible por revisión.
+
+Resultado técnico del `2026-08-25`:
+
+- únicamente `registration_monitoring_started` lee la plantilla vigente al
+  preparar el siguiente aviso; `no_pending_request` e `invalid_credentials`
+  continúan usando sus constructores Python anteriores;
+- el contexto productivo usa nombre verificado por el portal, servicio, monto,
+  condiciones de búsqueda y exclusiones de la orden; el renderizado de la
+  revisión vigente `3` resultó idéntico al constructor anterior para el caso
+  **Día elegido** con rango y fecha excluida;
+- PostgreSQL `v62` añadió `template_key` y `template_revision` como campos
+  opcionales de `whatsapp_automation_jobs`. Los `370` trabajos históricos
+  permanecieron con ambos valores nulos;
+- una inserción controlada dentro de una transacción confirmó texto, clave y
+  revisión, y luego fue revertida antes de quedar visible al dispatcher;
+- el Admin API fue reiniciado de forma aislada con cero trabajos WhatsApp
+  `running`, cero intentos de reserva activos y el worker detenido. Regresó
+  saludable y publica exactamente un consumidor conectado;
+- `compileall`, Ruff, `59` pruebas, `git diff --check` y el build Angular
+  terminaron correctamente. Se conserva la advertencia no bloqueante de
+  `10.71 kB` sobre el presupuesto inicial del dashboard;
+- no se creó un cliente, no se encoló un trabajo persistente y no se envió
+  WhatsApp. El cierre permanece pendiente hasta observar el siguiente aviso
+  natural y comprobar job, captura y ausencia de una alerta Telegram falsa.
 
 ### Etapa 4 - Completar avisos de registro
 

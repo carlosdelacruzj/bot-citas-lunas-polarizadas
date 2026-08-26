@@ -977,6 +977,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   de presupuesto inicial de `10.71 kB`; queda pendiente revisar visualmente la
   vista en `360`, `768`, `1024` y `1440 px` porque no hubo navegador integrado
   disponible en esta sesión.
+- Implementado como piloto el `2026-08-25`: la Etapa 3 conecta únicamente
+  `registration_monitoring_started` con la plantilla genérica vigente al
+  preparar el próximo aviso de alta validada. PostgreSQL `v62` conserva el texto
+  final, `template_key` y `template_revision` en
+  `whatsapp_automation_jobs`; los `370` trabajos históricos mantienen esos
+  campos nulos. La revisión `3` produjo el mismo texto que el constructor
+  anterior para Día elegido con rango y exclusión, y una inserción transaccional
+  confirmó la trazabilidad antes de revertirse. Admin API reinició aisladamente
+  con cero trabajos WhatsApp `running` y cero intentos de reserva activos, volvió
+  saludable e informa un solo consumidor conectado. No se creó un cliente, no
+  quedó un job nuevo y no se envió WhatsApp. Falta observar el siguiente aviso
+  natural y comprobar entrega, captura y ausencia de alerta Telegram falsa antes
+  de aceptar el piloto y continuar con la Etapa 4.
 
 ### Destinatarios de WhatsApp por usuario
 

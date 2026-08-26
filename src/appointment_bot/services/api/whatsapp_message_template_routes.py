@@ -179,7 +179,7 @@ def _template_payload(row: WhatsAppMessageTemplate) -> dict[str, object]:
         "preview_context": dict(definition.preview_context),
         "usage": definition.usage,
         "applies_from": definition.applies_from,
-        "consumer_connected": False,
+        "consumer_connected": row.template_key == "registration_monitoring_started",
     }
 
 

@@ -430,9 +430,13 @@ la superficie principal.
    permite seleccionar, editar, restaurar, previsualizar y guardar las siete
    plantillas, con confirmación y conflicto de revisión. El guardado y la
    relectura controlados no alteraron ninguna cola de WhatsApp. Falta la revisión
-   visual en `360`, `768`, `1024` y `1440 px` para cerrarla; las Etapas 3-8 siguen
-   pendientes y ningún consumidor productivo utiliza todavía el registro
-   genérico.
+   visual en `360`, `768`, `1024` y `1440 px` para cerrarla. La Etapa 3 quedó
+   implementada como piloto el `2026-08-25`: únicamente
+   `registration_monitoring_started` consume la revisión vigente al preparar un
+   aviso futuro y PostgreSQL `v62` conserva texto, clave y revisión en el job.
+   Los `370` trabajos históricos no fueron alterados y las otras seis plantillas
+   siguen desconectadas. Falta aceptar el piloto con el siguiente aviso natural,
+   sin crear un cliente o envío de prueba; las Etapas 4-8 permanecen pendientes.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

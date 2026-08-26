@@ -9,7 +9,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 61
+SCHEMA_VERSION = 62
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -352,6 +352,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_appointment_reminder_schema(connection)
     _create_appointment_reminder_control_schema(connection)
     _create_whatsapp_message_template_schema(connection)
+    _create_whatsapp_automation_template_trace_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
@@ -1049,6 +1050,8 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_automation_jobs", "reservation_id"),
         ("whatsapp_automation_jobs", "appointment_day"),
         ("whatsapp_automation_jobs", "priority"),
+        ("whatsapp_automation_jobs", "template_key"),
+        ("whatsapp_automation_jobs", "template_revision"),
         ("appointment_reminder_days", "service_date"),
         ("appointment_reminder_days", "appointment_day"),
         ("appointment_reminder_days", "status"),
@@ -2069,6 +2072,39 @@ def _create_whatsapp_message_template_schema(connection: Connection) -> None:
         )
 
 
+def _create_whatsapp_automation_template_trace_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        ALTER TABLE whatsapp_automation_jobs
+        ADD COLUMN IF NOT EXISTS template_key text,
+        ADD COLUMN IF NOT EXISTS template_revision integer
+        """
+    )
+    constraint = connection.execute(
+        """
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ck_whatsapp_automation_template_trace'
+          AND conrelid = 'whatsapp_automation_jobs'::regclass
+        """
+    ).fetchone()
+    if constraint is None:
+        connection.execute(
+            """
+            ALTER TABLE whatsapp_automation_jobs
+            ADD CONSTRAINT ck_whatsapp_automation_template_trace CHECK (
+                (template_key IS NULL AND template_revision IS NULL)
+                OR (
+                    template_key IS NOT NULL
+                    AND char_length(template_key) BETWEEN 1 AND 80
+                    AND template_revision IS NOT NULL
+                    AND template_revision > 0
+                )
+            )
+            """
+        )
+
+
 def _stored_appointment_day(value: object) -> object | None:
     text = str(value or "").strip()
     for pattern in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
@@ -3051,6 +3087,13 @@ def migrate_database(connection: Connection) -> None:
             (61,),
         )
         current_version = 61
+    if current_version == 61:
+        _create_whatsapp_automation_template_trace_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (62,),
+        )
+        current_version = 62
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

@@ -3,10 +3,17 @@ from __future__ import annotations
 from datetime import date
 
 from appointment_bot.config import Settings
+from appointment_bot.core.whatsapp_message_templates import (
+    render_whatsapp_template,
+    whatsapp_template_definition,
+)
 from appointment_bot.db.whatsapp_automation import (
     RegistrationNoticeType,
     enqueue_registration_notice_job,
 )
+from appointment_bot.db.whatsapp_message_templates import get_whatsapp_message_template
+
+MONITORING_STARTED_TEMPLATE_KEY = "registration_monitoring_started"
 
 
 def enqueue_registration_notice(
@@ -27,22 +34,50 @@ def enqueue_registration_notice(
 ) -> bool:
     if not recipient_phone and not recipient_username:
         return False
+    message_text = registration_notice_text(
+        notice_type,
+        display_name,
+        service_type=service_type,
+        reservation_price=reservation_price,
+        minimum_reservation_date=minimum_reservation_date,
+        maximum_reservation_date=maximum_reservation_date,
+        allowed_weekdays=allowed_weekdays,
+        excluded_date_ranges=excluded_date_ranges,
+    )
+    template_key = None
+    template_revision = None
+    if notice_type == "monitoring_started":
+        template = get_whatsapp_message_template(
+            MONITORING_STARTED_TEMPLATE_KEY,
+            settings,
+        )
+        definition = whatsapp_template_definition(MONITORING_STARTED_TEMPLATE_KEY)
+        if template is None or definition is None or not template.enabled:
+            raise RuntimeError("La plantilla del aviso de registro no está disponible.")
+        message_text = render_whatsapp_template(
+            definition,
+            template.message_template,
+            _monitoring_started_context(
+                display_name=display_name,
+                service_type=service_type,
+                reservation_price=reservation_price,
+                minimum_reservation_date=minimum_reservation_date,
+                maximum_reservation_date=maximum_reservation_date,
+                allowed_weekdays=allowed_weekdays,
+                excluded_date_ranges=excluded_date_ranges,
+            ),
+        )
+        template_key = template.template_key
+        template_revision = template.revision
     return enqueue_registration_notice_job(
         order_id=order_id,
         preflight_cycle=preflight_cycle,
         notice_type=notice_type,
         recipient_phone=recipient_phone,
         recipient_username=recipient_username,
-        message_text=registration_notice_text(
-            notice_type,
-            display_name,
-            service_type=service_type,
-            reservation_price=reservation_price,
-            minimum_reservation_date=minimum_reservation_date,
-            maximum_reservation_date=maximum_reservation_date,
-            allowed_weekdays=allowed_weekdays,
-            excluded_date_ranges=excluded_date_ranges,
-        ),
+        message_text=message_text,
+        template_key=template_key,
+        template_revision=template_revision,
         settings=settings,
     )
 
@@ -117,10 +152,7 @@ def _service_summary_text(
     excluded_date_ranges: tuple[dict[str, str], ...],
 ) -> str:
     amount = str(reservation_price or "50.00")
-    label = {
-        "selected_weekday": "Día elegido",
-        "custom": "Personalizado",
-    }.get(service_type, "Estándar")
+    label = _service_label(service_type)
     lines = [
         f"Servicio: {label}",
         f"Precio acordado: S/{amount}",
@@ -135,6 +167,40 @@ def _service_summary_text(
     if exclusions:
         lines.append(f"Fechas excluidas: {exclusions}")
     return "\n".join(lines)
+
+
+def _monitoring_started_context(
+    *,
+    display_name: str | None,
+    service_type: str,
+    reservation_price: str,
+    minimum_reservation_date: str | None,
+    maximum_reservation_date: str | None,
+    allowed_weekdays: tuple[int, ...] | None,
+    excluded_date_ranges: tuple[dict[str, str], ...],
+) -> dict[str, str]:
+    name = " ".join((display_name or "").split())
+    if not name:
+        raise ValueError("El aviso de registro validado requiere el nombre del solicitante.")
+    exclusions = _excluded_dates_text(excluded_date_ranges)
+    return {
+        "nombre": name,
+        "servicio": _service_label(service_type),
+        "monto": str(reservation_price or "50.00"),
+        "condiciones": _search_conditions_text(
+            minimum_reservation_date,
+            maximum_reservation_date,
+            allowed_weekdays,
+        ),
+        "fechas_excluidas": f"Fechas excluidas: {exclusions}" if exclusions else "",
+    }
+
+
+def _service_label(service_type: str) -> str:
+    return {
+        "selected_weekday": "Día elegido",
+        "custom": "Personalizado",
+    }.get(service_type, "Estándar")
 
 
 def _weekday_name(value: int) -> str:
@@ -195,4 +261,8 @@ def _display_date(value: str) -> str:
         return value
 
 
-__all__ = ["enqueue_registration_notice", "registration_notice_text"]
+__all__ = [
+    "MONITORING_STARTED_TEMPLATE_KEY",
+    "enqueue_registration_notice",
+    "registration_notice_text",
+]

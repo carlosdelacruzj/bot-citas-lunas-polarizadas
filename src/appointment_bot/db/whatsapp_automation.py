@@ -58,6 +58,8 @@ class WhatsAppAutomationJob(TypedDict):
     attachment_paths: list[str]
     registration_notice_type: RegistrationNoticeType | None
     preflight_cycle: int | None
+    template_key: str | None
+    template_revision: int | None
 
 
 def enqueue_whatsapp_automation_job(
@@ -198,11 +200,17 @@ def enqueue_registration_notice_job(
     recipient_phone: str | None,
     recipient_username: str | None,
     message_text: str,
+    template_key: str | None = None,
+    template_revision: int | None = None,
     settings: Settings | None = None,
     _connection_override=None,
 ) -> bool:
     if preflight_cycle < 1:
         raise ValueError("preflight_cycle must be greater than or equal to 1.")
+    if (template_key is None) != (template_revision is None):
+        raise ValueError("template_key and template_revision must be provided together.")
+    if template_revision is not None and template_revision < 1:
+        raise ValueError("template_revision must be greater than or equal to 1.")
     effective_settings = _settings(settings)
     init_database(effective_settings)
     now = datetime.now(UTC)
@@ -215,12 +223,13 @@ def enqueue_registration_notice_job(
             """
             INSERT INTO whatsapp_automation_jobs (
                 job_key, order_id, job_kind, recipient_phone, recipient_username, message_text,
-                registration_notice_type, preflight_cycle, status, attempt_count,
+                registration_notice_type, preflight_cycle, template_key,
+                template_revision, status, attempt_count,
                 next_attempt_at, created_at, updated_at
             )
             VALUES (
                 %s, %s, 'registration_notice', %s, %s, %s,
-                %s, %s, 'queued', 0, %s, %s, %s
+                %s, %s, %s, %s, 'queued', 0, %s, %s, %s
             )
             ON CONFLICT(job_key) DO NOTHING
             RETURNING job_key
@@ -233,6 +242,8 @@ def enqueue_registration_notice_job(
                 message_text,
                 notice_type,
                 preflight_cycle,
+                template_key,
+                template_revision,
                 now,
                 now,
                 now,
@@ -254,7 +265,8 @@ def next_waiting_whatsapp_automation_job(
                    appointment_day, recipient_phone,
                    recipient_username,
                    message_text, publication_text, attachment_paths,
-                   registration_notice_type, preflight_cycle
+                   registration_notice_type, preflight_cycle,
+                   template_key, template_revision
             FROM whatsapp_automation_jobs
             WHERE status IN ('queued', 'blocked') AND next_attempt_at <= %s
               AND (
@@ -357,7 +369,8 @@ def claim_whatsapp_automation_job(
                           appointment_day, recipient_phone,
                           recipient_username,
                           message_text, publication_text, attachment_paths,
-                          registration_notice_type, preflight_cycle
+                          registration_notice_type, preflight_cycle,
+                          template_key, template_revision
                 """,
                 (owner_token, lease_expires_at, now, now, job_key, now),
             ).fetchone()
@@ -473,7 +486,8 @@ def recover_expired_whatsapp_automation_jobs(
                       appointment_day, recipient_phone,
                       recipient_username,
                       message_text, publication_text, attachment_paths,
-                      registration_notice_type, preflight_cycle
+                      registration_notice_type, preflight_cycle,
+                      template_key, template_revision
             """,
             (now, now, now),
         ).fetchall()
@@ -547,7 +561,8 @@ def refresh_running_appointment_reminder_snapshot(
             RETURNING job_key, order_id, reservation_id, job_kind, report_date,
                       appointment_day, recipient_phone, recipient_username,
                       message_text, publication_text, attachment_paths,
-                      registration_notice_type, preflight_cycle
+                      registration_notice_type, preflight_cycle,
+                      template_key, template_revision
             """,
             (phone, username, message_text, now, job_key, owner_token),
         ).fetchone()
@@ -779,6 +794,14 @@ def _job_from_row(row) -> WhatsAppAutomationJob:
         "preflight_cycle": (
             int(row["preflight_cycle"])
             if row["preflight_cycle"] is not None
+            else None
+        ),
+        "template_key": (
+            str(row["template_key"]) if row["template_key"] is not None else None
+        ),
+        "template_revision": (
+            int(row["template_revision"])
+            if row["template_revision"] is not None
             else None
         ),
     }
