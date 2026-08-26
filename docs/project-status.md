@@ -519,6 +519,27 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   manuales, PostgreSQL quedó en `v60`, Admin API regresó saludable y el receptor
   Telegram pasó `--check`. No se reinició el worker, no se crearon clientes
   reales ni se enviaron comunicaciones.
+- Implementado el `2026-08-26`: el alta del dashboard también fija servicio y
+  precio antes de crear la orden. Ofrece **Servicio regular - S/50**,
+  **Disponibilidad restringida - S/70** y **Monto personalizado**. La variante
+  restringida exige fecha inicial, fecha final y al menos una regla de días o
+  exclusiones; la ficha de la orden muestra servicio y precio acordado. El
+  primer caso real conservó una ventana `02/09/2026-30/09/2026` con nueve
+  rangos excluidos: la evaluación del motor aceptó exactamente los diez días
+  indicados por el cliente y rechazó cualquier otro día evaluado. El primer
+  preflight rechazó la clave y envió naturalmente el aviso trazado de
+  credenciales inválidas. La corrección posterior validó el acceso, activó la
+  orden y envió el aviso trazado de monitoreo iniciado. Desde entonces, `37`
+  corridas con cupos en días no autorizados terminaron
+  `partial / blocked_by_order_rule`, sin intentar reservarlos. El primer cupo
+  compatible apareció para el `22/09/2026 09:00`, uno de los diez días
+  autorizados: produjo el único intento y quedó confirmado. La orden pasó a
+  cobro pendiente por `S/70`. Su paquete de reserva/cobro conservó las
+  revisiones `reservation_confirmation:2` y `reservation_payment:1`, pero el
+  trabajo de WhatsApp terminó `uncertain` al no encontrar un control de adjuntos
+  múltiples; no se reintentó automáticamente.
+  `compileall`, Ruff, `59 passed`, build Angular y `git diff --check` quedaron
+  correctos; el build conserva el warning conocido de presupuesto inicial.
 - Actualizado el `2026-08-20`: la captura de WhatsApp en `/cliente_nuevo` ofrece
   una elección explícita entre **Número**, **Usuario** y **Omitir WhatsApp**.
   Telegram valida únicamente el tipo elegido; para usuario acepta el valor con
@@ -1083,8 +1104,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   distingue en la auditoría `operator_edit` de `restore_recommended` y añade un
   runbook de aceptación natural con evidencia y consultas por flujo. La Etapa
   8B queda condicionada a retirar cada constructor hardcodeado solo después de
-  observar su caso real; 8C mantiene resumen diario y TikTok fuera del alcance
-  actual. No se retiró ningún rollback ni se envió WhatsApp.
+  observar su caso real. La Etapa 8C quedó cerrada sin implementación por
+  decisión del operador: el resumen diario no necesita edición y la publicación
+  de TikTok conserva su generador de `138,240` variantes deterministas; no se
+  añaden plantillas, migraciones ni cambios de disparadores para esos contenidos.
+  No se retiró ningún rollback ni se envió WhatsApp.
 - Implementada técnicamente el `2026-08-26` por autorización explícita del
   operador: la Etapa 8B retiró únicamente respaldos activos ya sustituidos por
   el registro de plantillas. Registro ya no calcula un constructor hardcodeado

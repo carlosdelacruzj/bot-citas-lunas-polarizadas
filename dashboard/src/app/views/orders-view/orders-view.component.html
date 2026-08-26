@@ -276,6 +276,13 @@
             <h4>Reglas y prioridad</h4>
             <dl>
               <div>
+                <dt>Servicio</dt>
+                <dd>
+                  {{ dashboard.serviceTypeLabel(order) }} ·
+                  {{ dashboard.servicePriceLabel(order) }}
+                </dd>
+              </div>
+              <div>
                 <dt>Prioridad {{ order.priority }}</dt>
                 <dd>{{ dashboard.priorityExplanation(order) }}</dd>
               </div>

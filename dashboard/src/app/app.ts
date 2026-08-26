@@ -94,6 +94,7 @@ import { FinanceEntryModalComponent } from './modals/finance-entry-modal.compone
 import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+type NewServicePackage = 'standard' | 'restricted' | 'custom';
 type ViewKey =
   | 'inbox'
   | 'summary'
@@ -353,7 +354,6 @@ function readOrderViewState(): OrderViewState {
     return DEFAULT_ORDER_VIEW_STATE;
   }
 }
-
 function readOrderSearch(): string {
   try {
     return window.sessionStorage.getItem(ORDER_SEARCH_SESSION_KEY) ?? '';
@@ -594,6 +594,8 @@ export class App implements OnDestroy {
   protected readonly newContactWhatsapp = signal('');
   protected readonly newContactWhatsappUsername = signal('');
   protected readonly newContactSource = signal('');
+  protected readonly newServicePackage = signal<NewServicePackage>('standard');
+  protected readonly newCustomReservationPrice = signal('');
   protected readonly newMinimumReservationDate = signal('');
   protected readonly newMaximumReservationDate = signal('');
   protected readonly newAllowedWeekdays = signal<number[]>([]);
@@ -2484,6 +2486,23 @@ export class App implements OnDestroy {
     );
   }
 
+  protected serviceTypeLabel(order: ServiceOrder): string {
+    if (order.service_type === 'selected_weekday') {
+      return 'Día elegido';
+    }
+    if (order.service_type === 'custom') {
+      return this.hasReservationRestrictions(order)
+        ? 'Disponibilidad restringida'
+        : 'Personalizado';
+    }
+    return 'Estándar';
+  }
+
+  protected servicePriceLabel(order: ServiceOrder): string {
+    const amount = Number(order.reservation_price);
+    return Number.isFinite(amount) ? `S/${amount.toFixed(2)}` : `S/${order.reservation_price}`;
+  }
+
   protected restrictionDaysLabel(order: ServiceOrder): string {
     const days = Array.from(
       new Set((order.allowed_weekdays ?? []).filter((day) => day >= 1 && day <= 7)),
@@ -4071,6 +4090,22 @@ export class App implements OnDestroy {
     if (excludedDateRanges === null) {
       return;
     }
+    const servicePackage = this.newServicePackage();
+    const customPrice = Number(this.newCustomReservationPrice());
+    if (
+      servicePackage === 'custom' &&
+      (!Number.isFinite(customPrice) || customPrice <= 0 || customPrice > 99999.99)
+    ) {
+      this.errorMessage.set('Ingresa un precio personalizado válido mayor que cero.');
+      return;
+    }
+    const serviceType = servicePackage === 'standard' ? 'standard' : 'custom';
+    const reservationPrice =
+      servicePackage === 'standard'
+        ? '50.00'
+        : servicePackage === 'restricted'
+          ? '70.00'
+          : customPrice.toFixed(2);
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
       document_type: this.newDocumentType(),
@@ -4079,6 +4114,8 @@ export class App implements OnDestroy {
       contact_whatsapp_username: this.optionalText(this.newContactWhatsappUsername()),
       contact_name: this.newContactName().trim(),
       contact_source: this.newContactSource(),
+      service_type: serviceType,
+      reservation_price: reservationPrice,
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
       maximum_reservation_date: this.optionalText(this.newMaximumReservationDate()),
       allowed_weekdays: this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
@@ -4093,6 +4130,25 @@ export class App implements OnDestroy {
       return;
     }
     if (
+      servicePackage === 'restricted' &&
+      (!payload.minimum_reservation_date || !payload.maximum_reservation_date)
+    ) {
+      this.errorMessage.set(
+        'La disponibilidad restringida exige una fecha inicial y una fecha final.',
+      );
+      return;
+    }
+    if (
+      servicePackage === 'restricted' &&
+      !payload.allowed_weekdays?.length &&
+      !payload.excluded_date_ranges?.length
+    ) {
+      this.errorMessage.set(
+        'Indica días permitidos o fechas excluidas para delimitar la disponibilidad restringida.',
+      );
+      return;
+    }
+    if (
       !payload.document_number ||
       !payload.document_type ||
       !payload.password ||
@@ -4104,7 +4160,13 @@ export class App implements OnDestroy {
     }
     this.setPendingAction({
       title: 'Crear orden nueva',
-      message: `Crear orden para documento ${payload.document_number}.`,
+      message: `Crear orden para documento ${payload.document_number} como ${
+        servicePackage === 'standard'
+          ? 'servicio estándar'
+          : servicePackage === 'restricted'
+            ? 'disponibilidad restringida'
+            : 'servicio personalizado'
+      } por S/${reservationPrice}.`,
       execute: () => this.api.createServiceOrder(payload),
       containsSecret: true,
       onSuccess: () => {
@@ -5090,7 +5152,10 @@ export class App implements OnDestroy {
     this.newPassword.set('');
     this.newContactName.set('');
     this.newContactWhatsapp.set('');
+    this.newContactWhatsappUsername.set('');
     this.newContactSource.set('');
+    this.newServicePackage.set('standard');
+    this.newCustomReservationPrice.set('');
     this.newMinimumReservationDate.set('');
     this.newMaximumReservationDate.set('');
     this.newAllowedWeekdays.set([]);

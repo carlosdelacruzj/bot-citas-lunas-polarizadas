@@ -3,28 +3,28 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 2503
-- Reservas registradas: 168
+- Eventos indexados: 2599
+- Reservas registradas: 171
 - Reservas no confirmadas: 5
-- Disponibilidades completas: 1673
-- Disponibilidades parciales: 460
+- Disponibilidades completas: 1699
+- Disponibilidades parciales: 525
 - Senales de defensa: 13
 
 ## Origen de deteccion
-- normal: 2498
+- normal: 2594
 - slot_lost_reobservation: 5
 
 ## Ultimos eventos utiles
-- 2026-08-26 09:12:16 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
-- 2026-08-26 09:12:08 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
-- 2026-08-26 09:11:59 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
-- 2026-08-26 09:11:50 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
-- 2026-08-26 09:10:08 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
-- 2026-08-26 09:10:00 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
-- 2026-08-26 09:09:50 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
-- 2026-08-26 09:09:41 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
-- 2026-08-26 09:02:44 | sin orden | available | normal | 07/09/2026 08:00 | sin outcome
-- 2026-08-26 09:02:36 | sin orden | available | normal | 07/09/2026 08:00 | sin outcome
+- 2026-08-26 13:09:49 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
+- 2026-08-26 13:09:40 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
+- 2026-08-26 13:09:32 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
+- 2026-08-26 13:09:22 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
+- 2026-08-26 13:09:14 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
+- 2026-08-26 13:09:05 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
+- 2026-08-26 13:08:57 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
+- 2026-08-26 13:08:49 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
+- 2026-08-26 13:08:40 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
+- 2026-08-26 13:08:31 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
 
 ## Senales de defensa
 - 2026-08-26 08:54:58 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.

@@ -2,8 +2,8 @@
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
 de revisión visual, Etapas 3-7 implementadas y pendientes de observación
-natural, y Etapas 8A-8B implementadas técnicamente; Etapa 8C permanece fuera
-del alcance actual**.
+natural, y Etapas 8A-8B implementadas técnicamente; Etapa 8C cerrada sin
+implementación por decisión del operador**.
 
 Fecha: `2026-08-25`.
 
@@ -689,6 +689,12 @@ Incidente y recuperación del `2026-08-26`:
 - la recuperación comprueba el renderizado, la persistencia y el envío real del
   álbum, pero no sustituye el próximo caso automático natural completo. La
   Etapa 5 continúa pendiente de esa observación antes de retirar su respaldo.
+- un caso natural posterior preparó correctamente el paquete con
+  `reservation_confirmation:2` y `reservation_payment:1`, pero el dispatcher no
+  encontró el control de adjuntos múltiples (`non_multiple_input`) y terminó
+  `uncertain / send_state_unknown`. No hubo reintento automático. Este caso
+  confirma la trazabilidad del paquete, pero no acepta el envío automático del
+  álbum; la observación natural continúa abierta.
 
 ### Etapa 6 - Pago confirmado
 
@@ -860,10 +866,21 @@ Resultado del `2026-08-26`:
 
 ### Etapa 8C - Evaluaciones separadas
 
-Estado: **pendiente y fuera del cierre de las siete plantillas actuales**.
+Estado: **cerrada sin implementación el 2026-08-26 por decisión de alcance**.
 
-- evaluar plantillas para resumen diario y TikTok como trabajos independientes;
-- no ampliar automáticamente el registro actual ni sus disparadores.
+Decisión:
+
+- el texto breve del resumen diario no necesita una plantilla editable;
+- la publicación de TikTok conserva el generador actual, que combina títulos,
+  aperturas, explicaciones, llamadas a la acción, advertencias y hashtags para
+  producir `138,240` variantes deterministas según la fecha;
+- no se reemplaza ese generador por un texto único predefinido;
+- no se agregan claves de plantilla, migraciones, controles de dashboard ni
+  cambios de disparadores para estos dos contenidos.
+
+Cierre: 8C no requiere trabajo adicional. Una solicitud futura para editar
+estos contenidos se tratará como un alcance nuevo e independiente, sin reabrir
+el cierre de las siete plantillas actuales.
 
 ## Validación por etapa
 

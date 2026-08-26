@@ -51,6 +51,13 @@ se reescribió su estado técnico `failed`. La confirmación del operador acredi
 llegada, pero no reemplaza la próxima observación natural del dispatcher, que
 sigue siendo necesaria para retirar el respaldo de este flujo.
 
+El siguiente caso natural congeló correctamente
+`reservation_confirmation:2` y `reservation_payment:1`, pero WhatsApp Web no
+expuso el control de adjuntos múltiples. El trabajo terminó
+`uncertain / non_multiple_input / send_state_unknown` y no se reintentó. Esta
+evidencia valida la trazabilidad del paquete, no el envío automático completo;
+el caso de reserva/cobro continúa pendiente.
+
 ## Consultas de trazabilidad
 
 Avisos de registro y recordatorios recientes:

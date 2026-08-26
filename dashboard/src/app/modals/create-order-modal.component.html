@@ -118,8 +118,54 @@
       </p>
 
       <fieldset class="restriction-fields">
+        <legend>Servicio y precio</legend>
+        <div class="form-grid wide">
+          <label>
+            Tipo de servicio <span class="required-marker" aria-hidden="true">*</span>
+            <select
+              name="newServicePackage"
+              required
+              [ngModel]="view.newServicePackage()"
+              (ngModelChange)="view.editField(view.newServicePackage, $event)"
+            >
+              <option value="standard">Servicio regular — S/50</option>
+              <option value="restricted">Disponibilidad restringida — S/70</option>
+              <option value="custom">Monto personalizado</option>
+            </select>
+          </label>
+          @if (view.newServicePackage() === 'custom') {
+            <label>
+              Precio acordado (S/) <span class="required-marker" aria-hidden="true">*</span>
+              <input
+                name="newCustomReservationPrice"
+                type="number"
+                min="0.01"
+                max="99999.99"
+                step="0.01"
+                required
+                [ngModel]="view.newCustomReservationPrice()"
+                (ngModelChange)="view.editField(view.newCustomReservationPrice, $event)"
+              />
+            </label>
+          }
+        </div>
+        @if (view.newServicePackage() === 'restricted') {
+          <p class="required-help">
+            Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
+            disponibilidad acordada. El precio queda fijado en S/70.
+          </p>
+        }
+      </fieldset>
+
+      <fieldset class="restriction-fields">
         <legend>Restricción de fechas (opcional)</legend>
-        <p>Déjalo vacío para buscar cualquier fecha disponible.</p>
+        <p>
+          {{
+            view.newServicePackage() === 'restricted'
+              ? 'Configura obligatoriamente el periodo y las exclusiones acordadas.'
+              : 'Déjalo vacío para buscar cualquier fecha disponible.'
+          }}
+        </p>
         <app-reservation-rules-editor
           controlPrefix="new"
           [minimumDate]="view.newMinimumReservationDate()"

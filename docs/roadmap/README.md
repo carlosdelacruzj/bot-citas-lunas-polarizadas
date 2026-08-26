@@ -410,6 +410,13 @@ Prioridad: **P1/P2**.
 Objetivo: priorizar decisiones de clientes y dinero, y retirar diagnosticos de
 la superficie principal.
 
+Avance del `2026-08-26`: el alta del dashboard ya permite elegir y persistir
+**Servicio regular - S/50**, **Disponibilidad restringida - S/70** o un monto
+personalizado antes del preflight. La disponibilidad restringida requiere una
+ventana cerrada y reglas de días o exclusiones, y la ficha muestra el servicio
+y precio acordados. Esta capacidad queda completada; no agrega una tarea futura
+independiente.
+
 ### Alcance
 
 1. Separar Pendientes comerciales del backlog de entrenamiento CAPTCHA.
@@ -454,7 +461,10 @@ la superficie principal.
    `message_id`, se conciliaron como `dismissed` con una nota que conserva el
    enlace lógico al envío de recuperación y dejaron de aparecer en Pendientes.
    La aceptación automática continúa pendiente hasta que el próximo
-   trabajo natural complete preparación y envío mediante el dispatcher. Falta
+   trabajo natural complete preparación y envío mediante el dispatcher. Un
+   caso natural posterior congeló correctamente ambas revisiones, pero terminó
+   `uncertain / non_multiple_input` antes de adjuntar las imágenes y no se
+   reintentó; por eso la aceptación automática sigue abierta. Falta
    observar naturalmente las tres variantes de registro y esa próxima
    reserva/cobro automática. La
    Etapa 6 quedó implementada técnicamente el `2026-08-26`:
@@ -473,7 +483,9 @@ la superficie principal.
    recordatorio. Falta la revisión visual por ausencia de navegador conectado y
    observar el próximo caso natural. La Etapa 8 quedó separada: 8A ya aporta
    trazabilidad visible, auditoría de edición/restauración y un runbook de
-   aceptación; 8C deja resumen diario/TikTok como evaluación independiente. La
+   aceptación. 8C quedó cerrada sin implementación por decisión del operador:
+   el resumen diario no requiere edición y TikTok conserva el generador actual
+   de variantes, sin nuevas plantillas ni cambios de disparadores. La
    Etapa 8B quedó implementada técnicamente el `2026-08-26`
    por autorización explícita del operador: retiró el constructor de registro
    que ya era una rama muerta, eliminó el default hardcodeado del recordatorio y
