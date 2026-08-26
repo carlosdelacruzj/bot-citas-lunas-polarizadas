@@ -19,6 +19,9 @@ from appointment_bot.db.whatsapp_message_templates import (
     update_whatsapp_message_template,
 )
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.registration_notices import (
+    REGISTRATION_NOTICE_TEMPLATE_KEYS,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
@@ -179,7 +182,8 @@ def _template_payload(row: WhatsAppMessageTemplate) -> dict[str, object]:
         "preview_context": dict(definition.preview_context),
         "usage": definition.usage,
         "applies_from": definition.applies_from,
-        "consumer_connected": row.template_key == "registration_monitoring_started",
+        "consumer_connected": row.template_key
+        in REGISTRATION_NOTICE_TEMPLATE_KEYS.values(),
     }
 
 

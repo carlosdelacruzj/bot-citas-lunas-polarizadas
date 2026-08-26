@@ -2,7 +2,8 @@
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
 de revisión visual, Etapa 3 implementada como piloto y pendiente de observación
-natural, Etapas 4-8 pendientes**.
+natural, Etapa 4 implementada y pendiente de observación natural, Etapas 5-8
+pendientes**.
 
 Fecha: `2026-08-25`.
 
@@ -586,6 +587,8 @@ Resultado técnico del `2026-08-25`:
 
 ### Etapa 4 - Completar avisos de registro
 
+Estado: **implementada técnicamente el 2026-08-25; pendiente de observación natural**.
+
 Objetivo: conectar las otras dos variantes después de aceptar el piloto.
 
 - solicitud no encontrada;
@@ -595,6 +598,31 @@ Objetivo: conectar las otras dos variantes después de aceptar el piloto.
 
 Cierre: cada variante conserva el texto actual como default y no duplica avisos
 por ciclo de preflight.
+
+Resultado técnico del `2026-08-25`:
+
+- por instrucción explícita del operador se avanzó antes de completar la
+  observación natural de la Etapa 3; esa aceptación continúa pendiente;
+- `registration_no_pending_request` y `registration_invalid_credentials` ahora
+  leen su plantilla vigente al preparar un aviso, además del piloto
+  `registration_monitoring_started`;
+- los dos defaults en revisión `1` renderizaron exactamente el mismo contenido
+  que sus constructores Python anteriores usando únicamente `{nombre}`;
+- la clave de plantilla se resuelve desde un único mapa por variante y el job
+  conserva el texto final, `template_key` y `template_revision` en PostgreSQL
+  `v62`;
+- una validación transaccional de cada variante aceptó el primer insert y
+  rechazó el segundo para la misma orden, ciclo y tipo. La transacción se
+  revirtió y la base permaneció en `370` trabajos totales y `0` trazados;
+- Admin API reinició aisladamente con cero trabajos WhatsApp `running`, cero
+  intentos de reserva activos y el worker detenido. La API regresó saludable
+  mostrando tres plantillas de registro conectadas y cuatro desconectadas;
+- `compileall`, Ruff, `59` pruebas, `git diff --check` y el build Angular
+  terminaron correctamente; persiste la advertencia no bloqueante de `10.71 kB`
+  sobre el presupuesto inicial;
+- no se creó un cliente, no quedó un trabajo nuevo y no se envió WhatsApp. El
+  cierre permanece pendiente hasta observar naturalmente cada variante y
+  confirmar entrega o incertidumbre terminal, captura y ausencia de duplicados.
 
 ### Etapa 5 - Reserva y cobro
 

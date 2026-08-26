@@ -990,6 +990,20 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   quedó un job nuevo y no se envió WhatsApp. Falta observar el siguiente aviso
   natural y comprobar entrega, captura y ausencia de alerta Telegram falsa antes
   de aceptar el piloto y continuar con la Etapa 4.
+- Implementado técnicamente el `2026-08-25`: por instrucción explícita del
+  operador, la Etapa 4 avanzó antes de completar la observación natural del
+  piloto. `registration_no_pending_request` y
+  `registration_invalid_credentials` consumen ahora su revisión vigente, igual
+  que `registration_monitoring_started`; las cuatro plantillas de reserva,
+  cobro, postpago y pre-cita siguen desconectadas. Ambos defaults en revisión
+  `1` produjeron el mismo texto que sus constructores anteriores. Una validación
+  transaccional confirmó la trazabilidad y rechazó el segundo insert de la misma
+  orden, ciclo y variante antes de revertirse; PostgreSQL conservó `370`
+  trabajos y ninguno quedó trazado por la prueba. Admin API reinició con cero
+  trabajos WhatsApp `running` y cero intentos de reserva activos, volvió
+  saludable y expone exactamente tres consumidores conectados. No se creó un
+  cliente ni se envió WhatsApp; falta aceptar cada variante con eventos
+  naturales y comprobar que no se duplique el aviso por ciclo.
 
 ### Destinatarios de WhatsApp por usuario
 

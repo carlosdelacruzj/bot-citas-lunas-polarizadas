@@ -434,9 +434,13 @@ la superficie principal.
    implementada como piloto el `2026-08-25`: únicamente
    `registration_monitoring_started` consume la revisión vigente al preparar un
    aviso futuro y PostgreSQL `v62` conserva texto, clave y revisión en el job.
-   Los `370` trabajos históricos no fueron alterados y las otras seis plantillas
-   siguen desconectadas. Falta aceptar el piloto con el siguiente aviso natural,
-   sin crear un cliente o envío de prueba; las Etapas 4-8 permanecen pendientes.
+   Los `370` trabajos históricos no fueron alterados. Por instrucción explícita
+   del operador, la Etapa 4 se implementó técnicamente el `2026-08-25` antes de
+   aceptar el piloto natural: las tres variantes de registro consumen ahora su
+   plantilla vigente, conservan texto, clave y revisión, y mantienen la
+   deduplicación por orden, ciclo y tipo. Las cuatro plantillas restantes siguen
+   desconectadas. Falta observar naturalmente las tres variantes, sin crear un
+   cliente o envío de prueba; las Etapas 5-8 permanecen pendientes.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

@@ -13,7 +13,11 @@ from appointment_bot.db.whatsapp_automation import (
 )
 from appointment_bot.db.whatsapp_message_templates import get_whatsapp_message_template
 
-MONITORING_STARTED_TEMPLATE_KEY = "registration_monitoring_started"
+REGISTRATION_NOTICE_TEMPLATE_KEYS: dict[RegistrationNoticeType, str] = {
+    "monitoring_started": "registration_monitoring_started",
+    "no_pending_request": "registration_no_pending_request",
+    "invalid_credentials": "registration_invalid_credentials",
+}
 
 
 def enqueue_registration_notice(
@@ -44,20 +48,13 @@ def enqueue_registration_notice(
         allowed_weekdays=allowed_weekdays,
         excluded_date_ranges=excluded_date_ranges,
     )
-    template_key = None
-    template_revision = None
-    if notice_type == "monitoring_started":
-        template = get_whatsapp_message_template(
-            MONITORING_STARTED_TEMPLATE_KEY,
-            settings,
-        )
-        definition = whatsapp_template_definition(MONITORING_STARTED_TEMPLATE_KEY)
-        if template is None or definition is None or not template.enabled:
-            raise RuntimeError("La plantilla del aviso de registro no está disponible.")
-        message_text = render_whatsapp_template(
-            definition,
-            template.message_template,
-            _monitoring_started_context(
+    template_key = REGISTRATION_NOTICE_TEMPLATE_KEYS[notice_type]
+    template = get_whatsapp_message_template(template_key, settings)
+    definition = whatsapp_template_definition(template_key)
+    if template is None or definition is None or not template.enabled:
+        raise RuntimeError("La plantilla del aviso de registro no está disponible.")
+    context = (
+        _monitoring_started_context(
                 display_name=display_name,
                 service_type=service_type,
                 reservation_price=reservation_price,
@@ -65,10 +62,15 @@ def enqueue_registration_notice(
                 maximum_reservation_date=maximum_reservation_date,
                 allowed_weekdays=allowed_weekdays,
                 excluded_date_ranges=excluded_date_ranges,
-            ),
         )
-        template_key = template.template_key
-        template_revision = template.revision
+        if notice_type == "monitoring_started"
+        else _registration_name_context(display_name)
+    )
+    message_text = render_whatsapp_template(
+        definition,
+        template.message_template,
+        context,
+    )
     return enqueue_registration_notice_job(
         order_id=order_id,
         preflight_cycle=preflight_cycle,
@@ -76,8 +78,8 @@ def enqueue_registration_notice(
         recipient_phone=recipient_phone,
         recipient_username=recipient_username,
         message_text=message_text,
-        template_key=template_key,
-        template_revision=template_revision,
+        template_key=template.template_key,
+        template_revision=template.revision,
         settings=settings,
     )
 
@@ -196,6 +198,13 @@ def _monitoring_started_context(
     }
 
 
+def _registration_name_context(display_name: str | None) -> dict[str, str]:
+    name = " ".join((display_name or "").split())
+    if not name:
+        raise ValueError("El aviso de registro requiere un nombre para el saludo.")
+    return {"nombre": name}
+
+
 def _service_label(service_type: str) -> str:
     return {
         "selected_weekday": "Día elegido",
@@ -262,7 +271,7 @@ def _display_date(value: str) -> str:
 
 
 __all__ = [
-    "MONITORING_STARTED_TEMPLATE_KEY",
+    "REGISTRATION_NOTICE_TEMPLATE_KEYS",
     "enqueue_registration_notice",
     "registration_notice_text",
 ]
