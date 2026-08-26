@@ -11,6 +11,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     validate_whatsapp_template,
     whatsapp_template_definition,
 )
+from appointment_bot.db.whatsapp_followup_messages import POST_PAYMENT_TEMPLATE_KEY
 from appointment_bot.db.whatsapp_message_templates import (
     WhatsAppMessageTemplate,
     WhatsAppMessageTemplateConflict,
@@ -23,6 +24,9 @@ from appointment_bot.db.whatsapp_messages import (
     RESERVATION_PAYMENT_TEMPLATE_KEY,
 )
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.appointment_reminders import (
+    APPOINTMENT_REMINDER_TEMPLATE_KEY,
+)
 from appointment_bot.services.registration_notices import (
     REGISTRATION_NOTICE_TEMPLATE_KEYS,
 )
@@ -36,6 +40,8 @@ _CONNECTED_TEMPLATE_KEYS = frozenset(
         *REGISTRATION_NOTICE_TEMPLATE_KEYS.values(),
         RESERVATION_CONFIRMATION_TEMPLATE_KEY,
         RESERVATION_PAYMENT_TEMPLATE_KEY,
+        POST_PAYMENT_TEMPLATE_KEY,
+        APPOINTMENT_REMINDER_TEMPLATE_KEY,
     )
 )
 

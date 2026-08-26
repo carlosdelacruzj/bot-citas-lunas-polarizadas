@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   AppointmentApiService,
@@ -33,12 +34,15 @@ export class MessageTemplatesViewComponent implements OnDestroy {
 
   protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
   private readonly api = inject(AppointmentApiService);
+  private readonly route = inject(ActivatedRoute);
   private previewTimer: number | null = null;
   private previewGeneration = 0;
   private hydratedRevision = 0;
 
   protected readonly maxTemplateLength = 1500;
-  protected readonly selectedTemplateKey = signal('');
+  protected readonly selectedTemplateKey = signal(
+    this.route.snapshot.queryParamMap.get('template') ?? '',
+  );
   protected readonly draft = signal('');
   protected readonly preview = signal('');
   protected readonly previewContext = signal<Record<string, string>>({});

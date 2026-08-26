@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import logging
-import re
 import threading
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
+from appointment_bot.core.whatsapp_message_templates import (
+    render_whatsapp_template,
+    validate_whatsapp_template,
+    whatsapp_template_definition,
+)
 from appointment_bot.db.appointment_reminder_control import (
     get_appointment_reminder_control,
 )
@@ -23,8 +27,11 @@ from appointment_bot.db.appointment_reminders import (
     record_appointment_reminder_day,
 )
 from appointment_bot.db.whatsapp_automation import enqueue_appointment_reminder_job
+from appointment_bot.db.whatsapp_message_templates import (
+    WhatsAppMessageTemplate,
+    get_whatsapp_message_template,
+)
 from appointment_bot.services.notifier import send_telegram_message
-from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 LIMA_TIMEZONE = ZoneInfo("America/Lima")
@@ -43,13 +50,12 @@ MONTH_NAMES = (
     "noviembre",
     "diciembre",
 )
-ALLOWED_TEMPLATE_VARIABLES = ("nombre", "fecha", "hora", "sede")
+APPOINTMENT_REMINDER_TEMPLATE_KEY = "appointment_reminder"
 DEFAULT_REMINDER_TEMPLATE = (
     "Hola, {nombre}. Te recordamos que mañana, {fecha}, tienes tu cita de "
     "lunas polarizadas. Hora: {hora}. Sede: {sede}. Si tu cita fue "
     "modificada recientemente, por favor comunícate con nosotros."
 )
-_TEMPLATE_FIELD = re.compile(r"\{([^{}]+)\}")
 
 
 class AppointmentReminderScheduler:
@@ -113,6 +119,7 @@ def reconcile_appointment_reminders(
     if normalized_count:
         logger.info("Normalized %s stored appointment dates", normalized_count)
     control = get_appointment_reminder_control(settings)
+    template = get_current_appointment_reminder_template(settings)
     candidates = list_appointment_reminder_candidates(
         appointment_day,
         settings=settings,
@@ -139,7 +146,7 @@ def reconcile_appointment_reminders(
                 candidate,
                 phone,
                 username,
-                appointment_reminder_message(candidate, control.message_template),
+                appointment_reminder_message(candidate, template.message_template),
             )
         )
 
@@ -169,6 +176,8 @@ def reconcile_appointment_reminders(
                     recipient_phone=phone,
                     recipient_username=username,
                     message_text=message_text,
+                    template_key=template.template_key,
+                    template_revision=template.revision,
                     settings=settings,
                 )
                 if created:
@@ -244,21 +253,10 @@ def reconcile_appointment_reminders(
 
 
 def validate_reminder_template(message_template: str) -> dict[str, str]:
-    errors: dict[str, str] = {}
-    template = message_template.strip()
-    if not template:
-        return {"message_template": "El mensaje no puede quedar vacío."}
-    if len(template) > 1000:
-        errors["message_template"] = "El mensaje no puede superar 1000 caracteres."
-    stripped = _TEMPLATE_FIELD.sub("", template)
-    if "{" in stripped or "}" in stripped:
-        errors["message_template"] = "Hay una variable incompleta o llaves sin cerrar."
-    unknown = sorted(set(_TEMPLATE_FIELD.findall(template)) - set(ALLOWED_TEMPLATE_VARIABLES))
-    if unknown:
-        errors["message_template"] = "Variables no permitidas: " + ", ".join(unknown)
-    if "{fecha}" not in template:
-        errors["message_template"] = "Incluye {fecha} para identificar la cita sin ambigüedad."
-    return errors
+    definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
+    if definition is None:
+        return {"message_template": "La plantilla de recordatorio no está disponible."}
+    return validate_whatsapp_template(definition, message_template)
 
 
 def appointment_reminder_message(
@@ -276,10 +274,19 @@ def appointment_reminder_message(
         "hora": hour or "por confirmar",
         "sede": site or "por confirmar",
     }
-    rendered = message_template
-    for key, value in values.items():
-        rendered = rendered.replace("{" + key + "}", value)
-    return sanitize_text(rendered)
+    definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
+    if definition is None:
+        raise RuntimeError("La plantilla de recordatorio no está disponible.")
+    return render_whatsapp_template(definition, message_template, values)
+
+
+def get_current_appointment_reminder_template(
+    settings: Settings,
+) -> WhatsAppMessageTemplate:
+    template = get_whatsapp_message_template(APPOINTMENT_REMINDER_TEMPLATE_KEY, settings)
+    if template is None or not template.enabled:
+        raise RuntimeError("La plantilla vigente de recordatorio no está disponible.")
+    return template
 
 
 def _appointment_day_text(appointment_day: date) -> str:
@@ -291,6 +298,10 @@ def _appointment_day_text(appointment_day: date) -> str:
 def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]:
     now = datetime.now(LIMA_TIMEZONE)
     control = get_appointment_reminder_control(settings)
+    template = get_current_appointment_reminder_template(settings)
+    definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
+    if definition is None:
+        raise RuntimeError("La definición del recordatorio no está disponible.")
     payload = appointment_reminder_status(now.date(), settings=settings)
     candidates = list_appointment_reminder_candidates(
         now.date() + timedelta(days=1),
@@ -317,15 +328,16 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     }
     payload["control"] = {
         "mode": control.mode,
-        "message_template": control.message_template,
-        "default_template": DEFAULT_REMINDER_TEMPLATE,
+        "message_template": template.message_template,
+        "default_template": definition.recommended_template,
         "canary_order_ids": list(control.canary_order_ids),
         "revision": control.revision,
+        "template_revision": template.revision,
         "updated_at": control.updated_at.isoformat(),
         "updated_by": control.updated_by,
         "applies_from": "next_reconciliation",
     }
-    payload["allowed_variables"] = list(ALLOWED_TEMPLATE_VARIABLES)
+    payload["allowed_variables"] = list(definition.allowed_variables)
     payload["current_time"] = now.isoformat()
     payload["scheduler_window_open"] = now.time() >= settings.appointment_reminders_time
     return payload
@@ -389,6 +401,7 @@ __all__ = [
     "AppointmentReminderScheduler",
     "appointment_reminder_message",
     "appointment_reminder_status_payload",
+    "get_current_appointment_reminder_template",
     "reconcile_appointment_reminders",
     "validate_reminder_template",
 ]

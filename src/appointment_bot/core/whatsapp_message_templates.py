@@ -134,6 +134,7 @@ def _definition(
     *,
     recommended_template: str | None = None,
     optional_line_variables: tuple[str, ...] = (),
+    preview_context_overrides: dict[str, str] | None = None,
 ) -> WhatsAppTemplateDefinition:
     return WhatsAppTemplateDefinition(
         key=key,
@@ -145,7 +146,10 @@ def _definition(
         optional_line_variables=optional_line_variables,
         usage=usage,
         applies_from=applies_from,
-        preview_context={name: _COMMON_PREVIEW_CONTEXT[name] for name in allowed_variables},
+        preview_context={
+            **{name: _COMMON_PREVIEW_CONTEXT[name] for name in allowed_variables},
+            **(preview_context_overrides or {}),
+        },
     )
 
 
@@ -216,6 +220,7 @@ WHATSAPP_TEMPLATE_DEFINITIONS = {
             "Recordatorio existente; su control operativo permanece separado.",
             "next_reconciliation",
             recommended_template=_RECOMMENDED_APPOINTMENT_REMINDER,
+            preview_context_overrides={"fecha": "6 de septiembre de 2026"},
         ),
     )
 }

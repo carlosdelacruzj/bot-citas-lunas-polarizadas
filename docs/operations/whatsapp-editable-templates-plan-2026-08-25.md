@@ -2,8 +2,9 @@
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
 de revisión visual, Etapa 3 implementada como piloto y pendiente de observación
-natural, Etapas 4-5 implementadas y pendientes de observación natural, Etapas
-6-8 pendientes**.
+natural, Etapas 4-6 implementadas y pendientes de observación natural, Etapa 7
+implementada técnicamente y pendiente de revisión visual/observación natural,
+y Etapa 8 pendiente**.
 
 Fecha: `2026-08-25`.
 
@@ -672,6 +673,8 @@ Resultado técnico del `2026-08-26`:
 
 ### Etapa 6 - Pago confirmado
 
+Estado: **implementada técnicamente el 2026-08-26; pendiente de observación natural**.
+
 Objetivo: hacer editable el texto posterior a los PDF.
 
 - plantilla única de postpago;
@@ -683,7 +686,41 @@ Objetivo: hacer editable el texto posterior a los PDF.
 Cierre: siguiente postpago natural con PDF y texto confirmados, o incertidumbre
 correctamente separada por componente.
 
+Resultado técnico del `2026-08-26`:
+
+- `post_payment_confirmation` se renderiza desde su revisión vigente al preparar
+  el siguiente paquete postpago. El contexto incluye persona solicitante,
+  fecha, hora, sede, monto pagado y el usuario comercial de TikTok;
+- PostgreSQL `v64` añadió `message_text`, `template_key` y
+  `template_revision` a `whatsapp_followup_messages`. Los `145` paquetes
+  históricos conservaron sus cuatro pasos y quedaron con los campos nuevos en
+  `NULL`; al consultarlos siguen derivando el texto compacto anterior;
+- los paquetes nuevos congelan el texto final y la revisión durante la
+  preparación. Una validación transaccional modificó temporalmente la plantilla
+  vigente y confirmó que el paquete `prepared` no cambió; la transacción se
+  revirtió sin dejar filas;
+- el default en revisión `1` produjo exactamente el mismo texto compacto
+  anterior para una cita de control y un monto pagado de `70.00`;
+- el flujo conserva los cuatro bloques internos, sus títulos y orden. Los `145`
+  históricos tienen exactamente cuatro pasos y al menos un paso con PDFs;
+- la automatización de navegador no cambió: primero procesa los PDFs y después
+  el texto. Si uno de los componentes queda ambiguo, registra por separado
+  `documents` y `payment_confirmation`, termina sin reintento automático y no
+  repite los documentos;
+- Admin API reinició aisladamente con cero trabajos WhatsApp `running`, cero
+  corridas activas y el worker detenido. Regresó saludable y la API activa
+  expone seis consumidores conectados y solo pre-cita pendiente de unificación;
+- `compileall`, Ruff, `59` pruebas, `git diff --check` y el build Angular
+  terminaron correctamente. Persiste la advertencia no bloqueante de `10.71 kB`
+  sobre el presupuesto inicial del dashboard;
+- no se registró un pago, no se preparó un paquete persistente, no se copiaron
+  PDFs y no se envió WhatsApp. El cierre queda pendiente del siguiente postpago
+  natural y de confirmar los PDFs, el texto, el monto, la revisión y el estado
+  por componente.
+
 ### Etapa 7 - Unificación del recordatorio existente
+
+Estado: **implementada técnicamente el 2026-08-26; pendiente de revisión visual y observación natural**.
 
 Objetivo: mostrar todas las plantillas en una experiencia coherente sin romper
 el control `disabled/dry_run/canary/live` de recordatorios.
@@ -694,6 +731,43 @@ el control `disabled/dry_run/canary/live` de recordatorios.
 - conservar modos, canarios y scheduler fuera del registro de plantillas.
 
 Cierre: editor unificado y comportamiento pre-cita idéntico al vigente.
+
+Resultado técnico del `2026-08-26`:
+
+- `appointment_reminder` es ahora la fuente de texto para la conciliación y la
+  revalidación inmediatamente anterior al envío; utiliza el renderizador y las
+  validaciones comunes, con `{fecha}` todavía obligatoria;
+- PostgreSQL `v65` adaptó el historial sin borrar la fuente anterior: la
+  plantilla común adoptó la revisión vigente `6` y conserva versiones `1-6`,
+  mientras `appointment_reminder_template_versions` mantiene intactas sus seis
+  revisiones legadas;
+- el control operativo permanece separado. `disabled`, `dry_run`, `canary`,
+  `live`, IDs canarios, horarios, límites, barrera del resumen diario y scheduler
+  siguen fuera del registro de plantillas;
+- **Seguimiento** ya no ofrece un segundo editor de texto: administra únicamente
+  activación y canarios, y enlaza directamente a **Mensajes** con
+  `appointment_reminder` seleccionado. Guardar el modo no crea versiones de
+  texto;
+- la vista previa común usa `6 de septiembre de 2026`, el mismo formato de fecha
+  larga que genera el backend para un recordatorio real;
+- cada job nuevo guarda `template_key=appointment_reminder` y la revisión
+  utilizada. La revalidación previa al envío vuelve a leer la plantilla vigente
+  y actualiza texto y trazabilidad, conservando el contrato especial
+  `next_reconciliation`;
+- una validación transaccional confirmó texto idéntico, nombre de la persona que
+  asistirá —no del contacto—, revisión `6`, separación de controles y cero jobs
+  persistentes. El modo productivo siguió `live`, revisión de control `6`, sin
+  canarios;
+- Admin API reinició aisladamente con cero trabajos WhatsApp, corridas o
+  recordatorios activos y el worker detenido. Regresó saludable; la API activa
+  expone las siete plantillas conectadas y pre-cita en revisión `6`;
+- `compileall`, Ruff, `59` pruebas y el build Angular terminaron correctamente.
+  El bundle bajó `0.13 kB` y conserva una advertencia no bloqueante de `10.58 kB`
+  sobre el presupuesto inicial;
+- no se modificó un modo, no se seleccionó un canario, no se encoló un
+  recordatorio y no se envió WhatsApp. No fue posible completar la revisión
+  visual porque esta sesión no tiene un navegador conectado; también falta
+  observar el próximo recordatorio natural y confirmar su revisión persistida.
 
 ### Etapa 8 - Operación y limpieza
 

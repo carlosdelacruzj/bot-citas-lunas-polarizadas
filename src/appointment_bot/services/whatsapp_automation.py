@@ -43,7 +43,10 @@ from appointment_bot.db.whatsapp_messages import (
     mark_whatsapp_message_sent,
     prepare_order_whatsapp_message,
 )
-from appointment_bot.services.appointment_reminders import appointment_reminder_message
+from appointment_bot.services.appointment_reminders import (
+    appointment_reminder_message,
+    get_current_appointment_reminder_template,
+)
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -394,6 +397,7 @@ class WhatsAppAutomationDispatcher:
         order_id = job["order_id"] or ""
         if not control.allows(order_id):
             return None, "El control vigente ya no autoriza este recordatorio."
+        template = get_current_appointment_reminder_template(self.settings)
         try:
             refreshed = refresh_running_appointment_reminder_snapshot(
                 job["job_key"],
@@ -402,8 +406,10 @@ class WhatsAppAutomationDispatcher:
                 recipient_username=candidate["recipient_username"],
                 message_text=appointment_reminder_message(
                     candidate,
-                    control.message_template,
+                    template.message_template,
                 ),
+                template_key=template.template_key,
+                template_revision=template.revision,
                 settings=self.settings,
             )
         except ValueError as exc:

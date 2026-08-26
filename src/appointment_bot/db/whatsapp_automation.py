@@ -149,9 +149,13 @@ def enqueue_appointment_reminder_job(
     recipient_phone: str | None,
     recipient_username: str | None,
     message_text: str,
+    template_key: str,
+    template_revision: int,
     settings: Settings | None = None,
     _connection_override=None,
 ) -> bool:
+    if not template_key.strip() or template_revision < 1:
+        raise ValueError("Appointment reminder template trace is invalid.")
     effective_settings = _settings(settings)
     init_database(effective_settings)
     now = datetime.now(UTC)
@@ -165,12 +169,13 @@ def enqueue_appointment_reminder_job(
             INSERT INTO whatsapp_automation_jobs (
                 job_key, order_id, reservation_id, job_kind, report_date,
                 appointment_day, recipient_phone, recipient_username, message_text,
-                status, attempt_count, priority, next_attempt_at, created_at, updated_at
+                template_key, template_revision, status, attempt_count, priority,
+                next_attempt_at, created_at, updated_at
             )
             VALUES (
                 %s, %s, %s, 'appointment_reminder', %s,
                 %s, %s, %s, %s,
-                'blocked', 0, 100, %s, %s, %s
+                %s, %s, 'blocked', 0, 100, %s, %s, %s
             )
             ON CONFLICT(job_key) DO NOTHING
             RETURNING job_key
@@ -184,6 +189,8 @@ def enqueue_appointment_reminder_job(
                 phone,
                 username,
                 message_text,
+                template_key.strip(),
+                template_revision,
                 now,
                 now,
                 now,
@@ -539,8 +546,12 @@ def refresh_running_appointment_reminder_snapshot(
     recipient_phone: str | None,
     recipient_username: str | None,
     message_text: str,
+    template_key: str,
+    template_revision: int,
     settings: Settings,
 ) -> WhatsAppAutomationJob | None:
+    if not template_key.strip() or template_revision < 1:
+        raise ValueError("Appointment reminder template trace is invalid.")
     init_database(settings)
     phone, username = resolve_whatsapp_recipient(recipient_phone, recipient_username)
     if phone is not None:
@@ -553,6 +564,8 @@ def refresh_running_appointment_reminder_snapshot(
             SET recipient_phone = %s,
                 recipient_username = %s,
                 message_text = %s,
+                template_key = %s,
+                template_revision = %s,
                 updated_at = %s
             WHERE job_key = %s
               AND job_kind = 'appointment_reminder'
@@ -564,7 +577,16 @@ def refresh_running_appointment_reminder_snapshot(
                       registration_notice_type, preflight_cycle,
                       template_key, template_revision
             """,
-            (phone, username, message_text, now, job_key, owner_token),
+            (
+                phone,
+                username,
+                message_text,
+                template_key.strip(),
+                template_revision,
+                now,
+                job_key,
+                owner_token,
+            ),
         ).fetchone()
     return _job_from_row(row) if row is not None else None
 

@@ -445,8 +445,22 @@ la superficie principal.
    históricos permanecieron intactos; número, titular e imagen de pago siguen
    en configuración separada y el envío conserva dos imágenes dentro de un solo
    álbum. No se creó una reserva ni se envió WhatsApp. Falta observar
-   naturalmente las tres variantes de registro y la próxima reserva/cobro; las
-   Etapas 6-8 permanecen pendientes.
+   naturalmente las tres variantes de registro y la próxima reserva/cobro. La
+   Etapa 6 quedó implementada técnicamente el `2026-08-26`:
+   `post_payment_confirmation` controla el texto compacto posterior a los PDFs
+   y PostgreSQL `v64` congela texto, clave y revisión en cada paquete nuevo. Los
+   `145` paquetes históricos conservaron sus cuatro pasos y siguen legibles; la
+   secuencia de PDFs y texto, la confirmación por componentes y la prohibición
+   de reintentar ambigüedades no cambiaron. No se registró un pago, no se copió
+   ningún PDF y no se envió WhatsApp. Falta observar también el próximo
+   postpago natural. La Etapa 7 quedó implementada técnicamente el `2026-08-26`:
+   el recordatorio consume la plantilla común tanto al conciliar como antes de
+   enviar, y PostgreSQL `v65` conserva revisión vigente `6`, versiones genéricas
+   `1-6` y las seis versiones legadas. Modos, canarios, scheduler y barrera del
+   resumen siguen separados; **Seguimiento** controla activación y **Mensajes**
+   edita el texto. No se cambió el modo `live`, no se encoló ni envió un
+   recordatorio. Falta la revisión visual por ausencia de navegador conectado y
+   observar el próximo caso natural; la Etapa 8 permanece pendiente.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

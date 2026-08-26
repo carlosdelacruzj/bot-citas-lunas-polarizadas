@@ -7,6 +7,10 @@ from uuid import uuid4
 
 from appointment_bot.config import Settings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
+from appointment_bot.core.whatsapp_message_templates import (
+    render_whatsapp_template,
+    whatsapp_template_definition,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -15,10 +19,13 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
+from appointment_bot.db.whatsapp_message_templates import get_whatsapp_message_template
 from appointment_bot.db.whatsapp_messages import _international_phone
 from appointment_bot.utils.file_deduplication import copy_deduplicated_file
 
 MESSAGE_KIND = "post_payment_followup"
+POST_PAYMENT_TEMPLATE_KEY = "post_payment_confirmation"
+DEFAULT_TIKTOK_USERNAME = "@citaspolarizadasperu"
 OUTGOING_ROOT = Path("screenshots/whatsapp-followup-outgoing")
 FOLLOWUP_CONFIG_PATH = Path(".runtime/whatsapp-followup/followup-details.json")
 
@@ -30,6 +37,14 @@ def prepare_test_post_payment_whatsapp_message(
 ) -> dict[str, object]:
     phone = _international_phone(recipient_phone)
     message_id = f"followup-test-{uuid4().hex}"
+    message_text, template_revision = _render_post_payment_template(
+        applicant_name="CLIENTE DE PRUEBA",
+        site="LIMA-LA VICTORIA",
+        appointment_date="15/08/2026",
+        appointment_hour="10:00",
+        amount_paid="50.00",
+        settings=settings,
+    )
     steps = _build_followup_steps(
         message_id=message_id,
         applicant_name="CLIENTE DE PRUEBA",
@@ -43,6 +58,9 @@ def prepare_test_post_payment_whatsapp_message(
         recipient_phone=phone,
         recipient_username=None,
         steps=steps,
+        message_text=message_text,
+        template_key=POST_PAYMENT_TEMPLATE_KEY,
+        template_revision=template_revision,
         test_mode=True,
         settings=settings,
     )
@@ -131,6 +149,14 @@ def prepare_post_payment_whatsapp_message(
         phone = _international_phone(phone)
     message_id = f"followup-{uuid4().hex}"
     applicant_name = str(row["applicant_name"] or "").strip()
+    message_text, template_revision = _render_post_payment_template(
+        applicant_name=applicant_name,
+        site=str(row["site"] or "").strip(),
+        appointment_date=row["appointment_date"],
+        appointment_hour=row["appointment_hour"],
+        amount_paid=f"{row['amount_paid']:.2f}",
+        settings=effective_settings,
+    )
     steps = _build_followup_steps(
         message_id=message_id,
         applicant_name=applicant_name,
@@ -144,6 +170,9 @@ def prepare_post_payment_whatsapp_message(
         recipient_phone=phone,
         recipient_username=recipient_username,
         steps=steps,
+        message_text=message_text,
+        template_key=POST_PAYMENT_TEMPLATE_KEY,
+        template_revision=template_revision,
         test_mode=False,
         settings=effective_settings,
     )
@@ -190,7 +219,8 @@ def get_followup_message(
         row = connection.execute(
             """
             SELECT message_id, order_id, recipient_phone, recipient_username,
-                   steps, status, test_mode, prepared_at, sent_at
+                   steps, message_text, template_key, template_revision,
+                   status, test_mode, prepared_at, sent_at
             FROM whatsapp_followup_messages
             WHERE message_id = %s
             """,
@@ -217,6 +247,9 @@ def get_followup_message(
         str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
     )
     recipient_username = row["recipient_username"]
+    message_text = str(row["message_text"] or "").strip() or _combined_followup_text(
+        steps
+    )
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -227,7 +260,9 @@ def get_followup_message(
         "recipient_username": recipient_username,
         "recipient_label": recipient_phone or recipient_username,
         "steps": enriched_steps,
-        "combined_text": _combined_followup_text(steps),
+        "combined_text": message_text,
+        "template_key": row["template_key"],
+        "template_revision": row["template_revision"],
         "prepared_at": str(row["prepared_at"]),
         "sent_at": str(row["sent_at"]) if row["sent_at"] is not None else None,
     }
@@ -273,7 +308,8 @@ def get_followup_web_draft(
         row = connection.execute(
             """
             SELECT message_id, order_id, recipient_phone, recipient_username,
-                   steps, status, test_mode
+                   steps, message_text, template_key, template_revision,
+                   status, test_mode
             FROM whatsapp_followup_messages
             WHERE message_id = %s
             """,
@@ -291,6 +327,9 @@ def get_followup_web_draft(
     ]
     if not attachment_paths:
         raise ValueError("El seguimiento post-pago no tiene PDFs adjuntos.")
+    message_text = str(row["message_text"] or "").strip() or _combined_followup_text(
+        steps
+    )
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -299,9 +338,11 @@ def get_followup_web_draft(
         ),
         "recipient_username": row["recipient_username"],
         "attachment_paths": attachment_paths,
-        "caption": _combined_followup_text(steps),
+        "caption": message_text,
         "draft_kind": "post_payment_followup",
         "test_mode": bool(row["test_mode"]),
+        "template_key": row["template_key"],
+        "template_revision": row["template_revision"],
     }
 
 
@@ -316,6 +357,36 @@ def prepare_followup_attachment_path(
         f"/api/v1/whatsapp-followup-messages/{message_id}/attachments/"
         f"{step_index}/{attachment_index}"
     )
+
+
+def _render_post_payment_template(
+    *,
+    applicant_name: str,
+    site: str,
+    appointment_date: object,
+    appointment_hour: object,
+    amount_paid: str,
+    settings: Settings | None,
+) -> tuple[str, int]:
+    template = get_whatsapp_message_template(POST_PAYMENT_TEMPLATE_KEY, settings)
+    definition = whatsapp_template_definition(POST_PAYMENT_TEMPLATE_KEY)
+    if template is None or definition is None:
+        raise RuntimeError("La plantilla de confirmacion post-pago no esta disponible.")
+    if not template.enabled:
+        raise ValueError("La plantilla de confirmacion post-pago esta deshabilitada.")
+    message_text = render_whatsapp_template(
+        definition,
+        template.message_template,
+        {
+            "nombre": applicant_name,
+            "fecha": str(appointment_date or "").strip(),
+            "hora": str(appointment_hour or "").strip(),
+            "sede": site,
+            "monto_pagado": amount_paid,
+            "usuario_tiktok": DEFAULT_TIKTOK_USERNAME,
+        },
+    )
+    return message_text, template.revision
 
 
 def _build_followup_steps(
@@ -453,6 +524,9 @@ def _insert_followup_message(
     recipient_phone: str | None,
     recipient_username: str | None,
     steps: list[dict[str, object]],
+    message_text: str,
+    template_key: str,
+    template_revision: int,
     test_mode: bool,
     settings: Settings | None,
 ) -> dict[str, object]:
@@ -464,10 +538,14 @@ def _insert_followup_message(
             """
             INSERT INTO whatsapp_followup_messages (
                 message_id, order_id, recipient_phone, recipient_username,
-                steps, status, test_mode,
+                steps, message_text, template_key, template_revision,
+                status, test_mode,
                 prepared_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, 'prepared', %s, %s, %s, %s)
+            VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s,
+                'prepared', %s, %s, %s, %s
+            )
             """,
             (
                 message_id,
@@ -475,6 +553,9 @@ def _insert_followup_message(
                 recipient_phone,
                 recipient_username,
                 json.dumps(steps, ensure_ascii=False),
+                message_text,
+                template_key,
+                template_revision,
                 test_mode,
                 now,
                 now,
@@ -506,7 +587,9 @@ def _insert_followup_message(
         "recipient_username": recipient_username,
         "recipient_label": recipient_phone or recipient_username,
         "steps": enriched_steps,
-        "combined_text": _combined_followup_text(steps),
+        "combined_text": message_text,
+        "template_key": template_key,
+        "template_revision": template_revision,
         "prepared_at": now,
         "sent_at": None,
     }
@@ -554,6 +637,7 @@ def _step_attachments(step: dict[str, object]) -> list[str]:
 
 
 __all__ = [
+    "POST_PAYMENT_TEMPLATE_KEY",
     "get_followup_attachment",
     "get_followup_message",
     "get_followup_web_draft",

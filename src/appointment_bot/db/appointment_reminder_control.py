@@ -54,7 +54,6 @@ def get_appointment_reminder_control(
 def update_appointment_reminder_control(
     *,
     mode: str,
-    message_template: str,
     canary_order_ids: list[str],
     expected_revision: int,
     updated_by: str,
@@ -84,22 +83,14 @@ def update_appointment_reminder_control(
         row = connection.execute(
             """
             UPDATE appointment_reminder_control
-            SET mode = %s, message_template = %s, canary_order_ids = %s,
+            SET mode = %s, canary_order_ids = %s,
                 revision = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
             WHERE id = 1
             RETURNING mode, message_template, canary_order_ids, revision,
                       updated_at, updated_by
             """,
-            (normalized_mode, message_template, Jsonb(normalized_ids), next_revision, actor),
+            (normalized_mode, Jsonb(normalized_ids), next_revision, actor),
         ).fetchone()
-        connection.execute(
-            """
-            INSERT INTO appointment_reminder_template_versions (
-                revision, message_template, created_at, created_by
-            ) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)
-            """,
-            (next_revision, message_template, actor),
-        )
     record_remote_control_audit(
         actor=actor,
         action="update_appointment_reminder_control",

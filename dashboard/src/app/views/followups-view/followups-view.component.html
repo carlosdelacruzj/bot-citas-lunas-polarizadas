@@ -91,23 +91,11 @@
 
       <section class="panel reminder-editor-shell" aria-label="Configuración del recordatorio">
         <header class="reminder-editor-heading">
-          <div><p class="eyebrow">Salida de WhatsApp</p><h3>Mensaje y activación</h3><p>Redacta, comprueba la vista previa y elige cómo se habilitará.</p></div>
-          <button type="button" class="secondary" (click)="openReminderEditor()">{{ reminderEditorOpen() ? 'Cerrar configuración' : 'Configurar recordatorio' }}</button>
+          <div><p class="eyebrow">Control operativo</p><h3>Activación pre-cita</h3><p>El texto se administra junto con los demás mensajes de WhatsApp.</p></div>
+          <div class="reminder-editor-actions"><button type="button" class="secondary" (click)="openReminderMessageEditor()">Editar texto en Mensajes</button><button type="button" class="secondary" (click)="openReminderEditor()">{{ reminderEditorOpen() ? 'Cerrar activación' : 'Configurar activación' }}</button></div>
         </header>
         @if (reminderEditorOpen()) {
-          <ol class="reminder-step-rail" aria-label="Proceso de configuración"><li class="active"><span>1</span>Redactar</li><li><span>2</span>Probar</li><li><span>3</span>Activar</li></ol>
-          <div class="reminder-editor-grid">
-            <div class="reminder-compose">
-              <label for="reminder-template">Plantilla del mensaje</label>
-              <textarea id="reminder-template" rows="8" maxlength="1000" [ngModel]="reminderTemplate()" (ngModelChange)="reminderTemplate.set($event); reminderActivationReview.set(false)"></textarea>
-              <div class="reminder-variable-row" aria-label="Variables disponibles">
-                @for (variable of reminders.allowed_variables; track variable) { <button type="button" (click)="insertReminderVariable(variable)">{{ '{' + variable + '}' }}</button> }
-              </div>
-              <small class="reminder-variable-note">{{ '{nombre}' }} siempre corresponde a la persona que asistirá a la cita, no al contacto de WhatsApp.</small>
-              <div class="reminder-compose-footer"><small>{{ reminderTemplate().length }}/1000 · {{ '{fecha}' }} es obligatoria</small><button type="button" class="text-button" (click)="restoreDefaultReminderTemplate()">Restaurar texto recomendado</button></div>
-            </div>
-            <aside class="reminder-preview" aria-label="Vista previa del mensaje"><div><span>Vista previa</span><small>Con la primera cita elegible</small></div><p>{{ reminderPreview() }}</p><small>“Por confirmar” evita dejar variables vacías.</small></aside>
-          </div>
+          <p class="reminder-variable-note">La plantilla vigente está en la revisión {{ reminders.control.template_revision }} y se aplica desde la próxima conciliación. Aquí solo se controlan el modo y los canarios.</p>
           <fieldset class="reminder-modes">
             <legend>Modo de operación</legend>
             <label [class.selected]="reminderMode() === 'disabled'"><input type="radio" name="reminderMode" value="disabled" [ngModel]="reminderMode()" (ngModelChange)="chooseReminderMode($event)" /><strong>Desactivado</strong><span>No crea ni envía recordatorios.</span></label>

@@ -15,7 +15,6 @@ from appointment_bot.db.appointment_reminders import list_appointment_reminder_c
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.appointment_reminders import (
     appointment_reminder_status_payload,
-    validate_reminder_template,
 )
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -41,10 +40,9 @@ def update_appointment_reminders_payload(
 ) -> tuple[HTTPStatus, dict[str, object]]:
     settings = load_settings(require_login=False)
     mode = str(body.get("mode") or "").strip().lower()
-    message_template = str(body.get("message_template") or "").strip()
     raw_ids = body.get("canary_order_ids")
     expected_revision = body.get("expected_revision")
-    errors = validate_reminder_template(message_template)
+    errors: dict[str, str] = {}
     if mode not in REMINDER_MODES:
         errors["mode"] = "Usa disabled, dry_run, canary o live."
     if not isinstance(expected_revision, int) or isinstance(expected_revision, bool):
@@ -72,7 +70,6 @@ def update_appointment_reminders_payload(
     try:
         update_appointment_reminder_control(
             mode=mode,
-            message_template=message_template,
             canary_order_ids=canary_order_ids,
             expected_revision=int(expected_revision),
             updated_by=requested_by or "dashboard-owner",

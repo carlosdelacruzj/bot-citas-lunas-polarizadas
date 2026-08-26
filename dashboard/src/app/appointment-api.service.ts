@@ -37,6 +37,7 @@ export interface AppointmentReminderStatus {
     default_template: string;
     canary_order_ids: string[];
     revision: number;
+    template_revision: number;
     updated_at: string;
     updated_by: string;
     applies_from: 'next_reconciliation';
@@ -1087,7 +1088,6 @@ export class AppointmentApiService {
 
   async updateAppointmentReminders(payload: {
     mode: AppointmentReminderStatus['control']['mode'];
-    message_template: string;
     canary_order_ids: string[];
     expected_revision: number;
   }): Promise<AppointmentReminderStatus> {

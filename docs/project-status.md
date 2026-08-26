@@ -20,7 +20,7 @@ Estado verificado el `2026-08-11`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Operativo                | `127.0.0.1:8765/health` responde `ok`, con `worker_running=true`; el reinicio controlado ya no hereda una pausa y sus controles dejan auditoría durable. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v63` agrega trazabilidad independiente de las plantillas de confirmación y cobro en cada paquete de reserva, preservando mensajes históricos, recordatorios, autoridad CAPTCHA y colas existentes. |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v65` unifica la plantilla pre-cita y adapta sus seis revisiones sin perder el historial legado, preservando modos, canarios y colas existentes. |
 | Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
 | CAPTCHA local         | Rollback a 2Captcha      | 2Captcha volvió a ser la autoridad persistente desde el siguiente CAPTCHA; V6 queda fuera de admisión con sus contadores y evidencia preservados. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
@@ -1021,6 +1021,43 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   pruebas, `git diff --check` y el build Angular, con la advertencia conocida de
   `10.71 kB`. No se creó una reserva, paquete persistente ni envío; falta validar
   el siguiente caso natural con ambas imágenes, monto, caption y revisiones.
+- Implementado técnicamente el `2026-08-26`: la Etapa 6 conectó
+  `post_payment_confirmation` al texto compacto enviado después de los PDFs.
+  PostgreSQL `v64` conserva `message_text`, clave y revisión en
+  `whatsapp_followup_messages`; los `145` paquetes históricos mantuvieron sus
+  cuatro pasos y quedaron con los nuevos campos en `NULL`, usando el derivador
+  anterior al consultarse. La plantilla recibe nombre de la persona solicitante,
+  fecha, hora, sede, monto pagado y usuario comercial de TikTok. El default en
+  revisión `1` coincidió con el texto compacto anterior y una transacción
+  revertida confirmó que un cambio posterior no modifica un paquete `prepared`.
+  No cambió la secuencia: PDFs primero y texto después, con confirmación separada
+  de `documents` y `payment_confirmation`; una ambigüedad permanece terminal,
+  sin reintento automático ni repetición de documentos. Admin API reinició con
+  cero trabajos WhatsApp `running`, cero corridas activas y el worker detenido,
+  volvió saludable y expone seis consumidores conectados. Pasaron `compileall`,
+  Ruff, `59` pruebas, `git diff --check` y el build Angular con la advertencia
+  conocida de `10.71 kB`. No se registró un pago, no se copiaron PDFs, no quedó
+  un paquete nuevo y no se envió WhatsApp; falta validar el siguiente postpago
+  natural por componente.
+- Implementado técnicamente el `2026-08-26`: la Etapa 7 convirtió
+  `appointment_reminder` en la fuente común para conciliación y revalidación
+  pre-envío. PostgreSQL `v65` elevó la plantilla común de revisión `1` a la
+  revisión vigente `6`, copió las versiones no conflictivas y preservó intactas
+  las seis revisiones de `appointment_reminder_template_versions`. El modo
+  continúa `live`, la revisión del control continúa `6` y no hay canarios. Los
+  modos, IDs canarios, scheduler, horarios, límites y barrera del resumen diario
+  siguen separados del texto. **Seguimiento** administra solo la activación y
+  enlaza a **Mensajes** para editar pre-cita; guardar el modo ya no crea una
+  versión textual. Cada job nuevo conserva clave/revisión y la revalidación
+  vuelve a tomar la plantilla vigente, usando siempre el nombre de quien
+  asistirá. Una prueba transaccional confirmó revisión `6` y revirtió el único
+  job de control. Admin API reinició con cero trabajos WhatsApp, corridas o
+  recordatorios activos y el worker detenido; volvió saludable exponiendo las
+  siete plantillas conectadas. Pasaron `compileall`, Ruff, `59` pruebas y build
+  Angular; queda la advertencia conocida, ahora de `10.58 kB`. No se cambió el
+  modo, no se encoló ni envió un recordatorio. La revisión visual quedó pendiente
+  porque no hubo un navegador conectado, igual que la observación del próximo
+  recordatorio natural.
 
 ### Destinatarios de WhatsApp por usuario
 

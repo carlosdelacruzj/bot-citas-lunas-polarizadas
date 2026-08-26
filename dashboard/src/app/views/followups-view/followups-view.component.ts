@@ -31,7 +31,6 @@ export class FollowupsViewComponent {
   protected readonly reminderStatusLoading = signal(this.reminderStatus() === null);
   protected readonly reminderStatusError = signal(false);
   protected readonly reminderEditorOpen = signal(false);
-  protected readonly reminderTemplate = signal('');
   protected readonly reminderMode = signal<'disabled' | 'dry_run' | 'canary' | 'live'>(
     'disabled',
   );
@@ -111,18 +110,6 @@ export class FollowupsViewComponent {
       return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
     });
   });
-  protected readonly reminderPreviewCandidate = computed(
-    () => this.reminderStatus()?.candidates[0] ?? null,
-  );
-  protected readonly reminderPreview = computed(() => {
-    const candidate = this.reminderPreviewCandidate();
-    if (!candidate) return 'No hay una cita elegible para generar la vista previa.';
-    return this.reminderTemplate()
-      .replaceAll('{nombre}', candidate.applicant_name || 'cliente')
-      .replaceAll('{fecha}', candidate.appointment_date_label)
-      .replaceAll('{hora}', candidate.appointment_hour || 'por confirmar')
-      .replaceAll('{sede}', candidate.site || 'por confirmar');
-  });
 
   constructor() {
     this.dashboard.setPostAppointmentFilter(
@@ -180,15 +167,10 @@ export class FollowupsViewComponent {
     this.reminderActivationReview.set(false);
   }
 
-  protected insertReminderVariable(variable: string): void {
-    this.reminderTemplate.update((value) => `${value}${value.endsWith(' ') ? '' : ' '}{${variable}}`);
-    this.reminderActivationReview.set(false);
-  }
-
-  protected restoreDefaultReminderTemplate(): void {
-    const value = this.reminderStatus()?.control.default_template;
-    if (value) this.reminderTemplate.set(value);
-    this.reminderActivationReview.set(false);
+  protected openReminderMessageEditor(): void {
+    void this.router.navigate(['/mensajes'], {
+      queryParams: { template: 'appointment_reminder' },
+    });
   }
 
   protected chooseReminderMode(mode: 'disabled' | 'dry_run' | 'canary' | 'live'): void {
@@ -209,10 +191,6 @@ export class FollowupsViewComponent {
 
   protected requestReminderSave(): void {
     this.reminderSaveError.set(null);
-    if (!this.reminderTemplate().includes('{fecha}')) {
-      this.reminderSaveError.set('El mensaje debe incluir {fecha}.');
-      return;
-    }
     if (this.reminderMode() === 'canary' && this.reminderCanaryOrderIds().length === 0) {
       this.reminderSaveError.set('Selecciona 1 o 2 citas para el modo canario.');
       return;
@@ -237,14 +215,13 @@ export class FollowupsViewComponent {
     try {
       const updated = await this.api.updateAppointmentReminders({
         mode: this.reminderMode(),
-        message_template: this.reminderTemplate(),
         canary_order_ids:
           this.reminderMode() === 'canary' ? this.reminderCanaryOrderIds() : [],
         expected_revision: current.control.revision,
       });
       this.reminderStatus.set(updated);
       this.syncReminderEditor(updated);
-      this.reminderSaveSuccess.set('Configuración guardada. Se aplicará en la próxima revisión.');
+      this.reminderSaveSuccess.set('Activación guardada. Se aplicará en la próxima revisión.');
     } catch (error) {
       this.reminderSaveError.set(apiErrorMessage(error));
     } finally {
@@ -272,7 +249,6 @@ export class FollowupsViewComponent {
   }
 
   private syncReminderEditor(status: AppointmentReminderStatus): void {
-    this.reminderTemplate.set(status.control.message_template);
     this.reminderMode.set(status.control.mode);
     this.reminderCanaryOrderIds.set(status.control.canary_order_ids);
   }
