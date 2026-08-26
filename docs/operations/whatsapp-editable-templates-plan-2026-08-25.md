@@ -1,6 +1,7 @@
 # Plan de plantillas editables de WhatsApp
 
-Estado: **en ejecución; Etapas 0-1 completadas, Etapas 2-8 pendientes**.
+Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
+de revisión visual, Etapas 3-8 pendientes**.
 
 Fecha: `2026-08-25`.
 
@@ -511,6 +512,8 @@ Cierre: API y migración validadas; cero cambios en mensajes emitidos.
 
 ### Etapa 2 - Editor de dashboard
 
+Estado: **implementada técnicamente el 2026-08-25; pendiente de revisión visual**.
+
 Objetivo: administrar y previsualizar sin conectar aún todos los disparadores.
 
 - sección y navegación;
@@ -520,6 +523,27 @@ Objetivo: administrar y previsualizar sin conectar aún todos los disparadores.
 - revisión visual en `360`, `768`, `1024` y `1440 px`.
 
 Cierre: guardado y relectura correctos; ninguna acción envía WhatsApp.
+
+Resultado técnico del `2026-08-25`:
+
+- se añadió la sección **Mensajes** en Administración, con catálogo de las siete
+  plantillas, editor, inserción de variables permitidas, restauración del texto
+  recomendado y vista previa con datos ficticios;
+- el guardado incluye una revisión explícita que aclara que no prepara, encola
+  ni envía WhatsApp, y maneja carga, error y conflicto de revisión `409`;
+- una escritura controlada de `registration_monitoring_started` reutilizó el
+  texto vigente, avanzó de revisión `2` a `3` y la relectura devolvió el mismo
+  contenido;
+- antes y después de esa escritura se conservaron exactamente `370` filas en
+  `whatsapp_automation_jobs`, `151` en `whatsapp_messages` y `145` en
+  `whatsapp_followup_messages`; los siete consumidores siguen desconectados;
+- PostgreSQL conserva `9` versiones: siete iniciales y una validación controlada
+  por cada una de las Etapas 1 y 2;
+- `npm run build` terminó correctamente. Queda una advertencia no bloqueante: el
+  paquete inicial supera por `10.71 kB` el presupuesto de `535 kB`;
+- no fue posible ejecutar la revisión visual en `360`, `768`, `1024` y `1440 px`
+  porque esta sesión no tiene un navegador integrado conectado. Por eso la
+  etapa no se considera completamente cerrada todavía.
 
 ### Etapa 3 - Piloto de registro exitoso
 

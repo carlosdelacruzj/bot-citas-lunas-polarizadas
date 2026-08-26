@@ -426,8 +426,13 @@ la superficie principal.
    defaults, variables, bloques opcionales y momentos de snapshot están
    congelados; PostgreSQL `v61` conserva siete plantillas con historial y la API
    permite inventario, preview y guardado con revisión optimista y auditoría.
-   Las Etapas 2-8 permanecen pendientes y ningún consumidor productivo utiliza
-   todavía el registro genérico.
+   La Etapa 2 quedó implementada técnicamente el `2026-08-25`: el dashboard ya
+   permite seleccionar, editar, restaurar, previsualizar y guardar las siete
+   plantillas, con confirmación y conflicto de revisión. El guardado y la
+   relectura controlados no alteraron ninguna cola de WhatsApp. Falta la revisión
+   visual en `360`, `768`, `1024` y `1440 px` para cerrarla; las Etapas 3-8 siguen
+   pendientes y ningún consumidor productivo utiliza todavía el registro
+   genérico.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

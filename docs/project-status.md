@@ -966,6 +966,17 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   revisión `6`. Registro, reserva, cobro, postpago y recordatorios siguen usando
   sus constructores actuales: conectar consumidores comienza recién en las
   Etapas 3-7 del plan y esta etapa no envía ni prepara mensajes.
+- Implementado técnicamente el `2026-08-25`: la Etapa 2 añadió **Mensajes** al
+  dashboard con catálogo de siete plantillas, editor, variables permitidas,
+  restauración recomendada, preview ficticio, confirmación de guardado y manejo
+  de conflictos `409`. Una escritura controlada conservó el texto, avanzó
+  `registration_monitoring_started` de revisión `2` a `3` y fue releída
+  correctamente; los conteos de trabajos, mensajes y postpagos permanecieron en
+  `370 / 151 / 145`, por lo que no preparó ni envió WhatsApp. Los siete
+  consumidores siguen desconectados. El build Angular pasa con una advertencia
+  de presupuesto inicial de `10.71 kB`; queda pendiente revisar visualmente la
+  vista en `360`, `768`, `1024` y `1440 px` porque no hubo navegador integrado
+  disponible en esta sesión.
 
 ### Destinatarios de WhatsApp por usuario
 

@@ -22,6 +22,10 @@ const loadFollowupsView = () =>
   import('./views/followups-view/followups-view.component').then(
     (module) => module.FollowupsViewComponent,
   );
+const loadMessageTemplatesView = () =>
+  import('./views/message-templates-view/message-templates-view.component').then(
+    (module) => module.MessageTemplatesViewComponent,
+  );
 
 export const routes: Routes = [
   { path: 'pendientes', title: 'Pendientes', loadComponent: loadInboxView },
@@ -33,6 +37,11 @@ export const routes: Routes = [
   { path: 'seguimiento', title: 'Seguimiento', loadComponent: loadFollowupsView },
   { path: 'post-cita', pathMatch: 'full', redirectTo: 'seguimiento' },
   { path: 'finanzas', title: 'Finanzas', loadComponent: loadFinanceView },
+  {
+    path: 'mensajes',
+    title: 'Mensajes de WhatsApp',
+    loadComponent: loadMessageTemplatesView,
+  },
   { path: 'captchas', title: 'Control de CAPTCHA', loadComponent: loadCaptchasView },
   { path: '', pathMatch: 'full', redirectTo: 'resumen' },
   { path: '**', redirectTo: 'resumen' },

@@ -2,6 +2,7 @@ export type RefreshableDashboardView =
   | 'inbox'
   | 'summary'
   | 'finance'
+  | 'messageTemplates'
   | 'orders'
   | 'followups'
   | 'runs'
@@ -16,6 +17,7 @@ const VIEW_INTERVALS_MS: Record<Exclude<RefreshableDashboardView, 'captchas'>, n
   followups: 60_000,
   summary: 60_000,
   finance: 120_000,
+  messageTemplates: 120_000,
 };
 
 const CAPTCHA_INTERVALS_MS: Record<CaptchaRefreshMode, number> = {

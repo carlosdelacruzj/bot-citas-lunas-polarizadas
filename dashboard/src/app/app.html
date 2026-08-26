@@ -95,6 +95,16 @@
           <span class="nav-icon text-icon" aria-hidden="true">S/</span>
           <span class="nav-label">Finanzas</span>
         </a>
+        <a
+          class="sidebar-link"
+          routerLink="/mensajes"
+          [class.active]="activeView() === 'messageTemplates'"
+          [attr.aria-current]="activeView() === 'messageTemplates' ? 'page' : null"
+          title="Mensajes de WhatsApp"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">WA</span>
+          <span class="nav-label">Mensajes</span>
+        </a>
       </section>
 
       @if (captchaShadowEnabled()) {

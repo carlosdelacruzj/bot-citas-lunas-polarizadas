@@ -64,6 +64,7 @@ import {
   WorkerCommand,
   WorkerStatus,
   WhatsAppFollowUpPackage,
+  WhatsAppMessageTemplate,
   WhatsAppMessagePackage,
   WhatsAppReviewPayload,
   WhatsAppReviewResolution,
@@ -97,6 +98,7 @@ type ViewKey =
   | 'inbox'
   | 'summary'
   | 'finance'
+  | 'messageTemplates'
   | 'orders'
   | 'followups'
   | 'runs'
@@ -324,6 +326,7 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   followups: { label: 'Seguimiento', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
+  messageTemplates: { label: 'Mensajes de WhatsApp', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
 };
 const INITIAL_ORDER_VIEW_STATE = readOrderViewState();
@@ -522,6 +525,7 @@ export class App implements OnDestroy {
   protected readonly selectedMonth = signal(INITIAL_MONTH);
   protected readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
   protected readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
+  protected readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
   protected readonly monthlyLoading = signal(false);
   protected readonly financeCategories = signal<FinanceCategory[]>([]);
   protected readonly financeEntries = signal<FinanceEntry[]>([]);
@@ -1158,6 +1162,9 @@ export class App implements OnDestroy {
     if (view === 'finance') {
       return this.financeSummary() !== null;
     }
+    if (view === 'messageTemplates') {
+      return this.whatsappMessageTemplates().length > 0 || state === 'ready';
+    }
     if (view === 'orders') {
       return this.orders().length > 0 || state === 'ready';
     }
@@ -1324,6 +1331,7 @@ export class App implements OnDestroy {
       'post-cita': 'followups',
       seguimiento: 'followups',
       finanzas: 'finance',
+      mensajes: 'messageTemplates',
       captchas: 'captchas',
     };
     const view = viewBySection[section] ?? 'summary';
@@ -1552,6 +1560,10 @@ export class App implements OnDestroy {
       this.financeQuality.set(financeQuality);
       this.applyFinanceMonthClosure(financeMonthClosure);
       this.monthlySummary.set(monthlySummary);
+      return;
+    }
+    if (view === 'messageTemplates') {
+      this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
       return;
     }
     if (view === 'orders') {

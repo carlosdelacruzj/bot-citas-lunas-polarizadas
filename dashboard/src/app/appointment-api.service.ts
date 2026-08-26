@@ -79,6 +79,44 @@ export interface AppointmentReminderStatus {
   }>;
 }
 
+export interface WhatsAppMessageTemplate {
+  status: 'ok';
+  template_key: string;
+  display_name: string;
+  message_template: string;
+  recommended_template: string;
+  allowed_variables: string[];
+  required_variables: string[];
+  optional_line_variables: string[];
+  revision: number;
+  enabled: boolean;
+  updated_at: string;
+  updated_by: string;
+  preview: string;
+  preview_context: Record<string, string>;
+  usage: string;
+  applies_from:
+    | 'next_prepared_job'
+    | 'next_prepared_message'
+    | 'next_prepared_followup'
+    | 'next_reconciliation';
+  consumer_connected: boolean;
+}
+
+export interface WhatsAppMessageTemplatesResponse {
+  status: 'ok';
+  templates: WhatsAppMessageTemplate[];
+}
+
+export interface WhatsAppMessageTemplatePreview {
+  status: 'ok';
+  template_key: string;
+  preview: string;
+  preview_context: Record<string, string>;
+  persists: false;
+  sends_message: false;
+}
+
 export interface WorkerStatus {
   phase?: string;
   paused?: boolean;
@@ -1056,6 +1094,40 @@ export class AppointmentApiService {
     return this.post<AppointmentReminderStatus>('/api/v1/appointment-reminders', payload);
   }
 
+  async getWhatsAppMessageTemplates(
+    scope?: RequestScope,
+  ): Promise<WhatsAppMessageTemplate[]> {
+    const response = await this.read<WhatsAppMessageTemplatesResponse>(
+      '/api/v1/whatsapp-message-templates',
+      scope,
+    );
+    return response.templates;
+  }
+
+  async previewWhatsAppMessageTemplate(
+    templateKey: string,
+    messageTemplate: string,
+  ): Promise<WhatsAppMessageTemplatePreview> {
+    return this.post<WhatsAppMessageTemplatePreview>(
+      `/api/v1/whatsapp-message-templates/${encodeURIComponent(templateKey)}/preview`,
+      { message_template: messageTemplate },
+    );
+  }
+
+  async updateWhatsAppMessageTemplate(
+    templateKey: string,
+    messageTemplate: string,
+    expectedRevision: number,
+  ): Promise<WhatsAppMessageTemplate> {
+    return this.put<WhatsAppMessageTemplate>(
+      `/api/v1/whatsapp-message-templates/${encodeURIComponent(templateKey)}`,
+      {
+        message_template: messageTemplate,
+        expected_revision: expectedRevision,
+      },
+    );
+  }
+
   async getOpportunityControl(scope?: RequestScope): Promise<OpportunityControl> {
     return this.read<OpportunityControl>('/api/v1/runtime-controls/opportunity', scope);
   }
@@ -1535,6 +1607,10 @@ export class AppointmentApiService {
     return firstValueFrom(this.http.post<T>(url, payload));
   }
 
+  private async put<T>(url: string, payload: unknown): Promise<T> {
+    return firstValueFrom(this.http.put<T>(url, payload));
+  }
+
   private async read<T>(url: string, scope?: RequestScope): Promise<T> {
     const request = this.http.get<T>(url);
     return scope ? scope.read(request) : firstValueFrom(request);
@@ -1557,6 +1633,8 @@ export function apiErrorMessage(error: unknown): string {
         contact_name: 'Persona de contacto',
         contact_source: 'Fuente',
         contact_whatsapp: 'WhatsApp',
+        message_template: 'Mensaje',
+        expected_revision: 'Revisión',
       };
       const details = Object.entries(fieldErrors)
         .map(([field, value]) => `${labels[field] ?? field}: ${String(value)}`)
