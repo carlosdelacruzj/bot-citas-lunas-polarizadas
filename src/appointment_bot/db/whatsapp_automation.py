@@ -651,19 +651,34 @@ def get_order_whatsapp_review(
     with _connection(_database_url(effective_settings)) as connection:
         row = connection.execute(
             """
-            SELECT job_key, order_id, job_kind, status, message_id, error_message,
-                   review_resolution, review_note, reviewed_at, reviewed_by,
-                   started_at, finished_at, updated_at
-            FROM whatsapp_automation_jobs
-            WHERE order_id = %s AND job_kind = %s
-            ORDER BY created_at DESC
+            SELECT jobs.job_key, jobs.order_id, jobs.job_kind, jobs.status,
+                   jobs.message_id, jobs.error_message, jobs.review_resolution,
+                   jobs.review_note, jobs.reviewed_at, jobs.reviewed_by,
+                   jobs.started_at, jobs.finished_at, jobs.updated_at,
+                   jobs.template_key AS job_template_key,
+                   jobs.template_revision AS job_template_revision,
+                   messages.confirmation_template_key,
+                   messages.confirmation_template_revision,
+                   messages.payment_template_key,
+                   messages.payment_template_revision,
+                   followups.template_key AS followup_template_key,
+                   followups.template_revision AS followup_template_revision
+            FROM whatsapp_automation_jobs AS jobs
+            LEFT JOIN whatsapp_messages AS messages
+              ON jobs.job_kind = 'reservation_album'
+             AND messages.message_id = jobs.message_id
+            LEFT JOIN whatsapp_followup_messages AS followups
+              ON jobs.job_kind = 'post_payment_followup'
+             AND followups.message_id = jobs.message_id
+            WHERE jobs.order_id = %s AND jobs.job_kind = %s
+            ORDER BY jobs.created_at DESC
             LIMIT 1
             """,
             (order_id, job_kind),
         ).fetchone()
     if row is None:
         raise ValueError(f"WhatsApp automation job not found: {order_id}")
-    return {
+    payload = {
         key: (str(row[key]) if row[key] is not None else None)
         for key in (
             "job_key",
@@ -681,6 +696,25 @@ def get_order_whatsapp_review(
             "updated_at",
         )
     }
+    template_trace: list[dict[str, object]] = []
+    for key_column, revision_column in (
+        ("job_template_key", "job_template_revision"),
+        ("confirmation_template_key", "confirmation_template_revision"),
+        ("payment_template_key", "payment_template_revision"),
+        ("followup_template_key", "followup_template_revision"),
+    ):
+        template_key = row[key_column]
+        template_revision = row[revision_column]
+        if template_key is None or template_revision is None:
+            continue
+        trace = {
+            "template_key": str(template_key),
+            "template_revision": int(template_revision),
+        }
+        if trace not in template_trace:
+            template_trace.append(trace)
+    payload["template_trace"] = template_trace
+    return payload
 
 
 def resolve_whatsapp_automation_review(

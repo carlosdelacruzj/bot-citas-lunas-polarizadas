@@ -91,6 +91,16 @@
           <small>
             Trabajo {{ review.job.job_key }} · {{ view.formatDateTime(review.job.finished_at) }}
           </small>
+          @if (review.job.template_trace.length) {
+            <small>
+              Plantillas:
+              @for (trace of review.job.template_trace; track trace.template_key) {
+                <span>{{ trace.template_key }} (rev. {{ trace.template_revision }})</span>
+              }
+            </small>
+          } @else {
+            <small>Plantilla: paquete histórico sin trazabilidad de revisión.</small>
+          }
         </section>
       }
 
@@ -107,6 +117,13 @@
               view.statusLabel(message.status)
             }}</strong>
             <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+          </div>
+          <div>
+            <span>Plantilla</span>
+            <strong>{{ message.template_key ?? 'Histórica' }}</strong>
+            <small>
+              {{ message.template_revision ? 'Revisión ' + message.template_revision : 'Sin revisión registrada' }}
+            </small>
           </div>
         </section>
 
@@ -294,6 +311,17 @@
               view.statusLabel(message.status)
             }}</strong>
             <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+          </div>
+          <div>
+            <span>Plantillas</span>
+            <strong>
+              {{ message.confirmation_template_key ?? 'Confirmación histórica' }} ·
+              {{ message.payment_template_key ?? 'Cobro histórico' }}
+            </strong>
+            <small>
+              Rev. {{ message.confirmation_template_revision ?? '—' }} /
+              {{ message.payment_template_revision ?? '—' }}
+            </small>
           </div>
         </section>
 

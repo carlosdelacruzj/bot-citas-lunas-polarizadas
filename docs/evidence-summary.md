@@ -3,30 +3,31 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 2483
-- Reservas registradas: 163
+- Eventos indexados: 2503
+- Reservas registradas: 168
 - Reservas no confirmadas: 5
-- Disponibilidades completas: 1658
+- Disponibilidades completas: 1673
 - Disponibilidades parciales: 460
-- Senales de defensa: 12
+- Senales de defensa: 13
 
 ## Origen de deteccion
-- normal: 2478
+- normal: 2498
 - slot_lost_reobservation: 5
 
 ## Ultimos eventos utiles
-- 2026-08-25 15:40:23 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:40:14 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:40:05 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:56 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:48 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:39 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:31 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:22 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:13 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
-- 2026-08-25 15:39:05 | sin orden | available | normal | 09/09/2026 12:00 | sin outcome
+- 2026-08-26 09:12:16 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
+- 2026-08-26 09:12:08 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
+- 2026-08-26 09:11:59 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
+- 2026-08-26 09:11:50 | sin orden | available | normal | 23/09/2026 12:00 | sin outcome
+- 2026-08-26 09:10:08 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
+- 2026-08-26 09:10:00 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
+- 2026-08-26 09:09:50 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
+- 2026-08-26 09:09:41 | sin orden | available | normal | 23/09/2026 11:00 | sin outcome
+- 2026-08-26 09:02:44 | sin orden | available | normal | 07/09/2026 08:00 | sin outcome
+- 2026-08-26 09:02:36 | sin orden | available | normal | 07/09/2026 08:00 | sin outcome
 
 ## Senales de defensa
+- 2026-08-26 08:54:58 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
 - 2026-08-18 17:22:49 | order-***-1be4d862e11fa4c6 | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
@@ -50,9 +51,6 @@ Call log:
 - 2026-07-20 17:22:36 |  | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede")
-- 2026-07-18 08:00:14 |  | network | Page.goto: net::ERR_NETWORK_CHANGED at https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx
-Call log:
-  - navigating to "https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx", waiting until "domcontentloaded"
 
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.

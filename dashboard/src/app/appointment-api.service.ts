@@ -955,6 +955,10 @@ export interface WhatsAppMessagePackage {
   whatsapp_url: string | null;
   attachment_url: string;
   payment_attachment_url: string;
+  confirmation_template_key: string | null;
+  confirmation_template_revision: number | null;
+  payment_template_key: string | null;
+  payment_template_revision: number | null;
   prepared_at: string;
   sent_at: string | null;
 }
@@ -976,6 +980,8 @@ export interface WhatsAppFollowUpPackage {
   recipient_label: string;
   steps: WhatsAppFollowUpStep[];
   combined_text: string;
+  template_key: string | null;
+  template_revision: number | null;
   prepared_at: string;
   sent_at: string | null;
 }
@@ -999,6 +1005,10 @@ export interface WhatsAppReviewJob {
   started_at: string | null;
   finished_at: string | null;
   updated_at: string;
+  template_trace: Array<{
+    template_key: string;
+    template_revision: number;
+  }>;
 }
 
 export interface WhatsAppReviewPayload {

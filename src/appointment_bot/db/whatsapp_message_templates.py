@@ -132,7 +132,16 @@ def update_whatsapp_message_template(
             target_type="whatsapp_message_template",
             target_id=definition.key,
             operation_id=f"whatsapp-template-{definition.key}-{next_revision}",
-            detail=f"revision={next_revision}; previous_revision={current_revision}",
+            detail=(
+                f"revision={next_revision}; previous_revision={current_revision}; "
+                "source="
+                + (
+                    "restore_recommended"
+                    if normalized_template
+                    == normalize_template(definition.recommended_template)
+                    else "operator_edit"
+                )
+            ),
         )
     if row is None:
         raise RuntimeError(f"WhatsApp template update failed: {definition.key}.")

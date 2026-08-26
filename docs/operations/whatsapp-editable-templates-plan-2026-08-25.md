@@ -1,10 +1,9 @@
 # Plan de plantillas editables de WhatsApp
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
-de revisión visual, Etapa 3 implementada como piloto y pendiente de observación
-natural, Etapas 4-6 implementadas y pendientes de observación natural, Etapa 7
-implementada técnicamente y pendiente de revisión visual/observación natural,
-y Etapa 8 pendiente**.
+de revisión visual, Etapas 3-7 implementadas y pendientes de observación
+natural, Etapa 8A implementada técnicamente, y Etapa 8B condicionada a la
+aceptación natural de cada flujo**.
 
 Fecha: `2026-08-25`.
 
@@ -671,6 +670,26 @@ Resultado técnico del `2026-08-26`:
   natural y verificar las dos imágenes, el caption combinado, el monto y las
   revisiones persistidas.
 
+Incidente y recuperación del `2026-08-26`:
+
+- el primer lote natural confirmó cinco reservas, pero sus cinco trabajos
+  `reservation_album` fallaron antes de abrir WhatsApp: el `INSERT` ampliado en
+  la Etapa 5 tenía `19` placeholders para `18` parámetros;
+- se corrigió el placeholder excedente y una preparación controlada ejecutó el
+  mismo camino contra PostgreSQL sin abrir WhatsApp;
+- después de una frontera segura y un reinicio aislado de Admin API, el operador
+  autorizó enviar los cinco paquetes faltantes uno por uno. Todos terminaron
+  `sent`, con `reservation_confirmation` revisión `2` y
+  `reservation_payment` revisión `1`;
+- el operador confirmó que los cinco paquetes llegaron correctamente. Los
+  trabajos automáticos originales no tenían `message_id`, por lo que se
+  conciliaron como `dismissed` con una nota que conserva la recuperación
+  separada `sent`; dejaron de aparecer en Pendientes sin convertir el intento
+  técnico fallido en un envío exitoso;
+- la recuperación comprueba el renderizado, la persistencia y el envío real del
+  álbum, pero no sustituye el próximo caso automático natural completo. La
+  Etapa 5 continúa pendiente de esa observación antes de retirar su respaldo.
+
 ### Etapa 6 - Pago confirmado
 
 Estado: **implementada técnicamente el 2026-08-26; pendiente de observación natural**.
@@ -769,17 +788,54 @@ Resultado técnico del `2026-08-26`:
   visual porque esta sesión no tiene un navegador conectado; también falta
   observar el próximo recordatorio natural y confirmar su revisión persistida.
 
-### Etapa 8 - Operación y limpieza
+### Etapa 8A - Operación observable y limpieza segura
 
-Objetivo: retirar duplicación solo después de la validación real.
+Estado: **implementada técnicamente el 2026-08-26**.
 
-- eliminar constructores hardcodeados ya sin consumidores;
-- actualizar contratos y runbooks;
-- mostrar clave/revisión en detalle técnico y conciliación;
-- medir errores de renderizado y uso de restauración;
-- evaluar después, como trabajo separado, resumen diario y TikTok.
+Objetivo: preparar la aceptación real sin retirar todavía el rollback.
 
-Cierre: no existen dos fuentes activas para la misma plantilla.
+- actualizar contratos y crear el runbook de observación natural;
+- mostrar clave/revisión en paquetes y conciliación;
+- distinguir en auditoría una edición de una restauración recomendada;
+- medir fallos productivos mediante el estado y error durable de cada trabajo;
+- inventariar los constructores anteriores, pero conservarlos hasta aceptar su
+  flujo.
+
+Resultado:
+
+- el detalle de reserva/cobro y postpago muestra las revisiones que quedaron
+  congeladas en el paquete;
+- la conciliación arma la trazabilidad desde el job y su paquete asociado, y
+  marca explícitamente los históricos que no tienen revisión;
+- la auditoría `update_whatsapp_message_template` conserva ahora
+  `source=operator_edit` o `source=restore_recommended` sin crear tablas nuevas;
+- [`whatsapp-template-natural-acceptance-2026-08-26.md`](whatsapp-template-natural-acceptance-2026-08-26.md)
+  define evidencia, consultas y cierre por flujo;
+- no se eliminó ningún constructor, no se cambió el runtime y no se envió
+  WhatsApp.
+
+Cierre: operación preparada para aceptar casos naturales sin perder el rollback.
+
+### Etapa 8B - Retiro condicionado de respaldos
+
+Estado: **pendiente; se ejecuta por flujo después de su aceptación natural**.
+
+Objetivo: retirar duplicación únicamente donde la entrega real ya fue comprobada.
+
+- eliminar el constructor hardcodeado del flujo aceptado;
+- retirar imports y ramas muertas correspondientes;
+- ejecutar las validaciones base y comprobar el siguiente caso del flujo;
+- conservar textos renderizados, versiones, auditoría e históricos;
+- no borrar respaldos de otros flujos todavía pendientes.
+
+Cierre: no existen dos fuentes de texto para cada flujo ya aceptado.
+
+### Etapa 8C - Evaluaciones separadas
+
+Estado: **pendiente y fuera del cierre de las siete plantillas actuales**.
+
+- evaluar plantillas para resumen diario y TikTok como trabajos independientes;
+- no ampliar automáticamente el registro actual ni sus disparadores.
 
 ## Validación por etapa
 

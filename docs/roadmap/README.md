@@ -444,8 +444,19 @@ la superficie principal.
    clave/revisión independientes en `whatsapp_messages`. Los `151` paquetes
    históricos permanecieron intactos; número, titular e imagen de pago siguen
    en configuración separada y el envío conserva dos imágenes dentro de un solo
-   álbum. No se creó una reserva ni se envió WhatsApp. Falta observar
-   naturalmente las tres variantes de registro y la próxima reserva/cobro. La
+   álbum. El primer lote natural del `2026-08-26` expuso un `INSERT` con `19`
+   placeholders y `18` parámetros: cinco reservas quedaron confirmadas y sus
+   cinco trabajos de álbum fallaron antes de abrir WhatsApp. La corrección se
+   validó contra PostgreSQL y los cinco paquetes fueron recuperados uno por uno
+   con autorización del operador; todos terminaron `sent` con revisiones
+   `reservation_confirmation:2` y `reservation_payment:1`. El operador confirmó
+   que los cinco llegaron correctamente; los trabajos originales, que no tenían
+   `message_id`, se conciliaron como `dismissed` con una nota que conserva el
+   enlace lógico al envío de recuperación y dejaron de aparecer en Pendientes.
+   La aceptación automática continúa pendiente hasta que el próximo
+   trabajo natural complete preparación y envío mediante el dispatcher. Falta
+   observar naturalmente las tres variantes de registro y esa próxima
+   reserva/cobro automática. La
    Etapa 6 quedó implementada técnicamente el `2026-08-26`:
    `post_payment_confirmation` controla el texto compacto posterior a los PDFs
    y PostgreSQL `v64` congela texto, clave y revisión en cada paquete nuevo. Los
@@ -460,7 +471,11 @@ la superficie principal.
    resumen siguen separados; **Seguimiento** controla activación y **Mensajes**
    edita el texto. No se cambió el modo `live`, no se encoló ni envió un
    recordatorio. Falta la revisión visual por ausencia de navegador conectado y
-   observar el próximo caso natural; la Etapa 8 permanece pendiente.
+   observar el próximo caso natural. La Etapa 8 quedó separada: 8A ya aporta
+   trazabilidad visible, auditoría de edición/restauración y un runbook de
+   aceptación sin retirar respaldos; 8B eliminará constructores por flujo solo
+   después de su caso natural, y 8C deja resumen diario/TikTok como evaluación
+   independiente.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

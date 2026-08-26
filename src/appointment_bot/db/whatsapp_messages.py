@@ -406,7 +406,7 @@ def _insert_message(
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, 'prepared', %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s
             )
             """,
             (

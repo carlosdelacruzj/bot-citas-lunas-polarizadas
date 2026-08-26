@@ -1021,6 +1021,25 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   pruebas, `git diff --check` y el build Angular, con la advertencia conocida de
   `10.71 kB`. No se creó una reserva, paquete persistente ni envío; falta validar
   el siguiente caso natural con ambas imágenes, monto, caption y revisiones.
+- Corregido el `2026-08-26`: el primer lote natural posterior a la Etapa 5
+  confirmó cinco reservas, pero los cinco trabajos `reservation_album` fallaron
+  antes de abrir WhatsApp porque el `INSERT` de `whatsapp_messages` tenía `19`
+  placeholders para `18` parámetros. El error se corrigió y una preparación
+  controlada recorrió el mismo `INSERT` contra PostgreSQL. Después de comprobar
+  cero trabajos WhatsApp, corridas, ráfagas, submissions operativos y sesiones
+  manuales, se reinició únicamente Admin API; el worker continuó saludable.
+  El operador autorizó recuperar los cinco casos: cada uno creó un solo paquete
+  con `reservation_confirmation` revisión `2` y `reservation_payment` revisión
+  `1`, y los cinco terminaron técnicamente `sent` entre las `09:08` y `09:10`
+  hora Lima. El operador confirmó después que los cinco paquetes llegaron
+  correctamente. Como los intentos originales fallaron antes de crear un
+  `message_id`, se conciliaron con `review_resolution=dismissed` y una nota que
+  enlaza el paquete de recuperación `sent`; así salieron de Pendientes sin
+  atribuir el envío al intento fallido. Esta recuperación valida preparación y envío real, pero no cierra
+  todavía la aceptación automática natural; debe observarse el próximo trabajo
+  creado y enviado de extremo a extremo por el dispatcher. Pasaron `compileall`,
+  Ruff, `59` pruebas, build Angular y `git diff --check`; el build conserva la
+  advertencia conocida de `10.58 kB`.
 - Implementado técnicamente el `2026-08-26`: la Etapa 6 conectó
   `post_payment_confirmation` al texto compacto enviado después de los PDFs.
   PostgreSQL `v64` conserva `message_text`, clave y revisión en
@@ -1058,6 +1077,14 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   modo, no se encoló ni envió un recordatorio. La revisión visual quedó pendiente
   porque no hubo un navegador conectado, igual que la observación del próximo
   recordatorio natural.
+- Implementado técnicamente el `2026-08-26`: la Etapa 8 se dividió para no
+  confundir observabilidad con eliminación de respaldos. La Etapa 8A muestra en
+  el detalle y la conciliación las claves/revisiones congeladas del paquete,
+  distingue en la auditoría `operator_edit` de `restore_recommended` y añade un
+  runbook de aceptación natural con evidencia y consultas por flujo. La Etapa
+  8B queda condicionada a retirar cada constructor hardcodeado solo después de
+  observar su caso real; 8C mantiene resumen diario y TikTok fuera del alcance
+  actual. No se retiró ningún rollback ni se envió WhatsApp.
 
 ### Destinatarios de WhatsApp por usuario
 
