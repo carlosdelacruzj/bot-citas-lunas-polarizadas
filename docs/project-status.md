@@ -540,6 +540,27 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   múltiples; no se reintentó automáticamente.
   `compileall`, Ruff, `59 passed`, build Angular y `git diff --check` quedaron
   correctos; el build conserva el warning conocido de presupuesto inicial.
+- Corregido el `2026-08-26`: el fallo `non_multiple_input` del álbum puede
+  repetir una sola vez la apertura en una página nueva, pero únicamente cuando
+  todavía no se llamó a ningún selector de archivos. Cualquier error posterior
+  a iniciar una selección o un envío conserva el comportamiento terminal sin
+  reintento. Una simulación aislada reprodujo el primer fallo y comprobó
+  `2` páginas / `2` intentos antes de completar; otra comprobó que un estado
+  posterior a selección usa `1` página / `1` intento. Pasaron `compileall`,
+  Ruff, `59 passed` y `git diff --check`. Admin API se reinició aisladamente con
+  cero trabajos WhatsApp, corridas, ráfagas o sesiones manuales activas y la
+  sesión persistente regresó `session_ready`. No se reenvió el caso anterior ni
+  se generó un mensaje de prueba; falta observar el próximo álbum natural.
+  Después, el operador autorizó expresamente un reenvío del caso: se creó un
+  único paquete nuevo, WhatsApp encontró el selector múltiple en el primer
+  recorrido y terminó técnicamente `sent` a las `13:41` hora Lima. La captura
+  final muestra constancia y QR como salientes; PostgreSQL conserva monto
+  `S/70`, revisiones `reservation_confirmation:2` y `reservation_payment:1`.
+  El trabajo automático original permanece técnicamente `uncertain`, con un
+  solo intento, y se concilió como `dismissed` mediante una nota que enlaza el
+  paquete nuevo sin atribuirle el envío. Este reenvío no ejercitó la nueva
+  reapertura y no sustituye la próxima aceptación natural del dispatcher ni
+  confirma lectura del cliente.
 - Actualizado el `2026-08-20`: la captura de WhatsApp en `/cliente_nuevo` ofrece
   una elección explícita entre **Número**, **Usuario** y **Omitir WhatsApp**.
   Telegram valida únicamente el tipo elegido; para usuario acepta el valor con

@@ -695,6 +695,20 @@ Incidente y recuperación del `2026-08-26`:
   `uncertain / send_state_unknown`. No hubo reintento automático. Este caso
   confirma la trazabilidad del paquete, pero no acepta el envío automático del
   álbum; la observación natural continúa abierta.
+- la corrección posterior permite recrear una sola vez la página del álbum ante
+  `non_multiple_input`, exclusivamente si todavía no se invocó un selector de
+  archivos. Una simulación aislada validó recuperación antes de selección y
+  ausencia de reintento después de esa frontera; Admin API regresó con la sesión
+  WhatsApp `session_ready`. No se reenvió el caso histórico ni se creó un envío
+  de prueba, por lo que la observación natural continúa abierta.
+- con autorización posterior del operador se creó un único paquete de reenvío
+  separado. Terminó técnicamente `sent` con constancia, QR, monto `S/70` y las
+  revisiones `reservation_confirmation:2` / `reservation_payment:1`; el trabajo
+  automático original continúa técnicamente `uncertain` con un intento y quedó
+  conciliado `dismissed` mediante una nota que enlaza el reenvío. El selector
+  múltiple funcionó en la primera apertura, por lo que esta recuperación no
+  valida la nueva rama de reapertura ni reemplaza la observación natural
+  pendiente.
 
 ### Etapa 6 - Pago confirmado
 

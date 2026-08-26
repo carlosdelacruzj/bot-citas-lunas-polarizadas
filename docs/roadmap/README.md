@@ -464,7 +464,19 @@ independiente.
    trabajo natural complete preparación y envío mediante el dispatcher. Un
    caso natural posterior congeló correctamente ambas revisiones, pero terminó
    `uncertain / non_multiple_input` antes de adjuntar las imágenes y no se
-   reintentó; por eso la aceptación automática sigue abierta. Falta
+   reintentó. El `2026-08-26` esa fase incorporó una sola reapertura en página
+   nueva, permitida únicamente mientras ningún selector de archivos haya sido
+   invocado; después de cualquier riesgo de selección o envío continúa
+   prohibido reintentar. La frontera se validó de forma aislada y Admin API
+   regresó con WhatsApp `session_ready`, sin reenviar el histórico ni crear una
+   prueba. La aceptación automática sigue abierta hasta observar esta guarda en
+   el próximo álbum natural. Un reenvío posterior autorizado creó un solo
+   paquete separado y terminó técnicamente `sent` con ambas imágenes y monto
+   `S/70`; el intento automático original continúa técnicamente `uncertain` y
+   quedó conciliado `dismissed` con una nota que enlaza el reenvío separado.
+   Como WhatsApp mostró el selector correcto en el primer recorrido, esa
+   recuperación no ejercitó la nueva reapertura ni cierra la aceptación
+   automática. Falta
    observar naturalmente las tres variantes de registro y esa próxima
    reserva/cobro automática. La
    Etapa 6 quedó implementada técnicamente el `2026-08-26`:
@@ -634,7 +646,10 @@ aparezca el evento natural:
 - siguientes trabajos WhatsApp: album, postpago y aviso de registro,
   revisar las guardas acotadas del `2026-08-20`: una segunda apertura del menú
   solo antes de seleccionar archivos, una segunda búsqueda por `@usuario` solo
-  antes de escribir. En postpago, un único clic de documentos debe cerrar la
+  antes de escribir. Desde el `2026-08-26`, un `non_multiple_input` puede además
+  recrear una sola vez la página del álbum únicamente si ningún selector de
+  archivo fue invocado; validar esa recuperación con el próximo caso natural.
+  En postpago, un único clic de documentos debe cerrar la
   vista previa antes del texto: si todas las burbujas PDF se confirman, continúa
   normalmente; si la vista previa cerró y volvió el compositor pero los checks
   no se reconocen, continúa únicamente con el texto, conserva los PDF como

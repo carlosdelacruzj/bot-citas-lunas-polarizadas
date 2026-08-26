@@ -26,6 +26,10 @@ class WhatsAppSendUncertain(RuntimeError):
     pass
 
 
+class _AttachmentBeforeFileSelectionError(RuntimeError):
+    pass
+
+
 DAILY_SUMMARY_IMAGE_BATCH_SIZE = 4
 PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS = 30
 PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS = 3
@@ -397,16 +401,13 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
     items = list(draft["album_items"])
     if len(items) != 2:
         raise ValueError("El album de WhatsApp requiere exactamente dos imagenes.")
-    page = _fresh_whatsapp_page(context)
-    recipient_error = _open_recipient_chat(
-        page, draft, str(draft["message_id"]), "whatsapp-album-chat-not-ready"
-    )
-    if recipient_error is not None:
-        return recipient_error
     attachments = [Path(str(item["attachment_path"])).resolve() for item in items]
     if not all(path.is_file() for path in attachments):
         raise FileNotFoundError("Una de las imagenes preparadas ya no esta disponible.")
-    _attach_image(page, attachments)
+    page_or_error = _attach_album_with_safe_page_retry(context, draft, attachments)
+    if isinstance(page_or_error, dict):
+        return page_or_error
+    page = page_or_error
     page.wait_for_timeout(1_000)
     thumbnails = _album_thumbnails(page)
     if len(thumbnails) != len(items):
@@ -485,6 +486,32 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
         message_id=str(draft["message_id"]),
         draft_mode="album",
     )
+
+
+def _attach_album_with_safe_page_retry(
+    context: BrowserContext,
+    draft: dict[str, object],
+    attachments: list[Path],
+) -> Page | dict[str, object]:
+    for page_attempt in range(1, 3):
+        page = _fresh_whatsapp_page(context)
+        recipient_error = _open_recipient_chat(
+            page, draft, str(draft["message_id"]), "whatsapp-album-chat-not-ready"
+        )
+        if recipient_error is not None:
+            return recipient_error
+        try:
+            _attach_image(page, attachments)
+            return page
+        except _AttachmentBeforeFileSelectionError:
+            if page_attempt == 2:
+                raise
+            logger.info(
+                "WhatsApp album safe page retry before file selection: "
+                "message_id=%s",
+                draft["message_id"],
+            )
+    raise RuntimeError("WhatsApp no pudo preparar el album despues del reintento seguro.")
 
 
 def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dict[str, object]:
@@ -1458,6 +1485,7 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
         else [str(attachment)]
     )
     failure_phase = "attach_control_not_found"
+    file_selection_started = False
     for attempt in range(1, 3):
         if attempt == 2:
             logger.info(
@@ -1488,6 +1516,7 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
             option_input = container.locator("input[type='file']")
             if option_input.count():
                 try:
+                    file_selection_started = True
                     option_input.first.set_input_files(files)
                     page.wait_for_timeout(1_000)
                     return
@@ -1496,6 +1525,7 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
             try:
                 with page.expect_file_chooser(timeout=3_000) as chooser_info:
                     container.click()
+                file_selection_started = True
                 chooser_info.value.set_files(files)
                 page.wait_for_timeout(1_000)
                 return
@@ -1505,6 +1535,7 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
         logger.info("WhatsApp Web attachment menu: %s", _attachment_menu_summary(page))
         file_input = _image_file_input(page, require_multiple=len(files) > 1)
         if file_input is not None:
+            file_selection_started = True
             file_input.set_input_files(files)
             page.wait_for_timeout(1_000)
             return
@@ -1516,10 +1547,13 @@ def _attach_image(page: Page, attachment: Path | list[Path]) -> None:
 
     logger.info("WhatsApp Web file inputs: %s", _file_input_summary(page))
     logger.info("WhatsApp Web attachment controls: %s", _attachment_control_summary(page))
-    raise RuntimeError(
+    error_message = (
         "No se encontro el control para adjuntar imagenes en WhatsApp Web. "
         f"Fase: {failure_phase}."
     )
+    if failure_phase == "non_multiple_input" and not file_selection_started:
+        raise _AttachmentBeforeFileSelectionError(error_message)
+    raise RuntimeError(error_message)
 
 
 def _click_attachment_button(page: Page) -> bool:

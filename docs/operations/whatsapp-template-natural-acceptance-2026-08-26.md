@@ -58,6 +58,22 @@ expuso el control de adjuntos múltiples. El trabajo terminó
 evidencia valida la trazabilidad del paquete, no el envío automático completo;
 el caso de reserva/cobro continúa pendiente.
 
+La corrección permite una única página nueva ante `non_multiple_input` solo si
+ningún selector de archivos llegó a invocarse. Si una selección pudo comenzar o
+el envío pudo ejecutarse, se conserva el cierre terminal sin reintento. La
+frontera pasó una simulación aislada y la sesión persistente regresó
+`session_ready` después de reiniciar únicamente Admin API, pero todavía debe
+observarse en un álbum natural; el caso anterior no fue reenviado.
+
+Después de una autorización explícita, ese caso recibió un único paquete nuevo
+de recuperación. WhatsApp confirmó técnicamente el envío de constancia y QR con
+monto `S/70`; el paquete conserva revisiones `2/1` y el trabajo original sigue
+técnicamente `uncertain` con un intento. Se concilió como `dismissed` con una
+nota que enlaza el paquete nuevo sin atribuirle el envío. El selector múltiple
+funcionó en la primera apertura, así que este reenvío no prueba la reapertura
+nueva, no acredita lectura del destinatario y no cierra la aceptación
+automática natural.
+
 ## Consultas de trazabilidad
 
 Avisos de registro y recordatorios recientes:
