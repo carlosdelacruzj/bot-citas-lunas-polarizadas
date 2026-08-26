@@ -102,6 +102,12 @@ from appointment_bot.services.api.service_order_routes import (
     update_service_order_priority_payload,
     update_service_order_restrictions_payload,
 )
+from appointment_bot.services.api.whatsapp_message_template_routes import (
+    preview_whatsapp_message_template_payload,
+    update_whatsapp_message_template_payload,
+    whatsapp_message_template_action_path,
+    whatsapp_message_templates_payload,
+)
 from appointment_bot.services.api.whatsapp_routes import (
     attachment_payload,
     followup_attachment_payload,
@@ -199,6 +205,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if not self._require_authorized(strict=True):
                 return
             status, payload = appointment_reminders_payload()
+            self._send_json(status, payload)
+            return
+
+        if path == "/api/v1/whatsapp-message-templates":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = whatsapp_message_templates_payload()
             self._send_json(status, payload)
             return
 
@@ -463,6 +476,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+
+        template_key = whatsapp_message_template_action_path(path, "preview")
+        if template_key is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = preview_whatsapp_message_template_payload(
+                template_key,
+                self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
 
         if path == "/api/v1/appointment-reminders":
             if not self._require_authorized(strict=True):
@@ -878,6 +902,36 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 settings=controller_settings,
             )
         self._send_json(HTTPStatus.OK, payload)
+
+    def do_PUT(self) -> None:
+        try:
+            self._handle_put()
+        except RequestBodyError as exc:
+            self._send_json(
+                exc.status,
+                error_payload("bad_request", str(exc)),
+            )
+
+    def _handle_put(self) -> None:
+        path = urlparse(self.path).path
+        template_key = whatsapp_message_template_action_path(path)
+        if template_key is None:
+            self._send_json(
+                HTTPStatus.NOT_FOUND,
+                error_payload(
+                    "not_found",
+                    "Use los endpoints de plantillas de WhatsApp.",
+                ),
+            )
+            return
+        if not self._require_authorized(strict=True):
+            return
+        status, payload = update_whatsapp_message_template_payload(
+            template_key,
+            self._read_json(),
+            requested_by=self.headers.get("X-Appointment-Actor"),
+        )
+        self._send_json(status, payload)
 
     def log_message(self, format: str, *args) -> None:
         logger.info("%s - %s", self.address_string(), format % args)

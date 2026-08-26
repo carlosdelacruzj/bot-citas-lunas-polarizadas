@@ -957,6 +957,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   cuya comprobación automática devolvió `0/3`; el operador informó que tuvo que
   completar manualmente el texto en algunos casos. No se reenviaron ni se
   conciliaron automáticamente esos trabajos históricos.
+- Implementado el `2026-08-25`: la Etapa 1 de plantillas editables de WhatsApp
+  añadió el registro genérico PostgreSQL `v61` con siete defaults y versiones
+  append-only. La API autenticada permite listar, previsualizar con datos
+  ficticios y guardar mediante `expected_revision`; cada cambio crea versión y
+  auditoría en la misma transacción y una revisión obsoleta devuelve `409` con
+  el estado vigente. La migración preservó sin cambios el control pre-cita en
+  revisión `6`. Registro, reserva, cobro, postpago y recordatorios siguen usando
+  sus constructores actuales: conectar consumidores comienza recién en las
+  Etapas 3-7 del plan y esta etapa no envía ni prepara mensajes.
 
 ### Destinatarios de WhatsApp por usuario
 

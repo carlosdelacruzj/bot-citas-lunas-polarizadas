@@ -1,6 +1,6 @@
 # Plan de plantillas editables de WhatsApp
 
-Estado: **en ejecución; Etapa 0 completada, Etapas 1-8 pendientes**.
+Estado: **en ejecución; Etapas 0-1 completadas, Etapas 2-8 pendientes**.
 
 Fecha: `2026-08-25`.
 
@@ -237,6 +237,48 @@ esa revisión o debe proporcionar un valor seguro desde el contexto.
 7. Los mensajes actuales y la revisión `6` de pre-cita no se modifican durante
    la Etapa 1.
 
+## Resultado de la Etapa 1 - Registro y versiones
+
+Estado: **completada el 2026-08-25**.
+
+La fuente de verdad genérica quedó disponible sin conectar todavía ningún
+constructor ni consumidor productivo. La migración aditiva `v61` creó:
+
+- `whatsapp_message_templates`, con texto vigente, revisión, estado reservado,
+  fecha y actor;
+- `whatsapp_message_template_versions`, append-only y única por clave/revisión;
+- siete plantillas iniciales derivadas del contrato de la Etapa 0;
+- revisión inicial independiente para la copia genérica de pre-cita, sin alterar
+  `appointment_reminder_control` ni su revisión histórica `6`.
+
+La API autenticada incorporó:
+
+- `GET /api/v1/whatsapp-message-templates` para inventario, defaults,
+  variables, revisión, preview y momento de aplicación;
+- `POST /api/v1/whatsapp-message-templates/{template_key}/preview` para validar
+  y renderizar solo con contexto ficticio del servidor;
+- `PUT /api/v1/whatsapp-message-templates/{template_key}` para guardar con
+  `expected_revision`, actor, nueva versión y auditoría en una transacción;
+- `409 stale` con la plantilla vigente cuando la revisión esperada ya cambió.
+
+El renderizador común rechaza texto vacío, más de `1500` caracteres, llaves
+incompletas, variables desconocidas, variables requeridas ausentes, repeticiones
+excesivas y caracteres de control. Solo `{fechas_excluidas}` puede retirar una
+línea opcional vacía; los valores sustituidos no se reinterpretan como plantilla.
+
+### Validación de cierre
+
+- los siete defaults renderizados se compararon con los constructores vigentes;
+- PostgreSQL migró de `v60` a `v61` con siete filas vigentes y siete versiones;
+- la revisión `6`, el hash del texto y `updated_at` de pre-cita no cambiaron;
+- un guardado controlado del mismo texto creó la revisión `2`, su versión y una
+  auditoría; repetir la revisión anterior devolvió `409`;
+- las cantidades de jobs, álbumes y postpagos permanecieron idénticas;
+- la API reiniciada respondió `200` para inventario y preview, y `409` para el
+  guardado obsoleto;
+- ninguna ruta de registro, reserva, cobro, postpago o recordatorio consume aún
+  estas tablas genéricas.
+
 ## Principios obligatorios
 
 1. **Aplicación futura:** una plantilla comercial nueva se usa únicamente al
@@ -454,6 +496,8 @@ Cierre: tabla de plantillas aprobada y ejemplos renderizados iguales a los
 mensajes actuales.
 
 ### Etapa 1 - Registro y versiones en PostgreSQL
+
+Estado: **completada el 2026-08-25**.
 
 Objetivo: crear la fuente de verdad sin cambiar todavía ningún mensaje real.
 

@@ -19,6 +19,7 @@ Desde el paso 9.3 contiene la implementacion PostgreSQL principal:
 - `db.runs`
 - `db.worker_commands`
 - `db.remote_control_audit`
+- `db.whatsapp_message_templates`
 - `db.worker_state`
 
 Desde el paso 9.7 se retiraron los wrappers historicos

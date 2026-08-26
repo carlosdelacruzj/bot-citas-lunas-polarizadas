@@ -422,10 +422,12 @@ la superficie principal.
    variables allowlisted y conserva historial. El detalle y los puntos de pausa
    viven en
    [`../operations/whatsapp-editable-templates-plan-2026-08-25.md`](../operations/whatsapp-editable-templates-plan-2026-08-25.md).
-   La Etapa 0 quedó completada el `2026-08-25`: constructores, defaults,
-   variables, bloques opcionales y momentos de snapshot están congelados; las
-   Etapas 1-8 permanecen pendientes y no existen todavía tablas, endpoints ni
-   consumidores nuevos.
+   Las Etapas 0 y 1 quedaron completadas el `2026-08-25`: constructores,
+   defaults, variables, bloques opcionales y momentos de snapshot están
+   congelados; PostgreSQL `v61` conserva siete plantillas con historial y la API
+   permite inventario, preview y guardado con revisión optimista y auditoría.
+   Las Etapas 2-8 permanecen pendientes y ningún consumidor productivo utiliza
+   todavía el registro genérico.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

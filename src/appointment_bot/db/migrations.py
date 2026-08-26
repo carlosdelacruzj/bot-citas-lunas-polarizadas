@@ -4,7 +4,12 @@ from datetime import UTC, datetime
 
 from psycopg import Connection
 
-SCHEMA_VERSION = 60
+from appointment_bot.core.whatsapp_message_templates import (
+    MAX_TEMPLATE_LENGTH,
+    WHATSAPP_TEMPLATE_DEFINITIONS,
+)
+
+SCHEMA_VERSION = 61
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -346,6 +351,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_automation_jobs_schema(connection)
     _create_appointment_reminder_schema(connection)
     _create_appointment_reminder_control_schema(connection)
+    _create_whatsapp_message_template_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
@@ -913,6 +919,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "appointment_reminder_days",
         "appointment_reminder_control",
         "appointment_reminder_template_versions",
+        "whatsapp_message_templates",
+        "whatsapp_message_template_versions",
         "captcha_shadow_outbox",
         "telegram_alert_outbox",
         "captcha_sampling_control",
@@ -1051,6 +1059,17 @@ def _validate_current_schema(connection: Connection) -> None:
         ("appointment_reminder_control", "revision"),
         ("appointment_reminder_template_versions", "revision"),
         ("appointment_reminder_template_versions", "message_template"),
+        ("whatsapp_message_templates", "template_key"),
+        ("whatsapp_message_templates", "message_template"),
+        ("whatsapp_message_templates", "revision"),
+        ("whatsapp_message_templates", "enabled"),
+        ("whatsapp_message_templates", "updated_at"),
+        ("whatsapp_message_templates", "updated_by"),
+        ("whatsapp_message_template_versions", "template_key"),
+        ("whatsapp_message_template_versions", "revision"),
+        ("whatsapp_message_template_versions", "message_template"),
+        ("whatsapp_message_template_versions", "created_at"),
+        ("whatsapp_message_template_versions", "created_by"),
         ("captcha_shadow_outbox", "event_key"),
         ("captcha_shadow_outbox", "event_id"),
         ("captcha_shadow_outbox", "sequence"),
@@ -1995,6 +2014,59 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
         """,
         (default_template, now),
     )
+
+
+def _create_whatsapp_message_template_schema(connection: Connection) -> None:
+    connection.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS whatsapp_message_templates (
+            template_key text PRIMARY KEY CHECK (
+                char_length(template_key) BETWEEN 1 AND 80
+            ),
+            message_template text NOT NULL CHECK (
+                char_length(message_template) BETWEEN 1 AND {MAX_TEMPLATE_LENGTH}
+            ),
+            revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+            enabled boolean NOT NULL DEFAULT true,
+            updated_at timestamptz NOT NULL,
+            updated_by text NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS whatsapp_message_template_versions (
+            template_key text NOT NULL REFERENCES whatsapp_message_templates(template_key),
+            revision integer NOT NULL CHECK (revision >= 1),
+            message_template text NOT NULL CHECK (
+                char_length(message_template) BETWEEN 1 AND {MAX_TEMPLATE_LENGTH}
+            ),
+            created_at timestamptz NOT NULL,
+            created_by text NOT NULL,
+            PRIMARY KEY (template_key, revision)
+        )
+        """
+    )
+    now = datetime.now(UTC)
+    for definition in WHATSAPP_TEMPLATE_DEFINITIONS.values():
+        connection.execute(
+            """
+            INSERT INTO whatsapp_message_templates (
+                template_key, message_template, revision, enabled, updated_at, updated_by
+            ) VALUES (%s, %s, 1, true, %s, 'schema-migration')
+            ON CONFLICT (template_key) DO NOTHING
+            """,
+            (definition.key, definition.current_default_template, now),
+        )
+        connection.execute(
+            """
+            INSERT INTO whatsapp_message_template_versions (
+                template_key, revision, message_template, created_at, created_by
+            ) VALUES (%s, 1, %s, %s, 'schema-migration')
+            ON CONFLICT (template_key, revision) DO NOTHING
+            """,
+            (definition.key, definition.current_default_template, now),
+        )
 
 
 def _stored_appointment_day(value: object) -> object | None:
@@ -2972,6 +3044,13 @@ def migrate_database(connection: Connection) -> None:
             (60,),
         )
         current_version = 60
+    if current_version == 60:
+        _create_whatsapp_message_template_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (61,),
+        )
+        current_version = 61
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "
