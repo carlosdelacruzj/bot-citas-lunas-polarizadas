@@ -18,6 +18,10 @@ from appointment_bot.db.whatsapp_message_templates import (
     list_whatsapp_message_templates,
     update_whatsapp_message_template,
 )
+from appointment_bot.db.whatsapp_messages import (
+    RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+    RESERVATION_PAYMENT_TEMPLATE_KEY,
+)
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.registration_notices import (
     REGISTRATION_NOTICE_TEMPLATE_KEYS,
@@ -27,6 +31,13 @@ from appointment_bot.utils.sanitization import sanitize_text
 logger = logging.getLogger(__name__)
 
 _COLLECTION_PATH = "/api/v1/whatsapp-message-templates"
+_CONNECTED_TEMPLATE_KEYS = frozenset(
+    (
+        *REGISTRATION_NOTICE_TEMPLATE_KEYS.values(),
+        RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+        RESERVATION_PAYMENT_TEMPLATE_KEY,
+    )
+)
 
 
 def whatsapp_message_template_action_path(path: str, action: str | None = None) -> str | None:
@@ -182,8 +193,7 @@ def _template_payload(row: WhatsAppMessageTemplate) -> dict[str, object]:
         "preview_context": dict(definition.preview_context),
         "usage": definition.usage,
         "applies_from": definition.applies_from,
-        "consumer_connected": row.template_key
-        in REGISTRATION_NOTICE_TEMPLATE_KEYS.values(),
+        "consumer_connected": row.template_key in _CONNECTED_TEMPLATE_KEYS,
     }
 
 

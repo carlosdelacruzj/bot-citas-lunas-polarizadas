@@ -438,9 +438,15 @@ la superficie principal.
    del operador, la Etapa 4 se implementó técnicamente el `2026-08-25` antes de
    aceptar el piloto natural: las tres variantes de registro consumen ahora su
    plantilla vigente, conservan texto, clave y revisión, y mantienen la
-   deduplicación por orden, ciclo y tipo. Las cuatro plantillas restantes siguen
-   desconectadas. Falta observar naturalmente las tres variantes, sin crear un
-   cliente o envío de prueba; las Etapas 5-8 permanecen pendientes.
+   deduplicación por orden, ciclo y tipo. La Etapa 5 quedó implementada
+   técnicamente el `2026-08-26`: confirmación de reserva y cobro consumen ahora
+   sus plantillas vigentes, y PostgreSQL `v63` congela ambos textos con pares de
+   clave/revisión independientes en `whatsapp_messages`. Los `151` paquetes
+   históricos permanecieron intactos; número, titular e imagen de pago siguen
+   en configuración separada y el envío conserva dos imágenes dentro de un solo
+   álbum. No se creó una reserva ni se envió WhatsApp. Falta observar
+   naturalmente las tres variantes de registro y la próxima reserva/cobro; las
+   Etapas 6-8 permanecen pendientes.
 5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo

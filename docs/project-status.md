@@ -20,7 +20,7 @@ Estado verificado el `2026-08-11`:
 | --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Worker de reservas    | Operativo                | `127.0.0.1:8765/health` responde `ok`, con `worker_running=true`; el reinicio controlado ya no hereda una pausa y sus controles dejan auditoría durable. |
 | Admin API y dashboard | Operativos               | `127.0.0.1:8766/health` responde `ok`, con `worker_running=false` y razón `api_only`.                     |
-| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v58` agrega conciliación durable de trabajos WhatsApp ambiguos, preservando recordatorios, fechas normalizadas, autoridad CAPTCHA, calidad financiera y outbox Telegram. |
+| PostgreSQL            | Operativo                | PostgreSQL 16 saludable; esquema `v63` agrega trazabilidad independiente de las plantillas de confirmación y cobro en cada paquete de reserva, preservando mensajes históricos, recordatorios, autoridad CAPTCHA y colas existentes. |
 | Telegram remoto       | Operativo sin prueba     | La alerta urgente de cupo se persiste y envía fuera de la ruta de reserva, con deduplicación y hasta tres intentos; esta revisión no envió mensajes de prueba. |
 | CAPTCHA local         | Rollback a 2Captcha      | 2Captcha volvió a ser la autoridad persistente desde el siguiente CAPTCHA; V6 queda fuera de admisión con sus contadores y evidencia preservados. |
 | WhatsApp automático   | Operativo con vigilancia | Emisor único en Admin API, cola durable y sin reintentos automáticos ambiguos.                            |
@@ -1004,6 +1004,23 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   saludable y expone exactamente tres consumidores conectados. No se creó un
   cliente ni se envió WhatsApp; falta aceptar cada variante con eventos
   naturales y comprobar que no se duplique el aviso por ciclo.
+- Implementado técnicamente el `2026-08-26`: la Etapa 5 conectó
+  `reservation_confirmation` y `reservation_payment` al paquete que se prepara
+  después de confirmar una reserva. La confirmación usa el nombre de la persona
+  solicitante que pasará el peritaje y los datos confirmados de cita; el cobro
+  usa el monto acordado, mientras número, titular e imagen siguen fuera de la
+  plantilla en la configuración privada. PostgreSQL `v63` conserva por separado
+  clave y revisión de ambos textos en `whatsapp_messages`; los `151` paquetes
+  históricos permanecieron intactos con esos campos en `NULL`. Los defaults en
+  revisión `1` coincidieron con los constructores anteriores y una transacción
+  revertida confirmó que un cambio posterior de revisión no modifica un paquete
+  `prepared`. Se mantiene el mismo envío de dos imágenes en un solo álbum y el
+  mismo caption combinado. Admin API reinició aisladamente con cero trabajos
+  WhatsApp `running`, cero corridas activas y el worker detenido, y volvió
+  saludable con cinco consumidores conectados. Pasaron `compileall`, Ruff, `59`
+  pruebas, `git diff --check` y el build Angular, con la advertencia conocida de
+  `10.71 kB`. No se creó una reserva, paquete persistente ni envío; falta validar
+  el siguiente caso natural con ambas imágenes, monto, caption y revisiones.
 
 ### Destinatarios de WhatsApp por usuario
 

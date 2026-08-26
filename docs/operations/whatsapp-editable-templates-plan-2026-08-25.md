@@ -2,8 +2,8 @@
 
 Estado: **en ejecución; Etapas 0-1 completadas, Etapa 2 implementada y pendiente
 de revisión visual, Etapa 3 implementada como piloto y pendiente de observación
-natural, Etapa 4 implementada y pendiente de observación natural, Etapas 5-8
-pendientes**.
+natural, Etapas 4-5 implementadas y pendientes de observación natural, Etapas
+6-8 pendientes**.
 
 Fecha: `2026-08-25`.
 
@@ -626,6 +626,8 @@ Resultado técnico del `2026-08-25`:
 
 ### Etapa 5 - Reserva y cobro
 
+Estado: **implementada técnicamente el 2026-08-26; pendiente de observación natural**.
+
 Objetivo: separar confirmación de cita e instrucciones de pago.
 
 - plantilla de reserva;
@@ -636,6 +638,37 @@ Objetivo: separar confirmación de cita e instrucciones de pago.
 
 Cierre: dos imágenes, captions y monto correcto en el siguiente caso natural;
 un cambio de plantilla no altera un paquete `prepared`.
+
+Resultado técnico del `2026-08-26`:
+
+- `reservation_confirmation` y `reservation_payment` se renderizan desde sus
+  revisiones vigentes al preparar el siguiente paquete de reserva y cobro;
+- `{nombre}` usa a la persona solicitante que pasará el peritaje, mientras
+  `{monto}` usa el monto acordado real. `{numero_pago}`, `{titular_pago}` y la
+  imagen continúan leyéndose de la configuración privada separada;
+- PostgreSQL `v63` añadió a `whatsapp_messages` pares independientes de clave y
+  revisión para confirmación y cobro. Los `151` mensajes históricos conservaron
+  sus textos y quedaron con los cuatro campos nuevos en `NULL`;
+- el texto final de ambos captions queda congelado junto con sus revisiones al
+  crear el paquete. Una validación transaccional avanzó temporalmente ambas
+  revisiones y confirmó que el paquete `prepared` no cambió; después revirtió
+  todo y no dejó filas nuevas;
+- los defaults de reserva y cobro en revisión `1` produjeron exactamente los
+  mismos textos que los constructores anteriores, incluido un monto de control
+  de `70.00`;
+- el envío conserva exactamente dos adjuntos, en el mismo orden y dentro de un
+  solo álbum; los dos captions se concatenan en el compositor con una línea en
+  blanco, sin alterar la lógica de envío ni confirmación;
+- Admin API reinició aisladamente con cero trabajos WhatsApp `running`, cero
+  corridas activas y el worker detenido. Regresó saludable y el inventario
+  interno expone cinco consumidores conectados;
+- `compileall`, Ruff, `59` pruebas, `git diff --check` y el build Angular
+  terminaron correctamente. Persiste la advertencia no bloqueante de `10.71 kB`
+  sobre el presupuesto inicial del dashboard;
+- no se creó una reserva, no se preparó un paquete persistente y no se envió
+  WhatsApp. El cierre queda pendiente hasta observar la siguiente reserva
+  natural y verificar las dos imágenes, el caption combinado, el monto y las
+  revisiones persistidas.
 
 ### Etapa 6 - Pago confirmado
 

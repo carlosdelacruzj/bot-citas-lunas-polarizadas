@@ -13,6 +13,10 @@ from appointment_bot.core.contacts import (
     normalize_contact_whatsapp,
     resolve_whatsapp_recipient,
 )
+from appointment_bot.core.whatsapp_message_templates import (
+    render_whatsapp_template,
+    whatsapp_template_definition,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -21,12 +25,12 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
-from appointment_bot.services.reservation_messages import (
-    format_confirmed_reservation_message,
-)
+from appointment_bot.db.whatsapp_message_templates import get_whatsapp_message_template
 from appointment_bot.utils.file_deduplication import copy_deduplicated_file
 
 MESSAGE_KIND = "reservation_confirmation_payment"
+RESERVATION_CONFIRMATION_TEMPLATE_KEY = "reservation_confirmation"
+RESERVATION_PAYMENT_TEMPLATE_KEY = "reservation_payment"
 OUTGOING_ROOT = Path("screenshots/whatsapp-outgoing")
 PAYMENT_CONFIG_PATH = Path(".runtime/whatsapp-payment/payment-details.json")
 SAFE_EVIDENCE_LABELS = ("programado", "etapas", "confirmacion")
@@ -39,15 +43,28 @@ def prepare_test_whatsapp_message(
 ) -> dict[str, object]:
     phone = _international_phone(recipient_phone)
     message_id = f"whatsapp-{uuid4().hex}"
-    greeting = format_confirmed_reservation_message(
-        person_name="CLIENTE DE PRUEBA",
-        date="15/08/2026",
-        hour="10:00",
-        site="LIMA-LA VICTORIA",
+    greeting, confirmation_revision = _render_current_template(
+        RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+        {
+            "nombre": "CLIENTE DE PRUEBA",
+            "fecha": "15/08/2026",
+            "hora": "10:00",
+            "sede": "LIMA-LA VICTORIA",
+        },
+        settings=settings,
     )
-    payment = _payment_message("50.00")
+    payment_details = _payment_details()
+    payment, payment_revision = _render_current_template(
+        RESERVATION_PAYMENT_TEMPLATE_KEY,
+        {
+            "monto": "50.00",
+            "numero_pago": payment_details["phone"],
+            "titular_pago": payment_details["account_name"],
+        },
+        settings=settings,
+    )
     attachment = _render_demo_constancia(message_id)
-    payment_attachment = _copy_payment_attachment(message_id)
+    payment_attachment = _copy_payment_attachment(message_id, payment_details)
     return _insert_message(
         message_id=message_id,
         order_id=None,
@@ -59,6 +76,10 @@ def prepare_test_whatsapp_message(
         payment_message=payment,
         attachment_path=attachment,
         payment_attachment_path=payment_attachment,
+        confirmation_template_key=RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+        confirmation_template_revision=confirmation_revision,
+        payment_template_key=RESERVATION_PAYMENT_TEMPLATE_KEY,
+        payment_template_revision=payment_revision,
         test_mode=True,
         settings=settings,
     )
@@ -160,17 +181,30 @@ def prepare_order_whatsapp_message(
         [*(row["evidence_paths"] or []), row["evidence_path"]]
     )
     message_id = f"whatsapp-{uuid4().hex}"
-    attachment = _copy_attachment(source, message_id)
-    payment_attachment = _copy_payment_attachment(message_id)
+    payment_details = _payment_details()
     applicant_name = str(row["applicant_name"] or "").strip()
-    greeting = format_confirmed_reservation_message(
-        person_name=applicant_name,
-        date=row["appointment_date"],
-        hour=row["appointment_hour"],
-        site=row["site"],
+    greeting, confirmation_revision = _render_current_template(
+        RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+        {
+            "nombre": applicant_name,
+            "fecha": row["appointment_date"],
+            "hora": row["appointment_hour"],
+            "sede": row["site"],
+        },
+        settings=effective_settings,
     )
     amount = f"{row['amount_agreed']:.2f}"
-    payment = _payment_message(amount)
+    payment, payment_revision = _render_current_template(
+        RESERVATION_PAYMENT_TEMPLATE_KEY,
+        {
+            "monto": amount,
+            "numero_pago": payment_details["phone"],
+            "titular_pago": payment_details["account_name"],
+        },
+        settings=effective_settings,
+    )
+    attachment = _copy_attachment(source, message_id)
+    payment_attachment = _copy_payment_attachment(message_id, payment_details)
     return _insert_message(
         message_id=message_id,
         order_id=order_id,
@@ -182,6 +216,10 @@ def prepare_order_whatsapp_message(
         payment_message=payment,
         attachment_path=attachment,
         payment_attachment_path=payment_attachment,
+        confirmation_template_key=RESERVATION_CONFIRMATION_TEMPLATE_KEY,
+        confirmation_template_revision=confirmation_revision,
+        payment_template_key=RESERVATION_PAYMENT_TEMPLATE_KEY,
+        payment_template_revision=payment_revision,
         test_mode=False,
         settings=effective_settings,
     )
@@ -273,7 +311,8 @@ def get_whatsapp_web_draft(
             """
             SELECT message_id, order_id, recipient_phone, recipient_username, greeting,
                    evidence_caption, payment_message, payment_attachment_path,
-                   status, test_mode
+                   confirmation_template_key, confirmation_template_revision,
+                   payment_template_key, payment_template_revision, status, test_mode
             FROM whatsapp_messages
             WHERE message_id = %s
             """,
@@ -311,6 +350,10 @@ def get_whatsapp_web_draft(
         "caption": text,
         "draft_kind": draft_kind,
         "test_mode": bool(row["test_mode"]),
+        "confirmation_template_key": row["confirmation_template_key"],
+        "confirmation_template_revision": row["confirmation_template_revision"],
+        "payment_template_key": row["payment_template_key"],
+        "payment_template_revision": row["payment_template_revision"],
     }
 
 
@@ -341,6 +384,10 @@ def _insert_message(
     payment_message: str,
     attachment_path: Path,
     payment_attachment_path: Path,
+    confirmation_template_key: str,
+    confirmation_template_revision: int,
+    payment_template_key: str,
+    payment_template_revision: int,
     test_mode: bool,
     settings: Settings | None,
 ) -> dict[str, object]:
@@ -353,9 +400,14 @@ def _insert_message(
             INSERT INTO whatsapp_messages (
                 message_id, order_id, message_kind, recipient_phone, recipient_username, greeting,
                 evidence_caption, payment_message, attachment_path, status,
-                payment_attachment_path, test_mode, prepared_at, created_at, updated_at
+                payment_attachment_path, confirmation_template_key,
+                confirmation_template_revision, payment_template_key,
+                payment_template_revision, test_mode, prepared_at, created_at, updated_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'prepared', %s, %s, %s, %s, %s)
+            VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, 'prepared', %s,
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
             """,
             (
                 message_id,
@@ -368,6 +420,10 @@ def _insert_message(
                 payment_message,
                 str(attachment_path),
                 str(payment_attachment_path),
+                confirmation_template_key,
+                confirmation_template_revision,
+                payment_template_key,
+                payment_template_revision,
                 test_mode,
                 now,
                 now,
@@ -386,6 +442,10 @@ def _insert_message(
         "greeting": greeting,
         "evidence_caption": evidence_caption,
         "payment_message": payment_message,
+        "confirmation_template_key": confirmation_template_key,
+        "confirmation_template_revision": confirmation_template_revision,
+        "payment_template_key": payment_template_key,
+        "payment_template_revision": payment_template_revision,
         "whatsapp_url": (
             f"https://wa.me/{recipient_phone[1:]}?text={quote(greeting)}"
             if recipient_phone
@@ -431,8 +491,11 @@ def _copy_attachment(source: Path, message_id: str) -> Path:
     return copy_deduplicated_file(source, destination)
 
 
-def _copy_payment_attachment(message_id: str) -> Path:
-    details = _payment_details()
+def _copy_payment_attachment(
+    message_id: str,
+    details: dict[str, str] | None = None,
+) -> Path:
+    details = details or _payment_details()
     config_root = PAYMENT_CONFIG_PATH.resolve().parent
     source = (config_root / details["image"]).resolve()
     if (
@@ -450,12 +513,21 @@ def _copy_payment_attachment(message_id: str) -> Path:
     return copy_deduplicated_file(source, destination)
 
 
-def _payment_message(amount: str) -> str:
-    details = _payment_details()
+def _render_current_template(
+    template_key: str,
+    context: dict[str, object],
+    *,
+    settings: Settings | None,
+) -> tuple[str, int]:
+    template = get_whatsapp_message_template(template_key, settings)
+    definition = whatsapp_template_definition(template_key)
+    if template is None or definition is None:
+        raise RuntimeError(f"WhatsApp template is missing: {template_key}.")
+    if not template.enabled:
+        raise ValueError(f"La plantilla de WhatsApp {template_key} esta deshabilitada.")
     return (
-        "Ahora ya podemos proceder con el pago del servicio, "
-        f"el monto es de {amount} soles.\n"
-        f"El número es {details['phone']} a nombre de *{details['account_name']}*"
+        render_whatsapp_template(definition, template.message_template, context),
+        template.revision,
     )
 
 
@@ -527,6 +599,8 @@ def _render_demo_constancia(message_id: str) -> Path:
 
 
 __all__ = [
+    "RESERVATION_CONFIRMATION_TEMPLATE_KEY",
+    "RESERVATION_PAYMENT_TEMPLATE_KEY",
     "archive_whatsapp_evidence",
     "get_whatsapp_attachment",
     "mark_whatsapp_message_sent",

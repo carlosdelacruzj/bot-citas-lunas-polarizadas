@@ -9,7 +9,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 62
+SCHEMA_VERSION = 63
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -353,6 +353,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_appointment_reminder_control_schema(connection)
     _create_whatsapp_message_template_schema(connection)
     _create_whatsapp_automation_template_trace_schema(connection)
+    _create_whatsapp_message_template_trace_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
@@ -891,6 +892,8 @@ def _create_opportunity_observability_schema(connection: Connection) -> None:
         ON CONFLICT DO NOTHING
         """
     )
+
+
 def _validate_current_schema(connection: Connection) -> None:
     required_tables = {
         "schema_version",
@@ -1019,6 +1022,10 @@ def _validate_current_schema(connection: Connection) -> None:
         ("whatsapp_messages", "status"),
         ("whatsapp_messages", "test_mode"),
         ("whatsapp_messages", "sent_at"),
+        ("whatsapp_messages", "confirmation_template_key"),
+        ("whatsapp_messages", "confirmation_template_revision"),
+        ("whatsapp_messages", "payment_template_key"),
+        ("whatsapp_messages", "payment_template_revision"),
         ("whatsapp_followup_messages", "message_id"),
         ("whatsapp_followup_messages", "recipient_phone"),
         ("whatsapp_followup_messages", "recipient_username"),
@@ -1147,6 +1154,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
         "ck_whatsapp_messages_recipient",
+        "ck_whatsapp_messages_confirmation_template_trace",
+        "ck_whatsapp_messages_payment_template_trace",
         "ck_whatsapp_followup_messages_sent",
         "ck_whatsapp_followup_messages_recipient",
         "ck_whatsapp_automation_job_review",
@@ -2103,6 +2112,54 @@ def _create_whatsapp_automation_template_trace_schema(connection: Connection) ->
             )
             """
         )
+
+
+def _create_whatsapp_message_template_trace_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        ALTER TABLE whatsapp_messages
+        ADD COLUMN IF NOT EXISTS confirmation_template_key text,
+        ADD COLUMN IF NOT EXISTS confirmation_template_revision integer,
+        ADD COLUMN IF NOT EXISTS payment_template_key text,
+        ADD COLUMN IF NOT EXISTS payment_template_revision integer
+        """
+    )
+    for constraint_name, key_column, revision_column in (
+        (
+            "ck_whatsapp_messages_confirmation_template_trace",
+            "confirmation_template_key",
+            "confirmation_template_revision",
+        ),
+        (
+            "ck_whatsapp_messages_payment_template_trace",
+            "payment_template_key",
+            "payment_template_revision",
+        ),
+    ):
+        constraint = connection.execute(
+            """
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = %s
+              AND conrelid = 'whatsapp_messages'::regclass
+            """,
+            (constraint_name,),
+        ).fetchone()
+        if constraint is None:
+            connection.execute(
+                f"""
+                ALTER TABLE whatsapp_messages
+                ADD CONSTRAINT {constraint_name} CHECK (
+                    ({key_column} IS NULL AND {revision_column} IS NULL)
+                    OR (
+                        {key_column} IS NOT NULL
+                        AND char_length({key_column}) BETWEEN 1 AND 80
+                        AND {revision_column} IS NOT NULL
+                        AND {revision_column} > 0
+                    )
+                )
+                """
+            )
 
 
 def _stored_appointment_day(value: object) -> object | None:
@@ -3094,6 +3151,13 @@ def migrate_database(connection: Connection) -> None:
             (62,),
         )
         current_version = 62
+    if current_version == 62:
+        _create_whatsapp_message_template_trace_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (63,),
+        )
+        current_version = 63
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "
