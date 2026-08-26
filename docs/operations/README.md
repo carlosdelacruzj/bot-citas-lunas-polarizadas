@@ -168,6 +168,11 @@ decisiones y trazas actuales estan en:
 - [`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md);
 - [`whatsapp-daily-slot-summary-2026-07-30.md`](whatsapp-daily-slot-summary-2026-07-30.md).
 
+El plan incremental para editar desde el dashboard los mensajes comerciales,
+con variables allowlisted, preview, versiones y aplicación solo a trabajos
+futuros, vive en
+[`whatsapp-editable-templates-plan-2026-08-25.md`](whatsapp-editable-templates-plan-2026-08-25.md).
+
 ## CAPTCHA local y sombra
 
 Runtime residente actual:

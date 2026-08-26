@@ -923,16 +923,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   manual, evitando un segundo intento de acceso dentro del mismo ciclo.
 - Corregido el `2026-08-25`: una burbuja de texto con reloj `msg-time` podía
   coincidir a la vez con una etiqueta accesible genérica y cerrar como falso
-  `sent`. El reloj tiene ahora prioridad absoluta, la confirmación positiva
-  exige un icono real de enviado, entregado o leído, y el contexto de WhatsApp
-  permanece abierto si vence la espera para no abortar el mensaje localmente
-  pendiente. El trabajo termina `uncertain`, conserva captura y no se reintenta
-  automáticamente. Una reproducción DOM aislada cubrió reloj con etiqueta
-  genérica, check real y reloj más check; `compileall`, Ruff, las `59` pruebas
-  existentes y `git diff --check` quedaron correctos. Admin API se reinició de
-  forma aislada con cola WhatsApp, submissions, sesiones manuales y ráfagas en
-  cero; regresó saludable sin reiniciar worker o Telegram ni enviar mensajes.
-  El caso real que motivó el cambio no fue reenviado.
+  `sent`. La primera guarda retiró esas coincidencias amplias, pero el siguiente
+  aviso real reveló el caso inverso: WhatsApp mostró el texto completo con doble
+  check y el detector lo dejó `uncertain` porque contaba marcadores ocultos y ya
+  no aceptaba el estado accesible exacto. La confirmación ahora considera solo
+  iconos visibles, mantiene un reloj visible como veto y admite exclusivamente
+  las etiquetas completas `Enviado`, `Entregado` o `Leído` y sus equivalentes
+  en inglés; textos genéricos como `Enviado correctamente` no confirman nada.
+  El contexto permanece abierto si vence la espera y nunca se reintenta un
+  posible envío. Una reproducción DOM aislada cubrió reloj visible, reloj
+  oculto con entrega exacta, check estructural, lectura exacta y reloj más
+  check. El caso real de las `15:14` no fue reenviado ni conciliado durante la
+  corrección.
 - Corregido el `2026-08-08`: un diálogo de WhatsApp bloqueó el primer aviso
   real dirigido por `@usuario` antes de abrir el chat. La ruta ahora guarda
   captura única, cierra solamente controles seguros, vuelve a resolver el mismo
@@ -943,6 +945,18 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 - Después de las imágenes, el mismo trabajo diario enviará una publicación para
   TikTok lista para copiar. Se genera sin IA ni tokens mediante 138,240
   combinaciones deterministas; precio, pago, WhatsApp y advertencias permanecen
+
+- Corregido el `2026-08-25`: la confirmación incierta de los PDF ya no corta el
+  texto de pago confirmado cuando el único clic de documentos cerró la vista
+  previa y WhatsApp devolvió el compositor normal. En ese caso el flujo envía
+  el texto como una acción distinta, conserva los PDF como `uncertain` y nunca
+  repite su clic. El resultado y la alerta Telegram detallan por separado
+  `documents` y `payment_confirmation`, guardan una captura final y solo marcan
+  el paquete completo como `sent` si ambos componentes quedan confirmados. El
+  cambio responde a tres postpagos reales cuyos PDF aparecieron enviados pero
+  cuya comprobación automática devolvió `0/3`; el operador informó que tuvo que
+  completar manualmente el texto en algunos casos. No se reenviaron ni se
+  conciliaron automáticamente esos trabajos históricos.
 
 ### Destinatarios de WhatsApp por usuario
 

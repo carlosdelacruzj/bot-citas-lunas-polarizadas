@@ -465,7 +465,10 @@ class WhatsAppAutomationDispatcher:
             else f"Fecha: {job['report_date']}"
         )
         component_lines: list[str] = []
-        if job["job_kind"] == "daily_slot_summary" and result is not None:
+        if result is not None and job["job_kind"] in {
+            "daily_slot_summary",
+            "post_payment_followup",
+        }:
             components = result.get("delivery_components")
             if isinstance(components, dict):
                 labels = {
@@ -473,13 +476,23 @@ class WhatsAppAutomationDispatcher:
                     "images": "Imágenes",
                     "publication": "Publicación TikTok",
                 }
+                if job["job_kind"] == "post_payment_followup":
+                    labels.update(
+                        {
+                            "documents": "PDFs",
+                            "payment_confirmation": "Mensaje de pago confirmado",
+                        }
+                    )
+                    component_keys = ("documents", "payment_confirmation")
+                else:
+                    component_keys = ("summary", "images", "publication")
                 states = {
                     "confirmed": "confirmado",
                     "skipped": "omitidas porque no había archivos",
                     "uncertain": "no confirmado automáticamente",
                     "not_attempted": "no intentado",
                 }
-                for key in ("summary", "images", "publication"):
+                for key in component_keys:
                     value = str(components.get(key) or "not_attempted")
                     component_lines.append(
                         f"{labels[key]}: {states.get(value, value)}"

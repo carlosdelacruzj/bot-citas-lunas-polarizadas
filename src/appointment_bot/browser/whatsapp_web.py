@@ -500,7 +500,7 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
         raise FileNotFoundError("Uno de los PDFs preparados ya no esta disponible.")
     _attach_document(page, attachments)
     if draft.get("auto_send"):
-        _click_send_button(page, attachments)
+        documents_confirmed = _click_send_button(page, attachments)
         text_sent = _send_plain_text_message(
             page,
             str(draft["caption"]),
@@ -509,27 +509,58 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                 f"{_safe_whatsapp_artifact_name(message_id)}"
             ),
         )
-        if not text_sent:
-            logger.warning(
-                "WhatsApp Web follow-up documents were sent but the text message "
-                "was not confirmed: message_id=%s",
-                message_id,
-            )
-            return _result(
-                "send_uncertain",
+        delivery_components = {
+            "documents": "confirmed" if documents_confirmed else "uncertain",
+            "payment_confirmation": "confirmed" if text_sent else "uncertain",
+        }
+        if not documents_confirmed or not text_sent:
+            evidence_path = _save_whatsapp_debug_screenshot(
+                page,
                 (
+                    "whatsapp-followup-"
+                    f"{_safe_whatsapp_artifact_name(message_id)}-components-uncertain"
+                ),
+            )
+            logger.warning(
+                "WhatsApp Web follow-up was not fully confirmed: "
+                "message_id=%s documents_confirmed=%s text_confirmed=%s",
+                message_id,
+                documents_confirmed,
+                text_sent,
+            )
+            if documents_confirmed:
+                message = (
                     "Los PDFs salieron, pero WhatsApp no confirmo el texto post-pago. "
                     "No se marcara el paquete completo como enviado ni se reintentara "
                     "automaticamente."
-                ),
+                )
+            elif text_sent:
+                message = (
+                    "WhatsApp cerro la vista previa de los PDFs sin permitir confirmar "
+                    "automaticamente todas sus burbujas. El mensaje de pago confirmado "
+                    "si fue enviado y confirmado; no se repetiran los PDFs."
+                )
+            else:
+                message = (
+                    "WhatsApp cerro la vista previa de los PDFs sin permitir confirmar "
+                    "automaticamente todas sus burbujas y tampoco confirmo el mensaje "
+                    "de pago. No se reintentara automaticamente."
+                )
+            if documents_confirmed:
+                delivery_phase = "documents_confirmed_text_unconfirmed"
+            elif text_sent:
+                delivery_phase = "documents_unconfirmed_text_confirmed"
+            else:
+                delivery_phase = "documents_and_text_unconfirmed"
+            return _result(
+                "send_uncertain",
+                message,
                 message_id=message_id,
                 draft_mode="documents",
                 manual_send_required=True,
-                delivery_phase="send_attempted",
-                evidence_path=(
-                    ".runtime/whatsapp-followup-"
-                    f"{_safe_whatsapp_artifact_name(message_id)}-text-send-uncertain.png"
-                ),
+                delivery_phase=delivery_phase,
+                evidence_path=evidence_path,
+                delivery_components=delivery_components,
             )
         context.close()
         logger.info(
@@ -544,6 +575,7 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
             draft_mode="documents",
             manual_send_required=False,
             sent=True,
+            delivery_components=delivery_components,
         )
     draft_mode = _fill_caption(
         page,
@@ -1756,18 +1788,17 @@ def _fill_caption(
     raise RuntimeError("La imagen se adjunto, pero no se encontro el campo para el texto.")
 
 
-def _click_send_button(page: Page, attachments: list[Path]) -> None:
+def _click_send_button(page: Page, attachments: list[Path]) -> bool:
     attachment_names = [attachment.name for attachment in attachments]
     outgoing_signatures = _outgoing_message_signatures(page)
     if _document_preview_visible(page, attachment_names):
         if _click_bottom_right_send_button(page):
-            _wait_until_send_attempt_finishes(
+            return _wait_until_send_attempt_finishes(
                 page,
                 attachment_names=attachment_names,
                 outgoing_signatures=outgoing_signatures,
                 expected_outgoing_count=len(attachments),
             )
-            return
     selectors = (
         "[data-testid='send']",
         "button[aria-label*='Enviar' i]",
@@ -1794,25 +1825,23 @@ def _click_send_button(page: Page, attachments: list[Path]) -> None:
                 target = role_button.first
             _save_whatsapp_debug_screenshot(page, "whatsapp-followup-before-send")
             target.click(timeout=2_000, force=True)
-            _wait_until_send_attempt_finishes(
+            return _wait_until_send_attempt_finishes(
                 page,
                 attachment_names=attachment_names,
                 outgoing_signatures=outgoing_signatures,
                 expected_outgoing_count=len(attachments),
             )
-            return
         page.wait_for_timeout(500)
     if _attachment_preview_visible(
         page,
         attachment_names,
     ) and _click_bottom_right_send_button(page):
-        _wait_until_send_attempt_finishes(
+        return _wait_until_send_attempt_finishes(
             page,
             attachment_names=attachment_names,
             outgoing_signatures=outgoing_signatures,
             expected_outgoing_count=len(attachments),
         )
-        return
     _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-button-missing")
     raise RuntimeError("No se encontro el boton Enviar de WhatsApp.")
 
@@ -1937,24 +1966,51 @@ def _outgoing_message_signatures(
 def _message_container_has_confirmed_status(message) -> bool:
     if _message_container_has_pending_status(message):
         return False
-    return bool(
-        message.locator(
-            "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
-            "[data-icon^='msg-check-'], [data-icon^='msg-dblcheck-'], "
-            "[data-icon*='dblcheck'], "
-            "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
-            "[class*='wds-ic-sent']"
-        ).count()
+    status_markers = message.locator(
+        "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
+        "[data-icon^='msg-check-'], [data-icon^='msg-dblcheck-'], "
+        "[data-icon*='dblcheck'], "
+        "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
+        "[class*='wds-ic-sent']"
     )
+    if _locator_has_visible_match(status_markers):
+        return True
+    labels = message.locator("[aria-label]")
+    confirmed_labels = {
+        "enviado",
+        "entregado",
+        "leido",
+        "sent",
+        "delivered",
+        "read",
+    }
+    for index in range(labels.count()):
+        label = labels.nth(index)
+        if not label.is_visible():
+            continue
+        value = _safe_get_attribute(label, "aria-label") or ""
+        if _compact_alphanumeric_text(value) in confirmed_labels:
+            return True
+    return False
 
 
 def _message_container_has_pending_status(message) -> bool:
-    return bool(
+    return _locator_has_visible_match(
         message.locator(
             "[data-icon='msg-time'], [data-icon^='msg-time-'], "
             "[class*='wds-ic-time']"
-        ).count()
+        )
     )
+
+
+def _locator_has_visible_match(locator) -> bool:
+    for index in range(locator.count()):
+        try:
+            if locator.nth(index).is_visible():
+                return True
+        except PlaywrightError:
+            continue
+    return False
 
 
 def _message_container_signature(message) -> str:
@@ -2061,7 +2117,7 @@ def _wait_until_send_attempt_finishes(
     attachment_names: list[str],
     outgoing_signatures: set[str],
     expected_outgoing_count: int,
-) -> None:
+) -> bool:
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
         confirmed_signatures = _outgoing_message_signatures(
@@ -2074,17 +2130,29 @@ def _wait_until_send_attempt_finishes(
             and new_confirmed_count >= expected_outgoing_count
         ):
             page.wait_for_timeout(1_000)
-            return
+            return True
         page.wait_for_timeout(500)
-    _save_whatsapp_debug_screenshot(page, "whatsapp-followup-send-not-confirmed")
+    evidence_path = _save_whatsapp_debug_screenshot(
+        page,
+        "whatsapp-followup-send-not-confirmed",
+    )
+    preview_visible = _attachment_preview_visible(page, attachment_names)
     logger.warning(
         "WhatsApp document send confirmation failed: "
         "phase=document_preview_still_open_or_unconfirmed "
-        "confirmed=%s expected=%s preview_visible=%s",
+        "confirmed=%s expected=%s preview_visible=%s evidence=%s",
         new_confirmed_count,
         expected_outgoing_count,
-        _attachment_preview_visible(page, attachment_names),
+        preview_visible,
+        evidence_path,
     )
+    if not preview_visible and _normal_chat_composer_visible(page):
+        logger.warning(
+            "WhatsApp document preview closed without full confirmation; "
+            "continuing with the distinct post-payment text and preserving "
+            "the documents as uncertain"
+        )
+        return False
     raise RuntimeError(
         "WhatsApp no confirmo el envio de los documentos; la vista previa no cerro "
         "o no aparecieron todas las burbujas salientes confirmadas. "

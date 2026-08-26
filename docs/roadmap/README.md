@@ -416,21 +416,31 @@ la superficie principal.
 2. Mostrar antiguedad, vencimiento, responsable y siguiente accion.
 3. Mover pruebas de WhatsApp a `Diagnostico de comunicaciones`, con destinatario
    y alcance visibles.
-4. Extender la conciliacion guiada ya implementada para álbum y postpago a los
+4. Implementar de forma incremental las plantillas editables de WhatsApp desde
+   el dashboard: registro, reserva/cobro y postpago antes de unificar el editor
+   pre-cita existente. Cada revisión aplica solo a trabajos futuros, usa
+   variables allowlisted y conserva historial. El detalle y los puntos de pausa
+   viven en
+   [`../operations/whatsapp-editable-templates-plan-2026-08-25.md`](../operations/whatsapp-editable-templates-plan-2026-08-25.md).
+   La Etapa 0 quedó completada el `2026-08-25`: constructores, defaults,
+   variables, bloques opcionales y momentos de snapshot están congelados; las
+   Etapas 1-8 permanecen pendientes y no existen todavía tablas, endpoints ni
+   consumidores nuevos.
+5. Extender la conciliacion guiada ya implementada para álbum y postpago a los
    demás tipos de WhatsApp. Desde el `2026-08-20`, los casos comerciales
    `failed/uncertain` permiten registrar `ya estaba completo`, `complete lo
    faltante` o `cerrar sin envio`; la revisión nunca reintenta y conserva el
    resultado técnico original. Falta cubrir resúmenes diarios, avisos de
    registro y recordatorios con la misma superficie.
-5. Sacar configuracion CAPTCHA avanzada de Resumen; dejar una franja cuando el
+6. Sacar configuracion CAPTCHA avanzada de Resumen; dejar una franja cuando el
    muestreo este activo.
-6. Mantener IDs, `details_json`, estados crudos y copiar snapshot dentro de
+7. Mantener IDs, `details_json`, estados crudos y copiar snapshot dentro de
    detalle tecnico.
-7. Añadir frescura: ultima reserva, cupo, defensa, WhatsApp confirmado, backup y
+8. Añadir frescura: ultima reserva, cupo, defensa, WhatsApp confirmado, backup y
    actualizacion de cada fuente.
-8. Cargar Post-cita y textos sensibles de manera progresiva y paginada; evitar
+9. Cargar Post-cita y textos sensibles de manera progresiva y paginada; evitar
    transportar las 108 historias completas cuando solo se necesita el resumen.
-9. Completar la revision visual humana de `Seguimiento` en `360`, `768`,
+10. Completar la revision visual humana de `Seguimiento` en `360`, `768`,
     `1024` y `1440 px`. La separacion funcional entre Proximas citas,
     Post-cita e Historial ya esta implementada; queda pendiente aprobar su
     presentacion real en escritorio y movil.
@@ -556,9 +566,12 @@ aparezca el evento natural:
 - siguientes trabajos WhatsApp: album, postpago y aviso de registro,
   revisar las guardas acotadas del `2026-08-20`: una segunda apertura del menú
   solo antes de seleccionar archivos, una segunda búsqueda por `@usuario` solo
-  antes de escribir y la barrera que exige cierre de vista previa más dos
-  burbujas PDF confirmadas antes del texto. Preservar `uncertain` sin reintento
-  después de un posible envío. La segunda apertura del menú ya no usa
+  antes de escribir. En postpago, un único clic de documentos debe cerrar la
+  vista previa antes del texto: si todas las burbujas PDF se confirman, continúa
+  normalmente; si la vista previa cerró y volvió el compositor pero los checks
+  no se reconocen, continúa únicamente con el texto, conserva los PDF como
+  `uncertain` y nunca repite su clic. Preservar `uncertain` sin reintento después
+  de un posible envío. La segunda apertura del menú ya no usa
   `Escape` y debe conservar visible el compositor del chat; el resumen real
   del `2026-08-13` ya validó
   paquetes secuenciales `4 + 4 + 2` y publicación posterior al último;
@@ -568,9 +581,13 @@ aparezca el evento natural:
   autorizado de `order-72687222` validó el `2026-08-21` la regla de un solo clic:
   la vista previa coexistió con el compositor y después aparecieron `3/3`
   burbujas PDF y el texto completo, sin segundo clic. Desde el `2026-08-25`,
-  una burbuja con reloj veta `sent`, solo un check real confirma el texto y el
-  contexto no se cierra mientras el resultado queda pendiente; validar esta
-  guarda con el siguiente aviso natural, sin crear un reenvío de prueba;
+  un reloj visible veta `sent`, mientras un check visible o una etiqueta exacta
+  de enviado, entregado o leído confirma el texto; los marcadores ocultos y las
+  etiquetas genéricas no deciden. El contexto no se cierra mientras el resultado
+  queda pendiente. Validar con el
+  siguiente postpago natural los estados separados `documents` y
+  `payment_confirmation`, y validar la guarda del reloj con el siguiente aviso
+  natural, sin crear un reenvío de prueba;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada
   después, sin comparar nuevamente texto ni emojis;
