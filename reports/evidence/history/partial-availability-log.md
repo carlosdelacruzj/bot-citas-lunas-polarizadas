@@ -667,9 +667,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Seleccion fecha/hora: 1.750s
 - Evidencia:
   - Screenshot principal: no registrado
-  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
-  - Screenshot adicional: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
-  - Screenshot adicional: screenshots\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123801-5e8bca9f-order-***-3f5dd8ebbc854f719e9dc670254b41b4.png
+  - Diagnostico captcha_images: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
+  - Screenshot adicional: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123801-5e8bca9f-order-***-3b6f608a9b284130a40748440f06f467-original-html.png
+  - Screenshot adicional: screenshots\2026-07\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123801-5e8bca9f-order-***-3f5dd8ebbc854f719e9dc670254b41b4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -703,9 +703,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Seleccion fecha/hora: 1.813s
 - Evidencia:
   - Screenshot principal: no registrado
-  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
-  - Screenshot adicional: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
-  - Screenshot adicional: screenshots\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123813-d7a19608-order-***-6a02d62e6b1e4dbf82f11c0cc9195c41.png
+  - Diagnostico captcha_images: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
+  - Screenshot adicional: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-123813-d7a19608-order-***-e0539454626a4b2a9ce1a751407565d9-original-html.png
+  - Screenshot adicional: screenshots\2026-07\06-07-2026\03-modal-reserva-citas-cupo-disponible-***-123813-d7a19608-order-***-6a02d62e6b1e4dbf82f11c0cc9195c41.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -738,7 +738,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.252s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\06-07-2026\parcial-233923-order-***-187ac0.png
+  - Screenshot principal: screenshots\2026-07\06-07-2026\parcial-233923-order-***-187ac0.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -771,7 +771,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 12.614s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\06-07-2026\parcial-234929-order-***-fdee7d.png
+  - Screenshot principal: screenshots\2026-07\06-07-2026\parcial-234929-order-***-fdee7d.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -804,9 +804,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.943s
   - Seleccion fecha/hora: 1.656s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-082840-order-***-1ec87a.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-082840-order-***-a7352c-original.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-082840-order-***-1ec87a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -839,9 +839,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 11.004s
   - Seleccion fecha/hora: 1.891s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-124617-order-***-02c311.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-124617-order-***-c3db9d-original.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-124617-order-***-02c311.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -874,9 +874,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.571s
   - Seleccion fecha/hora: 1.937s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-125504-order-***-82a328.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-125504-order-***-b52d21-original.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-125504-order-***-82a328.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -909,9 +909,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.823s
   - Seleccion fecha/hora: 1.875s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-125521-order-***-b181c0.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-125521-order-***-fc3090-original.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-125521-order-***-b181c0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -944,9 +944,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.672s
   - Seleccion fecha/hora: 1.719s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-102636-order-***-cd1996.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-102636-order-***-f30e7b-original.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-102636-order-***-cd1996.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -979,9 +979,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 29.184s
   - Seleccion fecha/hora: 1.704s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-105801-order-***-019158.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-105801-order-***-13141b-original.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-105801-order-***-019158.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1014,7 +1014,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 103.059s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\parcial-151932-order-***-c939a4.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\parcial-151932-order-***-c939a4.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -1047,9 +1047,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 25.927s
   - Seleccion fecha/hora: 1.719s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-080455-order-***-7d11b3-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-080455-order-***-7d11b3-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-080455-order-***-55fe40.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\captchas\captcha-080455-order-***-7d11b3-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-080455-order-***-7d11b3-original.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-080455-order-***-55fe40.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1082,9 +1082,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 36.690s
   - Seleccion fecha/hora: 1.750s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-080749-order-***-b44697-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-080749-order-***-b44697-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-080749-order-***-28cf65.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\captchas\captcha-080749-order-***-b44697-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-080749-order-***-b44697-original.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-080749-order-***-28cf65.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1117,9 +1117,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.454s
   - Seleccion fecha/hora: 1.704s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-091807-order-***-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-091807-order-***-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-091807-order-***.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\captchas\captcha-091807-order-***-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-091807-order-***-original.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-091807-order-***.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
@@ -1152,9 +1152,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 20.872s
   - Seleccion fecha/hora: 1.734s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-102200-order-***-891072-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-102200-order-***-891072-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-102200-order-***-1ca1aa.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\captchas\captcha-102200-order-***-891072-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-102200-order-***-891072-original.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-102200-order-***-1ca1aa.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1187,9 +1187,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.641s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\captchas\captcha-121323-order-***-ae18bc-original.png
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-121323-order-***-ae18bc-original.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-121323-order-***-b8629f.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\captchas\captcha-121323-order-***-ae18bc-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-121323-order-***-ae18bc-original.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-121323-order-***-b8629f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1222,9 +1222,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.789s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\captchas\captcha-102341-order-***-e5ceda-original.png
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-102341-order-***-e5ceda-original.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-102341-order-***-a2592e.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\captchas\captcha-102341-order-***-e5ceda-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-102341-order-***-e5ceda-original.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-102341-order-***-a2592e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1257,9 +1257,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 24.804s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\captchas\captcha-134116-order-***-b1e91c-original.png
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-134116-order-***-b1e91c-original.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-134116-order-***-4dee35.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\captchas\captcha-134116-order-***-b1e91c-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-134116-order-***-b1e91c-original.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-134116-order-***-4dee35.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1292,9 +1292,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.081s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-085542-order-***-3d245c-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-085542-order-***-3d245c-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-085542-order-***-b9ac0d.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-085542-order-***-3d245c-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-085542-order-***-3d245c-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-085542-order-***-b9ac0d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1327,9 +1327,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 43.435s
   - Seleccion fecha/hora: 1.735s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-092020-order-***-161313-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-092020-order-***-161313-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-092020-order-***-8f78c4.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-092020-order-***-161313-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-092020-order-***-161313-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-092020-order-***-8f78c4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1362,9 +1362,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.614s
   - Seleccion fecha/hora: 1.688s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-095146-order-***-868b7a-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-095146-order-***-868b7a-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-095146-order-***-eccf73.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-095146-order-***-868b7a-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-095146-order-***-868b7a-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-095146-order-***-eccf73.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1397,9 +1397,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 33.544s
   - Seleccion fecha/hora: 1.688s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-095302-order-***-9b6d4b-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-095302-order-***-9b6d4b-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-095302-order-***-085b0e.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-095302-order-***-9b6d4b-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-095302-order-***-9b6d4b-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-095302-order-***-085b0e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1432,9 +1432,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.672s
   - Seleccion fecha/hora: 1.688s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-104053-order-***-681c32-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-104053-order-***-681c32-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-104053-order-***-7680e4.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-104053-order-***-681c32-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-104053-order-***-681c32-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-104053-order-***-7680e4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1467,9 +1467,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.770s
   - Seleccion fecha/hora: 1.704s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\captchas\captcha-130915-order-***-99a4fe-original.png
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-130915-order-***-99a4fe-original.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-130915-order-***-05a354.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\captchas\captcha-130915-order-***-99a4fe-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-130915-order-***-99a4fe-original.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-130915-order-***-05a354.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1502,9 +1502,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 45.616s
   - Seleccion fecha/hora: 1.812s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-084434-order-***-f1bda2.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-084434-order-***-168890-original.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-084434-order-***-f1bda2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1537,9 +1537,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.658s
   - Seleccion fecha/hora: 1.797s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-093923-order-***-1debf8.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-093923-order-***-b53ddb-original.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-093923-order-***-1debf8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1572,9 +1572,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.147s
   - Seleccion fecha/hora: 1.828s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-094051-order-***-c89851.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-094051-order-***-2424ce-original.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-094051-order-***-c89851.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1607,9 +1607,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 34.043s
   - Seleccion fecha/hora: 1.656s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-141926-order-***-85aa4b.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-141926-order-***-e6a904-original.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-141926-order-***-85aa4b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1642,9 +1642,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.632s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-085233-order-***-4b268f.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-085233-order-***-24a220-original.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-085233-order-***-4b268f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
@@ -1677,8 +1677,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 24.165s
   - Seleccion fecha/hora: 1.844s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-104218-order-***-401323-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1711,8 +1711,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 34.880s
   - Seleccion fecha/hora: 1.719s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-104337-order-***-da2873-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1745,8 +1745,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.723s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-123329-order-***-527320-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1779,8 +1779,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 39.812s
   - Seleccion fecha/hora: 1.766s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-124843-order-***-0f321e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1813,9 +1813,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 40.890s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-165945-order-***-c5548d.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-165945-order-***-8bfc2a-original.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-165945-order-***-c5548d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
@@ -1848,8 +1848,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 45.228s
   - Seleccion fecha/hora: 1.765s
 - Evidencia:
-  - Screenshot principal: screenshots\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
-  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
+  - Screenshot principal: screenshots\2026-07\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\22-07-2026\captchas\captcha-131211-order-***-781260-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1882,8 +1882,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 35.394s
   - Seleccion fecha/hora: 1.703s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-104846-order-***-8a1987-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1916,8 +1916,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 37.702s
   - Seleccion fecha/hora: 1.750s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-112934-order-***-dc742d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1950,8 +1950,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.461s
   - Seleccion fecha/hora: 1.718s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-121721-order-***-8e4eb6-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -1984,8 +1984,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 52.893s
   - Seleccion fecha/hora: 1.718s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-134426-order-***-e03666-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2018,8 +2018,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.080s
   - Seleccion fecha/hora: 1.671s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-143143-order-***-6d0a27-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2052,8 +2052,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 49.388s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
-  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
+  - Screenshot principal: screenshots\2026-07\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\27-07-2026\captchas\captcha-100507-order-***-a9bd0b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2086,9 +2086,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 8.937s
   - Seleccion fecha/hora: 1.688s
 - Evidencia:
-  - Screenshot principal: screenshots\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
-  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
-  - Screenshot adicional: screenshots\30-07-2026\cupo-134632-order-***-d7d3d4.png
+  - Screenshot principal: screenshots\2026-07\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\30-07-2026\captchas\captcha-134632-order-***-e52f15-original.png
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\cupo-134632-order-***-d7d3d4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal.
 
@@ -2121,8 +2121,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 21.621s
   - Seleccion fecha/hora: 2.218s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-114737-order-***-a913d6-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2155,8 +2155,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.871s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-131946-order-***-2a7f8a-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2189,8 +2189,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 9.342s
   - Seleccion fecha/hora: 2.063s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-145801-order-***-23a678-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2223,8 +2223,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 19.943s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-080931-order-***-5202e3-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-080931-order-***-5202e3-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-080931-order-***-5202e3-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-080931-order-***-5202e3-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2257,8 +2257,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 31.549s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-081040-order-***-2ebd46-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-081040-order-***-2ebd46-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-081040-order-***-2ebd46-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-081040-order-***-2ebd46-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2291,8 +2291,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 51.286s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-094647-order-***-dd7122-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-094647-order-***-dd7122-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-094647-order-***-dd7122-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-094647-order-***-dd7122-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2325,8 +2325,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 13.877s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-094813-order-***-5f8d44-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-094813-order-***-5f8d44-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-094813-order-***-5f8d44-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-094813-order-***-5f8d44-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2359,8 +2359,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.242s
   - Seleccion fecha/hora: 1.937s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-101311-order-***-93aaea-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-101311-order-***-93aaea-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-101311-order-***-93aaea-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-101311-order-***-93aaea-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2393,8 +2393,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 43.098s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\captchas\captcha-115513-order-***-f3abb4-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-115513-order-***-f3abb4-original.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\captchas\captcha-115513-order-***-f3abb4-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-115513-order-***-f3abb4-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2427,8 +2427,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 51.629s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-074845-order-***-6931f8-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-074845-order-***-6931f8-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-074845-order-***-6931f8-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-074845-order-***-6931f8-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2461,8 +2461,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.739s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-115803-order-***-dca6cf-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-115803-order-***-dca6cf-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-115803-order-***-dca6cf-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-115803-order-***-dca6cf-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2495,8 +2495,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 31.723s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-121635-order-***-2d2d38-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-121635-order-***-2d2d38-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-121635-order-***-2d2d38-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-121635-order-***-2d2d38-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2529,8 +2529,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 51.919s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-121904-order-***-a48dd3-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-121904-order-***-a48dd3-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-121904-order-***-a48dd3-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-121904-order-***-a48dd3-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2563,8 +2563,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 29.981s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-122737-order-***-a67c48-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-122737-order-***-a67c48-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-122737-order-***-a67c48-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-122737-order-***-a67c48-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2597,8 +2597,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.312s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-122814-order-***-0a4a4d-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-122814-order-***-0a4a4d-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-122814-order-***-0a4a4d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-122814-order-***-0a4a4d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2631,8 +2631,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.165s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-130116-order-***-de19ae-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130116-order-***-de19ae-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-130116-order-***-de19ae-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130116-order-***-de19ae-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2665,8 +2665,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.576s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-130127-order-***-66f83f-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130127-order-***-66f83f-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-130127-order-***-66f83f-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130127-order-***-66f83f-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2699,8 +2699,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 16.477s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-130455-order-***-b2469d-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130455-order-***-b2469d-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-130455-order-***-b2469d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130455-order-***-b2469d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2733,8 +2733,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.476s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-130512-order-***-6583f4-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130512-order-***-6583f4-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-130512-order-***-6583f4-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130512-order-***-6583f4-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2767,8 +2767,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.286s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-130519-order-***-604337-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130519-order-***-604337-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-130519-order-***-604337-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130519-order-***-604337-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2801,8 +2801,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 36.414s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-132249-order-***-689c17-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-132249-order-***-689c17-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-132249-order-***-689c17-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-132249-order-***-689c17-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2835,8 +2835,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.739s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-132327-order-***-1d2542-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-132327-order-***-1d2542-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-132327-order-***-1d2542-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-132327-order-***-1d2542-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2869,8 +2869,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 54.797s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-132931-order-***-58e69d-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-132931-order-***-58e69d-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-132931-order-***-58e69d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-132931-order-***-58e69d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2903,8 +2903,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.640s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-133027-order-***-1712cd-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-133027-order-***-1712cd-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-133027-order-***-1712cd-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-133027-order-***-1712cd-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2937,8 +2937,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 56.031s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-135851-order-***-e3a477-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-135851-order-***-e3a477-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-135851-order-***-e3a477-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-135851-order-***-e3a477-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -2971,8 +2971,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 18.955s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-135948-order-***-2c9f08-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-135948-order-***-2c9f08-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-135948-order-***-2c9f08-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-135948-order-***-2c9f08-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3005,8 +3005,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 28.666s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-140008-order-***-5bb468-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-140008-order-***-5bb468-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-140008-order-***-5bb468-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-140008-order-***-5bb468-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3039,8 +3039,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 55.736s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-155408-order-***-86e986-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-155408-order-***-86e986-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-155408-order-***-86e986-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-155408-order-***-86e986-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3073,8 +3073,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 12.621s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-155520-order-***-4f614b-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-155520-order-***-4f614b-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-155520-order-***-4f614b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-155520-order-***-4f614b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3107,8 +3107,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.354s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160555-order-***-bddc39-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160555-order-***-bddc39-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160555-order-***-bddc39-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160555-order-***-bddc39-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3141,8 +3141,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.646s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160602-order-***-38920d-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160602-order-***-38920d-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160602-order-***-38920d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160602-order-***-38920d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3175,8 +3175,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.201s
   - Seleccion fecha/hora: 2.828s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160609-order-***-f38511-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160609-order-***-f38511-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160609-order-***-f38511-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160609-order-***-f38511-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3209,8 +3209,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.399s
   - Seleccion fecha/hora: 2.844s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160617-order-***-cdf9d4-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160617-order-***-cdf9d4-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160617-order-***-cdf9d4-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160617-order-***-cdf9d4-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3243,8 +3243,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.452s
   - Seleccion fecha/hora: 2.032s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160624-order-***-cc0222-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160624-order-***-cc0222-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160624-order-***-cc0222-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160624-order-***-cc0222-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3277,8 +3277,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.768s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160632-order-***-afd4a0-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160632-order-***-afd4a0-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160632-order-***-afd4a0-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160632-order-***-afd4a0-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3311,8 +3311,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.643s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160639-order-***-2ebd59-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160639-order-***-2ebd59-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160639-order-***-2ebd59-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160639-order-***-2ebd59-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3345,8 +3345,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.679s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\captchas\captcha-160645-order-***-f25205-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-160645-order-***-f25205-original.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\captchas\captcha-160645-order-***-f25205-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-160645-order-***-f25205-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3379,8 +3379,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 33.453s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-081758-order-***-f9e1c7-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081758-order-***-f9e1c7-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-081758-order-***-f9e1c7-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081758-order-***-f9e1c7-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3413,8 +3413,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.125s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-081847-order-***-dc5cca-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081847-order-***-dc5cca-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-081847-order-***-dc5cca-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081847-order-***-dc5cca-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3447,8 +3447,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.077s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-081908-order-***-cd5d2e-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081908-order-***-cd5d2e-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-081908-order-***-cd5d2e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081908-order-***-cd5d2e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3481,8 +3481,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 13.052s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-082233-order-***-30a39e-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-082233-order-***-30a39e-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-082233-order-***-30a39e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-082233-order-***-30a39e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3515,8 +3515,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.612s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-082247-order-***-f467ae-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-082247-order-***-f467ae-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-082247-order-***-f467ae-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-082247-order-***-f467ae-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3549,8 +3549,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 31.145s
   - Seleccion fecha/hora: 1.937s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090318-order-***-e02654-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090318-order-***-e02654-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090318-order-***-e02654-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090318-order-***-e02654-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3583,8 +3583,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.352s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090351-order-***-6c8fbe-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090351-order-***-6c8fbe-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090351-order-***-6c8fbe-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090351-order-***-6c8fbe-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3617,8 +3617,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.399s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090357-order-***-4843ad-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090357-order-***-4843ad-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090357-order-***-4843ad-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090357-order-***-4843ad-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3651,8 +3651,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.133s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090404-order-***-7a3b60-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090404-order-***-7a3b60-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090404-order-***-7a3b60-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090404-order-***-7a3b60-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3685,8 +3685,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.351s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090411-order-***-edc056-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090411-order-***-edc056-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090411-order-***-edc056-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090411-order-***-edc056-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3719,8 +3719,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.345s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090417-order-***-be2f3b-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090417-order-***-be2f3b-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090417-order-***-be2f3b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090417-order-***-be2f3b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3753,8 +3753,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.402s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090424-order-***-be569e-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090424-order-***-be569e-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090424-order-***-be569e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090424-order-***-be569e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3787,8 +3787,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.109s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090430-order-***-6161dd-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090430-order-***-6161dd-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090430-order-***-6161dd-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090430-order-***-6161dd-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3821,8 +3821,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.347s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090437-order-***-70bac5-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090437-order-***-70bac5-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090437-order-***-70bac5-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090437-order-***-70bac5-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3855,8 +3855,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.332s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090444-order-***-c16848-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090444-order-***-c16848-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090444-order-***-c16848-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090444-order-***-c16848-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3889,8 +3889,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 41.370s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090450-order-***-c028b0-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090450-order-***-c028b0-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090450-order-***-c028b0-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090450-order-***-c028b0-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3923,8 +3923,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.506s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090532-order-***-79a19e-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090532-order-***-79a19e-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090532-order-***-79a19e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090532-order-***-79a19e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3957,8 +3957,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.352s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090539-order-***-c809c2-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090539-order-***-c809c2-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090539-order-***-c809c2-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090539-order-***-c809c2-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -3991,8 +3991,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 37.478s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090634-order-***-fe2079-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090634-order-***-fe2079-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090634-order-***-fe2079-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090634-order-***-fe2079-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4025,8 +4025,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.338s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-090713-order-***-9cc167-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-090713-order-***-9cc167-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-090713-order-***-9cc167-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-090713-order-***-9cc167-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4059,8 +4059,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 43.740s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-093604-order-***-3b6ccb-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-093604-order-***-3b6ccb-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-093604-order-***-3b6ccb-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-093604-order-***-3b6ccb-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4093,8 +4093,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 35.036s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\captchas\captcha-093703-order-***-0eb2a9-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-093703-order-***-0eb2a9-original.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\captchas\captcha-093703-order-***-0eb2a9-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-093703-order-***-0eb2a9-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4127,8 +4127,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 47.284s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-073459-order-***-fdf247-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-073459-order-***-fdf247-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-073459-order-***-fdf247-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-073459-order-***-fdf247-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4161,8 +4161,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 41.223s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-073724-order-***-038224-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-073724-order-***-038224-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-073724-order-***-038224-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-073724-order-***-038224-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4195,8 +4195,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 50.656s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-075250-order-***-0194b9-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-075250-order-***-0194b9-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-075250-order-***-0194b9-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-075250-order-***-0194b9-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4229,8 +4229,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.278s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-075342-order-***-01a6a0-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-075342-order-***-01a6a0-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-075342-order-***-01a6a0-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-075342-order-***-01a6a0-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4263,8 +4263,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.033s
   - Seleccion fecha/hora: 2.172s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093537-order-***-76bf18-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093537-order-***-76bf18-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093537-order-***-76bf18-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093537-order-***-76bf18-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4297,8 +4297,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.004s
   - Seleccion fecha/hora: 2.187s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093604-order-***-6f243d-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093604-order-***-6f243d-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093604-order-***-6f243d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093604-order-***-6f243d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4331,8 +4331,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.897s
   - Seleccion fecha/hora: 2.093s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093612-order-***-450673-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093612-order-***-450673-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093612-order-***-450673-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093612-order-***-450673-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4365,8 +4365,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.185s
   - Seleccion fecha/hora: 2.234s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093619-order-***-be3038-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093619-order-***-be3038-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093619-order-***-be3038-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093619-order-***-be3038-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4399,8 +4399,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 37.316s
   - Seleccion fecha/hora: 32.656s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093626-order-***-672b74-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093626-order-***-672b74-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093626-order-***-672b74-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093626-order-***-672b74-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4433,8 +4433,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.209s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093705-order-***-f426be-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093705-order-***-f426be-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093705-order-***-f426be-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093705-order-***-f426be-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4467,8 +4467,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.849s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093712-order-***-c9b1b8-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093712-order-***-c9b1b8-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093712-order-***-c9b1b8-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093712-order-***-c9b1b8-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4501,8 +4501,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.155s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093719-order-***-2354b7-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093719-order-***-2354b7-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093719-order-***-2354b7-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093719-order-***-2354b7-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4535,8 +4535,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.278s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093725-order-***-f136d1-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093725-order-***-f136d1-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093725-order-***-f136d1-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093725-order-***-f136d1-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4569,8 +4569,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.709s
   - Seleccion fecha/hora: 2.078s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093731-order-***-d44cfa-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093731-order-***-d44cfa-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093731-order-***-d44cfa-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093731-order-***-d44cfa-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4603,8 +4603,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.740s
   - Seleccion fecha/hora: 2.110s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093739-order-***-fa34bd-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093739-order-***-fa34bd-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093739-order-***-fa34bd-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093739-order-***-fa34bd-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4637,8 +4637,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.880s
   - Seleccion fecha/hora: 2.078s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-093746-order-***-9ef9bc-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093746-order-***-9ef9bc-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-093746-order-***-9ef9bc-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093746-order-***-9ef9bc-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4671,8 +4671,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 41.613s
   - Seleccion fecha/hora: 2.094s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-095607-order-***-ad7cb5-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-095607-order-***-ad7cb5-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-095607-order-***-ad7cb5-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-095607-order-***-ad7cb5-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4705,8 +4705,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.552s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-095650-order-***-b07c1e-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-095650-order-***-b07c1e-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-095650-order-***-b07c1e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-095650-order-***-b07c1e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4739,8 +4739,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 13.498s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-100301-order-***-8ed90e-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-100301-order-***-8ed90e-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-100301-order-***-8ed90e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-100301-order-***-8ed90e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4773,8 +4773,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.608s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-100316-order-***-ff1926-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-100316-order-***-ff1926-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-100316-order-***-ff1926-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-100316-order-***-ff1926-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4807,8 +4807,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.582s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-100323-order-***-d1b18d-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-100323-order-***-d1b18d-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-100323-order-***-d1b18d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-100323-order-***-d1b18d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4841,8 +4841,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 21.770s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-100330-order-***-6433ff-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-100330-order-***-6433ff-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-100330-order-***-6433ff-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-100330-order-***-6433ff-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4875,8 +4875,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.188s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-100352-order-***-bc2c74-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-100352-order-***-bc2c74-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-100352-order-***-bc2c74-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-100352-order-***-bc2c74-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4909,8 +4909,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 8.535s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-140115-order-***-51a988-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-140115-order-***-51a988-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-140115-order-***-51a988-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-140115-order-***-51a988-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4943,8 +4943,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.091s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-140133-order-***-9ab3ed-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-140133-order-***-9ab3ed-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-140133-order-***-9ab3ed-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-140133-order-***-9ab3ed-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -4977,8 +4977,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.408s
   - Seleccion fecha/hora: 2.984s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\captchas\captcha-140201-order-***-345819-original.png
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-140201-order-***-345819-original.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\captchas\captcha-140201-order-***-345819-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-140201-order-***-345819-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5011,8 +5011,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 15.727s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-091102-order-***-d73d00-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-091102-order-***-d73d00-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-091102-order-***-d73d00-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-091102-order-***-d73d00-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5045,8 +5045,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 36.132s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-141747-order-***-223c4d-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-141747-order-***-223c4d-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-141747-order-***-223c4d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-141747-order-***-223c4d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5079,8 +5079,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.023s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-141824-order-***-fb3f5d-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-141824-order-***-fb3f5d-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-141824-order-***-fb3f5d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-141824-order-***-fb3f5d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5113,8 +5113,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 46.360s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-141832-order-***-8f9016-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-141832-order-***-8f9016-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-141832-order-***-8f9016-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-141832-order-***-8f9016-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5147,8 +5147,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 41.591s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-141920-order-***-96b1d7-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-141920-order-***-96b1d7-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-141920-order-***-96b1d7-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-141920-order-***-96b1d7-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5181,8 +5181,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 12.842s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153350-order-***-16cbf5-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153350-order-***-16cbf5-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153350-order-***-16cbf5-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153350-order-***-16cbf5-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5215,8 +5215,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 14.946s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153601-order-***-26525e-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153601-order-***-26525e-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153601-order-***-26525e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153601-order-***-26525e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5249,8 +5249,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 54.297s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153753-order-***-694d0c-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153753-order-***-694d0c-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153753-order-***-694d0c-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153753-order-***-694d0c-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5283,8 +5283,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.683s
   - Seleccion fecha/hora: 2.062s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153848-order-***-5aa74b-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153848-order-***-5aa74b-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153848-order-***-5aa74b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153848-order-***-5aa74b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5317,8 +5317,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.403s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153855-order-***-f4f108-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153855-order-***-f4f108-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153855-order-***-f4f108-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153855-order-***-f4f108-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5351,8 +5351,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.110s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153901-order-***-0b3c6d-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153901-order-***-0b3c6d-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153901-order-***-0b3c6d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153901-order-***-0b3c6d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5385,8 +5385,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.418s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153909-order-***-a119e8-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153909-order-***-a119e8-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153909-order-***-a119e8-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153909-order-***-a119e8-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5419,8 +5419,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.448s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153915-order-***-86dd71-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153915-order-***-86dd71-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153915-order-***-86dd71-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153915-order-***-86dd71-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5453,8 +5453,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.583s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153921-order-***-d780ac-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153921-order-***-d780ac-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153921-order-***-d780ac-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153921-order-***-d780ac-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5487,8 +5487,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.444s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153928-order-***-e5bf09-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153928-order-***-e5bf09-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153928-order-***-e5bf09-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153928-order-***-e5bf09-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5521,8 +5521,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.155s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153934-order-***-9de2f1-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153934-order-***-9de2f1-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153934-order-***-9de2f1-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153934-order-***-9de2f1-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5555,8 +5555,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.340s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153942-order-***-ff4937-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153942-order-***-ff4937-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153942-order-***-ff4937-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153942-order-***-ff4937-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5589,8 +5589,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.369s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153948-order-***-b87cdd-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153948-order-***-b87cdd-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153948-order-***-b87cdd-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153948-order-***-b87cdd-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5623,8 +5623,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.570s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-153954-order-***-23ae73-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153954-order-***-23ae73-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-153954-order-***-23ae73-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153954-order-***-23ae73-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5657,8 +5657,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.396s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154001-order-***-95079b-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154001-order-***-95079b-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154001-order-***-95079b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154001-order-***-95079b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5691,8 +5691,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.384s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154007-order-***-e5a157-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154007-order-***-e5a157-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154007-order-***-e5a157-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154007-order-***-e5a157-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5725,8 +5725,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.407s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154014-order-***-e9011b-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154014-order-***-e9011b-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154014-order-***-e9011b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154014-order-***-e9011b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5759,8 +5759,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.378s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154020-order-***-8af545-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154020-order-***-8af545-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154020-order-***-8af545-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154020-order-***-8af545-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5793,8 +5793,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.397s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154026-order-***-21c0e0-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154026-order-***-21c0e0-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154026-order-***-21c0e0-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154026-order-***-21c0e0-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5827,8 +5827,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.398s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154033-order-***-462601-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154033-order-***-462601-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154033-order-***-462601-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154033-order-***-462601-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5861,8 +5861,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 6.257s
   - Seleccion fecha/hora: 2.032s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154039-order-***-a705b3-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154039-order-***-a705b3-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154039-order-***-a705b3-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154039-order-***-a705b3-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5895,8 +5895,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.392s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154047-order-***-26168c-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154047-order-***-26168c-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154047-order-***-26168c-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154047-order-***-26168c-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5929,8 +5929,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.428s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154053-order-***-0c534a-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154053-order-***-0c534a-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154053-order-***-0c534a-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154053-order-***-0c534a-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5963,8 +5963,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.459s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\captchas\captcha-154059-order-***-e1ef4b-original.png
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-154059-order-***-e1ef4b-original.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\captchas\captcha-154059-order-***-e1ef4b-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-154059-order-***-e1ef4b-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -5997,8 +5997,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 40.466s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-085650-order-***-83a22e-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-085650-order-***-83a22e-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-085650-order-***-83a22e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-085650-order-***-83a22e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6031,8 +6031,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 39.656s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-085730-order-***-d5435c-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-085730-order-***-d5435c-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-085730-order-***-d5435c-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-085730-order-***-d5435c-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6065,8 +6065,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 21.988s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-085810-order-***-522e13-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-085810-order-***-522e13-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-085810-order-***-522e13-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-085810-order-***-522e13-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6099,8 +6099,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 21.949s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-085832-order-***-5bf263-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-085832-order-***-5bf263-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-085832-order-***-5bf263-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-085832-order-***-5bf263-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6133,8 +6133,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 21.367s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-085854-order-***-3b0fb3-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-085854-order-***-3b0fb3-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-085854-order-***-3b0fb3-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-085854-order-***-3b0fb3-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6167,8 +6167,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 46.147s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-093538-order-***-2f899c-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-093538-order-***-2f899c-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-093538-order-***-2f899c-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-093538-order-***-2f899c-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6201,8 +6201,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.059s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-093624-order-***-cb2c41-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-093624-order-***-cb2c41-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-093624-order-***-cb2c41-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-093624-order-***-cb2c41-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6235,8 +6235,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.689s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-100149-order-***-75b642-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-100149-order-***-75b642-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-100149-order-***-75b642-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-100149-order-***-75b642-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6269,8 +6269,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 61.903s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-100216-order-***-f7540d-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-100216-order-***-f7540d-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-100216-order-***-f7540d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-100216-order-***-f7540d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6303,8 +6303,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.754s
   - Seleccion fecha/hora: 2.094s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\captchas\captcha-100453-order-***-85cabc-original.png
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-100453-order-***-85cabc-original.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\captchas\captcha-100453-order-***-85cabc-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-100453-order-***-85cabc-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6337,8 +6337,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.201s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-084820-order-***-82b280-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6371,8 +6371,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.067s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-084830-order-***-13ad04-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6405,8 +6405,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 11.008s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122140-order-***-37abd8-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6439,8 +6439,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.675s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122151-order-***-2749bc-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6473,8 +6473,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.598s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122202-order-***-cd8973-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6507,8 +6507,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.036s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122213-order-***-394597-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6541,8 +6541,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.300s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122223-order-***-205677-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6575,8 +6575,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 12.166s
   - Seleccion fecha/hora: 2.062s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132618-order-***-8df020-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6609,8 +6609,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.703s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132630-order-***-b54011-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6643,8 +6643,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.649s
   - Seleccion fecha/hora: 2.062s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132641-order-***-6a46a2-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6677,8 +6677,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.737s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132652-order-***-f73906-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6711,8 +6711,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 31.070s
   - Seleccion fecha/hora: 2.141s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132723-order-***-dadc8a-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6745,8 +6745,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 29.129s
   - Seleccion fecha/hora: 2.359s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-132754-order-***-5b35a5-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6779,8 +6779,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 71.092s
   - Seleccion fecha/hora: 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-150124-order-***-5de393-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6813,8 +6813,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 72.959s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-150235-order-***-409607-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6847,8 +6847,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 53.085s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-150348-order-***-9e8b5d-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6881,8 +6881,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 29.389s
   - Seleccion fecha/hora: 2.047s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-150441-order-***-e1e46f-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6915,8 +6915,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 72.905s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-104323-order-***-eb92ca-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-104323-order-***-eb92ca-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-104323-order-***-eb92ca-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-104323-order-***-eb92ca-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6949,8 +6949,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.642s
   - Seleccion fecha/hora: 1.985s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-104436-order-***-75fbbc-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-104436-order-***-75fbbc-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-104436-order-***-75fbbc-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-104436-order-***-75fbbc-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -6983,8 +6983,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 50.885s
   - Seleccion fecha/hora: 2.032s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-104503-order-***-3b22cb-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-104503-order-***-3b22cb-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-104503-order-***-3b22cb-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-104503-order-***-3b22cb-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7017,8 +7017,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.279s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-104554-order-***-151863-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-104554-order-***-151863-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-104554-order-***-151863-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-104554-order-***-151863-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7051,8 +7051,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 56.272s
   - Seleccion fecha/hora: 2.765s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-111219-order-***-531051-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-111219-order-***-531051-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-111219-order-***-531051-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-111219-order-***-531051-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7085,8 +7085,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 67.641s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-111409-order-***-0ab75e-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-111409-order-***-0ab75e-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-111409-order-***-0ab75e-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-111409-order-***-0ab75e-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7119,8 +7119,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 63.115s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-112548-order-***-85f8eb-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-112548-order-***-85f8eb-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-112548-order-***-85f8eb-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-112548-order-***-85f8eb-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7153,8 +7153,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 66.742s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113509-order-***-69274a-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113509-order-***-69274a-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113509-order-***-69274a-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113509-order-***-69274a-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7187,8 +7187,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 33.997s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113707-order-***-f5c1bf-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113707-order-***-f5c1bf-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113707-order-***-f5c1bf-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113707-order-***-f5c1bf-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7221,8 +7221,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.204s
   - Seleccion fecha/hora: 2.015s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113741-order-***-b8b430-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113741-order-***-b8b430-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113741-order-***-b8b430-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113741-order-***-b8b430-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7255,8 +7255,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.830s
   - Seleccion fecha/hora: 1.969s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113809-order-***-1900e7-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113809-order-***-1900e7-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113809-order-***-1900e7-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113809-order-***-1900e7-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7289,8 +7289,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 27.161s
   - Seleccion fecha/hora: 1.953s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113835-order-***-fcea34-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113835-order-***-fcea34-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113835-order-***-fcea34-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113835-order-***-fcea34-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7323,8 +7323,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.224s
   - Seleccion fecha/hora: 1.968s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113903-order-***-7c2107-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113903-order-***-7c2107-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113903-order-***-7c2107-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113903-order-***-7c2107-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7357,8 +7357,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.477s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113929-order-***-53ff8a-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113929-order-***-53ff8a-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113929-order-***-53ff8a-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113929-order-***-53ff8a-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7391,8 +7391,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 61.731s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-113956-order-***-a5659f-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-113956-order-***-a5659f-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-113956-order-***-a5659f-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-113956-order-***-a5659f-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7425,8 +7425,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 47.621s
   - Seleccion fecha/hora: 1.984s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-114151-order-***-689298-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-114151-order-***-689298-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-114151-order-***-689298-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-114151-order-***-689298-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7459,8 +7459,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 42.313s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-114733-order-***-c95d38-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-114733-order-***-c95d38-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-114733-order-***-c95d38-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-114733-order-***-c95d38-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7493,8 +7493,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.768s
   - Seleccion fecha/hora: 2.032s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-114816-order-***-2dba08-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-114816-order-***-2dba08-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-114816-order-***-2dba08-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-114816-order-***-2dba08-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7527,8 +7527,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 12.795s
   - Seleccion fecha/hora: 2.016s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-120736-order-***-12b8ed-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-120736-order-***-12b8ed-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-120736-order-***-12b8ed-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-120736-order-***-12b8ed-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7561,8 +7561,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.867s
   - Seleccion fecha/hora: 2.125s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-120749-order-***-14b4a9-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-120749-order-***-14b4a9-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-120749-order-***-14b4a9-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-120749-order-***-14b4a9-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7595,8 +7595,8 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.853s
   - Seleccion fecha/hora: 2.031s
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\captchas\captcha-120755-order-***-b0eac7-original.png
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-120755-order-***-b0eac7-original.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\captchas\captcha-120755-order-***-b0eac7-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-120755-order-***-b0eac7-original.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7629,9 +7629,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 26.195s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
-  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
-  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+  - Screenshot principal: screenshots\2026-08\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\17-08-2026\captchas\captcha-075155-order-***-1be2a8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7664,9 +7664,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 14.822s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093558-order-***-3c4933.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7699,9 +7699,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.884s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-094929-order-***-917047.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094929-order-***-917047.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094929-order-***-917047.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-094929-order-***-917047.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094929-order-***-917047.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094929-order-***-917047.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7734,9 +7734,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.214s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094940-order-***-db6a92.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7769,9 +7769,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.580s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094944-order-***-af16f8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7804,9 +7804,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 20.643s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094949-order-***-1bc43c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7839,9 +7839,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.080s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095010-order-***-c677c0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7874,9 +7874,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.041s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095014-order-***-a96814.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095014-order-***-a96814.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095014-order-***-a96814.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095014-order-***-a96814.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095014-order-***-a96814.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095014-order-***-a96814.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7909,9 +7909,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.037s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095018-order-***-e830b1.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7944,9 +7944,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.109s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095022-order-***-cd4c6e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -7979,9 +7979,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.047s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095026-order-***-a07a68.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8014,9 +8014,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 46.545s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095030-order-***-28fad6.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8049,9 +8049,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.066s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095117-order-***-e673c2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8084,9 +8084,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.108s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095121-order-***-ee4641.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8119,9 +8119,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.000s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095125-order-***-b22e70.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8154,9 +8154,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.077s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095130-order-***-57cdd9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8189,9 +8189,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.093s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095134-order-***-ea8c4f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8224,9 +8224,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.107s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095138-order-***-0c5b34.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8259,9 +8259,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.251s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100025-order-***-714bca.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100025-order-***-714bca.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100025-order-***-714bca.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100025-order-***-714bca.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100025-order-***-714bca.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100025-order-***-714bca.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8294,9 +8294,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 25.232s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100038-order-***-411de4.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100038-order-***-411de4.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100038-order-***-411de4.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100038-order-***-411de4.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100038-order-***-411de4.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100038-order-***-411de4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8329,9 +8329,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.281s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100104-order-***-b85aa3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8364,9 +8364,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.118s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100108-order-***-053436.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100108-order-***-053436.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100108-order-***-053436.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100108-order-***-053436.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100108-order-***-053436.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100108-order-***-053436.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8399,9 +8399,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.235s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100112-order-***-586b6a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8434,9 +8434,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.108s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100117-order-***-520bbc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8469,9 +8469,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.164s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\captchas\captcha-100121-order-***-e64941.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100121-order-***-e64941.png
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100121-order-***-e64941.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\captchas\captcha-100121-order-***-e64941.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100121-order-***-e64941.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100121-order-***-e64941.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8504,9 +8504,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.363s
   - Seleccion fecha/hora: 1.015s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093216-order-***-2d7542.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8539,9 +8539,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.533s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093254-order-***-add8b5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8574,9 +8574,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.214s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093259-order-***-63e41f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8609,9 +8609,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.387s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093303-order-***-a00f2b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8644,9 +8644,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.420s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093308-order-***-88ed1b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8679,9 +8679,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.450s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093312-order-***-86cb26.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8714,9 +8714,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.723s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093317-order-***-a93b58.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8749,9 +8749,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.671s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093323-order-***-1486d9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8784,9 +8784,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 40.388s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093328-order-***-e7f897.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8819,9 +8819,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.295s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093408-order-***-d41d0d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8854,9 +8854,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.246s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093413-order-***-ca7881.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8889,9 +8889,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.489s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-093417-order-***-45bddd.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8924,9 +8924,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 25.435s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101552-order-***-c530c2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8959,9 +8959,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.244s
   - Seleccion fecha/hora: 1.156s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101618-order-***-abd1bb.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -8994,9 +8994,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.321s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101622-order-***-e027f4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9029,9 +9029,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.940s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101626-order-***-e149cb.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9064,9 +9064,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.742s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101630-order-***-cb2764.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9099,9 +9099,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.986s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101635-order-***-7b8196.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9134,9 +9134,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.822s
   - Seleccion fecha/hora: 1.782s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101639-order-***-8e7931.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9169,9 +9169,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.084s
   - Seleccion fecha/hora: 1.781s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101644-order-***-37a0ac.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9204,9 +9204,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.994s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101649-order-***-98cd5d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9239,9 +9239,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.030s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101653-order-***-d626ac.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9274,9 +9274,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.973s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101658-order-***-3fe79f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9309,9 +9309,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.907s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101702-order-***-bd0879.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9344,9 +9344,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.924s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101706-order-***-18b550.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101706-order-***-18b550.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101706-order-***-18b550.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101706-order-***-18b550.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101706-order-***-18b550.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101706-order-***-18b550.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9379,9 +9379,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.993s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101710-order-***-4180ce.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9414,9 +9414,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.084s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101714-order-***-fb3557.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9449,9 +9449,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.112s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101718-order-***-480b5c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9484,9 +9484,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.946s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101722-order-***-442783.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101722-order-***-442783.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101722-order-***-442783.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101722-order-***-442783.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101722-order-***-442783.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101722-order-***-442783.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9519,9 +9519,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.978s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101726-order-***-22aa40.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9554,9 +9554,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.094s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101730-order-***-9d7420.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9589,9 +9589,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.007s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101734-order-***-80eedc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9624,9 +9624,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.247s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101739-order-***-43190b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101739-order-***-43190b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101739-order-***-43190b.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101739-order-***-43190b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101739-order-***-43190b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101739-order-***-43190b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9659,9 +9659,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.120s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101743-order-***-eb28a1.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9694,9 +9694,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.010s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101747-order-***-e6a15f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9729,9 +9729,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.998s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101751-order-***-c9892e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9764,9 +9764,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.005s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101755-order-***-83cb6a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9799,9 +9799,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.275s
   - Seleccion fecha/hora: 1.188s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101759-order-***-08a614.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101759-order-***-08a614.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101759-order-***-08a614.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101759-order-***-08a614.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101759-order-***-08a614.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101759-order-***-08a614.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9834,9 +9834,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.964s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101804-order-***-b5191c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9869,9 +9869,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.000s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101808-order-***-d2ad61.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9904,9 +9904,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.964s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101812-order-***-8938d6.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9939,9 +9939,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.999s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101816-order-***-7dbe92.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -9974,9 +9974,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.185s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101820-order-***-b5b088.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10009,9 +10009,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.986s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101824-order-***-871b9b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10044,9 +10044,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.197s
   - Seleccion fecha/hora: 1.204s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101829-order-***-9bde6e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10079,9 +10079,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.060s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101833-order-***-cef9e7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10114,9 +10114,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.051s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101837-order-***-5c6ae2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10149,9 +10149,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.031s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101841-order-***-a001f4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10184,9 +10184,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.147s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101845-order-***-bcc71d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10219,9 +10219,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.925s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101849-order-***-2d57a5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10254,9 +10254,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.023s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101854-order-***-14fe25.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10289,9 +10289,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.923s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101858-order-***-5ddd82.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10324,9 +10324,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.023s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101902-order-***-980f92.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101902-order-***-980f92.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101902-order-***-980f92.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101902-order-***-980f92.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101902-order-***-980f92.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101902-order-***-980f92.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10359,9 +10359,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.918s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101906-order-***-1b1d6c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10394,9 +10394,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.870s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101910-order-***-fafe76.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10429,9 +10429,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.924s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101914-order-***-e7526f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10464,9 +10464,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.004s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101918-order-***-319311.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101918-order-***-319311.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101918-order-***-319311.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101918-order-***-319311.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101918-order-***-319311.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101918-order-***-319311.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10499,9 +10499,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.078s
   - Seleccion fecha/hora: 1.094s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101922-order-***-7233f4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10534,9 +10534,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.061s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-101926-order-***-f1fe17.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10569,9 +10569,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.186s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105846-order-***-87a781.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105846-order-***-87a781.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105846-order-***-87a781.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105846-order-***-87a781.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105846-order-***-87a781.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105846-order-***-87a781.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10604,9 +10604,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.889s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105851-order-***-69b699.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105851-order-***-69b699.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105851-order-***-69b699.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105851-order-***-69b699.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105851-order-***-69b699.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105851-order-***-69b699.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10639,9 +10639,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.922s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105855-order-***-70e2b3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10674,9 +10674,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.939s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105859-order-***-1b9350.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10709,9 +10709,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.919s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105903-order-***-19fd77.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10744,9 +10744,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.918s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105907-order-***-8ae744.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10779,9 +10779,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.845s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105939-order-***-b3da12.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10814,9 +10814,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.950s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105942-order-***-3c6b45.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10849,9 +10849,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.762s
   - Seleccion fecha/hora: 1.766s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105946-order-***-fae37a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10884,9 +10884,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 38.956s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-105951-order-***-090b3f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10919,9 +10919,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.999s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110030-order-***-33be3b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10954,9 +10954,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.963s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110034-order-***-423865.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110034-order-***-423865.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110034-order-***-423865.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110034-order-***-423865.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110034-order-***-423865.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110034-order-***-423865.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -10989,9 +10989,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.872s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110039-order-***-45c798.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110039-order-***-45c798.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110039-order-***-45c798.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110039-order-***-45c798.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110039-order-***-45c798.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110039-order-***-45c798.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11024,9 +11024,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 33.047s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110042-order-***-b326a5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11059,9 +11059,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.029s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110116-order-***-f16539.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110116-order-***-f16539.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110116-order-***-f16539.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110116-order-***-f16539.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110116-order-***-f16539.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110116-order-***-f16539.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11094,9 +11094,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.723s
   - Seleccion fecha/hora: 1.765s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110120-order-***-78343d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110120-order-***-78343d.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110120-order-***-78343d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110120-order-***-78343d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110120-order-***-78343d.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110120-order-***-78343d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11129,9 +11129,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 31.735s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110246-order-***-ddc1f9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11164,9 +11164,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.943s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\captchas\captcha-110318-order-***-34d758.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110318-order-***-34d758.png
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-110318-order-***-34d758.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\captchas\captcha-110318-order-***-34d758.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110318-order-***-34d758.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-110318-order-***-34d758.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11199,7 +11199,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 76.977s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\parcial-112528-order-***-0e54ed.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\parcial-112528-order-***-0e54ed.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -11232,7 +11232,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 90.926s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\parcial-125010-order-***-923889.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\parcial-125010-order-***-923889.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -11265,7 +11265,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 82.119s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\parcial-125742-order-***-21261d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\parcial-125742-order-***-21261d.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -11298,7 +11298,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 61.514s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\parcial-131002-order-***-4ef107.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\parcial-131002-order-***-4ef107.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -11331,7 +11331,7 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 60.442s
   - Seleccion fecha/hora: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\parcial-134336-order-***-e2dd54.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\parcial-134336-order-***-e2dd54.png
 - Observacion tecnica:
   - La senal parcial vino de fetch_probe; conviene medir si anticipa horas reales. Aparecio fecha sin hora seleccionable.
 
@@ -11364,9 +11364,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.406s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091400-order-***-f7558a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11399,9 +11399,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.312s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091420-order-***-f0642c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11434,9 +11434,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 18.246s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091424-order-***-e55138.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091424-order-***-e55138.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091424-order-***-e55138.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091424-order-***-e55138.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091424-order-***-e55138.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091424-order-***-e55138.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11469,9 +11469,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.154s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091443-order-***-140918.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091443-order-***-140918.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091443-order-***-140918.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091443-order-***-140918.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091443-order-***-140918.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091443-order-***-140918.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11504,9 +11504,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.249s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091447-order-***-44b5d6.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11539,9 +11539,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.300s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091451-order-***-1d5c33.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11574,9 +11574,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.114s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091456-order-***-6e1a75.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11609,9 +11609,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.073s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091500-order-***-4af076.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091500-order-***-4af076.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091500-order-***-4af076.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091500-order-***-4af076.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091500-order-***-4af076.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091500-order-***-4af076.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11644,9 +11644,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.117s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091504-order-***-3969d7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11679,9 +11679,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.366s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091509-order-***-be23f3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11714,9 +11714,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.540s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091513-order-***-a1da0d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11749,9 +11749,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.714s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091518-order-***-dfb42a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11784,9 +11784,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.289s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091523-order-***-a6ef75.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11819,9 +11819,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.107s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091527-order-***-a46524.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091527-order-***-a46524.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091527-order-***-a46524.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091527-order-***-a46524.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091527-order-***-a46524.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091527-order-***-a46524.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11854,9 +11854,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.131s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091531-order-***-ac036d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11889,9 +11889,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.011s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091536-order-***-da451e.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091536-order-***-da451e.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091536-order-***-da451e.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091536-order-***-da451e.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091536-order-***-da451e.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091536-order-***-da451e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11924,9 +11924,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.005s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091540-order-***-20f16b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11959,9 +11959,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.029s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091544-order-***-f401d4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -11994,9 +11994,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.054s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091548-order-***-621d21.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091548-order-***-621d21.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091548-order-***-621d21.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091548-order-***-621d21.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091548-order-***-621d21.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091548-order-***-621d21.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12029,9 +12029,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.972s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091552-order-***-3fe2de.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12064,9 +12064,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.269s
   - Seleccion fecha/hora: 1.266s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091556-order-***-8d9317.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12099,9 +12099,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.030s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091600-order-***-3d0455.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12134,9 +12134,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.179s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091605-order-***-6adc1f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12169,9 +12169,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.975s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091609-order-***-bbdb91.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12204,9 +12204,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.028s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-091613-order-***-c44758.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091613-order-***-c44758.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091613-order-***-c44758.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-091613-order-***-c44758.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091613-order-***-c44758.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091613-order-***-c44758.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12239,9 +12239,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 15.493s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102235-order-***-00b79b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12274,9 +12274,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.256s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102306-order-***-b65cd2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12309,9 +12309,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.752s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102311-order-***-0fbfcb.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12344,9 +12344,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.203s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102316-order-***-46d8dd.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12379,9 +12379,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.325s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102321-order-***-89e9c6.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12414,9 +12414,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.206s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102325-order-***-8489b9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12449,9 +12449,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.259s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102330-order-***-2ffb33.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12484,9 +12484,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.092s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102334-order-***-24cf65.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12519,9 +12519,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.052s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102338-order-***-17d4c7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12554,9 +12554,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.001s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102343-order-***-75042d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102343-order-***-75042d.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102343-order-***-75042d.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102343-order-***-75042d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102343-order-***-75042d.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102343-order-***-75042d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12589,9 +12589,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.059s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102347-order-***-9d4609.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12624,9 +12624,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.944s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102351-order-***-0ee3bf.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12659,9 +12659,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.030s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102355-order-***-035691.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102355-order-***-035691.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102355-order-***-035691.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102355-order-***-035691.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102355-order-***-035691.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102355-order-***-035691.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12694,9 +12694,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.118s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102359-order-***-c56d6a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12729,9 +12729,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.973s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102403-order-***-9a34a1.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12764,9 +12764,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.063s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102407-order-***-2f9ece.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12799,9 +12799,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.161s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102411-order-***-d68a15.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12834,9 +12834,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.552s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103208-order-***-fd41ce.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12869,9 +12869,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.106s
   - Seleccion fecha/hora: 1.125s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103239-order-***-8c87d7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12904,9 +12904,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.969s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103243-order-***-ccd422.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12939,9 +12939,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 25.354s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-090738-order-***-000e72.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-090738-order-***-000e72.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-090738-order-***-000e72.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-090738-order-***-000e72.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-090738-order-***-000e72.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-090738-order-***-000e72.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -12974,9 +12974,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.420s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092025-order-***-e50b46.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13009,9 +13009,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.958s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092035-order-***-c889a7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13044,9 +13044,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.021s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092039-order-***-88447c.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092039-order-***-88447c.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092039-order-***-88447c.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092039-order-***-88447c.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092039-order-***-88447c.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092039-order-***-88447c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13079,9 +13079,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.993s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092044-order-***-e9defc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13114,9 +13114,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.992s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092048-order-***-0e68cf.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13149,9 +13149,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.954s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092052-order-***-a92d3a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13184,9 +13184,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.045s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092056-order-***-0a178b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13219,9 +13219,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 37.288s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092150-order-***-30cba8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13254,9 +13254,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.053s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092227-order-***-918456.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092227-order-***-918456.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092227-order-***-918456.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092227-order-***-918456.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092227-order-***-918456.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092227-order-***-918456.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13289,9 +13289,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.960s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092231-order-***-0b4af7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13324,9 +13324,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.985s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092235-order-***-06b5ed.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13359,9 +13359,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 18.152s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092646-order-***-bb85fc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13394,9 +13394,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.987s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092704-order-***-e4bc56.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13429,9 +13429,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.982s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092709-order-***-d0e2cb.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13464,9 +13464,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.973s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092713-order-***-846918.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092713-order-***-846918.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092713-order-***-846918.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092713-order-***-846918.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092713-order-***-846918.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092713-order-***-846918.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13499,9 +13499,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.075s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-092717-order-***-77fbe4.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13534,9 +13534,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 50.368s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093343-order-***-e922a2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13569,9 +13569,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.420s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093433-order-***-d1c83c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13604,9 +13604,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.989s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093438-order-***-c74b10.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13639,9 +13639,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.869s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-093442-order-***-77ca0b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13674,9 +13674,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 42.086s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110731-order-***-14eda9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13709,9 +13709,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.287s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110813-order-***-2db07a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13744,9 +13744,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.114s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110818-order-***-a7088f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13779,9 +13779,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.059s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110822-order-***-47a45a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13814,9 +13814,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.115s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-110826-order-***-5121db.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110826-order-***-5121db.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-110826-order-***-5121db.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-110826-order-***-5121db.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110826-order-***-5121db.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-110826-order-***-5121db.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13849,9 +13849,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 22.847s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123500-order-***-72fbde.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13884,9 +13884,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.428s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123523-order-***-52b569.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123523-order-***-52b569.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123523-order-***-52b569.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123523-order-***-52b569.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123523-order-***-52b569.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123523-order-***-52b569.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13919,9 +13919,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 39.898s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123615-order-***-ce8f94.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13954,9 +13954,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.107s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123655-order-***-ff67d2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -13989,9 +13989,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.273s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123700-order-***-925472.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123700-order-***-925472.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123700-order-***-925472.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123700-order-***-925472.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123700-order-***-925472.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123700-order-***-925472.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14024,9 +14024,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.308s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123704-order-***-2da073.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123704-order-***-2da073.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123704-order-***-2da073.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123704-order-***-2da073.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123704-order-***-2da073.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123704-order-***-2da073.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14059,9 +14059,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.603s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123709-order-***-e9883a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14094,9 +14094,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.254s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123719-order-***-dd5cf9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14129,9 +14129,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 28.622s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123724-order-***-2789a8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14164,9 +14164,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.251s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123752-order-***-04ca9e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14199,9 +14199,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.238s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123757-order-***-12799b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123757-order-***-12799b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123757-order-***-12799b.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123757-order-***-12799b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123757-order-***-12799b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123757-order-***-12799b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14234,9 +14234,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.111s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123801-order-***-017d01.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123801-order-***-017d01.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123801-order-***-017d01.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123801-order-***-017d01.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123801-order-***-017d01.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123801-order-***-017d01.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14269,9 +14269,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.265s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123805-order-***-085816.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123805-order-***-085816.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123805-order-***-085816.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123805-order-***-085816.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123805-order-***-085816.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123805-order-***-085816.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14304,9 +14304,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.642s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123810-order-***-c64042.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123810-order-***-c64042.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123810-order-***-c64042.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123810-order-***-c64042.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123810-order-***-c64042.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123810-order-***-c64042.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14339,9 +14339,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.254s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123820-order-***-a06f41.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14374,9 +14374,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 48.075s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131818-order-***-d3f4f9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14409,9 +14409,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.731s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131922-order-***-43c8a8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14444,9 +14444,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.615s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131927-order-***-fb9260.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14479,9 +14479,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.686s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-131932-order-***-01a042.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131932-order-***-01a042.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131932-order-***-01a042.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-131932-order-***-01a042.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131932-order-***-01a042.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131932-order-***-01a042.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14514,9 +14514,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.154s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131936-order-***-1a8c1a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14549,9 +14549,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 25.385s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132119-order-***-92e334.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132119-order-***-92e334.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132119-order-***-92e334.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132119-order-***-92e334.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132119-order-***-92e334.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132119-order-***-92e334.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14584,9 +14584,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.321s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132145-order-***-dd35c6.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14619,9 +14619,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.178s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132149-order-***-7713a3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14654,9 +14654,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.273s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132153-order-***-bb7322.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14689,9 +14689,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.294s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132158-order-***-44d7ce.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14724,9 +14724,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.290s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132202-order-***-0afbab.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14759,9 +14759,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.368s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132206-order-***-a694f0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14794,9 +14794,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.240s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132211-order-***-6ab55a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14829,9 +14829,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.093s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132215-order-***-d3797b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14864,9 +14864,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.116s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132220-order-***-0c0f3f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14899,9 +14899,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.161s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132224-order-***-04c6a5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14934,9 +14934,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.111s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132228-order-***-b25340.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132228-order-***-b25340.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132228-order-***-b25340.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132228-order-***-b25340.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132228-order-***-b25340.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132228-order-***-b25340.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -14969,9 +14969,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.125s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132232-order-***-34d285.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132232-order-***-34d285.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132232-order-***-34d285.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132232-order-***-34d285.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132232-order-***-34d285.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132232-order-***-34d285.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15004,9 +15004,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.096s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132236-order-***-f9c7c2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15039,9 +15039,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.101s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132241-order-***-7bf11a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15074,9 +15074,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.116s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132245-order-***-4d3182.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15109,9 +15109,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.115s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132249-order-***-393833.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132249-order-***-393833.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132249-order-***-393833.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132249-order-***-393833.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132249-order-***-393833.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132249-order-***-393833.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15144,9 +15144,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.110s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132253-order-***-c9c78a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15179,9 +15179,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.134s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132257-order-***-5fda09.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15214,9 +15214,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.154s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132302-order-***-563a06.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132302-order-***-563a06.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132302-order-***-563a06.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132302-order-***-563a06.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132302-order-***-563a06.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132302-order-***-563a06.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15249,9 +15249,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.113s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132306-order-***-a37612.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132306-order-***-a37612.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132306-order-***-a37612.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132306-order-***-a37612.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132306-order-***-a37612.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132306-order-***-a37612.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15284,9 +15284,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.168s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-132310-order-***-303109.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132310-order-***-303109.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-132310-order-***-303109.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-132310-order-***-303109.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132310-order-***-303109.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-132310-order-***-303109.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15319,9 +15319,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.752s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135355-order-***-675130.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135355-order-***-675130.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135355-order-***-675130.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135355-order-***-675130.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135355-order-***-675130.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135355-order-***-675130.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15354,9 +15354,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.243s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135400-order-***-7492c8.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15389,9 +15389,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.142s
   - Seleccion fecha/hora: 1.078s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135405-order-***-a5196d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15424,9 +15424,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.971s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135410-order-***-72fbe0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15459,9 +15459,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.893s
   - Seleccion fecha/hora: 1.015s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135415-order-***-0dd2d9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15494,9 +15494,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.151s
   - Seleccion fecha/hora: 1.015s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135420-order-***-939558.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135420-order-***-939558.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135420-order-***-939558.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135420-order-***-939558.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135420-order-***-939558.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135420-order-***-939558.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15529,9 +15529,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.053s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135426-order-***-6507ce.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15564,9 +15564,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.985s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135431-order-***-5ff88b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15599,9 +15599,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.836s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135436-order-***-5cc2a5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15634,9 +15634,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.053s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135441-order-***-7a2aec.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15669,9 +15669,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.069s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135446-order-***-0ceccd.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15704,9 +15704,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.986s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-135451-order-***-6fc3d2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15739,9 +15739,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 52.299s
   - Seleccion fecha/hora: 1.062s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140246-order-***-99a35e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15774,9 +15774,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.470s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140339-order-***-894fa0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15809,9 +15809,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.336s
   - Seleccion fecha/hora: 1.015s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140344-order-***-aeb0c2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15844,9 +15844,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.092s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140350-order-***-383ec7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15879,9 +15879,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.966s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140355-order-***-ca52e3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15914,9 +15914,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.742s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140400-order-***-a1f3b7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15949,9 +15949,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.760s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140405-order-***-8f4fd9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -15984,9 +15984,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.701s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140410-order-***-9b541f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16019,9 +16019,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.202s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140415-order-***-efdddc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16054,9 +16054,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 14.357s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084429-order-***-fa74ae.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16089,9 +16089,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.384s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-084443-order-***-534f73.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084443-order-***-534f73.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084443-order-***-534f73.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-084443-order-***-534f73.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084443-order-***-534f73.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084443-order-***-534f73.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16124,9 +16124,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.418s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-084448-order-***-afc098.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084448-order-***-afc098.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084448-order-***-afc098.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-084448-order-***-afc098.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084448-order-***-afc098.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084448-order-***-afc098.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16159,9 +16159,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.264s
   - Seleccion fecha/hora: 1.047s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084452-order-***-896ce0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16194,9 +16194,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.549s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-084457-order-***-69421b.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084457-order-***-69421b.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084457-order-***-69421b.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-084457-order-***-69421b.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084457-order-***-69421b.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084457-order-***-69421b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16229,9 +16229,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 42.586s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092808-order-***-47e55b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16264,9 +16264,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.989s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092851-order-***-edd04e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16299,9 +16299,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.894s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092855-order-***-5d8790.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16334,9 +16334,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.948s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-092859-order-***-971dac.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092859-order-***-971dac.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092859-order-***-971dac.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-092859-order-***-971dac.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092859-order-***-971dac.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092859-order-***-971dac.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16369,9 +16369,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.974s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092903-order-***-453d7c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16404,9 +16404,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.001s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115911-order-***-ee1441.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16439,9 +16439,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 10.010s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-120117-order-***-b8fb74.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16474,9 +16474,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.732s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-112351-order-***-965c1e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16509,9 +16509,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 49.928s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103240-order-***-3d9cae.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16544,9 +16544,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.156s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103331-order-***-9aaa4b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16579,9 +16579,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.434s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103336-order-***-27ffbd.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16614,9 +16614,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 36.067s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103340-order-***-d92a49.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16649,9 +16649,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.561s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103417-order-***-fb9e13.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16684,9 +16684,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.553s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103421-order-***-b2047f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16719,9 +16719,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.575s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103426-order-***-b8384c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16754,9 +16754,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.558s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103431-order-***-7341a0.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16789,9 +16789,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.346s
   - Seleccion fecha/hora: 1.016s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-103435-order-***-bf028e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16824,9 +16824,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 30.880s
   - Seleccion fecha/hora: 1.047s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104828-order-***-789438.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104828-order-***-789438.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104828-order-***-789438.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104828-order-***-789438.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104828-order-***-789438.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104828-order-***-789438.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16859,9 +16859,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.887s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104859-order-***-974aaa.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16894,9 +16894,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.607s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104904-order-***-eb467d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16929,9 +16929,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.058s
   - Seleccion fecha/hora: 0.985s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104909-order-***-5e98ad.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16964,9 +16964,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.949s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104913-order-***-5ded71.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -16999,9 +16999,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.027s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104917-order-***-c7e9d9.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17034,9 +17034,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.956s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104922-order-***-a96256.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104922-order-***-a96256.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104922-order-***-a96256.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104922-order-***-a96256.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104922-order-***-a96256.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104922-order-***-a96256.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17069,9 +17069,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.992s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104926-order-***-3bf298.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17104,9 +17104,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.967s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104930-order-***-c12a74.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17139,9 +17139,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.032s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-104934-order-***-b36911.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104934-order-***-b36911.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-104934-order-***-b36911.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-104934-order-***-b36911.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104934-order-***-b36911.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-104934-order-***-b36911.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17174,9 +17174,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 7.417s
   - Seleccion fecha/hora: 0.984s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111352-order-***-7eb583.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17209,9 +17209,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.953s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111359-order-***-f9d20b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17244,9 +17244,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.794s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111404-order-***-08ab46.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17279,9 +17279,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.082s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111409-order-***-f13933.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111409-order-***-f13933.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111409-order-***-f13933.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111409-order-***-f13933.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111409-order-***-f13933.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111409-order-***-f13933.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17314,9 +17314,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.135s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111413-order-***-5068cc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17349,9 +17349,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.091s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111418-order-***-a6f8d7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17384,9 +17384,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.082s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111422-order-***-aab230.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111422-order-***-aab230.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111422-order-***-aab230.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111422-order-***-aab230.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111422-order-***-aab230.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111422-order-***-aab230.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17419,9 +17419,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.976s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111426-order-***-b57ae5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17454,9 +17454,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.173s
   - Seleccion fecha/hora: 2.235s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111430-order-***-098db2.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111430-order-***-098db2.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111430-order-***-098db2.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111430-order-***-098db2.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111430-order-***-098db2.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111430-order-***-098db2.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17489,9 +17489,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.955s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111435-order-***-b7d91c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17524,9 +17524,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.952s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111440-order-***-af4575.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111440-order-***-af4575.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111440-order-***-af4575.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111440-order-***-af4575.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111440-order-***-af4575.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111440-order-***-af4575.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17559,9 +17559,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.004s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111444-order-***-2bd214.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17594,9 +17594,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.997s
   - Seleccion fecha/hora: 1.031s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111448-order-***-2c12cf.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17629,9 +17629,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.896s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111452-order-***-9778e3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17664,9 +17664,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.968s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111456-order-***-cefa12.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17699,9 +17699,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.915s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111500-order-***-878c2e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17734,9 +17734,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.147s
   - Seleccion fecha/hora: 0.954s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111504-order-***-7a7f33.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17769,9 +17769,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.886s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-111508-order-***-a51d3b.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17804,9 +17804,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.207s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114111-order-***-a45a3f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17839,9 +17839,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.337s
   - Seleccion fecha/hora: 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114115-order-***-0dae63.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17874,9 +17874,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.025s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114120-order-***-9adefb.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17909,9 +17909,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.229s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114125-order-***-729a9c.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17944,9 +17944,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.024s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114129-order-***-869f6e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -17979,9 +17979,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.896s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114134-order-***-34b5e1.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18014,9 +18014,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.961s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114138-order-***-48408e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114138-order-***-48408e.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114138-order-***-48408e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114138-order-***-48408e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114138-order-***-48408e.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114138-order-***-48408e.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18049,9 +18049,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.976s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114142-order-***-d32e85.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18084,9 +18084,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.951s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114146-order-***-c98eea.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18119,9 +18119,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.013s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114150-order-***-0d1ef3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18154,9 +18154,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.008s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114154-order-***-c1e6c7.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18189,9 +18189,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.227s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114158-order-***-b81af1.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18224,9 +18224,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.044s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114202-order-***-21979d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114202-order-***-21979d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114202-order-***-21979d.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114202-order-***-21979d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114202-order-***-21979d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114202-order-***-21979d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18259,9 +18259,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.044s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114206-order-***-7b5ef3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18294,9 +18294,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.945s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114211-order-***-02e0dc.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18329,9 +18329,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.950s
   - Seleccion fecha/hora: 0.921s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114215-order-***-517163.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114215-order-***-517163.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114215-order-***-517163.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114215-order-***-517163.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114215-order-***-517163.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114215-order-***-517163.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18364,9 +18364,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.107s
   - Seleccion fecha/hora: 0.937s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114219-order-***-c7d662.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18399,9 +18399,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.020s
   - Seleccion fecha/hora: 0.922s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114223-order-***-9f1fae.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18434,9 +18434,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.085s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114227-order-***-f0ddff.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18469,9 +18469,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.059s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114231-order-***-1e1416.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18504,9 +18504,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.060s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114235-order-***-397e78.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114235-order-***-397e78.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114235-order-***-397e78.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114235-order-***-397e78.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114235-order-***-397e78.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114235-order-***-397e78.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18539,9 +18539,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 5.181s
   - Seleccion fecha/hora: 0.968s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114240-order-***-c6ca37.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18574,9 +18574,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 3.960s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114245-order-***-20bd7d.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18609,9 +18609,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.080s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114249-order-***-894b9a.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18644,9 +18644,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.087s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114253-order-***-2ca40f.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18679,9 +18679,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 4.236s
   - Seleccion fecha/hora: 0.969s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114257-order-***-eefdf3.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18714,9 +18714,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 8.187s
   - Seleccion fecha/hora: 0.953s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121011-order-***-8f88bf.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 
@@ -18749,9 +18749,9 @@ Archivo curado y automatico para senales donde aparece fecha, hora parcial o dis
   - Duracion corrida: 16.528s
   - Seleccion fecha/hora: 0.938s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121039-order-***-51efa5.png
 - Observacion tecnica:
   - La senal parcial fue visible por el flujo normal. No se reservo porque la disponibilidad no cumplia reglas.
 

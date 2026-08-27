@@ -16,7 +16,7 @@ reserva completada ni que el cupo continúe disponible.
 fecha y hora bajo:
 
 ```text
-screenshots/DD-MM-YYYY/cupos-unicos/
+screenshots/YYYY-MM/DD-MM-YYYY/cupos-unicos/
 ```
 
 El resumen diario de las `18:00`, hora de Lima, ya enumera esas imágenes de

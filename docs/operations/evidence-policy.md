@@ -28,8 +28,9 @@ pesado entre ambos.
 - El CAPTCHA original derivado del HTML es canonico; no conservar un recorte
   duplicado salvo que el original no exista.
 - La limpieza configurada recorre subcarpetas de logs, screenshots y videos.
-  Nunca entra en `screenshots/whatsapp/`, `screenshots/whatsapp-outgoing/`,
-  `screenshots/whatsapp-followup-outgoing/` ni `screenshots/preflight/`.
+  Nunca entra en `screenshots/whatsapp/`, `screenshots/whatsapp-outgoing/` ni
+  `screenshots/preflight/`. Los seguimientos post-pago referencian directamente
+  los PDF originales de `pdfs/` y no generan una carpeta de screenshots.
 - Dentro de las carpetas fechadas conserva por nombre confirmaciones, cupos,
   preenvios, respuestas del portal, resultados parciales, errores, defensas,
   rechazos, `reservation_unconfirmed`, `slot_lost` y CAPTCHA `original-html`.

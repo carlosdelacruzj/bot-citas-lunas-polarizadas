@@ -225,6 +225,11 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   liberando su lease. Se conservaron dos MP4 mediante una anulación temporal de
   diagnóstico; el flujo normal de `RECORD_CLIENT_SESSIONS` elimina videos si no
   existe una reserva confirmada.
+- Activado operativamente el `2026-08-26` para las próximas sesiones:
+  `RECORD_CLIENT_SESSIONS=true`, exportación final MP4 habilitada y destino
+  `videos/reservations`. El worker conserva el video solo cuando la reserva
+  queda confirmada; las sesiones sin confirmación continúan eliminándose. La
+  activación no genera retroactivamente videos de reservas anteriores.
 - Implementada y validada en portal real el `2026-08-01` la telemetría durable
   por selección de sede. Cada evento conserva intento, fase, POST detectado,
   URL sin query string, estado HTTP, latencia, tamaño declarado cuando existe,
@@ -402,6 +407,14 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   La migración recuperó `91.04 MB`; las nuevas constancias, imágenes de pago y
   PDFs se deduplican por SHA-256, con copia normal como fallback si el sistema
   de archivos no admite enlaces físicos.
+- Ajustado el `2026-08-27`: el seguimiento postpago dejó de crear una carpeta y
+  enlaces por cliente. Sus paquetes referencian directamente los PDF originales
+  de `pdfs/`; `148` mensajes históricos fueron migrados sin referencias rotas y
+  se retiraron `466` archivos visibles de
+  `screenshots/whatsapp-followup-outgoing/`. También se eliminaron tres
+  preparaciones huérfanas del `2026-07-15`, nunca encoladas ni enviadas, cuyos
+  seis adjuntos no correspondían a los originales. Permanecen `132` paquetes
+  enviados y `16` preparados; futuras altas no vuelven a llenar esa carpeta.
 - Se retiraron `10` módulos de compatibilidad que solo reexportaban símbolos y
   las fachadas públicas de cinco paquetes. Código, tests y entrypoints importan
   ahora desde `core`, `db`, `reports`, `reservation_engine` y `worker` en su
@@ -581,6 +594,13 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
 ### Evidencia y CAPTCHA
 
 - Evidencia organizada por fecha y resumen compacto.
+- Desde el `2026-08-27`, las carpetas diarias se agrupan primero por año y mes:
+  `screenshots/YYYY-MM/DD-MM-YYYY/`. Se migraron sin sobrescrituras las `47`
+  carpetas de junio, julio y agosto (`3,228` archivos), y PostgreSQL, el índice
+  compacto y las bitácoras históricas actualizaron sus referencias. Las raíces
+  operativas no fechadas, como `preflight` y los paquetes de WhatsApp,
+  permanecen separadas. Las capturas nuevas usan la estructura mensual desde su
+  creación.
 - Corregido el `2026-08-02`: las bitácoras Markdown ya no escriben nombres de
   clientes, `order_id` completos ni respuestas CAPTCHA. Las entradas nuevas del
   1 de agosto se sanitizaron antes de versionarlas.
@@ -897,12 +917,47 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `live`, revision `2`.
 - Al corte de las 18:00 se encola un resumen diario idempotente al número
   personal configurado fuera del repositorio: primero envía el texto fechado y
-  luego todas las imágenes de `cupos-unicos`. El primer caso real del 30 de
+  luego todas las imágenes publicables del día. Desde el `2026-08-26`, cada
+  original se conserva intacto en `cupos-unicos` y una cola local de un solo
+  hilo crea en segundo plano su copia determinista en
+  `cupos-unicos-marcados`. La versión
+  `provided-assets-v8-channel-pattern-1` usa directamente los tres PNG
+  transparentes entregados por el usuario: logo central suave, firma inferior
+  completa con nombre y WhatsApp, e identificación de canal. Esta última se
+  muestra completa arriba a la derecha y repite solo el usuario tres veces en
+  horizontal y con baja opacidad; no usa diagonales. Solo recorta transparencia
+  vacía, escala proporcionalmente y ajusta el alfa global para no tapar datos;
+  no reconstruye el diseño ni usa IA. El corte vuelve
+  a reconciliar todas las copias después de la revisión final y antes de crear
+  el trabajo; si falta o falla una, no sustituye por el original ni encola el
+  resumen. La huella PNG combina original, logo, número y versión del diseño,
+  por lo que la generación es idempotente y se actualiza al cambiar una entrada.
+  El emisor valida carpeta, marca, PNG y existencia antes de abrir WhatsApp o
+  enviar el primer texto. El primer caso real del 30 de
   julio cargó cuatro miniaturas, pero cerró el navegador con tres imágenes aún
   pendientes y solo una llegó al teléfono. El trabajo quedó reconciliado a
   `uncertain`; ahora se exige confirmar cada imagen saliente antes de cerrar.
   El reintento manual autorizado terminó `sent` con las cuatro imágenes
   confirmadas.
+- Validado el `2026-08-27`: los `12` originales del `26-08-2026` conservaron
+  sus hashes y produjeron `12/12` derivados con la nueva versión. El reenvío
+  separado `daily_slot_summary:2026-08-26:retry-1`, autorizado para verificar
+  este estándar, terminó técnicamente `sent` en un intento: texto, imágenes en
+  paquetes `4 + 4 + 4` y publicación quedaron confirmados. La evidencia de los
+  tres paquetes muestra burbujas salientes con doble check azul. El resumen
+  histórico original permanece intacto; todavía falta observar el primer cierre
+  diario natural generado desde el inicio con esta versión.
+- Incidente local del `2026-08-26`: al retirar un wheel temporal, un `git clean`
+  dirigido a una ruta ignorada eliminó accidentalmente `.runtime/`. Se
+  reconstruyeron y validaron desde evidencia durable la configuración del
+  resumen diario, la configuración postpago, los datos de cobro y la imagen de
+  Yape exacta. Admin API y el receptor Telegram permanecen saludables; Telegram
+  conserva el offset vigente en memoria y lo volverá a persistir al procesar la
+  siguiente actualización. El perfil no versionado de WhatsApp Web no pudo
+  recuperarse en ese momento. El `2026-08-27`, antes de cualquier envío nuevo,
+  la validación viva devolvió `session_ready`; después de la recarga aislada del
+  Admin API volvió a devolver el mismo estado y el resumen autorizado terminó
+  técnicamente `sent`. Ningún trabajo histórico ambiguo fue reintentado.
 - Corregido el `2026-08-13`: el resumen atrasado del 12 de agosto confirmó el
   texto, pero dos intentos de su álbum de 21 imágenes quedaron en la vista
   previa sin accionar el botón de envío. La ruta de álbum ahora prioriza el

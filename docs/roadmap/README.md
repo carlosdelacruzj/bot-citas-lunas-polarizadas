@@ -26,18 +26,21 @@ crear colas paralelas.
 
 ## Orden inmediato
 
-1. Reunir la muestra productiva de cierre de la **Fase 1** sin cambiar sus
+1. Antes de reiniciar Telegram, procesar una actualización nueva y comprobar
+   que se recreó `.runtime/telegram-control-offset.json`. WhatsApp ya volvió a
+   validar `session_ready` y completó un envío técnico real el `2026-08-27`.
+2. Reunir la muestra productiva de cierre de la **Fase 1** sin cambiar sus
    parametros: `10` rafagas y `30` auxiliares reconstruibles.
-2. Revisar las primeras `10` selecciones del canario de ruta critica: estrategia,
+3. Revisar las primeras `10` selecciones del canario de ruta critica: estrategia,
    fallback, seleccion preservada y tiempos pre-click, sin contar entrenamiento.
-3. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
+4. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
    diferencia de `S/10` y reunir saldos/costos suficientes para cierres reales.
-4. Completar la revision visual humana de `Seguimiento` en escritorio y movil;
+5. Completar la revision visual humana de `Seguimiento` en escritorio y movil;
    el primer lote real ya cerro `8/8 sent` despues del resumen diario.
-5. Incorporar controles seguros y salud compuesta en la **Fase 3**.
-6. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
-7. Reorganizar flujos y datos del dashboard antes del rediseño visual.
-8. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
+6. Incorporar controles seguros y salud compuesta en la **Fase 3**.
+7. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
+8. Reorganizar flujos y datos del dashboard antes del rediseño visual.
+9. Ejecutar deuda tecnica solo despues de estabilizar las fases funcionales.
 
 ## Fase 0 - Consolidacion documental
 
@@ -596,6 +599,35 @@ Prioridad: **P2**.
 
 Objetivo: conservar comparabilidad sin retener indefinidamente datos crudos o
 presentar snapshots incompletos como estado vivo.
+
+Completado el `2026-08-26`: las capturas originales de cupos únicos permanecen
+intactas y protegidas de la limpieza; cada captura nueva programa fuera de la
+ruta crítica una copia marcada determinista. Después de la revisión final de
+las `18:00`, el resumen reconcilia una relación `1:1`, congela únicamente rutas
+de `cupos-unicos-marcados` y falla cerrado si alguna copia no es válida. El
+emisor tampoco abre WhatsApp ni manda el texto si un adjunto marcado desapareció
+o un trabajo histórico apunta a originales. No queda una tarea futura separada
+para esta protección. El diseño `provided-assets-v8-channel-pattern-1` incrusta
+directamente los tres PNG transparentes entregados por el usuario: marca
+central, firma inferior e identificación superior del canal; repite solo el
+usuario tres veces en horizontal y con baja opacidad, sin diagonales ni
+reconstrucción de sus elementos. Un reenvío autorizado del `26-08-2026`
+confirmó técnicamente texto, `12` imágenes en paquetes `4 + 4 + 4` y publicación
+en un solo intento. Falta observar su primer cierre diario natural.
+
+Completado el `2026-08-27`: toda carpeta diaria de capturas queda bajo
+`screenshots/YYYY-MM/DD-MM-YYYY/`. Las `47` carpetas históricas de junio a
+agosto y sus `3,228` archivos se movieron sin colisiones; se actualizaron las
+referencias de PostgreSQL y las bitácoras versionadas. Las capturas futuras y
+la reconciliación diaria de marcas usan directamente la nueva jerarquía, por lo
+que esta organización no queda como tarea futura.
+
+Completado el `2026-08-27`: los paquetes postpago referencian los PDF originales
+de `pdfs/` y ya no crean copias o enlaces por cliente. Se migraron `148`
+mensajes, se eliminaron `466` rutas repetidas y tres preparaciones huérfanas sin
+envío ni trabajo asociado. La carpeta
+`screenshots/whatsapp-followup-outgoing/` fue retirada y no queda una tarea
+futura separada para esta limpieza.
 
 ### Alcance
 

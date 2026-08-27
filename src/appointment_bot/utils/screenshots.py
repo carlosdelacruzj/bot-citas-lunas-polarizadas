@@ -3,7 +3,7 @@ import re
 import shutil
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -34,8 +34,21 @@ ARTIFACT_LABEL_ALIASES = {
 
 
 def screenshot_artifact_dir(settings: Settings, *parts: str) -> Path:
-    day = datetime.now(ARTIFACT_TIMEZONE).strftime("%d-%m-%Y")
-    return settings.screenshots_dir.joinpath(day, *parts)
+    return screenshot_artifact_dir_for_date(
+        settings,
+        datetime.now(ARTIFACT_TIMEZONE),
+        *parts,
+    )
+
+
+def screenshot_artifact_dir_for_date(
+    settings: Settings,
+    artifact_date: date | datetime,
+    *parts: str,
+) -> Path:
+    month = artifact_date.strftime("%Y-%m")
+    day = artifact_date.strftime("%d-%m-%Y")
+    return settings.screenshots_dir.joinpath(month, day, *parts)
 
 
 def _artifact_path(settings: Settings, label: str) -> Path:
@@ -204,6 +217,17 @@ def _archive_unique_slot_candidate(
         return None
 
     logger.info("Archived unique slot screenshot: %s", destination)
+    try:
+        from appointment_bot.services.unique_slot_watermark import (
+            queue_unique_slot_watermark,
+        )
+
+        queue_unique_slot_watermark(settings, destination)
+    except Exception:
+        logger.exception(
+            "Could not queue the branded copy for unique slot screenshot: %s",
+            destination,
+        )
     return destination
 
 

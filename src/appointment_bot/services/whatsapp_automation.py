@@ -48,6 +48,9 @@ from appointment_bot.services.appointment_reminders import (
     get_current_appointment_reminder_template,
 )
 from appointment_bot.services.notifier import send_telegram_message
+from appointment_bot.services.unique_slot_watermark import (
+    validate_daily_watermarked_attachment_paths,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
@@ -309,13 +312,20 @@ class WhatsAppAutomationDispatcher:
             raise ValueError(
                 "El trabajo del resumen diario no contiene destinatario o textos."
             )
+        if job["report_date"] is None:
+            raise ValueError("El trabajo del resumen diario no contiene fecha.")
+        attachment_paths = validate_daily_watermarked_attachment_paths(
+            self.settings,
+            date.fromisoformat(job["report_date"]),
+            job["attachment_paths"],
+        )
         message_id = job["job_key"]
         result = send_whatsapp_web_daily_slot_summary(
             message_id=message_id,
             recipient_phone=recipient_phone,
             message_text=message_text,
             publication_text=publication_text,
-            attachment_paths=job["attachment_paths"],
+            attachment_paths=attachment_paths,
         )
         return message_id, result
 

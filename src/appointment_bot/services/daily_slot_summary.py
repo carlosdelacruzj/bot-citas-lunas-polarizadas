@@ -9,6 +9,9 @@ from zoneinfo import ZoneInfo
 from appointment_bot.config import Settings
 from appointment_bot.db.whatsapp_automation import enqueue_daily_slot_summary_job
 from appointment_bot.services.tiktok_description import generate_tiktok_publication
+from appointment_bot.services.unique_slot_watermark import (
+    prepare_daily_unique_slot_watermarks,
+)
 
 logger = logging.getLogger(__name__)
 LIMA_TIMEZONE = ZoneInfo("America/Lima")
@@ -42,11 +45,16 @@ def enqueue_daily_slot_summary(
         logger.info("Daily WhatsApp slot summary is not configured.")
         return False
 
-    attachment_paths = _daily_unique_slot_paths(settings, effective_date)
+    public_whatsapp = _configured_public_whatsapp()
+    attachment_paths = prepare_daily_unique_slot_watermarks(
+        settings,
+        effective_date,
+        public_whatsapp=public_whatsapp,
+    )
     message_text = _daily_summary_message(effective_date)
     publication_text = generate_tiktok_publication(
         effective_date,
-        public_whatsapp=_configured_public_whatsapp(),
+        public_whatsapp=public_whatsapp,
     )
     created = enqueue_daily_slot_summary_job(
         report_date=effective_date,
@@ -111,20 +119,6 @@ def _daily_summary_config() -> dict[str, object] | None:
     if payload.get("enabled") is False:
         return None
     return payload
-
-
-def _daily_unique_slot_paths(settings: Settings, report_date: date) -> list[Path]:
-    day_directory = (
-        settings.screenshots_dir
-        / report_date.strftime("%d-%m-%Y")
-        / "cupos-unicos"
-    )
-    if not day_directory.is_dir():
-        return []
-    return sorted(
-        (path.resolve() for path in day_directory.glob("*.png") if path.is_file()),
-        key=lambda path: path.name,
-    )
 
 
 def _daily_summary_message(report_date: date) -> str:

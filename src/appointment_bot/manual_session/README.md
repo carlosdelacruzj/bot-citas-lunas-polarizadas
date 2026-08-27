@@ -49,7 +49,8 @@ Reglas:
 
 El modo `diagnostic` instala la medicion antes del login y deja el navegador en
 el portal para que el operador realice el flujo completo. Persiste un JSON
-incremental bajo `screenshots/<fecha>/manual-diagnostics/<session_id>/` con
+incremental bajo
+`screenshots/<año-mes>/<fecha>/manual-diagnostics/<session_id>/` con
 nombres y longitudes de campos, cambios DOM, POST y estados HTTP. No guarda
 password, cookies, respuesta CAPTCHA, tokens ASP.NET completos ni el cuerpo
 crudo del POST. Sede, fecha y hora son los unicos valores operativos

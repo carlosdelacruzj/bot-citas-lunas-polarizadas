@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 SCREENSHOT_PROTECTED_ROOTS = {
     "preflight",
     "whatsapp",
-    "whatsapp-followup-outgoing",
     "whatsapp-outgoing",
 }
 SCREENSHOT_PROTECTED_NAME_MARKERS = (
@@ -98,6 +97,12 @@ def _preserve_screenshot(path: Path, screenshots_root: Path) -> bool:
     except ValueError:
         return True
     if relative_path.parts and relative_path.parts[0].lower() in SCREENSHOT_PROTECTED_ROOTS:
+        return True
+    protected_unique_slot_directories = {"cupos-unicos", "cupos-unicos-marcados"}
+    if any(
+        part.lower() in protected_unique_slot_directories
+        for part in relative_path.parts[:-1]
+    ):
         return True
     normalized_name = path.name.lower()
     return any(marker in normalized_name for marker in SCREENSHOT_PROTECTED_NAME_MARKERS)

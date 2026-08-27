@@ -136,25 +136,16 @@ class FileDeduplicationTests(unittest.TestCase):
             self.assertFalse(os.path.samefile(first, image))
             self.assertEqual(first.read_bytes(), image.read_bytes())
 
-    def test_followup_packages_keep_independent_paths_with_shared_content(self) -> None:
+    def test_followup_packages_reference_the_original_document(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             document = root / "requirements.pdf"
             document.write_bytes(b"followup-document")
-            outgoing = root / "outgoing"
+            first = Path(_copy_followup_documents("message-a", [document])[0])
+            second = Path(_copy_followup_documents("message-b", [document])[0])
 
-            with patch(
-                "appointment_bot.db.whatsapp_followup_messages.OUTGOING_ROOT",
-                outgoing,
-            ), patch(
-                "appointment_bot.utils.file_deduplication.DEFAULT_CONTENT_STORE",
-                root / "store",
-            ):
-                first = Path(_copy_followup_documents("message-a", [document])[0])
-                second = Path(_copy_followup_documents("message-b", [document])[0])
-
-            self.assertNotEqual(first, second)
-            self.assertTrue(os.path.samefile(first, second))
+            self.assertEqual(first, document.resolve())
+            self.assertEqual(second, document.resolve())
             self.assertEqual(first.read_bytes(), document.read_bytes())
 
 

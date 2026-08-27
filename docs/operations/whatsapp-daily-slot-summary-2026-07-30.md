@@ -7,7 +7,7 @@ Al finalizar la operación diaria, enviar al número personal configurado:
 1. un mensaje con el texto
    `Resumen de cupos únicos hoy <día> de <mes> de <año>`;
 2. todas las imágenes archivadas ese día en
-   `screenshots/DD-MM-YYYY/cupos-unicos/`;
+   `screenshots/YYYY-MM/DD-MM-YYYY/cupos-unicos/`;
 3. una publicación variable para TikTok lista para copiar.
 
 Si no existen imágenes, se omite el álbum pero se conservan el mensaje de
@@ -182,3 +182,62 @@ futura sección pública `Cupos encontrados recientemente`. Se mostrarán como
 detecciones históricas, no como reservas ni disponibilidad vigente. El plan de
 Cloudinary, idempotencia y aislamiento se documenta en
 [`public-slot-evidence-cloudinary-plan-2026-08-01.md`](public-slot-evidence-cloudinary-plan-2026-08-01.md).
+
+## Marca de agua determinista — 26-08-2026
+
+Las capturas originales siguen siendo evidencia autoritativa y nunca se
+sobrescriben:
+
+```text
+screenshots/YYYY-MM/DD-MM-YYYY/cupos-unicos/<fecha>_<hora>.png
+```
+
+Después de crear por primera vez un original, una cola local de un solo hilo
+genera fuera de la ruta crítica una copia publicable:
+
+```text
+screenshots/YYYY-MM/DD-MM-YYYY/cupos-unicos-marcados/<fecha>_<hora>.png
+```
+
+La composición usa Pillow, no IA. Desde el `2026-08-27` incrusta directamente
+los tres PNG transparentes entregados por el usuario: `Logo transparente.png`
+para la marca central, `logo con numero.png` para la firma inferior completa y
+`Nombre canal.png` para la identificación superior. De este último recurso se
+extrae también su nombre visible, sin recrear la tipografía, y se repite tres
+veces en horizontal con alfa global de `15%`: a media altura a izquierda y
+derecha, y una vez centrado sobre el pie. La identificación superior conserva
+el recurso completo con alfa global de `82%`; no se usan repeticiones diagonales.
+El render solo recorta lienzo totalmente transparente, escala sin deformar y
+reduce el alfa global del recurso central para conservar legibles fecha, hora,
+cupos, CAPTCHA y controles. No reconstruye logo, colores, tipografía, borde ni
+número. La misma regla proporcional se aplica a cada captura y la versión
+vigente es `provided-assets-v8-channel-pattern-1`, con alfa global central de
+`20%`. Si el WhatsApp público
+configurado deja de coincidir con
+el número incorporado en la firma, el render falla cerrado hasta reemplazar el
+PNG, evitando publicar un contacto desactualizado.
+
+Cada derivado conserva una huella de original, logo, WhatsApp y versión del
+diseño. Si la huella coincide, se reutiliza sin tocar su fecha de modificación;
+si cambia una entrada, se regenera mediante archivo temporal y reemplazo
+atómico. La pérdida de la cola en memoria no pierde trabajo: después de la
+revisión final del corte, `enqueue_daily_slot_summary()` reconcilia de forma
+síncrona todos los originales antes de persistir el job.
+
+El resumen congela exclusivamente rutas de `cupos-unicos-marcados`. Si una
+copia no puede crearse o validarse, se registra el error y no se encola el
+resumen con originales. Antes de abrir WhatsApp, el dispatcher vuelve a exigir
+que cada adjunto exista, pertenezca a la carpeta marcada y contenga la versión
+vigente. El navegador comprueba nuevamente la existencia de todos los adjuntos
+antes de enviar el texto fechado, evitando un mensaje parcial por un archivo
+desaparecido.
+
+Validación operativa: las `12` capturas del `26-08-2026` produjeron `12` copias
+con la versión vigente y los hashes de todos los originales permanecieron
+iguales. El reenvío explícitamente autorizado
+`daily_slot_summary:2026-08-26:retry-1` terminó técnicamente `sent` en un solo
+intento el `2026-08-27`: confirmó texto, tres paquetes de imágenes `4 + 4 + 4`
+y publicación final. Las capturas de cada paquete muestran burbujas salientes
+con doble check azul. El trabajo diario original del `26-08-2026` permanece
+intacto como histórico `sent`; falta observar el primer cierre diario natural
+que nazca directamente con esta versión.

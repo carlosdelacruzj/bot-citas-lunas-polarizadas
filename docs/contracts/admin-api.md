@@ -559,8 +559,9 @@ consolida el texto post-pago.
 
 Los PDFs post-pago se configuran localmente en
 `.runtime/whatsapp-followup/followup-details.json` con una lista `documents`.
-Cada archivo debe ser PDF y se copia a `screenshots/whatsapp-followup-outgoing/`
-al preparar el paquete. `POST /api/v1/whatsapp-followup-messages/{message_id}/web/prepare`
+Cada archivo debe ser uno de los PDF originales conservados en `pdfs/`. El
+paquete registra esas rutas directamente y no crea una copia por cliente.
+`POST /api/v1/whatsapp-followup-messages/{message_id}/web/prepare`
 abre WhatsApp Web localmente, envia primero los PDFs y luego envia el texto como
 segundo mensaje. Si el envio automatico termina correctamente, el paquete queda
 marcado como `sent`; `POST /api/v1/whatsapp-followup-messages/{message_id}/sent`

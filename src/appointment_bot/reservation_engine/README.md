@@ -7,7 +7,8 @@ citas después de seleccionar fecha y hora y comprobar que el CAPTCHA cargó. Ca
 detección conserva una sola captura del modal.
 
 Después de registrar cada resultado, la primera captura de una combinación de
-fecha y hora se copia en `screenshots/DD-MM-YYYY/cupos-unicos/`. El observador y
+fecha y hora se copia en
+`screenshots/YYYY-MM/DD-MM-YYYY/cupos-unicos/`. El observador y
 las órdenes normales comparten la carpeta y la regla: si el cupo ya existe para
 esa fecha y hora, no se genera otra copia.
 

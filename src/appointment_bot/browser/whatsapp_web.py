@@ -810,6 +810,15 @@ def _send_daily_slot_summary(
     context: BrowserContext,
     draft: dict[str, object],
 ) -> dict[str, object]:
+    attachments = [
+        Path(str(path)).resolve()
+        for path in list(draft.get("attachment_paths") or [])
+    ]
+    if attachments and not all(path.is_file() for path in attachments):
+        raise FileNotFoundError(
+            "Una de las imagenes marcadas del resumen diario ya no esta disponible."
+        )
+
     page = _fresh_whatsapp_page(context)
     phone = "".join(
         character
@@ -827,10 +836,6 @@ def _send_daily_slot_summary(
             screenshot_name="whatsapp-daily-summary-chat-not-ready",
         )
 
-    attachments = [
-        Path(str(path)).resolve()
-        for path in list(draft.get("attachment_paths") or [])
-    ]
     delivery_components = {
         "summary": "not_attempted",
         "images": "not_attempted" if attachments else "skipped",
@@ -861,11 +866,6 @@ def _send_daily_slot_summary(
         delivery_components["summary"] = "skipped"
 
     if attachments:
-        if not all(path.is_file() for path in attachments):
-            raise FileNotFoundError(
-                "Una de las imagenes del resumen diario ya no esta disponible."
-            )
-
         batches = [
             attachments[index : index + DAILY_SUMMARY_IMAGE_BATCH_SIZE]
             for index in range(0, len(attachments), DAILY_SUMMARY_IMAGE_BATCH_SIZE)

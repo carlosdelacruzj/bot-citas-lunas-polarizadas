@@ -21,12 +21,11 @@ from appointment_bot.db.common import (
 )
 from appointment_bot.db.whatsapp_message_templates import get_whatsapp_message_template
 from appointment_bot.db.whatsapp_messages import _international_phone
-from appointment_bot.utils.file_deduplication import copy_deduplicated_file
 
 MESSAGE_KIND = "post_payment_followup"
 POST_PAYMENT_TEMPLATE_KEY = "post_payment_confirmation"
 DEFAULT_TIKTOK_USERNAME = "@citaspolarizadasperu"
-OUTGOING_ROOT = Path("screenshots/whatsapp-followup-outgoing")
+ORIGINAL_DOCUMENT_ROOT = Path("pdfs")
 FOLLOWUP_CONFIG_PATH = Path(".runtime/whatsapp-followup/followup-details.json")
 
 
@@ -289,8 +288,8 @@ def get_followup_attachment(
     if attachment_index < 0 or attachment_index >= len(attachments):
         raise ValueError("El adjunto solicitado no existe.")
     path = Path(attachments[attachment_index]).resolve()
-    root = OUTGOING_ROOT.resolve()
-    if root not in path.parents or not path.is_file():
+    original_documents = _original_followup_documents()
+    if path not in original_documents or not path.is_file():
         raise ValueError("El adjunto de seguimiento no esta disponible.")
     return path
 
@@ -485,18 +484,38 @@ def _copy_followup_documents(message_id: str, values: object) -> list[str]:
             "Falta la lista de PDFs para el seguimiento post-pago en "
             ".runtime/whatsapp-followup/followup-details.json."
         )
+    del message_id
     copied: list[str] = []
-    package_dir = OUTGOING_ROOT / message_id
-    package_dir.mkdir(parents=True, exist_ok=True)
-    for index, value in enumerate(values, start=1):
+    for value in values:
         source = Path(str(value)).expanduser().resolve()
         if source.suffix.lower() != ".pdf" or not source.is_file():
             raise ValueError(f"El PDF de seguimiento no es valido: {source}")
-        destination = package_dir / source.name
-        if destination.exists():
-            destination = package_dir / f"{source.stem}-{index}{source.suffix}"
-        copied.append(str(copy_deduplicated_file(source, destination)))
+        copied.append(str(source))
     return copied
+
+
+def _configured_followup_documents() -> set[Path]:
+    values = _followup_details().get("documents", [])
+    documents = {Path(str(value)).expanduser().resolve() for value in values}
+    if not documents or any(
+        path.suffix.lower() != ".pdf" or not path.is_file() for path in documents
+    ):
+        raise ValueError("La configuracion contiene PDFs de seguimiento invalidos.")
+    return documents
+
+
+def _original_followup_documents() -> set[Path]:
+    root = ORIGINAL_DOCUMENT_ROOT.resolve()
+    if not root.is_dir():
+        raise ValueError("No existe la carpeta de PDFs originales de seguimiento.")
+    documents = {
+        path.resolve()
+        for path in root.rglob("*.pdf")
+        if path.is_file() and not path.is_symlink()
+    }
+    if not documents:
+        raise ValueError("No existen PDFs originales de seguimiento.")
+    return documents
 
 
 def _followup_details() -> dict[str, object]:

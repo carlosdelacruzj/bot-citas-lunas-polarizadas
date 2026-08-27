@@ -551,12 +551,12 @@ flujo sin guardar nombres completos ni credenciales.
 - Evidencia:
   - Screenshot principal: no registrado
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.765s
     - Medidas CAPTCHA: png=360x142, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=10069, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
-  - Diagnostico dom_snapshots: screenshots\06-07-2026\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-100928-b70ff5bc-order-***-.html
+    - CAPTCHA original HTML: path=screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png, mime=image/jpeg, formato_detectado=png, bytes=10069, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\06-07-2026\captchas\04-reserva-captcha-tecnico-2captcha-***-100928-b70ff5bc-order-***-d8fd6d1ae85647ef8e7a31d0d8274ef5-original-html.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\06-07-2026\diagnostics\06-reserva-respuesta-portal-html-intento-1-***-100928-b70ff5bc-order-***-.html
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 ## 2026-07-07 08:28:40 - order-*** - unavailable
@@ -585,18 +585,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\portal-1-082815-order-***-e1442d.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\portal-1-082815-order-***-e1442d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.719s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10271, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png
-  - Diagnostico screenshots: screenshots\07-07-2026\preenvio-1-082815-order-***-736596.png
-  - Diagnostico screenshots: screenshots\07-07-2026\portal-1-082815-order-***-e1442d.png
-  - Diagnostico dom_snapshots: screenshots\07-07-2026\diagnostics\portal-html-1-082815-order-***-185105.html
-  - Screenshot adicional: screenshots\07-07-2026\preenvio-1-082815-order-***-736596.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-082815-order-***-9820c8.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10271, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-082815-order-***-15756d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\preenvio-1-082815-order-***-736596.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\portal-1-082815-order-***-e1442d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\07-07-2026\diagnostics\portal-html-1-082815-order-***-185105.html
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\preenvio-1-082815-order-***-736596.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-082815-order-***-9820c8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.922s).
 
@@ -626,18 +626,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\portal-1-082850-order-***-f7479d.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\portal-1-082850-order-***-f7479d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.437s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10388, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png
-  - Diagnostico screenshots: screenshots\07-07-2026\preenvio-1-082850-order-***-2afd5c.png
-  - Diagnostico screenshots: screenshots\07-07-2026\portal-1-082850-order-***-f7479d.png
-  - Diagnostico dom_snapshots: screenshots\07-07-2026\diagnostics\portal-html-1-082850-order-***-2921b2.html
-  - Screenshot adicional: screenshots\07-07-2026\preenvio-1-082850-order-***-2afd5c.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-082850-order-***-cc1b56.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10388, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-082850-order-***-80aab8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\preenvio-1-082850-order-***-2afd5c.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\portal-1-082850-order-***-f7479d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\07-07-2026\diagnostics\portal-html-1-082850-order-***-2921b2.html
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\preenvio-1-082850-order-***-2afd5c.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-082850-order-***-cc1b56.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.938s).
 
@@ -667,18 +667,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\portal-1-122939-order-***-81d951.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\portal-1-122939-order-***-81d951.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=5.391s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=10613, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png
-  - Diagnostico screenshots: screenshots\07-07-2026\preenvio-1-122939-order-***-fab659.png
-  - Diagnostico screenshots: screenshots\07-07-2026\portal-1-122939-order-***-81d951.png
-  - Diagnostico dom_snapshots: screenshots\07-07-2026\diagnostics\portal-html-1-122939-order-***-d318ae.html
-  - Screenshot adicional: screenshots\07-07-2026\preenvio-1-122939-order-***-fab659.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-122939-order-***-339014.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=10613, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-122939-order-***-4bf7ac-original.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\preenvio-1-122939-order-***-fab659.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\portal-1-122939-order-***-81d951.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\07-07-2026\diagnostics\portal-html-1-122939-order-***-d318ae.html
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\preenvio-1-122939-order-***-fab659.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-122939-order-***-339014.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.562s).
 
@@ -708,18 +708,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-07-2026\portal-1-125433-order-***-d57351.png
+  - Screenshot principal: screenshots\2026-07\07-07-2026\portal-1-125433-order-***-d57351.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=6.171s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png, mime=image/jpeg, formato_detectado=png, bytes=10291, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png
-  - Diagnostico screenshots: screenshots\07-07-2026\preenvio-1-125433-order-***-3f7b64.png
-  - Diagnostico screenshots: screenshots\07-07-2026\portal-1-125433-order-***-d57351.png
-  - Diagnostico dom_snapshots: screenshots\07-07-2026\diagnostics\portal-html-1-125433-order-***-f32a23.html
-  - Screenshot adicional: screenshots\07-07-2026\preenvio-1-125433-order-***-3f7b64.png
-  - Screenshot adicional: screenshots\07-07-2026\cupo-125433-order-***-8c7ef2.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png, mime=image/jpeg, formato_detectado=png, bytes=10291, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\07-07-2026\captchas\captcha-125433-order-***-9ee903-original.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\preenvio-1-125433-order-***-3f7b64.png
+  - Diagnostico screenshots: screenshots\2026-07\07-07-2026\portal-1-125433-order-***-d57351.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\07-07-2026\diagnostics\portal-html-1-125433-order-***-f32a23.html
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\preenvio-1-125433-order-***-3f7b64.png
+  - Screenshot adicional: screenshots\2026-07\07-07-2026\cupo-125433-order-***-8c7ef2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (3.047s).
 ## 2026-07-08 12:08:07 - order-*** - unavailable
@@ -748,18 +748,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\08-07-2026\portal-1-120734-order-***-e370e3.png
+  - Screenshot principal: screenshots\2026-07\08-07-2026\portal-1-120734-order-***-e370e3.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.61s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png, mime=image/jpeg, formato_detectado=png, bytes=10907, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png
-  - Diagnostico screenshots: screenshots\08-07-2026\preenvio-1-120734-order-***-49b2e7.png
-  - Diagnostico screenshots: screenshots\08-07-2026\portal-1-120734-order-***-e370e3.png
-  - Diagnostico dom_snapshots: screenshots\08-07-2026\diagnostics\portal-html-1-120734-order-***-79fee4.html
-  - Screenshot adicional: screenshots\08-07-2026\preenvio-1-120734-order-***-49b2e7.png
-  - Screenshot adicional: screenshots\08-07-2026\cupo-120734-order-***-8ab30f.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png, mime=image/jpeg, formato_detectado=png, bytes=10907, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\08-07-2026\captchas\captcha-120734-order-***-6dd632-original.png
+  - Diagnostico screenshots: screenshots\2026-07\08-07-2026\preenvio-1-120734-order-***-49b2e7.png
+  - Diagnostico screenshots: screenshots\2026-07\08-07-2026\portal-1-120734-order-***-e370e3.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\08-07-2026\diagnostics\portal-html-1-120734-order-***-79fee4.html
+  - Screenshot adicional: screenshots\2026-07\08-07-2026\preenvio-1-120734-order-***-49b2e7.png
+  - Screenshot adicional: screenshots\2026-07\08-07-2026\cupo-120734-order-***-8ab30f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -789,18 +789,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\08-07-2026\portal-1-130645-order-***-68e563.png
+  - Screenshot principal: screenshots\2026-07\08-07-2026\portal-1-130645-order-***-68e563.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.328s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10284, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png
-  - Diagnostico screenshots: screenshots\08-07-2026\preenvio-1-130645-order-***-79421e.png
-  - Diagnostico screenshots: screenshots\08-07-2026\portal-1-130645-order-***-68e563.png
-  - Diagnostico dom_snapshots: screenshots\08-07-2026\diagnostics\portal-html-1-130645-order-***-5393d5.html
-  - Screenshot adicional: screenshots\08-07-2026\preenvio-1-130645-order-***-79421e.png
-  - Screenshot adicional: screenshots\08-07-2026\cupo-130645-order-***-74ce6f.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10284, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\08-07-2026\captchas\captcha-130645-order-***-efbc5b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\08-07-2026\preenvio-1-130645-order-***-79421e.png
+  - Diagnostico screenshots: screenshots\2026-07\08-07-2026\portal-1-130645-order-***-68e563.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\08-07-2026\diagnostics\portal-html-1-130645-order-***-5393d5.html
+  - Screenshot adicional: screenshots\2026-07\08-07-2026\preenvio-1-130645-order-***-79421e.png
+  - Screenshot adicional: screenshots\2026-07\08-07-2026\cupo-130645-order-***-74ce6f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -830,7 +830,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\08-07-2026\etapas-141703-order-***-2eb51c.png
+  - Screenshot principal: screenshots\2026-07\08-07-2026\etapas-141703-order-***-2eb51c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-09 07:36:51 - order-*** - completed
@@ -858,7 +858,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\etapas-073637-order-***-ebbeda.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\etapas-073637-order-***-ebbeda.png
 - Observacion tecnica:
   - El flujo normal detecto la etapa Programado; reload_probe no fue necesario.
 ## 2026-07-09 08:28:06 - order-*** - registered
@@ -887,18 +887,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-082714-order-***-99bbc3.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-082714-order-***-99bbc3.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.469s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9809, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-082714-order-***-9c0b2f.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-082714-order-***-99bbc3.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-082714-order-***-d05059.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-082714-order-***-9c0b2f.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-082714-order-***-11af03.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9809, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-082714-order-***-230ca0-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-082714-order-***-9c0b2f.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-082714-order-***-99bbc3.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-082714-order-***-d05059.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-082714-order-***-9c0b2f.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-082714-order-***-11af03.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 ## 2026-07-09 08:28:21 - order-*** - registered
@@ -927,18 +927,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-082806-order-***-6fa552.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-082806-order-***-6fa552.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.328s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png, mime=image/jpeg, formato_detectado=png, bytes=10506, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-082806-order-***-f0f88f.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-082806-order-***-6fa552.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-082806-order-***-927d09.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-082806-order-***-f0f88f.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-082806-order-***-046ce8.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png, mime=image/jpeg, formato_detectado=png, bytes=10506, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-082806-order-***-c2c9ea-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-082806-order-***-f0f88f.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-082806-order-***-6fa552.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-082806-order-***-927d09.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-082806-order-***-f0f88f.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-082806-order-***-046ce8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 ## 2026-07-09 10:06:49 - order-*** - registered
@@ -967,18 +967,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-100632-order-***-38dc54.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-100632-order-***-38dc54.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.39s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10414, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-100632-order-***-f5d0b7.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-100632-order-***-38dc54.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-100632-order-***-bf21b1.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-100632-order-***-f5d0b7.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-100632-order-***-02cbef.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10414, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-100632-order-***-9d50a9-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-100632-order-***-f5d0b7.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-100632-order-***-38dc54.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-100632-order-***-bf21b1.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-100632-order-***-f5d0b7.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-100632-order-***-02cbef.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -1008,18 +1008,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 4.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-105834-order-***-8a14bf.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-105834-order-***-8a14bf.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.781s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png, mime=image/jpeg, formato_detectado=png, bytes=10586, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-105834-order-***-8b6349.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-105834-order-***-8a14bf.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-105834-order-***-02797b.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-105834-order-***-8b6349.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-105834-order-***-226e31.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png, mime=image/jpeg, formato_detectado=png, bytes=10586, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-105834-order-***-ce2e90-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-105834-order-***-8b6349.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-105834-order-***-8a14bf.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-105834-order-***-02797b.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-105834-order-***-8b6349.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-105834-order-***-226e31.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -1049,18 +1049,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-121525-order-***-e941df.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-121525-order-***-e941df.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.062s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png, mime=image/jpeg, formato_detectado=png, bytes=9698, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-121525-order-***-c4c5c3.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-121525-order-***-e941df.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-121525-order-***-e03d2c.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-121525-order-***-c4c5c3.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-121525-order-***-56b601.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png, mime=image/jpeg, formato_detectado=png, bytes=9698, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-121525-order-***-bf66bd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-121525-order-***-c4c5c3.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-121525-order-***-e941df.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-121525-order-***-e03d2c.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-121525-order-***-c4c5c3.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-121525-order-***-56b601.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -1090,18 +1090,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-140140-order-***-81d2c0.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-140140-order-***-81d2c0.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.219s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png, mime=image/jpeg, formato_detectado=png, bytes=9144, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-140140-order-***-228814.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-140140-order-***-81d2c0.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-140140-order-***-46f649.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-140140-order-***-228814.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-140140-order-***-8a3eb0.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png, mime=image/jpeg, formato_detectado=png, bytes=9144, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-140140-order-***-7dd859-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-140140-order-***-228814.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-140140-order-***-81d2c0.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-140140-order-***-46f649.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-140140-order-***-228814.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-140140-order-***-8a3eb0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 ## 2026-07-09 15:18:03 - order-*** - unavailable
@@ -1130,27 +1130,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-2-151734-order-***-0d32d7.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-2-151734-order-***-0d32d7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=14.328s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-151734-order-***-ed54d9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9706, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-151734-order-***-ed54d9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9706, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=slot_lost, valor=oculto, duracion=3.547s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png, mime=image/jpeg, formato_detectado=png, bytes=9986, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-151734-order-***-ed54d9-original.png
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-151734-order-***-e6b84d.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-151734-order-***-333597.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-2-151734-order-***-42b001.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-2-151734-order-***-0d32d7.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-151734-order-***-0eb515.html
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-2-151734-order-***-ce3346.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-151734-order-***-e6b84d.png
-  - Screenshot adicional: screenshots\09-07-2026\portal-1-151734-order-***-333597.png
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-2-151734-order-***-42b001.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-151734-order-***-c41745.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png, mime=image/jpeg, formato_detectado=png, bytes=9986, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-151734-order-***-ed54d9-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-151734-order-***-fb2b95-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-151734-order-***-e6b84d.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-151734-order-***-333597.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-2-151734-order-***-42b001.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-2-151734-order-***-0d32d7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-151734-order-***-0eb515.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-2-151734-order-***-ce3346.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-151734-order-***-e6b84d.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\portal-1-151734-order-***-333597.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-2-151734-order-***-42b001.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-151734-order-***-c41745.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -1180,7 +1180,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\etapas-151920-order-***-dd8a7f.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\etapas-151920-order-***-dd8a7f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -1210,18 +1210,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-1-152623-order-***-11abb8.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-1-152623-order-***-11abb8.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.641s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png, mime=image/jpeg, formato_detectado=png, bytes=9572, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-152623-order-***-4cdd6a.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-152623-order-***-11abb8.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-152623-order-***-b20e71.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-152623-order-***-4cdd6a.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-152623-order-***-dd1a99.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png, mime=image/jpeg, formato_detectado=png, bytes=9572, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-152623-order-***-806fae-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-152623-order-***-4cdd6a.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-152623-order-***-11abb8.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-152623-order-***-b20e71.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-152623-order-***-4cdd6a.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-152623-order-***-dd1a99.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.000s).
 
@@ -1251,27 +1251,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\09-07-2026\portal-2-152640-order-***-33ae91.png
+  - Screenshot principal: screenshots\2026-07\09-07-2026\portal-2-152640-order-***-33ae91.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=3.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-152640-order-***-54c23f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10009, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-152640-order-***-54c23f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10009, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=slot_lost, valor=oculto, duracion=3.172s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png, mime=image/jpeg, formato_detectado=png, bytes=9619, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-152640-order-***-54c23f-original.png
-  - Diagnostico captcha_images: screenshots\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-1-152640-order-***-01221c.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-1-152640-order-***-8b0b75.png
-  - Diagnostico screenshots: screenshots\09-07-2026\preenvio-2-152640-order-***-70358d.png
-  - Diagnostico screenshots: screenshots\09-07-2026\portal-2-152640-order-***-33ae91.png
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-1-152640-order-***-cfe5cc.html
-  - Diagnostico dom_snapshots: screenshots\09-07-2026\diagnostics\portal-html-2-152640-order-***-370ad8.html
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-1-152640-order-***-01221c.png
-  - Screenshot adicional: screenshots\09-07-2026\portal-1-152640-order-***-8b0b75.png
-  - Screenshot adicional: screenshots\09-07-2026\preenvio-2-152640-order-***-70358d.png
-  - Screenshot adicional: screenshots\09-07-2026\cupo-152640-order-***-dd025c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png, mime=image/jpeg, formato_detectado=png, bytes=9619, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-152640-order-***-54c23f-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\09-07-2026\captchas\captcha-152640-order-***-0f2953-original.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-1-152640-order-***-01221c.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-1-152640-order-***-8b0b75.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\preenvio-2-152640-order-***-70358d.png
+  - Diagnostico screenshots: screenshots\2026-07\09-07-2026\portal-2-152640-order-***-33ae91.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-1-152640-order-***-cfe5cc.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\09-07-2026\diagnostics\portal-html-2-152640-order-***-370ad8.html
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-1-152640-order-***-01221c.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\portal-1-152640-order-***-8b0b75.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\preenvio-2-152640-order-***-70358d.png
+  - Screenshot adicional: screenshots\2026-07\09-07-2026\cupo-152640-order-***-dd025c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.797s).
 ## 2026-07-10 14:01:34 - order-*** - registered
@@ -1300,18 +1300,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\portal-1-140048-order-***-f198fe.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\portal-1-140048-order-***-f198fe.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.969s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9840, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png
-  - Diagnostico screenshots: screenshots\10-07-2026\preenvio-1-140048-order-***-494aac.png
-  - Diagnostico screenshots: screenshots\10-07-2026\portal-1-140048-order-***-f198fe.png
-  - Diagnostico dom_snapshots: screenshots\10-07-2026\diagnostics\portal-html-1-140048-order-***-e5f062.html
-  - Screenshot adicional: screenshots\10-07-2026\preenvio-1-140048-order-***-494aac.png
-  - Screenshot adicional: screenshots\10-07-2026\cupo-140048-order-***-fc6aa6.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9840, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\10-07-2026\captchas\captcha-140048-order-***-e1ac0d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\preenvio-1-140048-order-***-494aac.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\portal-1-140048-order-***-f198fe.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\10-07-2026\diagnostics\portal-html-1-140048-order-***-e5f062.html
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\preenvio-1-140048-order-***-494aac.png
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\cupo-140048-order-***-fc6aa6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -1341,18 +1341,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\portal-1-140134-order-***-ed1fea.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\portal-1-140134-order-***-ed1fea.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\10-07-2026\captchas\captcha-140134-order-***-026603-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\10-07-2026\captchas\captcha-140134-order-***-026603-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.031s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-07-2026\captchas\captcha-140134-order-***-026603-original.png, mime=image/jpeg, formato_detectado=png, bytes=9404, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-07-2026\captchas\captcha-140134-order-***-026603-original.png
-  - Diagnostico screenshots: screenshots\10-07-2026\preenvio-1-140134-order-***-6cb0ce.png
-  - Diagnostico screenshots: screenshots\10-07-2026\portal-1-140134-order-***-ed1fea.png
-  - Diagnostico dom_snapshots: screenshots\10-07-2026\diagnostics\portal-html-1-140134-order-***-543f9f.html
-  - Screenshot adicional: screenshots\10-07-2026\preenvio-1-140134-order-***-6cb0ce.png
-  - Screenshot adicional: screenshots\10-07-2026\cupo-140134-order-***-3cb67c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\10-07-2026\captchas\captcha-140134-order-***-026603-original.png, mime=image/jpeg, formato_detectado=png, bytes=9404, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\10-07-2026\captchas\captcha-140134-order-***-026603-original.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\preenvio-1-140134-order-***-6cb0ce.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\portal-1-140134-order-***-ed1fea.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\10-07-2026\diagnostics\portal-html-1-140134-order-***-543f9f.html
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\preenvio-1-140134-order-***-6cb0ce.png
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\cupo-140134-order-***-3cb67c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 ## 2026-07-10 14:02:29 - order-*** - completed
@@ -1381,7 +1381,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 11.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\etapas-140218-order-***-5c44f3.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\etapas-140218-order-***-5c44f3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-10 14:37:16 - order-*** - unavailable
@@ -1410,18 +1410,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\portal-1-143645-order-***-e114f6.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\portal-1-143645-order-***-e114f6.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.875s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png, mime=image/jpeg, formato_detectado=png, bytes=10306, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png
-  - Diagnostico screenshots: screenshots\10-07-2026\preenvio-1-143645-order-***-128ea0.png
-  - Diagnostico screenshots: screenshots\10-07-2026\portal-1-143645-order-***-e114f6.png
-  - Diagnostico dom_snapshots: screenshots\10-07-2026\diagnostics\portal-html-1-143645-order-***-fd63eb.html
-  - Screenshot adicional: screenshots\10-07-2026\preenvio-1-143645-order-***-128ea0.png
-  - Screenshot adicional: screenshots\10-07-2026\cupo-143645-order-***-51d29e.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png, mime=image/jpeg, formato_detectado=png, bytes=10306, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\10-07-2026\captchas\captcha-143645-order-***-74d211-original.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\preenvio-1-143645-order-***-128ea0.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\portal-1-143645-order-***-e114f6.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\10-07-2026\diagnostics\portal-html-1-143645-order-***-fd63eb.html
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\preenvio-1-143645-order-***-128ea0.png
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\cupo-143645-order-***-51d29e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-07-10 14:38:10 - order-*** - registered
@@ -1450,18 +1450,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\portal-1-143756-order-***-5bcd44.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\portal-1-143756-order-***-5bcd44.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.203s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10155, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png
-  - Diagnostico screenshots: screenshots\10-07-2026\preenvio-1-143756-order-***-6400d7.png
-  - Diagnostico screenshots: screenshots\10-07-2026\portal-1-143756-order-***-5bcd44.png
-  - Diagnostico dom_snapshots: screenshots\10-07-2026\diagnostics\portal-html-1-143756-order-***-3a9ae5.html
-  - Screenshot adicional: screenshots\10-07-2026\preenvio-1-143756-order-***-6400d7.png
-  - Screenshot adicional: screenshots\10-07-2026\cupo-143756-order-***-39a62f.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10155, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\10-07-2026\captchas\captcha-143756-order-***-00d3cc-original.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\preenvio-1-143756-order-***-6400d7.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\portal-1-143756-order-***-5bcd44.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\10-07-2026\diagnostics\portal-html-1-143756-order-***-3a9ae5.html
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\preenvio-1-143756-order-***-6400d7.png
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\cupo-143756-order-***-39a62f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -1491,18 +1491,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-07-2026\portal-1-144437-order-***-96214e.png
+  - Screenshot principal: screenshots\2026-07\10-07-2026\portal-1-144437-order-***-96214e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.047s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png, mime=image/jpeg, formato_detectado=png, bytes=10159, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png
-  - Diagnostico screenshots: screenshots\10-07-2026\preenvio-1-144437-order-***-a264c2.png
-  - Diagnostico screenshots: screenshots\10-07-2026\portal-1-144437-order-***-96214e.png
-  - Diagnostico dom_snapshots: screenshots\10-07-2026\diagnostics\portal-html-1-144437-order-***-24e137.html
-  - Screenshot adicional: screenshots\10-07-2026\preenvio-1-144437-order-***-a264c2.png
-  - Screenshot adicional: screenshots\10-07-2026\cupo-144437-order-***-37b54c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png, mime=image/jpeg, formato_detectado=png, bytes=10159, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\10-07-2026\captchas\captcha-144437-order-***-126fe1-original.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\preenvio-1-144437-order-***-a264c2.png
+  - Diagnostico screenshots: screenshots\2026-07\10-07-2026\portal-1-144437-order-***-96214e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\10-07-2026\diagnostics\portal-html-1-144437-order-***-24e137.html
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\preenvio-1-144437-order-***-a264c2.png
+  - Screenshot adicional: screenshots\2026-07\10-07-2026\cupo-144437-order-***-37b54c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-07-11 08:31:47 - order-*** - unavailable
@@ -1531,18 +1531,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083050-order-***-78e893.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083050-order-***-78e893.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=24.844s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png, mime=image/jpeg, formato_detectado=png, bytes=9371, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083050-order-***-b97298.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083050-order-***-78e893.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083050-order-***-3a6bfe.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083050-order-***-b97298.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083050-order-***-b3ce40.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png, mime=image/jpeg, formato_detectado=png, bytes=9371, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083050-order-***-3e9226-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083050-order-***-b97298.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083050-order-***-78e893.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083050-order-***-3a6bfe.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083050-order-***-b97298.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083050-order-***-b3ce40.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (22.657s).
 
@@ -1572,18 +1572,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083149-order-***-f5b06c.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083149-order-***-f5b06c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png, mime=image/jpeg, formato_detectado=png, bytes=9668, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083149-order-***-5bd1ab.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083149-order-***-f5b06c.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083149-order-***-2f03bf.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083149-order-***-5bd1ab.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083149-order-***-2bad33.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png, mime=image/jpeg, formato_detectado=png, bytes=9668, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083149-order-***-6ed188-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083149-order-***-5bd1ab.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083149-order-***-f5b06c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083149-order-***-2f03bf.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083149-order-***-5bd1ab.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083149-order-***-2bad33.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-07-11 08:32:33 - order-*** - registered
@@ -1612,18 +1612,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083204-order-***-6c86e0.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083204-order-***-6c86e0.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=14.047s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10017, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083204-order-***-8a934e.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083204-order-***-6c86e0.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083204-order-***-d02785.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083204-order-***-8a934e.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083204-order-***-6943ca.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10017, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083204-order-***-cc747a-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083204-order-***-8a934e.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083204-order-***-6c86e0.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083204-order-***-d02785.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083204-order-***-8a934e.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083204-order-***-6943ca.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.000s).
 
@@ -1653,18 +1653,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083234-order-***-47e62c.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083234-order-***-47e62c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.266s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10369, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083234-order-***-baff62.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083234-order-***-47e62c.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083234-order-***-675e05.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083234-order-***-baff62.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083234-order-***-3bd583.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10369, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083234-order-***-efe67f-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083234-order-***-baff62.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083234-order-***-47e62c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083234-order-***-675e05.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083234-order-***-baff62.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083234-order-***-3bd583.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -1694,18 +1694,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 11.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083401-order-***-6b0237.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083401-order-***-6b0237.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.0s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9869, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083401-order-***-ab3476.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083401-order-***-6b0237.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083401-order-***-731dc5.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083401-order-***-ab3476.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083401-order-***-34e2c1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9869, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083401-order-***-bf5d4e-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083401-order-***-ab3476.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083401-order-***-6b0237.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083401-order-***-731dc5.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083401-order-***-ab3476.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083401-order-***-34e2c1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-07-11 08:35:26 - order-*** - registered
@@ -1734,18 +1734,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083508-order-***-ff8676.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083508-order-***-ff8676.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.5s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9622, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083508-order-***-6779ff.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083508-order-***-ff8676.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083508-order-***-e72b23.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083508-order-***-6779ff.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083508-order-***-461c25.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9622, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083508-order-***-52e5b1-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083508-order-***-6779ff.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083508-order-***-ff8676.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083508-order-***-e72b23.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083508-order-***-6779ff.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083508-order-***-461c25.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.797s).
 
@@ -1775,18 +1775,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083526-order-***-e3e27e.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083526-order-***-e3e27e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.313s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png, mime=image/jpeg, formato_detectado=png, bytes=10504, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083526-order-***-fe4caa.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083526-order-***-e3e27e.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083526-order-***-080dfc.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083526-order-***-fe4caa.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083526-order-***-b9fa48.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png, mime=image/jpeg, formato_detectado=png, bytes=10504, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083526-order-***-7961db-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083526-order-***-fe4caa.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083526-order-***-e3e27e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083526-order-***-080dfc.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083526-order-***-fe4caa.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083526-order-***-b9fa48.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -1816,18 +1816,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-083544-order-***-4da758.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-083544-order-***-4da758.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.36s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9721, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-083544-order-***-40352d.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-083544-order-***-4da758.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-083544-order-***-da8b5e.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-083544-order-***-40352d.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-083544-order-***-9ddc90.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9721, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-083544-order-***-ca32b3-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-083544-order-***-40352d.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-083544-order-***-4da758.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-083544-order-***-da8b5e.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-083544-order-***-40352d.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-083544-order-***-9ddc90.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -1857,7 +1857,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\etapas-083607-order-***-2d3463.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\etapas-083607-order-***-2d3463.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-11 09:51:43 - order-*** - registered
@@ -1886,18 +1886,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-095107-order-***.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-095107-order-***.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-095107-order-***-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-095107-order-***-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.266s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-095107-order-***-original.png, mime=image/jpeg, formato_detectado=png, bytes=9942, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-095107-order-***-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-095107-order-***.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-095107-order-***.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-095107-order-***.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-095107-order-***.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-095107-order-***.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-095107-order-***-original.png, mime=image/jpeg, formato_detectado=png, bytes=9942, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-095107-order-***-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-095107-order-***.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-095107-order-***.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-095107-order-***.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-095107-order-***.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-095107-order-***.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.704s).
 
@@ -1927,18 +1927,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\portal-1-095143-order-***-6a5576.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\portal-1-095143-order-***-6a5576.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.156s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=9667, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png
-  - Diagnostico screenshots: screenshots\11-07-2026\preenvio-1-095143-order-***-98b88d.png
-  - Diagnostico screenshots: screenshots\11-07-2026\portal-1-095143-order-***-6a5576.png
-  - Diagnostico dom_snapshots: screenshots\11-07-2026\diagnostics\portal-html-1-095143-order-***-c54d6d.html
-  - Screenshot adicional: screenshots\11-07-2026\preenvio-1-095143-order-***-98b88d.png
-  - Screenshot adicional: screenshots\11-07-2026\cupo-095143-order-***-2bea31.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=9667, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\11-07-2026\captchas\captcha-095143-order-***-1971ac-original.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\preenvio-1-095143-order-***-98b88d.png
+  - Diagnostico screenshots: screenshots\2026-07\11-07-2026\portal-1-095143-order-***-6a5576.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\11-07-2026\diagnostics\portal-html-1-095143-order-***-c54d6d.html
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\preenvio-1-095143-order-***-98b88d.png
+  - Screenshot adicional: screenshots\2026-07\11-07-2026\cupo-095143-order-***-2bea31.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (2.203s).
 
@@ -1968,7 +1968,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\11-07-2026\etapas-095208-order-***.png
+  - Screenshot principal: screenshots\2026-07\11-07-2026\etapas-095208-order-***.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-13 10:03:38 - order-*** - unavailable
@@ -1997,18 +1997,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-100247-order-***-8f75e0.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-100247-order-***-8f75e0.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.75s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10189, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-100247-order-***-4ff440.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-100247-order-***-8f75e0.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-100247-order-***-446a27.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-100247-order-***-4ff440.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-100247-order-***-596cd6.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10189, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-100247-order-***-213fbc-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-100247-order-***-4ff440.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-100247-order-***-8f75e0.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-100247-order-***-446a27.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-100247-order-***-4ff440.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-100247-order-***-596cd6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.938s).
 
@@ -2038,18 +2038,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-100341-order-***-d21402.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-100341-order-***-d21402.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.735s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png, mime=image/jpeg, formato_detectado=png, bytes=8914, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-100341-order-***-e4dc6e.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-100341-order-***-d21402.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-100341-order-***-e72bc9.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-100341-order-***-e4dc6e.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-100341-order-***-284a3e.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png, mime=image/jpeg, formato_detectado=png, bytes=8914, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-100341-order-***-f51465-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-100341-order-***-e4dc6e.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-100341-order-***-d21402.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-100341-order-***-e72bc9.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-100341-order-***-e4dc6e.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-100341-order-***-284a3e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.891s).
 
@@ -2079,18 +2079,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101527-order-***-f85f95.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101527-order-***-f85f95.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.078s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png, mime=image/jpeg, formato_detectado=png, bytes=9889, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101527-order-***-a74ec7.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101527-order-***-f85f95.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101527-order-***-9f89bf.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101527-order-***-a74ec7.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101527-order-***-cb99e7.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png, mime=image/jpeg, formato_detectado=png, bytes=9889, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101527-order-***-313e20-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101527-order-***-a74ec7.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101527-order-***-f85f95.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101527-order-***-9f89bf.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101527-order-***-a74ec7.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101527-order-***-cb99e7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -2120,18 +2120,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101542-order-***-c35232.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101542-order-***-c35232.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.282s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png, mime=image/jpeg, formato_detectado=png, bytes=9448, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101542-order-***-7c2d39.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101542-order-***-c35232.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101542-order-***-25b850.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101542-order-***-7c2d39.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101542-order-***-277209.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png, mime=image/jpeg, formato_detectado=png, bytes=9448, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101542-order-***-9b3517-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101542-order-***-7c2d39.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101542-order-***-c35232.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101542-order-***-25b850.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101542-order-***-7c2d39.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101542-order-***-277209.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -2161,18 +2161,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101557-order-***-d5ebd9.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101557-order-***-d5ebd9.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101557-order-***-752012-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101557-order-***-752012-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.453s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101557-order-***-752012-original.png, mime=image/jpeg, formato_detectado=png, bytes=9402, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101557-order-***-752012-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101557-order-***-d7ff17.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101557-order-***-d5ebd9.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101557-order-***-bbab04.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101557-order-***-d7ff17.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101557-order-***-b6e0d5.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101557-order-***-752012-original.png, mime=image/jpeg, formato_detectado=png, bytes=9402, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101557-order-***-752012-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101557-order-***-d7ff17.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101557-order-***-d5ebd9.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101557-order-***-bbab04.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101557-order-***-d7ff17.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101557-order-***-b6e0d5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.719s).
 
@@ -2202,7 +2202,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\etapas-101626-order-***-d04d05.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\etapas-101626-order-***-d04d05.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-13 10:18:23 - order-*** - registered
@@ -2231,18 +2231,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101747-order-***-3751fc.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101747-order-***-3751fc.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.172s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9403, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101747-order-***-2a2d18.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101747-order-***-3751fc.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101747-order-***-c5e041.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101747-order-***-2a2d18.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101747-order-***-a91f07.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9403, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101747-order-***-968e0d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101747-order-***-2a2d18.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101747-order-***-3751fc.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101747-order-***-c5e041.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101747-order-***-2a2d18.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101747-order-***-a91f07.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -2272,18 +2272,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101823-order-***-831cc4.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101823-order-***-831cc4.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.75s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png, mime=image/jpeg, formato_detectado=png, bytes=9630, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101823-order-***-b45bb8.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101823-order-***-831cc4.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101823-order-***-b39766.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101823-order-***-b45bb8.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101823-order-***-592ef2.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png, mime=image/jpeg, formato_detectado=png, bytes=9630, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101823-order-***-c80d99-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101823-order-***-b45bb8.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101823-order-***-831cc4.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101823-order-***-b39766.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101823-order-***-b45bb8.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101823-order-***-592ef2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -2313,18 +2313,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-101930-order-***-eb9f8e.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-101930-order-***-eb9f8e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10826, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-101930-order-***-9387a6.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-101930-order-***-eb9f8e.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-101930-order-***-6bccaf.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-101930-order-***-9387a6.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-101930-order-***-4597fa.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10826, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-101930-order-***-e2473b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-101930-order-***-9387a6.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-101930-order-***-eb9f8e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-101930-order-***-6bccaf.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-101930-order-***-9387a6.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-101930-order-***-4597fa.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -2354,18 +2354,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-102258-order-***-37dc78.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-102258-order-***-37dc78.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.296s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9506, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-102258-order-***-936666.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-102258-order-***-37dc78.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-102258-order-***-04c075.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-102258-order-***-936666.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-102258-order-***-3a50b1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9506, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-102258-order-***-16618f-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-102258-order-***-936666.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-102258-order-***-37dc78.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-102258-order-***-04c075.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-102258-order-***-936666.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-102258-order-***-3a50b1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -2395,18 +2395,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-102315-order-***-19c301.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-102315-order-***-19c301.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png, mime=image/jpeg, formato_detectado=png, bytes=10023, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-102315-order-***-99469f.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-102315-order-***-19c301.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-102315-order-***-6f0932.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-102315-order-***-99469f.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-102315-order-***-549e03.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png, mime=image/jpeg, formato_detectado=png, bytes=10023, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-102315-order-***-422eef-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-102315-order-***-99469f.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-102315-order-***-19c301.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-102315-order-***-6f0932.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-102315-order-***-99469f.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-102315-order-***-549e03.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -2436,18 +2436,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-102350-order-***-4a7bcc.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-102350-order-***-4a7bcc.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.156s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9570, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-102350-order-***-e06610.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-102350-order-***-4a7bcc.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-102350-order-***-7c1a30.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-102350-order-***-e06610.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-102350-order-***-60879b.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9570, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-102350-order-***-fb19fe-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-102350-order-***-e06610.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-102350-order-***-4a7bcc.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-102350-order-***-7c1a30.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-102350-order-***-e06610.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-102350-order-***-60879b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -2477,27 +2477,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-2-133503-order-***-f62585.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-2-133503-order-***-f62585.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=13.438s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-133503-order-***-0ce65c-original.png, mime=image/jpeg, formato_detectado=png, bytes=10312, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-133503-order-***-0ce65c-original.png, mime=image/jpeg, formato_detectado=png, bytes=10312, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=confirmed, valor=oculto, duracion=3.609s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9686, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-133503-order-***-0ce65c-original.png
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-133503-order-***-69cfea.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-133503-order-***-ef329e.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-2-133503-order-***-a73664.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-2-133503-order-***-f62585.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-133503-order-***-4622e1.html
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-2-133503-order-***-bbebab.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-133503-order-***-69cfea.png
-  - Screenshot adicional: screenshots\13-07-2026\portal-1-133503-order-***-ef329e.png
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-2-133503-order-***-a73664.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-133503-order-***-c48163.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9686, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-133503-order-***-0ce65c-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-133503-order-***-189f8f-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-133503-order-***-69cfea.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-133503-order-***-ef329e.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-2-133503-order-***-a73664.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-2-133503-order-***-f62585.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-133503-order-***-4622e1.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-2-133503-order-***-bbebab.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-133503-order-***-69cfea.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\portal-1-133503-order-***-ef329e.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-2-133503-order-***-a73664.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-133503-order-***-c48163.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -2527,18 +2527,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-133611-order-***-d76335.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-133611-order-***-d76335.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-133611-order-***-101313-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-133611-order-***-101313-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.219s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-133611-order-***-101313-original.png, mime=image/jpeg, formato_detectado=png, bytes=9985, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-133611-order-***-101313-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-133611-order-***-c878d4.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-133611-order-***-d76335.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-133611-order-***-e43877.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-133611-order-***-c878d4.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-133611-order-***-35553f.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-133611-order-***-101313-original.png, mime=image/jpeg, formato_detectado=png, bytes=9985, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-133611-order-***-101313-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-133611-order-***-c878d4.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-133611-order-***-d76335.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-133611-order-***-e43877.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-133611-order-***-c878d4.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-133611-order-***-35553f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -2568,7 +2568,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\etapas-133709-order-***-5cc85d.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\etapas-133709-order-***-5cc85d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -2598,18 +2598,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-150659-order-***-00975d.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-150659-order-***-00975d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.562s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png, mime=image/jpeg, formato_detectado=png, bytes=10329, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-150659-order-***-13bfb9.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-150659-order-***-00975d.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-150659-order-***-360f0b.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-150659-order-***-13bfb9.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-150659-order-***-f4c4b1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png, mime=image/jpeg, formato_detectado=png, bytes=10329, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-150659-order-***-f0d276-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-150659-order-***-13bfb9.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-150659-order-***-00975d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-150659-order-***-360f0b.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-150659-order-***-13bfb9.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-150659-order-***-f4c4b1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.735s).
 
@@ -2639,18 +2639,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-150717-order-***-c898b7.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-150717-order-***-c898b7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.921s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10015, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-150717-order-***-dc9642.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-150717-order-***-c898b7.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-150717-order-***-defd1f.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-150717-order-***-dc9642.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-150717-order-***-2a4b29.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10015, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-150717-order-***-2809d7-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-150717-order-***-dc9642.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-150717-order-***-c898b7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-150717-order-***-defd1f.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-150717-order-***-dc9642.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-150717-order-***-2a4b29.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.890s).
 
@@ -2679,18 +2679,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\13-07-2026\portal-1-150747-order-***-3c45b5.png
+  - Screenshot principal: screenshots\2026-07\13-07-2026\portal-1-150747-order-***-3c45b5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.938s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10915, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png
-  - Diagnostico screenshots: screenshots\13-07-2026\preenvio-1-150747-order-***-9af8f1.png
-  - Diagnostico screenshots: screenshots\13-07-2026\portal-1-150747-order-***-3c45b5.png
-  - Diagnostico dom_snapshots: screenshots\13-07-2026\diagnostics\portal-html-1-150747-order-***-ca3281.html
-  - Screenshot adicional: screenshots\13-07-2026\preenvio-1-150747-order-***-9af8f1.png
-  - Screenshot adicional: screenshots\13-07-2026\cupo-150747-order-***-627c4f.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10915, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\13-07-2026\captchas\captcha-150747-order-***-387c1a-original.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\preenvio-1-150747-order-***-9af8f1.png
+  - Diagnostico screenshots: screenshots\2026-07\13-07-2026\portal-1-150747-order-***-3c45b5.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\13-07-2026\diagnostics\portal-html-1-150747-order-***-ca3281.html
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\preenvio-1-150747-order-***-9af8f1.png
+  - Screenshot adicional: screenshots\2026-07\13-07-2026\cupo-150747-order-***-627c4f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.015s).
 ## 2026-07-14 09:52:52 - order-*** - registered
@@ -2719,18 +2719,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\portal-1-095238-order-***-49543b.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\portal-1-095238-order-***-49543b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.328s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10551, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png
-  - Diagnostico screenshots: screenshots\14-07-2026\preenvio-1-095238-order-***-de0a13.png
-  - Diagnostico screenshots: screenshots\14-07-2026\portal-1-095238-order-***-49543b.png
-  - Diagnostico dom_snapshots: screenshots\14-07-2026\diagnostics\portal-html-1-095238-order-***-043f3f.html
-  - Screenshot adicional: screenshots\14-07-2026\preenvio-1-095238-order-***-de0a13.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-095238-order-***-e42a4d.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png, mime=image/jpeg, formato_detectado=png, bytes=10551, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-095238-order-***-85d38b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\preenvio-1-095238-order-***-de0a13.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\portal-1-095238-order-***-49543b.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\14-07-2026\diagnostics\portal-html-1-095238-order-***-043f3f.html
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\preenvio-1-095238-order-***-de0a13.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-095238-order-***-e42a4d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-07-14 10:44:36 - order-*** - unavailable
@@ -2759,18 +2759,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\portal-1-104406-order-***-992b3f.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\portal-1-104406-order-***-992b3f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.188s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9400, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png
-  - Diagnostico screenshots: screenshots\14-07-2026\preenvio-1-104406-order-***-50aab7.png
-  - Diagnostico screenshots: screenshots\14-07-2026\portal-1-104406-order-***-992b3f.png
-  - Diagnostico dom_snapshots: screenshots\14-07-2026\diagnostics\portal-html-1-104406-order-***-3dc622.html
-  - Screenshot adicional: screenshots\14-07-2026\preenvio-1-104406-order-***-50aab7.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-104406-order-***-14a7a9.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9400, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-104406-order-***-e8a71c-original.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\preenvio-1-104406-order-***-50aab7.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\portal-1-104406-order-***-992b3f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\14-07-2026\diagnostics\portal-html-1-104406-order-***-3dc622.html
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\preenvio-1-104406-order-***-50aab7.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-104406-order-***-14a7a9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -2800,18 +2800,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\portal-1-123512-order-***-72d97c.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\portal-1-123512-order-***-72d97c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.594s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9625, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png
-  - Diagnostico screenshots: screenshots\14-07-2026\preenvio-1-123512-order-***-343ab5.png
-  - Diagnostico screenshots: screenshots\14-07-2026\portal-1-123512-order-***-72d97c.png
-  - Diagnostico dom_snapshots: screenshots\14-07-2026\diagnostics\portal-html-1-123512-order-***-0e5347.html
-  - Screenshot adicional: screenshots\14-07-2026\preenvio-1-123512-order-***-343ab5.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-123512-order-***-9027b4.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9625, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-123512-order-***-d73bc9-original.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\preenvio-1-123512-order-***-343ab5.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\portal-1-123512-order-***-72d97c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\14-07-2026\diagnostics\portal-html-1-123512-order-***-0e5347.html
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\preenvio-1-123512-order-***-343ab5.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-123512-order-***-9027b4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.782s).
 
@@ -2841,18 +2841,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\14-07-2026\portal-1-123649-order-***-02cfa9.png
+  - Screenshot principal: screenshots\2026-07\14-07-2026\portal-1-123649-order-***-02cfa9.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10153, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png
-  - Diagnostico screenshots: screenshots\14-07-2026\preenvio-1-123649-order-***-b61ed1.png
-  - Diagnostico screenshots: screenshots\14-07-2026\portal-1-123649-order-***-02cfa9.png
-  - Diagnostico dom_snapshots: screenshots\14-07-2026\diagnostics\portal-html-1-123649-order-***-8d37d8.html
-  - Screenshot adicional: screenshots\14-07-2026\preenvio-1-123649-order-***-b61ed1.png
-  - Screenshot adicional: screenshots\14-07-2026\cupo-123649-order-***-92158c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10153, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\14-07-2026\captchas\captcha-123649-order-***-e41de8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\preenvio-1-123649-order-***-b61ed1.png
+  - Diagnostico screenshots: screenshots\2026-07\14-07-2026\portal-1-123649-order-***-02cfa9.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\14-07-2026\diagnostics\portal-html-1-123649-order-***-8d37d8.html
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\preenvio-1-123649-order-***-b61ed1.png
+  - Screenshot adicional: screenshots\2026-07\14-07-2026\cupo-123649-order-***-92158c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.766s).
 ## 2026-07-15 09:39:50 - order-*** - unavailable
@@ -2881,18 +2881,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-093935-order-***-9a07bc.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-093935-order-***-9a07bc.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.766s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9673, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-093935-order-***-990e4b.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-093935-order-***-9a07bc.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-093935-order-***-d499ee.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-093935-order-***-990e4b.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-093935-order-***-4d09ae.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9673, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-093935-order-***-7395b8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-093935-order-***-990e4b.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-093935-order-***-9a07bc.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-093935-order-***-d499ee.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-093935-order-***-990e4b.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-093935-order-***-4d09ae.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.813s).
 
@@ -2922,18 +2922,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-093952-order-***-0e33a5.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-093952-order-***-0e33a5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.953s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10167, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-093952-order-***-571b2a.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-093952-order-***-0e33a5.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-093952-order-***-f82728.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-093952-order-***-571b2a.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-093952-order-***-09368b.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10167, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-093952-order-***-662bdb-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-093952-order-***-571b2a.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-093952-order-***-0e33a5.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-093952-order-***-f82728.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-093952-order-***-571b2a.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-093952-order-***-09368b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.860s).
 
@@ -2963,18 +2963,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-104350-order-***-584d71.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-104350-order-***-584d71.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.078s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10608, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-104350-order-***-a01299.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-104350-order-***-584d71.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-104350-order-***-de0659.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-104350-order-***-a01299.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-104350-order-***-a02384.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10608, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-104350-order-***-479bbd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-104350-order-***-a01299.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-104350-order-***-584d71.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-104350-order-***-de0659.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-104350-order-***-a01299.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-104350-order-***-a02384.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.891s).
 
@@ -3004,18 +3004,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-125227-order-***-d0981d.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-125227-order-***-d0981d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.296s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10199, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-125227-order-***-94f971.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-125227-order-***-d0981d.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-125227-order-***-5862d8.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-125227-order-***-94f971.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-125227-order-***-7eb1d9.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10199, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-125227-order-***-5a1ed8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-125227-order-***-94f971.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-125227-order-***-d0981d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-125227-order-***-5862d8.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-125227-order-***-94f971.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-125227-order-***-7eb1d9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.718s).
 
@@ -3045,18 +3045,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-125336-order-***-034118.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-125336-order-***-034118.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10185, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-125336-order-***-3926e5.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-125336-order-***-034118.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-125336-order-***-99f744.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-125336-order-***-3926e5.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-125336-order-***-3d42e0.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10185, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-125336-order-***-5ea3e5-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-125336-order-***-3926e5.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-125336-order-***-034118.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-125336-order-***-99f744.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-125336-order-***-3926e5.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-125336-order-***-3d42e0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.954s).
 
@@ -3086,18 +3086,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-130255-order-***-a7d308.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-130255-order-***-a7d308.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.063s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10680, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-130255-order-***-a7d308.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-130255-order-***-a2061a.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-130255-order-***-efad41.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10680, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-130255-order-***-1d3bf6-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-130255-order-***-a7d308.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-130255-order-***-a2061a.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-130255-order-***-cd88e2.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-130255-order-***-efad41.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.938s).
 
@@ -3127,18 +3127,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-131323-order-***-807d6d.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-131323-order-***-807d6d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.234s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png, mime=image/jpeg, formato_detectado=png, bytes=10558, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131323-order-***-8f283b.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131323-order-***-807d6d.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131323-order-***-e63cb3.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131323-order-***-8f283b.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-131323-order-***-123cbd.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png, mime=image/jpeg, formato_detectado=png, bytes=10558, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-131323-order-***-c01918-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-131323-order-***-8f283b.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-131323-order-***-807d6d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-131323-order-***-e63cb3.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-131323-order-***-8f283b.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-131323-order-***-123cbd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.140s).
 
@@ -3168,18 +3168,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-131415-order-***-d72a01.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-131415-order-***-d72a01.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=14.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png, mime=image/jpeg, formato_detectado=png, bytes=8801, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131415-order-***-d72a01.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131415-order-***-1a1aab.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-131415-order-***-a3fdf4.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png, mime=image/jpeg, formato_detectado=png, bytes=8801, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-131415-order-***-3dcaab-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-131415-order-***-d72a01.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-131415-order-***-1a1aab.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-131415-order-***-f1c79f.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-131415-order-***-a3fdf4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.875s).
 
@@ -3209,18 +3209,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-131444-order-***-9b4069.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-131444-order-***-9b4069.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.688s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png, mime=image/jpeg, formato_detectado=png, bytes=9743, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-131444-order-***-ea411a.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-131444-order-***-9b4069.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-131444-order-***-b69d7d.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-131444-order-***-ea411a.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-131444-order-***-456950.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png, mime=image/jpeg, formato_detectado=png, bytes=9743, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-131444-order-***-6e3507-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-131444-order-***-ea411a.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-131444-order-***-9b4069.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-131444-order-***-b69d7d.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-131444-order-***-ea411a.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-131444-order-***-456950.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.890s).
 
@@ -3250,18 +3250,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-141820-order-***-4b6139.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-141820-order-***-4b6139.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.016s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png, mime=image/jpeg, formato_detectado=png, bytes=9821, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-141820-order-***-4b6139.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-141820-order-***-0cd47c.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-141820-order-***-155768.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png, mime=image/jpeg, formato_detectado=png, bytes=9821, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-141820-order-***-640ccd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-141820-order-***-4b6139.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-141820-order-***-0cd47c.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-141820-order-***-b2d77a.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-141820-order-***-155768.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-07-15 14:20:14 - order-*** - unavailable
@@ -3290,18 +3290,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-142002-order-***-bf908f.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-142002-order-***-bf908f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.172s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png, mime=image/jpeg, formato_detectado=png, bytes=10569, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-142002-order-***-6a0289.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-142002-order-***-bf908f.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-142002-order-***-0301cf.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-142002-order-***-6a0289.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-142002-order-***-1c4f53.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png, mime=image/jpeg, formato_detectado=png, bytes=10569, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-142002-order-***-196db4-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-142002-order-***-6a0289.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-142002-order-***-bf908f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-142002-order-***-0301cf.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-142002-order-***-6a0289.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-142002-order-***-1c4f53.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -3330,18 +3330,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\15-07-2026\portal-1-142125-order-***-f0d299.png
+  - Screenshot principal: screenshots\2026-07\15-07-2026\portal-1-142125-order-***-f0d299.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=66.75s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png, mime=image/jpeg, formato_detectado=png, bytes=9834, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
-  - Diagnostico screenshots: screenshots\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
-  - Diagnostico screenshots: screenshots\15-07-2026\portal-1-142125-order-***-f0d299.png
-  - Diagnostico dom_snapshots: screenshots\15-07-2026\diagnostics\portal-html-1-142125-order-***-11c673.html
-  - Screenshot adicional: screenshots\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
-  - Screenshot adicional: screenshots\15-07-2026\cupo-142125-order-***-368484.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png, mime=image/jpeg, formato_detectado=png, bytes=9834, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\15-07-2026\captchas\captcha-142125-order-***-a77f40-original.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
+  - Diagnostico screenshots: screenshots\2026-07\15-07-2026\portal-1-142125-order-***-f0d299.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\15-07-2026\diagnostics\portal-html-1-142125-order-***-11c673.html
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\preenvio-1-142125-order-***-9f89b7.png
+  - Screenshot adicional: screenshots\2026-07\15-07-2026\cupo-142125-order-***-368484.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (64.891s).
 
@@ -3371,18 +3371,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-121245-order-***-d3d8d5.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-121245-order-***-d3d8d5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.047s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png, mime=image/jpeg, formato_detectado=png, bytes=9769, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121245-order-***-4a778e.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121245-order-***-d3d8d5.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121245-order-***-48033f.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121245-order-***-4a778e.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-121245-order-***-754972.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png, mime=image/jpeg, formato_detectado=png, bytes=9769, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-121245-order-***-cac712-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-121245-order-***-4a778e.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-121245-order-***-d3d8d5.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-121245-order-***-48033f.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-121245-order-***-4a778e.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-121245-order-***-754972.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.172s).
 
@@ -3412,18 +3412,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-121517-order-***-1d230b.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-121517-order-***-1d230b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.734s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10653, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121517-order-***-608292.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121517-order-***-1d230b.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121517-order-***-bd6114.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121517-order-***-608292.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-121517-order-***-2f425d.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10653, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-121517-order-***-8132cd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-121517-order-***-608292.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-121517-order-***-1d230b.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-121517-order-***-bd6114.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-121517-order-***-608292.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-121517-order-***-2f425d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.953s).
 
@@ -3453,18 +3453,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-121601-order-***-7da60e.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-121601-order-***-7da60e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.797s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9997, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-121601-order-***-ba296c.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-121601-order-***-7da60e.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-121601-order-***-c51d3c.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-121601-order-***-ba296c.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-121601-order-***-b6bfed.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9997, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-121601-order-***-395ec0-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-121601-order-***-ba296c.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-121601-order-***-7da60e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-121601-order-***-c51d3c.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-121601-order-***-ba296c.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-121601-order-***-b6bfed.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.969s).
 
@@ -3494,18 +3494,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-122423-order-***-4b89e7.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-122423-order-***-4b89e7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png, mime=image/jpeg, formato_detectado=png, bytes=10047, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-122423-order-***-e515e0.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-122423-order-***-4b89e7.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-122423-order-***-eefb90.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-122423-order-***-e515e0.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-122423-order-***-e52246.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png, mime=image/jpeg, formato_detectado=png, bytes=10047, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-122423-order-***-584f12-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-122423-order-***-e515e0.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-122423-order-***-4b89e7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-122423-order-***-eefb90.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-122423-order-***-e515e0.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-122423-order-***-e52246.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.875s).
 
@@ -3535,18 +3535,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-124626-order-***-9d0659.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-124626-order-***-9d0659.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.282s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png, mime=image/jpeg, formato_detectado=png, bytes=9788, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124626-order-***-8430d8.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124626-order-***-9d0659.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124626-order-***-4bf150.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124626-order-***-8430d8.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-124626-order-***-3c7999.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png, mime=image/jpeg, formato_detectado=png, bytes=9788, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-124626-order-***-51d2df-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-124626-order-***-8430d8.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-124626-order-***-9d0659.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-124626-order-***-4bf150.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-124626-order-***-8430d8.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-124626-order-***-3c7999.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.360s).
 
@@ -3576,18 +3576,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-124820-order-***-ccc5b2.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-124820-order-***-ccc5b2.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.047s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9604, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124820-order-***-f2edee.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124820-order-***-ccc5b2.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124820-order-***-4bf4bb.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124820-order-***-f2edee.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-124820-order-***-569050.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9604, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-124820-order-***-8a9c1c-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-124820-order-***-f2edee.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-124820-order-***-ccc5b2.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-124820-order-***-4bf4bb.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-124820-order-***-f2edee.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-124820-order-***-569050.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -3617,18 +3617,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-124940-order-***-7da1f7.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-124940-order-***-7da1f7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.422s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png, mime=image/jpeg, formato_detectado=png, bytes=9547, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124940-order-***-7da1f7.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124940-order-***-618677.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-124940-order-***-112ae8.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-124940-order-***-904090-original.png, mime=image/jpeg, formato_detectado=png, bytes=9547, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-124940-order-***-904090-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-124940-order-***-7da1f7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-124940-order-***-618677.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-124940-order-***-0cfbe1.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-124940-order-***-112ae8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -3658,18 +3658,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-124955-order-***-3c5cb9.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-124955-order-***-3c5cb9.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.469s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9908, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-124955-order-***-3c5cb9.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-124955-order-***-6619a9.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-124955-order-***-77232b.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9908, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-124955-order-***-e913e9-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-124955-order-***-3c5cb9.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-124955-order-***-6619a9.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-124955-order-***-ceb6ff.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-124955-order-***-77232b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.719s).
 
@@ -3699,7 +3699,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\etapas-125010-order-***-10c98b.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\etapas-125010-order-***-10c98b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -3729,18 +3729,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 20.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-125041-order-***-6c3a0d.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-125041-order-***-6c3a0d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=24.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10135, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-125041-order-***-3b4832.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-125041-order-***-6c3a0d.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-125041-order-***-8b5d04.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-125041-order-***-3b4832.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-125041-order-***-dee944.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png, mime=image/jpeg, formato_detectado=png, bytes=10135, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-125041-order-***-60afdd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-125041-order-***-3b4832.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-125041-order-***-6c3a0d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-125041-order-***-8b5d04.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-125041-order-***-3b4832.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-125041-order-***-dee944.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (22.500s).
 
@@ -3770,18 +3770,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-152147-order-***-6fa50b.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-152147-order-***-6fa50b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png, mime=image/jpeg, formato_detectado=png, bytes=10170, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-152147-order-***-e19801.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-152147-order-***-6fa50b.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-152147-order-***-8b2a38.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-152147-order-***-e19801.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-152147-order-***-2e3855.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png, mime=image/jpeg, formato_detectado=png, bytes=10170, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-152147-order-***-981eec-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-152147-order-***-e19801.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-152147-order-***-6fa50b.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-152147-order-***-8b2a38.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-152147-order-***-e19801.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-152147-order-***-2e3855.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.922s).
 
@@ -3811,18 +3811,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\16-07-2026\portal-1-152510-order-***-255b7c.png
+  - Screenshot principal: screenshots\2026-07\16-07-2026\portal-1-152510-order-***-255b7c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.343s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png, mime=image/jpeg, formato_detectado=png, bytes=9732, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
-  - Diagnostico screenshots: screenshots\16-07-2026\preenvio-1-152510-order-***-38f51f.png
-  - Diagnostico screenshots: screenshots\16-07-2026\portal-1-152510-order-***-255b7c.png
-  - Diagnostico dom_snapshots: screenshots\16-07-2026\diagnostics\portal-html-1-152510-order-***-145498.html
-  - Screenshot adicional: screenshots\16-07-2026\preenvio-1-152510-order-***-38f51f.png
-  - Screenshot adicional: screenshots\16-07-2026\cupo-152510-order-***-3bd101.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png, mime=image/jpeg, formato_detectado=png, bytes=9732, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\16-07-2026\captchas\captcha-152510-order-***-21f3a5-original.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\preenvio-1-152510-order-***-38f51f.png
+  - Diagnostico screenshots: screenshots\2026-07\16-07-2026\portal-1-152510-order-***-255b7c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\16-07-2026\diagnostics\portal-html-1-152510-order-***-145498.html
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\preenvio-1-152510-order-***-38f51f.png
+  - Screenshot adicional: screenshots\2026-07\16-07-2026\cupo-152510-order-***-3bd101.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -3852,18 +3852,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-084552-order-***-d06913.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-084552-order-***-d06913.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.5s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10245, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084552-order-***-f73d71.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084552-order-***-d06913.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084552-order-***-91f27e.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084552-order-***-f73d71.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-084552-order-***-339543.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10245, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-084552-order-***-81cdf7-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-084552-order-***-f73d71.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-084552-order-***-d06913.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-084552-order-***-91f27e.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-084552-order-***-f73d71.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-084552-order-***-339543.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -3893,18 +3893,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-084628-order-***-0792f1.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-084628-order-***-0792f1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.344s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png, mime=image/jpeg, formato_detectado=png, bytes=10521, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084628-order-***-0792f1.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084628-order-***-c54450.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-084628-order-***-38ff08.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png, mime=image/jpeg, formato_detectado=png, bytes=10521, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-084628-order-***-d62bda-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-084628-order-***-0792f1.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-084628-order-***-c54450.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-084628-order-***-5a5f42.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-084628-order-***-38ff08.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -3934,18 +3934,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-084644-order-***-0e07a3.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-084644-order-***-0e07a3.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.219s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png, mime=image/jpeg, formato_detectado=png, bytes=10120, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-084644-order-***-0e07a3.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-084644-order-***-521f3d.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-084644-order-***-d76660.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png, mime=image/jpeg, formato_detectado=png, bytes=10120, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-084644-order-***-33d105-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-084644-order-***-0e07a3.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-084644-order-***-521f3d.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-084644-order-***-0ad9ff.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-084644-order-***-d76660.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.813s).
 
@@ -3974,18 +3974,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-085241-order-***-75b635.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-085241-order-***-75b635.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=13.985s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png, mime=image/jpeg, formato_detectado=png, bytes=10193, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-085241-order-***-75b635.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-085241-order-***-bcb390.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-085241-order-***-692f52.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png, mime=image/jpeg, formato_detectado=png, bytes=10193, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-085241-order-***-1f6145-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-085241-order-***-75b635.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-085241-order-***-bcb390.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-085241-order-***-2bc2d6.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-085241-order-***-692f52.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.984s).
 
@@ -4015,18 +4015,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-085311-order-***-120f1d.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-085311-order-***-120f1d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.453s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10059, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-085311-order-***-120f1d.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-085311-order-***-0c2414.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-085311-order-***-e793e4.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10059, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-085311-order-***-9827e5-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-085311-order-***-120f1d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-085311-order-***-0c2414.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-085311-order-***-0f7a78.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-085311-order-***-e793e4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-07-17 13:25:59 - order-*** - unavailable
@@ -4055,18 +4055,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-132507-order-***-5c4891.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-132507-order-***-5c4891.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.032s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10656, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-132507-order-***-f5a570.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-132507-order-***-5c4891.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-132507-order-***-98b574.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-132507-order-***-f5a570.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-132507-order-***-6907fd.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10656, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-132507-order-***-bfe8b6-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-132507-order-***-f5a570.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-132507-order-***-5c4891.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-132507-order-***-98b574.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-132507-order-***-f5a570.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-132507-order-***-6907fd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.250s).
 
@@ -4096,18 +4096,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-133309-order-***-fcb164.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-133309-order-***-fcb164.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.922s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png, mime=image/jpeg, formato_detectado=png, bytes=9877, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-133309-order-***-d25f98.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-133309-order-***-fcb164.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-133309-order-***-d1649b.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-133309-order-***-d25f98.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-133309-order-***-3f38eb.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png, mime=image/jpeg, formato_detectado=png, bytes=9877, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-133309-order-***-221a01-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-133309-order-***-d25f98.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-133309-order-***-fcb164.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-133309-order-***-d1649b.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-133309-order-***-d25f98.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-133309-order-***-3f38eb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -4137,18 +4137,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-133340-order-***-d762f1.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-133340-order-***-d762f1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=13.437s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png, mime=image/jpeg, formato_detectado=png, bytes=10379, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-133340-order-***-dd39d0.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-133340-order-***-d762f1.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-133340-order-***-cc9d9b.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-133340-order-***-dd39d0.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-133340-order-***-3d9ff8.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png, mime=image/jpeg, formato_detectado=png, bytes=10379, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-133340-order-***-ff0b80-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-133340-order-***-dd39d0.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-133340-order-***-d762f1.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-133340-order-***-cc9d9b.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-133340-order-***-dd39d0.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-133340-order-***-3d9ff8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (11.953s).
 
@@ -4178,7 +4178,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\etapas-133423-order-***-35fa43.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\etapas-133423-order-***-35fa43.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -4208,18 +4208,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-142918-order-***-98d2de.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-142918-order-***-98d2de.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-142918-order-***-019101-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-142918-order-***-019101-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.734s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-142918-order-***-019101-original.png, mime=image/jpeg, formato_detectado=png, bytes=10310, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-142918-order-***-019101-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-142918-order-***-600704.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-142918-order-***-98d2de.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-142918-order-***-db5a81.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-142918-order-***-600704.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-142918-order-***-7a720b.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-142918-order-***-019101-original.png, mime=image/jpeg, formato_detectado=png, bytes=10310, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-142918-order-***-019101-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-142918-order-***-600704.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-142918-order-***-98d2de.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-142918-order-***-db5a81.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-142918-order-***-600704.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-142918-order-***-7a720b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.906s).
 
@@ -4249,18 +4249,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-150818-order-***-8f2919.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-150818-order-***-8f2919.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.109s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9657, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-150818-order-***-696b22.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-150818-order-***-8f2919.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-150818-order-***-c721e0.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-150818-order-***-696b22.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-150818-order-***-d8bfe0.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9657, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-150818-order-***-84ccaf-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-150818-order-***-696b22.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-150818-order-***-8f2919.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-150818-order-***-c721e0.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-150818-order-***-696b22.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-150818-order-***-d8bfe0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.093s).
 
@@ -4290,18 +4290,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-150920-order-***-f110eb.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-150920-order-***-f110eb.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=4.015s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10724, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-150920-order-***-3b342c.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-150920-order-***-f110eb.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-150920-order-***-61437d.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-150920-order-***-3b342c.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-150920-order-***-68e0cd.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10724, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-150920-order-***-111ed9-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-150920-order-***-3b342c.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-150920-order-***-f110eb.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-150920-order-***-61437d.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-150920-order-***-3b342c.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-150920-order-***-68e0cd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.860s).
 
@@ -4331,18 +4331,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-151000-order-***-0e93bd.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-151000-order-***-0e93bd.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=4.25s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png, mime=image/jpeg, formato_detectado=png, bytes=8892, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-151000-order-***-236ee7.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-151000-order-***-0e93bd.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-151000-order-***-076699.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-151000-order-***-236ee7.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-151000-order-***-0e0b51.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png, mime=image/jpeg, formato_detectado=png, bytes=8892, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-151000-order-***-a99a25-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-151000-order-***-236ee7.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-151000-order-***-0e93bd.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-151000-order-***-076699.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-151000-order-***-236ee7.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-151000-order-***-0e0b51.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.125s).
 ## 2026-07-17 17:00:42 - order-*** - registered
@@ -4370,18 +4370,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-170026-order-***-f25c91.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-170026-order-***-f25c91.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.516s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png, mime=image/jpeg, formato_detectado=png, bytes=9761, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-170026-order-***-fe26bd.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-170026-order-***-f25c91.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-170026-order-***-d836e0.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-170026-order-***-fe26bd.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-170026-order-***-d4e63c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png, mime=image/jpeg, formato_detectado=png, bytes=9761, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-170026-order-***-1f1281-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-170026-order-***-fe26bd.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-170026-order-***-f25c91.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-170026-order-***-d836e0.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-170026-order-***-fe26bd.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-170026-order-***-d4e63c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -4411,18 +4411,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-07-2026\portal-1-170043-order-***-a6764f.png
+  - Screenshot principal: screenshots\2026-07\17-07-2026\portal-1-170043-order-***-a6764f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.391s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9678, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png
-  - Diagnostico screenshots: screenshots\17-07-2026\preenvio-1-170043-order-***-7a09a5.png
-  - Diagnostico screenshots: screenshots\17-07-2026\portal-1-170043-order-***-a6764f.png
-  - Diagnostico dom_snapshots: screenshots\17-07-2026\diagnostics\portal-html-1-170043-order-***-e063eb.html
-  - Screenshot adicional: screenshots\17-07-2026\preenvio-1-170043-order-***-7a09a5.png
-  - Screenshot adicional: screenshots\17-07-2026\cupo-170043-order-***-55fbc8.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9678, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\17-07-2026\captchas\captcha-170043-order-***-97f5a1-original.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\preenvio-1-170043-order-***-7a09a5.png
+  - Diagnostico screenshots: screenshots\2026-07\17-07-2026\portal-1-170043-order-***-a6764f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\17-07-2026\diagnostics\portal-html-1-170043-order-***-e063eb.html
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\preenvio-1-170043-order-***-7a09a5.png
+  - Screenshot adicional: screenshots\2026-07\17-07-2026\cupo-170043-order-***-55fbc8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-07-20 10:37:58 - order-*** - error
@@ -4450,27 +4450,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-2-103727-order-***-92bf89.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-2-103727-order-***-92bf89.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=9.313s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-103727-order-***-854922-original.png, mime=image/jpeg, formato_detectado=png, bytes=10498, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-103727-order-***-854922-original.png, mime=image/jpeg, formato_detectado=png, bytes=10498, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=captcha_invalid, valor=oculto, duracion=8.953s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9632, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-103727-order-***-854922-original.png
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-103727-order-***-af0d62.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-103727-order-***-0216ab.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-2-103727-order-***-55a68a.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-2-103727-order-***-92bf89.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-103727-order-***-d4fb44.html
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-2-103727-order-***-19049f.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-103727-order-***-af0d62.png
-  - Screenshot adicional: screenshots\20-07-2026\portal-1-103727-order-***-0216ab.png
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-2-103727-order-***-55a68a.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-103727-order-***-d4b16b.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9632, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-103727-order-***-854922-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-103727-order-***-3a1eb8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-103727-order-***-af0d62.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-103727-order-***-0216ab.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-2-103727-order-***-55a68a.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-2-103727-order-***-92bf89.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-103727-order-***-d4fb44.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-2-103727-order-***-19049f.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-103727-order-***-af0d62.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\portal-1-103727-order-***-0216ab.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-2-103727-order-***-55a68a.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-103727-order-***-d4b16b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.157s).
 
@@ -4499,18 +4499,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-112717-order-***-5fb765.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-112717-order-***-5fb765.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-112717-order-***-992123-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-112717-order-***-992123-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.328s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-112717-order-***-992123-original.png, mime=image/jpeg, formato_detectado=png, bytes=9614, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-112717-order-***-992123-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-112717-order-***-f5767c.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-112717-order-***-5fb765.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-112717-order-***-c7f73a.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-112717-order-***-f5767c.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-112717-order-***-71aff1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-112717-order-***-992123-original.png, mime=image/jpeg, formato_detectado=png, bytes=9614, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-112717-order-***-992123-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-112717-order-***-f5767c.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-112717-order-***-5fb765.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-112717-order-***-c7f73a.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-112717-order-***-f5767c.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-112717-order-***-71aff1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -4540,18 +4540,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-130154-order-***-31fef1.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-130154-order-***-31fef1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=9.203s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9924, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-130154-order-***-28f0db.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-130154-order-***-31fef1.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-130154-order-***-5b0087.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-130154-order-***-28f0db.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-130154-order-***-a0fbbc.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9924, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-130154-order-***-2d233d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-130154-order-***-28f0db.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-130154-order-***-31fef1.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-130154-order-***-5b0087.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-130154-order-***-28f0db.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-130154-order-***-a0fbbc.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.078s).
 
@@ -4581,18 +4581,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-140231-order-***-dce224.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-140231-order-***-dce224.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.312s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png, mime=image/jpeg, formato_detectado=png, bytes=11100, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-140231-order-***-f7b948.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-140231-order-***-dce224.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-140231-order-***-832a6d.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-140231-order-***-f7b948.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-140231-order-***-64942e.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png, mime=image/jpeg, formato_detectado=png, bytes=11100, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-140231-order-***-4e43d6-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-140231-order-***-f7b948.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-140231-order-***-dce224.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-140231-order-***-832a6d.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-140231-order-***-f7b948.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-140231-order-***-64942e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.234s).
 
@@ -4622,18 +4622,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-140249-order-***-fdc70e.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-140249-order-***-fdc70e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=9668, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-140249-order-***-ae1b84.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-140249-order-***-fdc70e.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-140249-order-***-9608be.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-140249-order-***-ae1b84.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-140249-order-***-41ebd4.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png, mime=image/jpeg, formato_detectado=png, bytes=9668, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-140249-order-***-ef13e5-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-140249-order-***-ae1b84.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-140249-order-***-fdc70e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-140249-order-***-9608be.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-140249-order-***-ae1b84.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-140249-order-***-41ebd4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.219s).
 
@@ -4663,18 +4663,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-140324-order-***-f19dca.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-140324-order-***-f19dca.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.875s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10299, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-140324-order-***-3a4aae.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-140324-order-***-f19dca.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-140324-order-***-e9bc0d.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-140324-order-***-3a4aae.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-140324-order-***-55792a.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10299, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-140324-order-***-7716bb-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-140324-order-***-3a4aae.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-140324-order-***-f19dca.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-140324-order-***-e9bc0d.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-140324-order-***-3a4aae.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-140324-order-***-55792a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue click -> screenshot confirmacion (2.093s).
 
@@ -4704,7 +4704,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\etapas-140421-order-***-e0bd3e.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\etapas-140421-order-***-e0bd3e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -4734,7 +4734,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\etapas-140436-order-***-908a05.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\etapas-140436-order-***-908a05.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -4763,18 +4763,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-141645-order-***-a6506e.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-141645-order-***-a6506e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=5.109s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png, mime=image/jpeg, formato_detectado=png, bytes=11342, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-141645-order-***-0228f1.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-141645-order-***-a6506e.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-141645-order-***-e92133.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-141645-order-***-0228f1.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-141645-order-***-902ac3.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png, mime=image/jpeg, formato_detectado=png, bytes=11342, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-141645-order-***-d5f9df-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-141645-order-***-0228f1.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-141645-order-***-a6506e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-141645-order-***-e92133.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-141645-order-***-0228f1.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-141645-order-***-902ac3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue click -> screenshot confirmacion (2.406s).
 
@@ -4803,18 +4803,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\20-07-2026\portal-1-141820-order-***-d9dcbd.png
+  - Screenshot principal: screenshots\2026-07\20-07-2026\portal-1-141820-order-***-d9dcbd.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=4.609s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10132, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png
-  - Diagnostico screenshots: screenshots\20-07-2026\preenvio-1-141820-order-***-be2489.png
-  - Diagnostico screenshots: screenshots\20-07-2026\portal-1-141820-order-***-d9dcbd.png
-  - Diagnostico dom_snapshots: screenshots\20-07-2026\diagnostics\portal-html-1-141820-order-***-ee865b.html
-  - Screenshot adicional: screenshots\20-07-2026\preenvio-1-141820-order-***-be2489.png
-  - Screenshot adicional: screenshots\20-07-2026\cupo-141820-order-***-8125c4.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10132, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\20-07-2026\captchas\captcha-141820-order-***-2d301a-original.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\preenvio-1-141820-order-***-be2489.png
+  - Diagnostico screenshots: screenshots\2026-07\20-07-2026\portal-1-141820-order-***-d9dcbd.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\20-07-2026\diagnostics\portal-html-1-141820-order-***-ee865b.html
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\preenvio-1-141820-order-***-be2489.png
+  - Screenshot adicional: screenshots\2026-07\20-07-2026\cupo-141820-order-***-8125c4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.360s).
 
@@ -4844,18 +4844,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-092327-order-***-2a35e2.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-092327-order-***-2a35e2.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png, mime=image/jpeg, formato_detectado=png, bytes=9536, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-092327-order-***-a26d64.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-092327-order-***-2a35e2.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-092327-order-***-846402.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-092327-order-***-a26d64.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-092327-order-***-a5f407.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png, mime=image/jpeg, formato_detectado=png, bytes=9536, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-092327-order-***-2d18ed-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-092327-order-***-a26d64.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-092327-order-***-2a35e2.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-092327-order-***-846402.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-092327-order-***-a26d64.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-092327-order-***-a5f407.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -4885,18 +4885,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-111728-order-***-4acfc7.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-111728-order-***-4acfc7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png, mime=image/jpeg, formato_detectado=png, bytes=9323, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-111728-order-***-1a799d.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-111728-order-***-4acfc7.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-111728-order-***-bd5185.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-111728-order-***-1a799d.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-111728-order-***-492951.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png, mime=image/jpeg, formato_detectado=png, bytes=9323, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-111728-order-***-981f83-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-111728-order-***-1a799d.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-111728-order-***-4acfc7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-111728-order-***-bd5185.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-111728-order-***-1a799d.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-111728-order-***-492951.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -4926,18 +4926,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-133209-order-***-1d034e.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-133209-order-***-1d034e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.61s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png, mime=image/jpeg, formato_detectado=png, bytes=10479, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-133209-order-***-8afae3.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-133209-order-***-1d034e.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-133209-order-***-4b6c4a.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-133209-order-***-8afae3.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-133209-order-***-302540.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png, mime=image/jpeg, formato_detectado=png, bytes=10479, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-133209-order-***-5a8005-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-133209-order-***-8afae3.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-133209-order-***-1d034e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-133209-order-***-4b6c4a.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-133209-order-***-8afae3.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-133209-order-***-302540.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.844s).
 
@@ -4967,18 +4967,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-141413-order-***-32d0f4.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-141413-order-***-32d0f4.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.359s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9971, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-141413-order-***-3633cf.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-141413-order-***-32d0f4.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-141413-order-***-66fb06.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-141413-order-***-3633cf.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-141413-order-***-87218c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9971, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-141413-order-***-b060b8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-141413-order-***-3633cf.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-141413-order-***-32d0f4.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-141413-order-***-66fb06.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-141413-order-***-3633cf.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-141413-order-***-87218c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -5008,18 +5008,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 10.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-141515-order-***-f4d608.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-141515-order-***-f4d608.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=14.453s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10220, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-141515-order-***-e7d458.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-141515-order-***-f4d608.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-141515-order-***-3846e0.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-141515-order-***-e7d458.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-141515-order-***-5026c9.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10220, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-141515-order-***-36836e-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-141515-order-***-e7d458.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-141515-order-***-f4d608.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-141515-order-***-3846e0.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-141515-order-***-e7d458.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-141515-order-***-5026c9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (12.609s).
 
@@ -5049,18 +5049,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-154549-order-***-81de2f.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-154549-order-***-81de2f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-154549-order-***-297101-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-154549-order-***-297101-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.86s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-154549-order-***-297101-original.png, mime=image/jpeg, formato_detectado=png, bytes=9992, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-154549-order-***-297101-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-154549-order-***-47a321.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-154549-order-***-81de2f.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-154549-order-***-430e63.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-154549-order-***-47a321.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-154549-order-***-ba7dda.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-154549-order-***-297101-original.png, mime=image/jpeg, formato_detectado=png, bytes=9992, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-154549-order-***-297101-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-154549-order-***-47a321.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-154549-order-***-81de2f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-154549-order-***-430e63.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-154549-order-***-47a321.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-154549-order-***-ba7dda.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.735s).
 
@@ -5090,18 +5090,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-154608-order-***-4111fc.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-154608-order-***-4111fc.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.61s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10131, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-154608-order-***-43d5a8.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-154608-order-***-4111fc.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-154608-order-***-ddcb65.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-154608-order-***-43d5a8.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-154608-order-***-f18a9e.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png, mime=image/jpeg, formato_detectado=png, bytes=10131, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-154608-order-***-ee85f5-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-154608-order-***-43d5a8.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-154608-order-***-4111fc.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-154608-order-***-ddcb65.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-154608-order-***-43d5a8.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-154608-order-***-f18a9e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.796s).
 
@@ -5131,18 +5131,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\portal-1-154625-order-***-6f0a5f.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\portal-1-154625-order-***-6f0a5f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.828s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10262, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png
-  - Diagnostico screenshots: screenshots\21-07-2026\preenvio-1-154625-order-***-9d3496.png
-  - Diagnostico screenshots: screenshots\21-07-2026\portal-1-154625-order-***-6f0a5f.png
-  - Diagnostico dom_snapshots: screenshots\21-07-2026\diagnostics\portal-html-1-154625-order-***-4b4c55.html
-  - Screenshot adicional: screenshots\21-07-2026\preenvio-1-154625-order-***-9d3496.png
-  - Screenshot adicional: screenshots\21-07-2026\cupo-154625-order-***-8c8e8d.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10262, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\21-07-2026\captchas\captcha-154625-order-***-d7816d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\preenvio-1-154625-order-***-9d3496.png
+  - Diagnostico screenshots: screenshots\2026-07\21-07-2026\portal-1-154625-order-***-6f0a5f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\21-07-2026\diagnostics\portal-html-1-154625-order-***-4b4c55.html
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\preenvio-1-154625-order-***-9d3496.png
+  - Screenshot adicional: screenshots\2026-07\21-07-2026\cupo-154625-order-***-8c8e8d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.797s).
 
@@ -5172,7 +5172,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-07-2026\etapas-154643-order-***-8a7406.png
+  - Screenshot principal: screenshots\2026-07\21-07-2026\etapas-154643-order-***-8a7406.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-22 10:23:52 - order-*** - registered
@@ -5201,18 +5201,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-07-2026\portal-1-102254-order-***-06011a.png
+  - Screenshot principal: screenshots\2026-07\22-07-2026\portal-1-102254-order-***-06011a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=8.89s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png, mime=image/jpeg, formato_detectado=png, bytes=8930, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png
-  - Diagnostico screenshots: screenshots\22-07-2026\preenvio-1-102254-order-***-b5e3ab.png
-  - Diagnostico screenshots: screenshots\22-07-2026\portal-1-102254-order-***-06011a.png
-  - Diagnostico dom_snapshots: screenshots\22-07-2026\diagnostics\portal-html-1-102254-order-***-d747d9.html
-  - Screenshot adicional: screenshots\22-07-2026\preenvio-1-102254-order-***-b5e3ab.png
-  - Screenshot adicional: screenshots\22-07-2026\cupo-102254-order-***-f57b51.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png, mime=image/jpeg, formato_detectado=png, bytes=8930, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\22-07-2026\captchas\captcha-102254-order-***-c81ae8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\preenvio-1-102254-order-***-b5e3ab.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\portal-1-102254-order-***-06011a.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\22-07-2026\diagnostics\portal-html-1-102254-order-***-d747d9.html
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\preenvio-1-102254-order-***-b5e3ab.png
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\cupo-102254-order-***-f57b51.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.187s).
 
@@ -5242,18 +5242,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-07-2026\portal-1-102352-order-***-a6885c.png
+  - Screenshot principal: screenshots\2026-07\22-07-2026\portal-1-102352-order-***-a6885c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.281s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png, mime=image/jpeg, formato_detectado=png, bytes=9883, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png
-  - Diagnostico screenshots: screenshots\22-07-2026\preenvio-1-102352-order-***-9b110b.png
-  - Diagnostico screenshots: screenshots\22-07-2026\portal-1-102352-order-***-a6885c.png
-  - Diagnostico dom_snapshots: screenshots\22-07-2026\diagnostics\portal-html-1-102352-order-***-1ef303.html
-  - Screenshot adicional: screenshots\22-07-2026\preenvio-1-102352-order-***-9b110b.png
-  - Screenshot adicional: screenshots\22-07-2026\cupo-102352-order-***-e306c2.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png, mime=image/jpeg, formato_detectado=png, bytes=9883, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\22-07-2026\captchas\captcha-102352-order-***-10deda-original.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\preenvio-1-102352-order-***-9b110b.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\portal-1-102352-order-***-a6885c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\22-07-2026\diagnostics\portal-html-1-102352-order-***-1ef303.html
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\preenvio-1-102352-order-***-9b110b.png
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\cupo-102352-order-***-e306c2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -5282,18 +5282,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\22-07-2026\portal-1-132706-order-***-286dff.png
+  - Screenshot principal: screenshots\2026-07\22-07-2026\portal-1-132706-order-***-286dff.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=9.078s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png, mime=image/jpeg, formato_detectado=png, bytes=9431, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png
-  - Diagnostico screenshots: screenshots\22-07-2026\preenvio-1-132706-order-***-f95c0c.png
-  - Diagnostico screenshots: screenshots\22-07-2026\portal-1-132706-order-***-286dff.png
-  - Diagnostico dom_snapshots: screenshots\22-07-2026\diagnostics\portal-html-1-132706-order-***-1360ba.html
-  - Screenshot adicional: screenshots\22-07-2026\preenvio-1-132706-order-***-f95c0c.png
-  - Screenshot adicional: screenshots\22-07-2026\cupo-132706-order-***-707946.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png, mime=image/jpeg, formato_detectado=png, bytes=9431, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\22-07-2026\captchas\captcha-132706-order-***-8a1d96-original.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\preenvio-1-132706-order-***-f95c0c.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\portal-1-132706-order-***-286dff.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\22-07-2026\diagnostics\portal-html-1-132706-order-***-1360ba.html
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\preenvio-1-132706-order-***-f95c0c.png
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\cupo-132706-order-***-707946.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.094s).
 
@@ -5322,18 +5322,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\22-07-2026\portal-1-132727-order-***-048b2d.png
+  - Screenshot principal: screenshots\2026-07\22-07-2026\portal-1-132727-order-***-048b2d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.906s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png, mime=image/jpeg, formato_detectado=png, bytes=10258, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png
-  - Diagnostico screenshots: screenshots\22-07-2026\preenvio-1-132727-order-***-71c2bb.png
-  - Diagnostico screenshots: screenshots\22-07-2026\portal-1-132727-order-***-048b2d.png
-  - Diagnostico dom_snapshots: screenshots\22-07-2026\diagnostics\portal-html-1-132727-order-***-d62f91.html
-  - Screenshot adicional: screenshots\22-07-2026\preenvio-1-132727-order-***-71c2bb.png
-  - Screenshot adicional: screenshots\22-07-2026\cupo-132727-order-***-034740.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png, mime=image/jpeg, formato_detectado=png, bytes=10258, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\22-07-2026\captchas\captcha-132727-order-***-0b1737-original.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\preenvio-1-132727-order-***-71c2bb.png
+  - Diagnostico screenshots: screenshots\2026-07\22-07-2026\portal-1-132727-order-***-048b2d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\22-07-2026\diagnostics\portal-html-1-132727-order-***-d62f91.html
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\preenvio-1-132727-order-***-71c2bb.png
+  - Screenshot adicional: screenshots\2026-07\22-07-2026\cupo-132727-order-***-034740.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.828s).
 
@@ -5363,18 +5363,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-104923-order-***-d73109.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-104923-order-***-d73109.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.453s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10076, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-104923-order-***-3d45f0.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-104923-order-***-d73109.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-104923-order-***-4e5828.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-104923-order-***-3d45f0.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-104923-order-***-eec023.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png, mime=image/jpeg, formato_detectado=png, bytes=10076, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-104923-order-***-f8ced6-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-104923-order-***-3d45f0.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-104923-order-***-d73109.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-104923-order-***-4e5828.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-104923-order-***-3d45f0.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-104923-order-***-eec023.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -5404,18 +5404,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-104937-order-***-83187d.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-104937-order-***-83187d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10389, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-104937-order-***-24d16f.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-104937-order-***-83187d.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-104937-order-***-76ac8b.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-104937-order-***-24d16f.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-104937-order-***-752acd.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10389, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-104937-order-***-a0edf7-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-104937-order-***-24d16f.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-104937-order-***-83187d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-104937-order-***-76ac8b.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-104937-order-***-24d16f.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-104937-order-***-752acd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -5445,18 +5445,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-105206-order-***-ee8d03.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-105206-order-***-ee8d03.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.062s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=9883, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-105206-order-***-61b8b2.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-105206-order-***-ee8d03.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-105206-order-***-ac3fdf.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-105206-order-***-61b8b2.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-105206-order-***-e32a9d.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png, mime=image/jpeg, formato_detectado=png, bytes=9883, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-105206-order-***-b9b0ac-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-105206-order-***-61b8b2.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-105206-order-***-ee8d03.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-105206-order-***-ac3fdf.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-105206-order-***-61b8b2.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-105206-order-***-e32a9d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -5486,18 +5486,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-105440-order-***-97e9e5.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-105440-order-***-97e9e5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.36s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png, mime=image/jpeg, formato_detectado=png, bytes=8207, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-105440-order-***-8ed524.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-105440-order-***-97e9e5.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-105440-order-***-0a7634.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-105440-order-***-8ed524.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-105440-order-***-ffe259.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png, mime=image/jpeg, formato_detectado=png, bytes=8207, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-105440-order-***-44fcbd-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-105440-order-***-8ed524.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-105440-order-***-97e9e5.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-105440-order-***-0a7634.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-105440-order-***-8ed524.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-105440-order-***-ffe259.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -5527,18 +5527,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-105731-order-***-8e3367.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-105731-order-***-8e3367.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=9.016s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9191, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-105731-order-***-f018e6.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-105731-order-***-8e3367.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-105731-order-***-eb3692.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-105731-order-***-f018e6.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-105731-order-***-e61f31.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9191, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-105731-order-***-8a1c8e-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-105731-order-***-f018e6.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-105731-order-***-8e3367.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-105731-order-***-eb3692.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-105731-order-***-f018e6.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-105731-order-***-e61f31.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.984s).
 
@@ -5568,18 +5568,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-113013-order-***-e30453.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-113013-order-***-e30453.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=9.203s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png, mime=image/jpeg, formato_detectado=png, bytes=10278, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-113013-order-***-f0f7ef.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-113013-order-***-e30453.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-113013-order-***-e1396a.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-113013-order-***-f0f7ef.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-113013-order-***-b56ae2.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png, mime=image/jpeg, formato_detectado=png, bytes=10278, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-113013-order-***-ea6531-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-113013-order-***-f0f7ef.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-113013-order-***-e30453.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-113013-order-***-e1396a.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-113013-order-***-f0f7ef.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-113013-order-***-b56ae2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.172s).
 
@@ -5609,18 +5609,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-113036-order-***-fbc90f.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-113036-order-***-fbc90f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.281s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10304, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-113036-order-***-ffbba8.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-113036-order-***-fbc90f.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-113036-order-***-9d6b50.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-113036-order-***-ffbba8.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-113036-order-***-04d80d.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10304, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-113036-order-***-af740f-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-113036-order-***-ffbba8.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-113036-order-***-fbc90f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-113036-order-***-9d6b50.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-113036-order-***-ffbba8.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-113036-order-***-04d80d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -5650,7 +5650,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\etapas-113051-order-***-9b1d79.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\etapas-113051-order-***-9b1d79.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-24 13:41:06 - order-*** - unavailable
@@ -5679,18 +5679,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-134034-order-***-ace67a.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-134034-order-***-ace67a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.938s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png, mime=image/jpeg, formato_detectado=png, bytes=9796, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-134034-order-***-ff6e2a.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-134034-order-***-ace67a.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-134034-order-***-07a471.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-134034-order-***-ff6e2a.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-134034-order-***-19a4b3.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png, mime=image/jpeg, formato_detectado=png, bytes=9796, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-134034-order-***-61aa97-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-134034-order-***-ff6e2a.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-134034-order-***-ace67a.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-134034-order-***-07a471.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-134034-order-***-ff6e2a.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-134034-order-***-19a4b3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.032s).
 
@@ -5720,18 +5720,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-143153-order-***-4c7a8f.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-143153-order-***-4c7a8f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png, mime=image/jpeg, formato_detectado=png, bytes=9835, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-143153-order-***-3c27c0.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-143153-order-***-4c7a8f.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-143153-order-***-160636.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-143153-order-***-3c27c0.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-143153-order-***-097547.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png, mime=image/jpeg, formato_detectado=png, bytes=9835, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-143153-order-***-25b248-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-143153-order-***-3c27c0.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-143153-order-***-4c7a8f.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-143153-order-***-160636.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-143153-order-***-3c27c0.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-143153-order-***-097547.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -5760,18 +5760,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-143209-order-***-967d03.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-143209-order-***-967d03.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.469s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png, mime=image/jpeg, formato_detectado=png, bytes=10847, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-143209-order-***-bc328d.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-143209-order-***-967d03.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-143209-order-***-0dadb7.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-143209-order-***-bc328d.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-143209-order-***-08a963.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png, mime=image/jpeg, formato_detectado=png, bytes=10847, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-143209-order-***-ac6409-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-143209-order-***-bc328d.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-143209-order-***-967d03.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-143209-order-***-0dadb7.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-143209-order-***-bc328d.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-143209-order-***-08a963.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -5801,18 +5801,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-165016-order-***-68725d.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-165016-order-***-68725d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.422s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png, mime=image/jpeg, formato_detectado=png, bytes=10112, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-165016-order-***-6bd082.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-165016-order-***-68725d.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-165016-order-***-8be7ac.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-165016-order-***-6bd082.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-165016-order-***-192662.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png, mime=image/jpeg, formato_detectado=png, bytes=10112, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-165016-order-***-d05a4c-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-165016-order-***-6bd082.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-165016-order-***-68725d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-165016-order-***-8be7ac.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-165016-order-***-6bd082.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-165016-order-***-192662.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -5842,18 +5842,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-1-165121-order-***-b1dfb0.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-1-165121-order-***-b1dfb0.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.187s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10454, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-165121-order-***-7e4612.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-165121-order-***-b1dfb0.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-165121-order-***-ad00c7.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-165121-order-***-7e4612.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-165121-order-***-485ea5.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10454, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-165121-order-***-f2c13e-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-165121-order-***-7e4612.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-165121-order-***-b1dfb0.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-165121-order-***-ad00c7.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-165121-order-***-7e4612.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-165121-order-***-485ea5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -5883,27 +5883,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\portal-2-165136-order-***-d9daac.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\portal-2-165136-order-***-d9daac.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=3.187s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-165136-order-***-9be654-original.png, mime=image/jpeg, formato_detectado=png, bytes=9998, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-165136-order-***-9be654-original.png, mime=image/jpeg, formato_detectado=png, bytes=9998, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=confirmed, valor=oculto, duracion=3.094s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10727, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-165136-order-***-9be654-original.png
-  - Diagnostico captcha_images: screenshots\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-1-165136-order-***-0cef0e.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-1-165136-order-***-19b4a7.png
-  - Diagnostico screenshots: screenshots\24-07-2026\preenvio-2-165136-order-***-3db408.png
-  - Diagnostico screenshots: screenshots\24-07-2026\portal-2-165136-order-***-d9daac.png
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-1-165136-order-***-0ac449.html
-  - Diagnostico dom_snapshots: screenshots\24-07-2026\diagnostics\portal-html-2-165136-order-***-b2707b.html
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-1-165136-order-***-0cef0e.png
-  - Screenshot adicional: screenshots\24-07-2026\portal-1-165136-order-***-19b4a7.png
-  - Screenshot adicional: screenshots\24-07-2026\preenvio-2-165136-order-***-3db408.png
-  - Screenshot adicional: screenshots\24-07-2026\cupo-165136-order-***-84a799.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10727, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-165136-order-***-9be654-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\24-07-2026\captchas\captcha-165136-order-***-87482f-original.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-1-165136-order-***-0cef0e.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-1-165136-order-***-19b4a7.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\preenvio-2-165136-order-***-3db408.png
+  - Diagnostico screenshots: screenshots\2026-07\24-07-2026\portal-2-165136-order-***-d9daac.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-1-165136-order-***-0ac449.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\24-07-2026\diagnostics\portal-html-2-165136-order-***-b2707b.html
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-1-165136-order-***-0cef0e.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\portal-1-165136-order-***-19b4a7.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\preenvio-2-165136-order-***-3db408.png
+  - Screenshot adicional: screenshots\2026-07\24-07-2026\cupo-165136-order-***-84a799.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-07-24 17:22:50 - order-*** - completed
@@ -5931,7 +5931,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\24-07-2026\etapas-172238-order-***-cf870e.png
+  - Screenshot principal: screenshots\2026-07\24-07-2026\etapas-172238-order-***-cf870e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-07-25 08:26:12 - order-*** - registered
@@ -5960,18 +5960,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-07-2026\portal-1-082527-order-***-bea4e7.png
+  - Screenshot principal: screenshots\2026-07\25-07-2026\portal-1-082527-order-***-bea4e7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.156s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png, mime=image/jpeg, formato_detectado=png, bytes=9431, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png
-  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-082527-order-***-bff64d.png
-  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-082527-order-***-bea4e7.png
-  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-082527-order-***-31cc30.html
-  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-082527-order-***-bff64d.png
-  - Screenshot adicional: screenshots\25-07-2026\cupo-082527-order-***-3c66a9.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png, mime=image/jpeg, formato_detectado=png, bytes=9431, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\25-07-2026\captchas\captcha-082527-order-***-b55bec-original.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\preenvio-1-082527-order-***-bff64d.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\portal-1-082527-order-***-bea4e7.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\25-07-2026\diagnostics\portal-html-1-082527-order-***-31cc30.html
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\preenvio-1-082527-order-***-bff64d.png
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\cupo-082527-order-***-3c66a9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -6001,18 +6001,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-07-2026\portal-1-082612-order-***-2f0fd5.png
+  - Screenshot principal: screenshots\2026-07\25-07-2026\portal-1-082612-order-***-2f0fd5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=8.859s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png, mime=image/jpeg, formato_detectado=png, bytes=9585, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png
-  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-082612-order-***-c1a73c.png
-  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-082612-order-***-2f0fd5.png
-  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-082612-order-***-ce6555.html
-  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-082612-order-***-c1a73c.png
-  - Screenshot adicional: screenshots\25-07-2026\cupo-082612-order-***-37b7a1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png, mime=image/jpeg, formato_detectado=png, bytes=9585, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\25-07-2026\captchas\captcha-082612-order-***-1b4624-original.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\preenvio-1-082612-order-***-c1a73c.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\portal-1-082612-order-***-2f0fd5.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\25-07-2026\diagnostics\portal-html-1-082612-order-***-ce6555.html
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\preenvio-1-082612-order-***-c1a73c.png
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\cupo-082612-order-***-37b7a1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.922s).
 
@@ -6042,18 +6042,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-07-2026\portal-1-082634-order-***-15aaf1.png
+  - Screenshot principal: screenshots\2026-07\25-07-2026\portal-1-082634-order-***-15aaf1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.078s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png, mime=image/jpeg, formato_detectado=png, bytes=9933, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png
-  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-082634-order-***-179095.png
-  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-082634-order-***-15aaf1.png
-  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-082634-order-***-23945c.html
-  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-082634-order-***-179095.png
-  - Screenshot adicional: screenshots\25-07-2026\cupo-082634-order-***-640734.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png, mime=image/jpeg, formato_detectado=png, bytes=9933, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\25-07-2026\captchas\captcha-082634-order-***-80bb76-original.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\preenvio-1-082634-order-***-179095.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\portal-1-082634-order-***-15aaf1.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\25-07-2026\diagnostics\portal-html-1-082634-order-***-23945c.html
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\preenvio-1-082634-order-***-179095.png
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\cupo-082634-order-***-640734.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 ## 2026-07-25 09:18:57 - order-*** - unavailable
@@ -6081,18 +6081,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\25-07-2026\portal-1-091811-order-***-ae5d1b.png
+  - Screenshot principal: screenshots\2026-07\25-07-2026\portal-1-091811-order-***-ae5d1b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.172s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png, mime=image/jpeg, formato_detectado=png, bytes=10001, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
-  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
-  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-091811-order-***-ae5d1b.png
-  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-091811-order-***-740242.html
-  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
-  - Screenshot adicional: screenshots\25-07-2026\cupo-091811-order-***-4d2cf3.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png, mime=image/jpeg, formato_detectado=png, bytes=10001, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\25-07-2026\captchas\captcha-091811-order-***-b26f02-original.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\portal-1-091811-order-***-ae5d1b.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\25-07-2026\diagnostics\portal-html-1-091811-order-***-740242.html
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\preenvio-1-091811-order-***-3a72d5.png
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\cupo-091811-order-***-4d2cf3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-07-25 09:20:39 - order-*** - unavailable
@@ -6120,18 +6120,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\25-07-2026\portal-1-091952-order-***-cc5c8b.png
+  - Screenshot principal: screenshots\2026-07\25-07-2026\portal-1-091952-order-***-cc5c8b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.672s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png, mime=image/jpeg, formato_detectado=png, bytes=10762, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png
-  - Diagnostico screenshots: screenshots\25-07-2026\preenvio-1-091952-order-***-38ffaa.png
-  - Diagnostico screenshots: screenshots\25-07-2026\portal-1-091952-order-***-cc5c8b.png
-  - Diagnostico dom_snapshots: screenshots\25-07-2026\diagnostics\portal-html-1-091952-order-***-1bbd1a.html
-  - Screenshot adicional: screenshots\25-07-2026\preenvio-1-091952-order-***-38ffaa.png
-  - Screenshot adicional: screenshots\25-07-2026\cupo-091952-order-***-c55044.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png, mime=image/jpeg, formato_detectado=png, bytes=10762, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\25-07-2026\captchas\captcha-091952-order-***-fb5494-original.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\preenvio-1-091952-order-***-38ffaa.png
+  - Diagnostico screenshots: screenshots\2026-07\25-07-2026\portal-1-091952-order-***-cc5c8b.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\25-07-2026\diagnostics\portal-html-1-091952-order-***-1bbd1a.html
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\preenvio-1-091952-order-***-38ffaa.png
+  - Screenshot adicional: screenshots\2026-07\25-07-2026\cupo-091952-order-***-c55044.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.890s).
 
@@ -6161,18 +6161,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\27-07-2026\portal-1-120544-order-***-e75869.png
+  - Screenshot principal: screenshots\2026-07\27-07-2026\portal-1-120544-order-***-e75869.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.469s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png, mime=image/jpeg, formato_detectado=png, bytes=10398, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png
-  - Diagnostico screenshots: screenshots\27-07-2026\preenvio-1-120544-order-***-b2a608.png
-  - Diagnostico screenshots: screenshots\27-07-2026\portal-1-120544-order-***-e75869.png
-  - Diagnostico dom_snapshots: screenshots\27-07-2026\diagnostics\portal-html-1-120544-order-***-3f0ad7.html
-  - Screenshot adicional: screenshots\27-07-2026\preenvio-1-120544-order-***-b2a608.png
-  - Screenshot adicional: screenshots\27-07-2026\cupo-120544-order-***-2c88ef.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png, mime=image/jpeg, formato_detectado=png, bytes=10398, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\27-07-2026\captchas\captcha-120544-order-***-ab8930-original.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\preenvio-1-120544-order-***-b2a608.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\portal-1-120544-order-***-e75869.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\27-07-2026\diagnostics\portal-html-1-120544-order-***-3f0ad7.html
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\preenvio-1-120544-order-***-b2a608.png
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\cupo-120544-order-***-2c88ef.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (1.719s).
 
@@ -6202,18 +6202,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\27-07-2026\portal-1-120646-order-***-7e6c0e.png
+  - Screenshot principal: screenshots\2026-07\27-07-2026\portal-1-120646-order-***-7e6c0e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10443, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png
-  - Diagnostico screenshots: screenshots\27-07-2026\preenvio-1-120646-order-***-60aad5.png
-  - Diagnostico screenshots: screenshots\27-07-2026\portal-1-120646-order-***-7e6c0e.png
-  - Diagnostico dom_snapshots: screenshots\27-07-2026\diagnostics\portal-html-1-120646-order-***-9f1460.html
-  - Screenshot adicional: screenshots\27-07-2026\preenvio-1-120646-order-***-60aad5.png
-  - Screenshot adicional: screenshots\27-07-2026\cupo-120646-order-***-19d33a.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png, mime=image/jpeg, formato_detectado=png, bytes=10443, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\27-07-2026\captchas\captcha-120646-order-***-0ac9cc-original.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\preenvio-1-120646-order-***-60aad5.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\portal-1-120646-order-***-7e6c0e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\27-07-2026\diagnostics\portal-html-1-120646-order-***-9f1460.html
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\preenvio-1-120646-order-***-60aad5.png
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\cupo-120646-order-***-19d33a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -6243,18 +6243,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\27-07-2026\portal-1-120702-order-***-8af71e.png
+  - Screenshot principal: screenshots\2026-07\27-07-2026\portal-1-120702-order-***-8af71e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.922s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10778, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png
-  - Diagnostico screenshots: screenshots\27-07-2026\preenvio-1-120702-order-***-15e1ed.png
-  - Diagnostico screenshots: screenshots\27-07-2026\portal-1-120702-order-***-8af71e.png
-  - Diagnostico dom_snapshots: screenshots\27-07-2026\diagnostics\portal-html-1-120702-order-***-449bf9.html
-  - Screenshot adicional: screenshots\27-07-2026\preenvio-1-120702-order-***-15e1ed.png
-  - Screenshot adicional: screenshots\27-07-2026\cupo-120702-order-***-e2120c.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png, mime=image/jpeg, formato_detectado=png, bytes=10778, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\27-07-2026\captchas\captcha-120702-order-***-1804d8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\preenvio-1-120702-order-***-15e1ed.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\portal-1-120702-order-***-8af71e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\27-07-2026\diagnostics\portal-html-1-120702-order-***-449bf9.html
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\preenvio-1-120702-order-***-15e1ed.png
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\cupo-120702-order-***-e2120c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.969s).
 
@@ -6284,18 +6284,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\27-07-2026\portal-1-124057-order-***-c5a4bf.png
+  - Screenshot principal: screenshots\2026-07\27-07-2026\portal-1-124057-order-***-c5a4bf.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.14s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png, mime=image/jpeg, formato_detectado=png, bytes=9250, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png
-  - Diagnostico screenshots: screenshots\27-07-2026\preenvio-1-124057-order-***-035915.png
-  - Diagnostico screenshots: screenshots\27-07-2026\portal-1-124057-order-***-c5a4bf.png
-  - Diagnostico dom_snapshots: screenshots\27-07-2026\diagnostics\portal-html-1-124057-order-***-b16125.html
-  - Screenshot adicional: screenshots\27-07-2026\preenvio-1-124057-order-***-035915.png
-  - Screenshot adicional: screenshots\27-07-2026\cupo-124057-order-***-bd4068.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png, mime=image/jpeg, formato_detectado=png, bytes=9250, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\27-07-2026\captchas\captcha-124057-order-***-7253c7-original.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\preenvio-1-124057-order-***-035915.png
+  - Diagnostico screenshots: screenshots\2026-07\27-07-2026\portal-1-124057-order-***-c5a4bf.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\27-07-2026\diagnostics\portal-html-1-124057-order-***-b16125.html
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\preenvio-1-124057-order-***-035915.png
+  - Screenshot adicional: screenshots\2026-07\27-07-2026\cupo-124057-order-***-bd4068.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.110s).
 ## 2026-07-30 10:28:02 - order-*** - unavailable
@@ -6324,18 +6324,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\30-07-2026\portal-1-102708-order-***-b01cf4.png
+  - Screenshot principal: screenshots\2026-07\30-07-2026\portal-1-102708-order-***-b01cf4.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=9.031s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png, mime=image/jpeg, formato_detectado=png, bytes=11010, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png
-  - Diagnostico screenshots: screenshots\30-07-2026\preenvio-1-102708-order-***-ca36fd.png
-  - Diagnostico screenshots: screenshots\30-07-2026\portal-1-102708-order-***-b01cf4.png
-  - Diagnostico dom_snapshots: screenshots\30-07-2026\diagnostics\portal-html-1-102708-order-***-53a629.html
-  - Screenshot adicional: screenshots\30-07-2026\preenvio-1-102708-order-***-ca36fd.png
-  - Screenshot adicional: screenshots\30-07-2026\cupo-102708-order-***-cf4bc7.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png, mime=image/jpeg, formato_detectado=png, bytes=11010, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\30-07-2026\captchas\captcha-102708-order-***-daa51b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\preenvio-1-102708-order-***-ca36fd.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\portal-1-102708-order-***-b01cf4.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\30-07-2026\diagnostics\portal-html-1-102708-order-***-53a629.html
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\preenvio-1-102708-order-***-ca36fd.png
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\cupo-102708-order-***-cf4bc7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.407s).
 
@@ -6365,18 +6365,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\30-07-2026\portal-1-115019-order-***-90a366.png
+  - Screenshot principal: screenshots\2026-07\30-07-2026\portal-1-115019-order-***-90a366.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=5.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9368, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png
-  - Diagnostico screenshots: screenshots\30-07-2026\preenvio-1-115019-order-***-5251e2.png
-  - Diagnostico screenshots: screenshots\30-07-2026\portal-1-115019-order-***-90a366.png
-  - Diagnostico dom_snapshots: screenshots\30-07-2026\diagnostics\portal-html-1-115019-order-***-7b4c67.html
-  - Screenshot adicional: screenshots\30-07-2026\preenvio-1-115019-order-***-5251e2.png
-  - Screenshot adicional: screenshots\30-07-2026\cupo-115019-order-***-241de9.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9368, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\30-07-2026\captchas\captcha-115019-order-***-9f8cf8-original.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\preenvio-1-115019-order-***-5251e2.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\portal-1-115019-order-***-90a366.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\30-07-2026\diagnostics\portal-html-1-115019-order-***-7b4c67.html
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\preenvio-1-115019-order-***-5251e2.png
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\cupo-115019-order-***-241de9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (2.359s).
 
@@ -6406,18 +6406,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\30-07-2026\portal-1-115126-order-***-86374c.png
+  - Screenshot principal: screenshots\2026-07\30-07-2026\portal-1-115126-order-***-86374c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.953s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png, mime=image/jpeg, formato_detectado=png, bytes=9395, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png
-  - Diagnostico screenshots: screenshots\30-07-2026\preenvio-1-115126-order-***-412bb8.png
-  - Diagnostico screenshots: screenshots\30-07-2026\portal-1-115126-order-***-86374c.png
-  - Diagnostico dom_snapshots: screenshots\30-07-2026\diagnostics\portal-html-1-115126-order-***-6bea22.html
-  - Screenshot adicional: screenshots\30-07-2026\preenvio-1-115126-order-***-412bb8.png
-  - Screenshot adicional: screenshots\30-07-2026\cupo-115126-order-***-bb1b70.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png, mime=image/jpeg, formato_detectado=png, bytes=9395, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\30-07-2026\captchas\captcha-115126-order-***-84e782-original.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\preenvio-1-115126-order-***-412bb8.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\portal-1-115126-order-***-86374c.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\30-07-2026\diagnostics\portal-html-1-115126-order-***-6bea22.html
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\preenvio-1-115126-order-***-412bb8.png
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\cupo-115126-order-***-bb1b70.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.766s).
 
@@ -6447,18 +6447,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\30-07-2026\portal-1-135025-order-***-7bf347.png
+  - Screenshot principal: screenshots\2026-07\30-07-2026\portal-1-135025-order-***-7bf347.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=20.344s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png, mime=image/jpeg, formato_detectado=png, bytes=9381, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png
-  - Diagnostico screenshots: screenshots\30-07-2026\preenvio-1-135025-order-***-700ae7.png
-  - Diagnostico screenshots: screenshots\30-07-2026\portal-1-135025-order-***-7bf347.png
-  - Diagnostico dom_snapshots: screenshots\30-07-2026\diagnostics\portal-html-1-135025-order-***-1a9b6c.html
-  - Screenshot adicional: screenshots\30-07-2026\preenvio-1-135025-order-***-700ae7.png
-  - Screenshot adicional: screenshots\30-07-2026\cupo-135025-order-***-4d0d96.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png, mime=image/jpeg, formato_detectado=png, bytes=9381, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\30-07-2026\captchas\captcha-135025-order-***-b63482-original.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\preenvio-1-135025-order-***-700ae7.png
+  - Diagnostico screenshots: screenshots\2026-07\30-07-2026\portal-1-135025-order-***-7bf347.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\30-07-2026\diagnostics\portal-html-1-135025-order-***-1a9b6c.html
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\preenvio-1-135025-order-***-700ae7.png
+  - Screenshot adicional: screenshots\2026-07\30-07-2026\cupo-135025-order-***-4d0d96.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (18.406s).
 ## 2026-07-31 09:34:17 - order-*** - unavailable
@@ -6487,18 +6487,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-093353-order-***-77617a.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-093353-order-***-77617a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.938s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png, mime=image/jpeg, formato_detectado=png, bytes=10304, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-093353-order-***-9993e6.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-093353-order-***-77617a.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-093353-order-***-b95f7e.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-093353-order-***-9993e6.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-093353-order-***-383806.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png, mime=image/jpeg, formato_detectado=png, bytes=10304, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-093353-order-***-ec7a69-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-093353-order-***-9993e6.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-093353-order-***-77617a.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-093353-order-***-b95f7e.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-093353-order-***-9993e6.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-093353-order-***-383806.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -6528,18 +6528,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-093504-order-***-81bfc4.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-093504-order-***-81bfc4.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.484s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9622, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-093504-order-***-173c68.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-093504-order-***-81bfc4.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-093504-order-***-73b7dc.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-093504-order-***-173c68.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-093504-order-***-093ee1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9622, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-093504-order-***-84d91b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-093504-order-***-173c68.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-093504-order-***-81bfc4.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-093504-order-***-73b7dc.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-093504-order-***-173c68.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-093504-order-***-093ee1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.860s).
 
@@ -6569,18 +6569,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-114652-order-***-835c9e.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-114652-order-***-835c9e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=4.156s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10585, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-114652-order-***-5c542b.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-114652-order-***-835c9e.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-114652-order-***-a55042.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-114652-order-***-5c542b.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-114652-order-***-6e8075.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10585, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-114652-order-***-8ed26d-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-114652-order-***-5c542b.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-114652-order-***-835c9e.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-114652-order-***-a55042.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-114652-order-***-5c542b.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-114652-order-***-6e8075.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue click -> screenshot confirmacion (1.922s).
 
@@ -6610,27 +6610,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-2-132026-order-***-213984.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-2-132026-order-***-213984.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=6.063s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-132026-order-***-ae92e3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9882, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-132026-order-***-ae92e3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9882, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=captcha_invalid, valor=oculto, duracion=3.594s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png, mime=image/jpeg, formato_detectado=png, bytes=9850, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-132026-order-***-ae92e3-original.png
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-132026-order-***-1b736a.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-132026-order-***-197ea8.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-2-132026-order-***-70f0ea.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-2-132026-order-***-213984.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-132026-order-***-397e38.html
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-2-132026-order-***-2daee6.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-132026-order-***-1b736a.png
-  - Screenshot adicional: screenshots\31-07-2026\portal-1-132026-order-***-197ea8.png
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-2-132026-order-***-70f0ea.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-132026-order-***-5655fa.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png, mime=image/jpeg, formato_detectado=png, bytes=9850, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-132026-order-***-ae92e3-original.png
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-132026-order-***-a623db-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-132026-order-***-1b736a.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-132026-order-***-197ea8.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-2-132026-order-***-70f0ea.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-2-132026-order-***-213984.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-132026-order-***-397e38.html
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-2-132026-order-***-2daee6.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-132026-order-***-1b736a.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\portal-1-132026-order-***-197ea8.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-2-132026-order-***-70f0ea.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-132026-order-***-5655fa.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue click -> screenshot confirmacion (1.890s).
 
@@ -6660,18 +6660,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-145811-order-***-97f5cd.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-145811-order-***-97f5cd.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png, mime=image/jpeg, formato_detectado=png, bytes=9407, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-145811-order-***-6c5500.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-145811-order-***-97f5cd.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-145811-order-***-25993f.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-145811-order-***-6c5500.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-145811-order-***-50c7a1.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png, mime=image/jpeg, formato_detectado=png, bytes=9407, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-145811-order-***-94cbcc-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-145811-order-***-6c5500.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-145811-order-***-97f5cd.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-145811-order-***-25993f.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-145811-order-***-6c5500.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-145811-order-***-50c7a1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.844s).
 
@@ -6701,18 +6701,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-145912-order-***-49b31d.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-145912-order-***-49b31d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.953s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png, mime=image/jpeg, formato_detectado=png, bytes=10629, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-145912-order-***-5617e0.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-145912-order-***-49b31d.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-145912-order-***-8aea86.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-145912-order-***-5617e0.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-145912-order-***-6be718.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png, mime=image/jpeg, formato_detectado=png, bytes=10629, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-145912-order-***-37e5db-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-145912-order-***-5617e0.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-145912-order-***-49b31d.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-145912-order-***-8aea86.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-145912-order-***-5617e0.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-145912-order-***-6be718.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.062s).
 
@@ -6742,18 +6742,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-150230-order-***-e334df.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-150230-order-***-e334df.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.344s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9605, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-150230-order-***-c6b6c3.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-150230-order-***-e334df.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-150230-order-***-a90682.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-150230-order-***-c6b6c3.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-150230-order-***-328b24.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9605, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-150230-order-***-f021d6-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-150230-order-***-c6b6c3.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-150230-order-***-e334df.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-150230-order-***-a90682.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-150230-order-***-c6b6c3.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-150230-order-***-328b24.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -6783,18 +6783,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\31-07-2026\portal-1-153027-order-***-64bf94.png
+  - Screenshot principal: screenshots\2026-07\31-07-2026\portal-1-153027-order-***-64bf94.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-07\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=3.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9987, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png
-  - Diagnostico screenshots: screenshots\31-07-2026\preenvio-1-153027-order-***-bf88bd.png
-  - Diagnostico screenshots: screenshots\31-07-2026\portal-1-153027-order-***-64bf94.png
-  - Diagnostico dom_snapshots: screenshots\31-07-2026\diagnostics\portal-html-1-153027-order-***-fcf47e.html
-  - Screenshot adicional: screenshots\31-07-2026\preenvio-1-153027-order-***-bf88bd.png
-  - Screenshot adicional: screenshots\31-07-2026\cupo-153027-order-***-812952.png
+    - CAPTCHA original HTML: path=screenshots\2026-07\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9987, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-07\31-07-2026\captchas\captcha-153027-order-***-1d209b-original.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\preenvio-1-153027-order-***-bf88bd.png
+  - Diagnostico screenshots: screenshots\2026-07\31-07-2026\portal-1-153027-order-***-64bf94.png
+  - Diagnostico dom_snapshots: screenshots\2026-07\31-07-2026\diagnostics\portal-html-1-153027-order-***-fcf47e.html
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\preenvio-1-153027-order-***-bf88bd.png
+  - Screenshot adicional: screenshots\2026-07\31-07-2026\cupo-153027-order-***-812952.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 ## 2026-08-01 09:48:10 - order-*** - unavailable
@@ -6823,18 +6823,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-094740-order-***-c7e9ff.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-094740-order-***-c7e9ff.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=11.89s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9149, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-094740-order-***-ef17ed.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-094740-order-***-c7e9ff.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-094740-order-***-1ed2ae.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-094740-order-***-ef17ed.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-094740-order-***-5d9555.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9149, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-094740-order-***-012c7a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-094740-order-***-ef17ed.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-094740-order-***-c7e9ff.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-094740-order-***-1ed2ae.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-094740-order-***-ef17ed.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-094740-order-***-5d9555.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.484s).
 
@@ -6864,18 +6864,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-095224-order-***-021f55.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-095224-order-***-021f55.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=5.609s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9921, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-095224-order-***-3cbf00.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-095224-order-***-021f55.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-095224-order-***-5d2a7d.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-095224-order-***-3cbf00.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-095224-order-***-e4f918.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png, mime=image/jpeg, formato_detectado=png, bytes=9921, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-095224-order-***-eaeab8-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-095224-order-***-3cbf00.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-095224-order-***-021f55.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-095224-order-***-5d2a7d.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-095224-order-***-3cbf00.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-095224-order-***-e4f918.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (3.735s).
 
@@ -6905,18 +6905,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-101414-order-***-44dd6d.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-101414-order-***-44dd6d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=11.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10037, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-101414-order-***-0ec77b.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-101414-order-***-44dd6d.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-101414-order-***-0eb03f.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-101414-order-***-0ec77b.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-101414-order-***-d71849.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png, mime=image/jpeg, formato_detectado=png, bytes=10037, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-101414-order-***-2519fb-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-101414-order-***-0ec77b.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-101414-order-***-44dd6d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-101414-order-***-0eb03f.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-101414-order-***-0ec77b.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-101414-order-***-d71849.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.938s).
 
@@ -6946,18 +6946,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-101544-order-***-38765d.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-101544-order-***-38765d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=11.484s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png, mime=image/jpeg, formato_detectado=png, bytes=10009, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-101544-order-***-ff932b.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-101544-order-***-38765d.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-101544-order-***-f18621.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-101544-order-***-ff932b.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-101544-order-***-25a2db.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png, mime=image/jpeg, formato_detectado=png, bytes=10009, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-101544-order-***-cf35bf-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-101544-order-***-ff932b.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-101544-order-***-38765d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-101544-order-***-f18621.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-101544-order-***-ff932b.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-101544-order-***-25a2db.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.828s).
 
@@ -6987,18 +6987,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-115205-order-***-2f2ff1.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-115205-order-***-2f2ff1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=5.86s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png, mime=image/jpeg, formato_detectado=png, bytes=9767, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-115205-order-***-e8f088.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-115205-order-***-2f2ff1.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-115205-order-***-269696.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-115205-order-***-e8f088.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-115205-order-***-535923.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png, mime=image/jpeg, formato_detectado=png, bytes=9767, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-115205-order-***-d4eb32-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-115205-order-***-e8f088.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-115205-order-***-2f2ff1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-115205-order-***-269696.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-115205-order-***-e8f088.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-115205-order-***-535923.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (3.844s).
 
@@ -7028,27 +7028,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-2-115350-order-***-9bb48b.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-2-115350-order-***-9bb48b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=11.234s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-115350-order-***-a32ea1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9295, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-115350-order-***-a32ea1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9295, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=slot_lost, valor=oculto, duracion=5.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png, mime=image/jpeg, formato_detectado=png, bytes=10156, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-115350-order-***-a32ea1-original.png
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-115350-order-***-9684cb.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-115350-order-***-ac1293.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-2-115350-order-***-71c002.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-2-115350-order-***-9bb48b.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-115350-order-***-8c813f.html
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-2-115350-order-***-3808a6.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-115350-order-***-9684cb.png
-  - Screenshot adicional: screenshots\01-08-2026\portal-1-115350-order-***-ac1293.png
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-2-115350-order-***-71c002.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-115350-order-***-dcb5ec.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png, mime=image/jpeg, formato_detectado=png, bytes=10156, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-115350-order-***-a32ea1-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-115350-order-***-e5e385-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-115350-order-***-9684cb.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-115350-order-***-ac1293.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-2-115350-order-***-71c002.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-2-115350-order-***-9bb48b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-115350-order-***-8c813f.html
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-2-115350-order-***-3808a6.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-115350-order-***-9684cb.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\portal-1-115350-order-***-ac1293.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-2-115350-order-***-71c002.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-115350-order-***-dcb5ec.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (3.766s).
 
@@ -7078,18 +7078,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\01-08-2026\portal-1-115428-order-***-044888.png
+  - Screenshot principal: screenshots\2026-08\01-08-2026\portal-1-115428-order-***-044888.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=5.641s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png, mime=image/jpeg, formato_detectado=png, bytes=9822, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png
-  - Diagnostico screenshots: screenshots\01-08-2026\preenvio-1-115428-order-***-bc176f.png
-  - Diagnostico screenshots: screenshots\01-08-2026\portal-1-115428-order-***-044888.png
-  - Diagnostico dom_snapshots: screenshots\01-08-2026\diagnostics\portal-html-1-115428-order-***-f601eb.html
-  - Screenshot adicional: screenshots\01-08-2026\preenvio-1-115428-order-***-bc176f.png
-  - Screenshot adicional: screenshots\01-08-2026\cupo-115428-order-***-0f3943.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png, mime=image/jpeg, formato_detectado=png, bytes=9822, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\01-08-2026\captchas\captcha-115428-order-***-0f0d60-original.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\preenvio-1-115428-order-***-bc176f.png
+  - Diagnostico screenshots: screenshots\2026-08\01-08-2026\portal-1-115428-order-***-044888.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\01-08-2026\diagnostics\portal-html-1-115428-order-***-f601eb.html
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\preenvio-1-115428-order-***-bc176f.png
+  - Screenshot adicional: screenshots\2026-08\01-08-2026\cupo-115428-order-***-0f3943.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (3.766s).
 ## 2026-08-03 10:27:24 - order-*** - unavailable
@@ -7118,18 +7118,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-102647-order-***-feaf8b.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-102647-order-***-feaf8b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.828s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9791, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-102647-order-***-68eadb.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-102647-order-***-feaf8b.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-102647-order-***-d61b06.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-102647-order-***-68eadb.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-102647-order-***-bffd62.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9791, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-102647-order-***-82a58d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-102647-order-***-68eadb.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-102647-order-***-feaf8b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-102647-order-***-d61b06.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-102647-order-***-68eadb.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-102647-order-***-bffd62.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.157s).
 
@@ -7159,18 +7159,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-102817-order-***-4d6484.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-102817-order-***-4d6484.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.672s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9220, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-102817-order-***-ee7fca.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-102817-order-***-4d6484.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-102817-order-***-94189f.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-102817-order-***-ee7fca.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-102817-order-***-acd328.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png, mime=image/jpeg, formato_detectado=png, bytes=9220, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-102817-order-***-b6803f-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-102817-order-***-ee7fca.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-102817-order-***-4d6484.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-102817-order-***-94189f.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-102817-order-***-ee7fca.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-102817-order-***-acd328.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.985s).
 
@@ -7200,18 +7200,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-112125-order-***-982c1c.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-112125-order-***-982c1c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.406s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png, mime=image/jpeg, formato_detectado=png, bytes=10003, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-112125-order-***-faa97a.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-112125-order-***-982c1c.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-112125-order-***-d3265b.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-112125-order-***-faa97a.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-112125-order-***-220563.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png, mime=image/jpeg, formato_detectado=png, bytes=10003, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-112125-order-***-f9e042-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-112125-order-***-faa97a.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-112125-order-***-982c1c.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-112125-order-***-d3265b.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-112125-order-***-faa97a.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-112125-order-***-220563.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -7241,18 +7241,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-112249-order-***-f38fee.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-112249-order-***-f38fee.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-112249-order-***-257354-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-112249-order-***-257354-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.765s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-112249-order-***-257354-original.png, mime=image/jpeg, formato_detectado=png, bytes=9792, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-112249-order-***-257354-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-112249-order-***-14c0f5.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-112249-order-***-f38fee.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-112249-order-***-5207a0.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-112249-order-***-14c0f5.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-112249-order-***-d70c1b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-112249-order-***-257354-original.png, mime=image/jpeg, formato_detectado=png, bytes=9792, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-112249-order-***-257354-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-112249-order-***-14c0f5.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-112249-order-***-f38fee.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-112249-order-***-5207a0.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-112249-order-***-14c0f5.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-112249-order-***-d70c1b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.063s).
 
@@ -7282,18 +7282,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-112350-order-***-fe37d1.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-112350-order-***-fe37d1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.0s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9655, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-112350-order-***-8a4ba6.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-112350-order-***-fe37d1.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-112350-order-***-6abbde.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-112350-order-***-8a4ba6.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-112350-order-***-d94716.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9655, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-112350-order-***-abcfc6-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-112350-order-***-8a4ba6.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-112350-order-***-fe37d1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-112350-order-***-6abbde.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-112350-order-***-8a4ba6.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-112350-order-***-d94716.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -7323,18 +7323,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 3.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-112414-order-***-3e2ea4.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-112414-order-***-3e2ea4.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.922s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png, mime=image/jpeg, formato_detectado=png, bytes=10205, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-112414-order-***-a71e36.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-112414-order-***-3e2ea4.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-112414-order-***-19187f.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-112414-order-***-a71e36.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-112414-order-***-b21f20.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png, mime=image/jpeg, formato_detectado=png, bytes=10205, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-112414-order-***-e1db87-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-112414-order-***-a71e36.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-112414-order-***-3e2ea4.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-112414-order-***-19187f.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-112414-order-***-a71e36.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-112414-order-***-b21f20.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -7363,7 +7363,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\etapas-112852-order-***-564166.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\etapas-112852-order-***-564166.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -7393,18 +7393,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-115612-order-***-01cadd.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-115612-order-***-01cadd.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.859s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9754, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-115612-order-***-828044.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-115612-order-***-01cadd.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-115612-order-***-105dbc.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-115612-order-***-828044.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-115612-order-***-924ae0.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9754, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-115612-order-***-3f11e2-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-115612-order-***-828044.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-115612-order-***-01cadd.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-115612-order-***-105dbc.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-115612-order-***-828044.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-115612-order-***-924ae0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (1.969s).
 
@@ -7434,18 +7434,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-120014-order-***-14fae2.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-120014-order-***-14fae2.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.266s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png, mime=image/jpeg, formato_detectado=png, bytes=9612, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-120014-order-***-4577a4.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-120014-order-***-14fae2.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-120014-order-***-d7569f.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-120014-order-***-4577a4.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-120014-order-***-9f7b9c.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png, mime=image/jpeg, formato_detectado=png, bytes=9612, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-120014-order-***-efbdec-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-120014-order-***-4577a4.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-120014-order-***-14fae2.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-120014-order-***-d7569f.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-120014-order-***-4577a4.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-120014-order-***-9f7b9c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -7475,18 +7475,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-120559-order-***-830440.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-120559-order-***-830440.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.062s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9792, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-120559-order-***-d2d46c.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-120559-order-***-830440.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-120559-order-***-dfe23b.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-120559-order-***-d2d46c.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-120559-order-***-731e1f.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9792, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-120559-order-***-17282d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-120559-order-***-d2d46c.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-120559-order-***-830440.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-120559-order-***-dfe23b.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-120559-order-***-d2d46c.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-120559-order-***-731e1f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -7516,18 +7516,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-121609-order-***-3e0b94.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-121609-order-***-3e0b94.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.172s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png, mime=image/jpeg, formato_detectado=png, bytes=10323, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-121609-order-***-fb6dc5.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-121609-order-***-3e0b94.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-121609-order-***-ca4865.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-121609-order-***-fb6dc5.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-121609-order-***-bdc7c7.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png, mime=image/jpeg, formato_detectado=png, bytes=10323, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-121609-order-***-904e89-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-121609-order-***-fb6dc5.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-121609-order-***-3e0b94.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-121609-order-***-ca4865.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-121609-order-***-fb6dc5.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-121609-order-***-bdc7c7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -7557,18 +7557,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-121757-order-***-ce4f8d.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-121757-order-***-ce4f8d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png, mime=image/jpeg, formato_detectado=png, bytes=9454, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-121757-order-***-8e3bc1.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-121757-order-***-ce4f8d.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-121757-order-***-3897dd.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-121757-order-***-8e3bc1.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-121757-order-***-d95616.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png, mime=image/jpeg, formato_detectado=png, bytes=9454, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-121757-order-***-9ed808-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-121757-order-***-8e3bc1.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-121757-order-***-ce4f8d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-121757-order-***-3897dd.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-121757-order-***-8e3bc1.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-121757-order-***-d95616.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -7598,18 +7598,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-121956-order-***-cbeaf6.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-121956-order-***-cbeaf6.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.984s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png, mime=image/jpeg, formato_detectado=png, bytes=9692, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-121956-order-***-d92a99.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-121956-order-***-cbeaf6.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-121956-order-***-13e46c.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-121956-order-***-d92a99.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-121956-order-***-dcc825.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png, mime=image/jpeg, formato_detectado=png, bytes=9692, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-121956-order-***-48f9dc-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-121956-order-***-d92a99.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-121956-order-***-cbeaf6.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-121956-order-***-13e46c.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-121956-order-***-d92a99.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-121956-order-***-dcc825.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -7639,18 +7639,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-122053-order-***-41508d.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-122053-order-***-41508d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.0s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9834, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-122053-order-***-862ecc.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-122053-order-***-41508d.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-122053-order-***-7a5faf.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-122053-order-***-862ecc.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-122053-order-***-52cfc3.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9834, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-122053-order-***-af4bc2-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-122053-order-***-862ecc.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-122053-order-***-41508d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-122053-order-***-7a5faf.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-122053-order-***-862ecc.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-122053-order-***-52cfc3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -7680,18 +7680,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-122152-order-***-515333.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-122152-order-***-515333.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.75s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9515, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-122152-order-***-dc2dd2.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-122152-order-***-515333.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-122152-order-***-1fc75f.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-122152-order-***-dc2dd2.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-122152-order-***-cee0a2.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9515, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-122152-order-***-48872b-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-122152-order-***-dc2dd2.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-122152-order-***-515333.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-122152-order-***-1fc75f.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-122152-order-***-dc2dd2.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-122152-order-***-cee0a2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.016s).
 
@@ -7721,18 +7721,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-122820-order-***-ef5bee.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-122820-order-***-ef5bee.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.141s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png, mime=image/jpeg, formato_detectado=png, bytes=10144, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-122820-order-***-9773ba.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-122820-order-***-ef5bee.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-122820-order-***-5c3a6d.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-122820-order-***-9773ba.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-122820-order-***-ef6d48.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png, mime=image/jpeg, formato_detectado=png, bytes=10144, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-122820-order-***-f1eaaa-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-122820-order-***-9773ba.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-122820-order-***-ef5bee.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-122820-order-***-5c3a6d.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-122820-order-***-9773ba.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-122820-order-***-ef6d48.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.360s).
 
@@ -7762,27 +7762,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-2-125958-order-***-5a0515.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-2-125958-order-***-5a0515.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=2.531s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-125958-order-***-760e76-original.png, mime=image/jpeg, formato_detectado=png, bytes=10273, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-125958-order-***-760e76-original.png, mime=image/jpeg, formato_detectado=png, bytes=10273, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=slot_lost, valor=oculto, duracion=2.015s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9433, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-125958-order-***-760e76-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-125958-order-***-7181a7.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-125958-order-***-6dd745.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-2-125958-order-***-b47b59.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-2-125958-order-***-5a0515.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-125958-order-***-f24df8.html
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-2-125958-order-***-55173a.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-125958-order-***-7181a7.png
-  - Screenshot adicional: screenshots\03-08-2026\portal-1-125958-order-***-6dd745.png
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-2-125958-order-***-b47b59.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-125958-order-***-64fe88.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png, mime=image/jpeg, formato_detectado=png, bytes=9433, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-125958-order-***-760e76-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-125958-order-***-bb329b-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-125958-order-***-7181a7.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-125958-order-***-6dd745.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-2-125958-order-***-b47b59.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-2-125958-order-***-5a0515.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-125958-order-***-f24df8.html
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-2-125958-order-***-55173a.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-125958-order-***-7181a7.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\portal-1-125958-order-***-6dd745.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-2-125958-order-***-b47b59.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-125958-order-***-64fe88.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -7812,18 +7812,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-130019-order-***-73ddaf.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-130019-order-***-73ddaf.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.235s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png, mime=image/jpeg, formato_detectado=png, bytes=9702, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-130019-order-***-e3664a.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-130019-order-***-73ddaf.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-130019-order-***-d88fe3.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-130019-order-***-e3664a.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-130019-order-***-f5a103.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png, mime=image/jpeg, formato_detectado=png, bytes=9702, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-130019-order-***-256e05-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-130019-order-***-e3664a.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-130019-order-***-73ddaf.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-130019-order-***-d88fe3.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-130019-order-***-e3664a.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-130019-order-***-f5a103.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -7853,18 +7853,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-1-155504-order-***-e7343a.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-1-155504-order-***-e7343a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-155504-order-***-447540-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-155504-order-***-447540-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.734s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-155504-order-***-447540-original.png, mime=image/jpeg, formato_detectado=png, bytes=10141, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-155504-order-***-447540-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-155504-order-***-3b57c0.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-155504-order-***-e7343a.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-155504-order-***-c9bf3c.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-155504-order-***-3b57c0.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-155504-order-***-23a12c.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-155504-order-***-447540-original.png, mime=image/jpeg, formato_detectado=png, bytes=10141, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-155504-order-***-447540-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-155504-order-***-3b57c0.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-155504-order-***-e7343a.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-155504-order-***-c9bf3c.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-155504-order-***-3b57c0.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-155504-order-***-23a12c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.016s).
 
@@ -7894,27 +7894,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\03-08-2026\portal-2-155533-order-***-df83c5.png
+  - Screenshot principal: screenshots\2026-08\03-08-2026\portal-2-155533-order-***-df83c5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=1.969s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-155533-order-***-ef6f40-original.png, mime=image/jpeg, formato_detectado=png, bytes=9487, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-155533-order-***-ef6f40-original.png, mime=image/jpeg, formato_detectado=png, bytes=9487, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=confirmed, valor=oculto, duracion=2.156s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9926, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-155533-order-***-ef6f40-original.png
-  - Diagnostico captcha_images: screenshots\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-1-155533-order-***-b82fbe.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-1-155533-order-***-0fad48.png
-  - Diagnostico screenshots: screenshots\03-08-2026\preenvio-2-155533-order-***-9330f9.png
-  - Diagnostico screenshots: screenshots\03-08-2026\portal-2-155533-order-***-df83c5.png
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-1-155533-order-***-eebf4b.html
-  - Diagnostico dom_snapshots: screenshots\03-08-2026\diagnostics\portal-html-2-155533-order-***-efbac1.html
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-1-155533-order-***-b82fbe.png
-  - Screenshot adicional: screenshots\03-08-2026\portal-1-155533-order-***-0fad48.png
-  - Screenshot adicional: screenshots\03-08-2026\preenvio-2-155533-order-***-9330f9.png
-  - Screenshot adicional: screenshots\03-08-2026\cupo-155533-order-***-07a590.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png, mime=image/jpeg, formato_detectado=png, bytes=9926, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-155533-order-***-ef6f40-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\03-08-2026\captchas\captcha-155533-order-***-84d4a3-original.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-1-155533-order-***-b82fbe.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-1-155533-order-***-0fad48.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\preenvio-2-155533-order-***-9330f9.png
+  - Diagnostico screenshots: screenshots\2026-08\03-08-2026\portal-2-155533-order-***-df83c5.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-1-155533-order-***-eebf4b.html
+  - Diagnostico dom_snapshots: screenshots\2026-08\03-08-2026\diagnostics\portal-html-2-155533-order-***-efbac1.html
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-1-155533-order-***-b82fbe.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\portal-1-155533-order-***-0fad48.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\preenvio-2-155533-order-***-9330f9.png
+  - Screenshot adicional: screenshots\2026-08\03-08-2026\cupo-155533-order-***-07a590.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -7944,18 +7944,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-081832-order-***-413eb0.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-081832-order-***-413eb0.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.625s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png, mime=image/jpeg, formato_detectado=png, bytes=9990, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-081832-order-***-d765c7.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-081832-order-***-413eb0.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-081832-order-***-f156a0.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-081832-order-***-d765c7.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-081832-order-***-489721.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png, mime=image/jpeg, formato_detectado=png, bytes=9990, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081832-order-***-b5f821-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-081832-order-***-d765c7.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-081832-order-***-413eb0.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-081832-order-***-f156a0.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-081832-order-***-d765c7.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-081832-order-***-489721.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.938s).
 
@@ -7985,18 +7985,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-081853-order-***-c18858.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-081853-order-***-c18858.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.516s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9832, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-081853-order-***-1a54b8.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-081853-order-***-c18858.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-081853-order-***-e74e39.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-081853-order-***-1a54b8.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-081853-order-***-f5b5a6.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9832, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081853-order-***-dac5fe-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-081853-order-***-1a54b8.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-081853-order-***-c18858.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-081853-order-***-e74e39.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-081853-order-***-1a54b8.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-081853-order-***-f5b5a6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.875s).
 
@@ -8026,18 +8026,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-081914-order-***-1a6589.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-081914-order-***-1a6589.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.875s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9451, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-081914-order-***-badddb.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-081914-order-***-1a6589.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-081914-order-***-5e3bd8.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-081914-order-***-badddb.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-081914-order-***-998d85.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9451, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-081914-order-***-af637c-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-081914-order-***-badddb.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-081914-order-***-1a6589.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-081914-order-***-5e3bd8.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-081914-order-***-badddb.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-081914-order-***-998d85.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -8067,18 +8067,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-082148-order-***-0bfa8d.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-082148-order-***-0bfa8d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=7.906s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9933, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-082148-order-***-e69358.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-082148-order-***-0bfa8d.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-082148-order-***-97e5ae.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-082148-order-***-e69358.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-082148-order-***-111f5b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9933, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-082148-order-***-f0fbb9-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-082148-order-***-e69358.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-082148-order-***-0bfa8d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-082148-order-***-97e5ae.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-082148-order-***-e69358.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-082148-order-***-111f5b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.000s).
 
@@ -8108,18 +8108,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-093648-order-***-1cbdf7.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-093648-order-***-1cbdf7.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.859s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png, mime=image/jpeg, formato_detectado=png, bytes=9300, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-093648-order-***-14f4c9.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-093648-order-***-1cbdf7.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-093648-order-***-69daf6.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-093648-order-***-14f4c9.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-093648-order-***-e2f5f0.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png, mime=image/jpeg, formato_detectado=png, bytes=9300, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-093648-order-***-2ea336-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-093648-order-***-14f4c9.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-093648-order-***-1cbdf7.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-093648-order-***-69daf6.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-093648-order-***-14f4c9.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-093648-order-***-e2f5f0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.156s).
 
@@ -8149,27 +8149,27 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-2-093739-order-***-3e1e74.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-2-093739-order-***-3e1e74.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png
   - Intento CAPTCHA 1: outcome=captcha_invalid, valor=oculto, duracion=7.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-093739-order-***-bbe8b4-original.png, mime=image/jpeg, formato_detectado=png, bytes=9595, dimensiones=180x70
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-093739-order-***-bbe8b4-original.png, mime=image/jpeg, formato_detectado=png, bytes=9595, dimensiones=180x70
   - Intento CAPTCHA 2: outcome=slot_lost, valor=oculto, duracion=1.985s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png, mime=image/jpeg, formato_detectado=png, bytes=10309, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-093739-order-***-bbe8b4-original.png
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-093739-order-***-ab654a.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-093739-order-***-d590ba.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-2-093739-order-***-2d7e0a.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-2-093739-order-***-3e1e74.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-093739-order-***-7a80bb.html
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-2-093739-order-***-997f8e.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-093739-order-***-ab654a.png
-  - Screenshot adicional: screenshots\04-08-2026\portal-1-093739-order-***-d590ba.png
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-2-093739-order-***-2d7e0a.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-093739-order-***-14fee5.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png, mime=image/jpeg, formato_detectado=png, bytes=10309, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-093739-order-***-bbe8b4-original.png
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-093739-order-***-0d3061-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-093739-order-***-ab654a.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-093739-order-***-d590ba.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-2-093739-order-***-2d7e0a.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-2-093739-order-***-3e1e74.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-093739-order-***-7a80bb.html
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-2-093739-order-***-997f8e.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-093739-order-***-ab654a.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\portal-1-093739-order-***-d590ba.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-2-093739-order-***-2d7e0a.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-093739-order-***-14fee5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -8199,18 +8199,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-095743-order-***-f6e03e.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-095743-order-***-f6e03e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-095743-order-***-006312-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-095743-order-***-006312-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.782s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-095743-order-***-006312-original.png, mime=image/jpeg, formato_detectado=png, bytes=10179, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-095743-order-***-006312-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-095743-order-***-0ce0aa.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-095743-order-***-f6e03e.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-095743-order-***-bacaec.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-095743-order-***-0ce0aa.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-095743-order-***-443e65.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-095743-order-***-006312-original.png, mime=image/jpeg, formato_detectado=png, bytes=10179, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-095743-order-***-006312-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-095743-order-***-0ce0aa.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-095743-order-***-f6e03e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-095743-order-***-bacaec.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-095743-order-***-0ce0aa.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-095743-order-***-443e65.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.719s).
 
@@ -8240,18 +8240,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-123236-order-***-a470ac.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-123236-order-***-a470ac.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.063s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png, mime=image/jpeg, formato_detectado=png, bytes=9324, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-123236-order-***-346423.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-123236-order-***-a470ac.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-123236-order-***-c31d88.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-123236-order-***-346423.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-123236-order-***-ec6ac2.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png, mime=image/jpeg, formato_detectado=png, bytes=9324, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-123236-order-***-3c9eef-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-123236-order-***-346423.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-123236-order-***-a470ac.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-123236-order-***-c31d88.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-123236-order-***-346423.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-123236-order-***-ec6ac2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -8281,18 +8281,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-123528-order-***-4a0f3c.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-123528-order-***-4a0f3c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.015s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=10188, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-123528-order-***-ae571c.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-123528-order-***-4a0f3c.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-123528-order-***-bddfab.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-123528-order-***-ae571c.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-123528-order-***-ed6635.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=10188, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-123528-order-***-9678fe-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-123528-order-***-ae571c.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-123528-order-***-4a0f3c.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-123528-order-***-bddfab.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-123528-order-***-ae571c.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-123528-order-***-ed6635.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.359s).
 
@@ -8322,18 +8322,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-123825-order-***-f09173.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-123825-order-***-f09173.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.938s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10325, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-123825-order-***-b99c4c.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-123825-order-***-f09173.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-123825-order-***-ecae23.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-123825-order-***-b99c4c.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-123825-order-***-c513ef.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png, mime=image/jpeg, formato_detectado=png, bytes=10325, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-123825-order-***-05b7f9-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-123825-order-***-b99c4c.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-123825-order-***-f09173.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-123825-order-***-ecae23.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-123825-order-***-b99c4c.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-123825-order-***-c513ef.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.265s).
 
@@ -8363,18 +8363,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-123907-order-***-a73b57.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-123907-order-***-a73b57.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.968s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10336, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-123907-order-***-14160c.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-123907-order-***-a73b57.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-123907-order-***-67f552.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-123907-order-***-14160c.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-123907-order-***-1880f1.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10336, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-123907-order-***-b5b22f-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-123907-order-***-14160c.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-123907-order-***-a73b57.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-123907-order-***-67f552.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-123907-order-***-14160c.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-123907-order-***-1880f1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.265s).
 
@@ -8404,18 +8404,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-124112-order-***-c9066e.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-124112-order-***-c9066e.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.313s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png, mime=image/jpeg, formato_detectado=png, bytes=9836, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-124112-order-***-b10127.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-124112-order-***-c9066e.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-124112-order-***-c831bb.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-124112-order-***-b10127.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-124112-order-***-9ee673.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png, mime=image/jpeg, formato_detectado=png, bytes=9836, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-124112-order-***-29d7ff-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-124112-order-***-b10127.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-124112-order-***-c9066e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-124112-order-***-c831bb.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-124112-order-***-b10127.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-124112-order-***-9ee673.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -8444,18 +8444,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\04-08-2026\portal-1-124654-order-***-8abc66.png
+  - Screenshot principal: screenshots\2026-08\04-08-2026\portal-1-124654-order-***-8abc66.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.906s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10059, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png
-  - Diagnostico screenshots: screenshots\04-08-2026\preenvio-1-124654-order-***-5c40ae.png
-  - Diagnostico screenshots: screenshots\04-08-2026\portal-1-124654-order-***-8abc66.png
-  - Diagnostico dom_snapshots: screenshots\04-08-2026\diagnostics\portal-html-1-124654-order-***-eeec9e.html
-  - Screenshot adicional: screenshots\04-08-2026\preenvio-1-124654-order-***-5c40ae.png
-  - Screenshot adicional: screenshots\04-08-2026\cupo-124654-order-***-6794a1.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10059, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\04-08-2026\captchas\captcha-124654-order-***-4ea93f-original.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\preenvio-1-124654-order-***-5c40ae.png
+  - Diagnostico screenshots: screenshots\2026-08\04-08-2026\portal-1-124654-order-***-8abc66.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\04-08-2026\diagnostics\portal-html-1-124654-order-***-eeec9e.html
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\preenvio-1-124654-order-***-5c40ae.png
+  - Screenshot adicional: screenshots\2026-08\04-08-2026\cupo-124654-order-***-6794a1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.250s).
 
@@ -8485,18 +8485,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-085350-order-***-d10068.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-085350-order-***-d10068.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.266s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9639, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-085350-order-***-808bf4.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-085350-order-***-d10068.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-085350-order-***-82ee03.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-085350-order-***-808bf4.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-085350-order-***-44f25b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png, mime=image/jpeg, formato_detectado=png, bytes=9639, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-085350-order-***-b318a9-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-085350-order-***-808bf4.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-085350-order-***-d10068.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-085350-order-***-82ee03.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-085350-order-***-808bf4.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-085350-order-***-44f25b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.671s).
 
@@ -8526,18 +8526,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-091752-order-***-8973bb.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-091752-order-***-8973bb.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9856, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-091752-order-***-63c918.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-091752-order-***-8973bb.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-091752-order-***-f87afc.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-091752-order-***-63c918.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-091752-order-***-55c92f.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png, mime=image/jpeg, formato_detectado=png, bytes=9856, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-091752-order-***-e12ec6-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-091752-order-***-63c918.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-091752-order-***-8973bb.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-091752-order-***-f87afc.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-091752-order-***-63c918.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-091752-order-***-55c92f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -8567,18 +8567,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-091858-order-***-646100.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-091858-order-***-646100.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.219s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9844, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-091858-order-***-ef6457.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-091858-order-***-646100.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-091858-order-***-c6c506.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-091858-order-***-ef6457.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-091858-order-***-2c4777.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9844, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-091858-order-***-6bd95e-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-091858-order-***-ef6457.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-091858-order-***-646100.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-091858-order-***-c6c506.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-091858-order-***-ef6457.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-091858-order-***-2c4777.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.735s).
 
@@ -8608,18 +8608,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093211-order-***-dc6c6a.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093211-order-***-dc6c6a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.0s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10101, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093211-order-***-030ee2.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093211-order-***-dc6c6a.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093211-order-***-26200b.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093211-order-***-030ee2.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093211-order-***-ea90d4.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png, mime=image/jpeg, formato_detectado=png, bytes=10101, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093211-order-***-6f789f-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093211-order-***-030ee2.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093211-order-***-dc6c6a.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093211-order-***-26200b.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093211-order-***-030ee2.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093211-order-***-ea90d4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.172s).
 
@@ -8649,18 +8649,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093235-order-***-b19d5d.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093235-order-***-b19d5d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=8.281s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png, mime=image/jpeg, formato_detectado=png, bytes=10193, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093235-order-***-5251a0.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093235-order-***-b19d5d.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093235-order-***-1424eb.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093235-order-***-5251a0.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093235-order-***-eec1b0.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png, mime=image/jpeg, formato_detectado=png, bytes=10193, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093235-order-***-17cf97-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093235-order-***-5251a0.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093235-order-***-b19d5d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093235-order-***-1424eb.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093235-order-***-5251a0.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093235-order-***-eec1b0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.219s).
 
@@ -8690,18 +8690,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093342-order-***-059f2b.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093342-order-***-059f2b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.312s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9684, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093342-order-***-fd1f75.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093342-order-***-059f2b.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093342-order-***-715eb9.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093342-order-***-fd1f75.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093342-order-***-412bc0.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png, mime=image/jpeg, formato_detectado=png, bytes=9684, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093342-order-***-a326e2-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093342-order-***-fd1f75.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093342-order-***-059f2b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093342-order-***-715eb9.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093342-order-***-fd1f75.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093342-order-***-412bc0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -8731,18 +8731,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 10.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093401-order-***-ab4fec.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093401-order-***-ab4fec.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.765s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9789, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093401-order-***-90f42a.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093401-order-***-ab4fec.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093401-order-***-2a4771.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093401-order-***-90f42a.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093401-order-***-8888e6.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9789, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093401-order-***-68b10d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093401-order-***-90f42a.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093401-order-***-ab4fec.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093401-order-***-2a4771.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093401-order-***-90f42a.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093401-order-***-8888e6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.766s).
 
@@ -8772,18 +8772,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093411-order-***-e3578d.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093411-order-***-e3578d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.36s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9573, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093411-order-***-538df5.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093411-order-***-e3578d.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093411-order-***-ed0589.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093411-order-***-538df5.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093411-order-***-ea1850.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9573, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093411-order-***-cd8ebf-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093411-order-***-538df5.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093411-order-***-e3578d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093411-order-***-ed0589.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093411-order-***-538df5.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093411-order-***-ea1850.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.422s).
 
@@ -8813,18 +8813,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 9.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093435-order-***-44d989.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093435-order-***-44d989.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=8.484s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png, mime=image/jpeg, formato_detectado=png, bytes=9941, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093435-order-***-7a41d8.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093435-order-***-44d989.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093435-order-***-ebb2c6.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093435-order-***-7a41d8.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093435-order-***-83fc42.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png, mime=image/jpeg, formato_detectado=png, bytes=9941, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093435-order-***-bde197-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093435-order-***-7a41d8.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093435-order-***-44d989.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093435-order-***-ebb2c6.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093435-order-***-7a41d8.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093435-order-***-83fc42.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.391s).
 
@@ -8854,18 +8854,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093459-order-***-906f5f.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093459-order-***-906f5f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10137, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093459-order-***-6eadbd.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093459-order-***-906f5f.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093459-order-***-74c419.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093459-order-***-6eadbd.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093459-order-***-337616.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10137, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093459-order-***-0ef31d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093459-order-***-6eadbd.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093459-order-***-906f5f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093459-order-***-74c419.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093459-order-***-6eadbd.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093459-order-***-337616.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -8895,18 +8895,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093509-order-***-14c945.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093509-order-***-14c945.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.281s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png, mime=image/jpeg, formato_detectado=png, bytes=9458, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093509-order-***-bc6db4.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093509-order-***-14c945.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093509-order-***-b84115.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093509-order-***-bc6db4.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093509-order-***-a6dd7d.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png, mime=image/jpeg, formato_detectado=png, bytes=9458, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093509-order-***-dd5b35-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093509-order-***-bc6db4.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093509-order-***-14c945.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093509-order-***-b84115.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093509-order-***-bc6db4.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093509-order-***-a6dd7d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.734s).
 
@@ -8936,18 +8936,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-093544-order-***-1e9693.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-093544-order-***-1e9693.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-093544-order-***-084959-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-093544-order-***-084959-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.469s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-093544-order-***-084959-original.png, mime=image/jpeg, formato_detectado=png, bytes=10574, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-093544-order-***-084959-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-093544-order-***-1a5e5e.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-093544-order-***-1e9693.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-093544-order-***-59874e.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-093544-order-***-1a5e5e.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-093544-order-***-d06da6.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-093544-order-***-084959-original.png, mime=image/jpeg, formato_detectado=png, bytes=10574, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-093544-order-***-084959-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-093544-order-***-1a5e5e.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-093544-order-***-1e9693.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-093544-order-***-59874e.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-093544-order-***-1a5e5e.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-093544-order-***-d06da6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.750s).
 
@@ -8977,18 +8977,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-114131-order-***-619112.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-114131-order-***-619112.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.032s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9740, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-114131-order-***-0c186b.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-114131-order-***-619112.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-114131-order-***-4b5259.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-114131-order-***-0c186b.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-114131-order-***-7cad75.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png, mime=image/jpeg, formato_detectado=png, bytes=9740, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-114131-order-***-faca9d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-114131-order-***-0c186b.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-114131-order-***-619112.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-114131-order-***-4b5259.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-114131-order-***-0c186b.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-114131-order-***-7cad75.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -9018,18 +9018,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-140124-order-***-421e5b.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-140124-order-***-421e5b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.047s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png, mime=image/jpeg, formato_detectado=png, bytes=9866, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-140124-order-***-62f4f8.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-140124-order-***-421e5b.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-140124-order-***-b9037e.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-140124-order-***-62f4f8.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-140124-order-***-4895b4.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png, mime=image/jpeg, formato_detectado=png, bytes=9866, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-140124-order-***-582eba-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-140124-order-***-62f4f8.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-140124-order-***-421e5b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-140124-order-***-b9037e.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-140124-order-***-62f4f8.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-140124-order-***-4895b4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -9059,18 +9059,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\05-08-2026\portal-1-140139-order-***-93ad5a.png
+  - Screenshot principal: screenshots\2026-08\05-08-2026\portal-1-140139-order-***-93ad5a.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.265s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png, mime=image/jpeg, formato_detectado=png, bytes=9758, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png
-  - Diagnostico screenshots: screenshots\05-08-2026\preenvio-1-140139-order-***-f23acd.png
-  - Diagnostico screenshots: screenshots\05-08-2026\portal-1-140139-order-***-93ad5a.png
-  - Diagnostico dom_snapshots: screenshots\05-08-2026\diagnostics\portal-html-1-140139-order-***-5e2bd4.html
-  - Screenshot adicional: screenshots\05-08-2026\preenvio-1-140139-order-***-f23acd.png
-  - Screenshot adicional: screenshots\05-08-2026\cupo-140139-order-***-0532f4.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png, mime=image/jpeg, formato_detectado=png, bytes=9758, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\05-08-2026\captchas\captcha-140139-order-***-16f604-original.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\preenvio-1-140139-order-***-f23acd.png
+  - Diagnostico screenshots: screenshots\2026-08\05-08-2026\portal-1-140139-order-***-93ad5a.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\05-08-2026\diagnostics\portal-html-1-140139-order-***-5e2bd4.html
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\preenvio-1-140139-order-***-f23acd.png
+  - Screenshot adicional: screenshots\2026-08\05-08-2026\cupo-140139-order-***-0532f4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.703s).
 
@@ -9100,18 +9100,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-091119-order-***-8cee11.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-091119-order-***-8cee11.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.062s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9871, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-091119-order-***-df6faa.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-091119-order-***-8cee11.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-091119-order-***-ab189b.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-091119-order-***-df6faa.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-091119-order-***-1b0ebe.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png, mime=image/jpeg, formato_detectado=png, bytes=9871, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-091119-order-***-59dd8c-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-091119-order-***-df6faa.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-091119-order-***-8cee11.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-091119-order-***-ab189b.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-091119-order-***-df6faa.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-091119-order-***-1b0ebe.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.219s).
 
@@ -9141,18 +9141,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-091206-order-***-0b66bd.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-091206-order-***-0b66bd.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.969s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png, mime=image/jpeg, formato_detectado=png, bytes=9434, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-091206-order-***-e4e53e.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-091206-order-***-0b66bd.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-091206-order-***-fa5fa0.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-091206-order-***-e4e53e.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-091206-order-***-b910eb.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png, mime=image/jpeg, formato_detectado=png, bytes=9434, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-091206-order-***-c468af-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-091206-order-***-e4e53e.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-091206-order-***-0b66bd.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-091206-order-***-fa5fa0.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-091206-order-***-e4e53e.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-091206-order-***-b910eb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.094s).
 
@@ -9182,18 +9182,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-091223-order-***-d13355.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-091223-order-***-d13355.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.015s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10720, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-091223-order-***-96eb45.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-091223-order-***-d13355.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-091223-order-***-b7bf8d.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-091223-order-***-96eb45.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-091223-order-***-bbc978.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10720, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-091223-order-***-63f04a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-091223-order-***-96eb45.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-091223-order-***-d13355.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-091223-order-***-b7bf8d.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-091223-order-***-96eb45.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-091223-order-***-bbc978.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.219s).
 
@@ -9223,18 +9223,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-091240-order-***-c41328.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-091240-order-***-c41328.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.891s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png, mime=image/jpeg, formato_detectado=png, bytes=10288, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-091240-order-***-2ae8ba.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-091240-order-***-c41328.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-091240-order-***-38be7d.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-091240-order-***-2ae8ba.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-091240-order-***-a8b151.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png, mime=image/jpeg, formato_detectado=png, bytes=10288, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-091240-order-***-3d6397-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-091240-order-***-2ae8ba.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-091240-order-***-c41328.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-091240-order-***-38be7d.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-091240-order-***-2ae8ba.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-091240-order-***-a8b151.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.078s).
 
@@ -9264,18 +9264,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-092554-order-***-f39e68.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-092554-order-***-f39e68.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.0s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9910, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-092554-order-***-2f76af.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-092554-order-***-f39e68.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-092554-order-***-040c95.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-092554-order-***-2f76af.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-092554-order-***-7c7cb3.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png, mime=image/jpeg, formato_detectado=png, bytes=9910, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-092554-order-***-f90adf-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-092554-order-***-2f76af.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-092554-order-***-f39e68.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-092554-order-***-040c95.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-092554-order-***-2f76af.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-092554-order-***-7c7cb3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.172s).
 
@@ -9305,18 +9305,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-111652-order-***-8807c8.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-111652-order-***-8807c8.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.75s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png, mime=image/jpeg, formato_detectado=png, bytes=9736, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-111652-order-***-e74361.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-111652-order-***-8807c8.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-111652-order-***-3ba6f4.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-111652-order-***-e74361.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-111652-order-***-c59fb0.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png, mime=image/jpeg, formato_detectado=png, bytes=9736, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-111652-order-***-5c62db-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-111652-order-***-e74361.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-111652-order-***-8807c8.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-111652-order-***-3ba6f4.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-111652-order-***-e74361.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-111652-order-***-c59fb0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.062s).
 
@@ -9346,18 +9346,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 2.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-111721-order-***-94a77c.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-111721-order-***-94a77c.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.906s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png, mime=image/jpeg, formato_detectado=png, bytes=10602, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-111721-order-***-eebdbc.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-111721-order-***-94a77c.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-111721-order-***-55490f.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-111721-order-***-eebdbc.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-111721-order-***-e1a702.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png, mime=image/jpeg, formato_detectado=png, bytes=10602, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-111721-order-***-109d38-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-111721-order-***-eebdbc.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-111721-order-***-94a77c.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-111721-order-***-55490f.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-111721-order-***-eebdbc.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-111721-order-***-e1a702.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.688s).
 
@@ -9387,18 +9387,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-112825-order-***-809ebf.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-112825-order-***-809ebf.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.282s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png, mime=image/jpeg, formato_detectado=png, bytes=10054, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-112825-order-***-6ef41a.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-112825-order-***-809ebf.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-112825-order-***-bd90ec.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-112825-order-***-6ef41a.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-112825-order-***-d3b390.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png, mime=image/jpeg, formato_detectado=png, bytes=10054, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-112825-order-***-d42426-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-112825-order-***-6ef41a.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-112825-order-***-809ebf.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-112825-order-***-bd90ec.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-112825-order-***-6ef41a.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-112825-order-***-d3b390.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -9428,18 +9428,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-112843-order-***-eae36d.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-112843-order-***-eae36d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.891s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png, mime=image/jpeg, formato_detectado=png, bytes=9929, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-112843-order-***-a0d27b.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-112843-order-***-eae36d.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-112843-order-***-009cda.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-112843-order-***-a0d27b.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-112843-order-***-4fa937.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png, mime=image/jpeg, formato_detectado=png, bytes=9929, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-112843-order-***-53ef72-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-112843-order-***-a0d27b.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-112843-order-***-eae36d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-112843-order-***-009cda.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-112843-order-***-a0d27b.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-112843-order-***-4fa937.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.672s).
 
@@ -9469,18 +9469,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-124934-order-***-312b92.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-124934-order-***-312b92.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=7.922s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10505, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-124934-order-***-d9f705.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-124934-order-***-312b92.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-124934-order-***-8bbe20.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-124934-order-***-d9f705.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-124934-order-***-d77426.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png, mime=image/jpeg, formato_detectado=png, bytes=10505, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-124934-order-***-856bc7-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-124934-order-***-d9f705.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-124934-order-***-312b92.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-124934-order-***-8bbe20.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-124934-order-***-d9f705.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-124934-order-***-d77426.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.094s).
 
@@ -9510,18 +9510,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-153119-order-***-063cc8.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-153119-order-***-063cc8.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-153119-order-***-252982-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-153119-order-***-252982-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=8.094s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-153119-order-***-252982-original.png, mime=image/jpeg, formato_detectado=png, bytes=10087, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153119-order-***-252982-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-153119-order-***-8c2e5b.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-153119-order-***-063cc8.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-153119-order-***-fde9ee.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-153119-order-***-8c2e5b.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-153119-order-***-15ee31.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-153119-order-***-252982-original.png, mime=image/jpeg, formato_detectado=png, bytes=10087, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153119-order-***-252982-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-153119-order-***-8c2e5b.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-153119-order-***-063cc8.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-153119-order-***-fde9ee.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-153119-order-***-8c2e5b.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-153119-order-***-15ee31.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.406s).
 
@@ -9551,18 +9551,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-153403-order-***-3120bf.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-153403-order-***-3120bf.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=7.625s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png, mime=image/jpeg, formato_detectado=png, bytes=10356, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-153403-order-***-ab9780.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-153403-order-***-3120bf.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-153403-order-***-f584fe.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-153403-order-***-ab9780.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-153403-order-***-690164.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png, mime=image/jpeg, formato_detectado=png, bytes=10356, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153403-order-***-a33e24-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-153403-order-***-ab9780.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-153403-order-***-3120bf.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-153403-order-***-f584fe.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-153403-order-***-ab9780.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-153403-order-***-690164.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (7.000s).
 
@@ -9592,18 +9592,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-153616-order-***-12c9a5.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-153616-order-***-12c9a5.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.032s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9354, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-153616-order-***-cbbce7.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-153616-order-***-12c9a5.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-153616-order-***-47db1b.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-153616-order-***-cbbce7.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-153616-order-***-c1f525.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9354, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153616-order-***-f0e4a1-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-153616-order-***-cbbce7.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-153616-order-***-12c9a5.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-153616-order-***-47db1b.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-153616-order-***-cbbce7.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-153616-order-***-c1f525.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -9633,18 +9633,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-153713-order-***-e1175b.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-153713-order-***-e1175b.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=3.187s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png, mime=image/jpeg, formato_detectado=png, bytes=9612, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-153713-order-***-583404.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-153713-order-***-e1175b.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-153713-order-***-5f7ec9.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-153713-order-***-583404.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-153713-order-***-ca9ef1.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png, mime=image/jpeg, formato_detectado=png, bytes=9612, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153713-order-***-f22c77-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-153713-order-***-583404.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-153713-order-***-e1175b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-153713-order-***-5f7ec9.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-153713-order-***-583404.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-153713-order-***-ca9ef1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (2.359s).
 
@@ -9674,18 +9674,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\07-08-2026\portal-1-153726-order-***-521007.png
+  - Screenshot principal: screenshots\2026-08\07-08-2026\portal-1-153726-order-***-521007.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.093s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9088, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png
-  - Diagnostico screenshots: screenshots\07-08-2026\preenvio-1-153726-order-***-3bd447.png
-  - Diagnostico screenshots: screenshots\07-08-2026\portal-1-153726-order-***-521007.png
-  - Diagnostico dom_snapshots: screenshots\07-08-2026\diagnostics\portal-html-1-153726-order-***-e8be6f.html
-  - Screenshot adicional: screenshots\07-08-2026\preenvio-1-153726-order-***-3bd447.png
-  - Screenshot adicional: screenshots\07-08-2026\cupo-153726-order-***-528285.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png, mime=image/jpeg, formato_detectado=png, bytes=9088, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\07-08-2026\captchas\captcha-153726-order-***-01721e-original.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\preenvio-1-153726-order-***-3bd447.png
+  - Diagnostico screenshots: screenshots\2026-08\07-08-2026\portal-1-153726-order-***-521007.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\07-08-2026\diagnostics\portal-html-1-153726-order-***-e8be6f.html
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\preenvio-1-153726-order-***-3bd447.png
+  - Screenshot adicional: screenshots\2026-08\07-08-2026\cupo-153726-order-***-528285.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.656s).
 ## 2026-08-08 10:06:43 - order-*** - unavailable
@@ -9714,18 +9714,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-100613-order-***-2a0864.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-100613-order-***-2a0864.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=19.516s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png, mime=image/jpeg, formato_detectado=png, bytes=10161, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-100613-order-***-696858.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-100613-order-***-2a0864.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-100613-order-***-97042e.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-100613-order-***-696858.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-100613-order-***-4b4de7.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png, mime=image/jpeg, formato_detectado=png, bytes=10161, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-100613-order-***-d02203-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-100613-order-***-696858.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-100613-order-***-2a0864.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-100613-order-***-97042e.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-100613-order-***-696858.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-100613-order-***-4b4de7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (17.500s).
 
@@ -9754,18 +9754,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-101757-order-***-75fb6d.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-101757-order-***-75fb6d.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=18.5s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9868, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-101757-order-***-644f8a.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-101757-order-***-75fb6d.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-101757-order-***-5d3c69.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-101757-order-***-644f8a.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-101757-order-***-0522a8.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png, mime=image/jpeg, formato_detectado=png, bytes=9868, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-101757-order-***-3405fe-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-101757-order-***-644f8a.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-101757-order-***-75fb6d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-101757-order-***-5d3c69.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-101757-order-***-644f8a.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-101757-order-***-0522a8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.578s).
 
@@ -9794,18 +9794,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-103424-order-***-8edb7f.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-103424-order-***-8edb7f.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=18.297s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9255, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-103424-order-***-aa18ac.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-103424-order-***-8edb7f.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-103424-order-***-05ac2b.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-103424-order-***-aa18ac.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-103424-order-***-4af3ab.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9255, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-103424-order-***-c4f67a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-103424-order-***-aa18ac.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-103424-order-***-8edb7f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-103424-order-***-05ac2b.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-103424-order-***-aa18ac.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-103424-order-***-4af3ab.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.406s).
 
@@ -9834,18 +9834,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-103531-order-***-f41d42.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-103531-order-***-f41d42.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=23.843s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png, mime=image/jpeg, formato_detectado=png, bytes=9989, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-103531-order-***-5499b8.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-103531-order-***-f41d42.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-103531-order-***-dcd32e.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-103531-order-***-5499b8.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-103531-order-***-e0713b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png, mime=image/jpeg, formato_detectado=png, bytes=9989, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-103531-order-***-a00d42-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-103531-order-***-5499b8.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-103531-order-***-f41d42.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-103531-order-***-dcd32e.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-103531-order-***-5499b8.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-103531-order-***-e0713b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.391s).
 
@@ -9874,18 +9874,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-103808-order-***-de46d1.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-103808-order-***-de46d1.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=17.969s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9979, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-103808-order-***-10bbad.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-103808-order-***-de46d1.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-103808-order-***-5efbe8.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-103808-order-***-10bbad.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-103808-order-***-f8fc93.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png, mime=image/jpeg, formato_detectado=png, bytes=9979, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-103808-order-***-ac16a0-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-103808-order-***-10bbad.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-103808-order-***-de46d1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-103808-order-***-5efbe8.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-103808-order-***-10bbad.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-103808-order-***-f8fc93.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.109s).
 
@@ -9914,18 +9914,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-110357-order-***-4043ac.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-110357-order-***-4043ac.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=24.015s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png, mime=image/jpeg, formato_detectado=png, bytes=8899, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-110357-order-***-a9f303.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-110357-order-***-4043ac.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-110357-order-***-a9eaf6.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-110357-order-***-a9f303.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-110357-order-***-a1d799.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png, mime=image/jpeg, formato_detectado=png, bytes=8899, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-110357-order-***-cc402c-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-110357-order-***-a9f303.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-110357-order-***-4043ac.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-110357-order-***-a9eaf6.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-110357-order-***-a9f303.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-110357-order-***-a1d799.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.437s).
 
@@ -9954,18 +9954,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-110654-order-***-7f4126.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-110654-order-***-7f4126.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=23.578s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png, mime=image/jpeg, formato_detectado=png, bytes=10771, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-110654-order-***-14ed9f.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-110654-order-***-7f4126.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-110654-order-***-cb9098.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-110654-order-***-14ed9f.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-110654-order-***-46e2b2.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png, mime=image/jpeg, formato_detectado=png, bytes=10771, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-110654-order-***-ab75ce-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-110654-order-***-14ed9f.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-110654-order-***-7f4126.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-110654-order-***-cb9098.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-110654-order-***-14ed9f.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-110654-order-***-46e2b2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.141s).
 
@@ -9994,18 +9994,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\08-08-2026\portal-1-110726-order-***-ec2795.png
+  - Screenshot principal: screenshots\2026-08\08-08-2026\portal-1-110726-order-***-ec2795.png
   - CAPTCHA enviado: oculto
-  - Imagen enviada a 2captcha: screenshots\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=23.5s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9793, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png
-  - Diagnostico screenshots: screenshots\08-08-2026\preenvio-1-110726-order-***-af2057.png
-  - Diagnostico screenshots: screenshots\08-08-2026\portal-1-110726-order-***-ec2795.png
-  - Diagnostico dom_snapshots: screenshots\08-08-2026\diagnostics\portal-html-1-110726-order-***-d14238.html
-  - Screenshot adicional: screenshots\08-08-2026\preenvio-1-110726-order-***-af2057.png
-  - Screenshot adicional: screenshots\08-08-2026\cupo-110726-order-***-f7501b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png, mime=image/jpeg, formato_detectado=png, bytes=9793, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\08-08-2026\captchas\captcha-110726-order-***-7961a1-original.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\preenvio-1-110726-order-***-af2057.png
+  - Diagnostico screenshots: screenshots\2026-08\08-08-2026\portal-1-110726-order-***-ec2795.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\08-08-2026\diagnostics\portal-html-1-110726-order-***-d14238.html
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\preenvio-1-110726-order-***-af2057.png
+  - Screenshot adicional: screenshots\2026-08\08-08-2026\cupo-110726-order-***-f7501b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (16.046s).
 ## 2026-08-10 12:18:29 - order-*** - registered
@@ -10033,18 +10033,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-121819-order-***-1bc718.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-121819-order-***-1bc718.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.937s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10173, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-121819-order-***-f61a96.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-121819-order-***-1bc718.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-121819-order-***-4715e7.html
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-121819-order-***-f61a96.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-121819-order-***-dca424.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png, mime=image/jpeg, formato_detectado=png, bytes=10173, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-121819-order-***-7ed53a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-121819-order-***-f61a96.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-121819-order-***-1bc718.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-121819-order-***-4715e7.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-121819-order-***-f61a96.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-121819-order-***-dca424.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.828s).
 
@@ -10074,21 +10074,21 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-121801-order-***-5c3213.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-121801-order-***-5c3213.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=6.296s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png, mime=image/jpeg, formato_detectado=png, bytes=10108, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-121801-order-***-28d071.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-121801-order-***-5c3213.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-121801-order-***-5d60e6.html
-  - Screenshot adicional: screenshots\10-08-2026\portal-1-121801-order-***-817f46.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-121801-order-***-e4c668.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-121801-order-***-10b72d.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-121801-order-***-28d071.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-121801-order-***-bf242d.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png, mime=image/jpeg, formato_detectado=png, bytes=10108, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-121801-order-***-c88c79-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-121801-order-***-28d071.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-121801-order-***-5c3213.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-121801-order-***-5d60e6.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\portal-1-121801-order-***-817f46.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-121801-order-***-e4c668.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-121801-order-***-10b72d.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-121801-order-***-28d071.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-121801-order-***-bf242d.png
 - Observacion tecnica:
   - El tramo mas lento fue imagen CAPTCHA (4.282s).
 
@@ -10118,23 +10118,23 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-121829-order-***-d43b6d.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-121829-order-***-d43b6d.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.547s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9651, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-121829-order-***-71972c.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-121829-order-***-d43b6d.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-121829-order-***-ea52f5.html
-  - Screenshot adicional: screenshots\10-08-2026\portal-2-121829-order-***-abfac0.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-121829-order-***-631882.png
-  - Screenshot adicional: screenshots\10-08-2026\portal-1-121829-order-***-4d493b.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-2-121829-order-***-572dc0.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-121829-order-***-ac379a.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-121829-order-***-71972c.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-121829-order-***-a9a934.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9651, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-121829-order-***-cfb25a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-121829-order-***-71972c.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-121829-order-***-d43b6d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-121829-order-***-ea52f5.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\portal-2-121829-order-***-abfac0.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-121829-order-***-631882.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\portal-1-121829-order-***-4d493b.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-2-121829-order-***-572dc0.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-121829-order-***-ac379a.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-121829-order-***-71972c.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-121829-order-***-a9a934.png
 - Observacion tecnica:
   - El tramo mas lento fue seleccion fecha/hora (1.781s).
 
@@ -10163,18 +10163,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-122037-order-***-8228e7.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-122037-order-***-8228e7.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.375s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png, mime=image/jpeg, formato_detectado=png, bytes=8901, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-122037-order-***-e57f58.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-122037-order-***-8228e7.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-122037-order-***-4e1e79.html
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-122037-order-***-e57f58.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-122037-order-***-d0e168.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png, mime=image/jpeg, formato_detectado=png, bytes=8901, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122037-order-***-6051c0-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-122037-order-***-e57f58.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-122037-order-***-8228e7.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-122037-order-***-4e1e79.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-122037-order-***-e57f58.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-122037-order-***-d0e168.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.687s).
 
@@ -10204,18 +10204,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-122011-order-***-12a564.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-122011-order-***-12a564.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=11.828s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png, mime=image/jpeg, formato_detectado=png, bytes=9981, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-122011-order-***-d089ee.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-122011-order-***-12a564.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-122011-order-***-9efad1.html
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-122011-order-***-d089ee.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-122011-order-***-32c5ea.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png, mime=image/jpeg, formato_detectado=png, bytes=9981, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122011-order-***-d7b175-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-122011-order-***-d089ee.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-122011-order-***-12a564.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-122011-order-***-9efad1.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-122011-order-***-d089ee.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-122011-order-***-32c5ea.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2captcha (6.969s).
 
@@ -10245,21 +10245,21 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede elapsed: no registrado
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\10-08-2026\portal-1-122049-order-***-c94852.png
+  - Screenshot principal: screenshots\2026-08\10-08-2026\portal-1-122049-order-***-c94852.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen enviada a 2captcha: screenshots\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png
+  - Imagen enviada a 2captcha: screenshots\2026-08\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.266s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png, mime=image/jpeg, formato_detectado=png, bytes=9791, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png
-  - Diagnostico screenshots: screenshots\10-08-2026\preenvio-1-122049-order-***-969a43.png
-  - Diagnostico screenshots: screenshots\10-08-2026\portal-1-122049-order-***-c94852.png
-  - Diagnostico dom_snapshots: screenshots\10-08-2026\diagnostics\portal-html-1-122049-order-***-ba4c59.html
-  - Screenshot adicional: screenshots\10-08-2026\portal-1-122049-order-***-e458fc.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-122049-order-***-d4279e.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-122049-order-***-1d3edb.png
-  - Screenshot adicional: screenshots\10-08-2026\preenvio-1-122049-order-***-969a43.png
-  - Screenshot adicional: screenshots\10-08-2026\cupo-122049-order-***-ea3a82.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png, mime=image/jpeg, formato_detectado=png, bytes=9791, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\10-08-2026\captchas\captcha-122049-order-***-bb2e58-original.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\preenvio-1-122049-order-***-969a43.png
+  - Diagnostico screenshots: screenshots\2026-08\10-08-2026\portal-1-122049-order-***-c94852.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\10-08-2026\diagnostics\portal-html-1-122049-order-***-ba4c59.html
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\portal-1-122049-order-***-e458fc.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-122049-order-***-d4279e.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-122049-order-***-1d3edb.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\preenvio-1-122049-order-***-969a43.png
+  - Screenshot adicional: screenshots\2026-08\10-08-2026\cupo-122049-order-***-ea3a82.png
 - Observacion tecnica:
   - El tramo mas lento fue seleccion fecha/hora (1.672s).
 ## 2026-08-11 11:10:28 - order-*** - unavailable
@@ -10287,18 +10287,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\portal-1-110859-order-***-e4cd48.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\portal-1-110859-order-***-e4cd48.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por V6 local: screenshots\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png
+  - Imagen usada por V6 local: screenshots\2026-08\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=22.563s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10483, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png
-  - Diagnostico screenshots: screenshots\11-08-2026\preenvio-1-110859-order-***-e613d7.png
-  - Diagnostico screenshots: screenshots\11-08-2026\portal-1-110859-order-***-e4cd48.png
-  - Diagnostico dom_snapshots: screenshots\11-08-2026\diagnostics\portal-html-1-110859-order-***-44bc35.html
-  - Screenshot adicional: screenshots\11-08-2026\preenvio-1-110859-order-***-e613d7.png
-  - Screenshot adicional: screenshots\11-08-2026\cupo-110859-order-***-61ced4.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png, mime=image/jpeg, formato_detectado=png, bytes=10483, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-110859-order-***-0ee34d-original.png
+  - Diagnostico screenshots: screenshots\2026-08\11-08-2026\preenvio-1-110859-order-***-e613d7.png
+  - Diagnostico screenshots: screenshots\2026-08\11-08-2026\portal-1-110859-order-***-e4cd48.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\11-08-2026\diagnostics\portal-html-1-110859-order-***-44bc35.html
+  - Screenshot adicional: screenshots\2026-08\11-08-2026\preenvio-1-110859-order-***-e613d7.png
+  - Screenshot adicional: screenshots\2026-08\11-08-2026\cupo-110859-order-***-61ced4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue imagen CAPTCHA (21.657s).
 ## 2026-08-11 12:29:12 - order-*** - registered
@@ -10326,18 +10326,18 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\11-08-2026\portal-1-122837-order-***-88e944.png
+  - Screenshot principal: screenshots\2026-08\11-08-2026\portal-1-122837-order-***-88e944.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por V6 local: screenshots\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png
+  - Imagen usada por V6 local: screenshots\2026-08\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.359s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png, mime=image/jpeg, formato_detectado=png, bytes=9427, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png
-  - Diagnostico screenshots: screenshots\11-08-2026\preenvio-1-122837-order-***-4102fe.png
-  - Diagnostico screenshots: screenshots\11-08-2026\portal-1-122837-order-***-88e944.png
-  - Diagnostico dom_snapshots: screenshots\11-08-2026\diagnostics\portal-html-1-122837-order-***-edf8ab.html
-  - Screenshot adicional: screenshots\11-08-2026\preenvio-1-122837-order-***-4102fe.png
-  - Screenshot adicional: screenshots\11-08-2026\cupo-122837-order-***-69bc2b.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png, mime=image/jpeg, formato_detectado=png, bytes=9427, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\11-08-2026\captchas\captcha-122837-order-***-c49510-original.png
+  - Diagnostico screenshots: screenshots\2026-08\11-08-2026\preenvio-1-122837-order-***-4102fe.png
+  - Diagnostico screenshots: screenshots\2026-08\11-08-2026\portal-1-122837-order-***-88e944.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\11-08-2026\diagnostics\portal-html-1-122837-order-***-edf8ab.html
+  - Screenshot adicional: screenshots\2026-08\11-08-2026\preenvio-1-122837-order-***-4102fe.png
+  - Screenshot adicional: screenshots\2026-08\11-08-2026\cupo-122837-order-***-69bc2b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (1.704s).
 ## 2026-08-12 09:58:53 - order-*** - unavailable
@@ -10371,16 +10371,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.36]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\12-08-2026\portal-1-095747-order-***-20ee76.png
+  - Screenshot principal: screenshots\2026-08\12-08-2026\portal-1-095747-order-***-20ee76.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por 2Captcha: screenshots\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png
+  - Imagen usada por 2Captcha: screenshots\2026-08\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.375s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png, mime=image/jpeg, formato_detectado=png, bytes=10385, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png
-  - Diagnostico screenshots: screenshots\12-08-2026\portal-1-095747-order-***-20ee76.png
-  - Diagnostico dom_snapshots: screenshots\12-08-2026\diagnostics\portal-html-1-095747-order-***-7b8734.html
-  - Screenshot adicional: screenshots\12-08-2026\cupo-095747-order-***-ef2c7a.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png, mime=image/jpeg, formato_detectado=png, bytes=10385, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\12-08-2026\captchas\captcha-095747-order-***-5bdfda-original.png
+  - Diagnostico screenshots: screenshots\2026-08\12-08-2026\portal-1-095747-order-***-20ee76.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\12-08-2026\diagnostics\portal-html-1-095747-order-***-7b8734.html
+  - Screenshot adicional: screenshots\2026-08\12-08-2026\cupo-095747-order-***-ef2c7a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2Captcha (2.094s).
 
@@ -10415,16 +10415,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\12-08-2026\portal-1-095855-order-***-d612ab.png
+  - Screenshot principal: screenshots\2026-08\12-08-2026\portal-1-095855-order-***-d612ab.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por 2Captcha: screenshots\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png
+  - Imagen usada por 2Captcha: screenshots\2026-08\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.718s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png, mime=image/jpeg, formato_detectado=png, bytes=9891, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png
-  - Diagnostico screenshots: screenshots\12-08-2026\portal-1-095855-order-***-d612ab.png
-  - Diagnostico dom_snapshots: screenshots\12-08-2026\diagnostics\portal-html-1-095855-order-***-99155a.html
-  - Screenshot adicional: screenshots\12-08-2026\cupo-095855-order-***-5ff958.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png, mime=image/jpeg, formato_detectado=png, bytes=9891, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\12-08-2026\captchas\captcha-095855-order-***-a58545-original.png
+  - Diagnostico screenshots: screenshots\2026-08\12-08-2026\portal-1-095855-order-***-d612ab.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\12-08-2026\diagnostics\portal-html-1-095855-order-***-99155a.html
+  - Screenshot adicional: screenshots\2026-08\12-08-2026\cupo-095855-order-***-5ff958.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2Captcha (1.235s).
 
@@ -10459,16 +10459,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.343]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\13-08-2026\portal-1-092233-order-***-24eca4.png
+  - Screenshot principal: screenshots\2026-08\13-08-2026\portal-1-092233-order-***-24eca4.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por 2Captcha: screenshots\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png
+  - Imagen usada por 2Captcha: screenshots\2026-08\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.906s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png, mime=image/jpeg, formato_detectado=png, bytes=10097, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png
-  - Diagnostico screenshots: screenshots\13-08-2026\portal-1-092233-order-***-24eca4.png
-  - Diagnostico dom_snapshots: screenshots\13-08-2026\diagnostics\portal-html-1-092233-order-***-da11ca.html
-  - Screenshot adicional: screenshots\13-08-2026\cupo-092233-order-***-3b7394.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png, mime=image/jpeg, formato_detectado=png, bytes=10097, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\13-08-2026\captchas\captcha-092233-order-***-26f725-original.png
+  - Diagnostico screenshots: screenshots\2026-08\13-08-2026\portal-1-092233-order-***-24eca4.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\13-08-2026\diagnostics\portal-html-1-092233-order-***-da11ca.html
+  - Screenshot adicional: screenshots\2026-08\13-08-2026\cupo-092233-order-***-3b7394.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2Captcha (1.453s).
 
@@ -10503,16 +10503,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\13-08-2026\portal-1-103349-order-***-0a0e22.png
+  - Screenshot principal: screenshots\2026-08\13-08-2026\portal-1-103349-order-***-0a0e22.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por 2Captcha: screenshots\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png
+  - Imagen usada por 2Captcha: screenshots\2026-08\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=7.5s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png, mime=image/jpeg, formato_detectado=png, bytes=10190, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png
-  - Diagnostico screenshots: screenshots\13-08-2026\portal-1-103349-order-***-0a0e22.png
-  - Diagnostico dom_snapshots: screenshots\13-08-2026\diagnostics\portal-html-1-103349-order-***-f9ac44.html
-  - Screenshot adicional: screenshots\13-08-2026\cupo-103349-order-***-ff30dd.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png, mime=image/jpeg, formato_detectado=png, bytes=10190, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\13-08-2026\captchas\captcha-103349-order-***-afd343-original.png
+  - Diagnostico screenshots: screenshots\2026-08\13-08-2026\portal-1-103349-order-***-0a0e22.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\13-08-2026\diagnostics\portal-html-1-103349-order-***-f9ac44.html
+  - Screenshot adicional: screenshots\2026-08\13-08-2026\cupo-103349-order-***-ff30dd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2Captcha (7.047s).
 
@@ -10547,16 +10547,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.329]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\13-08-2026\portal-1-111804-order-***-caf22a.png
+  - Screenshot principal: screenshots\2026-08\13-08-2026\portal-1-111804-order-***-caf22a.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por 2Captcha: screenshots\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png
+  - Imagen usada por 2Captcha: screenshots\2026-08\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=7.422s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10444, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png
-  - Diagnostico screenshots: screenshots\13-08-2026\portal-1-111804-order-***-caf22a.png
-  - Diagnostico dom_snapshots: screenshots\13-08-2026\diagnostics\portal-html-1-111804-order-***-de3a0b.html
-  - Screenshot adicional: screenshots\13-08-2026\cupo-111804-order-***-05275d.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png, mime=image/jpeg, formato_detectado=png, bytes=10444, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\13-08-2026\captchas\captcha-111804-order-***-e6397e-original.png
+  - Diagnostico screenshots: screenshots\2026-08\13-08-2026\portal-1-111804-order-***-caf22a.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\13-08-2026\diagnostics\portal-html-1-111804-order-***-de3a0b.html
+  - Screenshot adicional: screenshots\2026-08\13-08-2026\cupo-111804-order-***-05275d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue 2Captcha (6.921s).
 
@@ -10591,16 +10591,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.359]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\13-08-2026\portal-1-133851-order-***-c17c2e.png
+  - Screenshot principal: screenshots\2026-08\13-08-2026\portal-1-133851-order-***-c17c2e.png
   - CAPTCHA enviado: registrado y oculto
-  - Imagen usada por V6 local: screenshots\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png
+  - Imagen usada por V6 local: screenshots\2026-08\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=0.703s
     - Medidas CAPTCHA: png=no registrado, css=180.0x70.0, scale=2
-    - CAPTCHA original HTML: path=screenshots\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9875, dimensiones=180x70
-  - Diagnostico captcha_images: screenshots\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png
-  - Diagnostico screenshots: screenshots\13-08-2026\portal-1-133851-order-***-c17c2e.png
-  - Diagnostico dom_snapshots: screenshots\13-08-2026\diagnostics\portal-html-1-133851-order-***-56bd4a.html
-  - Screenshot adicional: screenshots\13-08-2026\cupo-133851-order-***-99b8fe.png
+    - CAPTCHA original HTML: path=screenshots\2026-08\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png, mime=image/jpeg, formato_detectado=png, bytes=9875, dimensiones=180x70
+  - Diagnostico captcha_images: screenshots\2026-08\13-08-2026\captchas\captcha-133851-order-***-0ff70a-original.png
+  - Diagnostico screenshots: screenshots\2026-08\13-08-2026\portal-1-133851-order-***-c17c2e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\13-08-2026\diagnostics\portal-html-1-133851-order-***-56bd4a.html
+  - Screenshot adicional: screenshots\2026-08\13-08-2026\cupo-133851-order-***-99b8fe.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue seleccion fecha/hora (0.672s).
 ## 2026-08-14 10:00:11 - order-*** - completed
@@ -10631,7 +10631,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\14-08-2026\etapas-100005-order-***-e5c8a0.png
+  - Screenshot principal: screenshots\2026-08\14-08-2026\etapas-100005-order-***-e5c8a0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 ## 2026-08-14 13:16:49 - order-*** - completed
@@ -10662,7 +10662,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\14-08-2026\etapas-131643-order-***-ad7cd7.png
+  - Screenshot principal: screenshots\2026-08\14-08-2026\etapas-131643-order-***-ad7cd7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -10694,7 +10694,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\15-08-2026\etapas-090300-order-***-4964b7.png
+  - Screenshot principal: screenshots\2026-08\15-08-2026\etapas-090300-order-***-4964b7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -10726,7 +10726,7 @@ flujo sin guardar nombres completos ni credenciales.
   - Refresco sede cambio opciones: no registrado
   - Refresco sede elapsed: no registrado
 - Evidencia:
-  - Screenshot principal: screenshots\17-08-2026\etapas-075321-order-***-6e005a.png
+  - Screenshot principal: screenshots\2026-08\17-08-2026\etapas-075321-order-***-6e005a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario.
 
@@ -10762,14 +10762,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-08-2026\portal-1-105720-order-***-c9eed6.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
+  - Screenshot principal: screenshots\2026-08\17-08-2026\portal-1-105720-order-***-c9eed6.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.797s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
-  - Diagnostico screenshots: screenshots\17-08-2026\portal-1-105720-order-***-c9eed6.png
-  - Diagnostico dom_snapshots: screenshots\17-08-2026\diagnostics\portal-html-1-105720-order-***-9d9e50.html
-  - Screenshot adicional: screenshots\17-08-2026\cupo-105720-order-***-0945e2.png
+  - Diagnostico captcha_images: screenshots\2026-08\17-08-2026\captchas\captcha-105720-order-***-5af1fb.png
+  - Diagnostico screenshots: screenshots\2026-08\17-08-2026\portal-1-105720-order-***-c9eed6.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\17-08-2026\diagnostics\portal-html-1-105720-order-***-9d9e50.html
+  - Screenshot adicional: screenshots\2026-08\17-08-2026\cupo-105720-order-***-0945e2.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.219s).
 
@@ -10805,14 +10805,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\17-08-2026\portal-1-105756-order-***-5792d8.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
+  - Screenshot principal: screenshots\2026-08\17-08-2026\portal-1-105756-order-***-5792d8.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.187s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
-  - Diagnostico screenshots: screenshots\17-08-2026\portal-1-105756-order-***-5792d8.png
-  - Diagnostico dom_snapshots: screenshots\17-08-2026\diagnostics\portal-html-1-105756-order-***-834af0.html
-  - Screenshot adicional: screenshots\17-08-2026\cupo-105756-order-***-faf8a0.png
+  - Diagnostico captcha_images: screenshots\2026-08\17-08-2026\captchas\captcha-105756-order-***-e63fa5.png
+  - Diagnostico screenshots: screenshots\2026-08\17-08-2026\portal-1-105756-order-***-5792d8.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\17-08-2026\diagnostics\portal-html-1-105756-order-***-834af0.html
+  - Screenshot adicional: screenshots\2026-08\17-08-2026\cupo-105756-order-***-faf8a0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.531s).
 ## 2026-08-17 12:17:03 - order-*** - registered
@@ -10846,14 +10846,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\17-08-2026\portal-1-121626-order-***-fea7a9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\17-08-2026\captchas\captcha-121626-order-***-761d64.png
+  - Screenshot principal: screenshots\2026-08\17-08-2026\portal-1-121626-order-***-fea7a9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\17-08-2026\captchas\captcha-121626-order-***-761d64.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.0s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\17-08-2026\captchas\captcha-121626-order-***-761d64.png
-  - Diagnostico screenshots: screenshots\17-08-2026\portal-1-121626-order-***-fea7a9.png
-  - Diagnostico dom_snapshots: screenshots\17-08-2026\diagnostics\portal-html-1-121626-order-***-fef0c5.html
-  - Screenshot adicional: screenshots\17-08-2026\cupo-121626-order-***-5199c3.png
+  - Diagnostico captcha_images: screenshots\2026-08\17-08-2026\captchas\captcha-121626-order-***-761d64.png
+  - Diagnostico screenshots: screenshots\2026-08\17-08-2026\portal-1-121626-order-***-fea7a9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\17-08-2026\diagnostics\portal-html-1-121626-order-***-fef0c5.html
+  - Screenshot adicional: screenshots\2026-08\17-08-2026\cupo-121626-order-***-5199c3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.422s).
 
@@ -10889,16 +10889,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093613-order-***-89d3dc.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093613-order-***-250dc6.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093613-order-***-89d3dc.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093613-order-***-250dc6.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.719s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093613-order-***-250dc6.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093613-order-***-89d3dc.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093613-order-***-2f159a.html
-  - Screenshot adicional: screenshots\18-08-2026\portal-1-093613-order-***-2ef254.png
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093613-order-***-0a4ef6.png
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093613-order-***-a532d5.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093613-order-***-250dc6.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093613-order-***-89d3dc.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093613-order-***-2f159a.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\portal-1-093613-order-***-2ef254.png
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093613-order-***-0a4ef6.png
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093613-order-***-a532d5.png
 - Observacion tecnica:
   - El tramo mas lento fue llenar CAPTCHA -> click (2.266s).
 
@@ -10934,14 +10934,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093638-order-***-ff719e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093638-order-***-53dc3a.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093638-order-***-ff719e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093638-order-***-53dc3a.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.078s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093638-order-***-53dc3a.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093638-order-***-ff719e.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093638-order-***-44930f.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093638-order-***-4c32a0.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093638-order-***-53dc3a.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093638-order-***-ff719e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093638-order-***-44930f.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093638-order-***-4c32a0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.437s).
 
@@ -10977,14 +10977,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093715-order-***-863de1.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093715-order-***-78fb4c.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093715-order-***-863de1.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093715-order-***-78fb4c.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.266s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093715-order-***-78fb4c.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093715-order-***-863de1.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093715-order-***-eed8c6.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093715-order-***-cb63bb.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093715-order-***-78fb4c.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093715-order-***-863de1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093715-order-***-eed8c6.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093715-order-***-cb63bb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.735s).
 
@@ -11020,14 +11020,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 13.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093751-order-***-5d1421.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093751-order-***-cfcf7f.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093751-order-***-5d1421.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093751-order-***-cfcf7f.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.313s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093751-order-***-cfcf7f.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093751-order-***-5d1421.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093751-order-***-765243.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093751-order-***-6a7305.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093751-order-***-cfcf7f.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093751-order-***-5d1421.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093751-order-***-765243.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093751-order-***-6a7305.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.766s).
 
@@ -11063,14 +11063,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093836-order-***-26a3bb.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093836-order-***-b758a6.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093836-order-***-26a3bb.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093836-order-***-b758a6.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.016s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093836-order-***-b758a6.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093836-order-***-26a3bb.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093836-order-***-d26538.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093836-order-***-087c6a.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093836-order-***-b758a6.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093836-order-***-26a3bb.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093836-order-***-d26538.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093836-order-***-087c6a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.625s).
 
@@ -11106,14 +11106,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 12.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093907-order-***-c5e375.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093907-order-***-58c813.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093907-order-***-c5e375.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093907-order-***-58c813.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.656s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093907-order-***-58c813.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093907-order-***-c5e375.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093907-order-***-f88d37.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093907-order-***-da8ee7.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093907-order-***-58c813.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093907-order-***-c5e375.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093907-order-***-f88d37.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093907-order-***-da8ee7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.921s).
 ## 2026-08-18 09:39:52 - order-*** - unavailable
@@ -11148,14 +11148,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-093932-order-***-f206b9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-093932-order-***-b29923.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-093932-order-***-f206b9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-093932-order-***-b29923.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.719s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-093932-order-***-b29923.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-093932-order-***-f206b9.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-093932-order-***-21bef9.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-093932-order-***-7e4759.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-093932-order-***-b29923.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-093932-order-***-f206b9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-093932-order-***-21bef9.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-093932-order-***-7e4759.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.328s).
 
@@ -11191,14 +11191,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-094820-order-***-fc2798.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-094820-order-***-58c59b.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-094820-order-***-fc2798.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-094820-order-***-58c59b.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.25s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094820-order-***-58c59b.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-094820-order-***-fc2798.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-094820-order-***-0b84ff.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-094820-order-***-cd8a6d.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094820-order-***-58c59b.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-094820-order-***-fc2798.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-094820-order-***-0b84ff.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-094820-order-***-cd8a6d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.672s).
 
@@ -11234,14 +11234,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-094903-order-***-66fa29.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-094903-order-***-728935.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-094903-order-***-66fa29.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-094903-order-***-728935.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.219s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-094903-order-***-728935.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-094903-order-***-66fa29.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-094903-order-***-b33693.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-094903-order-***-88649e.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-094903-order-***-728935.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-094903-order-***-66fa29.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-094903-order-***-b33693.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-094903-order-***-88649e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.641s).
 
@@ -11277,14 +11277,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-095958-order-***-a8d7eb.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-095958-order-***-76ac46.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-095958-order-***-a8d7eb.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-095958-order-***-76ac46.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.86s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-095958-order-***-76ac46.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-095958-order-***-a8d7eb.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-095958-order-***-f2673d.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-095958-order-***-1738aa.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-095958-order-***-76ac46.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-095958-order-***-a8d7eb.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-095958-order-***-f2673d.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-095958-order-***-1738aa.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.313s).
 
@@ -11319,14 +11319,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.36]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-100125-order-***-ed7422.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-100125-order-***-08bef3.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-100125-order-***-ed7422.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-100125-order-***-08bef3.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.359s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-100125-order-***-08bef3.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-100125-order-***-ed7422.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-100125-order-***-168048.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-100125-order-***-2b06ea.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-100125-order-***-08bef3.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-100125-order-***-ed7422.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-100125-order-***-168048.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-100125-order-***-2b06ea.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.859s).
 
@@ -11362,14 +11362,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 3783.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-110500-order-***-5a3c0d.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-110500-order-***-27a022.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-110500-order-***-5a3c0d.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-110500-order-***-27a022.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.985s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-110500-order-***-27a022.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-110500-order-***-5a3c0d.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-110500-order-***-2fc08f.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-110500-order-***-a9fd12.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-110500-order-***-27a022.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-110500-order-***-5a3c0d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-110500-order-***-2fc08f.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-110500-order-***-a9fd12.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.391s).
 
@@ -11404,14 +11404,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-142535-order-***-15f804.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-142535-order-***-9baff3.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-142535-order-***-15f804.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-142535-order-***-9baff3.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.703s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-142535-order-***-9baff3.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-142535-order-***-15f804.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-142535-order-***-4877e3.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-142535-order-***-8bfd34.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-142535-order-***-9baff3.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-142535-order-***-15f804.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-142535-order-***-4877e3.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-142535-order-***-8bfd34.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.187s).
 
@@ -11446,14 +11446,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-161505-order-***-e49b98.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-161505-order-***-21cf50.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-161505-order-***-e49b98.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-161505-order-***-21cf50.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.109s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-161505-order-***-21cf50.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-161505-order-***-e49b98.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-161505-order-***-fc1a07.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-161505-order-***-06f16b.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-161505-order-***-21cf50.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-161505-order-***-e49b98.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-161505-order-***-fc1a07.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-161505-order-***-06f16b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.610s).
 ## 2026-08-18 16:23:22 - order-*** - registered
@@ -11488,14 +11488,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 466.000s
 - Evidencia:
-  - Screenshot principal: screenshots\18-08-2026\portal-1-162317-order-***-946fa2.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\18-08-2026\captchas\captcha-162317-order-***-6858e1.png
+  - Screenshot principal: screenshots\2026-08\18-08-2026\portal-1-162317-order-***-946fa2.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\18-08-2026\captchas\captcha-162317-order-***-6858e1.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.813s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\18-08-2026\captchas\captcha-162317-order-***-6858e1.png
-  - Diagnostico screenshots: screenshots\18-08-2026\portal-1-162317-order-***-946fa2.png
-  - Diagnostico dom_snapshots: screenshots\18-08-2026\diagnostics\portal-html-1-162317-order-***-ab6359.html
-  - Screenshot adicional: screenshots\18-08-2026\cupo-162317-order-***-190e52.png
+  - Diagnostico captcha_images: screenshots\2026-08\18-08-2026\captchas\captcha-162317-order-***-6858e1.png
+  - Diagnostico screenshots: screenshots\2026-08\18-08-2026\portal-1-162317-order-***-946fa2.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\18-08-2026\diagnostics\portal-html-1-162317-order-***-ab6359.html
+  - Screenshot adicional: screenshots\2026-08\18-08-2026\cupo-162317-order-***-190e52.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.297s).
 
@@ -11531,14 +11531,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-***-47f48df1a49dde1a -> order-***-1be4d862e11fa4c6 en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\portal-1-080353-order-***-bef83e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\19-08-2026\captchas\captcha-080353-order-***-1adccb.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\portal-1-080353-order-***-bef83e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\19-08-2026\captchas\captcha-080353-order-***-1adccb.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.922s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-080353-order-***-1adccb.png
-  - Diagnostico screenshots: screenshots\19-08-2026\portal-1-080353-order-***-bef83e.png
-  - Diagnostico dom_snapshots: screenshots\19-08-2026\diagnostics\portal-html-1-080353-order-***-b6981f.html
-  - Screenshot adicional: screenshots\19-08-2026\cupo-080353-order-***-9d9073.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-080353-order-***-1adccb.png
+  - Diagnostico screenshots: screenshots\2026-08\19-08-2026\portal-1-080353-order-***-bef83e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\19-08-2026\diagnostics\portal-html-1-080353-order-***-b6981f.html
+  - Screenshot adicional: screenshots\2026-08\19-08-2026\cupo-080353-order-***-9d9073.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.421s).
 
@@ -11574,14 +11574,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-***-1be4d862e11fa4c6 -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\portal-1-080440-order-***-175a36.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\19-08-2026\captchas\captcha-080440-order-***-e498d8.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\portal-1-080440-order-***-175a36.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\19-08-2026\captchas\captcha-080440-order-***-e498d8.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.735s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-080440-order-***-e498d8.png
-  - Diagnostico screenshots: screenshots\19-08-2026\portal-1-080440-order-***-175a36.png
-  - Diagnostico dom_snapshots: screenshots\19-08-2026\diagnostics\portal-html-1-080440-order-***-cf62be.html
-  - Screenshot adicional: screenshots\19-08-2026\cupo-080440-order-***-222b80.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-080440-order-***-e498d8.png
+  - Diagnostico screenshots: screenshots\2026-08\19-08-2026\portal-1-080440-order-***-175a36.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\19-08-2026\diagnostics\portal-html-1-080440-order-***-cf62be.html
+  - Screenshot adicional: screenshots\2026-08\19-08-2026\cupo-080440-order-***-222b80.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.203s).
 
@@ -11617,14 +11617,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\portal-1-080442-order-***-0d6c25.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\19-08-2026\captchas\captcha-080442-order-***-7fb118.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\portal-1-080442-order-***-0d6c25.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\19-08-2026\captchas\captcha-080442-order-***-7fb118.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.672s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-080442-order-***-7fb118.png
-  - Diagnostico screenshots: screenshots\19-08-2026\portal-1-080442-order-***-0d6c25.png
-  - Diagnostico dom_snapshots: screenshots\19-08-2026\diagnostics\portal-html-1-080442-order-***-10a2a1.html
-  - Screenshot adicional: screenshots\19-08-2026\cupo-080442-order-***-7df681.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-080442-order-***-7fb118.png
+  - Diagnostico screenshots: screenshots\2026-08\19-08-2026\portal-1-080442-order-***-0d6c25.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\19-08-2026\diagnostics\portal-html-1-080442-order-***-10a2a1.html
+  - Screenshot adicional: screenshots\2026-08\19-08-2026\cupo-080442-order-***-7df681.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.172s).
 
@@ -11660,14 +11660,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-***-47f48df1a49dde1a en 28.000s
 - Evidencia:
-  - Screenshot principal: screenshots\19-08-2026\portal-1-080516-order-***-646dad.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\19-08-2026\captchas\captcha-080516-order-***-4f056d.png
+  - Screenshot principal: screenshots\2026-08\19-08-2026\portal-1-080516-order-***-646dad.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\19-08-2026\captchas\captcha-080516-order-***-4f056d.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.86s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\19-08-2026\captchas\captcha-080516-order-***-4f056d.png
-  - Diagnostico screenshots: screenshots\19-08-2026\portal-1-080516-order-***-646dad.png
-  - Diagnostico dom_snapshots: screenshots\19-08-2026\diagnostics\portal-html-1-080516-order-***-62eb55.html
-  - Screenshot adicional: screenshots\19-08-2026\cupo-080516-order-***-c1144c.png
+  - Diagnostico captcha_images: screenshots\2026-08\19-08-2026\captchas\captcha-080516-order-***-4f056d.png
+  - Diagnostico screenshots: screenshots\2026-08\19-08-2026\portal-1-080516-order-***-646dad.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\19-08-2026\diagnostics\portal-html-1-080516-order-***-62eb55.html
+  - Screenshot adicional: screenshots\2026-08\19-08-2026\cupo-080516-order-***-c1144c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.407s).
 
@@ -11703,14 +11703,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091233-order-***-a296bc.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091233-order-***-cb8b68.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091233-order-***-a296bc.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091233-order-***-cb8b68.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.656s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091233-order-***-cb8b68.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091233-order-***-a296bc.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091233-order-***-f237db.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091233-order-***-87caaa.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091233-order-***-cb8b68.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091233-order-***-a296bc.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091233-order-***-f237db.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091233-order-***-87caaa.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.313s).
 
@@ -11745,14 +11745,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091259-order-***-1143e5.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091259-order-***-ec5974.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091259-order-***-1143e5.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091259-order-***-ec5974.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.563s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091259-order-***-ec5974.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091259-order-***-1143e5.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091259-order-***-c1a6fd.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091259-order-***-1de429.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091259-order-***-ec5974.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091259-order-***-1143e5.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091259-order-***-c1a6fd.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091259-order-***-1de429.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.063s).
 
@@ -11788,14 +11788,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091309-order-***-201769.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091309-order-***-42b695.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091309-order-***-201769.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091309-order-***-42b695.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.156s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091309-order-***-42b695.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091309-order-***-201769.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091309-order-***-895904.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091309-order-***-8f38ad.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091309-order-***-42b695.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091309-order-***-201769.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091309-order-***-895904.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091309-order-***-8f38ad.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.547s).
 
@@ -11831,14 +11831,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091312-order-***-bfd9a9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091312-order-***-a53def.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091312-order-***-bfd9a9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091312-order-***-a53def.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.406s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091312-order-***-a53def.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091312-order-***-bfd9a9.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091312-order-***-939f33.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091312-order-***-d8cff7.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091312-order-***-a53def.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091312-order-***-bfd9a9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091312-order-***-939f33.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091312-order-***-d8cff7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.860s).
 
@@ -11874,16 +11874,16 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091316-order-***-bbf413.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091316-order-***-253879.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091316-order-***-bbf413.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091316-order-***-253879.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.641s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091316-order-***-253879.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091316-order-***-bbf413.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091316-order-***-2ca25e.html
-  - Screenshot adicional: screenshots\20-08-2026\portal-1-091316-order-***-0e1e0f.png
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091316-order-***-1e0f2a.png
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091316-order-***-e1df25.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091316-order-***-253879.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091316-order-***-bbf413.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091316-order-***-2ca25e.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\portal-1-091316-order-***-0e1e0f.png
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091316-order-***-1e0f2a.png
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091316-order-***-e1df25.png
 - Observacion tecnica:
   - El tramo mas lento fue llenar CAPTCHA -> click (1.312s).
 
@@ -11919,14 +11919,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-091404-order-***-5a05fe.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-091404-order-***-2cbac7.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-091404-order-***-5a05fe.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-091404-order-***-2cbac7.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.953s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-091404-order-***-2cbac7.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-091404-order-***-5a05fe.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-091404-order-***-d77ad6.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-091404-order-***-f7e88f.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-091404-order-***-2cbac7.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-091404-order-***-5a05fe.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-091404-order-***-d77ad6.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-091404-order-***-f7e88f.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.359s).
 
@@ -11962,14 +11962,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-102251-order-***-cd2c14.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-102251-order-***-33862f.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-102251-order-***-cd2c14.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-102251-order-***-33862f.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.469s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-102251-order-***-33862f.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-102251-order-***-cd2c14.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-102251-order-***-80e650.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-102251-order-***-653fe1.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-102251-order-***-33862f.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-102251-order-***-cd2c14.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-102251-order-***-80e650.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-102251-order-***-653fe1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.969s).
 ## 2026-08-20 10:32:53 - order-*** - registered
@@ -12004,14 +12004,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-103247-order-***-39d24d.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-103247-order-***-72bcae.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-103247-order-***-39d24d.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-103247-order-***-72bcae.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.75s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103247-order-***-72bcae.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-103247-order-***-39d24d.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-103247-order-***-fb5954.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-103247-order-***-27e618.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103247-order-***-72bcae.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-103247-order-***-39d24d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-103247-order-***-fb5954.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-103247-order-***-27e618.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.235s).
 
@@ -12047,14 +12047,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-103251-order-***-6fabc1.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-103251-order-***-69a426.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-103251-order-***-6fabc1.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-103251-order-***-69a426.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.469s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-103251-order-***-69a426.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-103251-order-***-6fabc1.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-103251-order-***-ad2450.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-103251-order-***-ab5705.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-103251-order-***-69a426.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-103251-order-***-6fabc1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-103251-order-***-ad2450.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-103251-order-***-ab5705.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.969s).
 ## 2026-08-20 14:07:17 - order-*** - registered
@@ -12088,14 +12088,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.329]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\20-08-2026\portal-1-140656-order-***-2de1c1.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
+  - Screenshot principal: screenshots\2026-08\20-08-2026\portal-1-140656-order-***-2de1c1.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.797s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
-  - Diagnostico screenshots: screenshots\20-08-2026\portal-1-140656-order-***-2de1c1.png
-  - Diagnostico dom_snapshots: screenshots\20-08-2026\diagnostics\portal-html-1-140656-order-***-4268ed.html
-  - Screenshot adicional: screenshots\20-08-2026\cupo-140656-order-***-71fdde.png
+  - Diagnostico captcha_images: screenshots\2026-08\20-08-2026\captchas\captcha-140656-order-***-5ef062.png
+  - Diagnostico screenshots: screenshots\2026-08\20-08-2026\portal-1-140656-order-***-2de1c1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\20-08-2026\diagnostics\portal-html-1-140656-order-***-4268ed.html
+  - Screenshot adicional: screenshots\2026-08\20-08-2026\cupo-140656-order-***-71fdde.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.281s).
 ## 2026-08-21 09:08:10 - order-*** - registered
@@ -12130,14 +12130,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-090803-order-***-bba66e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-090803-order-***-6c1f94.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-090803-order-***-bba66e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-090803-order-***-6c1f94.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.531s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-090803-order-***-6c1f94.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-090803-order-***-bba66e.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-090803-order-***-cc5042.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-090803-order-***-cc3dcc.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-090803-order-***-6c1f94.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-090803-order-***-bba66e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-090803-order-***-cc5042.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-090803-order-***-cc3dcc.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.016s).
 
@@ -12173,14 +12173,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-115749-order-***-5557e8.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-115749-order-***-f11df5.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-115749-order-***-5557e8.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-115749-order-***-f11df5.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.297s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-115749-order-***-f11df5.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-115749-order-***-5557e8.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-115749-order-***-611022.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-115749-order-***-c7c9f4.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-115749-order-***-f11df5.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-115749-order-***-5557e8.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-115749-order-***-611022.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-115749-order-***-c7c9f4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.938s).
 
@@ -12216,14 +12216,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-115820-order-***-255ed5.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-115820-order-***-1b1dc3.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-115820-order-***-255ed5.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-115820-order-***-1b1dc3.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.515s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-115820-order-***-1b1dc3.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-115820-order-***-255ed5.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-115820-order-***-fb4da9.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-115820-order-***-8fa55b.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-115820-order-***-1b1dc3.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-115820-order-***-255ed5.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-115820-order-***-fb4da9.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-115820-order-***-8fa55b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.172s).
 
@@ -12258,14 +12258,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-115845-order-***-f84cf1.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-115845-order-***-7eac43.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-115845-order-***-f84cf1.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-115845-order-***-7eac43.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.297s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-115845-order-***-7eac43.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-115845-order-***-f84cf1.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-115845-order-***-d63e36.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-115845-order-***-bb82f3.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-115845-order-***-7eac43.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-115845-order-***-f84cf1.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-115845-order-***-d63e36.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-115845-order-***-bb82f3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.781s).
 
@@ -12301,14 +12301,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-115859-order-***-d2f3a7.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-115859-order-***-1ddd54.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-115859-order-***-d2f3a7.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-115859-order-***-1ddd54.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.125s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-115859-order-***-1ddd54.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-115859-order-***-d2f3a7.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-115859-order-***-169b2d.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-115859-order-***-cbe9ce.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-115859-order-***-1ddd54.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-115859-order-***-d2f3a7.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-115859-order-***-169b2d.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-115859-order-***-cbe9ce.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.609s).
 
@@ -12343,14 +12343,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-123915-order-***-e5f0dc.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-123915-order-***-f9410a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-123915-order-***-e5f0dc.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-123915-order-***-f9410a.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.891s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-123915-order-***-f9410a.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-123915-order-***-e5f0dc.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-123915-order-***-a08ea9.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-123915-order-***-af472a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-123915-order-***-f9410a.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-123915-order-***-e5f0dc.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-123915-order-***-a08ea9.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-123915-order-***-af472a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.407s).
 
@@ -12386,14 +12386,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-131906-order-***-36a69e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-131906-order-***-fecd9a.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-131906-order-***-36a69e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-131906-order-***-fecd9a.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.656s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-131906-order-***-fecd9a.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-131906-order-***-36a69e.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-131906-order-***-2edb3e.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-131906-order-***-825c2a.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-131906-order-***-fecd9a.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-131906-order-***-36a69e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-131906-order-***-2edb3e.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-131906-order-***-825c2a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.094s).
 
@@ -12428,14 +12428,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\21-08-2026\portal-1-140420-order-***-fb56fe.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\21-08-2026\captchas\captcha-140420-order-***-2e65c6.png
+  - Screenshot principal: screenshots\2026-08\21-08-2026\portal-1-140420-order-***-fb56fe.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\21-08-2026\captchas\captcha-140420-order-***-2e65c6.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.906s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\21-08-2026\captchas\captcha-140420-order-***-2e65c6.png
-  - Diagnostico screenshots: screenshots\21-08-2026\portal-1-140420-order-***-fb56fe.png
-  - Diagnostico dom_snapshots: screenshots\21-08-2026\diagnostics\portal-html-1-140420-order-***-3c47f7.html
-  - Screenshot adicional: screenshots\21-08-2026\cupo-140420-order-***-69dd44.png
+  - Diagnostico captcha_images: screenshots\2026-08\21-08-2026\captchas\captcha-140420-order-***-2e65c6.png
+  - Diagnostico screenshots: screenshots\2026-08\21-08-2026\portal-1-140420-order-***-fb56fe.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\21-08-2026\diagnostics\portal-html-1-140420-order-***-3c47f7.html
+  - Screenshot adicional: screenshots\2026-08\21-08-2026\cupo-140420-order-***-69dd44.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.266s).
 
@@ -12471,14 +12471,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-083917-order-***-7b612b.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-083917-order-***-0c4dc2.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-083917-order-***-7b612b.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-083917-order-***-0c4dc2.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.297s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-083917-order-***-0c4dc2.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-083917-order-***-7b612b.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-083917-order-***-cdeea6.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-083917-order-***-696708.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-083917-order-***-0c4dc2.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-083917-order-***-7b612b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-083917-order-***-cdeea6.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-083917-order-***-696708.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.687s).
 
@@ -12514,14 +12514,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-083935-order-***-4db206.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-083935-order-***-e43ed5.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-083935-order-***-4db206.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-083935-order-***-e43ed5.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.766s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-083935-order-***-e43ed5.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-083935-order-***-4db206.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-083935-order-***-dbd4bd.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-083935-order-***-b026f5.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-083935-order-***-e43ed5.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-083935-order-***-4db206.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-083935-order-***-dbd4bd.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-083935-order-***-b026f5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.375s).
 
@@ -12557,14 +12557,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-084148-order-***-dd92d0.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-084148-order-***-063053.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-084148-order-***-dd92d0.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-084148-order-***-063053.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.313s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084148-order-***-063053.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-084148-order-***-dd92d0.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-084148-order-***-39c9e9.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-084148-order-***-f8e1c9.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084148-order-***-063053.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-084148-order-***-dd92d0.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-084148-order-***-39c9e9.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-084148-order-***-f8e1c9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.766s).
 
@@ -12600,14 +12600,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-084212-order-***-8f2929.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-084212-order-***-c349f6.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-084212-order-***-8f2929.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-084212-order-***-c349f6.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.5s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084212-order-***-c349f6.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-084212-order-***-8f2929.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-084212-order-***-e6b743.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-084212-order-***-045ddd.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084212-order-***-c349f6.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-084212-order-***-8f2929.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-084212-order-***-e6b743.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-084212-order-***-045ddd.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.860s).
 
@@ -12643,14 +12643,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-084215-order-***-e9f8c3.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-084215-order-***-8159af.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-084215-order-***-e9f8c3.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-084215-order-***-8159af.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.766s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-084215-order-***-8159af.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-084215-order-***-e9f8c3.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-084215-order-***-b6d110.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-084215-order-***-b09b9a.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-084215-order-***-8159af.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-084215-order-***-e9f8c3.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-084215-order-***-b6d110.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-084215-order-***-b09b9a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.219s).
 
@@ -12685,14 +12685,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.343]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-092907-order-***-0e525c.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-092907-order-***-3f2921.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-092907-order-***-0e525c.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-092907-order-***-3f2921.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.968s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-092907-order-***-3f2921.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-092907-order-***-0e525c.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-092907-order-***-43b38e.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-092907-order-***-2e82e0.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-092907-order-***-3f2921.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-092907-order-***-0e525c.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-092907-order-***-43b38e.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-092907-order-***-2e82e0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.641s).
 
@@ -12728,14 +12728,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-101357-order-***-42a7e6.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-101357-order-***-0bd017.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-101357-order-***-42a7e6.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-101357-order-***-0bd017.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.282s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-101357-order-***-0bd017.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-101357-order-***-42a7e6.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-101357-order-***-9c90ed.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-101357-order-***-92e6e9.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-101357-order-***-0bd017.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-101357-order-***-42a7e6.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-101357-order-***-9c90ed.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-101357-order-***-92e6e9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.782s).
 
@@ -12771,14 +12771,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-101423-order-***-ca9133.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-101423-order-***-d4c0f4.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-101423-order-***-ca9133.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-101423-order-***-d4c0f4.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.125s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-101423-order-***-d4c0f4.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-101423-order-***-ca9133.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-101423-order-***-849660.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-101423-order-***-a521a4.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-101423-order-***-d4c0f4.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-101423-order-***-ca9133.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-101423-order-***-849660.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-101423-order-***-a521a4.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.656s).
 
@@ -12813,14 +12813,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\22-08-2026\portal-1-104854-order-***-55e1ea.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\22-08-2026\captchas\captcha-104854-order-***-c45387.png
+  - Screenshot principal: screenshots\2026-08\22-08-2026\portal-1-104854-order-***-55e1ea.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\22-08-2026\captchas\captcha-104854-order-***-c45387.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.671s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\22-08-2026\captchas\captcha-104854-order-***-c45387.png
-  - Diagnostico screenshots: screenshots\22-08-2026\portal-1-104854-order-***-55e1ea.png
-  - Diagnostico dom_snapshots: screenshots\22-08-2026\diagnostics\portal-html-1-104854-order-***-26ce4a.html
-  - Screenshot adicional: screenshots\22-08-2026\cupo-104854-order-***-8583ac.png
+  - Diagnostico captcha_images: screenshots\2026-08\22-08-2026\captchas\captcha-104854-order-***-c45387.png
+  - Diagnostico screenshots: screenshots\2026-08\22-08-2026\portal-1-104854-order-***-55e1ea.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\22-08-2026\diagnostics\portal-html-1-104854-order-***-26ce4a.html
+  - Screenshot adicional: screenshots\2026-08\22-08-2026\cupo-104854-order-***-8583ac.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.156s).
 ## 2026-08-24 08:58:54 - order-*** - registered
@@ -12855,14 +12855,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-085806-order-***-e9c298.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-085806-order-***-5a6d90.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-085806-order-***-e9c298.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-085806-order-***-5a6d90.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.343s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-085806-order-***-5a6d90.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-085806-order-***-e9c298.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-085806-order-***-8b37ff.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-085806-order-***-4afec6.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-085806-order-***-5a6d90.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-085806-order-***-e9c298.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-085806-order-***-8b37ff.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-085806-order-***-4afec6.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.844s).
 
@@ -12898,14 +12898,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-085851-order-***-49ba68.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-085851-order-***-7b6c1e.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-085851-order-***-49ba68.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-085851-order-***-7b6c1e.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.438s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-085851-order-***-7b6c1e.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-085851-order-***-49ba68.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-085851-order-***-1e4e6e.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-085851-order-***-d78cd0.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-085851-order-***-7b6c1e.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-085851-order-***-49ba68.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-085851-order-***-1e4e6e.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-085851-order-***-d78cd0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.094s).
 
@@ -12941,14 +12941,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 11.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-085922-order-***-7c9790.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-085922-order-***-819f5b.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-085922-order-***-7c9790.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-085922-order-***-819f5b.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.985s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-085922-order-***-819f5b.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-085922-order-***-7c9790.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-085922-order-***-50b3d4.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-085922-order-***-211679.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-085922-order-***-819f5b.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-085922-order-***-7c9790.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-085922-order-***-50b3d4.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-085922-order-***-211679.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.485s).
 
@@ -12984,14 +12984,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-085956-order-***-c36dbf.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-085956-order-***-9e434d.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-085956-order-***-c36dbf.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-085956-order-***-9e434d.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.75s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-085956-order-***-9e434d.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-085956-order-***-c36dbf.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-085956-order-***-45a502.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-085956-order-***-0fb6a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-085956-order-***-9e434d.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-085956-order-***-c36dbf.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-085956-order-***-45a502.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-085956-order-***-0fb6a1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.438s).
 
@@ -13027,14 +13027,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-095801-order-***-f208e2.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-095801-order-***-b3bcb5.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-095801-order-***-f208e2.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-095801-order-***-b3bcb5.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.14s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-095801-order-***-b3bcb5.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-095801-order-***-f208e2.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-095801-order-***-8bcf82.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-095801-order-***-c4ece0.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-095801-order-***-b3bcb5.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-095801-order-***-f208e2.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-095801-order-***-8bcf82.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-095801-order-***-c4ece0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.625s).
 
@@ -13070,14 +13070,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-095845-order-***-a45822.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-095845-order-***-ef8db8.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-095845-order-***-a45822.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-095845-order-***-ef8db8.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.109s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-095845-order-***-ef8db8.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-095845-order-***-a45822.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-095845-order-***-3ef1cd.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-095845-order-***-820f69.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-095845-order-***-ef8db8.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-095845-order-***-a45822.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-095845-order-***-3ef1cd.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-095845-order-***-820f69.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.766s).
 
@@ -13113,14 +13113,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 12.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-095916-order-***-04b154.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-095916-order-***-bfb755.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-095916-order-***-04b154.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-095916-order-***-bfb755.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.078s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-095916-order-***-bfb755.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-095916-order-***-04b154.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-095916-order-***-078af8.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-095916-order-***-95421c.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-095916-order-***-bfb755.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-095916-order-***-04b154.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-095916-order-***-078af8.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-095916-order-***-95421c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.500s).
 
@@ -13156,14 +13156,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-095928-order-***-b110f0.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-095928-order-***-34b23b.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-095928-order-***-b110f0.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-095928-order-***-34b23b.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.86s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-095928-order-***-34b23b.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-095928-order-***-b110f0.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-095928-order-***-6acdc6.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-095928-order-***-9b6a09.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-095928-order-***-34b23b.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-095928-order-***-b110f0.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-095928-order-***-6acdc6.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-095928-order-***-9b6a09.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.484s).
 
@@ -13199,14 +13199,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115635-order-***-a090bb.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115635-order-***-d63a60.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115635-order-***-a090bb.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115635-order-***-d63a60.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.078s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115635-order-***-d63a60.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115635-order-***-a090bb.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115635-order-***-2ecb52.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115635-order-***-1d86eb.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115635-order-***-d63a60.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115635-order-***-a090bb.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115635-order-***-2ecb52.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115635-order-***-1d86eb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.750s).
 
@@ -13241,14 +13241,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115724-order-***-729648.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115724-order-***-532519.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115724-order-***-729648.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115724-order-***-532519.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.468s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115724-order-***-532519.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115724-order-***-729648.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115724-order-***-14e2e1.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115724-order-***-800d74.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115724-order-***-532519.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115724-order-***-729648.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115724-order-***-14e2e1.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115724-order-***-800d74.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.984s).
 
@@ -13284,14 +13284,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115804-order-***-f02760.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115804-order-***-58c208.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115804-order-***-f02760.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115804-order-***-58c208.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.719s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115804-order-***-58c208.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115804-order-***-f02760.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115804-order-***-ef9b99.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115804-order-***-d3f4d3.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115804-order-***-58c208.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115804-order-***-f02760.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115804-order-***-ef9b99.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115804-order-***-d3f4d3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.203s).
 
@@ -13327,14 +13327,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115806-order-***-61bb6e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115806-order-***-9cebe9.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115806-order-***-61bb6e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115806-order-***-9cebe9.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.5s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115806-order-***-9cebe9.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115806-order-***-61bb6e.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115806-order-***-c5692b.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115806-order-***-00fa1c.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115806-order-***-9cebe9.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115806-order-***-61bb6e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115806-order-***-c5692b.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115806-order-***-00fa1c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.969s).
 
@@ -13370,14 +13370,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115810-order-***-bc9ac4.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115810-order-***-7ec167.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115810-order-***-bc9ac4.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115810-order-***-7ec167.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.063s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115810-order-***-7ec167.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115810-order-***-bc9ac4.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115810-order-***-7d9047.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115810-order-***-eb6700.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115810-order-***-7ec167.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115810-order-***-bc9ac4.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115810-order-***-7d9047.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115810-order-***-eb6700.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.687s).
 
@@ -13413,14 +13413,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 30.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115858-order-***-d68cca.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115858-order-***-4d1f83.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115858-order-***-d68cca.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115858-order-***-4d1f83.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.329s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115858-order-***-4d1f83.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115858-order-***-d68cca.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115858-order-***-7e55a4.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115858-order-***-23be00.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115858-order-***-4d1f83.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115858-order-***-d68cca.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115858-order-***-7e55a4.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115858-order-***-23be00.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.828s).
 
@@ -13456,14 +13456,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115902-order-***-d4cc4b.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115902-order-***-9bf354.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115902-order-***-d4cc4b.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115902-order-***-9bf354.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.188s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115902-order-***-9bf354.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115902-order-***-d4cc4b.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115902-order-***-74d2b3.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115902-order-***-146872.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115902-order-***-9bf354.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115902-order-***-d4cc4b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115902-order-***-74d2b3.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115902-order-***-146872.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.593s).
 
@@ -13499,14 +13499,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115904-order-***-85ae81.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115904-order-***-c979ec.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115904-order-***-85ae81.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115904-order-***-c979ec.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.812s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115904-order-***-c979ec.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115904-order-***-85ae81.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115904-order-***-b38e80.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115904-order-***-8b73a1.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115904-order-***-c979ec.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115904-order-***-85ae81.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115904-order-***-b38e80.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115904-order-***-8b73a1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.266s).
 
@@ -13542,14 +13542,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-115908-order-***-e99850.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-115908-order-***-f97ed2.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-115908-order-***-e99850.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-115908-order-***-f97ed2.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.156s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-115908-order-***-f97ed2.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-115908-order-***-e99850.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-115908-order-***-9e4b23.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-115908-order-***-6ac401.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-115908-order-***-f97ed2.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-115908-order-***-e99850.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-115908-order-***-9e4b23.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-115908-order-***-6ac401.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.859s).
 
@@ -13585,14 +13585,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-120047-order-***-5ec5e6.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-120047-order-***-9464fb.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-120047-order-***-5ec5e6.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-120047-order-***-9464fb.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.922s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-120047-order-***-9464fb.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-120047-order-***-5ec5e6.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-120047-order-***-c0931c.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-120047-order-***-c642a0.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-120047-order-***-9464fb.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-120047-order-***-5ec5e6.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-120047-order-***-c0931c.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-120047-order-***-c642a0.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.437s).
 
@@ -13628,14 +13628,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-120111-order-***-b67151.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-120111-order-***-2247e4.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-120111-order-***-b67151.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-120111-order-***-2247e4.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.671s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-120111-order-***-2247e4.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-120111-order-***-b67151.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-120111-order-***-1830f1.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-120111-order-***-7804d5.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-120111-order-***-2247e4.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-120111-order-***-b67151.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-120111-order-***-1830f1.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-120111-order-***-7804d5.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.203s).
 
@@ -13671,14 +13671,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-120113-order-***-e38555.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-120113-order-***-77caaf.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-120113-order-***-e38555.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-120113-order-***-77caaf.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.25s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-120113-order-***-77caaf.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-120113-order-***-e38555.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-120113-order-***-fb9b64.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-120113-order-***-cf74bf.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-120113-order-***-77caaf.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-120113-order-***-e38555.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-120113-order-***-fb9b64.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-120113-order-***-cf74bf.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.890s).
 
@@ -13714,14 +13714,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-131752-order-***-7368c8.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-131752-order-***-8a5fe7.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-131752-order-***-7368c8.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-131752-order-***-8a5fe7.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.203s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-131752-order-***-8a5fe7.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-131752-order-***-7368c8.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-131752-order-***-8f1503.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-131752-order-***-ec8e6c.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-131752-order-***-8a5fe7.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-131752-order-***-7368c8.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-131752-order-***-8f1503.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-131752-order-***-ec8e6c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.719s).
 
@@ -13757,14 +13757,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-131806-order-***-d2abe9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-131806-order-***-a8f915.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-131806-order-***-d2abe9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-131806-order-***-a8f915.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.344s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-131806-order-***-a8f915.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-131806-order-***-d2abe9.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-131806-order-***-365aea.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-131806-order-***-8b4a94.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-131806-order-***-a8f915.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-131806-order-***-d2abe9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-131806-order-***-365aea.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-131806-order-***-8b4a94.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.969s).
 
@@ -13800,14 +13800,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-133028-order-***-3db841.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-133028-order-***-0d202a.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-133028-order-***-3db841.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-133028-order-***-0d202a.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.015s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-133028-order-***-0d202a.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-133028-order-***-3db841.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-133028-order-***-a950a0.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-133028-order-***-b40d6d.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-133028-order-***-0d202a.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-133028-order-***-3db841.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-133028-order-***-a950a0.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-133028-order-***-b40d6d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.531s).
 
@@ -13843,14 +13843,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-133035-order-***-bb92e7.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-133035-order-***-6d3783.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-133035-order-***-bb92e7.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-133035-order-***-6d3783.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.781s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-133035-order-***-6d3783.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-133035-order-***-bb92e7.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-133035-order-***-4277c8.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-133035-order-***-6f8feb.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-133035-order-***-6d3783.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-133035-order-***-bb92e7.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-133035-order-***-4277c8.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-133035-order-***-6f8feb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.297s).
 
@@ -13886,14 +13886,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-133037-order-***-f87f0d.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-133037-order-***-370ce9.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-133037-order-***-f87f0d.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-133037-order-***-370ce9.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.922s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-133037-order-***-370ce9.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-133037-order-***-f87f0d.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-133037-order-***-4e94be.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-133037-order-***-035ab9.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-133037-order-***-370ce9.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-133037-order-***-f87f0d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-133037-order-***-4e94be.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-133037-order-***-035ab9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.422s).
 
@@ -13929,14 +13929,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-133041-order-***-99a62c.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-133041-order-***-1a117b.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-133041-order-***-99a62c.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-133041-order-***-1a117b.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.062s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-133041-order-***-1a117b.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-133041-order-***-99a62c.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-133041-order-***-20fd3e.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-133041-order-***-4ddaf7.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-133041-order-***-1a117b.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-133041-order-***-99a62c.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-133041-order-***-20fd3e.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-133041-order-***-4ddaf7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.547s).
 
@@ -13971,14 +13971,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.343]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\24-08-2026\portal-1-152950-order-***-8cbab9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\24-08-2026\captchas\captcha-152950-order-***-d84a00.png
+  - Screenshot principal: screenshots\2026-08\24-08-2026\portal-1-152950-order-***-8cbab9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\24-08-2026\captchas\captcha-152950-order-***-d84a00.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.25s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\24-08-2026\captchas\captcha-152950-order-***-d84a00.png
-  - Diagnostico screenshots: screenshots\24-08-2026\portal-1-152950-order-***-8cbab9.png
-  - Diagnostico dom_snapshots: screenshots\24-08-2026\diagnostics\portal-html-1-152950-order-***-b73d25.html
-  - Screenshot adicional: screenshots\24-08-2026\cupo-152950-order-***-c7280e.png
+  - Diagnostico captcha_images: screenshots\2026-08\24-08-2026\captchas\captcha-152950-order-***-d84a00.png
+  - Diagnostico screenshots: screenshots\2026-08\24-08-2026\portal-1-152950-order-***-8cbab9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\24-08-2026\diagnostics\portal-html-1-152950-order-***-b73d25.html
+  - Screenshot adicional: screenshots\2026-08\24-08-2026\cupo-152950-order-***-c7280e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.718s).
 
@@ -14014,14 +14014,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-101204-order-***-e1d42d.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-101204-order-***-7b9fad.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-101204-order-***-e1d42d.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-101204-order-***-7b9fad.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.891s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-101204-order-***-7b9fad.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-101204-order-***-e1d42d.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-101204-order-***-a434d3.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-101204-order-***-3769f7.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-101204-order-***-7b9fad.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-101204-order-***-e1d42d.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-101204-order-***-a434d3.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-101204-order-***-3769f7.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.453s).
 
@@ -14056,14 +14056,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-101252-order-***-e726b2.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-101252-order-***-cedacd.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-101252-order-***-e726b2.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-101252-order-***-cedacd.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.672s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-101252-order-***-cedacd.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-101252-order-***-e726b2.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-101252-order-***-8eb430.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-101252-order-***-b0f692.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-101252-order-***-cedacd.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-101252-order-***-e726b2.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-101252-order-***-8eb430.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-101252-order-***-b0f692.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.219s).
 
@@ -14099,14 +14099,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 1.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-101459-order-***-7b3031.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-101459-order-***-d2c8f2.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-101459-order-***-7b3031.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-101459-order-***-d2c8f2.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.078s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-101459-order-***-d2c8f2.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-101459-order-***-7b3031.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-101459-order-***-2d4e9a.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-101459-order-***-e05894.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-101459-order-***-d2c8f2.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-101459-order-***-7b3031.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-101459-order-***-2d4e9a.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-101459-order-***-e05894.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.407s).
 
@@ -14142,14 +14142,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-101538-order-***-fc5a8f.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-101538-order-***-e56e1d.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-101538-order-***-fc5a8f.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-101538-order-***-e56e1d.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.813s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-101538-order-***-e56e1d.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-101538-order-***-fc5a8f.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-101538-order-***-f0915a.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-101538-order-***-92937c.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-101538-order-***-e56e1d.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-101538-order-***-fc5a8f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-101538-order-***-f0915a.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-101538-order-***-92937c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.359s).
 
@@ -14184,14 +14184,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-101703-order-***-655b89.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-101703-order-***-d50a1b.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-101703-order-***-655b89.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-101703-order-***-d50a1b.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.172s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-101703-order-***-d50a1b.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-101703-order-***-655b89.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-101703-order-***-4edba5.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-101703-order-***-8ef457.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-101703-order-***-d50a1b.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-101703-order-***-655b89.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-101703-order-***-4edba5.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-101703-order-***-8ef457.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.579s).
 
@@ -14226,14 +14226,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-112336-order-***-bc7611.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-112336-order-***-39fecd.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-112336-order-***-bc7611.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-112336-order-***-39fecd.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.781s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-112336-order-***-39fecd.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-112336-order-***-bc7611.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-112336-order-***-2dd15c.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-112336-order-***-dd1d82.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-112336-order-***-39fecd.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-112336-order-***-bc7611.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-112336-order-***-2dd15c.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-112336-order-***-dd1d82.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.140s).
 
@@ -14268,14 +14268,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.344]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-112405-order-***-0fa197.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-112405-order-***-d4b10b.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-112405-order-***-0fa197.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-112405-order-***-d4b10b.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.578s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-112405-order-***-d4b10b.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-112405-order-***-0fa197.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-112405-order-***-a16d43.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-112405-order-***-04078b.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-112405-order-***-d4b10b.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-112405-order-***-0fa197.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-112405-order-***-a16d43.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-112405-order-***-04078b.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.922s).
 
@@ -14310,14 +14310,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-115231-order-***-9ddf41.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-115231-order-***-3af919.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-115231-order-***-9ddf41.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-115231-order-***-3af919.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.25s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-115231-order-***-3af919.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-115231-order-***-9ddf41.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-115231-order-***-3d9bb1.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-115231-order-***-871dc3.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-115231-order-***-3af919.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-115231-order-***-9ddf41.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-115231-order-***-3d9bb1.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-115231-order-***-871dc3.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.875s).
 
@@ -14352,14 +14352,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-115301-order-***-0a026f.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-115301-order-***-bca399.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-115301-order-***-0a026f.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-115301-order-***-bca399.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.906s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-115301-order-***-bca399.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-115301-order-***-0a026f.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-115301-order-***-627273.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-115301-order-***-d46e3d.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-115301-order-***-bca399.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-115301-order-***-0a026f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-115301-order-***-627273.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-115301-order-***-d46e3d.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.344s).
 
@@ -14395,14 +14395,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-130704-order-***-b2c2e6.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-130704-order-***-57a304.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-130704-order-***-b2c2e6.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-130704-order-***-57a304.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=1.907s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-130704-order-***-57a304.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-130704-order-***-b2c2e6.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-130704-order-***-388a70.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-130704-order-***-e1602e.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-130704-order-***-57a304.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-130704-order-***-b2c2e6.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-130704-order-***-388a70.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-130704-order-***-e1602e.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.391s).
 
@@ -14438,14 +14438,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-130723-order-***-40f25f.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-130723-order-***-0731d6.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-130723-order-***-40f25f.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-130723-order-***-0731d6.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.5s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-130723-order-***-0731d6.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-130723-order-***-40f25f.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-130723-order-***-9c89eb.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-130723-order-***-0935bc.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-130723-order-***-0731d6.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-130723-order-***-40f25f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-130723-order-***-9c89eb.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-130723-order-***-0935bc.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.000s).
 
@@ -14481,14 +14481,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-130725-order-***-9201d9.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-130725-order-***-ff3feb.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-130725-order-***-9201d9.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-130725-order-***-ff3feb.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.329s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-130725-order-***-ff3feb.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-130725-order-***-9201d9.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-130725-order-***-9284e3.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-130725-order-***-a94951.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-130725-order-***-ff3feb.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-130725-order-***-9201d9.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-130725-order-***-9284e3.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-130725-order-***-a94951.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.610s).
 ## 2026-08-25 15:37:36 - order-*** - registered
@@ -14522,14 +14522,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Espera senal seleccion: [0.328]
   - Fallback seleccion: [None]
 - Evidencia:
-  - Screenshot principal: screenshots\25-08-2026\portal-1-153647-order-***-c4be5b.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\25-08-2026\captchas\captcha-153647-order-***-089dab.png
+  - Screenshot principal: screenshots\2026-08\25-08-2026\portal-1-153647-order-***-c4be5b.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\25-08-2026\captchas\captcha-153647-order-***-089dab.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.656s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\25-08-2026\captchas\captcha-153647-order-***-089dab.png
-  - Diagnostico screenshots: screenshots\25-08-2026\portal-1-153647-order-***-c4be5b.png
-  - Diagnostico dom_snapshots: screenshots\25-08-2026\diagnostics\portal-html-1-153647-order-***-813634.html
-  - Screenshot adicional: screenshots\25-08-2026\cupo-153647-order-***-2e44b8.png
+  - Diagnostico captcha_images: screenshots\2026-08\25-08-2026\captchas\captcha-153647-order-***-089dab.png
+  - Diagnostico screenshots: screenshots\2026-08\25-08-2026\portal-1-153647-order-***-c4be5b.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\25-08-2026\diagnostics\portal-html-1-153647-order-***-813634.html
+  - Screenshot adicional: screenshots\2026-08\25-08-2026\cupo-153647-order-***-2e44b8.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.125s).
 ## 2026-08-26 08:54:55 - order-*** - registered
@@ -14564,14 +14564,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-085442-order-***-ea3f3e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-085442-order-***-ad4b8a.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-085442-order-***-ea3f3e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-085442-order-***-ad4b8a.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.688s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-085442-order-***-ad4b8a.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-085442-order-***-ea3f3e.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-085442-order-***-9fe026.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-085442-order-***-2865fb.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-085442-order-***-ad4b8a.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-085442-order-***-ea3f3e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-085442-order-***-9fe026.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-085442-order-***-2865fb.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (2.156s).
 
@@ -14607,14 +14607,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-085452-order-***-563280.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-085452-order-***-e59ecc.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-085452-order-***-563280.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-085452-order-***-e59ecc.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.594s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-085452-order-***-e59ecc.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-085452-order-***-563280.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-085452-order-***-43d67d.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-085452-order-***-242068.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-085452-order-***-e59ecc.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-085452-order-***-563280.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-085452-order-***-43d67d.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-085452-order-***-242068.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.984s).
 
@@ -14650,14 +14650,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-085455-order-***-3af4bd.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-085455-order-***-731db3.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-085455-order-***-3af4bd.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-085455-order-***-731db3.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.109s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-085455-order-***-731db3.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-085455-order-***-3af4bd.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-085455-order-***-e6d376.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-085455-order-***-908d9c.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-085455-order-***-731db3.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-085455-order-***-3af4bd.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-085455-order-***-e6d376.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-085455-order-***-908d9c.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.531s).
 
@@ -14693,14 +14693,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-085458-order-***-6374ad.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-085458-order-***-9f29b4.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-085458-order-***-6374ad.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-085458-order-***-9f29b4.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.422s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-085458-order-***-9f29b4.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-085458-order-***-6374ad.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-085458-order-***-e9156e.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-085458-order-***-c8380a.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-085458-order-***-9f29b4.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-085458-order-***-6374ad.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-085458-order-***-e9156e.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-085458-order-***-c8380a.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.812s).
 
@@ -14736,14 +14736,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-085501-order-***-47ba25.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-085501-order-***-b8421e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-085501-order-***-47ba25.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-085501-order-***-b8421e.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.438s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-085501-order-***-b8421e.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-085501-order-***-47ba25.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-085501-order-***-1b3f30.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-085501-order-***-10d9f1.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-085501-order-***-b8421e.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-085501-order-***-47ba25.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-085501-order-***-1b3f30.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-085501-order-***-10d9f1.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.937s).
 ## 2026-08-26 11:41:02 - order-*** - registered
@@ -14778,14 +14778,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-114012-order-***-6d8faf.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-114012-order-***-338c33.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-114012-order-***-6d8faf.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-114012-order-***-338c33.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.109s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-114012-order-***-338c33.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-114012-order-***-6d8faf.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-114012-order-***-882f83.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-114012-order-***-066e84.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-114012-order-***-338c33.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-114012-order-***-6d8faf.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-114012-order-***-882f83.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-114012-order-***-066e84.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.609s).
 
@@ -14821,14 +14821,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-121019-order-***-977be5.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-121019-order-***-68b987.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-121019-order-***-977be5.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-121019-order-***-68b987.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=2.156s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121019-order-***-68b987.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-121019-order-***-977be5.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-121019-order-***-60c70e.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-121019-order-***-74e9f9.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121019-order-***-68b987.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-121019-order-***-977be5.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-121019-order-***-60c70e.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-121019-order-***-74e9f9.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.859s).
 
@@ -14864,14 +14864,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-121056-order-***-10450e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-121056-order-***-6948ec.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-121056-order-***-10450e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-121056-order-***-6948ec.png
   - Intento CAPTCHA 1: outcome=slot_lost, valor=oculto, duracion=1.953s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-121056-order-***-6948ec.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-121056-order-***-10450e.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-121056-order-***-fed777.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-121056-order-***-580656.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-121056-order-***-6948ec.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-121056-order-***-10450e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-121056-order-***-fed777.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-121056-order-***-580656.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.625s).
 
@@ -14907,14 +14907,14 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-130050-order-***-9f7b5e.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-130050-order-***-44384e.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-130050-order-***-9f7b5e.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-130050-order-***-44384e.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.11s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-130050-order-***-44384e.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-130050-order-***-9f7b5e.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-130050-order-***-e85140.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-130050-order-***-def617.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-130050-order-***-44384e.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-130050-order-***-9f7b5e.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-130050-order-***-e85140.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-130050-order-***-def617.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.578s).
 
@@ -14950,13 +14950,13 @@ flujo sin guardar nombres completos ni credenciales.
   - Fallback seleccion: [None]
   - Cambio de usuario: order-*** -> order-*** en 0.000s
 - Evidencia:
-  - Screenshot principal: screenshots\26-08-2026\portal-1-130104-order-***-dd969f.png
-  - Imagen usada por Resolutor CAPTCHA: screenshots\26-08-2026\captchas\captcha-130104-order-***-f6f9a0.png
+  - Screenshot principal: screenshots\2026-08\26-08-2026\portal-1-130104-order-***-dd969f.png
+  - Imagen usada por Resolutor CAPTCHA: screenshots\2026-08\26-08-2026\captchas\captcha-130104-order-***-f6f9a0.png
   - Intento CAPTCHA 1: outcome=confirmed, valor=oculto, duracion=2.468s
     - Medidas CAPTCHA: png=320x94, css=160.0x46.0, scale=
-  - Diagnostico captcha_images: screenshots\26-08-2026\captchas\captcha-130104-order-***-f6f9a0.png
-  - Diagnostico screenshots: screenshots\26-08-2026\portal-1-130104-order-***-dd969f.png
-  - Diagnostico dom_snapshots: screenshots\26-08-2026\diagnostics\portal-html-1-130104-order-***-d48781.html
-  - Screenshot adicional: screenshots\26-08-2026\cupo-130104-order-***-252556.png
+  - Diagnostico captcha_images: screenshots\2026-08\26-08-2026\captchas\captcha-130104-order-***-f6f9a0.png
+  - Diagnostico screenshots: screenshots\2026-08\26-08-2026\portal-1-130104-order-***-dd969f.png
+  - Diagnostico dom_snapshots: screenshots\2026-08\26-08-2026\diagnostics\portal-html-1-130104-order-***-d48781.html
+  - Screenshot adicional: screenshots\2026-08\26-08-2026\cupo-130104-order-***-252556.png
 - Observacion tecnica:
   - El flujo normal detecto el cupo; reload_probe no fue necesario. El tramo mas lento fue llenar CAPTCHA -> click (1.921s).
