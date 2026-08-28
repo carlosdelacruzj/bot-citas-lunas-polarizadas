@@ -159,7 +159,9 @@ para disparar corridas: el worker es el unico orquestador interno.
 
 `RECORD_CLIENT_SESSIONS=true` graba temporalmente cada sesion. Si no se confirma una reserva,
 el archivo se elimina. Si se confirma, se guarda en `RECORD_CLIENT_VIDEO_DIR`; la conversion a
-MP4 depende de FFmpeg y de `RECORD_CLIENT_VIDEO_FINAL_MP4`.
+MP4 depende de FFmpeg y de `RECORD_CLIENT_VIDEO_FINAL_MP4`. La grabacion conserva la sesion
+tal como se muestra en el portal, sin mascaras ni ocultamiento de campos; por ello el archivo
+resultante contiene informacion sensible y debe permanecer bajo control local.
 
 ## Verificacion
 

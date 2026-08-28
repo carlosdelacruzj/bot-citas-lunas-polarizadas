@@ -18,89 +18,6 @@ from appointment_bot.reports.run_reporting import reservation_confirmed
 logger = logging.getLogger(__name__)
 FFMPEG_TIMEOUT_SECONDS = 120
 
-CLIENT_SESSION_PRIVACY_SCRIPT = """
-() => {
-    const install = () => {
-        if (!document.getElementById("appointment-bot-client-video-style")) {
-            const style = document.createElement("style");
-            style.id = "appointment-bot-client-video-style";
-            style.textContent = `
-                input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
-                textarea {
-                    color: transparent !important;
-                    text-shadow: 0 0 0 #777 !important;
-                    -webkit-text-security: disc !important;
-                }
-                .appointment-bot-visible-reservation input,
-                .appointment-bot-visible-reservation textarea {
-                    color: inherit !important;
-                    text-shadow: none !important;
-                    -webkit-text-security: none !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        const captchaParts = ["captcha", "txtimg", "codigo"];
-        const isCaptchaControl = element => {
-            const key = [
-                element.id, element.name, element.placeholder,
-                element.getAttribute("aria-label")
-            ].join(" ").toLowerCase();
-            return captchaParts.some(part => key.includes(part));
-        };
-        const shouldShowReservationControl = element => {
-            if (isCaptchaControl(element)) return false;
-            let current = element;
-            for (let depth = 0; current && depth < 5; depth += 1) {
-                const text = current.innerText || "";
-                if (/Reserva Cita( Peritaje)?/i.test(text) && text.length < 1200) {
-                    current.classList.add("appointment-bot-visible-reservation");
-                    return true;
-                }
-                current = current.parentElement;
-            }
-            return false;
-        };
-        Array.from(document.querySelectorAll("input, textarea")).forEach(element => {
-            if (!shouldShowReservationControl(element)) return;
-            element.style.setProperty("color", "inherit", "important");
-            element.style.setProperty("text-shadow", "none", "important");
-            element.style.setProperty("-webkit-text-security", "none", "important");
-        });
-
-        if (!document.getElementById("appointment-bot-video-header-mask")) {
-            const mask = document.createElement("div");
-            mask.id = "appointment-bot-video-header-mask";
-            mask.textContent = "usuario oculto";
-            mask.style.cssText = [
-                "position:fixed",
-                "top:54px",
-                "left:0",
-                "z-index:2147483647",
-                "width:370px",
-                "height:42px",
-                "background:rgba(248,250,252,.98)",
-                "color:#334155",
-                "font:700 16px Arial,sans-serif",
-                "display:flex",
-                "align-items:center",
-                "padding-left:16px",
-                "pointer-events:none"
-            ].join(";");
-            document.body.appendChild(mask);
-        }
-    };
-    if (!window.__appointmentBotClientVideoPrivacy) {
-        window.__appointmentBotClientVideoPrivacy = true;
-        window.setInterval(install, 250);
-        document.addEventListener("DOMContentLoaded", install);
-    }
-    install();
-}
-"""
-
-
 @dataclass
 class ClientSessionVideoRecorder:
     settings: Settings
@@ -128,10 +45,6 @@ class ClientSessionVideoRecorder:
             started_at=started_at,
             temp_directory=tempfile.TemporaryDirectory(prefix="appointment-bot-client-video-"),
         )
-
-    @property
-    def init_script(self) -> str:
-        return f"({CLIENT_SESSION_PRIVACY_SCRIPT})()"
 
     @property
     def record_video_dir(self) -> Path:

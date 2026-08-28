@@ -230,6 +230,12 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `videos/reservations`. El worker conserva el video solo cuando la reserva
   queda confirmada; las sesiones sin confirmación continúan eliminándose. La
   activación no genera retroactivamente videos de reservas anteriores.
+- Ajustado el `2026-08-28`: la grabación de reservas ya no inyecta estilos ni
+  capas para ocultar campos, CAPTCHA o identidad del encabezado. Los videos
+  futuros conservados muestran la sesión tal como aparece en el portal. La
+  retención exclusiva de reservas confirmadas y la exportación MP4 permanecen
+  iguales; estos archivos locales contienen información sensible y no se
+  versionan.
 - Implementada y validada en portal real el `2026-08-01` la telemetría durable
   por selección de sede. Cada evento conserva intento, fase, POST detectado,
   URL sin query string, estado HTTP, latencia, tamaño declarado cuando existe,
@@ -415,6 +421,15 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   preparaciones huérfanas del `2026-07-15`, nunca encoladas ni enviadas, cuyos
   seis adjuntos no correspondían a los originales. Permanecen `132` paquetes
   enviados y `16` preparados; futuras altas no vuelven a llenar esa carpeta.
+- Restaurado operativamente el `2026-08-27`: los paquetes postpago futuros
+  vuelven a incluir los tres PDF ya usados por el flujo anterior, en orden
+  `Formato_Tramite.pdf`, `requisitos.pdf` y
+  `Formato_Tramite_Ejemplo.pdf`. La reconstrucción de `.runtime` posterior al
+  incidente del `2026-08-26` había conservado solo los dos primeros, aunque el
+  motor de selección múltiple ya tenía evidencia real `3/3`. Se inspeccionaron
+  visualmente las `10` páginas de los tres originales y una construcción local
+  de pasos confirmó tres rutas sin preparar un paquete ni abrir WhatsApp. Los
+  mensajes históricos conservan su snapshot y no se alteraron.
 - Se retiraron `10` módulos de compatibilidad que solo reexportaban símbolos y
   las fachadas públicas de cinco paquetes. Código, tests y entrypoints importan
   ahora desde `core`, `db`, `reports`, `reservation_engine` y `worker` en su
@@ -1054,6 +1069,25 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   cuya comprobación automática devolvió `0/3`; el operador informó que tuvo que
   completar manualmente el texto en algunos casos. No se reenviaron ni se
   conciliaron automáticamente esos trabajos históricos.
+- Corregido el `2026-08-27`: un postpago natural cargó sus dos PDF, pero el
+  único clic no cerró la vista previa. WhatsApp mantenía visibles el nombre del
+  documento y las dos miniaturas, aunque el detector de controles no reconoció
+  el icono de cierre vigente; al mismo tiempo, el compositor mostrado debajo de
+  la vista previa se confundió con el chat normal y el resultado terminó
+  ocultando el fallo inicial bajo `WhatsApp no dejo listo el mensaje de texto`.
+  La confirmación posterior al clic considera ahora suficiente la evidencia
+  visible del documento para mantener la vista previa como abierta, sin depender
+  de la conjunción exacta de iconos cerrar/enviar ni avanzar al texto. El
+  operador autorizó un único reenvío del mismo paquete preparado: los dos PDF y
+  el texto quedaron técnicamente confirmados a las `09:22` hora Lima y el
+  mensaje asociado pasó a `sent`; el trabajo automático original conserva su
+  resultado técnico `uncertain` y no se concilió ni se atribuyó lectura del
+  destinatario. Una reproducción DOM de la coexistencia documento/compositor,
+  `compileall`, Ruff, las `59` pruebas existentes y `git diff --check` quedaron
+  correctos. Admin API se reinició aisladamente después de comprobar una
+  frontera sin trabajos, ráfagas, corridas, intentos ni sesiones manuales
+  activas; WhatsApp regresó `session_ready` y worker/Telegram siguieron
+  saludables.
 - Implementado el `2026-08-25`: la Etapa 1 de plantillas editables de WhatsApp
   añadió el registro genérico PostgreSQL `v61` con siete defaults y versiones
   append-only. La API autenticada permite listar, previsualizar con datos

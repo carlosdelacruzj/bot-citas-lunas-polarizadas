@@ -3,30 +3,33 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 2600
-- Reservas registradas: 171
+- Eventos indexados: 2649
+- Reservas registradas: 190
 - Reservas no confirmadas: 5
-- Disponibilidades completas: 1699
-- Disponibilidades parciales: 525
-- Senales de defensa: 14
+- Disponibilidades completas: 1705
+- Disponibilidades parciales: 535
+- Senales de defensa: 15
 
 ## Origen de deteccion
-- normal: 2595
-- slot_lost_reobservation: 5
+- normal: 2641
+- slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
-- 2026-08-26 15:11:29 | order-*** | error | normal | sin cita | sin outcome
-- 2026-08-26 13:09:49 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
-- 2026-08-26 13:09:40 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
-- 2026-08-26 13:09:32 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
-- 2026-08-26 13:09:22 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
-- 2026-08-26 13:09:14 | sin orden | available | normal | 24/09/2026 09:00 | sin outcome
-- 2026-08-26 13:09:05 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
-- 2026-08-26 13:08:57 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
-- 2026-08-26 13:08:49 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
-- 2026-08-26 13:08:40 | sin orden | available | normal | 24/09/2026 08:00 | sin outcome
+- 2026-08-28 10:01:51 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
+- 2026-08-28 10:01:42 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
+- 2026-08-28 10:01:33 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
+- 2026-08-28 10:01:10 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
+- 2026-08-28 10:01:00 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
+- 2026-08-28 10:00:52 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
+- 2026-08-28 09:59:58 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
+- 2026-08-28 09:59:51 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
+- 2026-08-28 09:59:46 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
+- 2026-08-28 09:59:38 | order-*** | registered | normal | 25/09/2026 08:00 | confirmed
 
 ## Senales de defensa
+- 2026-08-28 09:22:52 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
 - 2026-08-26 15:11:29 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
@@ -50,7 +53,6 @@ Call log:
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
 - 2026-07-24 11:30:36 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
-- 2026-07-21 15:46:08 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
 
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.

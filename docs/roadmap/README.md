@@ -629,6 +629,11 @@ envío ni trabajo asociado. La carpeta
 `screenshots/whatsapp-followup-outgoing/` fue retirada y no queda una tarea
 futura separada para esta limpieza.
 
+Completado el `2026-08-28`: los videos locales de reservas confirmadas se
+graban tal como aparece la sesión en el portal, sin capas ni estilos de
+ocultamiento. La retención y exportación no cambiaron; no queda una tarea
+futura separada para esta modificación.
+
 ### Alcance
 
 1. Crear agregados diarios permanentes antes de purgar `runs` y `order_checks`.
@@ -699,9 +704,14 @@ aparezca el evento natural:
   un reloj visible veta `sent`, mientras un check visible o una etiqueta exacta
   de enviado, entregado o leído confirma el texto; los marcadores ocultos y las
   etiquetas genéricas no deciden. El contexto no se cierra mientras el resultado
-  queda pendiente. Validar con el
-  siguiente postpago natural los estados separados `documents` y
-  `payment_confirmation`, y validar la guarda del reloj con el siguiente aviso
+  queda pendiente. Desde el `2026-08-27`, la presencia visible del documento
+  también veta el paso al texto aunque cambien los iconos de la vista previa o
+  coexista un compositor. Un reenvío autorizado del paquete que reveló esa
+  brecha confirmó técnicamente sus dos PDF y el texto, pero no sustituye la
+  aceptación natural completa del dispatcher. Validar con el
+  siguiente postpago natural los tres PDF —incluido
+  `Formato_Tramite_Ejemplo.pdf` después de los dos anteriores— y los estados
+  separados `documents` y `payment_confirmation`, y validar la guarda del reloj con el siguiente aviso
   natural, sin crear un reenvío de prueba;
 - siguiente cierre diario: confirmar en tráfico real la regla simplificada de
   compositor validado antes del clic y burbuja saliente nueva confirmada

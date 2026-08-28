@@ -2170,17 +2170,20 @@ def _wait_until_send_attempt_finishes(
         page,
         "whatsapp-followup-send-not-confirmed",
     )
-    preview_visible = _attachment_preview_visible(page, attachment_names)
+    document_preview_visible = _document_preview_visible(page, attachment_names)
+    preview_controls_visible = _attachment_preview_visible(page, attachment_names)
     logger.warning(
         "WhatsApp document send confirmation failed: "
         "phase=document_preview_still_open_or_unconfirmed "
-        "confirmed=%s expected=%s preview_visible=%s evidence=%s",
+        "confirmed=%s expected=%s document_preview_visible=%s "
+        "preview_controls_visible=%s evidence=%s",
         new_confirmed_count,
         expected_outgoing_count,
-        preview_visible,
+        document_preview_visible,
+        preview_controls_visible,
         evidence_path,
     )
-    if not preview_visible and _normal_chat_composer_visible(page):
+    if not document_preview_visible and _normal_chat_composer_visible(page):
         logger.warning(
             "WhatsApp document preview closed without full confirmation; "
             "continuing with the distinct post-payment text and preserving "

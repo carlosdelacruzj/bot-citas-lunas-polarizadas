@@ -75,7 +75,6 @@ def run_with_report(
         with (
             open_page(
                 settings,
-                init_script=(video_recorder.init_script if video_recorder is not None else None),
                 video_dir=(video_recorder.record_video_dir if video_recorder is not None else None),
                 video_width=settings.client_video_width,
                 video_height=settings.client_video_height,
