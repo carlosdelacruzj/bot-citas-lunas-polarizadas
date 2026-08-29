@@ -332,7 +332,6 @@ def complete_available_reservation(
                         page,
                         result.details,
                         expected_person_name=expected_person_name,
-                        use_atomic_dom=settings.appointment_atomic_validation_enabled,
                     )
                 except AppointmentWorkflowUnavailable as exc:
                     if timing is not None:

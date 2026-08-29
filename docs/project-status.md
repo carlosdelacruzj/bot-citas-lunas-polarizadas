@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL actual: `v67`;
+- esquema PostgreSQL actual: `v68`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
@@ -59,10 +59,12 @@ videos y reportes son soporte o evidencia; no sustituyen el estado persistido.
 2. El preflight valida identidad y acceso antes de habilitar la busqueda.
 3. El worker monitorea dentro de los limites configurados.
 4. Cada cupo se contrasta con las reglas exactas de la orden.
-5. Una seleccion valida conserva screenshot antes de CAPTCHA o submit.
-6. La reserva solo se confirma con evidencia suficiente del portal.
-7. Pago y comunicaciones siguen estados independientes.
-8. Citas y recordatorios alimentan el seguimiento previo y posterior.
+5. La seleccion usa estabilizacion por eventos y validacion DOM atomica; si la
+   lectura no es concluyente vuelve automaticamente al camino conservador.
+6. Una seleccion valida conserva screenshot antes de CAPTCHA o submit.
+7. La reserva solo se confirma con evidencia suficiente del portal.
+8. Pago y comunicaciones siguen estados independientes.
+9. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
 Una incompatibilidad de fecha es `partial / blocked_by_order_rule`; no activa
 backoff general. Un submit ambiguo nunca se reintenta automaticamente.
@@ -99,7 +101,13 @@ sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea.
 
 **Citas y recordatorios** separa proximas citas, casos que requieren revision e
 historial. Permite anticipacion de `1..3` dias y mantiene el seguimiento post-cita
-conservador y paginado.
+conservador y paginado. Los recordatorios tienen modos `disabled`, `dry_run` y
+`live`; ya no existe un modo canario ni una lista especial de ordenes de prueba.
+
+Las rafagas de oportunidad y la reobservacion unica posterior a un `slot_lost`
+son capacidades estables. Su admision se gobierna en PostgreSQL con
+`enabled`, `disabled` y, para rafagas, `draining`; el breaker conserva prioridad
+sobre cualquier modo y el maximo sigue siendo dos sesiones Playwright.
 
 ## Comunicaciones WhatsApp
 

@@ -66,12 +66,11 @@ nunca el chat o usuario completo.
 
 Los supervisores respetan estos codigos y mantienen limite de reinicios.
 
-## Oportunidades OBS-006/007
+## Control de oportunidades
 
 `opportunity_runtime_control` gobierna admision de rafagas y reobservaciones;
 no reemplaza `worker_commands`.
 
-- `inherit`: usa configuracion activa;
 - `enabled`: admite si el breaker está cerrado;
 - `disabled`: bloquea trabajo nuevo;
 - `draining`: solo para rafagas; deja terminar sesiones ya iniciadas;

@@ -1,10 +1,10 @@
 # Runbook de rafagas de oportunidad
 
-Estado: vigente. No contiene tamaños de muestra; esos viven en el roadmap.
+Estado: estable y vigente.
 
 ## Activacion
 
-Solo una disponibilidad real y compatible inicia OBS-006. La rafaga admite como
+Solo una disponibilidad real y compatible inicia una rafaga. La rafaga admite como
 maximo dos sesiones Playwright aisladas. Cada orden conserva credenciales,
 cookies, claim, lease, reglas e intento propios.
 
@@ -14,7 +14,7 @@ Después de un `registered`, el coordinador puede admitir el siguiente candidato
 compatible sin exceder el limite. No sustituye una sesion activa ni transfiere
 estado del navegador.
 
-## Reobservacion OBS-007
+## Reobservacion de cupo perdido
 
 Solo un `slot_lost` explicito permite una reobservacion. Es unica, conserva el
 intento anterior y vuelve a validar compatibilidad. No se ejecuta tras submit,
@@ -48,4 +48,3 @@ Al cerrar la ultima, el control pasa a `disabled`. No reiniciar durante submit n
 marcar rafagas como cerradas borrando evidencia.
 
 Contrato: [`../contracts/worker-control.md`](../contracts/worker-control.md).
-Aceptacion pendiente: [`../roadmap/README.md`](../roadmap/README.md).

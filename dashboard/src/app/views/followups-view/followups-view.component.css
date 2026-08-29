@@ -162,8 +162,6 @@
 .reminder-modes label { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-content: start; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; cursor: pointer; }
 .reminder-modes input { grid-row: 1 / span 2; }
 .reminder-modes span { color: var(--ink-muted); font-size: .73rem; }
-.reminder-canary-list { display: grid; gap: 8px; border-left: 4px solid var(--followup-amber); background: var(--followup-amber-soft); padding: 14px; }
-.reminder-canary-list label { display: flex; gap: 9px; align-items: center; }
 .text-button { width: max-content; border: 0; background: transparent; padding: 0; color: var(--followup-teal); font: inherit; font-weight: 850; cursor: pointer; }
 .reminder-confirmation { display: flex; justify-content: space-between; gap: 18px; align-items: center; border: 1px solid var(--followup-amber); border-radius: 10px; background: var(--followup-amber-soft); padding: 14px; }
 .reminder-confirmation > div { display: grid; gap: 4px; }

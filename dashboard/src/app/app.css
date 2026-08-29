@@ -566,14 +566,14 @@ td span {
 }
 
 .opportunity-control-panel .panel-header p,
-.canary-control-row p,
-.canary-breaker p,
-.canary-hint {
+.opportunity-control-row p,
+.opportunity-breaker p,
+.opportunity-hint {
   margin: 4px 0 0;
   color: var(--ink-muted);
 }
 
-.canary-breaker {
+.opportunity-breaker {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
@@ -585,22 +585,22 @@ td span {
   padding: 12px 14px;
 }
 
-.canary-breaker p {
+.opportunity-breaker p {
   overflow-wrap: anywhere;
 }
 
-.canary-application-state {
+.opportunity-application-state {
   margin: 0 0 12px;
   font-size: 0.82rem;
   color: var(--ink-muted);
 }
 
-.canary-control-list {
+.opportunity-control-list {
   display: grid;
   gap: 8px;
 }
 
-.canary-control-row {
+.opportunity-control-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 12px;
@@ -610,27 +610,27 @@ td span {
   padding: 12px;
 }
 
-.canary-control-row h3 {
+.opportunity-control-row h3 {
   margin: 0;
   font-size: 0.92rem;
 }
 
-.canary-control-state {
+.opportunity-control-state {
   display: grid;
   justify-items: end;
   gap: 3px;
 }
 
-.canary-control-state small {
+.opportunity-control-state small {
   color: var(--ink-muted);
   white-space: nowrap;
 }
 
-.canary-hint {
+.opportunity-hint {
   font-size: 0.8rem;
 }
 
-.canary-burst {
+.opportunity-burst {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
@@ -641,12 +641,12 @@ td span {
   font-size: 0.82rem;
 }
 
-.canary-burst--quiet {
+.opportunity-burst--quiet {
   border-left-color: var(--line-strong);
   color: var(--ink-muted);
 }
 
-.canary-burst--unsafe {
+.opportunity-burst--unsafe {
   border-left-color: #b42318;
   background: #fff3f1;
   color: #9b1c1c;
@@ -1889,11 +1889,11 @@ td span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .canary-control-row {
+  .opportunity-control-row {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .canary-control-row > button {
+  .opportunity-control-row > button {
     grid-column: 1 / -1;
     justify-self: end;
   }
@@ -2008,8 +2008,8 @@ td span {
   .metrics,
   .split,
   .panel-header,
-  .canary-breaker,
-  .canary-control-row,
+  .opportunity-breaker,
+  .opportunity-control-row,
   .selected-detail,
   .form-grid,
   .form-grid.wide,
@@ -2018,11 +2018,11 @@ td span {
     grid-template-columns: 1fr;
   }
 
-  .canary-control-state {
+  .opportunity-control-state {
     justify-items: start;
   }
 
-  .canary-control-row > button {
+  .opportunity-control-row > button {
     grid-column: auto;
     justify-self: stretch;
   }

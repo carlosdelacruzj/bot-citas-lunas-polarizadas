@@ -33,11 +33,10 @@ export interface AppointmentReminderStatus {
     effective_lead_days: 1 | 2 | 3;
   };
   control: {
-    mode: 'disabled' | 'dry_run' | 'canary' | 'live';
+    mode: 'disabled' | 'dry_run' | 'live';
     lead_days: 1 | 2 | 3;
     message_template: string;
     default_template: string;
-    canary_order_ids: string[];
     revision: number;
     template_revision: number;
     updated_at: string;
@@ -1168,7 +1167,6 @@ export class AppointmentApiService {
   async updateAppointmentReminders(payload: {
     mode: AppointmentReminderStatus['control']['mode'];
     lead_days: AppointmentReminderStatus['control']['lead_days'];
-    canary_order_ids: string[];
     expected_revision: number;
   }): Promise<AppointmentReminderStatus> {
     return this.post<AppointmentReminderStatus>('/api/v1/appointment-reminders', payload);

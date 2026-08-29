@@ -3342,7 +3342,7 @@ export class App implements OnDestroy {
     return normalizeDashboardText(this.opportunityControl()?.breaker.state) === 'open';
   }
 
-  protected opportunityCanaryLabel(): string {
+  protected opportunityControlLabel(): string {
     const control = this.opportunityControl();
     if (!control) {
       return 'Estado sin confirmar';
@@ -3368,7 +3368,7 @@ export class App implements OnDestroy {
     return 'Configuración parcial';
   }
 
-  protected opportunityCanaryTone(): StatusTone {
+  protected opportunityControlTone(): StatusTone {
     if (!this.opportunityControl()) {
       return 'bad';
     }
@@ -3439,7 +3439,9 @@ export class App implements OnDestroy {
     if (!control || this.actionBusy()) {
       return;
     }
-    const targetLabel = target === 'obs006' ? 'OBS-006' : 'OBS-007';
+    const targetLabel = target === 'obs006'
+      ? 'ráfagas de oportunidad'
+      : 'reobservación de cupo perdido';
     const copy: Record<OpportunityControlAction, { title: string; message: string }> = {
       activate: {
         title: `Activar ${targetLabel}`,

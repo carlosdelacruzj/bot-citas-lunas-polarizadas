@@ -140,7 +140,7 @@ class OpportunityBurstCoordinator:
             return self._started
 
     def maybe_start(self, result: AvailabilityResult) -> bool:
-        if not self.settings.opportunity_burst_enabled or not self.settings.auto_reserve:
+        if not self.settings.auto_reserve:
             return False
         if self.cancel_event is not None and self.cancel_event.is_set():
             return False

@@ -178,9 +178,6 @@ def _monitor_observer(
                 page,
                 allow_hidden=True,
                 include_person=False,
-                event_driven_stabilization=(
-                    settings.appointment_selection_event_driven_enabled
-                ),
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
             if result.status == "available" and capture_captcha_samples:

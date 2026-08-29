@@ -281,10 +281,7 @@ def next_waiting_whatsapp_automation_job(
                     OR EXISTS (
                         SELECT 1 FROM appointment_reminder_control arc
                         WHERE arc.id = 1
-                          AND (
-                              arc.mode = 'live'
-                              OR (arc.mode = 'canary' AND arc.canary_order_ids ? order_id)
-                          )
+                          AND arc.mode = 'live'
                     )
               )
               AND (
@@ -344,13 +341,7 @@ def claim_whatsapp_automation_job(
                         OR EXISTS (
                             SELECT 1 FROM appointment_reminder_control arc
                             WHERE arc.id = 1
-                              AND (
-                                  arc.mode = 'live'
-                                  OR (
-                                      arc.mode = 'canary'
-                                      AND arc.canary_order_ids ? order_id
-                                  )
-                              )
+                              AND arc.mode = 'live'
                         )
                   )
                   AND (

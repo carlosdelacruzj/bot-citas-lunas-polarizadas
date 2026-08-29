@@ -1,8 +1,8 @@
 # Linea base observacional de optimizacion
 
-> Baseline historica promovida para comparacion. Las decisiones operativas de
-> esta fecha fueron sustituidas por `OBS-006` y `OBS-007`; consultar
-> `docs/optimization.md` y `docs/roadmap/README.md`.
+> Baseline historica conservada para comparacion. Las rafagas de oportunidad,
+> la reobservacion de cupo perdido y la ruta critica optimizada son hoy
+> comportamiento estable; consultar `docs/optimization.md` y sus runbooks.
 
 - Rango: `2026-07-06` a `2026-07-12` (America/Lima, inclusivo).
 - Runs: 4416.

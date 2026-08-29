@@ -46,13 +46,12 @@ Fuentes:
 
 `latest` es un artefacto, no estado vivo. Refrescar datos antes de concluir.
 
-## Aceptacion vigente
+## Operacion vigente
 
 Los runbooks de seguridad viven en:
 
 - [`operations/opportunity-bursts.md`](operations/opportunity-bursts.md);
-- [`operations/reservation-critical-path.md`](operations/reservation-critical-path.md);
-- [`roadmap/README.md`](roadmap/README.md).
+- [`operations/reservation-critical-path.md`](operations/reservation-critical-path.md).
 
 La cronologia retirada puede recuperarse mediante
 [`history/README.md`](history/README.md).

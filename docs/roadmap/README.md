@@ -18,23 +18,6 @@ generados en `reports/`.
 
 ## P0 - Aceptacion natural y seguridad
 
-### Rafagas OBS-006/OBS-007
-
-Reunir `10` rafagas y `30` auxiliares reconstruibles sin cambiar intervalos,
-concurrencia ni breakers. Revisar claims, reobservacion, seleccion, fallback y
-tiempos pre-click.
-
-Cierre: muestra completa, ninguna reserva duplicada y cada salida explicable
-desde PostgreSQL.
-
-### Ruta critica de reserva
-
-Revisar las primeras `10` selecciones naturales: estrategia, fallback,
-screenshot preservado y resultado. Una restriccion debe permanecer
-`partial / blocked_by_order_rule` sin backoff general.
-
-Cierre: diez casos reconstruibles sin ampliar autoridad CAPTCHA.
-
 ### Flujos naturales pendientes
 
 Observar, sin crear envios de prueba:

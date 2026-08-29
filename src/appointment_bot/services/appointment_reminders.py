@@ -149,8 +149,6 @@ def reconcile_appointment_reminders(
         except ValueError:
             missing_contact_count += 1
             continue
-        if control.mode == "canary" and candidate["order_id"] not in control.canary_order_ids:
-            continue
         valid_candidates.append(
             (
                 candidate,
@@ -175,9 +173,6 @@ def reconcile_appointment_reminders(
             )
         elif control.mode == "dry_run":
             status = "dry_run"
-        elif control.mode == "canary" and not control.canary_order_ids:
-            status = "blocked"
-            error = "El modo canario requiere al menos una orden elegible seleccionada."
         elif len(valid_candidates) > settings.appointment_reminders_daily_limit:
             status = "blocked"
             error = (
@@ -347,7 +342,7 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
         job_status_by_order,
     )
     payload["configuration"] = {
-        "enabled": control.mode in {"canary", "live"},
+        "enabled": control.mode == "live",
         "dry_run": control.mode == "dry_run",
         "time": settings.appointment_reminders_time.isoformat(timespec="minutes"),
         "summary_grace_minutes": settings.appointment_reminders_summary_grace_minutes,
@@ -361,7 +356,6 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
         "lead_days": control.lead_days,
         "message_template": template.message_template,
         "default_template": definition.recommended_template,
-        "canary_order_ids": list(control.canary_order_ids),
         "revision": control.revision,
         "template_revision": template.revision,
         "updated_at": control.updated_at.isoformat(),

@@ -230,12 +230,8 @@ def is_opportunity_admission_allowed(
         return False
     normalized = control_name.strip().lower()
     if normalized in _OBS006_NAMES:
-        if control.burst_mode == "inherit":
-            return bool(resolved.opportunity_burst_enabled)
         return control.burst_mode == "enabled"
     if normalized in _OBS007_NAMES:
-        if control.obs007_mode == "inherit":
-            return bool(resolved.slot_lost_reobservation_enabled)
         return control.obs007_mode == "enabled"
     raise ValueError(f"Unsupported opportunity control name: {control_name}")
 

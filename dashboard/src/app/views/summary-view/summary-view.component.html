@@ -712,27 +712,27 @@
           <strong id="opportunity-control-title">Ráfagas de reserva</strong>
           <small>Abre solo para activar, detener o revisar una protección</small>
         </span>
-        <span class="badge {{ dashboard.opportunityCanaryTone() }}">
-          {{ dashboard.opportunityCanaryLabel() }}
+        <span class="badge {{ dashboard.opportunityControlTone() }}">
+          {{ dashboard.opportunityControlLabel() }}
         </span>
       </summary>
       <div class="settings-body">
       <div class="panel-header">
         <div>
-          <h2 id="opportunity-control-title">Canario de oportunidades</h2>
-          <p>Control operativo de OBS-006 y OBS-007 · máximo 2 sesiones</p>
+          <h2 id="opportunity-control-title">Control de oportunidades</h2>
+          <p>Ráfagas y reobservación de cupos · máximo 2 sesiones</p>
         </div>
         <span
-          class="badge {{ dashboard.opportunityCanaryTone() }}"
+          class="badge {{ dashboard.opportunityControlTone() }}"
           aria-live="polite"
         >
-          {{ dashboard.opportunityCanaryLabel() }}
+          {{ dashboard.opportunityControlLabel() }}
         </span>
       </div>
 
       @if (dashboard.opportunityControl(); as control) {
         @if (dashboard.opportunityBreakerOpen()) {
-          <div class="canary-breaker" role="alert">
+          <div class="opportunity-breaker" role="alert">
             <div>
               <strong>Protección automática activada</strong>
               <p>
@@ -755,7 +755,7 @@
 
         <p
           id="opportunity-application-state"
-          class="canary-application-state"
+          class="opportunity-application-state"
           aria-live="polite"
         >
           <strong>{{ control.pending_application ? 'Pendiente de aplicar' : 'Aplicado' }}</strong>
@@ -765,13 +765,13 @@
           }
         </p>
 
-        <div class="canary-control-list">
-          <section class="canary-control-row" aria-labelledby="obs006-control-title">
+        <div class="opportunity-control-list">
+          <section class="opportunity-control-row" aria-labelledby="obs006-control-title">
             <div>
-              <h3 id="obs006-control-title">OBS-006</h3>
+              <h3 id="obs006-control-title">Ráfagas de oportunidad</h3>
               <p>Ráfaga de oportunidades con un máximo de 2 sesiones simultáneas.</p>
             </div>
-            <div class="canary-control-state">
+            <div class="opportunity-control-state">
               <span class="badge {{ dashboard.opportunityModeTone(control.obs006.effective_mode) }}">
                 {{ dashboard.opportunityModeLabel(control.obs006.effective_mode) }}
               </span>
@@ -791,12 +791,12 @@
             </button>
           </section>
 
-          <section class="canary-control-row" aria-labelledby="obs007-control-title">
+          <section class="opportunity-control-row" aria-labelledby="obs007-control-title">
             <div>
-              <h3 id="obs007-control-title">OBS-007</h3>
+              <h3 id="obs007-control-title">Reobservación de cupo perdido</h3>
               <p>Reobservación controlada después de perder un cupo durante la reserva.</p>
             </div>
-            <div class="canary-control-state">
+            <div class="opportunity-control-state">
               <span class="badge {{ dashboard.opportunityModeTone(control.obs007.effective_mode) }}">
                 {{ dashboard.opportunityModeLabel(control.obs007.effective_mode) }}
               </span>
@@ -817,7 +817,7 @@
           </section>
         </div>
 
-        <p id="opportunity-action-hint" class="canary-hint">
+        <p id="opportunity-action-hint" class="opportunity-hint">
           Drenar bloquea trabajos nuevos y permite terminar confirmaciones ya iniciadas.
           @if (dashboard.opportunityBreakerOpen()) {
             La protección debe restablecerse antes de volver a activar controles.
@@ -826,8 +826,8 @@
 
         @if (control.active_burst; as burst) {
           <div
-            class="canary-burst"
-            [class.canary-burst--unsafe]="burst.max_active_sessions > 2"
+            class="opportunity-burst"
+            [class.opportunity-burst--unsafe]="burst.max_active_sessions > 2"
             [attr.role]="burst.max_active_sessions > 2 ? 'alert' : null"
             aria-live="polite"
           >
@@ -837,7 +837,7 @@
             <span>Inició {{ dashboard.formatDateTime(burst.started_at) }}</span>
           </div>
         } @else if (dashboard.latestOpportunityBurst(); as burst) {
-          <div class="canary-burst canary-burst--quiet">
+          <div class="opportunity-burst opportunity-burst--quiet">
             <strong>Última ráfaga</strong>
             <span>{{ dashboard.opportunityModeLabel(burst.status) }}</span>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
@@ -846,7 +846,7 @@
         }
       } @else {
         <p class="empty" role="status" aria-live="polite">
-          El estado del canario todavía no está disponible. No se habilitan acciones hasta
+          El estado del control todavía no está disponible. No se habilitan acciones hasta
           confirmar una revisión vigente.
         </p>
       }

@@ -1,6 +1,6 @@
 # Runbook de ruta critica de reserva
 
-Estado: vigente. La muestra pendiente vive solamente en el roadmap.
+Estado: estable y vigente.
 
 ## Camino rapido
 
@@ -28,9 +28,5 @@ comportamiento seguro, no motivo de rollback global.
 fallback, estabilidad, tiempo pre-click y resultado final sin contar entrenamiento
 como reserva.
 
-## Desactivacion
-
-Las dos optimizaciones pueden desactivarse de forma independiente. Hacerlo en
-una frontera segura, sin matar una orden ni submission activo.
-
-Aceptacion pendiente: [`../roadmap/README.md`](../roadmap/README.md).
+La estabilizacion por eventos y la lectura atomica son el camino normal. Sus
+fallbacks conservadores son automaticos y no dependen de flags experimentales.

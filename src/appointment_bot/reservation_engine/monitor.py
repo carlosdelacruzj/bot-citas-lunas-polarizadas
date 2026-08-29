@@ -300,9 +300,6 @@ def _try_reservation_from_availability(
     selected_result = select_available_appointment(
         page,
         is_allowed_appointment=is_allowed_appointment,
-        event_driven_stabilization=(
-            settings.appointment_selection_event_driven_enabled
-        ),
         timeout=settings.postback_timeout_seconds * 1_000,
     )
     timing.mark("selection_finished")
@@ -399,9 +396,7 @@ def _try_reservation_from_availability(
                 run_id=run_id,
                 order_id=order_id,
             )
-            if not _is_explicit_slot_lost(completed_result[0]) or not (
-                settings.slot_lost_reobservation_enabled
-            ):
+            if not _is_explicit_slot_lost(completed_result[0]):
                 return ReservationAttemptOutcome(
                     completed_result=completed_result,
                     selected_result=selected_result,
@@ -642,9 +637,6 @@ def _reobserve_after_slot_lost(
             selected_result = select_available_appointment(
                 page,
                 is_allowed_appointment=is_allowed_appointment,
-                event_driven_stabilization=(
-                    settings.appointment_selection_event_driven_enabled
-                ),
                 timeout=settings.postback_timeout_seconds * 1_000,
             )
             timing.mark("selection_finished")

@@ -70,11 +70,10 @@
         <section class="panel reminder-status-strip" aria-label="Estado de recordatorios">
           <div class="reminder-status-primary">
             <span class="badge" [class.good]="reminders.control.mode === 'live'"
-              [class.warn]="reminders.control.mode === 'dry_run' || reminders.control.mode === 'canary'"
+              [class.warn]="reminders.control.mode === 'dry_run'"
               [class.neutral]="reminders.control.mode === 'disabled'">
               @if (reminders.control.mode === 'disabled') { Desactivados }
               @else if (reminders.control.mode === 'dry_run') { Solo revisión }
-              @else if (reminders.control.mode === 'canary') { Prueba controlada }
               @else { Activos }
             </span>
             <div><strong>{{ reminders.control.lead_days }} {{ reminders.control.lead_days === 1 ? 'día' : 'días' }} antes</strong>
@@ -155,30 +154,14 @@
               <legend>Modo de operación</legend>
               <label [class.selected]="reminderMode() === 'disabled'"><input type="radio" name="reminderMode" value="disabled" [ngModel]="reminderMode()" (ngModelChange)="chooseReminderMode($event)" /><strong>Desactivado</strong><span>No crea ni envía recordatorios.</span></label>
               <label [class.selected]="reminderMode() === 'dry_run'"><input type="radio" name="reminderMode" value="dry_run" [ngModel]="reminderMode()" (ngModelChange)="chooseReminderMode($event)" /><strong>Solo revisar</strong><span>Muestra elegibles sin encolarlos.</span></label>
-              <label [class.selected]="reminderMode() === 'canary'"><input type="radio" name="reminderMode" value="canary" [ngModel]="reminderMode()" (ngModelChange)="chooseReminderMode($event)" /><strong>Prueba controlada</strong><span>Solo 1 o 2 citas elegidas.</span></label>
               <label [class.selected]="reminderMode() === 'live'"><input type="radio" name="reminderMode" value="live" [ngModel]="reminderMode()" (ngModelChange)="chooseReminderMode($event)" /><strong>Activo</strong><span>Todos los elegibles, con límite diario.</span></label>
             </fieldset>
-
-            @if (reminderMode() === 'canary') {
-              @if (reminderCanarySelectionReady()) {
-                <div class="reminder-canary-list"><strong>Elige hasta 2 citas para la prueba</strong>
-                  @for (candidate of reminders.candidates; track candidate.order_id) {
-                    <label><input type="checkbox" [checked]="reminderCanaryOrderIds().includes(candidate.order_id)"
-                      [disabled]="!reminderCanaryOrderIds().includes(candidate.order_id) && reminderCanaryOrderIds().length >= 2"
-                      (change)="toggleReminderCanary(candidate.order_id)" />
-                      <span>{{ candidate.applicant_name || 'Nombre no registrado' }} · {{ candidate.appointment_hour || 'sin hora' }} · {{ candidate.recipient }}</span></label>
-                  }
-                </div>
-              } @else {
-                <p class="reminder-feedback error">Guarda primero la anticipación en “Solo revisar”. La selección se habilitará cuando la nueva fecha objetivo sea efectiva.</p>
-              }
-            }
 
             <button type="button" class="text-button" (click)="openReminderMessageEditor()">Editar el texto en Mensajes</button>
 
             @if (reminderActivationReview()) {
               <div class="reminder-confirmation" role="alert">
-                <div><strong>Confirma esta configuración</strong><span>Se aplicará {{ reminderLeadDays() }} {{ reminderLeadDays() === 1 ? 'día' : 'días' }} antes, en modo {{ reminderMode() === 'live' ? 'activo' : 'prueba controlada' }}. Se revalidarán la cita y el contacto antes de abrir WhatsApp.</span></div>
+                <div><strong>Confirma esta configuración</strong><span>Se aplicará {{ reminderLeadDays() }} {{ reminderLeadDays() === 1 ? 'día' : 'días' }} antes, en modo activo. Se revalidarán la cita y el contacto antes de abrir WhatsApp.</span></div>
                 <button type="button" class="primary" [disabled]="reminderSaving()" (click)="confirmReminderSave()">Confirmar y guardar</button>
               </div>
             }

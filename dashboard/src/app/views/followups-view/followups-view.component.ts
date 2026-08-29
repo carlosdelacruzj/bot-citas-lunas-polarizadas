@@ -61,7 +61,6 @@ export class FollowupsViewComponent {
   protected readonly reminderEditorOpen = signal(false);
   protected readonly reminderMode = signal<ReminderMode>('disabled');
   protected readonly reminderLeadDays = signal<ReminderLeadDays>(1);
-  protected readonly reminderCanaryOrderIds = signal<string[]>([]);
   protected readonly reminderSaving = signal(false);
   protected readonly reminderSaveError = signal<string | null>(null);
   protected readonly reminderSaveSuccess = signal<string | null>(null);
@@ -188,15 +187,6 @@ export class FollowupsViewComponent {
       && this.reminderLeadDays() !== status.configuration.effective_lead_days,
     );
   });
-  protected readonly reminderCanarySelectionReady = computed(() => {
-    const status = this.reminderStatus();
-    return Boolean(
-      status
-      && this.reminderLeadDays() === status.control.lead_days
-      && this.reminderLeadDays() === status.configuration.effective_lead_days,
-    );
-  });
-
   protected readonly reminderDraftServiceDate = computed(() => {
     const status = this.reminderStatus();
     if (!status) return '';
@@ -326,32 +316,9 @@ export class FollowupsViewComponent {
     this.reminderActivationReview.set(false);
   }
 
-  protected toggleReminderCanary(orderId: string): void {
-    this.reminderCanaryOrderIds.update((values) => values.includes(orderId)
-      ? values.filter((value) => value !== orderId)
-      : values.length < 2 ? [...values, orderId] : values,
-    );
-    this.reminderActivationReview.set(false);
-  }
-
   protected requestReminderSave(): void {
     this.reminderSaveError.set(null);
-    const current = this.reminderStatus();
-    if (
-      this.reminderMode() === 'canary'
-      && current
-      && !this.reminderCanarySelectionReady()
-    ) {
-      this.reminderSaveError.set(
-        'Guarda primero la anticipación en “Solo revisar”. Cuando sea efectiva podrás elegir las citas correctas para la prueba controlada.',
-      );
-      return;
-    }
-    if (this.reminderMode() === 'canary' && this.reminderCanaryOrderIds().length === 0) {
-      this.reminderSaveError.set('Selecciona 1 o 2 citas para el modo canario.');
-      return;
-    }
-    if (this.reminderMode() === 'canary' || this.reminderMode() === 'live') {
+    if (this.reminderMode() === 'live') {
       this.reminderActivationReview.set(true);
       return;
     }
@@ -369,7 +336,6 @@ export class FollowupsViewComponent {
       const updated = await this.api.updateAppointmentReminders({
         mode: this.reminderMode(),
         lead_days: this.reminderLeadDays(),
-        canary_order_ids: this.reminderMode() === 'canary' ? this.reminderCanaryOrderIds() : [],
         expected_revision: current.control.revision,
       });
       this.reminderStatus.set(updated);
@@ -404,7 +370,6 @@ export class FollowupsViewComponent {
   private syncReminderEditor(status: AppointmentReminderStatus): void {
     this.reminderMode.set(status.control.mode);
     this.reminderLeadDays.set(status.control.lead_days);
-    this.reminderCanaryOrderIds.set(status.control.canary_order_ids);
   }
 
   private addIsoDays(value: string, days: number): string {

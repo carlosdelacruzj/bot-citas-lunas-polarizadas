@@ -182,14 +182,12 @@ class Settings:
     observer_active_order_limit: int
     opportunity_handoff_max_candidates: int
     opportunity_handoff_max_seconds: int
-    opportunity_burst_enabled: bool
     opportunity_burst_max_sessions: int
     opportunity_burst_max_clients: int
     opportunity_burst_max_seconds: int
     opportunity_burst_session_seconds: int
     opportunity_burst_attempts: int
     opportunity_burst_reload_probe_after_attempt: int
-    slot_lost_reobservation_enabled: bool
     slot_lost_reobservation_seconds: int
     slot_lost_reobservation_attempts: int
     slot_lost_reobservation_reload_probe_after_attempt: int
@@ -218,8 +216,6 @@ class Settings:
     captcha_shadow_timeout_seconds: int = 2
     reservation_captcha_sample_limit: int = 1
     reservation_captcha_runtime_control_enabled: bool = True
-    appointment_selection_event_driven_enabled: bool = True
-    appointment_atomic_validation_enabled: bool = True
     reservation_math_pre_submit_delay_min_seconds: float = 1.0
     reservation_math_pre_submit_delay_max_seconds: float = 2.0
 
@@ -487,10 +483,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             default=300,
             minimum=1,
         ),
-        opportunity_burst_enabled=_parse_bool(
-            os.getenv("OPPORTUNITY_BURST_ENABLED"),
-            default=True,
-        ),
         opportunity_burst_max_sessions=_parse_int(
             os.getenv("OPPORTUNITY_BURST_MAX_SESSIONS"),
             default=2,
@@ -520,10 +512,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT"),
             default=3,
             minimum=1,
-        ),
-        slot_lost_reobservation_enabled=_parse_bool(
-            os.getenv("SLOT_LOST_REOBSERVATION_ENABLED"),
-            default=True,
         ),
         slot_lost_reobservation_seconds=_parse_int(
             os.getenv("SLOT_LOST_REOBSERVATION_SECONDS"),
@@ -628,14 +616,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("CAPTCHA_SHADOW_TIMEOUT_SECONDS"),
             default=2,
             minimum=1,
-        ),
-        appointment_selection_event_driven_enabled=_parse_bool(
-            os.getenv("APPOINTMENT_SELECTION_EVENT_DRIVEN_ENABLED"),
-            default=True,
-        ),
-        appointment_atomic_validation_enabled=_parse_bool(
-            os.getenv("APPOINTMENT_ATOMIC_VALIDATION_ENABLED"),
-            default=True,
         ),
         reservation_math_pre_submit_delay_min_seconds=_parse_float(
             os.getenv("RESERVATION_MATH_PRE_SUBMIT_DELAY_MIN_SECONDS"),

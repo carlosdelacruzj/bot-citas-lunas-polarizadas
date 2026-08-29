@@ -9,7 +9,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 67
+SCHEMA_VERSION = 68
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -888,12 +888,14 @@ def _create_opportunity_observability_schema(connection: Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS opportunity_runtime_control (
             id integer PRIMARY KEY CHECK (id = 1),
-            burst_mode text NOT NULL DEFAULT 'inherit' CHECK (
-                burst_mode IN ('inherit', 'enabled', 'disabled', 'draining')
-            ),
-            obs007_mode text NOT NULL DEFAULT 'inherit' CHECK (
-                obs007_mode IN ('inherit', 'enabled', 'disabled')
-            ),
+            burst_mode text NOT NULL DEFAULT 'enabled'
+                CONSTRAINT ck_opportunity_runtime_control_burst_mode CHECK (
+                    burst_mode IN ('enabled', 'disabled', 'draining')
+                ),
+            obs007_mode text NOT NULL DEFAULT 'enabled'
+                CONSTRAINT ck_opportunity_runtime_control_obs007_mode CHECK (
+                    obs007_mode IN ('enabled', 'disabled')
+                ),
             revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
             applied_revision bigint NOT NULL DEFAULT 0 CHECK (
                 applied_revision >= 0 AND applied_revision <= revision
@@ -1102,7 +1104,6 @@ def _validate_current_schema(connection: Connection) -> None:
         ("appointment_reminder_control", "mode"),
         ("appointment_reminder_control", "lead_days"),
         ("appointment_reminder_control", "message_template"),
-        ("appointment_reminder_control", "canary_order_ids"),
         ("appointment_reminder_control", "revision"),
         ("appointment_reminder_template_versions", "revision"),
         ("appointment_reminder_template_versions", "message_template"),
@@ -1210,6 +1211,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_whatsapp_automation_job_target",
         "fk_whatsapp_automation_jobs_reservation",
         "ck_appointment_reminder_control_lead_days",
+        "ck_appointment_reminder_control_mode",
         "ck_appointment_reminder_day_target",
         "ck_post_appointment_reviews_timestamps",
         "ck_post_appointment_automatic_review_finished",
@@ -1220,6 +1222,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_opportunity_burst_execution_finished",
         "ck_opportunity_burst_execution_timestamps",
         "ck_opportunity_runtime_control_circuit",
+        "ck_opportunity_runtime_control_burst_mode",
+        "ck_opportunity_runtime_control_obs007_mode",
         "ck_captcha_authority_circuit",
         "ck_captcha_authority_decision_resolution",
         "ck_finance_month_closure_reconciliation",
@@ -2029,15 +2033,13 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS appointment_reminder_control (
             id integer PRIMARY KEY CHECK (id = 1),
-            mode text NOT NULL DEFAULT 'disabled' CHECK (
-                mode IN ('disabled', 'dry_run', 'canary', 'live')
-            ),
+            mode text NOT NULL DEFAULT 'disabled'
+                CONSTRAINT ck_appointment_reminder_control_mode CHECK (
+                    mode IN ('disabled', 'dry_run', 'live')
+                ),
             lead_days smallint NOT NULL DEFAULT 1,
             message_template text NOT NULL CHECK (
                 char_length(message_template) BETWEEN 1 AND 1000
-            ),
-            canary_order_ids jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (
-                jsonb_typeof(canary_order_ids) = 'array'
             ),
             revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
             updated_at timestamptz NOT NULL,
@@ -2064,8 +2066,8 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
     connection.execute(
         """
         INSERT INTO appointment_reminder_control (
-            id, mode, message_template, canary_order_ids, revision, updated_at, updated_by
-        ) VALUES (1, 'disabled', %s, '[]'::jsonb, 1, %s, 'schema-migration')
+            id, mode, message_template, revision, updated_at, updated_by
+        ) VALUES (1, 'disabled', %s, 1, %s, 'schema-migration')
         ON CONFLICT (id) DO NOTHING
         """,
         (default_template, now),
@@ -2098,6 +2100,58 @@ def _create_appointment_reminder_lead_days_schema(connection: Connection) -> Non
         ADD CONSTRAINT ck_appointment_reminder_day_target CHECK (
             appointment_day BETWEEN service_date + 1 AND service_date + 3
         )
+        """
+    )
+
+
+def _promote_stable_runtime_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        UPDATE opportunity_runtime_control
+        SET burst_mode = 'enabled'
+        WHERE burst_mode = 'inherit'
+        """
+    )
+    connection.execute(
+        """
+        UPDATE opportunity_runtime_control
+        SET obs007_mode = 'enabled'
+        WHERE obs007_mode = 'inherit'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE opportunity_runtime_control
+        ALTER COLUMN burst_mode SET DEFAULT 'enabled',
+        ALTER COLUMN obs007_mode SET DEFAULT 'enabled',
+        DROP CONSTRAINT IF EXISTS opportunity_runtime_control_burst_mode_check,
+        DROP CONSTRAINT IF EXISTS opportunity_runtime_control_obs007_mode_check,
+        DROP CONSTRAINT IF EXISTS ck_opportunity_runtime_control_burst_mode,
+        DROP CONSTRAINT IF EXISTS ck_opportunity_runtime_control_obs007_mode,
+        ADD CONSTRAINT ck_opportunity_runtime_control_burst_mode CHECK (
+            burst_mode IN ('enabled', 'disabled', 'draining')
+        ),
+        ADD CONSTRAINT ck_opportunity_runtime_control_obs007_mode CHECK (
+            obs007_mode IN ('enabled', 'disabled')
+        )
+        """
+    )
+    connection.execute(
+        """
+        UPDATE appointment_reminder_control
+        SET mode = 'live'
+        WHERE mode = 'canary'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE appointment_reminder_control
+        DROP CONSTRAINT IF EXISTS appointment_reminder_control_mode_check,
+        DROP CONSTRAINT IF EXISTS ck_appointment_reminder_control_mode,
+        ADD CONSTRAINT ck_appointment_reminder_control_mode CHECK (
+            mode IN ('disabled', 'dry_run', 'live')
+        ),
+        DROP COLUMN IF EXISTS canary_order_ids
         """
     )
 
@@ -3377,6 +3431,13 @@ def migrate_database(connection: Connection) -> None:
             (67,),
         )
         current_version = 67
+    if current_version == 67:
+        _promote_stable_runtime_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (68,),
+        )
+        current_version = 68
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

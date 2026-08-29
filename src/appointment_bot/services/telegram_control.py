@@ -2200,7 +2200,10 @@ def _format_opportunity_control(control: dict[str, Any]) -> str:
         "",
         f"Revision: {control.get('revision', 'desconocida')}",
     ]
-    for target, label in (("obs006", "OBS-006 Rafaga"), ("obs007", "OBS-007 Optimizada")):
+    for target, label in (
+        ("obs006", "Rafagas de oportunidad"),
+        ("obs007", "Reobservacion de cupo perdido"),
+    ):
         item = control.get(target)
         if not isinstance(item, dict):
             lines.append(f"{label}: sin datos")

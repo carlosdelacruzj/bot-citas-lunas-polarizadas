@@ -268,7 +268,6 @@ def select_available_appointment(
     allow_hidden: bool = False,
     include_person: bool = True,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
-    event_driven_stabilization: bool = False,
     timeout: int = 15_000,
 ) -> AvailabilityResult:
     from appointment_bot.reservation_engine.appointments import (
@@ -363,11 +362,7 @@ def select_available_appointment(
 
             hour_select = page.locator(HOUR_SELECTOR)
             logger.info("Selecting appointment hour: %s", hour_option["text"])
-            probe_token = (
-                _start_selection_stability_probe(page)
-                if event_driven_stabilization
-                else None
-            )
+            probe_token = _start_selection_stability_probe(page)
             try:
                 _select_appointment_option(
                     hour_select,
@@ -383,7 +378,7 @@ def select_available_appointment(
                 expected_date=str(date_option["text"]),
                 expected_hour=str(hour_option["text"]),
                 include_person=include_person,
-                event_driven=event_driven_stabilization,
+                event_driven=True,
                 probe_token=probe_token,
             )
             observation["hour_stabilization_seconds"].append(
@@ -427,7 +422,6 @@ def select_available_appointment(
             include_person=include_person,
             timeout=timeout,
             observation=observation,
-            event_driven_stabilization=event_driven_stabilization,
         )
         return _with_selection_observation(
             blocked_evidence_result, observation, observation_started
@@ -464,7 +458,6 @@ def _select_blocked_appointment_for_evidence(
     include_person: bool,
     timeout: int,
     observation: dict[str, Any],
-    event_driven_stabilization: bool,
 ) -> AvailabilityResult:
     from appointment_bot.reservation_engine.appointments import (
         DATE_SELECTOR,
@@ -543,11 +536,7 @@ def _select_blocked_appointment_for_evidence(
                 include_person=include_person,
             )
 
-        probe_token = (
-            _start_selection_stability_probe(page)
-            if event_driven_stabilization
-            else None
-        )
+        probe_token = _start_selection_stability_probe(page)
         try:
             _select_appointment_option(
                 page.locator(HOUR_SELECTOR),
@@ -563,7 +552,7 @@ def _select_blocked_appointment_for_evidence(
             expected_date=date_text,
             expected_hour=hour_text,
             include_person=include_person,
-            event_driven=event_driven_stabilization,
+            event_driven=True,
             probe_token=probe_token,
         )
         observation["hour_stabilization_seconds"].append(
@@ -688,7 +677,6 @@ def validate_selected_appointment(
     expected_details: dict[str, Any] | None,
     *,
     expected_person_name: str | None = None,
-    use_atomic_dom: bool = False,
 ) -> dict[str, Any]:
     from appointment_bot.reservation_engine.appointments import (
         DATE_SELECTOR,
@@ -707,38 +695,31 @@ def validate_selected_appointment(
     expected_date = str(expected_details.get("fecha") or "")
     expected_hour = str(expected_details.get("hora") or "")
     started = time.monotonic()
-    mode = "legacy"
+    mode = "atomic"
     fallback_reason: str | None = None
-    if use_atomic_dom:
-        try:
-            snapshot = read_atomic_appointment_snapshot(page)
-            actual_site = snapshot.site
-            actual_date = snapshot.date
-            actual_hour = snapshot.hour
-            actual_slots = snapshot.slots
-            if (
-                (expected_site and not actual_site)
-                or (expected_date and not actual_date)
-                or (expected_hour and not actual_hour)
-            ):
-                raise ValueError("atomic_snapshot_missing_expected_selection")
-            mode = "atomic"
-        except Exception as exc:
-            fallback_reason = f"atomic_error:{type(exc).__name__}"
-            logger.warning(
-                "Atomic appointment validation fell back to legacy reads: %s",
-                fallback_reason,
-            )
-            actual_site = _selected_option_text(page, SITE_SELECTOR)
-            actual_date = _selected_option_text(page, DATE_SELECTOR)
-            actual_hour = _selected_option_text(page, HOUR_SELECTOR)
-            actual_slots = _read_slots_value(page)
-            mode = "legacy_fallback"
-    else:
+    try:
+        snapshot = read_atomic_appointment_snapshot(page)
+        actual_site = snapshot.site
+        actual_date = snapshot.date
+        actual_hour = snapshot.hour
+        actual_slots = snapshot.slots
+        if (
+            (expected_site and not actual_site)
+            or (expected_date and not actual_date)
+            or (expected_hour and not actual_hour)
+        ):
+            raise ValueError("atomic_snapshot_missing_expected_selection")
+    except Exception as exc:
+        fallback_reason = f"atomic_error:{type(exc).__name__}"
+        logger.warning(
+            "Atomic appointment validation fell back to legacy reads: %s",
+            fallback_reason,
+        )
         actual_site = _selected_option_text(page, SITE_SELECTOR)
         actual_date = _selected_option_text(page, DATE_SELECTOR)
         actual_hour = _selected_option_text(page, HOUR_SELECTOR)
         actual_slots = _read_slots_value(page)
+        mode = "legacy_fallback"
     if (
         (expected_site and not _same_option(actual_site, expected_site))
         or (expected_date and not _same_option(actual_date, expected_date))

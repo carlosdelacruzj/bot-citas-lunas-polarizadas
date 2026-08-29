@@ -126,11 +126,7 @@ def _control_payload(control: OpportunityRuntimeControl) -> dict[str, Any]:
     active_burst = get_active_opportunity_burst(settings)
     return {
         "revision": control.revision,
-        "source": (
-            "environment_fallback"
-            if "inherit" in {control.burst_mode, control.obs007_mode}
-            else "database"
-        ),
+        "source": "database",
         "obs006": _mode_payload(control, "obs006", control.burst_mode),
         "obs007": _mode_payload(control, "obs007", control.obs007_mode),
         "breaker": {
@@ -244,11 +240,11 @@ def _unsafe_reason(
     if action == "reset_breaker" and control.circuit_state != "open":
         return "El breaker ya esta cerrado; no hay nada que resetear."
     if action == "drain" and target != "obs006":
-        return "El drenaje solo aplica a OBS-006."
+        return "El drenaje solo aplica a las ráfagas de oportunidad."
     if action == "drain" and active_burst is None:
         return "No hay una rafaga activa que drenar."
     if action == "deactivate" and target == "obs006" and active_burst is not None:
-        return "OBS-006 tiene una rafaga activa. Solicita drain para cerrarla con seguridad."
+        return "Hay una ráfaga activa. Solicita drain para cerrarla con seguridad."
     return None
 
 

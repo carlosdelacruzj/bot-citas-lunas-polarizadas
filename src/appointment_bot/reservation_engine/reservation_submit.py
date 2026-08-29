@@ -70,7 +70,6 @@ def _validate_reservation_selection(
             page,
             expected_details,
             expected_person_name=expected_person_name,
-            use_atomic_dom=settings.appointment_atomic_validation_enabled,
         )
     finally:
         if timing is not None:
@@ -202,7 +201,6 @@ def solve_reservation_captcha_and_click_reserve(
             page,
             expected_details,
             expected_person_name=expected_person_name,
-            use_atomic_dom=settings.appointment_atomic_validation_enabled,
         ),
         detection_origin=(expected_details or {}).get("detection_origin"),
         captcha_audit=effective_captcha_audit,

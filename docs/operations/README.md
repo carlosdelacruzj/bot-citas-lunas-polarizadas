@@ -49,7 +49,7 @@ No reiniciar si existe:
 
 - submit o reserva en curso;
 - lease activo que no puede drenarse;
-- rafaga OBS-006/007 abierta;
+- rafaga o reobservacion de cupo abierta;
 - sesion manual;
 - trabajo WhatsApp preparando, seleccionando o esperando confirmacion;
 - lote de recordatorios o post-cita en ejecucion.
