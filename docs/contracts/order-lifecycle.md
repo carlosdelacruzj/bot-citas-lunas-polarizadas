@@ -1,328 +1,115 @@
 # Contrato de ciclo de vida de ordenes
 
-Este documento describe estados y transiciones que el admin API, CLI, worker y
-dashboard deben respetar.
+Estado: vigente. Ultima verificacion: `2026-08-29`.
 
-## Estados de `service_orders.status`
+Codigo propietario: `core/models.py`, `core/rules.py`, `db/order_*`,
+`db/reservations.py` y `services/api/service_order_routes.py`.
 
-- `ready`: orden elegible para monitoreo/reserva.
-- `paused`: orden pausada administrativamente o por rechazo de credenciales.
-- `reserved_payment_pending`: reserva confirmada, pago pendiente.
-- `paid`: cobro registrado.
-- `archived`: orden cerrada o excluida de cola.
+## Estados de orden
 
-Cada orden conserva `reservation_price` desde su alta. Las órdenes existentes
-al migrar a PostgreSQL v42 permanecen en `S/40`; las nuevas nacen en `S/50`.
-La reserva confirmada copia ese valor al pago pendiente, por lo que cambiar el
-precio general no modifica retroactivamente clientes ya registrados.
+`service_orders.status` admite:
 
-Un abono conserva `payments.status=pending` y
-`service_orders.status=reserved_payment_pending`; su `amount_paid` es el total
-acumulado y debe ser menor que `amount_agreed`. Solo un cierre explicito cambia
-ambos estados a `paid` y encola `post_payment_followup`. Un cierre por menos de
-lo acordado requiere una diferencia explicita y motivada; nunca se infiere a
-partir de un abono.
+- `ready`: elegible para la cola;
+- `paused`: conservada pero no elegible;
+- `reserved_payment_pending`: reserva confirmada y cobro abierto;
+- `paid`: servicio cobrado/completado por nosotros;
+- `archived`: cierre sin trabajo futuro de la cola.
 
-Solo `ready` puede entrar a una cola operativa. La cola normal del worker
-procesa órdenes sin restricciones positivas y también órdenes que únicamente
-tienen `excluded_date_ranges`: una exclusión protege fechas concretas, pero no
-convierte a la orden en espera de una coincidencia. Las órdenes con fecha
-mínima/máxima o días permitidos sí se consideran restringidas y
-su propia sesión solo intenta reservar cuando el cupo cumple esas reglas.
+Solo `ready` puede reclamarse. Backoff, preflight, intento y resultado no son
+estados alternativos de esta columna.
 
-El bloque de observadores usa hasta `OBSERVER_ACTIVE_ORDER_LIMIT` órdenes. La
-selección respeta prioridad, segundos trámites, menor penalización por
-restricciones y antigüedad;
-dentro del bloque se ejecuta primero quien lleva más tiempo sin revisión.
-Antes de resolver CAPTCHA o enviar la reserva, cualquier orden debe cumplir
-`minimum_date`, `maximum_date`, `allowed_weekdays` y
-`excluded_date_ranges`. Los límites de cada exclusión son inclusivos. Si el
-cupo incumple cualquier regla o cae dentro de un rango excluido, se registra
-como bloqueado por regla y no se intenta reservar.
-El horario no participa en compatibilidad: para la fecha permitida más próxima
-se usa el horario visible más temprano.
+## Creacion y preflight
 
-Las prioridades de `0` a `99` solo ordenan las ordenes dentro del comportamiento
-normal. Las prioridades de `100` a `199` activan prioridad de enfoque: esas
-ordenes ocupan primero los espacios disponibles del bloque, incluso si tienen
-restricciones. Con dos ordenes enfocadas y limite `2`, se rotan esas dos. Cuando
-una deja de estar `ready`, la enfocada restante conserva el primer espacio y el
-segundo vuelve a completarse con otra orden elegible.
-La prioridad solo cambia por una accion explicita del operador desde dashboard,
-API o Telegram. El worker no aumenta automaticamente la prioridad despues de
-una reserva ni por coincidencia de fecha u hora.
+Cada orden persiste contacto, credenciales cifradas, servicio, precio y reglas.
+Si requiere preflight nace pausada; solo vuelve a `ready` tras validacion. Un
+HTTP `201` prueba persistencia, no activacion.
 
-Una prioridad `200` o superior activa el enfoque exclusivo. Mientras esa orden
-este `ready` y sea elegible, `list_observer_orders()` devuelve solo esa orden,
-sin importar `OBSERVER_ACTIVE_ORDER_LIMIT`. Al asignar el modo exclusivo, otro
-exclusivo previo vuelve a prioridad `100` y se limpia la espera pendiente de la
-nueva orden. Si una fecha se descarta por sus reglas, la orden permanece
-elegible sin un cooldown temporal, sea normal, enfocada o exclusiva. Esto no
-crea navegadores ni
-workers paralelos: el worker existente repite sus sesiones de forma secuencial
-sobre la misma orden.
+## Servicio y precio
 
-La prioridad de enfoque controla que ordenes ocupan el bloque de observacion,
-pero no transfiere cupos entre sesiones. Si el segundo observador detecta un
-cupo compatible con su propia regla, debe intentar reservarlo inmediatamente
-con su propia cuenta. No debe cambiar a la orden enfocada, porque esa demora
-puede hacer que ambos usuarios pierdan el cupo. Esto tambien aplica si durante
-la sesion aparece una orden con prioridad `200`: el enfoque exclusivo modifica
-la siguiente seleccion de observadores, pero no cancela ni difiere una reserva
-compatible que ya fue detectada por otra sesion.
+`service_type` admite `standard`, `selected_weekday` y `custom`.
+`reservation_price` debe ser positivo y se conserva por orden. `S/50` es el
+default cuando no se especifica; un cambio global no reescribe ordenes creadas.
 
-## Ordenamiento
+La reserva copia el precio al pago acordado.
 
-La cola normal usa:
+## Restricciones
 
-```text
-priority DESC, created_at ASC
-```
+Reglas positivas:
 
-Las restricciones positivas que deciden si una orden debe esperar un cupo
-compatible son:
+- `minimum_date` y `maximum_date`;
+- `allowed_weekdays`.
 
-- `minimum_date`
-- `maximum_date`
-- `allowed_weekdays`
+Regla negativa: `excluded_date_ranges`.
 
-`excluded_date_ranges` es una protección negativa: no saca por sí sola a la
-orden de la cola normal, pero siempre se valida antes del CAPTCHA y del envío.
+Las positivas sacan la orden de la cola general y exigen coincidencia; una
+exclusion por si sola no la saca, pero siempre se valida antes de CAPTCHA o
+submit. Guardar reglas limpia esperas derivadas de restricciones anteriores.
 
-Una cuenta puede tener varios tramites pendientes. En ese caso la orden
-generica puede dividirse en subordenes con:
+Una fecha incompatible produce `partial / blocked_by_order_rule`, sin backoff
+general y sin contar como intento compatible.
 
-- `parent_order_id`
-- `program_expediente`
-- `program_plate`
+## Prioridad y admision
 
-Cada suborden comparte las credenciales del mismo titular, pero se procesa y se
-cierra de forma independiente. Si una suborden tiene expediente o placa objetivo,
-el worker debe seleccionar exactamente esa fila del listado de tramites; si no
-la encuentra o no esta `PENDIENTE`, debe fallar claro antes de abrir el panel de
-citas para evitar reservar el tramite equivocado.
+Los niveles especiales son focused `100` y exclusive `200`. Solo una orden puede
+mantener prioridad exclusiva; asignar otra degrada la anterior.
 
-Cada selección conserva en `selection_observation` las combinaciones fecha/hora
-realmente leídas. Si la sesión actual encuentra una opción compatible, reserva
-de inmediato y no recorre fechas adicionales solo para completar el inventario.
-Si queda bloqueada por reglas, conserva todas las combinaciones encontradas en
-el recorrido ya necesario.
+El ranking de admision considera prioridad, suborden, compatibilidad de reglas y
+antiguedad. El orden de ejecucion dentro del bloque también rota por suborden y
+ultima corrida; no debe presentarse como el mismo ranking.
 
-Desde el canario del `2026-08-11`, `selection_observation` conserva además el
-modo de estabilización (`event_atomic`, `legacy_fallback` o `legacy`), espera de
-señal, causa/duración de fallback y cantidad de snapshots atómicos. Estos campos
-son telemetría: no cambian las reglas de compatibilidad ni autorizan un submit.
+Cuando aparece una oportunidad, cada candidato conserva cuenta, contexto
+Playwright, claim y lease independientes. Nunca se transfieren cookies entre
+ordenes.
 
-Después de una detección, la cadena de oportunidades evalúa tanto órdenes
-abiertas como restringidas. Solo excluye a quien no sea compatible con ninguna
-fecha observada. El orden es:
+## Claims, intentos y backoff
 
-1. prioridad manual exclusiva (`>=200`);
-2. segundos trámites (`parent_order_id` presente);
-3. mayor cantidad de combinaciones compatibles;
-4. menor complejidad de restricciones;
-5. prioridad manual restante y antigüedad.
+Una orden reclamada no puede ejecutarse simultaneamente por otro worker. Un
+intento `intent`, `pending` o `unknown` bloquea una admision nueva hasta
+reconciliarse.
 
-La cadena es secuencial y conserva contexto, cookies y lease independientes por
-orden. Intenta como máximo `OPPORTUNITY_HANDOFF_MAX_CANDIDATES` clientes durante
-`OPPORTUNITY_HANDOFF_MAX_SECONDS`; los valores por defecto son `10` y `300`.
-Continúa después de cada reserva confirmada y termina si un cliente confirma que
-los cupos desaparecieron, vence la ventana, se agotan candidatos o surge un
-resultado ambiguo. Cada nueva sesión vuelve a leer el portal: las oportunidades
-son evidencia temporal, no inventario garantizado ni transferencia directa.
+`next_allowed_at` excluye temporalmente una orden `ready`; no cambia su estado.
+Resultados de regla no crean backoff global.
 
-Con `OPPORTUNITY_BURST_ENABLED=true`, una selección completa del detector abre
-una ráfaga antes de esa cadena: el detector continúa y se inicia un auxiliar
-compatible, priorizando la otra orden del bloque activo. Hay como máximo dos
-sesiones simultáneas. Cada `registered` confirmado libera una posición para el
-siguiente compatible; con `OPPORTUNITY_BURST_MAX_CLIENTS=0` se puede recorrer
-toda la fotografía inicial de la cola durante un máximo de 300 segundos. Un
-resultado sin cupos cierra esa sesión; una defensa, error técnico o
-`reservation_unconfirmed` detiene reemplazos nuevos sin repetir submits
-ambiguos. Cuando la ráfaga termina, no repite los mismos cupos en la cadena
-secuencial y vuelve al observer normal. Con la bandera en `false`, este bloque
-no reclama candidatos y se conserva el comportamiento secuencial anterior.
+## Resultados
 
-El muestreo CAPTCHA adicional solo corresponde a la sesión detectora. Toda
-sesión posterior de la cadena fuerza una sola muestra antes de 2Captcha para no
-multiplicar la demora de entrenamiento en el camino crítico.
+Resultados de ejecución:
 
-La espera entre ordenes dentro de la cola rapida se controla con:
+`available`, `completed`, `error`, `partial`, `paused`, `registered`,
+`reservation_unconfirmed`, `skipped`, `unavailable` y `unknown`.
 
-- `QUEUE_DELAY_MIN_SECONDS`
-- `QUEUE_DELAY_MAX_SECONDS`
+Estados internos como `submission_intent`, `submission_pending` o `programmed`
+pertenecen a la evidencia de intento, no al resultado público equivalente.
 
-Este delay no controla el monitoreo normal del observer. Solo se aplica entre
-ordenes de la cola operativa cuando ya se esta procesando un bloque de usuarios
-por disponibilidad, reserva confirmada o barrido rapido.
+Una seleccion unica archiva screenshot antes de CAPTCHA o submit. Un submit
+ambiguo permanece sin reintento automatico.
 
-El observer normal usa sus propios intervalos:
+## Reserva y pago
 
-- `OBSERVER_INTERVAL_MIN_SECONDS`
-- `OBSERVER_INTERVAL_MAX_SECONDS`
-- `CONTINUOUS_INTERVAL_MIN_SECONDS`
-- `CONTINUOUS_INTERVAL_MAX_SECONDS`
+Una reserva confirmada deja la orden en `reserved_payment_pending`, salvo flujo
+sin cobro. El pago parcial debe ser positivo y menor al acordado; conserva pago
+pendiente y no encola postpago.
 
-## Estado operativo en `order_state`
+El pago completo exige la orden pendiente de cobro. Si el monto es menor al
+acordado requiere autorizacion y motivo. La transaccion marca pago/orden y
+encola postpago durable; no implica entrega WhatsApp.
 
-`order_state` guarda informacion de ultimo resultado y cooldown:
+## Subordenes
 
-- `last_status`
-- `last_message`
-- `consecutive_errors`
-- `credential_failures`
-- `next_allowed_at`
-- `last_run_at`
-- `last_success_at`
-- flags de submission pendiente
+Una cuenta con varios tramites se divide mediante `parent_order_id`, expediente
+y placa objetivo. Precio, reglas y credenciales se heredan al dividir y el padre
+se archiva. Cada suborden mantiene estado, reserva y pago propios.
 
-`next_allowed_at` puede excluir temporalmente una orden sin cambiar
-`service_orders.status`.
+## Cierre
 
-## Estados de resultado
+`closure_reason`, `closure_note` y `closed_at` registran el motivo administrativo
+sin reemplazar el estado operativo. Una orden cerrada no regresa a la cola por
+editar contacto o por una comunicación pendiente.
 
-Resultados principales:
+## Integraciones posteriores
 
-- `available`
-- `completed`
-- `error`
-- `partial`
-- `paused`
-- `registered`
-- `reservation_unconfirmed`
-- `skipped`
-- `unavailable`
-- `unknown`
+- WhatsApp: [`whatsapp.md`](whatsapp.md).
+- Recordatorios y post-cita: [`../project-status.md`](../project-status.md).
+- Seguridad de reserva: [`reservation-safety.md`](reservation-safety.md).
 
-Estados internos adicionales:
-
-- `programmed`
-- `submission_intent`
-- `submission_pending`
-
-## Reglas de cierre
-
-- Una orden `paid`, `reserved_payment_pending` o `archived` no debe volver a la
-  cola activa.
-- `service_orders.status` es operativo. La razon administrativa del cierre se
-  guarda por separado en `closure_reason`, `closure_note` y `closed_at`.
-- Razones de cierre soportadas:
-  - `completed_by_us`: reservado por nosotros con cobro.
-  - `family_no_charge`: reservado por nosotros sin cobro familiar.
-  - `client_withdrew`: cliente retirado.
-  - `external_slot`: cupo conseguido por un tercero.
-  - `duplicate`: orden duplicada; la nota debe indicar la orden valida cuando
-    aplique.
-  - `not_serviceable`: caso no gestionable.
-- Las razones sin cobro (`family_no_charge`, `client_withdrew`,
-  `external_slot`, `duplicate`, `not_serviceable`) deben dejar
-  `charge_required=false` y limpiar pagos pendientes.
-- Una reserva confirmada debe persistirse junto con `runs`, `reservations`,
-  `payments` y estado de orden segun corresponda.
-- Las notificaciones de Telegram posteriores a una reserva confirmada son
-  diferidas cuando vienen de la cola rapida, para no bloquear el inicio del
-  siguiente intento. El mensaje copiable para el cliente debe mantenerse
-  separado del mensaje operativo de contacto.
-- Al agotarse normalmente la cola rapida, el worker revisa en sesiones nuevas las
-  ordenes confirmadas en ese ciclo y actualiza su evidencia con la vista de nombres
-  y `Separa Cita Peritaje: Programado`. Esa captura reemplaza la imagen de la
-  notificacion diferida de Telegram; si la revision falla, se conserva la captura
-  original como respaldo. Es posprocesamiento: nunca se ejecuta entre intentos ni
-  cuando la cola se detuvo por pausa, limite, incertidumbre o error.
-- WhatsApp es un flujo automatico durable posterior a la reserva y no forma
-  parte del camino critico de reserva. Solo una reserva `confirmed` con orden
-  `reserved_payment_pending`, pago pendiente, monto, contacto internacional y
-  constancia segura puede encolar confirmacion y cobro.
-- `whatsapp_automation_jobs` gobierna `queued`, `blocked`, `running`, `sent`,
-  `failed` y `uncertain`. Un `sent` exige evidencia segura; una entrega ambigua
-  queda `uncertain` y nunca se reintenta automaticamente. Ese estado no marca
-  el pago como cobrado. Los paquetes `test_mode=true` no cambian ordenes,
-  reservas ni pagos.
-- La bandeja operativa no considera pendiente a toda orden pagada. El estado
-  accionable combina evidencia real `sent` y el trabajo durable de
-  `whatsapp_automation_jobs`:
-  - cualquier envio real confirmado prevalece sobre un fallo anterior;
-  - `queued`, `blocked` y `running` siguen bajo responsabilidad automatica;
-  - solo `failed` o `uncertain` sin evidencia posterior requieren revision;
-  - una orden historica sin trabajo automatico queda `not_applicable` para la
-    bandeja, sin borrar sus paquetes ni enviar mensajes retroactivos.
-- Un resultado `uncertain` solo abre la orden para revision; nunca ofrece un
-  reintento directo desde la bandeja.
-- Los recordatorios de cita se derivan exclusivamente de la reserva
-  `confirmed` mas reciente de cada orden y de `reservations.appointment_day`.
-  El destinatario procede del contacto administrativo primario; nunca de
-  credenciales, formularios del portal ni campos honeypot.
-- La anticipacion operativa vive en
-  `appointment_reminder_control.lead_days`. Solo admite los enteros `1`, `2` o
-  `3`; el valor inicial y de compatibilidad es `1`. El dashboard la guarda en
-  PostgreSQL junto con el modo mediante revision optimista, por lo que el cambio
-  no requiere editar `.env` ni reiniciar Admin API o el worker.
-- La primera reconciliacion de cada `service_date` en hora Lima congela el
-  `appointment_day` de ese lote como `service_date + lead_days`. Si el lote del
-  dia ya existe, un cambio posterior de anticipacion queda persistido pero se
-  aplica desde el siguiente `service_date`: nunca reemplaza la fecha objetivo
-  ni mezcla los conteos del lote vigente. El contrato de base solo permite una
-  diferencia congelada de `1`, `2` o `3` dias.
-- Cada recordatorio usa la clave durable
-  `appointment_reminder:{reservation_id}:{appointment_day}`. Una reconciliacion
-  repetida no crea duplicados y una misma reserva/fecha no vuelve a recibir un
-  recordatorio si reaparece bajo otra anticipacion. El texto, la fecha operativa
-  y la fecha de cita quedan persistidos antes del intento.
-- Cambiar `lead_days` no cancela, reescribe ni mueve trabajos ya creados. Los
-  conteos y estados del dia consultan el `appointment_day` congelado, no el
-  valor de anticipacion que este vigente despues.
-- El recordatorio se guarda `blocked` y no puede reclamarse hasta que exista el
-  `daily_slot_summary` de la misma fecha operativa y ninguno de sus intentos
-  permanezca `queued`, `blocked` o `running`. El resumen diario conserva
-  prioridad `0`; los recordatorios usan prioridad `100`.
-- La autoridad operativa reside en `appointment_reminder_control`: `disabled`
-  no crea ni permite reclamar trabajos, `dry_run` solo calcula, `canary` limita
-  la admision a 1 o 2 `order_id` elegibles y `live` admite todos dentro del
-  limite diario. La validacion canaria usa la fecha congelada del lote si ya
-  existe o la fecha calculada con el `lead_days` solicitado si aun no existe.
-  Cada cambio usa revision optimista; el texto vive por separado en el registro
-  de plantillas WhatsApp.
-- Solo se aceptan `{nombre}`, `{fecha}`, `{hora}` y `{sede}`; `{fecha}` es
-  obligatoria y los datos ausentes se renderizan como `por confirmar`.
-  `{nombre}` corresponde exclusivamente a `applicants.full_name`, es decir, la
-  persona que asistira al peritaje; nunca usa el nombre administrativo del
-  contacto de WhatsApp. Si el nombre del solicitante falta, se usa `cliente`.
-  La API entrega tambien la etiqueta de fecha renderizada para que la vista
-  previa coincida literalmente con el mensaje final.
-- Si la plantilla vigente contiene la palabra `mañana`, la API rechaza guardar
-  una anticipacion de `2` o `3` dias y la conciliacion queda bloqueada aun ante
-  una alteracion directa de PostgreSQL. El operador debe corregir el texto en
-  **Mensajes**; una plantilla personalizada nunca se reemplaza silenciosamente.
-- `GET /api/v1/appointment-reminders` expone el control persistido, la
-  anticipacion efectiva del lote, su fecha exacta de aplicacion y la politica
-  `existing_jobs_policy=preserved`. Tambien entrega los candidatos de la fecha
-  objetivo para configurar el canario. La vista **Citas y recordatorios** cruza
-  esos datos con todas las citas futuras de Post-cita; el detalle visible limita
-  destinatarios a su forma enmascarada y nunca publica el contacto completo ni
-  credenciales.
-- Despues del claim se revalidan fecha Lima, reserva vigente, contacto y texto.
-  La vigencia temporal se comprueba contra el snapshot del propio trabajo:
-  `report_date` debe seguir siendo hoy en Lima y la diferencia hasta
-  `appointment_day` debe continuar entre `1` y `3`. No se compara contra el
-  `lead_days` actual, porque un cambio valido de configuracion no debe invalidar
-  el lote congelado. Un trabajo atrasado u obsoleto termina `skipped` antes de
-  abrir el chat. Si el intento llega al envio, conserva la misma semantica
-  estricta: `sent` exige evidencia de una burbuja saliente, mientras
-  `uncertain` es terminal y no se reintenta.
-- Una reserva incierta debe quedar protegida por `reservation_attempts` y
-  estado pendiente para evitar doble envio.
-- Una orden bloqueada por regla propia puede quedar en espera o cooldown sin
-  pausar ni archivar.
-
-## Reglas para dashboard
-
-- Borrar fisicamente no es una accion inicial; usar archivar/completar.
-- No permitir editar directamente estados internos de DB.
-- No marcar pagado sin monto.
-- No cambiar reglas de una orden reclamada sin validacion backend.
-- Mostrar claramente si una orden esta `ready` pero temporalmente bloqueada por
-  `next_allowed_at`.
-- **Citas y recordatorios** separa el listado operativo de su configuracion. La
-  busqueda y los filtros deben aparecer antes de la lista; anticipacion, modo y
-  canarios viven en un panel independiente que muestra la fecha objetivo real y
-  advierte que los lotes ya preparados no cambian.
+El éxito de una reserva o pago no depende del éxito de WhatsApp. `uncertain` es
+terminal para reintento automático.

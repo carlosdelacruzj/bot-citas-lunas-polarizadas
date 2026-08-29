@@ -1,144 +1,91 @@
 # Contrato de control del worker
 
-Este documento define como se controla el worker hoy y como debe migrarse a un
-admin API separado.
+Estado: vigente. Ultima verificacion: `2026-08-29`.
 
-## Estado actual
+Codigo propietario: `worker/continuous_worker.py`, `worker/host.py`,
+`services/api/worker_routes.py` y `db/worker_commands.py`.
 
-La topologia principal ejecuta `appointment-bot-worker` y
-`appointment-bot-admin-api` como procesos independientes. La API embebida de
-`8765` permanece como compatibilidad de rollback y, solo en ese modo, llama
-metodos del objeto `ContinuousWorker` en memoria:
+## Autoridad
 
-- `POST /api/v1/worker/pause`
-- `POST /api/v1/worker/resume`
-- `POST /api/v1/worker/restart`
+El worker decide cuando una operacion Playwright puede ejecutarse o detenerse.
+Admin API solicita acciones; no altera el loop ni sus recursos directamente.
 
-La API embebida conserva este modelo por compatibilidad. El admin API separado
-usa el canal persistido `worker_commands`.
+Existen dos transportes con la misma semantica:
 
-## Estado publico del worker
+- la API embebida del worker aplica el control sobre su `ContinuousWorker`;
+- Admin API encola un comando durable en `worker_commands`.
 
-Campos utiles para dashboard:
+La topologia normal usa el canal durable. La API embebida permanece como
+compatibilidad local y no debe convertirse en un segundo plano de control.
 
-- `phase`
-- `paused`
-- `current_order_id`
-- `masked_account`
-- `session_started_at`
-- `last_check_at`
-- `next_check_at`
-- `confirmed_reservations`
-- `consecutive_errors`
-- `last_error`
-- `updated_at`
-- `worker_running`
-- `continuous_worker_enabled`
+## Estado publico
 
-Campos internos que no deben salir al frontend:
+La respuesta administrativa usa una allowlist:
 
-- `owner_token`
-- `lease_expires_at`
-- cualquier dato no enmascarado de credenciales.
+- `phase`, `paused`, `current_order_id`, `masked_account`;
+- `session_started_at`, `last_check_at`, `next_check_at`, `updated_at`;
+- `confirmed_reservations`, `consecutive_errors`, `last_error`;
+- `worker_running`, `worker_starting`, `continuous_worker_enabled`.
 
-Estado implementado: `GET /api/v1/worker` usa una lista permitida de campos
-publicos y filtra los campos internos aunque el worker los tenga en memoria.
+No expone `owner_token`, lease, credenciales ni datos sin enmascarar.
 
-## Fases operativas importantes
+Una API viva no prueba worker funcional. En Admin API, `worker_running` depende
+del lease/estado persistido; salud puede responder `api_only` sin worker activo.
+`phase` es informativa y extensible: el frontend no debe congelar un enum ni
+interpretar una fase desconocida como fallo.
 
-- `starting`: arranque.
-- `paused`: pausa administrativa.
-- `outside_hot_window`: vivo pero esperando ventana.
-- `monitoring_observer`: observador activo.
-- `monitoring_order`: orden activa.
-- `rapid_queue`: cola rapida.
-- `backoff` o `recovery_backoff`: espera por error o defensa.
-- `daily_cutoff`: fin operativo diario.
-- `lease_unavailable`: otro host tiene el lease.
+## Comandos
 
-El dashboard debe distinguir API viva de worker realmente procesando.
-Cuando `phase` empieza por `monitoring_observer` y `current_order_id` esta vacio,
-el dashboard debe mostrar `Observador general activo`: la cuenta esta buscando
-cupos, pero no representa una orden de cliente.
+Comandos permitidos:
 
-El origen de la deteccion no cambia la alerta urgente de Telegram. Tanto el
-observador general como una orden activa usan el mismo formato breve:
-`CUPO DETECTADO`, hora de envio, sede, fechas, horas y cupos. El mensaje no
-incluye etiquetas del observador ni instrucciones adicionales.
+- `pause`: impide admitir trabajo nuevo y espera una frontera segura;
+- `resume`: reanuda admision;
+- `restart`: prepara salida coordinada para que el supervisor reinicie.
 
-## Comandos actuales
+Admin API crea el comando como `pending`. El worker reclama FIFO, registra su
+owner y lo termina como `applied` o `failed`. Aceptar el HTTP no equivale a que
+el comando ya fue aplicado.
 
-- `pause`: pausa el loop sin matar el proceso.
-- `resume`: reanuda el loop.
-- `restart`: prepara reinicio controlado y devuelve codigo 75 al bootstrap.
+No ampliar la allowlist sin implementar semantica idempotente, autorizacion,
+auditoria y tratamiento seguro de trabajo activo.
 
-Todos estos comandos requieren `Authorization: Bearer
-<APPOINTMENT_BOT_API_TOKEN>`. Si el token no esta configurado, la API responde
-`configuration_error` para evitar controles administrativos abiertos.
+## Autenticacion y actor
 
-Un cliente administrativo autenticado puede enviar `X-Appointment-Actor` con
-un identificador saneado de hasta 64 caracteres formado por letras, numeros,
-`:`, `_` o `-`. El valor se persiste como `requested_by`; cualquier valor
-ausente o invalido se normaliza a `admin_api`. Telegram usa un hash corto del
-`chat_id` y nunca guarda el identificador completo en `worker_commands`.
+Los controles requieren autenticacion estricta mediante bearer o sesion local
+confiable. Sin configuracion segura fallan cerrado.
 
-## Canal persistido
+`X-Appointment-Actor` admite hasta 64 caracteres en `[A-Za-z0-9:_-]`; un valor
+ausente o invalido se normaliza a `admin_api`. Telegram persiste un hash corto,
+nunca el chat o usuario completo.
 
-El canal persistido permite que `appointment-bot-admin-api` solicite acciones
-sin tener un objeto `ContinuousWorker` en memoria:
+## Salida coordinada
 
-```text
-worker_commands
-```
+- `0`: cierre normal;
+- `75`: reinicio coordinado;
+- `76`: host sin lease o detencion coordinada que no debe reiniciarse en bucle.
 
-Campos principales:
+Los supervisores respetan estos codigos y mantienen limite de reinicios.
 
-- `command_id`
-- `command`
-- `status`
-- `requested_at`
-- `claimed_at`
-- `processed_at`
-- `requested_by`
-- `worker_owner_token`
-- `error_message`
+## Oportunidades OBS-006/007
 
-Comandos iniciales:
+`opportunity_runtime_control` gobierna admision de rafagas y reobservaciones;
+no reemplaza `worker_commands`.
 
-- `pause`
-- `resume`
-- `restart`
+- `inherit`: usa configuracion activa;
+- `enabled`: admite si el breaker está cerrado;
+- `disabled`: bloquea trabajo nuevo;
+- `draining`: solo para rafagas; deja terminar sesiones ya iniciadas;
+- `circuit_state=open`: bloquea siempre hasta reset explicito auditado.
 
-El admin API separado escribe comandos con estado `pending`. El worker activo
-los reclama con su `owner_token`, los ejecuta en su propio ciclo y los marca
-como `applied` o `failed`.
+Al adquirir un lease nuevo, el worker reconcilia rafagas abandonadas como
+`aborted`. No reintenta submits ni elimina evidencia.
 
-## Compatibilidad
+Runbook: [`../operations/opportunity-bursts.md`](../operations/opportunity-bursts.md).
 
-Mientras la migracion conserva compatibilidad:
+## Seguridad
 
-- mantener API embebida para control directo;
-- mantener el canal persistido para el admin API separado;
-- mantener `appointment-bot-worker`;
-- mantener `scripts/start-worker.ps1`;
-- no cambiar codigos de salida 0, 75 y 76.
-
-## Control durable de oportunidades
-
-OBS-006 y OBS-007 tienen un control independiente en
-`opportunity_runtime_control`. No reemplaza `worker_commands`: gobierna la
-admision de nuevas rafagas y nuevas reobservaciones en cada frontera segura.
-
-- `inherit`: usa la bandera de entorno actual sin cambiar el comportamiento al
-  migrar a `schema v50`;
-- `enabled`: admite trabajo si el breaker esta cerrado;
-- `disabled`: bloquea admisiones nuevas;
-- `draining` en OBS-006: bloquea reemplazos nuevos y deja terminar las sesiones
-  ya iniciadas; al cerrar la ultima rafaga se convierte en `disabled`;
-- `circuit_state=open`: prevalece sobre cualquier modo deseado y requiere un
-  reset explicito, con actor, motivo y revision vigente.
-
-El worker reconcilia como `aborted` cualquier rafaga que haya quedado activa al
-adquirir un nuevo lease. Esa reconciliacion no reintenta submits ni borra la
-evidencia. El control general de pausa/reinicio seguro y la salud compuesta
-siguen perteneciendo a la Fase 3 del roadmap.
+- no matar una sesion durante submit;
+- no liberar backoff como efecto lateral de un comando;
+- no marcar un comando aplicado antes del punto seguro;
+- no ejecutar controles por SQL, Telegram o PowerShell fuera de Admin API;
+- no asumir salud funcional por PID o HTTP aislado.

@@ -5,7 +5,10 @@
     "screenshots/",
     "videos/",
     "backups/",
-    "reports/evidence/history/",
+    "docs/history/",
+    "docs/evidence-index.csv",
+    "docs/evidence-summary.md",
+    "reports/",
     "dashboard/node_modules/",
     "dashboard/dist/"
   ]

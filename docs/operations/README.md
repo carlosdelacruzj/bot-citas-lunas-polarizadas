@@ -1,319 +1,130 @@
-# Manual operativo
+# Runbook operativo
 
-Estado: **vigente**.
+Ultima verificacion documental: `2026-08-29`.
 
-Ultima verificacion: `2026-08-11`.
-
-Este documento contiene el camino diario de operacion y recuperacion. El estado
-general vive en [`../project-status.md`](../project-status.md) y todo trabajo
-futuro se prioriza exclusivamente en
+Este archivo contiene controles seguros y rutas de diagnostico. El estado actual
+vive en [`../project-status.md`](../project-status.md); el trabajo futuro, en
 [`../roadmap/README.md`](../roadmap/README.md).
 
-## Componentes actuales
+## Topologia
 
-```text
-AppointmentBotContinuousWorker (tarea programada)
-  -> scripts/start-runtime.pyw
-     -> scripts/start-runtime.ps1
-        |-- scripts/start-worker.ps1
-        |-- scripts/start-admin-dashboard.ps1
-        |-- scripts/start-telegram-control.ps1
-        `-- scripts/start-captcha-shadow.ps1 (solo si está habilitado)
+Procesos principales:
 
-PostgreSQL 16 en Docker
-  |-- worker de reservas: 127.0.0.1:8765
-  |-- Admin API + dashboard: 127.0.0.1:8766
-  |-- Telegram control -> Admin API
-  `-- CAPTCHA local/sombra: 127.0.0.1:8787 (apagado en reserva fría)
-```
+- Admin API en loopback: dashboard, comandos, schedulers y WhatsApp;
+- worker continuo: monitoreo y reservas;
+- control Telegram: interfaz movil sobre Admin API;
+- supervisor CAPTCHA: opcional, solo si la feature está habilitada;
+- PostgreSQL y dependencias externas.
 
-Los pares `.venv/python.exe -> Python312/python.exe` son el redirector normal
-del entorno virtual en Windows, no procesos funcionales duplicados.
+Detalles: [`deployment-topology.md`](deployment-topology.md) y
+[`../architecture/current-runtime.md`](../architecture/current-runtime.md).
 
-n8n `2.22.4` permanece local, fuera del camino crítico y sobre el volumen
-durable `n8n_data`. Su puerto debe publicarse exclusivamente como
-`127.0.0.1:5678:5678`; un bind vacío o `0.0.0.0:5678` vuelve a exponerlo en la
-red. Si se recrea el contenedor, conservar el volumen y comprobar `/healthz` y
-la activación de `Appointment Bot - Monitor continuo` antes de retirar el
-contenedor anterior.
-
-## Arranque
-
-El camino normal es la tarea programada instalada con:
+## Inicio
 
 ```powershell
-scripts/install-startup-task.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-runtime.ps1
 ```
 
-Para una recuperacion manual controlada:
+Para desarrollo del dashboard:
 
 ```powershell
-scripts/start-runtime.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-admin-dashboard.ps1
 ```
 
-Cada supervisor puede iniciarse por separado durante diagnostico:
-
-```powershell
-scripts/start-worker.ps1
-scripts/start-admin-dashboard.ps1
-scripts/start-telegram-control.ps1
-scripts/start-captcha-shadow.ps1
-```
-
-El último comando solo mantiene el servicio residente cuando
-`CAPTCHA_SHADOW_SERVICE_ENABLED=true`; con el valor `false` detiene una copia
-existente y termina.
-
-No iniciar una segunda copia sin comprobar antes la tarea, supervisores,
-procesos hijos y puertos.
-
-## Salud y horario
-
-| Superficie | Comprobacion | Lectura |
-| --- | --- | --- |
-| Worker | `http://127.0.0.1:8765/health` | Vida del proceso durante la ventana operativa. |
-| Estado worker | Dashboard `/api/v1/worker` | Fase, orden, error, pausa y proxima revision. |
-| Admin API | `http://127.0.0.1:8766/health` | `ok/api_only` significa API viva, no worker activo. |
-| CAPTCHA | `http://127.0.0.1:8787/health` | CUDA y modelos cuando está habilitado; conexión rechazada es normal en reserva fría. |
-| PostgreSQL | `docker ps` / healthcheck | Contenedor y esquema operativo. |
-
-El worker consulta de lunes a sabado y termina normalmente a las `18:00` con
-codigo `0`. `start-worker.ps1` espera hasta las `07:30`. Fuera de ese horario,
-un worker no escuchando en `8765` no es por si solo un incidente si el
-supervisor sigue vivo, no hay lease/submission y el corte quedo registrado.
+No interpretar un PID o un HTTP `200` aislado como salud funcional.
 
-## Configuracion vigente del observer
+## Verificacion minima
 
-- hasta `15` consultas de sede por sesion;
-- espera aleatoria independiente de `1-2` segundos;
-- un `reload_probe` despues del intento `8`;
-- nueva sesion Playwright por cliente;
-- `OBS-006`: maximo dos sesiones concurrentes;
-- `OBS-007`: reobservacion unica despues de `slot_lost` explicito;
-- V6 opera en canario de hasta `20` decisiones; 2Captcha es fallback automático.
-
-El canario operativo OBS-006/007 y su rollback estan en
-[`opportunity-burst-canary-2026-08-09.md`](opportunity-burst-canary-2026-08-09.md).
-La seleccion event-driven, sus mediciones y los dos kill switches de rollback
-estan en
-[`reservation-critical-path-canary-2026-08-11.md`](reservation-critical-path-canary-2026-08-11.md).
-Los planes de rendimiento de julio son historia y no describen configuracion
-actual.
-
-## Operacion desde dashboard
-
-Abrir `http://127.0.0.1:8766/`.
-
-Flujo normal:
-
-1. **Resumen**: salud, resultado mensual y alertas.
-2. **Pendientes**: cobros, contactos y comunicaciones que requieren decision.
-3. **Ordenes**: alta, edicion, prioridad, reglas, pago y sesiones manuales.
-4. **Post-cita**: lectura administrativa aislada; no reserva ni comunica.
-5. **CAPTCHA**: revision humana de la cola sombra; no responde al portal.
-6. **Finanzas**: costos PostgreSQL, anulacion auditable y conciliacion.
-
-Una orden lista abre **Sesion manual** en el panel de citas. Una orden no lista
-puede usar **Abrir portal** para consulta sin ejecutar automaticamente el flujo
-de reserva. Cada navegador se cierra de forma independiente.
+1. Confirmar PostgreSQL accesible y esquema esperado.
+2. Consultar salud de Admin API.
+3. Comprobar heartbeat y estado del worker.
+4. Verificar Telegram con una actualizacion nueva, no solo proceso vivo.
+5. Verificar WhatsApp `session_ready` y ausencia de jobs bloqueados.
+6. Revisar submissions, leases, rafagas y sesiones manuales activas.
+7. Confirmar frescura de la fuente relevante para la tarea.
 
-Toda fecha visible usa `DD-MM-YYYY`; horas `HH:mm`; timestamps en
-`America/Lima`.
+## Antes de reiniciar
 
-## Control remoto por Telegram
-
-La frontera obligatoria es:
+No reiniciar si existe:
 
-```text
-Telegram -> Admin API 127.0.0.1:8766 -> PostgreSQL/worker_commands -> worker
-```
+- submit o reserva en curso;
+- lease activo que no puede drenarse;
+- rafaga OBS-006/007 abierta;
+- sesion manual;
+- trabajo WhatsApp preparando, seleccionando o esperando confirmacion;
+- lote de recordatorios o post-cita en ejecucion.
 
-Telegram no ejecuta SQL ni PowerShell y no accede a una segunda fuente de
-datos. El menu permite buscar clientes, crear altas manuales, ajustar prioridad
-y reglas, consultar estado y etiquetar CAPTCHA sombra. Conversaciones y botones
-vencen; los guardados se vuelven a leer antes de anunciar exito.
+Si el reinicio es seguro, detener y levantar solo el proceso propietario. No
+liberar backoffs ni reconciliar jobs como efecto lateral del restart.
 
-El menú ofrece **En cola** para órdenes listas, en validación o pausadas, y
-**Faltan pagar** para reservas con `payment_status=pending`. Desde esta última
-vista, **Registrar pago** usa el monto acordado como total final, muestra
-abonos y saldo, y exige confirmación. Para una diferencia deliberada se usa
-`/pago ORDEN MONTO_TOTAL`. La Admin API cambia pago y orden a `paid` y encola el
-postpago en la misma transacción; el mensaje de Telegram solo confirma el
-registro y encolado, no la entrega por WhatsApp.
+## Dashboard
 
-La consulta de credenciales completas es una excepcion deliberada para el unico
-operador autorizado. Nunca se registran valores en logs o auditoria y debe
-minimizarse su permanencia en el chat.
+- **Pendientes** usa `/api/v1/operator-inbox`; CAPTCHA queda separado.
+- **Ordenes** administra alta, preflight, reglas y detalle.
+- **Citas y recordatorios** contiene agenda y post-cita.
+- **Mensajes** edita plantillas futuras y muestra trazabilidad.
+- **Finanzas** separa cobrado, pendiente, costo y calidad.
+- **Actividad** contiene diagnostico, no decisiones comerciales principales.
 
-## WhatsApp automatico
+Un error visual no autoriza alterar contratos del backend. Un build no reemplaza
+revision real en navegador.
 
-Admin API es el unico propietario del perfil persistente. Worker, Telegram y
-n8n no deben abrir una segunda sesion WhatsApp.
+## Reservas
 
-Tipos vigentes:
+- una sesion Playwright por cliente;
+- screenshot del cupo unico inmediatamente antes de CAPTCHA o submit;
+- confirmar solo con evidencia estricta;
+- `blocked_by_order_rule` no es fallo general;
+- no reintentar submit ambiguo;
+- videos locales se graban sin mascaras y son evidencia sensible.
 
-- album de reserva + Yape;
-- postpago despues de `paid`;
-- aviso de preflight;
-- resumen diario + imagenes unicas + publicacion TikTok.
+Runbooks activos:
 
-Cada trabajo es durable, idempotente y permite un solo intento automatico. Solo
-termina `sent` cuando se observa la evidencia saliente exigida para todos sus
-componentes. `failed` y `uncertain` nunca se reintentan automaticamente.
+- [`opportunity-bursts.md`](opportunity-bursts.md);
+- [`reservation-critical-path.md`](reservation-critical-path.md).
 
-Un `uncertain` se revisa con evidencia. No convertirlo en `sent` ni reenviar
-solo porque desaparecio una miniatura o regreso la vista del chat. Las
-decisiones y trazas actuales estan en:
+## WhatsApp
 
-- [`whatsapp-automatic-triggers-2026-07-25.md`](whatsapp-automatic-triggers-2026-07-25.md);
-- [`whatsapp-daily-slot-summary-2026-07-30.md`](whatsapp-daily-slot-summary-2026-07-30.md).
+Admin API es el unico propietario del perfil. Antes de aislarlo o reiniciarlo,
+comprobar jobs, dispatcher y sesiones. No reenviar `uncertain`; preservar
+captura, componentes y contexto.
 
-El plan incremental para editar desde el dashboard los mensajes comerciales,
-con variables allowlisted, preview, versiones y aplicación solo a trabajos
-futuros, vive en
-[`whatsapp-editable-templates-plan-2026-08-25.md`](whatsapp-editable-templates-plan-2026-08-25.md).
+Contrato: [`../contracts/whatsapp.md`](../contracts/whatsapp.md).
+Aceptacion natural:
+[`whatsapp-natural-acceptance.md`](whatsapp-natural-acceptance.md).
 
-## CAPTCHA local y sombra
+## Recordatorios y post-cita
 
-Runtime residente actual:
+Los schedulers pertenecen a Admin API. Mantener una sola sesion de solo lectura,
+pausas de `4-7` segundos, cap diario `20` y breaker ante ambiguedad. Preparacion,
+envio, entrega y lectura permanecen separados.
 
-- autoridad canaria: `v6_sequence_candidate`, hasta `20` decisiones reales;
-- control en sombra: `v3_selected`;
-- fallback del portal: 2Captcha.
+## CAPTCHA
 
-V6 solo responde al portal si `min_char_confidence >= 0.60` y
-`sequence_confidence_product >= 0.60`, con timeout de `500 ms`. Formato
-invalido, baja confianza, timeout, servicio no saludable, circuito abierto o
-limite agotado fuerzan 2Captcha. El primer `captcha_invalid`, un resultado
-ambiguo o un fallo local abre el circuito; el rollback persistente cambia a
-`mode=2captcha` sin editar `.env`. V3 sigue generando evidencia de sombra y no
-responde al portal.
+El CAPTCHA HTML matematico y el servicio grafico en sombra son sistemas
+distintos. El segundo es opcional y está en almacenamiento frio por defecto.
+No activarlo, entrenarlo ni promoverlo desde una investigacion ordinaria.
 
-V1, V2, V4 y V5 se conservan solo como historia y no consumen GPU. El corte
-prospectivo de `500` muestras sigue siendo una revision para decidir si el
-canario se amplia o se cierra; no es el estado de autoridad actual ni elimina
-el fallback.
+Contrato: [`../contracts/captcha.md`](../contracts/captcha.md).
 
-El muestreo adicional esta desactivado por defecto y puede agregar cerca de
-`0.4 s` por muestra. La integracion completa vive en
-[`captcha-shadow-integration.md`](captcha-shadow-integration.md).
+## Evidencia y reportes
 
-## Post-cita
+Seguir [`evidence-policy.md`](evidence-policy.md). `evidence-summary.md`,
+`evidence-index.csv` y `reports/*/latest.md` son snapshots; verificar fecha de
+corte y fuente viva antes de concluir.
 
-Post-cita abre una sesion Playwright nueva y de solo lectura por orden. Guarda
-expediente, placa, etapas y mensajes dentro de la frontera administrativa. No
-modifica cola, reserva, CAPTCHA, pago ni comunicaciones.
+## Diagnostico por sintoma
 
-Los accesos perdidos se conservan como historia y no se reintentan desde la
-vista inicial. Antes de recordatorios u ofertas debe definirse consentimiento,
-finalidad, retencion y acceso.
-
-Contrato:
-[`post-appointment-followup-2026-08-09.md`](post-appointment-followup-2026-08-09.md).
-
-## Recuperacion segura
-
-### Worker
-
-1. Revisar horario, supervisor, health, fase, `current_order_id`, lease y
-   submission pendiente.
-2. No reiniciar por estar fuera de ventana o en corte diario normal.
-3. Si existe submission, detener la intervencion y preservar la sesion.
-4. Si el proceso esta realmente caido, reiniciar solo `start-worker.ps1`.
-5. Confirmar fase, heartbeat y liberacion de claims.
-
-### Admin API y dashboard
-
-1. Comprobar `8766/health`.
-2. Antes de reiniciar, verificar que no haya trabajos WhatsApp `running`.
-3. Reiniciar solo `scripts/start-admin-dashboard.ps1`.
-4. Validar health, ordenes, Post-cita y endpoints a traves del proxy Angular.
-
-### Telegram
-
-1. Confirmar Admin API disponible.
-2. Revisar el ultimo polling/log sin enviar un mensaje de prueba a clientes.
-3. Reiniciar solo `scripts/start-telegram-control.ps1`.
-4. Ejecutar el check local del modulo si corresponde.
-
-### CAPTCHA
-
-1. Comprobar `8787/health` y modelos.
-2. Reiniciar solo `scripts/start-captcha-shadow.ps1`.
-3. Confirmar CUDA, `v3_selected`, `v6_sequence_candidate` y outbox.
-
-### PC, Docker y datos
-
-El simulacro disponible:
-
-```powershell
-scripts/verify-postgres-backup.ps1
-```
-
-prueba restaurabilidad temporal dentro del entorno local; no es una politica
-de backup durable. La recuperacion externa cifrada sigue pendiente en el
-roadmap.
-
-## Validacion de codigo
-
-Desde la raiz:
-
-```powershell
-python -m compileall -q src
-python -m ruff check src tests
-python -m pytest -q
-git diff --check
-```
-
-Desde `dashboard/`:
-
-```powershell
-npm run build
-npm audit --omit=dev
-```
-
-El build no sustituye una revision visual real.
-
-## Recordatorios de cita
-
-La implementacion, barrera del resumen diario, configuracion, validaciones y
-estado de activacion se documentan en
-[`appointment-reminders-implementation-2026-08-17.md`](appointment-reminders-implementation-2026-08-17.md).
-El endpoint operativo es `GET /api/v1/appointment-reminders`. Un trabajo
-`uncertain` nunca debe reintentarse automaticamente y los recordatorios no
-pueden adelantarse al resumen diario de evidencias.
-
-El dashboard abre el detalle desde `Resumen -> Ver elegibles` o desde
-`Seguimiento`. La pantalla separa `Proximas citas`, `Post-cita` e `Historial`;
-la ruta anterior `/post-cita` redirige a `/seguimiento`.
-
-## Reportes y evidencia
-
-```powershell
-appointment-bot-client weekly-report --start YYYY-MM-DD --end YYYY-MM-DD
-appointment-bot-client optimization-observation --start YYYY-MM-DD --end YYYY-MM-DD
-```
-
-`latest` significa ultimo artefacto escrito, no necesariamente estado vivo ni
-cobertura completa. Antes de comparar, revisar rango, fecha de generacion y
-dias faltantes.
-
-La politica de publicacion y retencion esta en
-[`evidence-policy.md`](evidence-policy.md). La lectura compacta vive en
-[`../evidence-summary.md`](../evidence-summary.md) y
-[`../evidence-index.csv`](../evidence-index.csv), ambos snapshots generados que
-no equivalen a PostgreSQL vivo.
+| Sintoma | Primera comprobacion |
+|---|---|
+| Telegram no responde | Admin API, log de bootstrap, offset y una actualizacion nueva. |
+| Dashboard carga pero no opera | auth local, Admin API, PostgreSQL y endpoint exacto. |
+| Worker no toma orden | estado/preflight, pausa, lease, backoff y comando pendiente. |
+| WhatsApp parece enviado | burbuja visible, reloj/check, componentes y resultado tecnico. |
+| Reserva no confirma | intento, screenshot, submit y evidencia del portal. |
+| Reporte discrepa | fecha de corte, cobertura y consulta PostgreSQL actual. |
 
 ## Documentos historicos
 
-Los siguientes archivos conservan evidencia, pero no gobiernan la operacion:
-
-- `performance-roadmap-2026-07-22.md`;
-- `observer-tuning-2026-07-22.md`;
-- `remote-control-plan.md`;
-- `whatsapp-manual-trace-2026-07-22.md`;
-- `whatsapp-dashboard-trace-2026-07-22.md`;
-- `whatsapp-evidence-validation-2026-07-23.md`.
-
-Su clasificacion completa se encuentra en
-[`../history/documentation-audit-2026-08-09.md`](../history/documentation-audit-2026-08-09.md).
+Planes cerrados y trazas anteriores se retiraron del working tree. El mecanismo
+de recuperacion puntual está en [`../history/README.md`](../history/README.md).

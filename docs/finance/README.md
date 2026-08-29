@@ -6,11 +6,10 @@ como si fueran utilidad.
 
 ## Fuente de verdad
 
-El registro serio vive en PostgreSQL y se administra desde la vista **Finanzas** del
-dashboard. La estructura y API estan documentadas en
-[`../contracts/finance.md`](../contracts/finance.md). El archivo
-[`cost-register.csv`](cost-register.csv) queda como antecedente historico del primer dato;
-ya no es fuente de calculo ni formato autorizado para nuevas altas.
+El registro serio vive en PostgreSQL y se administra desde la vista **Finanzas**
+del dashboard. La estructura y API estan documentadas en
+[`../contracts/finance.md`](../contracts/finance.md). El CSV inicial estimado fue
+retirado; no era fuente de calculo ni formato autorizado para nuevas altas.
 
 Desde el dashboard se puede crear, editar y anular. La anulacion reemplaza la eliminacion
 fisica para mantener auditoria.

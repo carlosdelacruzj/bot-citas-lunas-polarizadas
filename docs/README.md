@@ -1,73 +1,78 @@
-# Documentacion del proyecto
+# Mapa de documentacion
 
-Esta es la entrada principal. Para operar o decidir el siguiente trabajo no es
-necesario recorrer toda la carpeta. La clasificacion integral de los `40`
-archivos revisados el `2026-08-09` vive en
-[`history/documentation-audit-2026-08-09.md`](history/documentation-audit-2026-08-09.md).
+Ultima clasificacion: `2026-08-29`.
 
-## Lectura recomendada
+La documentacion se organiza por autoridad. Una fecha reciente no convierte un
+reporte en contrato y un documento historico nunca crea trabajo pendiente.
 
-1. [`project-status.md`](project-status.md): que existe, que se valido y que
-   falta.
-2. [`roadmap/README.md`](roadmap/README.md): unico orden de trabajo pendiente.
-3. [`operations/README.md`](operations/README.md): arranque, salud, recuperacion
-   y rollback.
-4. [`optimization.md`](optimization.md): metodologia, mediciones y limites de
-   optimizacion; el orden futuro siempre vuelve al roadmap.
-5. [`finance/README.md`](finance/README.md): registro de costos, conciliacion de
-   2Captcha y gastos de captacion.
+## Punto de entrada
 
-Los dos primeros archivos gobiernan el trabajo:
+Leer siempre, en este orden:
 
-- `project-status.md` responde **como vamos, que se realizo, que funciona y que
-  riesgos existen**;
-- `roadmap/README.md` responde **que toca hacer ahora y en que orden**.
+1. [`project-status.md`](project-status.md): como funciona el sistema hoy.
+2. [`roadmap/README.md`](roadmap/README.md): que sigue y en que prioridad.
 
-Antes de implementar un cambio se deben leer ambos. Al cerrar una fase se
-actualizan en el mismo cambio si el estado o la prioridad variaron.
+Para el resto, abrir solo el dominio de la tarea.
 
-## Mapa de autoridad
+## Documentos vigentes
 
-| Tipo | Autoridad | Uso |
-| --- | --- | --- |
-| Estado | [`project-status.md`](project-status.md) | Capacidades, validaciones, metricas y riesgos actuales. |
-| Trabajo futuro | [`roadmap/README.md`](roadmap/README.md) | Unica cola y orden de implementacion. |
-| Operacion | [`operations/README.md`](operations/README.md) | Arranque, salud, controles, recuperacion y rollback. |
-| Arquitectura | [`architecture/README.md`](architecture/README.md) | Runtime vigente y migracion historica. |
-| Contratos | [`contracts/README.md`](contracts/README.md) | Fronteras normativas de API, estados y seguridad. |
-| Evidencia | [`operations/evidence-policy.md`](operations/evidence-policy.md) | Retencion, sanitizacion y limites de publicacion. |
-| Historia | [`history/`](history/) | Hitos, planes cerrados y cortes que no gobiernan el runtime. |
+| Tipo | Ubicacion | Proposito |
+|---|---|---|
+| Arquitectura | [`architecture/current-runtime.md`](architecture/current-runtime.md) | Procesos, fronteras y dependencias actuales. |
+| Contratos | [`contracts/README.md`](contracts/README.md) | Invariantes que el codigo no debe romper. |
+| Operacion | [`operations/README.md`](operations/README.md) | Arranque, diagnostico, reinicio y recuperacion. |
+| Finanzas | [`finance/README.md`](finance/README.md) | Fuentes y limites del analisis financiero. |
+| Negocio | [`resumen-del-negocio.md`](resumen-del-negocio.md) | Oferta y lectura comercial estable. |
+| Evidencia | [`operations/evidence-policy.md`](operations/evidence-policy.md) | Privacidad, cobertura y uso de artefactos. |
 
-## Referencias
+## Lectura por tarea
 
-- [`architecture/`](architecture/): runtime vigente e historia de la migracion.
-- [`contracts/`](contracts/): contratos de API, estados y seguridad de reserva.
-- [`incidente-backoff-reglas-fecha-2026-07-24.md`](incidente-backoff-reglas-fecha-2026-07-24.md):
-  diagnostico, mejora acordada y limites de rollback para el backoff causado
-  por varias fechas fuera de rango.
-- [`operations/evidence-policy.md`](operations/evidence-policy.md): retencion y
-  sanitizacion de evidencia.
-- [`history/`](history/): hitos, fases terminadas y auditorias documentales.
-- `reports/`: metricas y bitacoras generadas; no son listas de tareas.
+| Si vas a cambiar | Lee tambien |
+|---|---|
+| API, Telegram o n8n | `contracts/admin-api.md`, `contracts/worker-control.md` |
+| Ordenes o pagos | `contracts/order-lifecycle.md`, `contracts/finance.md` |
+| Reservas | `contracts/reservation-safety.md` |
+| CAPTCHA | `contracts/captcha.md` |
+| WhatsApp | `contracts/whatsapp.md` |
+| Runtime o reinicios | `operations/README.md`, `architecture/current-runtime.md` |
+| Evidencia o reportes | `operations/evidence-policy.md` |
 
-Las cifras variables viven principalmente en `reports/`. `evidence-summary.md`
-y `evidence-index.csv` son excepciones generadas dentro de `docs/`: deben
-declarar su fecha y cobertura y nunca equivalen a los totales comerciales vivos
-de PostgreSQL.
+## Historico
 
-Los contratos, incidentes, runbooks y reportes son referencias. No deben crear
-colas paralelas de tareas ni reemplazar el estado maestro.
+[`history/`](history/) conserva un resumen de decisiones durables y explica cómo
+recuperar desde Git migraciones, planes, incidentes y auditorias retirados. No
+gobierna operacion ni prioridad. Su indice está en
+[`history/README.md`](history/README.md).
 
-## Estados documentales
+El detalle completo se conserva en Git. No leer el historial salvo que una
+investigacion necesite cronologia o evidencia de una decision antigua.
 
-Los documentos no rectores deben indicar cuando corresponda:
+## Documentos generados
 
-- `Vigente`: aplica a la operacion actual.
-- `Historico`: conserva evidencia fechada, no configuracion actual.
-- `Supersedido`: fue reemplazado y solo conserva trazabilidad.
-- `Generado`: snapshot regenerable con rango y fecha de corte.
+- `evidence-summary.md` y `evidence-index.csv` son snapshots generados por el
+  codigo y permanecen en `docs/` porque esa ruta es contrato del generador.
+- `reports/` contiene cortes operativos, de optimizacion y negocio.
+- Un archivo llamado `latest.md` es el ultimo artefacto escrito, no prueba de
+  estado vivo.
 
-No se elimina un documento solo por estar desactualizado. Primero se migra su
-contenido unico, se actualizan backlinks y se comprueba que no sea evidencia
-necesaria. Una reescritura del historial Git para retirar datos antiguos es una
-operacion destructiva separada y requiere autorizacion explicita.
+Los generados no forman parte de la lectura inicial y sus cifras deben
+refrescarse antes de una conclusion actual. `.ignore` y `codegraph.json` los
+excluyen de busquedas e indexacion ordinarias.
+
+## Reglas editoriales
+
+- Estado: presente, sin cronologia, maximo `250` lineas.
+- Roadmap: futuro accionable, sin tareas cerradas, maximo `180` lineas.
+- Contrato: reglas vigentes y fuente de verdad en codigo o datos.
+- Runbook: pasos operativos seguros y reversibles.
+- Historial: resultado cerrado con fecha y sin autoridad operativa.
+- Generado: fecha de corte, cobertura y limites visibles.
+
+Al actualizar una capacidad, reemplazar la descripcion anterior. El detalle de
+implementacion se mueve a historial en vez de acumularse al final.
+
+Validacion local:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-documentation.ps1
+```

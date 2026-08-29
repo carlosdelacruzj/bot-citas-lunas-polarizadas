@@ -2,9 +2,9 @@
 
 ## Fuente de verdad
 
-PostgreSQL es la fuente de verdad. `finance_categories` normaliza las categorias y
-`finance_entries` conserva los movimientos. El CSV de `docs/finance/` es solo antecedente e
-intercambio manual; no participa en los calculos del dashboard.
+PostgreSQL es la fuente de verdad. `finance_categories` normaliza las categorias
+y `finance_entries` conserva los movimientos. No existe un CSV activo como
+fuente o intercambio autorizado para los calculos del dashboard.
 
 ## Semantica contable operativa
 

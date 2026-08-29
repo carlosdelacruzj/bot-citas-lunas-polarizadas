@@ -33,7 +33,8 @@ resultado debe tratarse como incierto o error controlado, no como exito normal.
 Debe existir como maximo un intento activo por orden en estados `intent`,
 `pending` o `unknown`.
 
-La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsar
+Cada cupo unico debe archivar su screenshot inmediatamente antes de CAPTCHA o
+submit. La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsar
 `Reservar`, no constituye un intento de reserva. Los resultados
 `blocked_by_order_rule` y `priority_deferred` deben conservar
 `reservation_attempted=false` y no deben crear una fila en

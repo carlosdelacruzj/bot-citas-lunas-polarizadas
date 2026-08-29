@@ -1,20 +1,20 @@
-# Contratos
+# Contratos vigentes
 
-Documentos de contratos internos y externos.
+Ultima verificacion: `2026-08-29`.
 
-Esta carpeta documenta endpoints, estados de orden, control del worker,
-seguridad de reservas y superficies que no deben romperse. No contiene el
-roadmap; usar `../roadmap/README.md` para trabajo futuro.
+Los contratos describen invariantes actuales. No contienen cronologias,
+resultados de canarios ni listas de trabajo futuro.
 
-| Contrato | Estado | Alcance |
-| --- | --- | --- |
-| [`admin-api.md`](admin-api.md) | Vigente; rutas orientativas | Autenticacion, DTO, mutaciones y frontera local. |
-| [`worker-control.md`](worker-control.md) | Vigente con correcciones de runtime | Estado publico, comandos persistidos y controles. |
-| [`order-lifecycle.md`](order-lifecycle.md) | Vigente | Estados, prioridad, subordenes, pagos y comunicaciones. |
-| [`reservation-safety.md`](reservation-safety.md) | Vigente | Leases, confirmacion estricta y resultados ambiguos. |
-| [`captcha-shadow-dashboard.md`](captcha-shadow-dashboard.md) | Vigente con apendice historico | Integridad, revision humana, calidad y autoridad 2Captcha. |
-| [`finance.md`](finance.md) | Vigente | Caja, costo, prepago, consumo, anulacion y moneda. |
+| Contrato | Codigo propietario | Cubre |
+|---|---|---|
+| [`admin-api.md`](admin-api.md) | `services/local_api.py`, `services/api/` | Frontera HTTP, autenticacion, privacidad y errores. |
+| [`order-lifecycle.md`](order-lifecycle.md) | `core/`, `db/orders.py` | Estados, precio, restricciones, pagos y cierre. |
+| [`reservation-safety.md`](reservation-safety.md) | `reservation_engine/`, `worker/` | Leases, seleccion, submit y evidencia. |
+| [`worker-control.md`](worker-control.md) | `worker/`, `db/worker_commands.py` | Comandos persistidos y operacion segura. |
+| [`captcha.md`](captcha.md) | `reservation_captcha*`, `services/captcha_shadow.py` | CAPTCHA HTML y servicio grafico opcional. |
+| [`whatsapp.md`](whatsapp.md) | `services/whatsapp*`, `db/whatsapp*` | Jobs, plantillas, evidencia y conciliacion. |
+| [`finance.md`](finance.md) | `db/finance*`, `services/api/finance*` | Cobros, costos, cierres y calidad. |
 
-Cuando un inventario de endpoints no coincida con el runtime, mandan el codigo
-activo, la autenticacion definida por Admin API y `project-status.md`; el
-desfase debe corregirse documentalmente antes de usarlo para implementar.
+Si un contrato contradice el codigo activo o PostgreSQL, verificar primero el
+runtime y corregir el contrato en el mismo cambio. Los contratos supersedidos se
+recuperan puntualmente mediante [`../history/README.md`](../history/README.md).
