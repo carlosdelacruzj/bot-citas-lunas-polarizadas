@@ -20,8 +20,8 @@
   @if (dashboard.appointmentReminderStatus(); as reminders) {
     <section class="appointment-reminder-card" aria-labelledby="appointment-reminder-title">
       <div class="appointment-reminder-date" aria-hidden="true">
-        <span>MAÑ</span>
-        <strong>{{ reminders.day?.eligible_count ?? 0 }}</strong>
+        <span>DÍAS</span>
+        <strong>{{ reminders.configuration.effective_lead_days }}</strong>
       </div>
       <div class="appointment-reminder-copy">
         <p class="eyebrow">Próximas citas</p>
@@ -51,7 +51,7 @@
           }
         </span>
         <button type="button" class="secondary" [routerLink]="['/seguimiento']" [queryParams]="{ tab: 'upcoming' }">
-          Ver elegibles
+          Ver citas
         </button>
       </div>
       @if (reminders.day?.last_error; as error) {

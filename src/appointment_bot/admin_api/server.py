@@ -14,6 +14,7 @@ from appointment_bot.services.appointment_reminders import AppointmentReminderSc
 from appointment_bot.services.local_api import DEFAULT_HOST, LocalApiHandler
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.order_preflight import resume_pending_order_preflights
+from appointment_bot.services.post_appointment import PostAppointmentReviewScheduler
 from appointment_bot.services.whatsapp_automation import WhatsAppAutomationDispatcher
 
 logger = logging.getLogger(__name__)
@@ -122,8 +123,10 @@ def run_admin_api() -> int:
     server = create_admin_api_server()
     whatsapp_dispatcher = WhatsAppAutomationDispatcher(settings)
     appointment_reminder_scheduler = AppointmentReminderScheduler(settings)
+    post_appointment_scheduler = PostAppointmentReviewScheduler(settings)
     whatsapp_dispatcher.start()
     appointment_reminder_scheduler.start()
+    post_appointment_scheduler.start()
     host, port = server.server_address[:2]
     logger.info("Admin API listening on http://%s:%s", host, port)
     if getattr(server, "dashboard_root", None) is not None:
@@ -134,6 +137,7 @@ def run_admin_api() -> int:
         logger.info("Admin API shutdown requested")
     finally:
         server.server_close()
+        post_appointment_scheduler.stop()
         appointment_reminder_scheduler.stop()
         whatsapp_dispatcher.stop()
     return 0

@@ -9,7 +9,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 65
+SCHEMA_VERSION = 67
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -351,6 +351,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_automation_jobs_schema(connection)
     _create_appointment_reminder_schema(connection)
     _create_appointment_reminder_control_schema(connection)
+    _create_appointment_reminder_lead_days_schema(connection)
     _create_whatsapp_message_template_schema(connection)
     _create_whatsapp_automation_template_trace_schema(connection)
     _create_whatsapp_message_template_trace_schema(connection)
@@ -522,6 +523,35 @@ def _create_post_appointment_schema(connection: Connection) -> None:
             created_at timestamptz NOT NULL,
             PRIMARY KEY (review_id, stage_index)
         )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS post_appointment_automatic_reviews (
+            service_date date NOT NULL,
+            reservation_id text NOT NULL REFERENCES reservations(reservation_id)
+                ON DELETE CASCADE,
+            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
+            status text NOT NULL CHECK (
+                status IN ('running', 'completed', 'failed', 'skipped')
+            ),
+            review_id text REFERENCES post_appointment_reviews(review_id) ON DELETE SET NULL,
+            error_code text,
+            error_message text,
+            claimed_at timestamptz NOT NULL,
+            finished_at timestamptz,
+            PRIMARY KEY (service_date, reservation_id),
+            CONSTRAINT ck_post_appointment_automatic_review_finished CHECK (
+                (status = 'running' AND finished_at IS NULL)
+                OR (status <> 'running' AND finished_at IS NOT NULL)
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_post_appointment_automatic_reviews_status
+        ON post_appointment_automatic_reviews(service_date, status, claimed_at)
         """
     )
 
@@ -934,6 +964,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "captcha_authority_decisions",
         "post_appointment_reviews",
         "post_appointment_stage_snapshots",
+        "post_appointment_automatic_reviews",
         "opportunity_bursts",
         "opportunity_burst_candidates",
         "opportunity_burst_executions",
@@ -1069,6 +1100,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("appointment_reminder_days", "status"),
         ("appointment_reminder_days", "last_reconciled_at"),
         ("appointment_reminder_control", "mode"),
+        ("appointment_reminder_control", "lead_days"),
         ("appointment_reminder_control", "message_template"),
         ("appointment_reminder_control", "canary_order_ids"),
         ("appointment_reminder_control", "revision"),
@@ -1115,6 +1147,13 @@ def _validate_current_schema(connection: Connection) -> None:
         ("post_appointment_stage_snapshots", "message_present"),
         ("post_appointment_stage_snapshots", "message_class"),
         ("post_appointment_stage_snapshots", "message_text"),
+        ("post_appointment_automatic_reviews", "service_date"),
+        ("post_appointment_automatic_reviews", "reservation_id"),
+        ("post_appointment_automatic_reviews", "order_id"),
+        ("post_appointment_automatic_reviews", "status"),
+        ("post_appointment_automatic_reviews", "review_id"),
+        ("post_appointment_automatic_reviews", "claimed_at"),
+        ("post_appointment_automatic_reviews", "finished_at"),
         ("opportunity_bursts", "burst_id"),
         ("opportunity_bursts", "status"),
         ("opportunity_bursts", "admission_deadline_at"),
@@ -1170,8 +1209,10 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_whatsapp_automation_job_kind",
         "ck_whatsapp_automation_job_target",
         "fk_whatsapp_automation_jobs_reservation",
+        "ck_appointment_reminder_control_lead_days",
         "ck_appointment_reminder_day_target",
         "ck_post_appointment_reviews_timestamps",
+        "ck_post_appointment_automatic_review_finished",
         "ck_opportunity_bursts_timestamps",
         "ck_opportunity_bursts_finished",
         "ck_opportunity_burst_candidate_timestamps",
@@ -1239,6 +1280,8 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_captcha_authority_decisions_created")
     if "idx_post_appointment_reviews_order_finished" not in indexes:
         missing.append("idx_post_appointment_reviews_order_finished")
+    if "idx_post_appointment_automatic_reviews_status" not in indexes:
+        missing.append("idx_post_appointment_automatic_reviews_status")
     for index_name in (
         "uq_opportunity_bursts_active",
         "idx_opportunity_bursts_started",
@@ -1962,7 +2005,7 @@ def _create_appointment_reminder_schema(connection: Connection) -> None:
             created_at timestamptz NOT NULL,
             updated_at timestamptz NOT NULL,
             CONSTRAINT ck_appointment_reminder_day_target CHECK (
-                appointment_day = service_date + 1
+                appointment_day BETWEEN service_date + 1 AND service_date + 3
             )
         )
         """
@@ -1978,7 +2021,7 @@ def _create_appointment_reminder_schema(connection: Connection) -> None:
 
 def _create_appointment_reminder_control_schema(connection: Connection) -> None:
     default_template = (
-        "Hola, {nombre}. Te recordamos que mañana, {fecha}, tienes tu cita de "
+        "Hola, {nombre}. Te recordamos que el {fecha} tienes tu cita de "
         "lunas polarizadas. Hora: {hora}. Sede: {sede}. Si tu cita fue "
         "modificada recientemente, por favor comunícate con nosotros."
     )
@@ -1989,6 +2032,7 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
             mode text NOT NULL DEFAULT 'disabled' CHECK (
                 mode IN ('disabled', 'dry_run', 'canary', 'live')
             ),
+            lead_days smallint NOT NULL DEFAULT 1,
             message_template text NOT NULL CHECK (
                 char_length(message_template) BETWEEN 1 AND 1000
             ),
@@ -1997,7 +2041,10 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
             ),
             revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
             updated_at timestamptz NOT NULL,
-            updated_by text NOT NULL
+            updated_by text NOT NULL,
+            CONSTRAINT ck_appointment_reminder_control_lead_days CHECK (
+                lead_days BETWEEN 1 AND 3
+            )
         )
         """
     )
@@ -2031,6 +2078,27 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
         ON CONFLICT (revision) DO NOTHING
         """,
         (default_template, now),
+    )
+
+
+def _create_appointment_reminder_lead_days_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        ALTER TABLE appointment_reminder_control
+        ADD COLUMN IF NOT EXISTS lead_days smallint NOT NULL DEFAULT 1
+            CONSTRAINT ck_appointment_reminder_control_lead_days CHECK (
+            lead_days BETWEEN 1 AND 3
+        )
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE appointment_reminder_days
+        DROP CONSTRAINT IF EXISTS ck_appointment_reminder_day_target,
+        ADD CONSTRAINT ck_appointment_reminder_day_target CHECK (
+            appointment_day BETWEEN service_date + 1 AND service_date + 3
+        )
+        """
     )
 
 
@@ -3295,6 +3363,20 @@ def migrate_database(connection: Connection) -> None:
             (65,),
         )
         current_version = 65
+    if current_version == 65:
+        _create_appointment_reminder_lead_days_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (66,),
+        )
+        current_version = 66
+    if current_version == 66:
+        _create_post_appointment_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (67,),
+        )
+        current_version = 67
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

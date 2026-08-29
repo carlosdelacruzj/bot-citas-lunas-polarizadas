@@ -2399,7 +2399,7 @@ def _send_daily_summary(
                 [{"text": _display_text(applicant_name, 36), "callback_data": callback_data}]
             )
     if not candidates:
-        lines.extend(["", "No hay citas elegibles para el dia siguiente."])
+        lines.extend(["", "No hay citas elegibles para la fecha objetivo."])
     keyboard.append(
         [
             {"text": "Actualizar", "callback_data": "ui:summary:show"},

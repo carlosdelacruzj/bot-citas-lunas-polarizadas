@@ -205,6 +205,7 @@ def daily_summary_barrier_status(
 
 def appointment_reminder_job_counts(
     service_date: date,
+    appointment_day: date,
     *,
     settings: Settings,
 ) -> dict[str, int]:
@@ -214,12 +215,60 @@ def appointment_reminder_job_counts(
             """
             SELECT status, COUNT(*) AS total
             FROM whatsapp_automation_jobs
-            WHERE job_kind = 'appointment_reminder' AND report_date = %s
+            WHERE job_kind = 'appointment_reminder'
+              AND report_date = %s
+              AND appointment_day = %s
             GROUP BY status
             """,
-            (service_date,),
+            (service_date, appointment_day),
         ).fetchall()
     return {str(row["status"]): int(row["total"]) for row in rows}
+
+
+def get_appointment_reminder_batch_day(
+    service_date: date,
+    *,
+    settings: Settings,
+) -> date | None:
+    init_database(settings)
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            SELECT appointment_day
+            FROM appointment_reminder_days
+            WHERE service_date = %s
+            """,
+            (service_date,),
+        ).fetchone()
+    return row["appointment_day"] if row is not None else None
+
+
+def ensure_appointment_reminder_batch_day(
+    service_date: date,
+    configured_lead_days: int,
+    *,
+    settings: Settings,
+) -> date:
+    init_database(settings)
+    appointment_day = service_date + timedelta(days=configured_lead_days)
+    now = _now()
+    with _connection(_database_url(settings)) as connection:
+        row = connection.execute(
+            """
+            INSERT INTO appointment_reminder_days (
+                service_date, appointment_day, status, summary_status,
+                last_reconciled_at, created_at, updated_at
+            )
+            VALUES (%s, %s, 'disabled', NULL, %s, %s, %s)
+            ON CONFLICT(service_date) DO UPDATE SET
+                service_date = appointment_reminder_days.service_date
+            RETURNING appointment_day
+            """,
+            (service_date, appointment_day, now, now, now),
+        ).fetchone()
+    if row is None:
+        raise RuntimeError("Appointment reminder batch day could not be frozen.")
+    return row["appointment_day"]
 
 
 def record_appointment_reminder_day(
@@ -252,11 +301,20 @@ def record_appointment_reminder_day(
                 status = excluded.status,
                 summary_status = excluded.summary_status,
                 eligible_count = excluded.eligible_count,
-                queued_count = appointment_reminder_days.queued_count + excluded.queued_count,
+                queued_count = CASE
+                    WHEN appointment_reminder_days.appointment_day = excluded.appointment_day
+                    THEN appointment_reminder_days.queued_count + excluded.queued_count
+                    ELSE excluded.queued_count
+                END,
                 existing_count = excluded.existing_count,
                 missing_contact_count = excluded.missing_contact_count,
                 invalid_date_count = excluded.invalid_date_count,
                 last_error = excluded.last_error,
+                summary_alerted_at = CASE
+                    WHEN appointment_reminder_days.appointment_day = excluded.appointment_day
+                    THEN appointment_reminder_days.summary_alerted_at
+                    ELSE NULL
+                END,
                 last_reconciled_at = excluded.last_reconciled_at,
                 updated_at = excluded.updated_at
             """,
@@ -300,11 +358,11 @@ def mark_daily_summary_missing_alerted(
 
 def appointment_reminder_status(
     service_date: date,
+    lead_days: int,
     *,
     settings: Settings,
 ) -> dict[str, Any]:
     init_database(settings)
-    appointment_day = service_date + timedelta(days=1)
     with _connection(_database_url(settings)) as connection:
         day = connection.execute(
             """
@@ -317,14 +375,21 @@ def appointment_reminder_status(
             """,
             (service_date,),
         ).fetchone()
+        appointment_day = (
+            day["appointment_day"]
+            if day is not None
+            else service_date + timedelta(days=lead_days)
+        )
         count_rows = connection.execute(
             """
             SELECT status, COUNT(*) AS total
             FROM whatsapp_automation_jobs
-            WHERE job_kind = 'appointment_reminder' AND report_date = %s
+            WHERE job_kind = 'appointment_reminder'
+              AND report_date = %s
+              AND appointment_day = %s
             GROUP BY status
             """,
-            (service_date,),
+            (service_date, appointment_day),
         ).fetchall()
         jobs = connection.execute(
             """
@@ -332,11 +397,12 @@ def appointment_reminder_status(
                    recipient_username, status, error_message, created_at,
                    started_at, finished_at, updated_at
             FROM whatsapp_automation_jobs
-            WHERE job_kind = 'appointment_reminder' AND report_date = %s
-            ORDER BY created_at, job_key
+            WHERE job_kind = 'appointment_reminder'
+              AND appointment_day = %s
+            ORDER BY report_date DESC, created_at, job_key
             LIMIT 200
             """,
-            (service_date,),
+            (appointment_day,),
         ).fetchall()
     counts = {str(row["status"]): int(row["total"]) for row in count_rows}
     return {
@@ -410,7 +476,9 @@ __all__ = [
     "backfill_missing_appointment_days",
     "count_invalid_current_appointment_dates",
     "daily_summary_barrier_status",
+    "ensure_appointment_reminder_batch_day",
     "get_current_appointment_reminder_candidate",
+    "get_appointment_reminder_batch_day",
     "list_appointment_reminder_candidates",
     "mark_daily_summary_missing_alerted",
     "record_appointment_reminder_day",

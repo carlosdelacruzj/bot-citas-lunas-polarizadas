@@ -2,37 +2,12 @@
   <div>
     <p class="eyebrow">Bandeja de trabajo</p>
     <h2 id="inbox-title">Lo que requiere tu atención</h2>
-    <p>Solo aparecen tareas operativas. Cuando completas una, desaparece de esta lista.</p>
+    <p>Una sola siguiente acción por cliente, con los bloqueos más urgentes primero.</p>
   </div>
   <div class="inbox-total" [class.clear]="dashboard.inboxPendingTotal() === 0">
     <strong>{{ dashboard.inboxPendingTotal() }}</strong>
     <span>{{ dashboard.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
   </div>
-</section>
-
-<section class="inbox-metrics" aria-label="Resumen de pendientes">
-  <article class="metric-card">
-    <span>Accesos</span>
-    <strong>{{ dashboard.inboxAccessCount() }}</strong>
-    <small>Validaciones fallidas</small>
-  </article>
-  <article class="metric-card">
-    <span>Pagos</span>
-    <strong>{{ dashboard.inboxPaymentCount() }}</strong>
-    <small>Reservas por cobrar</small>
-  </article>
-  <article class="metric-card">
-    <span>Mensajes</span>
-    <strong>{{ dashboard.inboxMessageCount() }}</strong>
-    <small>WhatsApp o contacto</small>
-  </article>
-  @if (dashboard.captchaShadowEnabled()) {
-    <article class="metric-card">
-      <span>CAPTCHA</span>
-      <strong>{{ dashboard.captchaReviewTotal() }}</strong>
-      <small>Etiquetas por validar</small>
-    </article>
-  }
 </section>
 
 @if (dashboard.inboxPendingTotal() === 0) {
@@ -45,29 +20,36 @@
   <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
     <div class="panel-header">
       <div>
+        <p class="eyebrow">Cola comercial</p>
         <h2 id="inbox-list-title">Siguiente trabajo</h2>
-        <p>Ordenado para resolver primero los bloqueos y después los seguimientos.</p>
+        <p>Resuelve primero los bloqueos; dentro de cada nivel aparece el caso más antiguo.</p>
+      </div>
+      <button type="button" class="secondary" [disabled]="taskFilter() === 'all' && !taskSearch()" (click)="chooseFilter('all'); taskSearch.set('')">Limpiar filtros</button>
+    </div>
+
+    <div class="inbox-controls">
+      <label class="inbox-search">
+        <span>Buscar un pendiente</span>
+        <input type="search" autocomplete="off" placeholder="Cliente, orden o documento" [ngModel]="taskSearch()" (ngModelChange)="taskSearch.set($event)" />
+      </label>
+      <div class="inbox-filter-chips" aria-label="Filtrar pendientes">
+        @for (filter of filters(); track filter.key) {
+          @if (filter.key === 'all' || filter.count > 0 || taskFilter() === filter.key) {
+            <button type="button" class="filter-chip" [class.active]="taskFilter() === filter.key" [attr.aria-pressed]="taskFilter() === filter.key" (click)="chooseFilter(filter.key)">
+              <span>{{ filter.label }}</span><strong>{{ filter.count }}</strong>
+            </button>
+          }
+        }
       </div>
     </div>
 
-    <div class="inbox-list">
-      @if (dashboard.captchaShadowEnabled() && dashboard.captchaReviewTotal() > 0) {
-        <article class="inbox-row warn">
-          <div class="inbox-row-icon" aria-hidden="true">A9</div>
-          <div class="inbox-row-copy">
-            <div class="inbox-row-heading">
-              <strong>Validar respuestas CAPTCHA</strong>
-              <span class="badge warn">{{ dashboard.captchaReviewTotal() }} pendientes</span>
-            </div>
-            <p>Confirma las respuestas para ampliar el dataset de entrenamiento local.</p>
-          </div>
-          <button type="button" class="primary" (click)="dashboard.openInboxCaptchaReview()">
-            Revisar CAPTCHA
-          </button>
-        </article>
-      }
+    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ dashboard.inboxPendingTotal() }} pendientes</p>
 
-      @for (task of dashboard.inboxOrderTasks(); track task.key) {
+    @if (visibleTasks().length === 0) {
+      <app-view-state state="empty" title="No hay pendientes con estos filtros" message="Prueba otra búsqueda o vuelve a mostrar todos los tipos de trabajo." />
+    } @else {
+      <div class="inbox-list">
+      @for (task of visibleTasks(); track task.key) {
         <article class="inbox-row {{ task.tone }}">
           <div class="inbox-row-icon" aria-hidden="true">{{ task.icon }}</div>
           <div class="inbox-row-copy">
@@ -76,16 +58,16 @@
               <span class="badge {{ task.tone }}">{{ task.label }}</span>
             </div>
             <p>{{ task.description }}</p>
-            <small>
-              {{ task.order.applicant_name ?? task.order.document_number_masked }} ·
-              {{ task.order.order_id }}
-            </small>
+            <div class="inbox-row-meta">
+              <small>{{ task.applicantName ?? task.documentNumberMasked }} · {{ task.orderId }}</small>
+              <small>{{ taskAgeLabel(task.updatedAt) }}</small>
+            </div>
           </div>
           <div class="inbox-row-actions">
             <button
               type="button"
               class="secondary"
-              (click)="dashboard.openInboxOrder(task.order)"
+              (click)="dashboard.openInboxOrder(task.orderId)"
             >
               Ver orden
             </button>
@@ -95,11 +77,28 @@
               [disabled]="dashboard.actionBusy()"
               (click)="dashboard.runInboxOrderTask(task)"
             >
+              <span>Siguiente acción</span>
               {{ task.actionLabel }}
             </button>
           </div>
         </article>
       }
+      </div>
+    }
+  </section>
+}
+
+@if (dashboard.captchaShadowEnabled() && dashboard.captchaReviewTotal() > 0) {
+  <section class="panel inbox-training" aria-labelledby="inbox-training-title">
+    <div>
+      <p class="eyebrow">Entrenamiento local</p>
+      <h2 id="inbox-training-title">Revisión CAPTCHA</h2>
+      <p>Este backlog mejora el modelo, pero no bloquea clientes, pagos ni mensajes.</p>
+    </div>
+    <div class="inbox-training-action">
+      <strong>{{ dashboard.captchaReviewTotal() }}</strong>
+      <span>por etiquetar</span>
+      <button type="button" class="secondary" (click)="dashboard.openInboxCaptchaReview()">Abrir revisión</button>
     </div>
   </section>
 }

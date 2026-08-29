@@ -10,6 +10,10 @@ al portal. Esta primera versión es deliberadamente manual y de solo lectura.
 No envía recordatorios, no cambia la orden, no modifica la reserva y no ejecuta
 CAPTCHA.
 
+Esta descripción corresponde al corte inicial. Desde el `2026-08-28`, la
+clasificación temporal y el barrido post-cita pendiente también tienen una
+automatización diaria segura, documentada al final de este archivo.
+
 ## Datos que se guardan
 
 Cada revisión crea un evento en `post_appointment_reviews` y una instantánea de
@@ -161,3 +165,44 @@ la reserva. No vaciar esos campos: son la trazabilidad que permite saber qué
 trámite fue gestionado. Si se revierte únicamente la clasificación visual del
 padre archivado, puede restaurarse manualmente su estado `paused`, pero no debe
 reactivarse en la cola mientras existan sus dos subtrámites.
+
+## Automatización diaria segura
+
+Fecha de ampliación: `2026-08-28`.
+
+PostgreSQL `v67` agrega `post_appointment_automatic_reviews`, con clave primaria
+`(service_date, reservation_id)`. La tabla conserva claim, resultado, revisión
+producida y error terminal; una misma reserva nunca abre el portal dos veces en
+el mismo día Lima, incluso si la primera lectura falla.
+
+La clasificación visible no depende de ejecutar Playwright. En cada `GET`, una
+cita anterior a hoy en `America/Lima` deja de ser `upcoming` y pasa a
+`review_required` si todavía no tiene un resultado concluyente. Por eso una
+instantánea pre-cita antigua no puede volver a aparecer en **Próximas citas**.
+
+El scheduler vive en Admin API y aplica este contrato:
+
+1. Inicia el ciclo a las `20:00` de Lima y solo considera reservas confirmadas
+   entre D+1 y D+30.
+2. Excluye citas de hoy/futuras, `completed`, `access_lost` y cierres
+   `client_withdrew`, `external_slot`, `duplicate`, `not_serviceable` o
+   `uncollectible`.
+3. Procesa una orden por vez, con contexto Playwright nuevo, y espera una pausa
+   aleatoria de `4-7` segundos entre consultas.
+4. Admite como máximo `20` aperturas por día. Prioriza nunca revisados,
+   resultados que requieren atención, revisión más antigua y cita más antigua.
+   Si existe más backlog, permanece visible y continúa en el siguiente ciclo.
+5. Un fallo técnico queda terminal para ese día y vuelve a ser elegible recién
+   al día siguiente. Tres fallos técnicos consecutivos abren el breaker y
+   detienen el resto del lote diario. `invalid_credentials` produce
+   `access_lost` y no cuenta como caída general del portal.
+6. Un claim interrumpido se cierra como fallo sin reapertura el mismo día. El
+   botón **Revisar ahora** sigue disponible fuera del ciclo automático.
+
+La sesión conserva `headless=true`, `auto_reserve=false`, monitor en cero y
+notificaciones desactivadas. No pulsa reservar, no resuelve CAPTCHA, no crea
+WhatsApp, no modifica pagos, órdenes, reservas ni backoffs del worker.
+
+El dashboard muestra frescura de cada caso, próxima revisión automática,
+pendientes, revisiones activas/completadas/con fallo y breaker. Las citas con más
+de 30 días siguen en **Necesitan revisión**, pero requieren intervención manual.

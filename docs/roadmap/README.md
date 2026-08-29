@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-17`.
+Ultima priorizacion: `2026-08-28`.
 
 Esta es la unica lista de trabajo futuro y su orden de ejecucion. El estado de
 lo construido, validado y activo vive en
@@ -35,8 +35,10 @@ crear colas paralelas.
    fallback, seleccion preservada y tiempos pre-click, sin contar entrenamiento.
 4. Cerrar en la **Fase 2** la conciliacion manual del pago historico con
    diferencia de `S/10` y reunir saldos/costos suficientes para cierres reales.
-5. Completar la revision visual humana de `Seguimiento` en escritorio y movil;
-   el primer lote real ya cerro `8/8 sent` despues del resumen diario.
+5. Observar el primer lote post-cita natural de las `20:00`: claims únicos,
+   orden serial, pausa, cap `20`, breaker y clasificación resultante; además
+   completar la revisión visual humana de **Citas y recordatorios** en `360`,
+   `768`, `1024` y `1440 px`.
 6. Incorporar controles seguros y salud compuesta en la **Fase 3**.
 7. Cerrar backup externo, watchdogs, rotacion y retencion en la **Fase 4**.
 8. Reorganizar flujos y datos del dashboard antes del rediseño visual.
@@ -420,6 +422,14 @@ ventana cerrada y reglas de días o exclusiones, y la ficha muestra el servicio
 y precio acordados. Esta capacidad queda completada; no agrega una tarea futura
 independiente.
 
+Avance del `2026-08-29`: **Pendientes** ya separa el backlog CAPTCHA del
+contador y de la cola comercial, consume `/api/v1/operator-inbox`, incorpora
+pausados y acciones correctas para credenciales rechazadas, y agrega búsqueda,
+filtros, orden por severidad y siguiente acción visible. El dato disponible
+solo permite mostrar el último cambio de la orden; siguen pendientes una marca
+real `actionable_since`, vencimiento y responsable por tarea, además de la
+revisión visual en navegador real.
+
 ### Alcance
 
 1. Separar Pendientes comerciales del backlog de entrenamiento CAPTCHA.
@@ -523,10 +533,14 @@ independiente.
    actualizacion de cada fuente.
 9. Cargar Post-cita y textos sensibles de manera progresiva y paginada; evitar
    transportar las 108 historias completas cuando solo se necesita el resumen.
-10. Completar la revision visual humana de `Seguimiento` en `360`, `768`,
-    `1024` y `1440 px`. La separacion funcional entre Proximas citas,
-    Post-cita e Historial ya esta implementada; queda pendiente aprobar su
-    presentacion real en escritorio y movil.
+   La clasificación Lima, frescura y automatización nocturna D+1..D+30 ya están
+   activas; falta observar su primer lote natural y luego dimensionar el cap con
+   evidencia real, sin ampliarlo por el backlog inicial.
+10. Completar la revision visual humana de **Citas y recordatorios** en `360`,
+    `768`, `1024` y `1440 px`. La agenda completa, busqueda principal, filtros,
+    orden unico, espacios **Proximas citas / Necesitan revision / Historial** y
+    dialogo de anticipacion `1..3` dias ya estan implementados; queda pendiente
+    aprobar su presentacion real en escritorio y movil.
 
 ### Criterio de aceptacion
 

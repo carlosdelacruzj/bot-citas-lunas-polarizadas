@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
@@ -16,6 +16,7 @@ from appointment_bot.browser.whatsapp_web import (
 )
 from appointment_bot.config import Settings
 from appointment_bot.db.appointment_reminder_control import (
+    REMINDER_LEAD_DAYS,
     get_appointment_reminder_control,
 )
 from appointment_bot.db.appointment_reminders import (
@@ -384,18 +385,23 @@ class WhatsAppAutomationDispatcher:
         job: WhatsAppAutomationJob,
     ) -> tuple[WhatsAppAutomationJob | None, str]:
         reservation_id = job["reservation_id"]
+        report_date_raw = job["report_date"]
         appointment_day_raw = job["appointment_day"]
-        if reservation_id is None or appointment_day_raw is None:
-            return None, "El trabajo no conserva reserva o fecha de cita."
+        if reservation_id is None or report_date_raw is None or appointment_day_raw is None:
+            return None, "El trabajo no conserva reserva, fecha de envio o fecha de cita."
         try:
+            report_date = date.fromisoformat(report_date_raw)
             appointment_day = date.fromisoformat(appointment_day_raw)
         except ValueError:
-            return None, "La fecha normalizada del recordatorio es invalida."
-        expected_day = datetime.now(LIMA_TIMEZONE).date() + timedelta(days=1)
-        if appointment_day != expected_day:
+            return None, "Las fechas normalizadas del recordatorio son invalidas."
+        today = datetime.now(LIMA_TIMEZONE).date()
+        if report_date != today:
             return None, (
-                "El recordatorio ya no corresponde al dia siguiente en America/Lima."
+                "El lote del recordatorio ya no corresponde al dia actual en America/Lima."
             )
+        lead_days = (appointment_day - report_date).days
+        if lead_days not in REMINDER_LEAD_DAYS:
+            return None, "La anticipacion congelada del recordatorio es invalida."
         candidate = get_current_appointment_reminder_candidate(
             reservation_id,
             appointment_day,

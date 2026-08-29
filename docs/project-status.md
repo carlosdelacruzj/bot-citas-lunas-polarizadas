@@ -349,6 +349,19 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   `Página X de Y` y sus cabeceras ordenables exponen `aria-sort`.
 - Resumen mensual, finanzas, bandeja de pendientes y edición segura de
   credenciales.
+- Corregido el `2026-08-29`: **Pendientes** consume el contrato canónico
+  `/api/v1/operator-inbox` en vez de reconstruirlo en Angular. La vista vuelve
+  a incluir clientes pausados y distingue **Corregir acceso** de una
+  revalidación con las mismas credenciales. La cola comercial se puede buscar y
+  filtrar, ordena bloqueos antes que seguimientos y muestra el último cambio de
+  la orden junto a la siguiente acción. El backlog CAPTCHA queda en una
+  superficie secundaria y ya no infla el contador comercial. El build Angular
+  quedó correcto; la revisión visual en navegador real sigue pendiente porque
+  no hubo un navegador conectado en este corte.
+- Ajustado tras revisión del operador el `2026-08-29`: se retiraron las cuatro
+  tarjetas numéricas duplicadas de **Pendientes**. El total quedó como un
+  indicador compacto en la cabecera y los conteos aparecen una sola vez dentro
+  de los filtros, con mayor separación entre controles y tareas.
 - Implementado el `2026-08-10` en paralelo con la muestra pasiva de Fase 1: el
   contrato comercial v2 separa eventos del periodo, cohorte de altas y atención
   viva. MTD se compara contra los mismos días del mes anterior y los meses
@@ -1208,6 +1221,43 @@ comunicación. No reemplazan ese baseline para comparar regresiones del motor.
   modo, no se encoló ni envió un recordatorio. La revisión visual quedó pendiente
   porque no hubo un navegador conectado, igual que la observación del próximo
   recordatorio natural.
+- Implementado y activado técnicamente el `2026-08-28`: PostgreSQL `v66`
+  permite administrar desde **Citas y recordatorios** una anticipación de `1`,
+  `2` o `3` días. El primer corte de cada fecha Lima congela su fecha objetivo;
+  un cambio posterior se aplica al siguiente día y conserva todos los trabajos
+  ya preparados. La revalidación usa el snapshot `report_date ->
+  appointment_day`, impide lotes atrasados y bloquea `2/3` días si una
+  plantilla personalizada todavía afirma `mañana`. La pantalla reemplaza la
+  distribución anterior de **Seguimiento** por tres espacios: **Próximas
+  citas**, **Necesitan revisión** e **Historial**; la primera reúne todas las
+  citas futuras, deja búsqueda y filtros antes de las métricas y separa la
+  configuración en un diálogo visual. Pasaron `compileall`, Ruff, las `59`
+  pruebas existentes, `git diff --check` y el build Angular `main-HV74Q6LI.js`;
+  permanece el aviso conocido de presupuesto inicial, ahora `12.00 kB`. La
+  migración viva conservó `live`, `lead_days=1`, cero trabajos WhatsApp activos,
+  cero corridas/ráfagas activas y cero sesiones manuales; Admin API reinició
+  aisladamente en PID `21152`, antes del corte de las `18:00`, sin crear ni
+  enviar recordatorios. La aprobación visual humana en los cuatro anchos sigue
+  pendiente porque no había navegador conectado.
+- Corregido y activado técnicamente el `2026-08-28`: **Próximas citas** ya no
+  confía indefinidamente en un `upcoming` histórico. La API recalcula contra hoy
+  en Lima y convirtió los `38` casos vencidos detectados a
+  `review_required`; el caso reportado del `2026-08-10` quedó fuera de Próximas,
+  con frescura `stale` y revisión nocturna pendiente. PostgreSQL `v67` agregó
+  claims idempotentes por `(service_date, reservation_id)` y Admin API ejecuta
+  desde las `20:00` un lote post-cita serial, D+1..D+30, con pausa `4-7 s`,
+  límite `20`, prioridad por antigüedad y breaker tras tres fallos técnicos
+  consecutivos. Terminales, cierres comerciales y citas futuras nunca entran;
+  el botón manual permanece. La pantalla muestra frescura, próxima revisión,
+  backlog, actividad y breaker. En vivo quedaron `0` citas pasadas como
+  `upcoming`, `50` elegibles para el ciclo, `0` claims/revisiones/fallos hoy y
+  breaker cerrado. Pasaron `compileall`, Ruff, las `59` pruebas, diff-check de
+  los archivos del cambio y build Angular `main-ZYVL5IVO.js`; permanece el aviso
+  conocido de `12.08 kB`. Admin API reinició aisladamente en PID `23964`, con
+  cero trabajos WhatsApp, corridas, ráfagas, intentos recientes o sesiones
+  manuales activos. No se abrió el portal ni se envió contenido durante el
+  despliegue; tras la recarga final quedó en PID `3516` y falta observar el
+  primer lote natural de las `20:00`.
 - Implementado técnicamente el `2026-08-26`: la Etapa 8 se dividió para no
   confundir observabilidad con eliminación de respaldos. La Etapa 8A muestra en
   el detalle y la conciliación las claves/revisiones congeladas del paquete,

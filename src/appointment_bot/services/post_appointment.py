@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import re
 import threading
 import unicodedata
@@ -13,8 +14,14 @@ from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.db.order_credentials import get_service_order_runtime
 from appointment_bot.db.post_appointment import (
+    POST_APPOINTMENT_AUTOMATION_DAILY_LIMIT,
+    POST_APPOINTMENT_AUTOMATION_TIME,
+    claim_next_post_appointment_automatic_review,
+    fail_stale_post_appointment_automatic_reviews,
+    finish_post_appointment_automatic_review,
     get_post_appointment_target,
     list_post_appointment_followups,
+    post_appointment_automation_status,
     record_post_appointment_review,
 )
 from appointment_bot.reports.run_reporting import settings_for_order
@@ -30,10 +37,141 @@ POST_APPOINTMENT_STAGE_KEYS = {"peritaje_vehicular", "peritaje_lunas", "validaci
 _ACTIVE_REVIEWS: set[str] = set()
 _ACTIVE_REVIEWS_LOCK = threading.Lock()
 _TIME_RE = re.compile(r"\b([01]?\d|2[0-3]):[0-5]\d\b")
+POST_APPOINTMENT_AUTOMATION_RECONCILE_SECONDS = 300
+POST_APPOINTMENT_AUTOMATION_PAUSE_SECONDS = (4.0, 7.0)
 
 
 class PostAppointmentReviewConflict(RuntimeError):
     pass
+
+
+class PostAppointmentReviewScheduler:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None and self._thread.is_alive():
+            return
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run,
+            name="post-appointment-review-scheduler",
+            daemon=True,
+        )
+        self._thread.start()
+        logger.info(
+            "Post-appointment review scheduler started: time=%s daily_limit=%s",
+            POST_APPOINTMENT_AUTOMATION_TIME.isoformat(timespec="minutes"),
+            POST_APPOINTMENT_AUTOMATION_DAILY_LIMIT,
+        )
+
+    def stop(self) -> None:
+        self._stop_event.set()
+        thread = self._thread
+        if thread is None:
+            return
+        thread.join(timeout=10)
+        if thread.is_alive():
+            logger.warning("Post-appointment review scheduler is still finishing a review")
+        else:
+            logger.info("Post-appointment review scheduler stopped")
+        self._thread = None
+
+    def _run(self) -> None:
+        while not self._stop_event.is_set():
+            now = datetime.now(LIMA_TZ)
+            if now.time() >= POST_APPOINTMENT_AUTOMATION_TIME:
+                try:
+                    reconcile_post_appointment_reviews(
+                        self.settings,
+                        now=now,
+                        stop_event=self._stop_event,
+                    )
+                except Exception:
+                    logger.exception("Unexpected post-appointment scheduler failure")
+            self._stop_event.wait(POST_APPOINTMENT_AUTOMATION_RECONCILE_SECONDS)
+
+
+def reconcile_post_appointment_reviews(
+    settings: Settings,
+    *,
+    now: datetime | None = None,
+    stop_event: threading.Event | None = None,
+) -> dict[str, Any]:
+    now = now or datetime.now(LIMA_TZ)
+    service_date = now.astimezone(LIMA_TZ).date()
+    stale = fail_stale_post_appointment_automatic_reviews(
+        service_date=service_date,
+        settings=settings,
+    )
+    if stale:
+        logger.warning("Closed %s interrupted automatic post-appointment reviews", stale)
+
+    processed = 0
+    while stop_event is None or not stop_event.is_set():
+        claimed = claim_next_post_appointment_automatic_review(
+            service_date=service_date,
+            settings=settings,
+        )
+        if claimed is None:
+            break
+        reservation_id = str(claimed["reservation_id"])
+        order_id = str(claimed["order_id"])
+        try:
+            item = review_post_appointment_order(order_id, settings=settings)
+            error_code = str(item.get("error_code") or "") or None
+            technical_failure = error_code in {"portal_error", "workflow_unavailable"}
+            finish_post_appointment_automatic_review(
+                service_date=service_date,
+                reservation_id=reservation_id,
+                status="failed" if technical_failure else "completed",
+                review_id=str(item.get("review_id") or "") or None,
+                error_code=error_code if technical_failure else None,
+                error_message=(
+                    str(item.get("error_message") or "") or None
+                    if technical_failure
+                    else None
+                ),
+                settings=settings,
+            )
+        except PostAppointmentReviewConflict:
+            finish_post_appointment_automatic_review(
+                service_date=service_date,
+                reservation_id=reservation_id,
+                status="skipped",
+                error_code="manual_review_in_progress",
+                error_message="La orden ya tenía una revisión manual activa.",
+                settings=settings,
+            )
+        except Exception:
+            logger.exception(
+                "Automatic post-appointment review failed: order_id=%s",
+                order_id,
+            )
+            finish_post_appointment_automatic_review(
+                service_date=service_date,
+                reservation_id=reservation_id,
+                status="failed",
+                error_code="automatic_review_error",
+                error_message="No se pudo completar la revisión automática de solo lectura.",
+                settings=settings,
+            )
+        processed += 1
+        pause_seconds = random.uniform(*POST_APPOINTMENT_AUTOMATION_PAUSE_SECONDS)
+        if stop_event is not None:
+            if stop_event.wait(pause_seconds):
+                break
+        else:
+            threading.Event().wait(pause_seconds)
+
+    status = post_appointment_automation_status(
+        service_date=service_date,
+        settings=settings,
+    )
+    status["processed_this_reconciliation"] = processed
+    return status
 
 
 def review_post_appointment_order(
@@ -236,6 +374,8 @@ def _clean_text(value: object) -> str | None:
 
 
 __all__ = [
+    "PostAppointmentReviewScheduler",
     "PostAppointmentReviewConflict",
+    "reconcile_post_appointment_reviews",
     "review_post_appointment_order",
 ]

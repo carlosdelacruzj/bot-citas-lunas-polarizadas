@@ -34,7 +34,7 @@ export const routes: Routes = [
   { path: 'ordenes/:orderId', title: 'Detalle de orden', loadComponent: loadOrdersView },
   { path: 'actividad', title: 'Actividad', loadComponent: loadRunsView },
   { path: 'actividad/:runId', title: 'Detalle de actividad', loadComponent: loadRunsView },
-  { path: 'seguimiento', title: 'Seguimiento', loadComponent: loadFollowupsView },
+  { path: 'seguimiento', title: 'Citas y recordatorios', loadComponent: loadFollowupsView },
   { path: 'post-cita', pathMatch: 'full', redirectTo: 'seguimiento' },
   { path: 'finanzas', title: 'Finanzas', loadComponent: loadFinanceView },
   {

@@ -102,7 +102,7 @@ _CURRENT_APPOINTMENT_REMINDER = "\n\n".join(
 )
 
 _RECOMMENDED_APPOINTMENT_REMINDER = (
-    "Hola, {nombre}. Te recordamos que mañana, {fecha}, tienes tu cita de "
+    "Hola, {nombre}. Te recordamos que el {fecha} tienes tu cita de "
     "lunas polarizadas. Hora: {hora}. Sede: {sede}. Si tu cita fue modificada "
     "recientemente, por favor comunícate con nosotros."
 )

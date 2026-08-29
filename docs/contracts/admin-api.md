@@ -144,6 +144,36 @@ reiniciar procesos nunca resetea el breaker implicitamente.
 ejecuciones y eventos OBS-007 sanitizados. No expone credenciales, contactos,
 cookies, owner tokens ni `RunReport.details` crudo.
 
+## Citas y recordatorios
+
+`GET /api/v1/appointment-reminders` devuelve el lote operativo del dia Lima, la
+fecha objetivo, candidatos con contacto enmascarado y el control persistido. La
+anticipacion configurada aparece en `control.lead_days`; la que realmente usa el
+lote congelado aparece en `configuration.effective_lead_days`. Ambas admiten
+solo `1`, `2` o `3`.
+
+`control.lead_days_applies_from` distingue `current_service_date` de
+`next_service_date`, mientras `control.applies_from` entrega la fecha ISO exacta
+desde la que se usara el valor guardado. `existing_jobs_policy=preserved`
+confirma que el cambio no mueve, cancela ni reescribe trabajos ya preparados.
+
+`PUT /api/v1/appointment-reminders` exige un actor autenticado y este cuerpo:
+
+```json
+{
+  "mode": "live",
+  "lead_days": 3,
+  "canary_order_ids": [],
+  "expected_revision": 6
+}
+```
+
+`lead_days` debe ser un entero estricto; booleanos y valores fuera de `1..3`
+devuelven `400`. La revision obsoleta devuelve `409` con el estado actual. Si
+el texto vigente contiene `mañana`, seleccionar `2` o `3` dias tambien se
+rechaza hasta corregir la plantilla en **Mensajes**. `canary` exige una o dos
+ordenes elegibles para la fecha objetivo efectiva.
+
 ## Seguimiento post-cita
 
 `GET /api/v1/post-appointment-followups` devuelve todas las órdenes con una
@@ -152,6 +182,19 @@ etapas. Documento y contactos permanecen enmascarados. Cada elemento incluye
 `parent_order_id`, `program_expediente` y `program_plate` para distinguir los
 trámites de una misma cuenta. El payload incluye totales de casos que requieren
 atención, accesos perdidos y trámites con avance o cierre.
+
+La clasificación temporal se recalcula en cada lectura con la fecha Lima. Un
+resultado histórico `upcoming` nunca mantiene una cita pasada en Próximas: se
+expone como `review_required` hasta que exista una lectura post-cita actual. Por
+elemento se entregan `review_freshness` (`not_applicable`, `not_reviewed`,
+`current` o `stale`) y `next_automatic_review_at`.
+
+El bloque `automation` describe el ciclo de solo lectura de las `20:00` en
+`America/Lima`: límite diario, pendientes, revisiones activas/completadas/con
+fallo, último ciclo y estado del breaker. Solo admite citas entre D+1 y D+30,
+excluye resultados `completed`/`access_lost` y órdenes comercialmente cerradas,
+y conserva como máximo un intento por `(service_date, reservation_id)`. Tres
+fallos técnicos consecutivos detienen el resto del lote del día.
 
 `POST /api/v1/service-orders/{order_id}/post-appointment/review` realiza una
 consulta sin cuerpo y de solo lectura. Exige una reserva confirmada, rechaza una
@@ -164,6 +207,9 @@ columna `Mensaje`, además de `message_present` y `message_class` (`none`, `ok`,
 `observation` o `unknown`). Este endpoint es interno y requiere autenticación
 administrativa. Un rechazo de credenciales se informa como
 `access_lost`; un fallo técnico se mantiene separado como `portal_unavailable`.
+El botón manual permanece disponible para casos accionables, pero el scheduler
+es serial, usa un contexto Playwright nuevo por orden, espera `4-7` segundos
+entre lecturas y nunca reserva, resuelve CAPTCHA ni envía mensajes.
 
 ## Resumen mensual
 

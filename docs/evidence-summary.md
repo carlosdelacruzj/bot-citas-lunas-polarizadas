@@ -3,28 +3,28 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Totales
-- Eventos indexados: 2649
-- Reservas registradas: 190
+- Eventos indexados: 2663
+- Reservas registradas: 193
 - Reservas no confirmadas: 5
-- Disponibilidades completas: 1705
+- Disponibilidades completas: 1716
 - Disponibilidades parciales: 535
 - Senales de defensa: 15
 
 ## Origen de deteccion
-- normal: 2641
+- normal: 2655
 - slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
-- 2026-08-28 10:01:51 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
-- 2026-08-28 10:01:42 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
-- 2026-08-28 10:01:33 | sin orden | available | normal | 25/09/2026 11:00 | sin outcome
-- 2026-08-28 10:01:10 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
-- 2026-08-28 10:01:00 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
-- 2026-08-28 10:00:52 | sin orden | available | normal | 25/09/2026 10:00 | sin outcome
-- 2026-08-28 09:59:58 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
-- 2026-08-28 09:59:51 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
-- 2026-08-28 09:59:46 | order-*** | registered | normal | 25/09/2026 09:00 | confirmed
-- 2026-08-28 09:59:38 | order-*** | registered | normal | 25/09/2026 08:00 | confirmed
+- 2026-08-28 14:28:17 | order-*** | registered | normal | 25/09/2026 08:00 | confirmed
+- 2026-08-28 13:44:09 | order-*** | registered | normal | 23/09/2026 09:00 | confirmed
+- 2026-08-28 13:44:07 | order-*** | registered | normal | 23/09/2026 09:00 | confirmed
+- 2026-08-28 11:45:25 | sin orden | available | normal | 14/09/2026 12:00 | sin outcome
+- 2026-08-28 11:45:17 | sin orden | available | normal | 14/09/2026 12:00 | sin outcome
+- 2026-08-28 10:46:52 | sin orden | available | normal | 21/09/2026 08:00 | sin outcome
+- 2026-08-28 10:46:43 | sin orden | available | normal | 21/09/2026 08:00 | sin outcome
+- 2026-08-28 10:46:35 | sin orden | available | normal | 21/09/2026 08:00 | sin outcome
+- 2026-08-28 10:46:26 | sin orden | available | normal | 21/09/2026 08:00 | sin outcome
+- 2026-08-28 10:46:17 | sin orden | available | normal | 21/09/2026 08:00 | sin outcome
 
 ## Senales de defensa
 - 2026-08-28 09:22:52 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

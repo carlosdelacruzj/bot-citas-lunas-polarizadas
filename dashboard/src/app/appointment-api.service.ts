@@ -30,9 +30,11 @@ export interface AppointmentReminderStatus {
     send_interval_seconds: number;
     daily_limit: number;
     timezone: string;
+    effective_lead_days: 1 | 2 | 3;
   };
   control: {
     mode: 'disabled' | 'dry_run' | 'canary' | 'live';
+    lead_days: 1 | 2 | 3;
     message_template: string;
     default_template: string;
     canary_order_ids: string[];
@@ -40,7 +42,9 @@ export interface AppointmentReminderStatus {
     template_revision: number;
     updated_at: string;
     updated_by: string;
-    applies_from: 'next_reconciliation';
+    applies_from: string;
+    lead_days_applies_from: 'current_service_date' | 'next_service_date';
+    existing_jobs_policy: 'preserved';
   };
   allowed_variables: Array<'nombre' | 'fecha' | 'hora' | 'sede'>;
   day: {
@@ -299,6 +303,56 @@ export interface ServiceOrderDetail extends ServiceOrder {
   contact_whatsapp_username: string | null;
 }
 
+export type OperatorInboxTaskKind =
+  | 'preflight'
+  | 'paused'
+  | 'contact'
+  | 'whatsapp'
+  | 'payment'
+  | 'followup'
+  | 'review';
+
+export type OperatorInboxTaskAction =
+  | 'correct_credentials'
+  | 'revalidate'
+  | 'view_order'
+  | 'edit_contact'
+  | 'prepare_whatsapp'
+  | 'register_payment'
+  | 'review_whatsapp'
+  | 'review_post_payment_whatsapp';
+
+export interface OperatorInboxTask {
+  key: string;
+  kind: OperatorInboxTaskKind;
+  order_id: string;
+  applicant_name: string | null;
+  document_number_masked: string;
+  title: string;
+  description: string;
+  label: string;
+  action: OperatorInboxTaskAction;
+  action_label: string;
+  tone: 'bad' | 'warn' | 'neutral';
+  state: string;
+  updated_at: string;
+}
+
+export interface OperatorInboxPayload {
+  generated_at: string;
+  summary: {
+    total: number;
+    access: number;
+    paused: number;
+    contact: number;
+    whatsapp: number;
+    payment: number;
+    postpayment: number;
+    messages: number;
+  };
+  items: OperatorInboxTask[];
+}
+
 export type PostAppointmentOutcome =
   | 'upcoming'
   | 'awaiting_update'
@@ -345,6 +399,8 @@ export interface PostAppointmentFollowup {
   error_code: string | null;
   error_message: string | null;
   last_reviewed_at: string | null;
+  review_freshness: 'not_applicable' | 'not_reviewed' | 'current' | 'stale';
+  next_automatic_review_at: string | null;
   stages: PostAppointmentStage[];
 }
 
@@ -355,6 +411,19 @@ export interface PostAppointmentPayload {
     needs_attention: number;
     access_lost: number;
     progressed_or_completed: number;
+  };
+  automation: {
+    enabled: boolean;
+    timezone: string;
+    time: string;
+    daily_limit: number;
+    due_count: number;
+    running: number;
+    completed_today: number;
+    failed_today: number;
+    last_run_at: string | null;
+    breaker_open: boolean;
+    breaker_reason: 'three_consecutive_technical_failures' | null;
   };
   items: PostAppointmentFollowup[];
 }
@@ -1098,6 +1167,7 @@ export class AppointmentApiService {
 
   async updateAppointmentReminders(payload: {
     mode: AppointmentReminderStatus['control']['mode'];
+    lead_days: AppointmentReminderStatus['control']['lead_days'];
     canary_order_ids: string[];
     expected_revision: number;
   }): Promise<AppointmentReminderStatus> {
@@ -1189,6 +1259,10 @@ export class AppointmentApiService {
   async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {
     const response = await this.read<ServiceOrdersResponse>('/api/v1/service-orders', scope);
     return response.service_orders;
+  }
+
+  async getOperatorInbox(scope?: RequestScope): Promise<OperatorInboxPayload> {
+    return this.read<OperatorInboxPayload>('/api/v1/operator-inbox', scope);
   }
 
   async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {

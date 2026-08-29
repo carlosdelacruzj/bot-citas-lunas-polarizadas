@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import re
 import threading
+import unicodedata
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -22,6 +24,7 @@ from appointment_bot.db.appointment_reminders import (
     backfill_missing_appointment_days,
     count_invalid_current_appointment_dates,
     daily_summary_barrier_status,
+    ensure_appointment_reminder_batch_day,
     list_appointment_reminder_candidates,
     mark_daily_summary_missing_alerted,
     record_appointment_reminder_day,
@@ -51,6 +54,14 @@ MONTH_NAMES = (
     "diciembre",
 )
 APPOINTMENT_REMINDER_TEMPLATE_KEY = "appointment_reminder"
+
+
+def reminder_template_mentions_tomorrow(message_template: str) -> bool:
+    normalized = unicodedata.normalize("NFKD", message_template.casefold())
+    plain_text = "".join(
+        character for character in normalized if not unicodedata.combining(character)
+    )
+    return re.search(r"\bmanana\b", plain_text) is not None
 
 
 class AppointmentReminderScheduler:
@@ -107,13 +118,17 @@ def reconcile_appointment_reminders(
     else:
         effective_now = effective_now.astimezone(LIMA_TIMEZONE)
     service_date = effective_now.date()
-    appointment_day = service_date + timedelta(days=1)
     normalized_count, _invalid_backfill_count = backfill_missing_appointment_days(
         settings=settings
     )
     if normalized_count:
         logger.info("Normalized %s stored appointment dates", normalized_count)
     control = get_appointment_reminder_control(settings)
+    appointment_day = ensure_appointment_reminder_batch_day(
+        service_date,
+        control.lead_days,
+        settings=settings,
+    )
     template = get_current_appointment_reminder_template(settings)
     candidates = list_appointment_reminder_candidates(
         appointment_day,
@@ -150,7 +165,15 @@ def reconcile_appointment_reminders(
     created_count = 0
     existing_count = 0
     if control.mode != "disabled":
-        if control.mode == "dry_run":
+        if control.lead_days > 1 and reminder_template_mentions_tomorrow(
+            template.message_template
+        ):
+            status = "blocked"
+            error = (
+                "La plantilla vigente dice manana y no es compatible con una "
+                "anticipacion mayor a un dia. Actualiza el mensaje antes de enviar."
+            )
+        elif control.mode == "dry_run":
             status = "dry_run"
         elif control.mode == "canary" and not control.canary_order_ids:
             status = "blocked"
@@ -190,6 +213,7 @@ def reconcile_appointment_reminders(
 
             job_counts = appointment_reminder_job_counts(
                 service_date,
+                appointment_day,
                 settings=settings,
             )
             active_jobs = sum(
@@ -201,7 +225,8 @@ def reconcile_appointment_reminders(
                 for job_status in ("sent", "failed", "uncertain", "skipped")
             )
             if summary_status not in {"missing", "active"}:
-                if active_jobs == 0 and terminal_jobs >= len(valid_candidates):
+                covered_jobs = terminal_jobs + existing_count
+                if active_jobs == 0 and covered_jobs >= len(valid_candidates):
                     status = "complete"
                 elif job_counts.get("running", 0):
                     status = "processing"
@@ -244,7 +269,11 @@ def reconcile_appointment_reminders(
         missing_contact_count,
         summary_status,
     )
-    return appointment_reminder_status(service_date, settings=settings)
+    return appointment_reminder_status(
+        service_date,
+        control.lead_days,
+        settings=settings,
+    )
 
 
 def validate_reminder_template(message_template: str) -> dict[str, str]:
@@ -290,6 +319,7 @@ def _appointment_day_text(appointment_day: date) -> str:
         f"de {appointment_day.year}"
     )
 
+
 def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]:
     now = datetime.now(LIMA_TIMEZONE)
     control = get_appointment_reminder_control(settings)
@@ -297,9 +327,14 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
     if definition is None:
         raise RuntimeError("La definición del recordatorio no está disponible.")
-    payload = appointment_reminder_status(now.date(), settings=settings)
+    payload = appointment_reminder_status(
+        now.date(),
+        control.lead_days,
+        settings=settings,
+    )
+    target_day = date.fromisoformat(str(payload["appointment_day"]))
     candidates = list_appointment_reminder_candidates(
-        now.date() + timedelta(days=1),
+        target_day,
         settings=settings,
     )
     job_status_by_order = {
@@ -323,6 +358,7 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     }
     payload["control"] = {
         "mode": control.mode,
+        "lead_days": control.lead_days,
         "message_template": template.message_template,
         "default_template": definition.recommended_template,
         "canary_order_ids": list(control.canary_order_ids),
@@ -330,8 +366,19 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
         "template_revision": template.revision,
         "updated_at": control.updated_at.isoformat(),
         "updated_by": control.updated_by,
-        "applies_from": "next_reconciliation",
+        "existing_jobs_policy": "preserved",
     }
+    effective_lead_days = (target_day - now.date()).days
+    payload["configuration"]["effective_lead_days"] = effective_lead_days
+    payload["control"]["lead_days_applies_from"] = (
+        "current_service_date"
+        if effective_lead_days == control.lead_days
+        else "next_service_date"
+    )
+    applies_from = now.date()
+    if effective_lead_days != control.lead_days:
+        applies_from += timedelta(days=1)
+    payload["control"]["applies_from"] = applies_from.isoformat()
     payload["allowed_variables"] = list(definition.allowed_variables)
     payload["current_time"] = now.isoformat()
     payload["scheduler_window_open"] = now.time() >= settings.appointment_reminders_time
@@ -397,6 +444,7 @@ __all__ = [
     "appointment_reminder_message",
     "appointment_reminder_status_payload",
     "get_current_appointment_reminder_template",
+    "reminder_template_mentions_tomorrow",
     "reconcile_appointment_reminders",
     "validate_reminder_template",
 ]

@@ -7,14 +7,20 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import load_settings
 from appointment_bot.db.appointment_reminder_control import (
+    REMINDER_LEAD_DAYS,
     REMINDER_MODES,
     AppointmentReminderControlConflict,
     update_appointment_reminder_control,
 )
-from appointment_bot.db.appointment_reminders import list_appointment_reminder_candidates
+from appointment_bot.db.appointment_reminders import (
+    get_appointment_reminder_batch_day,
+    list_appointment_reminder_candidates,
+)
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.appointment_reminders import (
     appointment_reminder_status_payload,
+    get_current_appointment_reminder_template,
+    reminder_template_mentions_tomorrow,
 )
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -40,29 +46,67 @@ def update_appointment_reminders_payload(
 ) -> tuple[HTTPStatus, dict[str, object]]:
     settings = load_settings(require_login=False)
     mode = str(body.get("mode") or "").strip().lower()
+    lead_days = body.get("lead_days")
     raw_ids = body.get("canary_order_ids")
     expected_revision = body.get("expected_revision")
     errors: dict[str, str] = {}
     if mode not in REMINDER_MODES:
         errors["mode"] = "Usa disabled, dry_run, canary o live."
+    if (
+        not isinstance(lead_days, int)
+        or isinstance(lead_days, bool)
+        or lead_days not in REMINDER_LEAD_DAYS
+    ):
+        errors["lead_days"] = "Selecciona 1, 2 o 3 dias de anticipacion."
     if not isinstance(expected_revision, int) or isinstance(expected_revision, bool):
         errors["expected_revision"] = "La revisión esperada debe ser un entero."
     if not isinstance(raw_ids, list) or any(not isinstance(value, str) for value in raw_ids):
-        errors["canary_order_ids"] = "Selecciona órdenes válidas de la lista de mañana."
+        errors["canary_order_ids"] = (
+            "Selecciona órdenes válidas de la fecha objetivo."
+        )
         canary_order_ids: list[str] = []
     else:
         canary_order_ids = sorted({value.strip() for value in raw_ids if value.strip()})
     if len(canary_order_ids) > 2:
         errors["canary_order_ids"] = "El canario admite como máximo 2 órdenes."
-    tomorrow = datetime.now(ZoneInfo("America/Lima")).date() + timedelta(days=1)
+    service_date = datetime.now(ZoneInfo("America/Lima")).date()
+    target_day = get_appointment_reminder_batch_day(service_date, settings=settings)
+    if target_day is None:
+        draft_lead_days = (
+            lead_days
+            if isinstance(lead_days, int)
+            and not isinstance(lead_days, bool)
+            and lead_days in REMINDER_LEAD_DAYS
+            else 1
+        )
+        target_day = service_date + timedelta(
+            days=draft_lead_days
+        )
     eligible_ids = {
         candidate["order_id"]
-        for candidate in list_appointment_reminder_candidates(tomorrow, settings=settings)
+        for candidate in list_appointment_reminder_candidates(
+            target_day,
+            settings=settings,
+        )
     }
     if set(canary_order_ids) - eligible_ids:
-        errors["canary_order_ids"] = "Hay órdenes que ya no son elegibles para mañana."
+        errors["canary_order_ids"] = (
+            "Hay órdenes que ya no son elegibles para la fecha objetivo."
+        )
     if mode == "canary" and not canary_order_ids:
         errors["canary_order_ids"] = "Selecciona 1 o 2 órdenes antes de activar el canario."
+    if (
+        isinstance(lead_days, int)
+        and not isinstance(lead_days, bool)
+        and lead_days > 1
+        and reminder_template_mentions_tomorrow(
+            get_current_appointment_reminder_template(settings).message_template
+        )
+    ):
+        errors["lead_days"] = (
+            "La plantilla vigente dice 'mañana'. Actualízala en Mensajes antes de "
+            "usar 2 o 3 días de anticipación."
+        )
     if errors:
         payload = error_payload("bad_request", "Revisa la configuración del recordatorio.")
         payload["field_errors"] = errors
@@ -70,6 +114,7 @@ def update_appointment_reminders_payload(
     try:
         update_appointment_reminder_control(
             mode=mode,
+            lead_days=int(lead_days),
             canary_order_ids=canary_order_ids,
             expected_revision=int(expected_revision),
             updated_by=requested_by or "dashboard-owner",

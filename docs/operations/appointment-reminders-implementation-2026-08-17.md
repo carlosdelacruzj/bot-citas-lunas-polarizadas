@@ -5,8 +5,8 @@ Fecha de inicio: `2026-08-17`.
 ## Objetivo
 
 Generar diariamente recordatorios WhatsApp para las reservas confirmadas cuya
-cita sea al dia siguiente, conservando como prioridad absoluta el resumen
-diario de evidencias enviado al operador.
+cita sea dentro de `1`, `2` o `3` dias, segun el control persistido, conservando
+como prioridad absoluta el resumen diario de evidencias enviado al operador.
 
 ## Reglas acordadas
 
@@ -19,8 +19,8 @@ diario de evidencias enviado al operador.
 - La seleccion usa reservas confirmadas y datos administrativos; nunca toma
   destinatarios de credenciales, campos del portal ni honeypots.
 - Antes de enviar se revalida que la cita y el destinatario sigan vigentes.
-- La capacidad inicia detras de banderas seguras y no requiere modificar
-  `.env` durante la implementacion.
+- La anticipacion y el modo se administran desde el dashboard y PostgreSQL; no
+  requieren modificar `.env` ni reiniciar procesos.
 
 ## Estado recuperable
 
@@ -252,3 +252,114 @@ Estado: `8/8 sent el 2026-08-17; correccion aplicada para lotes futuros`.
    reinicio solo Admin API (`38408 -> 30048`). El runtime conservo `live`,
    revision `2`, los `8` trabajos `sent` y sirvio `main-5RIZKUNK.js` con la
    etiqueta de fecha nueva; no se reiniciaron worker, Telegram ni CAPTCHA.
+
+## Anticipacion configurable y nueva superficie operativa
+
+Fecha de ampliacion: `2026-08-28`.
+
+Estado: `implementacion tecnica incorporada; las validaciones del corte y la
+revision visual se registran por separado en project-status y roadmap`.
+
+### Persistencia y API
+
+1. PostgreSQL `schema v66` agrega
+   `appointment_reminder_control.lead_days smallint NOT NULL DEFAULT 1`. La
+   restriccion nombrada `ck_appointment_reminder_control_lead_days` admite solo
+   `1`, `2` o `3`, preservando el comportamiento anterior al migrar.
+2. `PUT /api/v1/appointment-reminders` exige `lead_days` como entero estricto
+   junto con `mode`, `canary_order_ids` y `expected_revision`. Los booleanos y
+   valores fuera del rango se rechazan. El guardado incrementa la misma revision
+   optimista y deja la anticipacion en la auditoria del control.
+3. `GET /api/v1/appointment-reminders` expone:
+   - `control.lead_days`, el valor configurado;
+   - `configuration.effective_lead_days`, la anticipacion efectiva del lote;
+   - `control.lead_days_applies_from`, con
+     `current_service_date` o `next_service_date`;
+   - `control.applies_from`, la fecha Lima exacta desde la que se aplica;
+   - `control.existing_jobs_policy=preserved`.
+4. El cambio se toma desde PostgreSQL en cada reconciliacion. No requiere
+   modificar `.env`, reiniciar Admin API ni reiniciar el worker.
+
+### Lote diario congelado
+
+1. La primera reconciliacion de un `service_date` crea la fila diaria y congela
+   `appointment_day = service_date + lead_days`. La restriccion del lote admite
+   diferencias de `1` a `3` dias.
+2. Si esa fecha Lima ya tiene lote, nuevas reconciliaciones reutilizan su
+   `appointment_day`. Un cambio de anticipacion queda guardado, pero comienza el
+   siguiente dia Lima; no pisa la fecha objetivo ni mezcla elegibles, trabajos
+   o conteos de dos configuraciones.
+3. Si aun no existe lote para hoy, la proxima reconciliacion usa inmediatamente
+   el valor guardado. La validacion de un canario sigue la misma regla: consulta
+   el target congelado cuando existe y el target propuesto cuando todavia no.
+4. Los trabajos existentes conservan `report_date`, `appointment_day`, texto,
+   plantilla y la clave
+   `appointment_reminder:{reservation_id}:{appointment_day}`. Cambiar
+   `lead_days` no los cancela, reescribe, mueve ni duplica.
+5. Candidatos, estado y conteos del dia se calculan contra el target congelado.
+   Una cita ya cubierta por esa clave durable no vuelve a producir otro envio
+   al reaparecer bajo una anticipacion distinta.
+
+### Revalidacion antes de WhatsApp
+
+1. El dispatcher no compara un trabajo preparado contra el `lead_days` que
+   pueda estar vigente despues. Usa el snapshot del propio trabajo y exige que
+   `appointment_day - report_date` sea `1`, `2` o `3`.
+2. `report_date` debe seguir siendo hoy en `America/Lima`. Un lote atrasado
+   termina `skipped` antes de abrir WhatsApp.
+3. Tambien se vuelven a leer la reserva confirmada vigente, su fecha, el
+   contacto y el texto. Una cita o un destinatario obsoleto termina `skipped`.
+4. La desactivacion del modo conserva autoridad sobre trabajos bloqueados. Si
+   un intento llega al envio, `sent` sigue exigiendo evidencia confirmada y
+   `uncertain` permanece terminal, sin reintento automatico.
+5. El texto recomendado deja de afirmar `mañana` y usa la fecha explicita. Los
+   textos de estado y error hablan de `fecha objetivo`, por lo que sirven para
+   cualquiera de las tres anticipaciones. Si una plantilla personalizada aun
+   contiene `mañana`, la API rechaza guardar `2` o `3` dias y la conciliacion
+   conserva una segunda barrera defensiva. El operador la corrige en
+   **Mensajes**; el sistema nunca sobrescribe texto personalizado en silencio.
+
+### Citas y recordatorios
+
+La antigua superficie **Seguimiento** pasa a presentarse como **Citas y
+recordatorios**, con tres espacios de trabajo:
+
+- **Proximas citas** reúne todas las citas futuras devueltas por Post-cita y
+  superpone el estado del recordatorio cuando la cita pertenece a la fecha
+  objetivo. Las demas permanecen visibles como `Cita programada`.
+- **Necesitan revision** contiene los seguimientos accionables y conserva
+  **Revisar ahora** como accion manual.
+- **Historial** contiene completados y accesos perdidos, sin acciones
+  automaticas.
+
+En **Proximas citas**, la busqueda aparece antes de metricas y listado. Busca
+por nombre, orden, documento enmascarado, placa, expediente, sede, contacto
+enmascarado, fecha, hora, estado y mensajes de etapa disponibles. Los filtros
+rapidos son **Todas**, **Pendientes**, **Sin contacto** y **Enviados**; un unico
+selector ordena por cita mas proxima, cita mas lejana, nombre o estado.
+
+En **Necesitan revision** e **Historial**, la busqueda conserva nombre, orden,
+documento enmascarado, placa, expediente, sede, resultado y mensajes. El orden
+se presenta como una sola eleccion comprensible: mas urgente, cita mas proxima,
+actualizado recientemente o nombre. Los filtros tecnicos, IDs y recorrido
+completo quedan secundarios respecto de fecha, persona, estado y siguiente
+accion. **Necesitan revision** presenta como filtros rapidos **Todos**,
+**Requieren atencion**, **Con observacion** y **Con avance**.
+
+### Configuracion visual separada
+
+El boton **Configurar recordatorios** abre un dialogo independiente del listado:
+
+1. **Anticipacion** usa tres radios visibles: 1, 2 o 3 dias antes.
+2. **Modo de operacion** ofrece Desactivado, Solo revisar, Prueba controlada y
+   Activo. Prueba controlada limita la seleccion a una o dos citas elegibles de
+   la fecha objetivo.
+3. El dialogo muestra con fechas concretas que citas se prepararan, enlaza a
+   **Mensajes** para editar el texto y exige confirmacion adicional al activar
+   Prueba controlada o Activo.
+4. El pie informa la revision vigente y que los trabajos ya creados conservan
+   su programacion. Un conflicto `409` mantiene el contrato de relectura antes
+   de volver a guardar.
+5. La navegacion mantiene tabs reales con `aria-selected`, filtros con
+   `aria-pressed`, radios nativos y un `dialog` modal. El build no sustituye la
+   revision visual humana en `360`, `768`, `1024` y `1440 px`.

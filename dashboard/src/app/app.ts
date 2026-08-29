@@ -47,6 +47,8 @@ import {
   ManualSessionMode,
   MetricPeriod,
   MonthlySummaryV2,
+  OperatorInboxPayload,
+  OperatorInboxTask,
   PaymentResolutionType,
   OpportunityBurst,
   OpportunityControl,
@@ -194,23 +196,20 @@ type OrderNextAction = {
   description: string;
   disabled: boolean;
 };
-type InboxTaskKind =
-  | 'preflight'
-  | 'contact'
-  | 'whatsapp'
-  | 'payment'
-  | 'followup'
-  | 'review';
 type InboxOrderTask = {
-  key: string;
-  kind: InboxTaskKind;
-  order: ServiceOrder;
+  key: OperatorInboxTask['key'];
+  kind: OperatorInboxTask['kind'];
+  action: OperatorInboxTask['action'];
+  orderId: string;
+  applicantName: string | null;
+  documentNumberMasked: string;
   title: string;
   description: string;
   label: string;
   actionLabel: string;
   icon: string;
   tone: 'bad' | 'warn' | 'neutral';
+  updatedAt: string;
 };
 
 const ERROR_MESSAGE_DURATION_MS = 8_000;
@@ -324,7 +323,7 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   inbox: { label: 'Pendientes', group: 'Operación' },
   summary: { label: 'Resumen', group: 'Operación' },
   orders: { label: 'Órdenes', group: 'Operación' },
-  followups: { label: 'Seguimiento', group: 'Operación' },
+  followups: { label: 'Citas y recordatorios', group: 'Operación' },
   runs: { label: 'Runs y actividad', group: 'Operación' },
   finance: { label: 'Finanzas', group: 'Administración' },
   messageTemplates: { label: 'Mensajes de WhatsApp', group: 'Administración' },
@@ -467,6 +466,7 @@ export class App implements OnDestroy {
   protected readonly captchaSamplingDirty = signal(false);
   protected readonly captchaSamplingSaving = signal(false);
   protected readonly orders = signal<ServiceOrder[]>([]);
+  protected readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
   protected readonly runs = signal<RunSummary[]>([]);
   protected readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
   protected readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
@@ -763,131 +763,39 @@ export class App implements OnDestroy {
     () => this.orders().filter((order) => order.payment_status === 'pending').length,
   );
   protected readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
-    const tasks: InboxOrderTask[] = [];
-    for (const order of this.orders()) {
-      if (order.status === 'archived') {
-        continue;
-      }
-      if (order.preflight_status === 'failed') {
-        tasks.push({
-          key: `preflight-${order.order_id}`,
-          kind: 'preflight',
-          order,
-          title: 'Validación de acceso fallida',
-          description: order.preflight_message ?? 'Vuelve a comprobar el acceso al portal.',
-          label: 'Bloqueo',
-          actionLabel: 'Volver a validar',
-          icon: '!',
-          tone: 'bad',
-        });
-        continue;
-      }
-      const hasPendingReservationPayment =
-        order.status === 'reserved_payment_pending' &&
-        order.reservation_status === 'confirmed' &&
-        order.payment_status === 'pending';
-      const hasOperationalContact = Boolean(
-        order.contact_whatsapp_masked || order.contact_whatsapp_username_masked,
-      );
-      if (hasPendingReservationPayment && !hasOperationalContact) {
-        tasks.push({
-          key: `contact-${order.order_id}`,
-          kind: 'contact',
-          order,
-          title: 'Completar contacto del cliente',
-          description:
-            'La reserva está confirmada, pero falta un teléfono o @usuario válido.',
-          label: 'Contacto',
-          actionLabel: 'Corregir contacto',
-          icon: '@',
-          tone: 'bad',
-        });
-        continue;
-      }
-      if (
-        hasPendingReservationPayment &&
-        order.whatsapp_message_action_state === 'manual_required'
-      ) {
-        tasks.push({
-          key: `whatsapp-${order.order_id}`,
-          kind: 'whatsapp',
-          order,
-          title: 'Enviar constancia y cobro',
-          description: 'La reserva está confirmada y todavía falta preparar el mensaje inicial.',
-          label: 'WhatsApp',
-          actionLabel: 'Preparar mensaje',
-          icon: 'WA',
-          tone: 'warn',
-        });
-        continue;
-      }
-      if (
-        hasPendingReservationPayment &&
-        ['failed', 'uncertain'].includes(order.whatsapp_message_action_state)
-      ) {
-        tasks.push({
-          key: `review-whatsapp-${order.order_id}`,
-          kind: 'review',
-          order,
-          title:
-            order.whatsapp_message_action_state === 'uncertain'
-              ? 'Confirmar resultado de WhatsApp'
-              : 'Revisar fallo de WhatsApp',
-          description:
-            order.whatsapp_message_action_state === 'uncertain'
-              ? 'El envío inicial terminó de forma ambigua y no debe repetirse automáticamente.'
-              : 'El envío automático falló y requiere una decisión del operador.',
-          label: 'WhatsApp',
-          actionLabel: 'Revisar orden',
-          icon: 'WA',
-          tone: 'bad',
-        });
-        continue;
-      }
-      if (order.payment_status === 'pending' && order.reservation_status === 'confirmed') {
-        tasks.push({
-          key: `payment-${order.order_id}`,
-          kind: 'payment',
-          order,
-          title: 'Registrar pago pendiente',
-          description: 'El contacto inicial ya fue atendido y la reserva sigue pendiente de cobro.',
-          label: 'Pago',
-          actionLabel: 'Registrar pago',
-          icon: 'S/',
-          tone: 'warn',
-        });
-        continue;
-      }
-      if (
-        this.isPostPaymentWhatsAppCandidate(order) &&
-        ['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)
-      ) {
-        tasks.push({
-          key: `review-followup-${order.order_id}`,
-          kind: 'review',
-          order,
-          title:
-            order.whatsapp_followup_action_state === 'uncertain'
-              ? 'Confirmar resultado post-pago'
-              : 'Revisar fallo post-pago',
-          description:
-            order.whatsapp_followup_action_state === 'uncertain'
-              ? 'El envío terminó de forma ambigua y no debe repetirse automáticamente.'
-              : 'El seguimiento automático falló y requiere una decisión del operador.',
-          label: 'Post-pago',
-          actionLabel: 'Revisar orden',
-          icon: 'PDF',
-          tone: 'bad',
-        });
-      }
-    }
-    return tasks;
+    const icons: Record<OperatorInboxTask['kind'], string> = {
+      preflight: '!',
+      paused: 'II',
+      contact: '@',
+      whatsapp: 'WA',
+      payment: 'S/',
+      followup: 'PDF',
+      review: '!',
+    };
+    return (this.operatorInbox()?.items ?? []).map((task) => ({
+      key: task.key,
+      kind: task.kind,
+      action: task.action,
+      orderId: task.order_id,
+      applicantName: task.applicant_name,
+      documentNumberMasked: task.document_number_masked,
+      title: task.title,
+      description: task.description,
+      label: task.label,
+      actionLabel: task.action_label,
+      icon: icons[task.kind],
+      tone: task.tone,
+      updatedAt: task.updated_at,
+    }));
   });
   protected readonly inboxAccessCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'preflight').length,
   );
   protected readonly inboxPaymentCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'payment').length,
+  );
+  protected readonly inboxPausedCount = computed(
+    () => this.inboxOrderTasks().filter((task) => task.kind === 'paused').length,
   );
   protected readonly inboxMessageCount = computed(
     () =>
@@ -896,9 +804,7 @@ export class App implements OnDestroy {
       ).length,
   );
   protected readonly inboxPendingTotal = computed(
-    () =>
-      this.inboxOrderTasks().length +
-      (this.captchaShadowEnabled() ? this.captchaReviewTotal() : 0),
+    () => this.inboxOrderTasks().length,
   );
   protected readonly confirmedOrders = computed(
     () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
@@ -1482,14 +1388,14 @@ export class App implements OnDestroy {
     scope: RequestScope,
   ): Promise<void> {
     if (view === 'inbox') {
-      const ordersRequest = this.api.getServiceOrders(scope);
+      const inboxRequest = this.api.getOperatorInbox(scope);
       if (!this.captchaShadowEnabled()) {
-        this.applyOrders(await ordersRequest);
+        this.operatorInbox.set(await inboxRequest);
         this.captchaReviewTotal.set(0);
         return;
       }
-      const [orders, pendingCaptchas] = await Promise.all([
-        ordersRequest,
+      const [inbox, pendingCaptchas] = await Promise.all([
+        inboxRequest,
         this.api
           .getCaptchaEvents(
             1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
@@ -1501,7 +1407,7 @@ export class App implements OnDestroy {
             return null;
           }),
       ]);
-      this.applyOrders(orders);
+      this.operatorInbox.set(inbox);
       if (pendingCaptchas) {
         this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
       }
@@ -2591,35 +2497,62 @@ export class App implements OnDestroy {
     void this.router.navigate(['/captchas'], { queryParams: { mode: 'review' } });
   }
 
-  protected openInboxOrder(order: ServiceOrder): void {
-    void this.router.navigate(['/ordenes', order.order_id]);
+  protected openInboxOrder(orderId: string): void {
+    void this.router.navigate(['/ordenes', orderId]);
   }
 
-  protected runInboxOrderTask(task: InboxOrderTask): void {
-    if (task.kind === 'preflight') {
-      this.selectOrder(task.order.order_id, false);
-      this.requestOrderValidation(task.order);
+  protected async runInboxOrderTask(task: InboxOrderTask): Promise<void> {
+    if (task.action === 'view_order') {
+      this.openInboxOrder(task.orderId);
       return;
     }
-    if (task.kind === 'contact') {
-      void this.openEditOrder(task.order, 'contact');
+    const order = await this.loadInboxTaskOrder(task.orderId);
+    if (!order) {
       return;
     }
-    if (task.kind === 'whatsapp') {
-      this.selectOrder(task.order.order_id, false);
-      void this.openOrderWhatsApp(task.order);
+    if (task.action === 'correct_credentials') {
+      await this.openEditOrder(order, 'credentials');
       return;
     }
-    if (task.kind === 'payment') {
-      void this.openPayment(task.order);
+    if (task.action === 'revalidate') {
+      this.selectOrder(order.order_id, false);
+      this.requestOrderValidation(order);
       return;
     }
-    if (task.kind === 'review') {
-      void this.openWhatsAppReview(task.order);
+    if (task.action === 'edit_contact') {
+      await this.openEditOrder(order, 'contact');
       return;
     }
-    this.selectOrder(task.order.order_id, false);
-    void this.openPostPaymentWhatsApp(task.order);
+    if (task.action === 'prepare_whatsapp') {
+      this.selectOrder(order.order_id, false);
+      await this.openOrderWhatsApp(order);
+      return;
+    }
+    if (task.action === 'register_payment') {
+      await this.openPayment(order);
+      return;
+    }
+    if (
+      task.action === 'review_whatsapp' ||
+      task.action === 'review_post_payment_whatsapp'
+    ) {
+      await this.openWhatsAppReview(order);
+    }
+  }
+
+  private async loadInboxTaskOrder(orderId: string): Promise<ServiceOrderDetail | null> {
+    this.actionBusy.set(true);
+    this.errorMessage.set(null);
+    try {
+      const order = await this.api.getServiceOrder(orderId);
+      this.orders.update((orders) => [order, ...orders.filter((item) => item.order_id !== orderId)]);
+      return order;
+    } catch (error) {
+      this.errorMessage.set(this.readError(error));
+      return null;
+    } finally {
+      this.actionBusy.set(false);
+    }
   }
 
   protected openOrderFromSummary(orderId: string): void {
@@ -4966,11 +4899,14 @@ export class App implements OnDestroy {
     item: PostAppointmentFollowup,
     filter: PostAppointmentFilter,
   ): boolean {
+    const expiredUpcoming =
+      item.outcome === 'upcoming' &&
+      (!item.appointment_date || item.appointment_date < INITIAL_DATE);
     if (filter === 'active') {
-      return !['upcoming', 'completed', 'access_lost'].includes(item.outcome);
+      return expiredUpcoming || !['upcoming', 'completed', 'access_lost'].includes(item.outcome);
     }
     if (filter === 'attention') {
-      return [
+      return expiredUpcoming || [
         'awaiting_update',
         'observation_no_progress',
         'portal_unavailable',

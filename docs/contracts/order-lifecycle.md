@@ -252,9 +252,25 @@ Estados internos adicionales:
   `confirmed` mas reciente de cada orden y de `reservations.appointment_day`.
   El destinatario procede del contacto administrativo primario; nunca de
   credenciales, formularios del portal ni campos honeypot.
+- La anticipacion operativa vive en
+  `appointment_reminder_control.lead_days`. Solo admite los enteros `1`, `2` o
+  `3`; el valor inicial y de compatibilidad es `1`. El dashboard la guarda en
+  PostgreSQL junto con el modo mediante revision optimista, por lo que el cambio
+  no requiere editar `.env` ni reiniciar Admin API o el worker.
+- La primera reconciliacion de cada `service_date` en hora Lima congela el
+  `appointment_day` de ese lote como `service_date + lead_days`. Si el lote del
+  dia ya existe, un cambio posterior de anticipacion queda persistido pero se
+  aplica desde el siguiente `service_date`: nunca reemplaza la fecha objetivo
+  ni mezcla los conteos del lote vigente. El contrato de base solo permite una
+  diferencia congelada de `1`, `2` o `3` dias.
 - Cada recordatorio usa la clave durable
   `appointment_reminder:{reservation_id}:{appointment_day}`. Una reconciliacion
-  repetida no crea duplicados y el texto queda persistido antes del intento.
+  repetida no crea duplicados y una misma reserva/fecha no vuelve a recibir un
+  recordatorio si reaparece bajo otra anticipacion. El texto, la fecha operativa
+  y la fecha de cita quedan persistidos antes del intento.
+- Cambiar `lead_days` no cancela, reescribe ni mueve trabajos ya creados. Los
+  conteos y estados del dia consultan el `appointment_day` congelado, no el
+  valor de anticipacion que este vigente despues.
 - El recordatorio se guarda `blocked` y no puede reclamarse hasta que exista el
   `daily_slot_summary` de la misma fecha operativa y ninguno de sus intentos
   permanezca `queued`, `blocked` o `running`. El resumen diario conserva
@@ -262,8 +278,10 @@ Estados internos adicionales:
 - La autoridad operativa reside en `appointment_reminder_control`: `disabled`
   no crea ni permite reclamar trabajos, `dry_run` solo calcula, `canary` limita
   la admision a 1 o 2 `order_id` elegibles y `live` admite todos dentro del
-  limite diario. Cada cambio usa revision optimista y conserva la plantilla en
-  `appointment_reminder_template_versions`.
+  limite diario. La validacion canaria usa la fecha congelada del lote si ya
+  existe o la fecha calculada con el `lead_days` solicitado si aun no existe.
+  Cada cambio usa revision optimista; el texto vive por separado en el registro
+  de plantillas WhatsApp.
 - Solo se aceptan `{nombre}`, `{fecha}`, `{hora}` y `{sede}`; `{fecha}` es
   obligatoria y los datos ausentes se renderizan como `por confirmar`.
   `{nombre}` corresponde exclusivamente a `applicants.full_name`, es decir, la
@@ -271,14 +289,26 @@ Estados internos adicionales:
   contacto de WhatsApp. Si el nombre del solicitante falta, se usa `cliente`.
   La API entrega tambien la etiqueta de fecha renderizada para que la vista
   previa coincida literalmente con el mensaje final.
-- `GET /api/v1/appointment-reminders` expone tambien los candidatos vigentes
-  para la vista interna de Seguimiento. El detalle limita cada fila a nombre,
-  orden, fecha, hora, sede, destinatario enmascarado y estado; no publica el
-  contacto completo ni credenciales.
-- Despues del claim se revalidan fecha Lima, reserva vigente y contacto. Un
-  trabajo obsoleto termina `skipped` antes de abrir el chat. Si el intento llega
-  al envio, conserva la misma semantica estricta: `sent` exige evidencia de una
-  burbuja saliente, mientras `uncertain` es terminal y no se reintenta.
+- Si la plantilla vigente contiene la palabra `mañana`, la API rechaza guardar
+  una anticipacion de `2` o `3` dias y la conciliacion queda bloqueada aun ante
+  una alteracion directa de PostgreSQL. El operador debe corregir el texto en
+  **Mensajes**; una plantilla personalizada nunca se reemplaza silenciosamente.
+- `GET /api/v1/appointment-reminders` expone el control persistido, la
+  anticipacion efectiva del lote, su fecha exacta de aplicacion y la politica
+  `existing_jobs_policy=preserved`. Tambien entrega los candidatos de la fecha
+  objetivo para configurar el canario. La vista **Citas y recordatorios** cruza
+  esos datos con todas las citas futuras de Post-cita; el detalle visible limita
+  destinatarios a su forma enmascarada y nunca publica el contacto completo ni
+  credenciales.
+- Despues del claim se revalidan fecha Lima, reserva vigente, contacto y texto.
+  La vigencia temporal se comprueba contra el snapshot del propio trabajo:
+  `report_date` debe seguir siendo hoy en Lima y la diferencia hasta
+  `appointment_day` debe continuar entre `1` y `3`. No se compara contra el
+  `lead_days` actual, porque un cambio valido de configuracion no debe invalidar
+  el lote congelado. Un trabajo atrasado u obsoleto termina `skipped` antes de
+  abrir el chat. Si el intento llega al envio, conserva la misma semantica
+  estricta: `sent` exige evidencia de una burbuja saliente, mientras
+  `uncertain` es terminal y no se reintenta.
 - Una reserva incierta debe quedar protegida por `reservation_attempts` y
   estado pendiente para evitar doble envio.
 - Una orden bloqueada por regla propia puede quedar en espera o cooldown sin
@@ -292,3 +322,7 @@ Estados internos adicionales:
 - No cambiar reglas de una orden reclamada sin validacion backend.
 - Mostrar claramente si una orden esta `ready` pero temporalmente bloqueada por
   `next_allowed_at`.
+- **Citas y recordatorios** separa el listado operativo de su configuracion. La
+  busqueda y los filtros deben aparecer antes de la lista; anticipacion, modo y
+  canarios viven en un panel independiente que muestra la fecha objetivo real y
+  advierte que los lotes ya preparados no cambian.

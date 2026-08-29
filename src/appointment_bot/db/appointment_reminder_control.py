@@ -11,6 +11,7 @@ from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.utils.sanitization import sanitize_text
 
 REMINDER_MODES = frozenset({"disabled", "dry_run", "canary", "live"})
+REMINDER_LEAD_DAYS = frozenset({1, 2, 3})
 
 
 class AppointmentReminderControlConflict(RuntimeError):
@@ -20,6 +21,7 @@ class AppointmentReminderControlConflict(RuntimeError):
 @dataclass(frozen=True)
 class AppointmentReminderControl:
     mode: str
+    lead_days: int
     message_template: str
     canary_order_ids: tuple[str, ...]
     revision: int
@@ -40,7 +42,7 @@ def get_appointment_reminder_control(
     with _connection(_database_url(resolved)) as connection:
         row = connection.execute(
             """
-            SELECT mode, message_template, canary_order_ids, revision,
+            SELECT mode, lead_days, message_template, canary_order_ids, revision,
                    updated_at, updated_by
             FROM appointment_reminder_control
             WHERE id = 1
@@ -54,6 +56,7 @@ def get_appointment_reminder_control(
 def update_appointment_reminder_control(
     *,
     mode: str,
+    lead_days: int,
     canary_order_ids: list[str],
     expected_revision: int,
     updated_by: str,
@@ -62,6 +65,8 @@ def update_appointment_reminder_control(
     normalized_mode = mode.strip().lower()
     if normalized_mode not in REMINDER_MODES:
         raise ValueError("Unsupported appointment reminder mode.")
+    if isinstance(lead_days, bool) or lead_days not in REMINDER_LEAD_DAYS:
+        raise ValueError("Appointment reminder lead days must be 1, 2, or 3.")
     actor = sanitize_text(updated_by.strip())[:120] or "dashboard-owner"
     normalized_ids = sorted({value.strip() for value in canary_order_ids if value.strip()})
     resolved = _settings(settings)
@@ -83,13 +88,19 @@ def update_appointment_reminder_control(
         row = connection.execute(
             """
             UPDATE appointment_reminder_control
-            SET mode = %s, canary_order_ids = %s,
+            SET mode = %s, lead_days = %s, canary_order_ids = %s,
                 revision = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
             WHERE id = 1
-            RETURNING mode, message_template, canary_order_ids, revision,
+            RETURNING mode, lead_days, message_template, canary_order_ids, revision,
                       updated_at, updated_by
             """,
-            (normalized_mode, Jsonb(normalized_ids), next_revision, actor),
+            (
+                normalized_mode,
+                lead_days,
+                Jsonb(normalized_ids),
+                next_revision,
+                actor,
+            ),
         ).fetchone()
     record_remote_control_audit(
         actor=actor,
@@ -98,7 +109,10 @@ def update_appointment_reminder_control(
         target_type="appointment_reminder_control",
         target_id="1",
         operation_id=f"appointment-reminder-control-{next_revision}",
-        detail=f"mode={normalized_mode}; revision={next_revision}; canaries={len(normalized_ids)}",
+        detail=(
+            f"mode={normalized_mode}; lead_days={lead_days}; "
+            f"revision={next_revision}; canaries={len(normalized_ids)}"
+        ),
         settings=resolved,
     )
     return _from_row(row)
@@ -108,6 +122,7 @@ def _from_row(row) -> AppointmentReminderControl:
     raw_ids = row["canary_order_ids"] if isinstance(row["canary_order_ids"], list) else []
     return AppointmentReminderControl(
         mode=str(row["mode"]),
+        lead_days=int(row["lead_days"]),
         message_template=str(row["message_template"]),
         canary_order_ids=tuple(str(value) for value in raw_ids),
         revision=int(row["revision"]),
@@ -119,6 +134,7 @@ def _from_row(row) -> AppointmentReminderControl:
 __all__ = [
     "AppointmentReminderControl",
     "AppointmentReminderControlConflict",
+    "REMINDER_LEAD_DAYS",
     "REMINDER_MODES",
     "get_appointment_reminder_control",
     "update_appointment_reminder_control",
