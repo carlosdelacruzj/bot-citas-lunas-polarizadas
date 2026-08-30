@@ -470,7 +470,7 @@ def _summary_markdown(
     lines.extend(["\n", "## Lectura recomendada\n"])
     lines.append("- Usar `docs/evidence-index.csv` para filtrar el caso exacto.\n")
     lines.append("- Abrir las rutas de evidencia solo cuando este resumen apunte a un evento.\n")
-    lines.append("- Comparar cambios contra `docs/optimization.md`.\n")
+    lines.append("- Comparar cambios contra `docs/contracts/optimization.md`.\n")
     return "".join(lines)
 
 
