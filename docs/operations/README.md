@@ -113,6 +113,13 @@ Seguir [`evidence-policy.md`](evidence-policy.md). `evidence-summary.md`,
 `evidence-index.csv` y `reports/*/latest.md` son snapshots; verificar fecha de
 corte y fuente viva antes de concluir.
 
+## Backup y restauracion
+
+La verificacion local de dump y restore esta documentada en
+[`postgres-backup-restore.md`](postgres-backup-restore.md). El script crea una
+base temporal aislada, compara conteos y elimina sus artefactos; no conserva un
+backup ni sustituye el backup externo pendiente.
+
 ## Diagnostico por sintoma
 
 | Sintoma | Primera comprobacion |

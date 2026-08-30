@@ -744,7 +744,7 @@ Riesgo: bajo, salvo scripts que puedan estar en uso manual.
 |---|---:|---|
 | `html con cupo.html` | 141,100 bytes | Eliminar o convertir en fixture real. |
 | `html sin cupo.html` | 140,827 bytes | Eliminar o convertir en fixture real. |
-| `assets/brand/citas-lunas-polarizadas-logo.jpeg` | 85,616 bytes | Eliminar si sigue sin consumidor. |
+| `src/appointment_bot/assets/brand/citas-lunas-polarizadas-logo.jpeg` | 85,616 bytes | Eliminar si sigue sin consumidor. |
 | `scripts/whatsapp-manual-trace.py` | 4,975 bytes | Archivar o eliminar; puede competir por el perfil persistente. |
 | `scripts/verify-postgres-backup.ps1` | 2,394 bytes | Conservar y documentar. |
 
@@ -752,16 +752,47 @@ Los dos HTML y el JPEG liberarian aproximadamente `367 KB`; el script manual
 otros `5 KB`. El ahorro es pequeño: el beneficio principal es reducir ambiguedad
 para humanos y agentes.
 
-- [ ] Buscar referencias exactas y usos manuales recientes.
-- [ ] Decidir si los HTML son fixtures reproducibles; si lo son, moverlos a una
+- [x] Buscar referencias exactas y usos manuales recientes.
+- [x] Decidir si los HTML son fixtures reproducibles; si lo son, moverlos a una
   ubicacion de fixtures y documentar su objetivo.
-- [ ] Confirmar que las otras tres imagenes de marca activas siguen sirviendo al
+- [x] Confirmar que las otras tres imagenes de marca activas siguen sirviendo al
   watermark antes de retirar solo el JPEG huerfano.
-- [ ] Confirmar que nadie ejecuta `whatsapp-manual-trace.py`.
-- [ ] Nunca ejecutar el script manual en paralelo con Admin API y su perfil
+- [x] Confirmar que nadie ejecuta `whatsapp-manual-trace.py`.
+- [x] Nunca ejecutar el script manual en paralelo con Admin API y su perfil
   persistente.
-- [ ] Agregar el verificador de backup al runbook antes de conservarlo como
+- [x] Agregar el verificador de backup al runbook antes de conservarlo como
   herramienta oficial.
+
+### Registro de ejecucion del Paso 8
+
+Corte de la comprobacion: `2026-08-30 America/Lima`.
+
+- Las busquedas de codigo, runtime, logs, procesos y tareas programadas no
+  encontraron consumidores de los dos HTML raiz, del JPEG ni del trazador
+  manual. Las coincidencias de proceso observadas pertenecian a la propia
+  auditoria.
+- Los HTML eran capturas completas del portal con recursos relativos ausentes;
+  no eran fixtures reproducibles ni participaban en tests. Se retiraron y Git
+  conserva su recuperacion.
+- El watermark referencia por nombre `Logo transparente.png`,
+  `logo con numero.png` y `Nombre canal.png`. Solo se retiro
+  `citas-lunas-polarizadas-logo.jpeg`, sin consumidor.
+- `whatsapp-manual-trace.py` pertenecia a un diagnostico manual de julio, abria
+  el mismo perfil persistente y no tenia integracion vigente. Se retiro sin
+  ejecutarlo ni abrir WhatsApp.
+- `verify-postgres-backup.ps1` se conservo y se formalizo en
+  `docs/operations/postgres-backup-restore.md`, declarando que su dump y base
+  temporal se eliminan y que no sustituye un backup externo durable.
+- La prueba actual creo y restauro una base temporal, verifico `240`
+  `service_orders`, `9,174` runs, `225` reservas, `392` intentos, `221` pagos y
+  `schema_version = 69`; termino sin conservar el dump.
+- `compileall`, Ruff, `59 passed`, build Angular, validador documental y
+  `git diff --check` pasaron. La busqueda final confirmo cero referencias
+  operativas a los cuatro archivos retirados. El build conserva los dos avisos
+  de presupuesto preexistentes.
+
+Resultado: **Paso 8 implementado; restauracion temporal comprobada y candidatos
+resueltos sin afectar los assets activos**.
 
 Criterio de cierre: todo archivo raiz o asset tiene consumidor, proposito
 documentado o decision explicita de eliminacion.
@@ -784,7 +815,7 @@ historia.
 
 - [ ] Contrato breve de recordatorios y post-cita: autoridad, deduplicacion,
   modos, dia congelado, limite 20, estados y conciliacion.
-- [ ] Runbook de backup y restore que referencie
+- [x] Runbook de backup y restore que referencie
   `scripts/verify-postgres-backup.ps1`.
 - [ ] Autoridad y orden exactos del paquete PDF postpago.
 
