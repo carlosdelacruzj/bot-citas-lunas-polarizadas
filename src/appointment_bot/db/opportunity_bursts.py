@@ -9,7 +9,6 @@ from uuid import uuid4
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
-from appointment_bot.core.models import RunReport
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -306,19 +305,6 @@ def update_burst_execution(
             )
 
 
-def mark_burst_execution_first_check(
-    execution_id: str,
-    *,
-    first_check_at: datetime | str | None = None,
-    settings: Settings | None = None,
-) -> None:
-    update_burst_execution(
-        execution_id,
-        first_read_at=first_check_at or datetime.now(UTC),
-        settings=settings,
-    )
-
-
 def mark_burst_execution_finished(
     execution_id: str,
     *,
@@ -440,10 +426,6 @@ def finish_opportunity_burst(
         _complete_drain_if_idle(connection)
 
 
-def close_opportunity_burst(*args, **kwargs) -> None:
-    finish_opportunity_burst(*args, **kwargs)
-
-
 def record_burst_event(
     reobservation_id: str,
     sequence: int,
@@ -512,94 +494,6 @@ def record_burst_event(
             ),
         ).fetchone()
     return str(row["event_id"])
-
-
-def persist_obs007_events_from_report(
-    report: RunReport | Mapping[str, Any],
-    *,
-    reobservation_id: str | None = None,
-    burst_id: str | None = None,
-    execution_id: str | None = None,
-    order_id: str | None = None,
-    original_attempt_id: str | None = None,
-    second_attempt_id: str | None = None,
-    settings: Settings | None = None,
-) -> str | None:
-    if isinstance(report, RunReport):
-        details = report.details or {}
-        run_id = report.run_id
-        order_id = order_id or report.order_id
-    else:
-        details = report.get("details") or {}
-        run_id = report.get("run_id")
-        order_id = order_id or report.get("order_id")
-    reobservation = details.get("slot_lost_reobservation")
-    if not isinstance(reobservation, Mapping):
-        return None
-    identifier = reobservation_id or _reobservation_id(
-        run_id=run_id,
-        execution_id=execution_id,
-        original_attempt_id=original_attempt_id,
-    )
-    common = {
-        "reobservation_id": identifier,
-        "burst_id": burst_id,
-        "execution_id": execution_id,
-        "order_id": order_id,
-        "run_id": run_id,
-        "original_attempt_id": original_attempt_id,
-        "second_attempt_id": second_attempt_id,
-        "settings": settings,
-    }
-    record_burst_event(sequence=0, event_type="started", details=reobservation, **common)
-    record_burst_event(
-        sequence=1,
-        event_type="slot_lost_resolved",
-        outcome="slot_lost",
-        **common,
-    )
-    sequence = 2
-    observations = reobservation.get("observations") or ()
-    for observation in observations:
-        if not isinstance(observation, Mapping):
-            continue
-        duration = observation.get("duration_seconds")
-        duration_ms = int(max(float(duration or 0), 0) * 1000)
-        record_burst_event(
-            sequence=sequence,
-            event_type="observation",
-            attempt_number=_optional_int(observation.get("attempt")),
-            mode=_safe_optional(observation.get("mode"), 40),
-            observed_status=_safe_optional(observation.get("status"), 40),
-            duration_ms=duration_ms,
-            details=observation,
-            **common,
-        )
-        sequence += 1
-    if second_attempt_id is not None:
-        record_burst_event(
-            sequence=sequence,
-            event_type="second_attempt_intent",
-            **common,
-        )
-        sequence += 1
-        record_burst_event(
-            sequence=sequence,
-            event_type="second_attempt_resolved",
-            outcome=_safe_optional(details.get("submission_outcome"), 80),
-            **common,
-        )
-        sequence += 1
-    elapsed = reobservation.get("elapsed_seconds")
-    record_burst_event(
-        sequence=sequence,
-        event_type="finished",
-        outcome=_safe_optional(reobservation.get("outcome"), 80),
-        duration_ms=int(max(float(elapsed or 0), 0) * 1000),
-        details=reobservation,
-        **common,
-    )
-    return identifier
 
 
 def list_opportunity_bursts(
@@ -831,20 +725,3 @@ def _safe_optional(value: Any, limit: int) -> str | None:
     if value in {None, ""}:
         return None
     return sanitize_text(str(value).strip())[:limit] or None
-
-
-def _optional_int(value: Any) -> int | None:
-    if value in {None, ""}:
-        return None
-    return int(value)
-
-
-def _reobservation_id(
-    *,
-    run_id: str | None,
-    execution_id: str | None,
-    original_attempt_id: str | None,
-) -> str:
-    source = run_id or execution_id or original_attempt_id or uuid4().hex
-    digest = hashlib.sha256(str(source).encode("utf-8")).hexdigest()[:32]
-    return f"slot-lost-reobservation-{digest}"

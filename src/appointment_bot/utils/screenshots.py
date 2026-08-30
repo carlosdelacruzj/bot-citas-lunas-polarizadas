@@ -126,14 +126,6 @@ def report_screenshot_paths(report: RunReport) -> list[Path]:
     return normalize_screenshot_paths(primary, additional)
 
 
-def archive_unique_slot_screenshot(
-    settings: Settings,
-    report: RunReport,
-) -> Path | None:
-    archived = archive_unique_slot_screenshots(settings, report)
-    return archived[0] if archived else None
-
-
 def archive_unique_slot_capture(
     settings: Settings,
     details: dict,

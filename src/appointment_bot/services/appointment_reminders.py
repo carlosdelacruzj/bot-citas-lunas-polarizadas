@@ -11,7 +11,6 @@ from appointment_bot.config import Settings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
-    validate_whatsapp_template,
     whatsapp_template_definition,
 )
 from appointment_bot.db.appointment_reminder_control import (
@@ -271,13 +270,6 @@ def reconcile_appointment_reminders(
     )
 
 
-def validate_reminder_template(message_template: str) -> dict[str, str]:
-    definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
-    if definition is None:
-        return {"message_template": "La plantilla de recordatorio no está disponible."}
-    return validate_whatsapp_template(definition, message_template)
-
-
 def appointment_reminder_message(
     candidate: AppointmentReminderCandidate,
     message_template: str,
@@ -440,5 +432,4 @@ __all__ = [
     "get_current_appointment_reminder_template",
     "reminder_template_mentions_tomorrow",
     "reconcile_appointment_reminders",
-    "validate_reminder_template",
 ]

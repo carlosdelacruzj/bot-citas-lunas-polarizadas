@@ -766,10 +766,6 @@ def _wait_until_outgoing_images_uploaded(
     return False
 
 
-def _outgoing_image_message_states(page: Page) -> list[str]:
-    return [state for _signature, state in _outgoing_image_message_records(page)]
-
-
 def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
     messages = page.locator("div.message-out")
     require_marker = False

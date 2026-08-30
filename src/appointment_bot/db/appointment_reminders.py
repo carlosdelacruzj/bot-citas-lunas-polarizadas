@@ -225,24 +225,6 @@ def appointment_reminder_job_counts(
     return {str(row["status"]): int(row["total"]) for row in rows}
 
 
-def get_appointment_reminder_batch_day(
-    service_date: date,
-    *,
-    settings: Settings,
-) -> date | None:
-    init_database(settings)
-    with _connection(_database_url(settings)) as connection:
-        row = connection.execute(
-            """
-            SELECT appointment_day
-            FROM appointment_reminder_days
-            WHERE service_date = %s
-            """,
-            (service_date,),
-        ).fetchone()
-    return row["appointment_day"] if row is not None else None
-
-
 def ensure_appointment_reminder_batch_day(
     service_date: date,
     configured_lead_days: int,
@@ -478,7 +460,6 @@ __all__ = [
     "daily_summary_barrier_status",
     "ensure_appointment_reminder_batch_day",
     "get_current_appointment_reminder_candidate",
-    "get_appointment_reminder_batch_day",
     "list_appointment_reminder_candidates",
     "mark_daily_summary_missing_alerted",
     "record_appointment_reminder_day",

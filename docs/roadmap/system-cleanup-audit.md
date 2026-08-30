@@ -337,26 +337,74 @@ Eliminar en grupos pequeños.
 
 ### Grupo A - Funciones y estado sin referencias
 
-- [ ] `src/appointment_bot/flows/__init__.py`: paquete vacio sin referencias;
+- [x] `src/appointment_bot/flows/__init__.py`: paquete vacio sin referencias;
   eliminar solo si el empaquetado no necesita conservar el paquete.
-- [ ] `browser/whatsapp_web.py::_outgoing_image_message_states`: estado antiguo
+- [x] `browser/whatsapp_web.py::_outgoing_image_message_states`: estado antiguo
   reemplazado por el camino basado en registros.
-- [ ] `db/appointment_reminders.py::get_appointment_reminder_batch_day`: helper
+- [x] `db/appointment_reminders.py::get_appointment_reminder_batch_day`: helper
   sin consumidor.
-- [ ] `services/appointment_reminders.py::validate_reminder_template`: wrapper
+- [x] `services/appointment_reminders.py::validate_reminder_template`: wrapper
   sin consumidor; la validacion vigente esta centralizada.
-- [ ] `utils/screenshots.py::archive_unique_slot_screenshot`: wrapper singular;
+- [x] `utils/screenshots.py::archive_unique_slot_screenshot`: wrapper singular;
   el camino plural es el activo.
-- [ ] `db/whatsapp_followup_messages.py::_configured_followup_documents`: helper
+- [x] `db/whatsapp_followup_messages.py::_configured_followup_documents`: helper
   sin consumidor.
+
+#### Registro de ejecucion del Grupo A
+
+Corte de la comprobacion: `2026-08-30 10:30-10:36 America/Lima`.
+
+- Se retiraron los seis candidatos, sus imports sobrantes y las dos entradas
+  publicadas solo mediante `__all__`. `flows/` no contenia modulos ni tenia
+  consumidores o entrypoints, por lo que el paquete vacio no era necesario.
+- WhatsApp conserva `_outgoing_image_message_records`, que identifica cada
+  imagen y su estado. Recordatorios conserva el congelamiento atomico mediante
+  `ensure_appointment_reminder_batch_day` y la validacion central de plantillas.
+- Screenshots conserva `archive_unique_slot_screenshots`, llamado por
+  `record_run_history`, y `archive_unique_slot_capture`, usado inmediatamente
+  por monitor y observer. Una primera retirada demasiado amplia del camino
+  plural fallo durante la coleccion de pruebas; se restauro antes del resultado
+  final y no alcanzo runtime ni Git publicado.
+- Postpago conserva la lista ordenada de `.runtime` y la validacion de originales
+  bajo `pdfs/`; solo se retiro el helper basado en `set` que no tenia llamadas.
+- Las busquedas finales confirmaron cero imports, `__all__`, mocks o accesos
+  dinamicos a los simbolos eliminados.
+- No se modificaron PostgreSQL, `.env`, PDF, reservas, trabajos WhatsApp ni
+  procesos en ejecucion. No fue necesario ningun paso manual o reinicio.
+- Validaciones finales: `compileall`, Ruff, `59 passed`, validador documental y
+  `git diff --check`.
+
+Resultado: **Grupo A completado**. El Paso 3 permanece abierto para los grupos B
+y C.
 
 ### Grupo B - Aliases y utilidades de oportunidad
 
-- [ ] `db/opportunity_controls.py::mark_applied`.
-- [ ] `db/opportunity_controls.py::open_opportunity_circuit_breaker`.
-- [ ] `db/opportunity_bursts.py::mark_burst_execution_first_check`.
-- [ ] `db/opportunity_bursts.py::close_opportunity_burst`.
-- [ ] `db/opportunity_bursts.py::persist_obs007_events_from_report`.
+- [x] `db/opportunity_controls.py::mark_applied`.
+- [x] `db/opportunity_controls.py::open_opportunity_circuit_breaker`.
+- [x] `db/opportunity_bursts.py::mark_burst_execution_first_check`.
+- [x] `db/opportunity_bursts.py::close_opportunity_burst`.
+- [x] `db/opportunity_bursts.py::persist_obs007_events_from_report`.
+
+#### Registro de ejecucion del Grupo B
+
+Corte de la comprobacion: `2026-08-30 America/Lima`.
+
+- Se retiraron los cuatro aliases o wrappers sin consumidores y el importador
+  retrospectivo de eventos OBS-007. Tambien se eliminaron su import y dos
+  auxiliares privados que quedaron sin uso.
+- Se conservaron las funciones vigentes: `mark_opportunity_control_applied`,
+  `trip_opportunity_circuit_breaker`, `update_burst_execution`,
+  `finish_opportunity_burst` y `record_burst_event`.
+- El worker sigue marcando directamente la primera lectura y finalizando cada
+  rafaga. Worker y monitor mantienen el cortacircuitos, y el monitor conserva el
+  registro en vivo de cada evento OBS-007.
+- No se modificaron esquema ni datos de PostgreSQL, controles activos,
+  configuracion, reservas, WhatsApp o procesos en ejecucion. No se requirieron
+  migraciones, reinicios ni pasos manuales.
+- Validaciones finales: `compileall`, Ruff, `59 passed`, validador documental y
+  `git diff --check`.
+
+Resultado: **Grupo B completado**. El Paso 3 permanece abierto para el Grupo C.
 
 ### Grupo C - Fallbacks imposibles
 

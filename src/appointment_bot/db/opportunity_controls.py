@@ -207,19 +207,6 @@ def mark_opportunity_control_applied(
     return _control_from_row(row)
 
 
-def mark_applied(
-    revision: int,
-    *,
-    applied_by_worker: str,
-    settings: Settings | None = None,
-) -> OpportunityRuntimeControl:
-    return mark_opportunity_control_applied(
-        revision,
-        applied_by_worker=applied_by_worker,
-        settings=settings,
-    )
-
-
 def is_opportunity_admission_allowed(
     control_name: str,
     settings: Settings | None = None,
@@ -294,15 +281,6 @@ def trip_opportunity_circuit_breaker(
         settings=resolved,
     )
     return _control_from_row(row)
-
-
-def open_opportunity_circuit_breaker(
-    reason: str,
-    *,
-    burst_id: str | None = None,
-    settings: Settings | None = None,
-) -> OpportunityRuntimeControl:
-    return trip_opportunity_circuit_breaker(reason, burst_id, settings)
 
 
 def reset_opportunity_circuit_breaker(

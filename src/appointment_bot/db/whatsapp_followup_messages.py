@@ -494,16 +494,6 @@ def _copy_followup_documents(message_id: str, values: object) -> list[str]:
     return copied
 
 
-def _configured_followup_documents() -> set[Path]:
-    values = _followup_details().get("documents", [])
-    documents = {Path(str(value)).expanduser().resolve() for value in values}
-    if not documents or any(
-        path.suffix.lower() != ".pdf" or not path.is_file() for path in documents
-    ):
-        raise ValueError("La configuracion contiene PDFs de seguimiento invalidos.")
-    return documents
-
-
 def _original_followup_documents() -> set[Path]:
     root = ORIGINAL_DOCUMENT_ROOT.resolve()
     if not root.is_dir():
