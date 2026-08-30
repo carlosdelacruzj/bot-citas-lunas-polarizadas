@@ -700,12 +700,9 @@ def _start_execution(
     *,
     claim_acquired: bool | None = None,
 ) -> None:
-    from appointment_bot.db import opportunity_bursts
+    from appointment_bot.db.opportunity_bursts import mark_burst_execution_started
 
-    mark_started = getattr(opportunity_bursts, "mark_burst_execution_started", None)
-    if mark_started is None:
-        mark_started = opportunity_bursts.mark_started
-    mark_started(
+    mark_burst_execution_started(
         execution_id,
         claim_acquired=claim_acquired,
         started_at=datetime.now(UTC),
@@ -736,12 +733,9 @@ def _finish_execution(
     exit_reason: str | None,
     settings: Settings,
 ) -> None:
-    from appointment_bot.db import opportunity_bursts
+    from appointment_bot.db.opportunity_bursts import mark_burst_execution_finished
 
-    mark_finished = getattr(opportunity_bursts, "mark_burst_execution_finished", None)
-    if mark_finished is None:
-        mark_finished = opportunity_bursts.mark_finished
-    mark_finished(
+    mark_burst_execution_finished(
         execution_id,
         result_status=status,
         exit_code=exit_code,
@@ -761,12 +755,9 @@ def _finish_burst(
     max_active_sessions: int,
     settings: Settings,
 ) -> None:
-    from appointment_bot.db import opportunity_bursts
+    from appointment_bot.db.opportunity_bursts import finish_opportunity_burst
 
-    finish_burst = getattr(opportunity_bursts, "finish_opportunity_burst", None)
-    if finish_burst is None:
-        finish_burst = opportunity_bursts.finish_burst
-    finish_burst(
+    finish_opportunity_burst(
         burst_id,
         completion_reason=completion_reason,
         max_active_sessions=max_active_sessions,

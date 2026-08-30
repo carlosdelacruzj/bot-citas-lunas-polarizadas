@@ -408,10 +408,25 @@ Resultado: **Grupo B completado**. El Paso 3 permanece abierto para el Grupo C.
 
 ### Grupo C - Fallbacks imposibles
 
-`worker/opportunity_burst.py` intenta nombres alternativos inexistentes como
-`mark_started`, `mark_finished` y `finish_burst`. Los metodos canonicos existen
-siempre. Simplificar esos fallbacks solo despues de comprobar el camino completo
-de rafagas y sus dobles de prueba existentes.
+- [x] Simplificar en `worker/opportunity_burst.py` los fallbacks hacia los
+  nombres inexistentes `mark_started`, `mark_finished` y `finish_burst`.
+
+#### Registro de ejecucion del Grupo C
+
+Corte de la comprobacion: `2026-08-30 11:00 America/Lima`.
+
+- Los nombres canonicos y los supuestos aliases nacieron en el mismo cambio;
+  los aliases nunca existieron en `db/opportunity_bursts.py`.
+- Se sustituyeron los tres accesos dinamicos por imports locales directos de
+  `mark_burst_execution_started`, `mark_burst_execution_finished` y
+  `finish_opportunity_burst`.
+- Se comprobaron los caminos de inicio del detector y auxiliares, cierre de
+  ejecuciones y cierre del coordinador. La suite actual no contiene mocks ni
+  dobles especificos para esos nombres.
+- No cambiaron argumentos, estados persistidos, limites de concurrencia,
+  cortacircuitos, reservas ni comportamiento ante resultados ambiguos.
+- Validaciones finales: importacion directa de los modulos, `compileall`, Ruff,
+  `59 passed`, validador documental y `git diff --check`.
 
 Validacion minima por grupo:
 
@@ -425,6 +440,8 @@ git diff --check
 Criterio de cierre: no quedan imports, `__all__`, mocks ni accesos dinamicos a los
 simbolos retirados; rafagas, recordatorios, screenshots y WhatsApp conservan su
 comportamiento.
+
+Resultado: **Paso 3 completado**. Los Grupos A, B y C quedaron cerrados.
 
 ## Paso 4 - Limpiar configuracion deprecada o engañosa
 
