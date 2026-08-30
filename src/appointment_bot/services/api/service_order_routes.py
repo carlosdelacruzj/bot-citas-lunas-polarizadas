@@ -86,11 +86,38 @@ PUBLIC_SERVICE_ORDER_DETAIL_FIELDS = PUBLIC_SERVICE_ORDER_FIELDS + (
     "contact_whatsapp_username",
 )
 
-
-def list_service_orders_payload() -> dict[str, Any]:
-    return {
-        "service_orders": [_public_service_order(order) for order in list_service_order_summaries()]
+DASHBOARD_SERVICE_ORDER_FIELDS = tuple(
+    field
+    for field in PUBLIC_SERVICE_ORDER_FIELDS
+    if field
+    not in {
+        "whatsapp_followup_sent_at",
+        "minimum_reservation_hour",
+        "preflight_started_at",
+        "preflight_validated_at",
+        "preflight_details",
+        "preflight_cycle",
+        "registration_notice_updated_at",
     }
+)
+
+
+def list_service_orders_payload(*, projection: str = "full") -> dict[str, Any]:
+    fields = (
+        DASHBOARD_SERVICE_ORDER_FIELDS
+        if projection == "dashboard"
+        else PUBLIC_SERVICE_ORDER_FIELDS
+    )
+    orders = list_service_order_summaries()
+    service_orders = [
+        _public_service_order(order, fields=fields)
+        for order in orders
+    ]
+    if projection == "dashboard":
+        for item, order in zip(service_orders, orders, strict=True):
+            details = order.preflight_details or {}
+            item["preflight_error_type"] = details.get("error_type")
+    return {"service_orders": service_orders}
 
 
 def search_service_orders_payload(query: str) -> dict[str, Any]:
@@ -132,9 +159,11 @@ def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | 
     if order is None:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
     payload = asdict(order)
-    return HTTPStatus.OK, {
+    response = {
         field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
     }
+    response["preflight_error_type"] = (order.preflight_details or {}).get("error_type")
+    return HTTPStatus.OK, response
 
 
 def get_service_order_credentials_payload(
@@ -679,6 +708,10 @@ def _optional_bool(payload: dict[str, Any], name: str, *, default: bool) -> bool
     raise ValueError(f"Invalid boolean value for {name}: {value!r}")
 
 
-def _public_service_order(order: Any) -> dict[str, Any]:
+def _public_service_order(
+    order: Any,
+    *,
+    fields: tuple[str, ...] = PUBLIC_SERVICE_ORDER_FIELDS,
+) -> dict[str, Any]:
     payload = asdict(order)
-    return {field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_FIELDS}
+    return {field: payload.get(field) for field in fields}

@@ -293,7 +293,17 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/service-orders":
             if not self._require_authorized(strict=True):
                 return
-            self._send_json(HTTPStatus.OK, list_service_orders_payload())
+            projection = str((query.get("projection") or ["full"])[0]).strip().lower()
+            if projection not in {"full", "dashboard"}:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"error": "bad_request", "message": "Unsupported service-order projection."},
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK,
+                list_service_orders_payload(projection=projection),
+            )
             return
 
         if path == "/api/v1/operator-inbox":
@@ -305,7 +315,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/post-appointment-followups":
             if not self._require_authorized(strict=True):
                 return
-            status, payload = post_appointment_followups_payload()
+            status, payload = post_appointment_followups_payload(query)
             self._send_json(status, payload)
             return
 

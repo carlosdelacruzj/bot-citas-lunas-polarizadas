@@ -57,6 +57,7 @@ import {
   PaymentPaidPayload,
   PostAppointmentFollowup,
   PostAppointmentPayload,
+  PostAppointmentQuery,
   PriorityUpdatePayload,
   ReservationRestrictionsUpdatePayload,
   RunDetail,
@@ -173,6 +174,58 @@ type ClosureReason =
 type SortDirection = 'asc' | 'desc';
 type StatusTone = 'good' | 'warn' | 'bad' | 'neutral';
 type StatusPresentation = { label: string; tone: StatusTone };
+type DashboardSnapshotHealth = Pick<
+  HealthPayload,
+  'status' | 'worker_running' | 'reason' | 'captcha_shadow_enabled'
+>;
+type DashboardSnapshotWorker = Pick<
+  WorkerStatus,
+  | 'phase'
+  | 'paused'
+  | 'current_order_id'
+  | 'session_started_at'
+  | 'last_check_at'
+  | 'next_check_at'
+  | 'confirmed_reservations'
+  | 'consecutive_errors'
+  | 'updated_at'
+  | 'worker_running'
+  | 'continuous_worker_enabled'
+>;
+type DashboardSnapshotOrder = Pick<
+  ServiceOrder,
+  | 'order_id'
+  | 'priority'
+  | 'charge_required'
+  | 'service_type'
+  | 'status'
+  | 'reservation_status'
+  | 'payment_status'
+  | 'whatsapp_message_action_state'
+  | 'whatsapp_followup_action_state'
+  | 'parent_order_id'
+  | 'preflight_status'
+  | 'registration_notice_status'
+  | 'created_at'
+  | 'updated_at'
+>;
+type DashboardSnapshotRun = Pick<
+  RunSummary,
+  | 'run_id'
+  | 'order_id'
+  | 'status'
+  | 'exit_code'
+  | 'started_at'
+  | 'finished_at'
+  | 'duration_seconds'
+  | 'reservation_attempted'
+  | 'reservation_confirmed'
+  | 'screenshot_count'
+>;
+type DashboardSnapshotWorkerCommand = Pick<
+  WorkerCommand,
+  'command_id' | 'command' | 'status' | 'requested_at' | 'claimed_at' | 'processed_at'
+>;
 type OrderViewState = {
   quickFilter: OrderQuickFilter;
   sortKey: OrderSortKey;
@@ -413,12 +466,14 @@ function normalizeDashboardText(value: unknown): string {
   encapsulation: ViewEncapsulation.None,
 })
 export class App implements OnDestroy {
-  protected readonly formatDate = formatPeruDate;
-  protected readonly formatDateTime = formatPeruDateTime;
-  protected readonly formatTime = formatPeruTime;
+  public readonly formatDate = formatPeruDate;
+  public readonly formatDateTime = formatPeruDateTime;
+  public readonly formatTime = formatPeruTime;
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
   private autoRefreshTimer: number | null = null;
+  private postAppointmentSearchTimer: number | null = null;
+  private postAppointmentRequestScope: RequestScope | null = null;
   private readonly activeManualSessionIds = new Set<string>();
   private readonly loadedViews = new Set<ViewKey>();
   private readonly lastSuccessfulViewUpdate = new Map<ViewKey, number>();
@@ -434,210 +489,210 @@ export class App implements OnDestroy {
   private errorMessageTimer: number | null = null;
   private lastFocusedElement: HTMLElement | null = null;
 
-  protected readonly activeView = signal<ViewKey>('summary');
-  protected readonly sidebarCollapsed = signal(
+  public readonly activeView = signal<ViewKey>('summary');
+  public readonly sidebarCollapsed = signal(
     window.localStorage.getItem('appointment-dashboard-sidebar-collapsed') === 'true',
   );
-  protected readonly mobileMenuOpen = signal(false);
-  protected readonly activeModal = signal<ModalKind>(null);
-  protected readonly autoRefreshEnabled = signal(true);
-  protected readonly pageHidden = signal(document.visibilityState === 'hidden');
-  protected readonly formDirty = signal(false);
-  protected readonly lastUpdatedAt = signal<string | null>(null);
-  protected readonly orderFilter = signal(readOrderSearch());
-  protected readonly orderQuickFilter = signal<OrderQuickFilter>(
+  public readonly mobileMenuOpen = signal(false);
+  public readonly activeModal = signal<ModalKind>(null);
+  public readonly autoRefreshEnabled = signal(true);
+  public readonly pageHidden = signal(document.visibilityState === 'hidden');
+  public readonly formDirty = signal(false);
+  public readonly lastUpdatedAt = signal<string | null>(null);
+  public readonly orderFilter = signal(readOrderSearch());
+  public readonly orderQuickFilter = signal<OrderQuickFilter>(
     INITIAL_ORDER_VIEW_STATE.quickFilter,
   );
-  protected readonly orderSortKey = signal<OrderSortKey>(INITIAL_ORDER_VIEW_STATE.sortKey);
-  protected readonly orderSortDirection = signal<SortDirection>(
+  public readonly orderSortKey = signal<OrderSortKey>(INITIAL_ORDER_VIEW_STATE.sortKey);
+  public readonly orderSortDirection = signal<SortDirection>(
     INITIAL_ORDER_VIEW_STATE.sortDirection,
   );
-  protected readonly orderPage = signal(INITIAL_ORDER_VIEW_STATE.page);
-  protected readonly orderPageSize = signal(INITIAL_ORDER_VIEW_STATE.pageSize);
-  protected readonly runStatusFilter = signal('');
-  protected readonly health = signal<HealthPayload | null>(null);
-  protected readonly worker = signal<WorkerStatus | null>(null);
-  protected readonly opportunityControl = signal<OpportunityControl | null>(null);
-  protected readonly opportunityBursts = signal<OpportunityBurst[]>([]);
-  protected readonly captchaAuthorityControl = signal<CaptchaAuthorityControl | null>(null);
-  protected readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
-  protected readonly captchaSamplingEnabled = signal(false);
-  protected readonly captchaSamplingLimit = signal(10);
-  protected readonly captchaSamplingDirty = signal(false);
-  protected readonly captchaSamplingSaving = signal(false);
-  protected readonly orders = signal<ServiceOrder[]>([]);
-  protected readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
-  protected readonly runs = signal<RunSummary[]>([]);
-  protected readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
-  protected readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
-  protected readonly postAppointmentFilter = signal<PostAppointmentFilter>('active');
-  protected readonly postAppointmentSearch = signal('');
-  protected readonly postAppointmentSortKey = signal<PostAppointmentSortKey>('priority');
-  protected readonly postAppointmentSortDirection = signal<SortDirection>('asc');
-  protected readonly postAppointmentPage = signal(1);
-  protected readonly postAppointmentPageSize = signal(10);
-  protected readonly captchaSummary = signal<CaptchaSummary | null>(null);
-  protected readonly captchaEvents = signal<CaptchaEvent[]>([]);
-  protected readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
-  protected readonly captchaReviewTotal = signal(0);
-  protected readonly captchaPendingTotal = signal(0);
-  protected readonly captchaReviewPosition = signal(0);
-  protected readonly captchaWorkspaceMode = signal<CaptchaWorkspaceMode>('review');
-  protected readonly captchaHistoryFiltersOpen = signal(false);
-  protected readonly captchaState = signal<LoadState>('idle');
-  protected readonly captchaError = signal<string | null>(null);
-  protected readonly captchaPage = signal(1);
-  protected readonly captchaPageSize = signal(12);
-  protected readonly captchaTotal = signal(0);
-  protected readonly captchaTotalPages = signal(1);
-  protected readonly captchaSearch = signal('');
-  protected readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
-  protected readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
-  protected readonly captchaSource = signal<CaptchaSourceFilter>('all');
-  protected readonly captchaReviewStatus = signal<CaptchaReviewFilter>('all');
-  protected readonly captchaDrafts = signal<Record<string, string>>({});
-  protected readonly captchaSavingEventId = signal('');
-  protected readonly captchaReviewMessage = signal<string | null>(null);
-  protected readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
-  protected readonly captchaShadowEnabled = computed(
+  public readonly orderPage = signal(INITIAL_ORDER_VIEW_STATE.page);
+  public readonly orderPageSize = signal(INITIAL_ORDER_VIEW_STATE.pageSize);
+  public readonly runStatusFilter = signal('');
+  public readonly health = signal<HealthPayload | null>(null);
+  public readonly worker = signal<WorkerStatus | null>(null);
+  public readonly opportunityControl = signal<OpportunityControl | null>(null);
+  public readonly opportunityBursts = signal<OpportunityBurst[]>([]);
+  public readonly captchaAuthorityControl = signal<CaptchaAuthorityControl | null>(null);
+  public readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
+  public readonly captchaSamplingEnabled = signal(false);
+  public readonly captchaSamplingLimit = signal(10);
+  public readonly captchaSamplingDirty = signal(false);
+  public readonly captchaSamplingSaving = signal(false);
+  public readonly orders = signal<ServiceOrder[]>([]);
+  public readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
+  public readonly runs = signal<RunSummary[]>([]);
+  public readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
+  public readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
+  public readonly postAppointmentFilter = signal<PostAppointmentFilter>('active');
+  public readonly postAppointmentSearch = signal('');
+  public readonly postAppointmentSortKey = signal<PostAppointmentSortKey>('priority');
+  public readonly postAppointmentSortDirection = signal<SortDirection>('asc');
+  public readonly postAppointmentPage = signal(1);
+  public readonly postAppointmentPageSize = signal(10);
+  public readonly captchaSummary = signal<CaptchaSummary | null>(null);
+  public readonly captchaEvents = signal<CaptchaEvent[]>([]);
+  public readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
+  public readonly captchaReviewTotal = signal(0);
+  public readonly captchaPendingTotal = signal(0);
+  public readonly captchaReviewPosition = signal(0);
+  public readonly captchaWorkspaceMode = signal<CaptchaWorkspaceMode>('review');
+  public readonly captchaHistoryFiltersOpen = signal(false);
+  public readonly captchaState = signal<LoadState>('idle');
+  public readonly captchaError = signal<string | null>(null);
+  public readonly captchaPage = signal(1);
+  public readonly captchaPageSize = signal(12);
+  public readonly captchaTotal = signal(0);
+  public readonly captchaTotalPages = signal(1);
+  public readonly captchaSearch = signal('');
+  public readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
+  public readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
+  public readonly captchaSource = signal<CaptchaSourceFilter>('all');
+  public readonly captchaReviewStatus = signal<CaptchaReviewFilter>('all');
+  public readonly captchaDrafts = signal<Record<string, string>>({});
+  public readonly captchaSavingEventId = signal('');
+  public readonly captchaReviewMessage = signal<string | null>(null);
+  public readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
+  public readonly captchaShadowEnabled = computed(
     () => this.health()?.captcha_shadow_enabled === true,
   );
-  protected readonly captchaQuality = signal<CaptchaQuality | null>(null);
-  protected readonly captchaQualityCases = signal<CaptchaQualityCasesPage | null>(null);
-  protected readonly captchaQualityState = signal<LoadState>('idle');
-  protected readonly captchaQualityError = signal<string | null>(null);
-  protected readonly captchaQualityCaseType = signal<CaptchaQualityCaseType>('wrong');
-  protected readonly captchaQualityCasePage = signal(1);
-  protected readonly captchaQualityCasePageSize = signal(12);
-  protected readonly captchaDatasetExporting = signal(false);
-  protected readonly captchaQualityCaseFilters = CAPTCHA_QUALITY_CASE_FILTERS;
-  protected readonly activeCaptchaReview = computed(
+  public readonly captchaQuality = signal<CaptchaQuality | null>(null);
+  public readonly captchaQualityCases = signal<CaptchaQualityCasesPage | null>(null);
+  public readonly captchaQualityState = signal<LoadState>('idle');
+  public readonly captchaQualityError = signal<string | null>(null);
+  public readonly captchaQualityCaseType = signal<CaptchaQualityCaseType>('wrong');
+  public readonly captchaQualityCasePage = signal(1);
+  public readonly captchaQualityCasePageSize = signal(12);
+  public readonly captchaDatasetExporting = signal(false);
+  public readonly captchaQualityCaseFilters = CAPTCHA_QUALITY_CASE_FILTERS;
+  public readonly activeCaptchaReview = computed(
     () => this.captchaReviewQueue()[this.captchaReviewPosition()] ?? null,
   );
-  protected readonly selectedRunId = signal('');
-  protected readonly selectedRunDetail = signal<RunDetail | null>(null);
-  protected readonly runDetailState = signal<LoadState>('idle');
-  protected readonly runDetailError = signal<string | null>(null);
-  protected readonly workerCommands = signal<WorkerCommand[]>([]);
-  protected readonly releaseSafeBackoffsOnRestart = signal(false);
-  protected readonly manualSessions = signal<ManualSession[]>([]);
-  protected readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
-  protected readonly selectedMonth = signal(INITIAL_MONTH);
-  protected readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
-  protected readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
-  protected readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
-  protected readonly monthlyLoading = signal(false);
-  protected readonly financeCategories = signal<FinanceCategory[]>([]);
-  protected readonly financeEntries = signal<FinanceEntry[]>([]);
-  protected readonly financeSummary = signal<FinanceSummary | null>(null);
-  protected readonly financeQuality = signal<FinanceDataQualitySummary | null>(null);
-  protected readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
-  protected readonly financeLoading = signal(false);
-  protected readonly financeClosureOpeningBalance = signal('');
-  protected readonly financeClosureClosingBalance = signal('');
-  protected readonly financeClosureReconciledBy = signal('');
-  protected readonly financeClosureNotes = signal('');
-  protected readonly financeMismatchPaymentId = signal('');
-  protected readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
-  protected readonly financeMismatchReason = signal('');
-  protected readonly financeMismatchReconciledBy = signal('');
-  protected readonly editingFinanceEntryId = signal('');
-  protected readonly financeOccurredOn = signal(INITIAL_DATE);
-  protected readonly financeEntryKind = signal<FinanceEntryKind>('expense');
-  protected readonly financeCategoryCode = signal('marketing');
-  protected readonly financeVendor = signal('');
-  protected readonly financeDescription = signal('');
-  protected readonly financeAmountOriginal = signal('');
-  protected readonly financeCurrency = signal('PEN');
-  protected readonly financeExchangeRatePen = signal('');
-  protected readonly financeQuantity = signal('');
-  protected readonly financeUnit = signal('');
-  protected readonly financeChannel = signal('');
-  protected readonly financeCampaign = signal('');
-  protected readonly financeOrderId = signal('');
-  protected readonly financeEvidenceReference = signal('');
-  protected readonly financeNotes = signal('');
-  protected readonly financeDataQuality = signal<FinanceDataQuality>('actual');
-  protected readonly loadState = signal<LoadState>('idle');
-  protected readonly viewLoadError = signal<string | null>(null);
-  protected readonly refreshingViewState = signal<ViewKey | null>(null);
-  protected readonly errorMessage = signal<string | null>(null);
-  protected readonly copiedLabel = signal<string | null>(null);
-  protected readonly selectedOrderId = signal('');
-  protected readonly orderPanelOpen = signal(false);
-  protected readonly selectedOrderDetail = signal<ServiceOrderDetail | null>(null);
-  protected readonly orderDetailLoading = signal(false);
-  protected readonly contactName = signal('');
-  protected readonly contactWhatsapp = signal('');
-  protected readonly contactWhatsappUsername = signal('');
-  protected readonly contactSource = signal('whatsapp');
-  protected readonly orderDocumentNumber = signal('');
-  protected readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
-  protected readonly orderPassword = signal('');
-  protected readonly orderPasswordVisible = signal(false);
-  protected readonly orderPriority = signal(0);
-  protected readonly orderMinimumReservationDate = signal('');
-  protected readonly orderMaximumReservationDate = signal('');
-  protected readonly orderAllowedWeekdays = signal<number[]>([]);
-  protected readonly orderExcludedDateRanges = signal<ExcludedDateRange[]>([]);
-  protected readonly orderExcludedDateStart = signal('');
-  protected readonly orderExcludedDateEnd = signal('');
-  protected readonly paymentAmountPaid = signal('');
-  protected readonly paymentAmountAgreed = signal('');
-  protected readonly editOrderSection = signal<
+  public readonly selectedRunId = signal('');
+  public readonly selectedRunDetail = signal<RunDetail | null>(null);
+  public readonly runDetailState = signal<LoadState>('idle');
+  public readonly runDetailError = signal<string | null>(null);
+  public readonly workerCommands = signal<WorkerCommand[]>([]);
+  public readonly releaseSafeBackoffsOnRestart = signal(false);
+  public readonly manualSessions = signal<ManualSession[]>([]);
+  public readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
+  public readonly selectedMonth = signal(INITIAL_MONTH);
+  public readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
+  public readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
+  public readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
+  public readonly monthlyLoading = signal(false);
+  public readonly financeCategories = signal<FinanceCategory[]>([]);
+  public readonly financeEntries = signal<FinanceEntry[]>([]);
+  public readonly financeSummary = signal<FinanceSummary | null>(null);
+  public readonly financeQuality = signal<FinanceDataQualitySummary | null>(null);
+  public readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
+  public readonly financeLoading = signal(false);
+  public readonly financeClosureOpeningBalance = signal('');
+  public readonly financeClosureClosingBalance = signal('');
+  public readonly financeClosureReconciledBy = signal('');
+  public readonly financeClosureNotes = signal('');
+  public readonly financeMismatchPaymentId = signal('');
+  public readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
+  public readonly financeMismatchReason = signal('');
+  public readonly financeMismatchReconciledBy = signal('');
+  public readonly editingFinanceEntryId = signal('');
+  public readonly financeOccurredOn = signal(INITIAL_DATE);
+  public readonly financeEntryKind = signal<FinanceEntryKind>('expense');
+  public readonly financeCategoryCode = signal('marketing');
+  public readonly financeVendor = signal('');
+  public readonly financeDescription = signal('');
+  public readonly financeAmountOriginal = signal('');
+  public readonly financeCurrency = signal('PEN');
+  public readonly financeExchangeRatePen = signal('');
+  public readonly financeQuantity = signal('');
+  public readonly financeUnit = signal('');
+  public readonly financeChannel = signal('');
+  public readonly financeCampaign = signal('');
+  public readonly financeOrderId = signal('');
+  public readonly financeEvidenceReference = signal('');
+  public readonly financeNotes = signal('');
+  public readonly financeDataQuality = signal<FinanceDataQuality>('actual');
+  public readonly loadState = signal<LoadState>('idle');
+  public readonly viewLoadError = signal<string | null>(null);
+  public readonly refreshingViewState = signal<ViewKey | null>(null);
+  public readonly errorMessage = signal<string | null>(null);
+  public readonly copiedLabel = signal<string | null>(null);
+  public readonly selectedOrderId = signal('');
+  public readonly orderPanelOpen = signal(false);
+  public readonly selectedOrderDetail = signal<ServiceOrderDetail | null>(null);
+  public readonly orderDetailLoading = signal(false);
+  public readonly contactName = signal('');
+  public readonly contactWhatsapp = signal('');
+  public readonly contactWhatsappUsername = signal('');
+  public readonly contactSource = signal('whatsapp');
+  public readonly orderDocumentNumber = signal('');
+  public readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
+  public readonly orderPassword = signal('');
+  public readonly orderPasswordVisible = signal(false);
+  public readonly orderPriority = signal(0);
+  public readonly orderMinimumReservationDate = signal('');
+  public readonly orderMaximumReservationDate = signal('');
+  public readonly orderAllowedWeekdays = signal<number[]>([]);
+  public readonly orderExcludedDateRanges = signal<ExcludedDateRange[]>([]);
+  public readonly orderExcludedDateStart = signal('');
+  public readonly orderExcludedDateEnd = signal('');
+  public readonly paymentAmountPaid = signal('');
+  public readonly paymentAmountAgreed = signal('');
+  public readonly editOrderSection = signal<
     'all' | 'contact' | 'credentials' | 'restrictions'
   >('all');
-  protected readonly newDocumentNumber = signal('');
-  protected readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
-  protected readonly newPassword = signal('');
-  protected readonly newContactName = signal('');
-  protected readonly newContactWhatsapp = signal('');
-  protected readonly newContactWhatsappUsername = signal('');
-  protected readonly newContactSource = signal('');
-  protected readonly newServicePackage = signal<NewServicePackage>('standard');
-  protected readonly newCustomReservationPrice = signal('');
-  protected readonly newMinimumReservationDate = signal('');
-  protected readonly newMaximumReservationDate = signal('');
-  protected readonly newAllowedWeekdays = signal<number[]>([]);
-  protected readonly newExcludedDateRanges = signal<ExcludedDateRange[]>([]);
-  protected readonly newExcludedDateStart = signal('');
-  protected readonly newExcludedDateEnd = signal('');
-  protected readonly splitKeepParentActive = signal(false);
-  protected readonly closureReason = signal<ClosureReason>('client_withdrew');
-  protected readonly closureNote = signal('');
-  protected readonly actionBusy = signal(false);
-  protected readonly pendingAction = signal<PendingAction | null>(null);
-  protected readonly whatsappPackage = signal<WhatsAppMessagePackage | null>(null);
-  protected readonly whatsappFollowUpPackage = signal<WhatsAppFollowUpPackage | null>(null);
-  protected readonly whatsappPackageLoading = signal(false);
-  protected readonly whatsappFollowUpLoading = signal(false);
-  protected readonly whatsappTestRecipient = signal('');
-  protected readonly whatsappTestMode = signal(false);
-  protected readonly whatsappFollowUpMode = signal(false);
-  protected readonly whatsappReviewMode = signal(false);
-  protected readonly whatsappReview = signal<WhatsAppReviewPayload | null>(null);
-  protected readonly whatsappReviewNote = signal('');
-  protected readonly whatsappWebBusy = signal(false);
-  protected readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
-  protected readonly whatsappManualFallbackOpen = signal(false);
-  protected readonly whatsappSessionBusy = signal(false);
-  protected readonly whatsappSessionState = signal<
+  public readonly newDocumentNumber = signal('');
+  public readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
+  public readonly newPassword = signal('');
+  public readonly newContactName = signal('');
+  public readonly newContactWhatsapp = signal('');
+  public readonly newContactWhatsappUsername = signal('');
+  public readonly newContactSource = signal('');
+  public readonly newServicePackage = signal<NewServicePackage>('standard');
+  public readonly newCustomReservationPrice = signal('');
+  public readonly newMinimumReservationDate = signal('');
+  public readonly newMaximumReservationDate = signal('');
+  public readonly newAllowedWeekdays = signal<number[]>([]);
+  public readonly newExcludedDateRanges = signal<ExcludedDateRange[]>([]);
+  public readonly newExcludedDateStart = signal('');
+  public readonly newExcludedDateEnd = signal('');
+  public readonly splitKeepParentActive = signal(false);
+  public readonly closureReason = signal<ClosureReason>('client_withdrew');
+  public readonly closureNote = signal('');
+  public readonly actionBusy = signal(false);
+  public readonly pendingAction = signal<PendingAction | null>(null);
+  public readonly whatsappPackage = signal<WhatsAppMessagePackage | null>(null);
+  public readonly whatsappFollowUpPackage = signal<WhatsAppFollowUpPackage | null>(null);
+  public readonly whatsappPackageLoading = signal(false);
+  public readonly whatsappFollowUpLoading = signal(false);
+  public readonly whatsappTestRecipient = signal('');
+  public readonly whatsappTestMode = signal(false);
+  public readonly whatsappFollowUpMode = signal(false);
+  public readonly whatsappReviewMode = signal(false);
+  public readonly whatsappReview = signal<WhatsAppReviewPayload | null>(null);
+  public readonly whatsappReviewNote = signal('');
+  public readonly whatsappWebBusy = signal(false);
+  public readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
+  public readonly whatsappManualFallbackOpen = signal(false);
+  public readonly whatsappSessionBusy = signal(false);
+  public readonly whatsappSessionState = signal<
     'unknown' | 'ready' | 'login_required' | 'error'
   >('unknown');
 
-  protected readonly selectedOrder = computed(() => {
+  public readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
     return this.orders().find((order) => order.order_id === selected) ?? this.orders()[0] ?? null;
   });
-  protected readonly latestOpportunityBurst = computed(
+  public readonly latestOpportunityBurst = computed(
     () => this.opportunityBursts()[0] ?? null,
   );
-  protected readonly currentOrder = computed(() => {
+  public readonly currentOrder = computed(() => {
     const currentOrderId = this.worker()?.current_order_id;
     return this.orders().find((order) => order.order_id === currentOrderId) ?? null;
   });
-  protected readonly modalOrder = computed(() => this.selectedOrder());
-  protected readonly filteredOrders = computed(() => {
+  public readonly modalOrder = computed(() => this.selectedOrder());
+  public readonly filteredOrders = computed(() => {
     const filter = this.orderFilter().trim().toLowerCase();
     const quickFilter = this.orderQuickFilter();
     const filtered = this.orders().filter((order) => {
@@ -665,26 +720,26 @@ export class App implements OnDestroy {
     });
     return this.sortOrders(filtered);
   });
-  protected readonly orderTotalPages = computed(() =>
+  public readonly orderTotalPages = computed(() =>
     Math.max(1, Math.ceil(this.filteredOrders().length / this.orderPageSize())),
   );
-  protected readonly currentOrderPage = computed(() =>
+  public readonly currentOrderPage = computed(() =>
     Math.min(this.orderPage(), this.orderTotalPages()),
   );
-  protected readonly paginatedOrders = computed(() => {
+  public readonly paginatedOrders = computed(() => {
     const start = (this.currentOrderPage() - 1) * this.orderPageSize();
     return this.filteredOrders().slice(start, start + this.orderPageSize());
   });
-  protected readonly orderPageStart = computed(() =>
+  public readonly orderPageStart = computed(() =>
     this.filteredOrders().length ? (this.currentOrderPage() - 1) * this.orderPageSize() + 1 : 0,
   );
-  protected readonly orderPageEnd = computed(() =>
+  public readonly orderPageEnd = computed(() =>
     Math.min(this.currentOrderPage() * this.orderPageSize(), this.filteredOrders().length),
   );
-  protected readonly orderPageNumbers = computed(() =>
+  public readonly orderPageNumbers = computed(() =>
     paginationWindow(this.currentOrderPage(), this.orderTotalPages()),
   );
-  protected readonly orderQuickFilters = computed(() => [
+  public readonly orderQuickFilters = computed(() => [
     { key: 'all' as const, label: 'Todas', count: this.orders().length },
     { key: 'ready' as const, label: 'Listas', count: this.countOrders('ready') },
     {
@@ -705,14 +760,14 @@ export class App implements OnDestroy {
       count: this.countOrders('restricted'),
     },
   ]);
-  protected readonly filteredRuns = computed(() => {
+  public readonly filteredRuns = computed(() => {
     const status = this.runStatusFilter().trim();
     if (!status) {
       return this.runs();
     }
     return this.runs().filter((run) => run.status === status);
   });
-  protected readonly runStatuses = computed(() =>
+  public readonly runStatuses = computed(() =>
     Array.from(
       new Set(
         this.runs()
@@ -721,16 +776,10 @@ export class App implements OnDestroy {
       ),
     ).sort(),
   );
-  protected readonly captchaSelectedStats = computed(
-    () => {
-      const summary = this.captchaSummary();
-      return summary ? (summary.stats.models[summary.selected_model] ?? null) : null;
-    },
-  );
-  protected readonly captchaPageNumbers = computed(() => {
+  public readonly captchaPageNumbers = computed(() => {
     return paginationWindow(this.captchaPage(), this.captchaTotalPages());
   });
-  protected readonly captchaQualityBestModel = computed<CaptchaQualityModel | null>(() => {
+  public readonly captchaQualityBestModel = computed<CaptchaQualityModel | null>(() => {
     return [...(this.captchaQuality()?.models ?? [])]
       .filter((model) => model.accuracy !== null)
       .sort(
@@ -738,20 +787,20 @@ export class App implements OnDestroy {
           (right.accuracy ?? 0) - (left.accuracy ?? 0) || right.evaluated - left.evaluated,
       )[0] ?? null;
   });
-  protected readonly captchaQualityCasePageNumbers = computed(() => {
+  public readonly captchaQualityCasePageNumbers = computed(() => {
     const pagination = this.captchaQualityCases()?.pagination;
     return pagination ? paginationWindow(pagination.page, pagination.total_pages) : [];
   });
-  protected readonly readyOrders = computed(
+  public readonly readyOrders = computed(
     () => this.orders().filter((order) => order.status === 'ready').length,
   );
-  protected readonly captchaSamplingEffectiveLimit = computed(() =>
+  public readonly captchaSamplingEffectiveLimit = computed(() =>
     this.captchaSamplingEnabled() ? this.captchaSamplingLimit() : 1,
   );
-  protected readonly captchaSamplingEstimatedSeconds = computed(() =>
+  public readonly captchaSamplingEstimatedSeconds = computed(() =>
     Math.round(Math.max(this.captchaSamplingEffectiveLimit() - 1, 0) * 4) / 10,
   );
-  protected readonly captchaAuthorityUsesV6 = computed(() => {
+  public readonly captchaAuthorityUsesV6 = computed(() => {
     const control = this.captchaAuthorityControl();
     return Boolean(
       control?.mode === 'canary' &&
@@ -759,10 +808,10 @@ export class App implements OnDestroy {
         control.remaining_local_decisions > 0,
     );
   });
-  protected readonly pendingPaymentOrders = computed(
+  public readonly pendingPaymentOrders = computed(
     () => this.orders().filter((order) => order.payment_status === 'pending').length,
   );
-  protected readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
+  public readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
     const icons: Record<OperatorInboxTask['kind'], string> = {
       preflight: '!',
       paused: 'II',
@@ -788,168 +837,93 @@ export class App implements OnDestroy {
       updatedAt: task.updated_at,
     }));
   });
-  protected readonly inboxAccessCount = computed(
+  public readonly inboxAccessCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'preflight').length,
   );
-  protected readonly inboxPaymentCount = computed(
+  public readonly inboxPaymentCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'payment').length,
   );
-  protected readonly inboxPausedCount = computed(
+  public readonly inboxPausedCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'paused').length,
   );
-  protected readonly inboxMessageCount = computed(
+  public readonly inboxMessageCount = computed(
     () =>
       this.inboxOrderTasks().filter((task) =>
         ['contact', 'whatsapp', 'followup', 'review'].includes(task.kind),
       ).length,
   );
-  protected readonly inboxPendingTotal = computed(
+  public readonly inboxPendingTotal = computed(
     () => this.inboxOrderTasks().length,
   );
-  protected readonly confirmedOrders = computed(
+  public readonly confirmedOrders = computed(
     () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
   );
-  protected readonly postAppointmentItems = computed(() => {
-    const priority: Record<string, number> = {
-      observation_no_progress: 0,
-      portal_unavailable: 1,
-      awaiting_update: 2,
-      review_required: 3,
-      observation_with_progress: 4,
-      in_progress: 5,
-      upcoming: 6,
-      completed: 7,
-      access_lost: 8,
-    };
-    const search = this.postAppointmentSearch().trim().toLocaleLowerCase('es');
-    const filter = this.postAppointmentFilter();
-    const direction = this.postAppointmentSortDirection() === 'asc' ? 1 : -1;
-    const filtered = (this.postAppointmentPayload()?.items ?? []).filter((item) => {
-      if (!this.matchesPostAppointmentFilter(item, filter)) {
-        return false;
-      }
-      if (!search) {
-        return true;
-      }
-      return [
-        item.applicant_name,
-        item.document_number_masked,
-        item.order_id,
-        item.program_expediente,
-        item.program_plate,
-        item.site,
-        item.outcome,
-        ...item.stages.map((stage) => stage.message_text),
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase('es').includes(search));
-    });
-    return [...filtered].sort((left, right) => {
-      const key = this.postAppointmentSortKey();
-      let compared = 0;
-      if (key === 'priority') {
-        compared = (priority[left.outcome] ?? 99) - (priority[right.outcome] ?? 99);
-      } else if (key === 'appointment_date') {
-        compared = compareOptionalTimestamps(
-          peruDateTimeSortValue(left.appointment_date, left.appointment_hour),
-          peruDateTimeSortValue(right.appointment_date, right.appointment_hour),
-          direction,
-        );
-        if (compared !== 0) {
-          return compared;
-        }
-      } else if (key === 'last_reviewed_at') {
-        compared = compareOptionalTimestamps(
-          peruDateTimeSortValue(left.last_reviewed_at),
-          peruDateTimeSortValue(right.last_reviewed_at),
-          direction,
-        );
-        if (compared !== 0) {
-          return compared;
-        }
-      } else {
-        compared = left.applicant_name.localeCompare(right.applicant_name, 'es', {
-          numeric: true,
-          sensitivity: 'base',
-        });
-      }
-      if (compared !== 0) {
-        return compared * direction;
-      }
-      return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
-    });
-  });
-  protected readonly postAppointmentQuickFilters = computed(() => {
-    const items = this.postAppointmentPayload()?.items ?? [];
+  public readonly postAppointmentItems = computed(
+    () => this.postAppointmentPayload()?.items ?? [],
+  );
+  public readonly postAppointmentQuickFilters = computed(() => {
+    const counts = this.postAppointmentPayload()?.filter_counts;
     return [
       {
         key: 'active' as const,
         label: 'En seguimiento',
-        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'active')).length,
+        count: counts?.active ?? 0,
       },
       {
         key: 'attention' as const,
         label: 'Requieren atención',
-        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'attention')).length,
+        count: counts?.attention ?? 0,
       },
       {
         key: 'observations' as const,
         label: 'Con observación',
-        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'observations'))
-          .length,
+        count: counts?.observations ?? 0,
       },
       {
         key: 'access_lost' as const,
         label: 'Historial sin acceso',
-        count: items.filter((item) => item.outcome === 'access_lost').length,
+        count: counts?.access_lost ?? 0,
       },
       {
         key: 'progressed' as const,
         label: 'Con avance',
-        count: items.filter((item) => this.matchesPostAppointmentFilter(item, 'progressed')).length,
+        count: counts?.progressed ?? 0,
       },
     ];
   });
-  protected readonly postAppointmentTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.postAppointmentItems().length / this.postAppointmentPageSize())),
-  );
-  protected readonly currentPostAppointmentPage = computed(() =>
-    Math.min(this.postAppointmentPage(), this.postAppointmentTotalPages()),
-  );
-  protected readonly paginatedPostAppointmentItems = computed(() => {
-    const start =
-      (this.currentPostAppointmentPage() - 1) * this.postAppointmentPageSize();
-    return this.postAppointmentItems().slice(start, start + this.postAppointmentPageSize());
-  });
-  protected readonly postAppointmentPageStart = computed(() =>
-    this.postAppointmentItems().length
-      ? (this.currentPostAppointmentPage() - 1) * this.postAppointmentPageSize() + 1
-      : 0,
-  );
-  protected readonly postAppointmentPageEnd = computed(() =>
-    Math.min(
-      this.currentPostAppointmentPage() * this.postAppointmentPageSize(),
-      this.postAppointmentItems().length,
+  public readonly postAppointmentTotalPages = computed(() =>
+    Math.max(
+      1,
+      Math.ceil(
+        (this.postAppointmentPayload()?.pagination.total ?? 0) /
+          this.postAppointmentPageSize(),
+      ),
     ),
   );
-  protected readonly postAppointmentPageNumbers = computed(() =>
+  public readonly currentPostAppointmentPage = computed(() =>
+    Math.min(this.postAppointmentPage(), this.postAppointmentTotalPages()),
+  );
+  public readonly paginatedPostAppointmentItems = computed(() => this.postAppointmentItems());
+  public readonly postAppointmentPageStart = computed(() =>
+    (this.postAppointmentPayload()?.pagination.total ?? 0) > 0
+      ? (this.postAppointmentPayload()?.pagination.offset ?? 0) + 1
+      : 0,
+  );
+  public readonly postAppointmentPageEnd = computed(() =>
+    (this.postAppointmentPayload()?.pagination.offset ?? 0) +
+      this.postAppointmentItems().length,
+  );
+  public readonly postAppointmentPageNumbers = computed(() =>
     paginationWindow(this.currentPostAppointmentPage(), this.postAppointmentTotalPages()),
   );
-  protected readonly failedRuns = computed(
+  public readonly failedRuns = computed(
     () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
   );
-  protected readonly selectedOrderRuns = computed(() => {
-    const orderId = this.selectedOrder()?.order_id;
-    if (!orderId) {
-      return [];
-    }
-    return this.runs().filter((run) => run.order_id === orderId);
-  });
-  protected readonly selectedOrderChildren = computed(() => {
+  public readonly selectedOrderChildren = computed(() => {
     const orderId = this.selectedOrder()?.order_id;
     return orderId ? this.orders().filter((order) => order.parent_order_id === orderId) : [];
   });
-  protected readonly orderNextAction = computed<OrderNextAction>(() => {
+  public readonly orderNextAction = computed<OrderNextAction>(() => {
     const order = this.selectedOrder();
     if (!order) {
       return {
@@ -1043,11 +1017,11 @@ export class App implements OnDestroy {
       disabled: false,
     };
   });
-  protected readonly selectedRun = computed(() => this.selectedRunDetail());
-  protected readonly selectedOrderWhatsappPlaceholder = computed(
+  public readonly selectedRun = computed(() => this.selectedRunDetail());
+  public readonly selectedOrderWhatsappPlaceholder = computed(
     () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin numero registrado',
   );
-  protected readonly selectedOrderWhatsapp = computed(() => {
+  public readonly selectedOrderWhatsapp = computed(() => {
     const order = this.selectedOrder();
     const detail = this.selectedOrderDetail();
     if (order && detail?.order_id === order.order_id) {
@@ -1055,13 +1029,13 @@ export class App implements OnDestroy {
     }
     return order?.contact_whatsapp_masked ?? order?.contact_whatsapp_username_masked ?? 'sin WhatsApp';
   });
-  protected readonly autoRefreshPaused = computed(
+  public readonly autoRefreshPaused = computed(
     () =>
       !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
   );
-  protected readonly activeViewLabel = computed(() => VIEW_LABELS[this.activeView()].label);
-  protected readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
-  protected readonly hasActiveViewData = computed(() => {
+  public readonly activeViewLabel = computed(() => VIEW_LABELS[this.activeView()].label);
+  public readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
+  public readonly hasActiveViewData = computed(() => {
     const view = this.activeView();
     const state = this.loadState();
     if (view === 'summary') {
@@ -1087,7 +1061,7 @@ export class App implements OnDestroy {
     }
     return this.orders().length > 0 || state === 'ready';
   });
-  protected readonly activeViewState = computed<ViewStateKind | null>(() => {
+  public readonly activeViewState = computed<ViewStateKind | null>(() => {
     const state = this.loadState();
     const hasData = this.hasActiveViewData();
     if (state === 'loading' && !hasData) {
@@ -1120,6 +1094,10 @@ export class App implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearRefreshTimer();
+    if (this.postAppointmentSearchTimer !== null) {
+      window.clearTimeout(this.postAppointmentSearchTimer);
+    }
+    this.postAppointmentRequestScope?.cancel();
     this.currentRefreshScope?.cancel();
     this.captchaLoadScope?.cancel();
     this.captchaQualityCaseScope?.cancel();
@@ -1134,12 +1112,12 @@ export class App implements OnDestroy {
   }
 
   @HostListener('window:beforeunload')
-  protected handleBeforeUnload(): void {
+  public handleBeforeUnload(): void {
     this.closeTrackedManualSessionsWithBeacon();
   }
 
   @HostListener('document:visibilitychange')
-  protected handleVisibilityChange(): void {
+  public handleVisibilityChange(): void {
     const hidden = document.visibilityState === 'hidden';
     this.pageHidden.set(hidden);
     if (hidden) {
@@ -1157,7 +1135,7 @@ export class App implements OnDestroy {
   }
 
   @HostListener('document:keydown.escape')
-  protected handleEscape(): void {
+  public handleEscape(): void {
     if (this.actionBusy()) {
       return;
     }
@@ -1179,7 +1157,7 @@ export class App implements OnDestroy {
   }
 
   @HostListener('document:keydown', ['$event'])
-  protected handleCaptchaReviewKeyboard(event: KeyboardEvent): void {
+  public handleCaptchaReviewKeyboard(event: KeyboardEvent): void {
     if (
       this.activeView() !== 'captchas' ||
       this.captchaWorkspaceMode() !== 'review' ||
@@ -1218,11 +1196,11 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async refreshAll(): Promise<void> {
+  public async refreshAll(): Promise<void> {
     await this.refreshView(this.activeView(), true);
   }
 
-  protected async refreshNow(): Promise<void> {
+  public async refreshNow(): Promise<void> {
     this.formDirty.set(false);
     await this.refreshAll();
   }
@@ -1488,7 +1466,9 @@ export class App implements OnDestroy {
       return;
     }
     if (view === 'followups') {
-      this.postAppointmentPayload.set(await this.api.getPostAppointmentFollowups(scope));
+      this.setPostAppointmentPayload(
+        await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
+      );
       return;
     }
     await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
@@ -1504,13 +1484,13 @@ export class App implements OnDestroy {
     }
   }
 
-  protected toggleSidebar(): void {
+  public toggleSidebar(): void {
     const collapsed = !this.sidebarCollapsed();
     this.sidebarCollapsed.set(collapsed);
     window.localStorage.setItem('appointment-dashboard-sidebar-collapsed', String(collapsed));
   }
 
-  protected async loadCaptchaData(showLoading = true, scope?: RequestScope): Promise<void> {
+  public async loadCaptchaData(showLoading = true, scope?: RequestScope): Promise<void> {
     const ownsScope = !scope;
     if (ownsScope) {
       this.captchaLoadScope?.cancel();
@@ -1576,7 +1556,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async loadCaptchaQuality(scope?: RequestScope): Promise<void> {
+  public async loadCaptchaQuality(scope?: RequestScope): Promise<void> {
     if (!this.captchaQuality()) {
       this.captchaQualityState.set('loading');
     }
@@ -1603,7 +1583,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async changeCaptchaQualityCaseType(value: CaptchaQualityCaseType): Promise<void> {
+  public async changeCaptchaQualityCaseType(value: CaptchaQualityCaseType): Promise<void> {
     if (value === this.captchaQualityCaseType()) {
       return;
     }
@@ -1612,7 +1592,7 @@ export class App implements OnDestroy {
     await this.loadCaptchaQualityCases();
   }
 
-  protected async goToCaptchaQualityCasePage(page: number): Promise<void> {
+  public async goToCaptchaQualityCasePage(page: number): Promise<void> {
     const pagination = this.captchaQualityCases()?.pagination;
     if (!pagination || page < 1 || page > pagination.total_pages || page === pagination.page) {
       return;
@@ -1651,7 +1631,7 @@ export class App implements OnDestroy {
     this.captchaQualityCasePageSize.set(cases.pagination.page_size);
   }
 
-  protected async exportCaptchaDataset(): Promise<void> {
+  public async exportCaptchaDataset(): Promise<void> {
     if (this.captchaDatasetExporting()) {
       return;
     }
@@ -1675,12 +1655,12 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async applyCaptchaFilters(): Promise<void> {
+  public async applyCaptchaFilters(): Promise<void> {
     this.captchaPage.set(1);
     await this.loadCaptchaData();
   }
 
-  protected async setCaptchaAgreement(filter: CaptchaAgreementFilter): Promise<void> {
+  public async setCaptchaAgreement(filter: CaptchaAgreementFilter): Promise<void> {
     if (this.captchaAgreement() === filter) {
       return;
     }
@@ -1688,22 +1668,22 @@ export class App implements OnDestroy {
     await this.applyCaptchaFilters();
   }
 
-  protected async changeCaptchaPortalStatus(value: CaptchaPortalFilter): Promise<void> {
+  public async changeCaptchaPortalStatus(value: CaptchaPortalFilter): Promise<void> {
     this.captchaPortalStatus.set(value);
     await this.applyCaptchaFilters();
   }
 
-  protected async changeCaptchaSource(value: CaptchaSourceFilter): Promise<void> {
+  public async changeCaptchaSource(value: CaptchaSourceFilter): Promise<void> {
     this.captchaSource.set(value);
     await this.applyCaptchaFilters();
   }
 
-  protected async changeCaptchaReviewStatus(value: CaptchaReviewFilter): Promise<void> {
+  public async changeCaptchaReviewStatus(value: CaptchaReviewFilter): Promise<void> {
     this.captchaReviewStatus.set(value);
     await this.applyCaptchaFilters();
   }
 
-  protected showCaptchaWorkspace(mode: CaptchaWorkspaceMode): void {
+  public showCaptchaWorkspace(mode: CaptchaWorkspaceMode): void {
     const changed = this.captchaWorkspaceMode() !== mode;
     this.captchaWorkspaceMode.set(mode);
     this.captchaPendingCorrection.set(null);
@@ -1721,17 +1701,17 @@ export class App implements OnDestroy {
     }
   }
 
-  protected showAllPendingCaptchas(): void {
+  public showAllPendingCaptchas(): void {
     this.captchaReviewStatus.set('pending');
     this.captchaPage.set(1);
     this.showCaptchaWorkspace('history');
   }
 
-  protected toggleCaptchaHistoryFilters(): void {
+  public toggleCaptchaHistoryFilters(): void {
     this.captchaHistoryFiltersOpen.update((open) => !open);
   }
 
-  protected captchaActiveFilterCount(): number {
+  public captchaActiveFilterCount(): number {
     return (
       Number(this.captchaAgreement() !== 'all') +
       Number(this.captchaPortalStatus() !== 'all') +
@@ -1739,7 +1719,7 @@ export class App implements OnDestroy {
     );
   }
 
-  protected moveCaptchaReview(offset: number): void {
+  public moveCaptchaReview(offset: number): void {
     const next = this.captchaReviewPosition() + offset;
     if (next < 0 || next >= this.captchaReviewQueue().length) {
       return;
@@ -1749,12 +1729,12 @@ export class App implements OnDestroy {
     this.clearCaptchaReviewMessage();
   }
 
-  protected async changeCaptchaPageSize(value: number | string): Promise<void> {
+  public async changeCaptchaPageSize(value: number | string): Promise<void> {
     this.captchaPageSize.set(Number(value));
     await this.applyCaptchaFilters();
   }
 
-  protected async goToCaptchaPage(page: number): Promise<void> {
+  public async goToCaptchaPage(page: number): Promise<void> {
     if (page < 1 || page > this.captchaTotalPages() || page === this.captchaPage()) {
       return;
     }
@@ -1762,11 +1742,11 @@ export class App implements OnDestroy {
     await this.loadCaptchaData();
   }
 
-  protected captchaPrediction(event: CaptchaEvent, modelName: string): CaptchaPrediction | null {
+  public captchaPrediction(event: CaptchaEvent, modelName: string): CaptchaPrediction | null {
     return event.predictions.find((prediction) => prediction.model_name === modelName) ?? null;
   }
 
-  protected captchaPredictionTone(event: CaptchaEvent, prediction: CaptchaPrediction): string {
+  public captchaPredictionTone(event: CaptchaEvent, prediction: CaptchaPrediction): string {
     const reference = event.human_label?.answer ?? event.external_answer;
     if (!reference) {
       return 'neutral';
@@ -1774,7 +1754,7 @@ export class App implements OnDestroy {
     return prediction.prediction === reference ? 'good' : 'warn';
   }
 
-  protected captchaPortalLabel(event: CaptchaEvent): string {
+  public captchaPortalLabel(event: CaptchaEvent): string {
     if (this.isObserverCaptcha(event)) {
       return 'Portal no aplica';
     }
@@ -1787,7 +1767,7 @@ export class App implements OnDestroy {
     return 'Sin validar por el portal';
   }
 
-  protected captchaPortalTone(event: CaptchaEvent): string {
+  public captchaPortalTone(event: CaptchaEvent): string {
     if (event.portal_accepted === true) {
       return 'good';
     }
@@ -1797,7 +1777,7 @@ export class App implements OnDestroy {
     return 'neutral';
   }
 
-  protected captchaAgreementLabel(event: CaptchaEvent): string {
+  public captchaAgreementLabel(event: CaptchaEvent): string {
     if (this.isObserverCaptcha(event)) {
       return event.predictions.length ? 'Solo modelos locales' : 'Inferencia pendiente';
     }
@@ -1811,7 +1791,7 @@ export class App implements OnDestroy {
     return event.selected_matches_external ? 'Coincide con 2Captcha' : 'Difiere de 2Captcha';
   }
 
-  protected captchaAgreementTone(event: CaptchaEvent): string {
+  public captchaAgreementTone(event: CaptchaEvent): string {
     if (this.isObserverCaptcha(event)) {
       return event.predictions.length ? 'good' : 'neutral';
     }
@@ -1825,25 +1805,25 @@ export class App implements OnDestroy {
     return event.selected_matches_external ? 'good' : 'warn';
   }
 
-  protected formatMilliseconds(value: number | null | undefined): string {
+  public formatMilliseconds(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(value)) {
       return 'Sin dato';
     }
     return value >= 1000 ? `${(value / 1000).toFixed(3)} s` : `${value.toFixed(3)} ms`;
   }
 
-  protected formatConfidence(value: number | null | undefined): string {
+  public formatConfidence(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(value)) {
       return 'Sin dato';
     }
     return `${(value * 100).toFixed(1)}%`;
   }
 
-  protected captchaQualityAccuracy(value: number | null | undefined): string {
+  public captchaQualityAccuracy(value: number | null | undefined): string {
     return this.formatConfidence(value);
   }
 
-  protected captchaQualityModelTone(model: CaptchaQualityModel): string {
+  public captchaQualityModelTone(model: CaptchaQualityModel): string {
     if (model.accuracy === null || model.evaluated < 10) {
       return 'neutral';
     }
@@ -1853,7 +1833,7 @@ export class App implements OnDestroy {
     return model.accuracy >= 0.85 ? 'warn' : 'bad';
   }
 
-  protected captchaQualityCaseSummary(item: CaptchaQualityCase): string {
+  public captchaQualityCaseSummary(item: CaptchaQualityCase): string {
     if (item.case_types.includes('unanimous_wrong')) {
       return 'Todos los modelos coincidieron en una respuesta incorrecta.';
     }
@@ -1869,33 +1849,33 @@ export class App implements OnDestroy {
     return 'Al menos un modelo difiere de la validación humana.';
   }
 
-  protected captchaQualityWeeklyModel(week: CaptchaQualityWeek, modelName: string) {
+  public captchaQualityWeeklyModel(week: CaptchaQualityWeek, modelName: string) {
     return week.models[modelName] ?? null;
   }
 
-  protected captchaOrderLabel(event: CaptchaEvent): string {
+  public captchaOrderLabel(event: CaptchaEvent): string {
     if (this.isObserverCaptcha(event)) {
       return `Observador · muestra ${event.metadata.attempt ?? '?'} de 15`;
     }
     return event.metadata.order_id || (event.metadata.run_id ? 'Observador' : 'Sin orden');
   }
 
-  protected isObserverCaptcha(event: CaptchaEvent): boolean {
+  public isObserverCaptcha(event: CaptchaEvent): boolean {
     return event.metadata.observer === 1 || event.metadata.observer === true;
   }
 
-  protected captchaLocalTotalMs(event: CaptchaEvent): number | null {
+  public captchaLocalTotalMs(event: CaptchaEvent): number | null {
     if (!event.predictions.length) {
       return null;
     }
     return event.predictions.reduce((total, prediction) => total + prediction.inference_ms, 0);
   }
 
-  protected captchaDraft(event: CaptchaEvent): string {
+  public captchaDraft(event: CaptchaEvent): string {
     return this.captchaDrafts()[event.event_id] ?? event.human_label?.answer ?? '';
   }
 
-  protected updateCaptchaDraft(eventId: string, value: string): void {
+  public updateCaptchaDraft(eventId: string, value: string): void {
     const normalized = value
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, '')
@@ -1904,7 +1884,7 @@ export class App implements OnDestroy {
     this.clearCaptchaReviewMessage();
   }
 
-  protected captchaPredictionOptions(event: CaptchaEvent): CaptchaPredictionOption[] {
+  public captchaPredictionOptions(event: CaptchaEvent): CaptchaPredictionOption[] {
     const groups = new Map<string, string[]>();
     for (const prediction of event.predictions) {
       const models = groups.get(prediction.prediction) ?? [];
@@ -1919,7 +1899,7 @@ export class App implements OnDestroy {
       );
   }
 
-  protected captchaChoiceMode(
+  public captchaChoiceMode(
     event: CaptchaEvent,
   ): 'consensus' | 'majority' | 'plurality' | 'manual' {
     const options = this.captchaPredictionOptions(event);
@@ -1936,7 +1916,7 @@ export class App implements OnDestroy {
     return 'manual';
   }
 
-  protected captchaChoiceLabel(event: CaptchaEvent): string {
+  public captchaChoiceLabel(event: CaptchaEvent): string {
     const mode = this.captchaChoiceMode(event);
     if (mode === 'consensus') {
       return 'Consenso';
@@ -1951,7 +1931,7 @@ export class App implements OnDestroy {
     return event.predictions.length ? `${event.predictions.length} respuestas` : 'Sin consenso';
   }
 
-  protected captchaReviewReasonLabel(event: CaptchaEvent): string {
+  public captchaReviewReasonLabel(event: CaptchaEvent): string {
     const labels: Record<string, string> = {
       canary_v6: 'Canario V6',
       anomaly: 'Anomalía',
@@ -1961,7 +1941,7 @@ export class App implements OnDestroy {
     return labels[event.review_priority_reason ?? ''] ?? 'Revisión dirigida';
   }
 
-  protected captchaModelLabel(modelName: string): string {
+  public captchaModelLabel(modelName: string): string {
     return (
       {
         v1_real: 'v1 original',
@@ -1975,32 +1955,32 @@ export class App implements OnDestroy {
     );
   }
 
-  protected captchaSourceLabel(event: CaptchaEvent): string {
+  public captchaSourceLabel(event: CaptchaEvent): string {
     return this.isObserverCaptcha(event) ? 'Observador' : 'Reserva';
   }
 
-  protected captchaSuggestionTone(event: CaptchaEvent, answer: string): string {
+  public captchaSuggestionTone(event: CaptchaEvent, answer: string): string {
     if (!event.human_label) {
       return 'neutral';
     }
     return event.human_label.answer === answer ? 'good' : 'bad';
   }
 
-  protected async chooseCaptchaPrediction(event: CaptchaEvent, answer: string): Promise<void> {
+  public async chooseCaptchaPrediction(event: CaptchaEvent, answer: string): Promise<void> {
     this.updateCaptchaDraft(event.event_id, answer);
     await this.requestCaptchaHumanLabel(event, answer);
   }
 
-  protected async saveCaptchaHumanLabel(event: CaptchaEvent): Promise<void> {
+  public async saveCaptchaHumanLabel(event: CaptchaEvent): Promise<void> {
     await this.requestCaptchaHumanLabel(event, this.captchaDraft(event));
   }
 
-  protected pendingCaptchaCorrection(eventId: string): CaptchaPendingCorrection | null {
+  public pendingCaptchaCorrection(eventId: string): CaptchaPendingCorrection | null {
     const correction = this.captchaPendingCorrection();
     return correction?.eventId === eventId ? correction : null;
   }
 
-  protected async confirmCaptchaCorrection(event: CaptchaEvent): Promise<void> {
+  public async confirmCaptchaCorrection(event: CaptchaEvent): Promise<void> {
     const correction = this.pendingCaptchaCorrection(event.event_id);
     if (!correction) {
       return;
@@ -2008,7 +1988,7 @@ export class App implements OnDestroy {
     await this.persistCaptchaHumanLabel(event, correction.nextAnswer);
   }
 
-  protected cancelCaptchaCorrection(event: CaptchaEvent): void {
+  public cancelCaptchaCorrection(event: CaptchaEvent): void {
     this.captchaPendingCorrection.set(null);
     this.updateCaptchaDraft(event.event_id, event.human_label?.answer ?? '');
   }
@@ -2107,7 +2087,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async changeMonth(month: string): Promise<void> {
+  public async changeMonth(month: string): Promise<void> {
     if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading() || this.financeLoading()) {
       return;
     }
@@ -2148,12 +2128,12 @@ export class App implements OnDestroy {
     }
   }
 
-  protected openNewFinanceEntry(): void {
+  public openNewFinanceEntry(): void {
     this.clearFinanceForm();
     this.openModal('finance-entry');
   }
 
-  protected openEditFinanceEntry(entry: FinanceEntry): void {
+  public openEditFinanceEntry(entry: FinanceEntry): void {
     if (entry.status !== 'active') {
       return;
     }
@@ -2179,14 +2159,14 @@ export class App implements OnDestroy {
     this.openModal('finance-entry');
   }
 
-  protected openEditFinanceEntryById(entryId: string): void {
+  public openEditFinanceEntryById(entryId: string): void {
     const entry = this.financeEntries().find((item) => item.entry_id === entryId);
     if (entry) {
       this.openEditFinanceEntry(entry);
     }
   }
 
-  protected requestSaveFinanceEntry(): void {
+  public requestSaveFinanceEntry(): void {
     const payload = this.financeFormPayload();
     if (!payload) {
       return;
@@ -2208,7 +2188,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async requestVoidFinanceEntry(entry: FinanceEntry): Promise<void> {
+  public async requestVoidFinanceEntry(entry: FinanceEntry): Promise<void> {
     if (entry.status !== 'active') {
       return;
     }
@@ -2240,7 +2220,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected financeKindLabel(kind: FinanceEntryKind): string {
+  public financeKindLabel(kind: FinanceEntryKind): string {
     const labels: Record<FinanceEntryKind, string> = {
       expense: 'Gasto directo',
       prepaid_topup: 'Recarga prepagada',
@@ -2250,28 +2230,28 @@ export class App implements OnDestroy {
     return labels[kind];
   }
 
-  protected financeConversionComplete(summary: FinanceSummary): boolean {
+  public financeConversionComplete(summary: FinanceSummary): boolean {
     return summary.conversion_complete ?? summary.is_complete;
   }
 
-  protected formatOriginalMoney(entry: FinanceEntry): string {
+  public formatOriginalMoney(entry: FinanceEntry): string {
     return `${entry.currency} ${entry.amount_original.toFixed(entry.currency === 'PEN' ? 2 : 4)}`;
   }
 
-  protected startFinanceMismatchResolution(paymentId: string): void {
+  public startFinanceMismatchResolution(paymentId: string): void {
     this.financeMismatchPaymentId.set(paymentId);
     this.financeMismatchResolution.set('discount');
     this.financeMismatchReason.set('');
     this.financeMismatchReconciledBy.set('');
   }
 
-  protected cancelFinanceMismatchResolution(): void {
+  public cancelFinanceMismatchResolution(): void {
     this.financeMismatchPaymentId.set('');
     this.financeMismatchReason.set('');
     this.financeMismatchReconciledBy.set('');
   }
 
-  protected requestReconcileFinancePayment(paymentId: string): void {
+  public requestReconcileFinancePayment(paymentId: string): void {
     const reason = this.financeMismatchReason().trim();
     const reconciledBy = this.financeMismatchReconciledBy().trim();
     if (reason.length < 3 || !reconciledBy) {
@@ -2293,7 +2273,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected financeResolutionLabel(resolution: PaymentResolutionType): string {
+  public financeResolutionLabel(resolution: PaymentResolutionType): string {
     return {
       discount: 'Descuento',
       waiver: 'Condonación',
@@ -2301,7 +2281,7 @@ export class App implements OnDestroy {
     }[resolution];
   }
 
-  protected requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
+  public requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
     const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
     const closing = String(this.financeClosureClosingBalance() ?? '').trim();
     const reconciledBy = this.financeClosureReconciledBy().trim();
@@ -2328,7 +2308,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected financeClosureCanReconcile(): boolean {
+  public financeClosureCanReconcile(): boolean {
     const closure = this.financeMonthClosure();
     const quality = this.financeQuality();
     return Boolean(
@@ -2341,18 +2321,18 @@ export class App implements OnDestroy {
     );
   }
 
-  protected financeSelectedMonthIsClosed(): boolean {
+  public financeSelectedMonthIsClosed(): boolean {
     return this.selectedMonth() < INITIAL_MONTH;
   }
 
-  protected missingAcquisitionSourceOrders(): number {
+  public missingAcquisitionSourceOrders(): number {
     return (
       this.monthlySummary()?.cohort_metrics.sources.find((source) => source.source === 'sin_fuente')
         ?.orders_created ?? 0
     );
   }
 
-  protected financeReviewIssueCount(): number {
+  public financeReviewIssueCount(): number {
     const quality = this.financeQuality();
     if (!quality) {
       return 0;
@@ -2367,7 +2347,7 @@ export class App implements OnDestroy {
     );
   }
 
-  protected formatMoney(value: number): string {
+  public formatMoney(value: number): string {
     return new Intl.NumberFormat('es-PE', {
       style: 'currency',
       currency: 'PEN',
@@ -2375,7 +2355,7 @@ export class App implements OnDestroy {
     }).format(value);
   }
 
-  protected formatPercent(value: number): string {
+  public formatPercent(value: number): string {
     return new Intl.NumberFormat('es-PE', {
       style: 'percent',
       minimumFractionDigits: 1,
@@ -2383,7 +2363,7 @@ export class App implements OnDestroy {
     }).format(value);
   }
 
-  protected hasReservationRestrictions(order: ServiceOrder): boolean {
+  public hasReservationRestrictions(order: ServiceOrder): boolean {
     return Boolean(
       order.minimum_reservation_date ||
       order.maximum_reservation_date ||
@@ -2392,7 +2372,7 @@ export class App implements OnDestroy {
     );
   }
 
-  protected serviceTypeLabel(order: ServiceOrder): string {
+  public serviceTypeLabel(order: ServiceOrder): string {
     if (order.service_type === 'selected_weekday') {
       return 'Día elegido';
     }
@@ -2404,12 +2384,12 @@ export class App implements OnDestroy {
     return 'Estándar';
   }
 
-  protected servicePriceLabel(order: ServiceOrder): string {
+  public servicePriceLabel(order: ServiceOrder): string {
     const amount = Number(order.reservation_price);
     return Number.isFinite(amount) ? `S/${amount.toFixed(2)}` : `S/${order.reservation_price}`;
   }
 
-  protected restrictionDaysLabel(order: ServiceOrder): string {
+  public restrictionDaysLabel(order: ServiceOrder): string {
     const days = Array.from(
       new Set((order.allowed_weekdays ?? []).filter((day) => day >= 1 && day <= 7)),
     ).sort((left, right) => left - right);
@@ -2426,7 +2406,7 @@ export class App implements OnDestroy {
     return this.capitalize(SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])));
   }
 
-  protected restrictionTimingLabel(order: ServiceOrder): string {
+  public restrictionTimingLabel(order: ServiceOrder): string {
     const limits: string[] = [];
     if (order.minimum_reservation_date) {
       limits.push(`A partir del ${this.formatDate(order.minimum_reservation_date)}`);
@@ -2443,7 +2423,7 @@ export class App implements OnDestroy {
     return limits.length ? limits.join(' · ') : 'Sin restricciones de fecha';
   }
 
-  protected metricPeriodLabel(period: MetricPeriod): string {
+  public metricPeriodLabel(period: MetricPeriod): string {
     if (period.coverage_end_exclusive <= period.start) {
       return 'Sin cobertura todavía';
     }
@@ -2453,14 +2433,14 @@ export class App implements OnDestroy {
     return `${start} – ${this.formatDate(end.toISOString().slice(0, 10))}`;
   }
 
-  protected selectedMonthLabel(): string {
+  public selectedMonthLabel(): string {
     const [year, month] = this.selectedMonth().split('-').map(Number);
     return new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric' }).format(
       new Date(year, month - 1, 1),
     );
   }
 
-  protected monthlyRevenueComparison(
+  public monthlyRevenueComparison(
     comparison: NonNullable<MonthlySummaryV2['comparisons']['same_day_window']>,
   ): string {
     return this.revenueDeltaLabel(
@@ -2469,14 +2449,14 @@ export class App implements OnDestroy {
     );
   }
 
-  protected closedMonthRevenueComparison(summary: MonthlySummaryV2): string {
+  public closedMonthRevenueComparison(summary: MonthlySummaryV2): string {
     return this.revenueDeltaLabel(
       summary.comparisons.closed_months.selected.metrics.revenue_collected,
       summary.comparisons.closed_months.previous.metrics.revenue_collected,
     );
   }
 
-  protected dailyRevenueWidth(summary: MonthlySummaryV2, amount: number): number {
+  public dailyRevenueWidth(summary: MonthlySummaryV2, amount: number): number {
     const maximum = Math.max(
       ...summary.period_metrics.daily_revenue.map((item) => item.amount),
       0,
@@ -2492,16 +2472,16 @@ export class App implements OnDestroy {
     return `${this.formatMoney(current)} · ${change >= 0 ? '+' : ''}${this.formatPercent(change)}`;
   }
 
-  protected openInboxCaptchaReview(): void {
+  public openInboxCaptchaReview(): void {
     this.showCaptchaWorkspace('review');
     void this.router.navigate(['/captchas'], { queryParams: { mode: 'review' } });
   }
 
-  protected openInboxOrder(orderId: string): void {
+  public openInboxOrder(orderId: string): void {
     void this.router.navigate(['/ordenes', orderId]);
   }
 
-  protected async runInboxOrderTask(task: InboxOrderTask): Promise<void> {
+  public async runInboxOrderTask(task: InboxOrderTask): Promise<void> {
     if (task.action === 'view_order') {
       this.openInboxOrder(task.orderId);
       return;
@@ -2555,11 +2535,11 @@ export class App implements OnDestroy {
     }
   }
 
-  protected openOrderFromSummary(orderId: string): void {
+  public openOrderFromSummary(orderId: string): void {
     void this.router.navigate(['/ordenes', orderId]);
   }
 
-  protected openPaymentFromSummary(orderId: string): void {
+  public openPaymentFromSummary(orderId: string): void {
     const order = this.orders().find((item) => item.order_id === orderId);
     if (!order) {
       this.openOrderFromSummary(orderId);
@@ -2569,7 +2549,7 @@ export class App implements OnDestroy {
     void this.openPayment(order);
   }
 
-  protected selectOrder(orderId: string, loadDetail = true, updateRoute = true): void {
+  public selectOrder(orderId: string, loadDetail = true, updateRoute = true): void {
     if (!this.orderPanelOpen()) {
       this.captureFocus();
     }
@@ -2589,7 +2569,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected closeOrderPanel(updateRoute = true): void {
+  public closeOrderPanel(updateRoute = true): void {
     if (this.activeModal() || this.actionBusy()) {
       return;
     }
@@ -2602,7 +2582,7 @@ export class App implements OnDestroy {
     this.restoreFocus();
   }
 
-  protected async selectRun(runId: string, updateRoute = true): Promise<void> {
+  public async selectRun(runId: string, updateRoute = true): Promise<void> {
     this.selectedRunId.set(runId);
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
@@ -2626,7 +2606,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected closeRunDetail(updateRoute = true): void {
+  public closeRunDetail(updateRoute = true): void {
     this.selectedRunId.set('');
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
@@ -2636,7 +2616,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected runResultLabel(run: RunSummary): string {
+  public runResultLabel(run: RunSummary): string {
     if (run.reservation_confirmed) {
       return 'Reserva confirmada';
     }
@@ -2646,14 +2626,14 @@ export class App implements OnDestroy {
     return 'Sin intento de reserva';
   }
 
-  protected runEvidencePaths(run: RunDetail): string[] {
+  public runEvidencePaths(run: RunDetail): string[] {
     if (run.screenshot_paths?.length) {
       return run.screenshot_paths;
     }
     return run.screenshot_path ? [run.screenshot_path] : [];
   }
 
-  protected async openEditOrder(
+  public async openEditOrder(
     order: ServiceOrder,
     section: 'all' | 'contact' | 'credentials' | 'restrictions' = 'all',
   ): Promise<void> {
@@ -2663,7 +2643,7 @@ export class App implements OnDestroy {
     await this.loadSelectedOrderDetail(order.order_id);
   }
 
-  protected async openPayment(order: ServiceOrder): Promise<void> {
+  public async openPayment(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id, false);
     this.paymentAmountAgreed.set(order.amount_agreed ?? '50.00');
     this.paymentAmountPaid.set(order.amount_agreed ?? '50.00');
@@ -2676,25 +2656,25 @@ export class App implements OnDestroy {
     }
   }
 
-  protected setQuickPaymentAmount(amount: string): void {
+  public setQuickPaymentAmount(amount: string): void {
     this.editField(this.paymentAmountPaid, amount);
   }
 
-  protected showPendingPayments(): void {
+  public showPendingPayments(): void {
     this.setOrderQuickFilter('payment_pending');
     void this.router.navigateByUrl('/ordenes');
   }
 
-  protected openOrderActions(order: ServiceOrder): void {
+  public openOrderActions(order: ServiceOrder): void {
     this.selectOrder(order.order_id);
     this.openModal('order-actions');
   }
 
-  protected openCreateOrder(): void {
+  public openCreateOrder(): void {
     this.openModal('create-order');
   }
 
-  protected openWhatsAppTest(): void {
+  public openWhatsAppTest(): void {
     this.whatsappPackage.set(null);
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestRecipient.set('');
@@ -2707,7 +2687,7 @@ export class App implements OnDestroy {
     this.openModal('whatsapp');
   }
 
-  protected openWhatsAppEvidenceTest(): void {
+  public openWhatsAppEvidenceTest(): void {
     this.whatsappPackage.set(null);
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestRecipient.set('');
@@ -2720,7 +2700,7 @@ export class App implements OnDestroy {
     this.openModal('whatsapp');
   }
 
-  protected async validateWhatsAppSession(): Promise<boolean> {
+  public async validateWhatsAppSession(): Promise<boolean> {
     if (this.whatsappSessionBusy()) {
       return false;
     }
@@ -2785,7 +2765,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async prepareWhatsAppTest(): Promise<void> {
+  public async prepareWhatsAppTest(): Promise<void> {
     const recipient = this.whatsappTestRecipient().trim();
     if (!recipient) {
       this.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
@@ -2804,7 +2784,7 @@ export class App implements OnDestroy {
     this.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
 
-  protected async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
+  public async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
     this.whatsappPackage.set(null);
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestMode.set(false);
@@ -2837,7 +2817,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async openPostPaymentWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
+  public async openPostPaymentWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
     this.whatsappPackage.set(null);
     this.whatsappFollowUpPackage.set(null);
     this.whatsappTestMode.set(false);
@@ -2869,7 +2849,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async openWhatsAppReview(order: ServiceOrder): Promise<void> {
+  public async openWhatsAppReview(order: ServiceOrder): Promise<void> {
     const isFollowUp =
       this.isPostPaymentWhatsAppCandidate(order) &&
       ['failed', 'uncertain'].includes(order.whatsapp_followup_action_state);
@@ -2899,7 +2879,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async resolveWhatsAppReview(resolution: WhatsAppReviewResolution): Promise<void> {
+  public async resolveWhatsAppReview(resolution: WhatsAppReviewResolution): Promise<void> {
     const review = this.whatsappReview();
     if (!review || this.actionBusy()) {
       return;
@@ -2950,7 +2930,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected canPrepareOrderWhatsApp(order: ServiceOrder): boolean {
+  public canPrepareOrderWhatsApp(order: ServiceOrder): boolean {
     const baseEligible =
       order.status === 'reserved_payment_pending' &&
       order.reservation_status === 'confirmed' &&
@@ -2970,7 +2950,7 @@ export class App implements OnDestroy {
     return this.hasWhatsAppRecipient(detail);
   }
 
-  protected whatsappPreparationHint(order: ServiceOrder): string {
+  public whatsappPreparationHint(order: ServiceOrder): string {
     if (order.whatsapp_message_action_state === 'resolved') {
       return 'El resultado fue conciliado y cerrado por el operador.';
     }
@@ -2995,7 +2975,7 @@ export class App implements OnDestroy {
       : 'Listo para preparar saludo, constancia y cobro.';
   }
 
-  protected canPreparePostPaymentWhatsApp(order: ServiceOrder): boolean {
+  public canPreparePostPaymentWhatsApp(order: ServiceOrder): boolean {
     if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return false;
     }
@@ -3009,7 +2989,7 @@ export class App implements OnDestroy {
     return this.hasWhatsAppRecipient(detail);
   }
 
-  protected postPaymentWhatsAppHint(order: ServiceOrder): string {
+  public postPaymentWhatsAppHint(order: ServiceOrder): string {
     if (!this.isPostPaymentWhatsAppCandidate(order)) {
       return 'Requiere reserva confirmada y pago ya registrado.';
     }
@@ -3028,7 +3008,7 @@ export class App implements OnDestroy {
       : 'Listo para preparar indicaciones post-pago y PDFs.';
   }
 
-  protected isPostPaymentWhatsAppCandidate(order: ServiceOrder): boolean {
+  public isPostPaymentWhatsAppCandidate(order: ServiceOrder): boolean {
     return (
       order.status === 'paid' &&
       order.reservation_status === 'confirmed' &&
@@ -3041,7 +3021,7 @@ export class App implements OnDestroy {
       || /^@\S{1,99}$/.test(detail.contact_whatsapp_username ?? '');
   }
 
-  protected async copyWhatsAppText(text: string, label: string): Promise<void> {
+  public async copyWhatsAppText(text: string, label: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
       this.markCopied(label);
@@ -3051,7 +3031,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async copyWhatsAppAttachment(): Promise<void> {
+  public async copyWhatsAppAttachment(): Promise<void> {
     const message = this.whatsappPackage();
     if (!message) {
       return;
@@ -3069,7 +3049,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async prepareWhatsAppWebDraft(
+  public async prepareWhatsAppWebDraft(
     preparedMessage?: WhatsAppMessagePackage,
     autoSend = false,
   ): Promise<void> {
@@ -3117,7 +3097,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async confirmAndSendWhatsAppEvidence(): Promise<void> {
+  public async confirmAndSendWhatsAppEvidence(): Promise<void> {
     const message = this.whatsappPackage();
     if (!message || message.status === 'sent' || this.whatsappWebBusy()) {
       return;
@@ -3140,7 +3120,7 @@ export class App implements OnDestroy {
     await this.prepareWhatsAppWebDraft(message, true);
   }
 
-  protected async prepareWhatsAppFollowUpWebDraft(
+  public async prepareWhatsAppFollowUpWebDraft(
     preparedMessage?: WhatsAppFollowUpPackage,
   ): Promise<WhatsAppWebDraftResponse | null> {
     const message = preparedMessage ?? this.whatsappFollowUpPackage();
@@ -3181,7 +3161,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async confirmAndSendWhatsAppFollowUp(): Promise<void> {
+  public async confirmAndSendWhatsAppFollowUp(): Promise<void> {
     const message = this.whatsappFollowUpPackage();
     if (!message || message.status === 'sent' || this.whatsappWebBusy()) {
       return;
@@ -3208,7 +3188,7 @@ export class App implements OnDestroy {
     await this.prepareWhatsAppFollowUpWebDraft(message);
   }
 
-  protected async confirmWhatsAppSent(): Promise<void> {
+  public async confirmWhatsAppSent(): Promise<void> {
     const message = this.whatsappPackage();
     if (!message || message.status === 'sent') {
       return;
@@ -3241,7 +3221,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async confirmWhatsAppFollowUpSent(): Promise<void> {
+  public async confirmWhatsAppFollowUpSent(): Promise<void> {
     const message = this.whatsappFollowUpPackage();
     if (!message || message.status === 'sent') {
       return;
@@ -3274,16 +3254,16 @@ export class App implements OnDestroy {
     }
   }
 
-  protected openWorkerRestart(): void {
+  public openWorkerRestart(): void {
     this.releaseSafeBackoffsOnRestart.set(false);
     this.openModal('worker-restart');
   }
 
-  protected opportunityMode(target: OpportunityControlTarget) {
+  public opportunityMode(target: OpportunityControlTarget) {
     return this.opportunityControl()?.[target] ?? null;
   }
 
-  protected opportunityModeLabel(mode: string | null | undefined): string {
+  public opportunityModeLabel(mode: string | null | undefined): string {
     const normalized = normalizeDashboardText(mode);
     if (normalized === 'enabled' || normalized === 'active') {
       return 'Activo';
@@ -3306,7 +3286,7 @@ export class App implements OnDestroy {
     return mode ? mode.replaceAll('_', ' ') : 'Sin confirmar';
   }
 
-  protected opportunityReasonLabel(reason: string | null | undefined): string {
+  public opportunityReasonLabel(reason: string | null | undefined): string {
     if (!reason) {
       return 'Sin motivo informado';
     }
@@ -3324,7 +3304,7 @@ export class App implements OnDestroy {
     return reason.replaceAll('_', ' ');
   }
 
-  protected opportunityModeTone(mode: string | null | undefined): StatusTone {
+  public opportunityModeTone(mode: string | null | undefined): StatusTone {
     const normalized = normalizeDashboardText(mode);
     if (normalized === 'enabled' || normalized === 'active') {
       return 'good';
@@ -3338,11 +3318,11 @@ export class App implements OnDestroy {
     return 'bad';
   }
 
-  protected opportunityBreakerOpen(): boolean {
+  public opportunityBreakerOpen(): boolean {
     return normalizeDashboardText(this.opportunityControl()?.breaker.state) === 'open';
   }
 
-  protected opportunityControlLabel(): string {
+  public opportunityControlLabel(): string {
     const control = this.opportunityControl();
     if (!control) {
       return 'Estado sin confirmar';
@@ -3368,7 +3348,7 @@ export class App implements OnDestroy {
     return 'Configuración parcial';
   }
 
-  protected opportunityControlTone(): StatusTone {
+  public opportunityControlTone(): StatusTone {
     if (!this.opportunityControl()) {
       return 'bad';
     }
@@ -3386,7 +3366,7 @@ export class App implements OnDestroy {
         : 'neutral';
   }
 
-  protected opportunityActionLabel(target: OpportunityControlTarget): string {
+  public opportunityActionLabel(target: OpportunityControlTarget): string {
     const mode = normalizeDashboardText(this.opportunityMode(target)?.effective_mode);
     if (mode === 'disabled' || mode === 'inactive') {
       return 'Activar';
@@ -3394,7 +3374,7 @@ export class App implements OnDestroy {
     return this.shouldDrainOpportunity(target) ? 'Drenar' : 'Desactivar';
   }
 
-  protected opportunityActionDisabled(target: OpportunityControlTarget): boolean {
+  public opportunityActionDisabled(target: OpportunityControlTarget): boolean {
     const control = this.opportunityControl();
     if (!control || this.actionBusy() || control.pending_application) {
       return true;
@@ -3405,7 +3385,7 @@ export class App implements OnDestroy {
     return activates && this.opportunityBreakerOpen();
   }
 
-  protected requestOpportunityContextAction(target: OpportunityControlTarget): void {
+  public requestOpportunityContextAction(target: OpportunityControlTarget): void {
     const mode = normalizeDashboardText(this.opportunityMode(target)?.effective_mode);
     const action: OpportunityControlAction =
       mode === 'disabled' || mode === 'inactive'
@@ -3416,7 +3396,7 @@ export class App implements OnDestroy {
     this.requestOpportunityAction(target, action);
   }
 
-  protected requestResetOpportunityBreaker(): void {
+  public requestResetOpportunityBreaker(): void {
     this.requestOpportunityAction('obs006', 'reset_breaker');
   }
 
@@ -3484,7 +3464,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected closeModal(): void {
+  public closeModal(): void {
     if (this.actionBusy()) {
       return;
     }
@@ -3511,7 +3491,7 @@ export class App implements OnDestroy {
     this.restoreFocus();
   }
 
-  protected runNextOrderAction(): void {
+  public runNextOrderAction(): void {
     const order = this.selectedOrder();
     const action = this.orderNextAction();
     if (!order || action.disabled) {
@@ -3530,7 +3510,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected rowPrimaryActionLabel(order: ServiceOrder): string {
+  public rowPrimaryActionLabel(order: ServiceOrder): string {
     if (order.payment_status === 'pending') {
       return 'Registrar pago';
     }
@@ -3558,7 +3538,7 @@ export class App implements OnDestroy {
     return 'Ver detalle';
   }
 
-  protected runRowPrimaryAction(order: ServiceOrder): void {
+  public runRowPrimaryAction(order: ServiceOrder): void {
     if (order.payment_status === 'pending') {
       void this.openPayment(order);
       return;
@@ -3585,12 +3565,12 @@ export class App implements OnDestroy {
     }
   }
 
-  protected setQuickPriority(priority: number): void {
+  public setQuickPriority(priority: number): void {
     this.orderPriority.set(priority);
     this.requestPriorityUpdate();
   }
 
-  protected priorityExplanation(order: ServiceOrder): string {
+  public priorityExplanation(order: ServiceOrder): string {
     if (order.priority >= 200) {
       return 'Enfoque exclusivo: el worker revisa unicamente esta orden.';
     }
@@ -3600,22 +3580,22 @@ export class App implements OnDestroy {
     return 'Cola normal: mayor numero primero; empate por orden de creacion.';
   }
 
-  protected isClosedOrder(order: ServiceOrder): boolean {
+  public isClosedOrder(order: ServiceOrder): boolean {
     return ['archived', 'paid'].includes(order.status) || !!order.closed_at;
   }
 
-  protected editField<T>(field: WritableSignal<T>, value: T): void {
+  public editField<T>(field: WritableSignal<T>, value: T): void {
     field.set(value);
     this.formDirty.set(true);
   }
 
-  protected setOrderQuickFilter(filter: OrderQuickFilter): void {
+  public setOrderQuickFilter(filter: OrderQuickFilter): void {
     this.orderQuickFilter.set(filter);
     this.resetOrderPage();
     this.persistOrderViewState();
   }
 
-  protected setOrderFilter(value: string): void {
+  public setOrderFilter(value: string): void {
     this.orderFilter.set(value);
     this.resetOrderPage();
     this.persistOrderViewState();
@@ -3626,7 +3606,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected setOrderSort(key: OrderSortKey): void {
+  public setOrderSort(key: OrderSortKey): void {
     if (this.orderSortKey() === key) {
       this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -3637,7 +3617,7 @@ export class App implements OnDestroy {
     this.persistOrderViewState();
   }
 
-  protected chooseOrderSort(key: OrderSortKey): void {
+  public chooseOrderSort(key: OrderSortKey): void {
     if (this.orderSortKey() === key) {
       return;
     }
@@ -3647,13 +3627,13 @@ export class App implements OnDestroy {
     this.persistOrderViewState();
   }
 
-  protected toggleOrderSortDirection(): void {
+  public toggleOrderSortDirection(): void {
     this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
     this.resetOrderPage();
     this.persistOrderViewState();
   }
 
-  protected changeOrderPageSize(value: number | string): void {
+  public changeOrderPageSize(value: number | string): void {
     const pageSize = Number(value);
     if (!ORDER_PAGE_SIZES.includes(pageSize as (typeof ORDER_PAGE_SIZES)[number])) {
       return;
@@ -3663,7 +3643,7 @@ export class App implements OnDestroy {
     this.persistOrderViewState();
   }
 
-  protected goToOrderPage(page: number): void {
+  public goToOrderPage(page: number): void {
     if (page < 1 || page > this.orderTotalPages() || page === this.currentOrderPage()) {
       return;
     }
@@ -3674,21 +3654,21 @@ export class App implements OnDestroy {
     });
   }
 
-  protected sortIndicator(key: OrderSortKey): string {
+  public sortIndicator(key: OrderSortKey): string {
     if (this.orderSortKey() !== key) {
       return '';
     }
     return this.orderSortDirection() === 'asc' ? 'ASC' : 'DESC';
   }
 
-  protected orderAriaSort(key: OrderSortKey): 'ascending' | 'descending' | null {
+  public orderAriaSort(key: OrderSortKey): 'ascending' | 'descending' | null {
     if (this.orderSortKey() !== key) {
       return null;
     }
     return this.orderSortDirection() === 'asc' ? 'ascending' : 'descending';
   }
 
-  protected requestContactUpdate(): void {
+  public requestContactUpdate(): void {
     if (this.orderDetailLoading()) {
       this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
       return;
@@ -3718,15 +3698,15 @@ export class App implements OnDestroy {
     });
   }
 
-  protected needsCredentialCorrection(order: ServiceOrder): boolean {
-    return order.preflight_details?.['error_type'] === 'invalid_credentials';
+  public needsCredentialCorrection(order: ServiceOrder): boolean {
+    return order.preflight_error_type === 'invalid_credentials';
   }
 
-  protected toggleOrderPasswordVisibility(): void {
+  public toggleOrderPasswordVisibility(): void {
     this.orderPasswordVisible.update((visible) => !visible);
   }
 
-  protected requestCredentialsUpdate(): void {
+  public requestCredentialsUpdate(): void {
     if (this.orderDetailLoading()) {
       this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
       return;
@@ -3766,7 +3746,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestPriorityUpdate(): void {
+  public requestPriorityUpdate(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -3800,7 +3780,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestReservationRestrictionsUpdate(): void {
+  public requestReservationRestrictionsUpdate(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -3834,7 +3814,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected addOrderExcludedDateRange(): void {
+  public addOrderExcludedDateRange(): void {
     const ranges = this.prepareExcludedDateRanges(
       this.orderExcludedDateRanges(),
       this.orderExcludedDateStart(),
@@ -3849,19 +3829,19 @@ export class App implements OnDestroy {
     this.formDirty.set(true);
   }
 
-  protected removeOrderExcludedDateRange(index: number): void {
+  public removeOrderExcludedDateRange(index: number): void {
     this.orderExcludedDateRanges.update((ranges) =>
       ranges.filter((_, rangeIndex) => rangeIndex !== index),
     );
     this.formDirty.set(true);
   }
 
-  protected clearOrderExcludedDateRanges(): void {
+  public clearOrderExcludedDateRanges(): void {
     this.orderExcludedDateRanges.set([]);
     this.formDirty.set(true);
   }
 
-  protected addNewExcludedDateRange(): void {
+  public addNewExcludedDateRange(): void {
     const ranges = this.prepareExcludedDateRanges(
       this.newExcludedDateRanges(),
       this.newExcludedDateStart(),
@@ -3876,19 +3856,19 @@ export class App implements OnDestroy {
     this.formDirty.set(true);
   }
 
-  protected removeNewExcludedDateRange(index: number): void {
+  public removeNewExcludedDateRange(index: number): void {
     this.newExcludedDateRanges.update((ranges) =>
       ranges.filter((_, rangeIndex) => rangeIndex !== index),
     );
     this.formDirty.set(true);
   }
 
-  protected clearNewExcludedDateRanges(): void {
+  public clearNewExcludedDateRanges(): void {
     this.newExcludedDateRanges.set([]);
     this.formDirty.set(true);
   }
 
-  protected requestOrderAction(
+  public requestOrderAction(
     action: 'pause' | 'activate' | 'no-charge' | 'done',
     title: string,
   ): void {
@@ -3908,7 +3888,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestOrderValidation(order: ServiceOrder): void {
+  public requestOrderValidation(order: ServiceOrder): void {
     this.setPendingAction({
       title: 'Validar acceso',
       message: `Ingresar al portal y validar identidad y programas de ${order.order_id}.`,
@@ -3917,7 +3897,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected preflightLabel(order: ServiceOrder): string {
+  public preflightLabel(order: ServiceOrder): string {
     const labels: Record<ServiceOrder['preflight_status'], string> = {
       not_required: 'Sin validación previa',
       pending: 'Validación pendiente',
@@ -3928,7 +3908,7 @@ export class App implements OnDestroy {
     return labels[order.preflight_status] ?? order.preflight_status;
   }
 
-  protected requestCloseOrder(): void {
+  public requestCloseOrder(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -3945,7 +3925,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected setClosureReason(value: string): void {
+  public setClosureReason(value: string): void {
     const allowed: ClosureReason[] = [
       'completed_by_us',
       'family_no_charge',
@@ -3961,7 +3941,7 @@ export class App implements OnDestroy {
     this.editField(this.closureReason, reason);
   }
 
-  protected requestMarkPaid(): void {
+  public requestMarkPaid(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -3999,7 +3979,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async copySelectedOrderWhatsapp(): Promise<void> {
+  public async copySelectedOrderWhatsapp(): Promise<void> {
     const recipient = this.selectedOrderDetail()?.contact_whatsapp
       ?? this.selectedOrderDetail()?.contact_whatsapp_username;
     if (!recipient) {
@@ -4009,14 +3989,14 @@ export class App implements OnDestroy {
     this.markCopied('whatsapp-number');
   }
 
-  protected openSelectedOrderWhatsapp(): void {
+  public openSelectedOrderWhatsapp(): void {
     const digits = this.selectedOrderDetail()?.contact_whatsapp?.replace(/\D/g, '');
     if (digits) {
       window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
     }
   }
 
-  protected requestCreateOrder(): void {
+  public requestCreateOrder(): void {
     const excludedDateRanges = this.prepareExcludedDateRanges(
       this.newExcludedDateRanges(),
       this.newExcludedDateStart(),
@@ -4112,7 +4092,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestRestartWorker(): void {
+  public requestRestartWorker(): void {
     const releaseSafeBackoffs = this.releaseSafeBackoffsOnRestart();
     this.setPendingAction({
       title: releaseSafeBackoffs ? 'Reiniciar y reintentar' : 'Reiniciar worker',
@@ -4132,7 +4112,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected setCaptchaSamplingEnabled(enabled: boolean): void {
+  public setCaptchaSamplingEnabled(enabled: boolean): void {
     if (this.captchaSamplingEnabled() === enabled) {
       return;
     }
@@ -4140,7 +4120,7 @@ export class App implements OnDestroy {
     this.captchaSamplingDirty.set(true);
   }
 
-  protected setCaptchaSamplingLimit(value: number | string): void {
+  public setCaptchaSamplingLimit(value: number | string): void {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) {
       return;
@@ -4153,7 +4133,7 @@ export class App implements OnDestroy {
     this.captchaSamplingDirty.set(true);
   }
 
-  protected async saveCaptchaSamplingControl(): Promise<void> {
+  public async saveCaptchaSamplingControl(): Promise<void> {
     if (this.captchaSamplingSaving()) {
       return;
     }
@@ -4186,7 +4166,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected requestCaptchaAuthorityFallback(): void {
+  public requestCaptchaAuthorityFallback(): void {
     this.setPendingAction({
       title: 'Usar 2Captcha como autoridad',
       message:
@@ -4201,7 +4181,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestCaptchaAuthorityCanary(): void {
+  public requestCaptchaAuthorityCanary(): void {
     const resetCircuit = this.captchaAuthorityControl()?.circuit_state === 'open';
     this.setPendingAction({
       title: resetCircuit ? 'Reactivar canario V6' : 'Activar canario V6',
@@ -4218,7 +4198,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestManualSession(): void {
+  public requestManualSession(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -4240,7 +4220,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected requestDiagnosticSession(): void {
+  public requestDiagnosticSession(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -4260,7 +4240,7 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async openManualSessionNow(
+  public async openManualSessionNow(
     order: ServiceOrder,
     mode: ManualSessionMode = this.manualSessionMode(order),
   ): Promise<void> {
@@ -4289,7 +4269,7 @@ export class App implements OnDestroy {
     }
   }
 
-  protected async closeManualSession(session: ManualSession): Promise<void> {
+  public async closeManualSession(session: ManualSession): Promise<void> {
     if (this.isManualSessionClosing(session.session_id) || session.close_requested) {
       return;
     }
@@ -4317,21 +4297,23 @@ export class App implements OnDestroy {
     }
   }
 
-  protected isManualSessionClosing(sessionId: string): boolean {
+  public isManualSessionClosing(sessionId: string): boolean {
     return this.closingManualSessionIds().has(sessionId);
   }
 
-  protected setPostAppointmentFilter(filter: PostAppointmentFilter): void {
+  public setPostAppointmentFilter(filter: PostAppointmentFilter): void {
     this.postAppointmentFilter.set(filter);
     this.postAppointmentPage.set(1);
+    this.schedulePostAppointmentReload();
   }
 
-  protected setPostAppointmentSearch(value: string): void {
+  public setPostAppointmentSearch(value: string): void {
     this.postAppointmentSearch.set(value);
     this.postAppointmentPage.set(1);
+    this.schedulePostAppointmentReload(275);
   }
 
-  protected choosePostAppointmentSort(key: PostAppointmentSortKey): void {
+  public choosePostAppointmentSort(key: PostAppointmentSortKey): void {
     if (this.postAppointmentSortKey() === key) {
       return;
     }
@@ -4340,16 +4322,18 @@ export class App implements OnDestroy {
       key === 'priority' || key === 'applicant' ? 'asc' : 'desc',
     );
     this.postAppointmentPage.set(1);
+    this.schedulePostAppointmentReload();
   }
 
-  protected togglePostAppointmentSortDirection(): void {
+  public togglePostAppointmentSortDirection(): void {
     this.postAppointmentSortDirection.set(
       this.postAppointmentSortDirection() === 'asc' ? 'desc' : 'asc',
     );
     this.postAppointmentPage.set(1);
+    this.schedulePostAppointmentReload();
   }
 
-  protected changePostAppointmentPageSize(value: number | string): void {
+  public changePostAppointmentPageSize(value: number | string): void {
     const pageSize = Number(value);
     if (
       !POST_APPOINTMENT_PAGE_SIZES.includes(
@@ -4360,9 +4344,10 @@ export class App implements OnDestroy {
     }
     this.postAppointmentPageSize.set(pageSize);
     this.postAppointmentPage.set(1);
+    this.schedulePostAppointmentReload();
   }
 
-  protected goToPostAppointmentPage(page: number): void {
+  public goToPostAppointmentPage(page: number): void {
     if (
       page < 1 ||
       page > this.postAppointmentTotalPages() ||
@@ -4371,20 +4356,21 @@ export class App implements OnDestroy {
       return;
     }
     this.postAppointmentPage.set(page);
+    this.schedulePostAppointmentReload();
     window.requestAnimationFrame(() => {
       document.querySelector('.followups-controls')?.scrollIntoView({ behavior: 'smooth' });
     });
   }
 
-  protected postAppointmentItemNumber(index: number): number {
+  public postAppointmentItemNumber(index: number): number {
     return this.postAppointmentPageStart() + index;
   }
 
-  protected postAppointmentItemLabel(index: number): string {
+  public postAppointmentItemLabel(index: number): string {
     return String(this.postAppointmentItemNumber(index)).padStart(3, '0');
   }
 
-  protected async reviewPostAppointment(item: PostAppointmentFollowup): Promise<void> {
+  public async reviewPostAppointment(item: PostAppointmentFollowup): Promise<void> {
     if (item.outcome === 'access_lost' || this.isPostAppointmentReviewing(item.order_id)) {
       return;
     }
@@ -4396,7 +4382,12 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     try {
       await this.api.reviewPostAppointment(item.order_id);
-      this.postAppointmentPayload.set(await this.api.getPostAppointmentFollowups());
+      let payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
+      if (payload.items.length === 0 && this.postAppointmentPage() > 1) {
+        this.postAppointmentPage.update((page) => page - 1);
+        payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
+      }
+      this.setPostAppointmentPayload(payload);
       this.lastUpdatedAt.set(this.formatClock(new Date()));
       this.showToast('Seguimiento post-cita actualizado');
     } catch (error) {
@@ -4410,11 +4401,11 @@ export class App implements OnDestroy {
     }
   }
 
-  protected isPostAppointmentReviewing(orderId: string): boolean {
+  public isPostAppointmentReviewing(orderId: string): boolean {
     return this.reviewingPostAppointmentOrderIds().has(orderId);
   }
 
-  protected postAppointmentOutcomeDetail(item: PostAppointmentFollowup): string {
+  public postAppointmentOutcomeDetail(item: PostAppointmentFollowup): string {
     const details: Record<string, string> = {
       upcoming: 'La cita todavía no ocurre; puede revisarse más adelante.',
       awaiting_update: 'La fecha pasó, pero el portal aún no muestra avance posterior.',
@@ -4430,7 +4421,7 @@ export class App implements OnDestroy {
     return details[item.outcome] ?? 'Estado pendiente de interpretación.';
   }
 
-  protected postAppointmentStageTone(
+  public postAppointmentStageTone(
     item: PostAppointmentFollowup,
     stage: { stage_date: string | null; status_text: string | null; message_class: string },
   ): string {
@@ -4456,7 +4447,7 @@ export class App implements OnDestroy {
     return 'followup-stage--neutral';
   }
 
-  protected postAppointmentMessageTone(
+  public postAppointmentMessageTone(
     item: PostAppointmentFollowup,
     messageClass: string,
   ): string {
@@ -4465,7 +4456,7 @@ export class App implements OnDestroy {
       : 'stage-ok';
   }
 
-  protected requestSplitPrograms(): void {
+  public requestSplitPrograms(): void {
     const order = this.requireSelectedOrder();
     if (!order) {
       return;
@@ -4479,17 +4470,19 @@ export class App implements OnDestroy {
     });
   }
 
-  protected async copyDashboardSnapshot(): Promise<void> {
+  public async copyDashboardSnapshot(): Promise<void> {
     try {
       const workerCommands = await this.api.getWorkerCommands();
       this.workerCommands.set(workerCommands);
       const snapshot = {
-        health: this.health(),
-        worker: this.sanitizeWorker(this.worker()),
-        current_order: this.currentOrder(),
-        service_orders: this.filteredOrders().map((order) => this.sanitizeOrder(order)),
-        runs: this.filteredRuns().map((run) => this.sanitizeRun(run)),
-        worker_commands: workerCommands.map((command) => this.sanitizeWorkerCommand(command)),
+        snapshot_version: 1,
+        generated_at: new Date().toISOString(),
+        health: this.snapshotHealth(this.health()),
+        worker: this.snapshotWorker(this.worker()),
+        current_order: this.snapshotOrder(this.currentOrder()),
+        service_orders: this.filteredOrders().map((order) => this.snapshotOrder(order)),
+        runs: this.filteredRuns().map((run) => this.snapshotRun(run)),
+        worker_commands: workerCommands.map((command) => this.snapshotWorkerCommand(command)),
       };
       await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2));
       this.markCopied('snapshot');
@@ -4498,21 +4491,21 @@ export class App implements OnDestroy {
     }
   }
 
-  protected phaseLabel(phase: string | null | undefined): string {
+  public phaseLabel(phase: string | null | undefined): string {
     if (!phase) {
       return 'sin fase';
     }
     return phase.replaceAll('_', ' ');
   }
 
-  protected generalObserverActive(): boolean {
+  public generalObserverActive(): boolean {
     const worker = this.worker();
     return Boolean(
       worker && !worker.current_order_id && worker.phase?.startsWith('monitoring_observer'),
     );
   }
 
-  protected currentWorkLabel(): string {
+  public currentWorkLabel(): string {
     if (this.worker()?.current_order_id) {
       return this.worker()!.current_order_id!;
     }
@@ -4522,21 +4515,21 @@ export class App implements OnDestroy {
     return 'Sin orden activa';
   }
 
-  protected orderLabel(order: ServiceOrder | null): string {
+  public orderLabel(order: ServiceOrder | null): string {
     if (!order) {
       return 'Sin orden seleccionada';
     }
     return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
   }
 
-  protected paymentLabel(order: ServiceOrder): string {
+  public paymentLabel(order: ServiceOrder): string {
     if (!order.charge_required) {
       return 'Sin cobro';
     }
     return this.statusLabel(order.payment_status, 'Sin pago');
   }
 
-  protected paymentAmountLabel(order: ServiceOrder): string {
+  public paymentAmountLabel(order: ServiceOrder): string {
     if (!order.charge_required) {
       return '';
     }
@@ -4550,7 +4543,7 @@ export class App implements OnDestroy {
     return order.amount_paid ?? order.amount_agreed ?? '';
   }
 
-  protected closureReasonLabel(reason: string | null | undefined): string {
+  public closureReasonLabel(reason: string | null | undefined): string {
     const labels: Record<ClosureReason, string> = {
       completed_by_us: 'Realizado por nosotros',
       family_no_charge: 'Familiar sin cobro',
@@ -4566,7 +4559,7 @@ export class App implements OnDestroy {
     return labels[reason as ClosureReason] ?? reason.replaceAll('_', ' ');
   }
 
-  protected closureDisplay(order: ServiceOrder): string {
+  public closureDisplay(order: ServiceOrder): string {
     if (order.closure_reason) {
       return this.closureReasonLabel(order.closure_reason);
     }
@@ -4579,7 +4572,7 @@ export class App implements OnDestroy {
     return 'abierto';
   }
 
-  protected manualSessionOrderLabel(session: ManualSession): string {
+  public manualSessionOrderLabel(session: ManualSession): string {
     const order = this.orders().find((item) => item.order_id === session.order_id);
     if (!order) {
       return session.order_id;
@@ -4587,22 +4580,22 @@ export class App implements OnDestroy {
     return `${session.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
   }
 
-  protected manualSessionMode(order: ServiceOrder): ManualSessionMode {
+  public manualSessionMode(order: ServiceOrder): ManualSessionMode {
     return order.status === 'ready' ? 'appointment' : 'portal';
   }
 
-  protected manualSessionActionLabel(order: ServiceOrder): string {
+  public manualSessionActionLabel(order: ServiceOrder): string {
     return this.manualSessionMode(order) === 'appointment' ? 'Sesión manual' : 'Abrir portal';
   }
 
-  protected manualSessionTypeLabel(session: ManualSession): string {
+  public manualSessionTypeLabel(session: ManualSession): string {
     if (session.mode === 'diagnostic') {
       return 'Diagnóstico protegido';
     }
     return session.mode === 'appointment' ? 'Operativa' : 'Consulta';
   }
 
-  protected hasActiveChildOrders(order: ServiceOrder): boolean {
+  public hasActiveChildOrders(order: ServiceOrder): boolean {
     return this.orders().some(
       (item) =>
         item.parent_order_id === order.order_id &&
@@ -4610,11 +4603,11 @@ export class App implements OnDestroy {
     );
   }
 
-  protected programChildCount(order: ServiceOrder): number {
+  public programChildCount(order: ServiceOrder): number {
     return this.orders().filter((item) => item.parent_order_id === order.order_id).length;
   }
 
-  protected orderStatusDisplay(order: ServiceOrder): string {
+  public orderStatusDisplay(order: ServiceOrder): string {
     const childCount = this.programChildCount(order);
     if (childCount) {
       return `Contenedor · ${childCount} trámite${childCount === 1 ? '' : 's'}`;
@@ -4622,7 +4615,7 @@ export class App implements OnDestroy {
     return this.statusLabel(order.status);
   }
 
-  protected statusLabel(
+  public statusLabel(
     value: string | boolean | null | undefined,
     fallback = 'Sin estado',
   ): string {
@@ -4638,7 +4631,7 @@ export class App implements OnDestroy {
     );
   }
 
-  protected statusTone(value: string | boolean | null | undefined): StatusTone {
+  public statusTone(value: string | boolean | null | undefined): StatusTone {
     if (typeof value === 'boolean') {
       return value ? 'good' : 'bad';
     }
@@ -4648,35 +4641,83 @@ export class App implements OnDestroy {
     return STATUS_PRESENTATIONS[value.trim().toLowerCase()]?.tone ?? 'neutral';
   }
 
-  private sanitizeWorker(worker: WorkerStatus | null): Partial<WorkerStatus> | null {
+  private snapshotHealth(health: HealthPayload | null): DashboardSnapshotHealth | null {
+    if (!health) {
+      return null;
+    }
+    return {
+      status: health.status,
+      worker_running: health.worker_running,
+      reason: health.reason,
+      captcha_shadow_enabled: health.captcha_shadow_enabled,
+    };
+  }
+
+  private snapshotWorker(worker: WorkerStatus | null): DashboardSnapshotWorker | null {
     if (!worker) {
       return null;
     }
-    const {
-      owner_token: _ownerToken,
-      lease_expires_at: _leaseExpiresAt,
-      availability_signature: _availabilitySignature,
-      ...publicWorker
-    } = worker;
-    return publicWorker;
+    return {
+      phase: worker.phase,
+      paused: worker.paused,
+      current_order_id: worker.current_order_id,
+      session_started_at: worker.session_started_at,
+      last_check_at: worker.last_check_at,
+      next_check_at: worker.next_check_at,
+      confirmed_reservations: worker.confirmed_reservations,
+      consecutive_errors: worker.consecutive_errors,
+      updated_at: worker.updated_at,
+      worker_running: worker.worker_running,
+      continuous_worker_enabled: worker.continuous_worker_enabled,
+    };
   }
 
-  private sanitizeOrder(order: ServiceOrder): ServiceOrder {
-    return { ...order };
+  private snapshotOrder(order: ServiceOrder | null): DashboardSnapshotOrder | null {
+    if (!order) {
+      return null;
+    }
+    return {
+      order_id: order.order_id,
+      priority: order.priority,
+      charge_required: order.charge_required,
+      service_type: order.service_type,
+      status: order.status,
+      reservation_status: order.reservation_status,
+      payment_status: order.payment_status,
+      whatsapp_message_action_state: order.whatsapp_message_action_state,
+      whatsapp_followup_action_state: order.whatsapp_followup_action_state,
+      parent_order_id: order.parent_order_id,
+      preflight_status: order.preflight_status,
+      registration_notice_status: order.registration_notice_status,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+    };
   }
 
-  private sanitizeRun(run: RunSummary): Partial<RunSummary> {
-    const {
-      details: _details,
-      screenshot_path: _screenshotPath,
-      screenshot_paths: _screenshotPaths,
-      ...publicRun
-    } = run;
-    return publicRun;
+  private snapshotRun(run: RunSummary): DashboardSnapshotRun {
+    return {
+      run_id: run.run_id,
+      order_id: run.order_id,
+      status: run.status,
+      exit_code: run.exit_code,
+      started_at: run.started_at,
+      finished_at: run.finished_at,
+      duration_seconds: run.duration_seconds,
+      reservation_attempted: run.reservation_attempted,
+      reservation_confirmed: run.reservation_confirmed,
+      screenshot_count: run.screenshot_count,
+    };
   }
 
-  private sanitizeWorkerCommand(command: WorkerCommand): WorkerCommand {
-    return { ...command };
+  private snapshotWorkerCommand(command: WorkerCommand): DashboardSnapshotWorkerCommand {
+    return {
+      command_id: command.command_id,
+      command: command.command,
+      status: command.status,
+      requested_at: command.requested_at,
+      claimed_at: command.claimed_at,
+      processed_at: command.processed_at,
+    };
   }
 
   private markCopied(label: string): void {
@@ -4889,42 +4930,76 @@ export class App implements OnDestroy {
     }
   }
 
+  private postAppointmentQuery(includeUpcoming: boolean): PostAppointmentQuery {
+    return {
+      filter: this.postAppointmentFilter(),
+      search: this.postAppointmentSearch().trim(),
+      sort: this.postAppointmentSortKey(),
+      direction: this.postAppointmentSortDirection(),
+      limit: this.postAppointmentPageSize(),
+      offset: (this.postAppointmentPage() - 1) * this.postAppointmentPageSize(),
+      include_upcoming: includeUpcoming,
+    };
+  }
+
+  private schedulePostAppointmentReload(delay = 0): void {
+    if (this.postAppointmentSearchTimer !== null) {
+      window.clearTimeout(this.postAppointmentSearchTimer);
+    }
+    this.postAppointmentSearchTimer = window.setTimeout(() => {
+      this.postAppointmentSearchTimer = null;
+      void this.reloadPostAppointmentFollowups();
+    }, delay);
+  }
+
+  private async reloadPostAppointmentFollowups(): Promise<void> {
+    if (this.activeView() !== 'followups') {
+      return;
+    }
+    this.postAppointmentRequestScope?.cancel();
+    const scope = new RequestScope();
+    this.postAppointmentRequestScope = scope;
+    try {
+      const payload = await this.api.getPostAppointmentFollowups(
+        this.postAppointmentQuery(false),
+        scope,
+      );
+      if (this.postAppointmentRequestScope === scope) {
+        this.setPostAppointmentPayload(payload);
+      }
+    } catch (error) {
+      if (!isRequestCancelled(error) && this.postAppointmentRequestScope === scope) {
+        this.errorMessage.set(this.readError(error));
+      }
+    } finally {
+      if (this.postAppointmentRequestScope === scope) {
+        this.postAppointmentRequestScope = null;
+      }
+    }
+  }
+
+  private setPostAppointmentPayload(payload: PostAppointmentPayload): void {
+    const current = this.postAppointmentPayload();
+    this.postAppointmentPayload.set({
+      ...payload,
+      upcoming: payload.upcoming ?? current?.upcoming ?? [],
+    });
+    const totalPages = Math.max(
+      1,
+      Math.ceil(payload.pagination.total / this.postAppointmentPageSize()),
+    );
+    if (this.postAppointmentPage() > totalPages) {
+      this.postAppointmentPage.set(totalPages);
+      this.schedulePostAppointmentReload();
+    }
+  }
+
   private keepValidSelection(orders: ServiceOrder[]): void {
     const selected = this.selectedOrderId();
     if (selected && orders.some((order) => order.order_id === selected)) {
       return;
     }
     this.selectedOrderId.set(orders[0]?.order_id ?? '');
-  }
-
-  private matchesPostAppointmentFilter(
-    item: PostAppointmentFollowup,
-    filter: PostAppointmentFilter,
-  ): boolean {
-    const expiredUpcoming =
-      item.outcome === 'upcoming' &&
-      (!item.appointment_date || item.appointment_date < INITIAL_DATE);
-    if (filter === 'active') {
-      return expiredUpcoming || !['upcoming', 'completed', 'access_lost'].includes(item.outcome);
-    }
-    if (filter === 'attention') {
-      return expiredUpcoming || [
-        'awaiting_update',
-        'observation_no_progress',
-        'portal_unavailable',
-        'review_required',
-      ].includes(item.outcome);
-    }
-    if (filter === 'observations') {
-      return ['observation_no_progress', 'observation_with_progress'].includes(item.outcome);
-    }
-    if (filter === 'access_lost') {
-      return item.outcome === 'access_lost';
-    }
-    if (filter === 'history') {
-      return ['completed', 'access_lost'].includes(item.outcome);
-    }
-    return ['in_progress', 'observation_with_progress'].includes(item.outcome);
   }
 
   private countOrders(filter: OrderQuickFilter): number {

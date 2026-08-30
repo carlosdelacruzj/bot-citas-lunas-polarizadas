@@ -826,10 +826,6 @@ td span {
   padding: 14px;
 }
 
-.create-block {
-  grid-column: 1 / -1;
-}
-
 .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1879,10 +1875,6 @@ td span {
 
   .captcha-focus-layout {
     grid-template-columns: 1fr;
-  }
-
-  .create-block {
-    grid-column: 1 / -1;
   }
 
   .order-task-grid {

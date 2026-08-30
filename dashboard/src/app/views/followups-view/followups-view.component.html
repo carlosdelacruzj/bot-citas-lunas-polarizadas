@@ -64,7 +64,7 @@
               </select>
             </label>
           </div>
-          <p class="followups-result-count" aria-live="polite">{{ reminderCandidates().length }} de {{ upcomingAppointments().length }} citas</p>
+          <p class="followups-result-count" aria-live="polite">{{ filteredReminderCandidates().length }} de {{ upcomingAppointments().length }} citas</p>
         </section>
 
         <section class="panel reminder-status-strip" aria-label="Estado de recordatorios">
@@ -88,7 +88,7 @@
           <article class="followup-metric--good"><span>Enviados</span><strong>{{ reminders.job_counts['sent'] ?? 0 }}</strong></article>
         </section>
 
-        @if (reminderCandidates().length === 0) {
+        @if (filteredReminderCandidates().length === 0) {
           <app-view-state state="empty" title="No encontramos citas con estos filtros" message="Prueba otra búsqueda o elige Todas para volver a ver la agenda." />
         } @else {
           <section class="upcoming-list" aria-label="Próximas citas">
@@ -120,6 +120,26 @@
               </article>
             }
           </section>
+
+          <div class="order-table-footer">
+            <span aria-live="polite">{{ reminderCandidatePageStart() }}–{{ reminderCandidatePageEnd() }} de {{ filteredReminderCandidates().length }} · Página {{ currentReminderCandidatePage() }} de {{ reminderCandidateTotalPages() }}</span>
+            <label class="filter">Citas por página
+              <select name="reminderCandidatePageSize" [ngModel]="reminderCandidatePageSize()" (ngModelChange)="changeReminderCandidatePageSize($event)">
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+              </select>
+            </label>
+          </div>
+          @if (reminderCandidateTotalPages() > 1) {
+            <nav class="order-pagination" aria-label="Páginas de próximas citas">
+              <button type="button" class="secondary" [disabled]="currentReminderCandidatePage() === 1" (click)="goToReminderCandidatePage(currentReminderCandidatePage() - 1)">Anterior</button>
+              @for (page of reminderCandidatePageNumbers(); track page) {
+                <button type="button" class="page-button" [class.active]="page === currentReminderCandidatePage()" [attr.aria-current]="page === currentReminderCandidatePage() ? 'page' : null" [attr.aria-label]="'Página ' + page" (click)="goToReminderCandidatePage(page)">{{ page }}</button>
+              }
+              <button type="button" class="secondary" [disabled]="currentReminderCandidatePage() === reminderCandidateTotalPages()" (click)="goToReminderCandidatePage(currentReminderCandidatePage() + 1)">Siguiente</button>
+            </nav>
+          }
         }
 
         <dialog #reminderDialog class="reminder-dialog" aria-labelledby="reminder-dialog-title" (close)="handleReminderDialogClosed()">
@@ -210,7 +230,7 @@
             </select>
           </label>
         </div>
-        <p class="followups-result-count" aria-live="polite">{{ dashboard.postAppointmentItems().length }} resultados</p>
+        <p class="followups-result-count" aria-live="polite">{{ payload.pagination.total }} resultados</p>
       </section>
 
       @if (followupWorkspace() === 'post_appointment') {
@@ -292,7 +312,7 @@
           }
         </section>
 
-        <div class="order-table-footer"><span aria-live="polite">{{ dashboard.postAppointmentPageStart() }}–{{ dashboard.postAppointmentPageEnd() }} de {{ dashboard.postAppointmentItems().length }} · Página {{ dashboard.currentPostAppointmentPage() }} de {{ dashboard.postAppointmentTotalPages() }}</span>
+        <div class="order-table-footer"><span aria-live="polite">{{ dashboard.postAppointmentPageStart() }}–{{ dashboard.postAppointmentPageEnd() }} de {{ payload.pagination.total }} · Página {{ dashboard.currentPostAppointmentPage() }} de {{ dashboard.postAppointmentTotalPages() }}</span>
           <label class="filter">Citas por página <select name="postAppointmentPageSize" [ngModel]="dashboard.postAppointmentPageSize()" (ngModelChange)="dashboard.changePostAppointmentPageSize($event)"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="20">20</option></select></label></div>
         @if (dashboard.postAppointmentTotalPages() > 1) {
           <nav class="order-pagination" aria-label="Páginas de citas"><button type="button" class="secondary" [disabled]="dashboard.currentPostAppointmentPage() === 1" (click)="dashboard.goToPostAppointmentPage(dashboard.currentPostAppointmentPage() - 1)">Anterior</button>

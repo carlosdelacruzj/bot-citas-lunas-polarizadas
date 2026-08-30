@@ -693,7 +693,7 @@
         <app-view-state
           state="stale"
           title="Mostrando la última medición disponible"
-          [message]="dashboard.captchaQualityError()"
+          [message]="dashboard.captchaQualityError() ?? 'No se pudo cargar la revisión de calidad.'"
           [compact]="true"
           (retry)="dashboard.loadCaptchaQuality()"
         />

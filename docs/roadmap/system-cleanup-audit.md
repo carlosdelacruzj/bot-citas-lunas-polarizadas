@@ -627,13 +627,13 @@ contrato.
 
 ### Limpieza local de bajo riesgo
 
-- [ ] Retirar `captchaSelectedStats` en `dashboard/src/app/app.ts` si la busqueda
+- [x] Retirar `captchaSelectedStats` en `dashboard/src/app/app.ts` si la busqueda
   actual confirma cero lecturas.
-- [ ] Retirar `selectedOrderRuns` en `dashboard/src/app/app.ts` si la busqueda
+- [x] Retirar `selectedOrderRuns` en `dashboard/src/app/app.ts` si la busqueda
   actual confirma cero lecturas.
-- [ ] Retirar selectores CSS sin markup consumidor:
+- [x] Retirar selectores CSS sin markup consumidor:
   `.create-block`, `.followup-stage--warn` y `.inbox-empty`.
-- [ ] Retirar `getMonthlySummary()` e interfaz `MonthlySummary` solo junto con la
+- [x] Retirar `getMonthlySummary()` e interfaz `MonthlySummary` solo junto con la
   deprecacion completa de API v1 del paso anterior.
 
 ### Sanitizacion y exportacion
@@ -642,9 +642,9 @@ contrato.
 `copyDashboardSnapshot()` confia en esos nombres como si aplicaran una politica
 de seguridad.
 
-- [ ] Definir una allowlist explicita por objeto exportable.
-- [ ] Excluir credenciales, datos personales y diagnostico sensible.
-- [ ] Renombrar helpers si solo copian o hacer que realmente saniticen.
+- [x] Definir una allowlist explicita por objeto exportable.
+- [x] Excluir credenciales, datos personales y diagnostico sensible.
+- [x] Renombrar helpers si solo copian o hacer que realmente saniticen.
 - [ ] Revisar manualmente el JSON final antes de habilitar la copia.
 
 ### DTO y payloads
@@ -660,26 +660,68 @@ transportando datos innecesarios. Ejemplos de `ServiceOrder` no usados por la UI
 - `preflight_cycle`;
 - `registration_notice_updated_at`.
 
-- [ ] Inventariar campos por vista y endpoint.
-- [ ] Crear DTO de resumen, lista y detalle; no cortar campos del endpoint
+- [x] Inventariar campos por vista y endpoint.
+- [x] Crear DTO de resumen, lista y detalle; no cortar campos del endpoint
   compartido sin revisar clientes externos.
-- [ ] Medir tamaño y frecuencia de `/service-orders` y `/operator-inbox` antes y
+- [x] Medir tamaño y frecuencia de `/service-orders` y `/operator-inbox` antes y
   despues.
-- [ ] Sustituir `DashboardViewFacade = any` por contratos tipados gradualmente.
+- [x] Sustituir `DashboardViewFacade = any` por contratos tipados gradualmente.
 
 ### Paginacion real
 
 La revision post-cita se presenta como paginada, pero el API entrega el conjunto
 completo y el cliente corta localmente.
 
-- [ ] Definir `limit`, cursor o `offset`, total y orden estable en el contrato.
-- [ ] Paginar en PostgreSQL/API.
-- [ ] Actualizar la UI para pedir solo la pagina necesaria.
-- [ ] Corregir la documentacion para no llamar “paginado” al estado previo.
+- [x] Definir `limit`, cursor o `offset`, total y orden estable en el contrato.
+- [x] Paginar en PostgreSQL/API.
+- [x] Actualizar la UI para pedir solo la pagina necesaria.
+- [x] Corregir la documentacion para no llamar “paginado” al estado previo.
 
 Nota: el dashboard no tiene una suite frontend automatizada. No crearla dentro
 de esta limpieza salvo pedido explicito; cada cambio visual requiere build y
 revision real en `360`, `768`, `1024` y `1440 px`.
+
+### Registro de ejecucion parcial del Paso 7
+
+Corte de la comprobacion: `2026-08-30 12:43 America/Lima`.
+
+- Se retiraron las dos señales y los tres selectores CSS sin consumidores. El
+  cliente mensual v1 ya habia sido retirado durante la deprecacion del paso 5.
+- La copia de diagnostico usa allowlists tipadas y no incluye identidad,
+  contacto, credenciales, DOM, screenshots, paths ni detalle de ejecucion. La
+  inspeccion final del JSON desde el navegador sigue pendiente.
+- `DashboardViewFacade` ahora referencia el tipo real de `App`; al retirar el
+  `any`, el compilador detecto y se corrigio un mensaje nullable en CAPTCHA.
+- La lista del dashboard solicita `projection=dashboard`. Sobre `240` ordenes,
+  el JSON bajo de `523,423` a `368,635` bytes (`29.6%`); la bandeja canonica ya
+  era proporcional: `3` tareas y `2,097` bytes al corte. Los logs disponibles
+  del `2026-08-16` al `2026-08-30` contenian `3,707` cargas de la lista de
+  ordenes y `89` de la bandeja; la frecuencia no se aumento.
+- Post-cita filtra, busca, ordena y pagina en PostgreSQL. La pagina activa de
+  diez casos bajo de `50,923` a `21,435` bytes despues de separar las `110`
+  proximas citas, que solo se cargan al abrir o refrescar la vista.
+- Una llamada sin query conserva los `225` elementos del contrato historico;
+  dashboard usa parametros explicitos. Busqueda y cambios de pagina cancelan la
+  solicitud anterior y el debounce se limpia al destruir el componente.
+- Se corrigieron conteos globales, pie de pagina, integracion de proximas citas
+  y orden por la fecha mostrada. Proximas citas reutiliza la paginacion visual
+  del dashboard con tamanos de `5`, `10` o `20`, aplicada despues de buscar,
+  filtrar y ordenar. No se agrego una suite frontend nueva.
+- Validaciones funcionales contra PostgreSQL y Admin API: filtros, totales,
+  pagina, proyeccion, compatibilidad y rechazo de booleanos invalidos.
+- Antes de reiniciar solo Admin API se comprobaron `0` sesiones manuales, jobs
+  WhatsApp, rafagas y revisiones post-cita activas; worker sin orden actual. El
+  intento `unknown` historico del `2026-07-03` no se altero. Despues del reinicio,
+  API saludable y WhatsApp `session_ready`, sin envio.
+- `compileall`, Ruff, `59 passed`, build Angular, validador documental y
+  `git diff --check` se ejecutan como cierre tecnico. El build mantiene dos
+  warnings de presupuesto preexistentes.
+- La sesion del agente no tuvo navegador conectado. El usuario aprobo
+  visualmente la vista despues de corregir la paginacion de proximas citas; no
+  quedo registrada una comprobacion individual de los cuatro anchos.
+
+Resultado: **Paso 7 implementado y aprobado visualmente, pendiente solo de la
+revision manual del JSON copiado en navegador**.
 
 Validacion:
 

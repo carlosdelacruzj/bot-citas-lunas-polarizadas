@@ -196,7 +196,6 @@
 .stage-rail li:last-child .stage-track::after { display: none; }
 .stage-marker { position: relative; z-index: 1; display: grid; width: 24px; height: 24px; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #64748b; color: #fff; font-size: .68rem; font-weight: 900; box-shadow: 0 0 0 1px #64748b; }
 .followup-stage--good .stage-marker { background: var(--success); box-shadow: 0 0 0 1px var(--success); }
-.followup-stage--warn .stage-marker { background: var(--warning); box-shadow: 0 0 0 1px var(--warning); }
 .followup-stage--bad .stage-marker { background: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
 .stage-copy { display: grid; gap: 4px; padding: 2px 14px 0 0; }
 .stage-copy strong { color: var(--ink); font-size: .8rem; line-height: 1.3; }

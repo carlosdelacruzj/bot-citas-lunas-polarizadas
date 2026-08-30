@@ -258,7 +258,6 @@ export interface ServiceOrder {
   whatsapp_message_sent_at: string | null;
   whatsapp_message_action_state: WhatsAppActionState;
   whatsapp_followup_status: string | null;
-  whatsapp_followup_sent_at: string | null;
   whatsapp_followup_action_state: WhatsAppActionState;
   parent_order_id: string | null;
   program_expediente: string | null;
@@ -266,20 +265,15 @@ export interface ServiceOrder {
   closure_reason: string | null;
   closure_note: string | null;
   closed_at: string | null;
-  minimum_reservation_hour: number | null;
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;
   excluded_date_ranges: ExcludedDateRange[];
   preflight_status: 'not_required' | 'pending' | 'running' | 'validated' | 'failed';
   preflight_message: string | null;
-  preflight_started_at: string | null;
-  preflight_validated_at: string | null;
-  preflight_details: Record<string, unknown> | null;
-  preflight_cycle: number;
+  preflight_error_type: string | null;
   registration_notice_type: string | null;
   registration_notice_status: WhatsAppActionState | null;
-  registration_notice_updated_at: string | null;
   registration_notice_error: string | null;
   created_at: string;
   updated_at: string;
@@ -411,6 +405,15 @@ export interface PostAppointmentPayload {
     access_lost: number;
     progressed_or_completed: number;
   };
+  filter_counts: {
+    active: number;
+    attention: number;
+    observations: number;
+    progressed: number;
+    history: number;
+    access_lost: number;
+    completed: number;
+  };
   automation: {
     enabled: boolean;
     timezone: string;
@@ -424,7 +427,28 @@ export interface PostAppointmentPayload {
     breaker_open: boolean;
     breaker_reason: 'three_consecutive_technical_failures' | null;
   };
+  upcoming?: Array<{
+    order_id: string;
+    applicant_name: string;
+    document_number_masked: string;
+    site: string | null;
+    appointment_date: string | null;
+    appointment_hour: string | null;
+    program_expediente: string | null;
+    program_plate: string | null;
+  }>;
+  pagination: { limit: number; offset: number; total: number };
   items: PostAppointmentFollowup[];
+}
+
+export interface PostAppointmentQuery {
+  filter: 'active' | 'attention' | 'observations' | 'access_lost' | 'progressed' | 'history';
+  search: string;
+  sort: 'priority' | 'appointment_date' | 'last_reviewed_at' | 'applicant';
+  direction: 'asc' | 'desc';
+  limit: number;
+  offset: number;
+  include_upcoming: boolean;
 }
 
 export interface RunSummary {
@@ -1210,7 +1234,10 @@ export class AppointmentApiService {
   }
 
   async getServiceOrders(scope?: RequestScope): Promise<ServiceOrder[]> {
-    const response = await this.read<ServiceOrdersResponse>('/api/v1/service-orders', scope);
+    const response = await this.read<ServiceOrdersResponse>(
+      '/api/v1/service-orders?projection=dashboard',
+      scope,
+    );
     return response.service_orders;
   }
 
@@ -1224,8 +1251,23 @@ export class AppointmentApiService {
     );
   }
 
-  async getPostAppointmentFollowups(scope?: RequestScope): Promise<PostAppointmentPayload> {
-    return this.read<PostAppointmentPayload>('/api/v1/post-appointment-followups', scope);
+  async getPostAppointmentFollowups(
+    query: PostAppointmentQuery,
+    scope?: RequestScope,
+  ): Promise<PostAppointmentPayload> {
+    const params = new URLSearchParams({
+      filter: query.filter,
+      search: query.search,
+      sort: query.sort,
+      direction: query.direction,
+      limit: String(query.limit),
+      offset: String(query.offset),
+      include_upcoming: String(query.include_upcoming),
+    });
+    return this.read<PostAppointmentPayload>(
+      `/api/v1/post-appointment-followups?${params.toString()}`,
+      scope,
+    );
   }
 
   async reviewPostAppointment(orderId: string): Promise<ApiActionResponse> {

@@ -122,52 +122,225 @@ def record_post_appointment_review(
 
 def list_post_appointment_followups(
     *,
+    filter_name: str = "active",
+    search: str = "",
+    sort: str = "priority",
+    direction: str = "asc",
+    limit: int = 10,
+    offset: int = 0,
+    include_upcoming: bool = False,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
-    with _connection(_database_url(settings)) as connection:
-        rows = connection.execute(
-            """
+    if filter_name not in {
+        "all",
+        "active",
+        "attention",
+        "observations",
+        "progressed",
+        "history",
+        "access_lost",
+    }:
+        raise ValueError("Unsupported post-appointment filter.")
+    if sort not in {
+        "legacy",
+        "priority",
+        "appointment_date",
+        "last_reviewed_at",
+        "applicant",
+    }:
+        raise ValueError("Unsupported post-appointment sort.")
+    if direction not in {"asc", "desc"}:
+        raise ValueError("Unsupported post-appointment sort direction.")
+    limit = max(1, min(int(limit), 500))
+    offset = max(0, int(offset))
+    normalized_search = " ".join(search.lower().split())
+    today = datetime.now(LIMA_TZ).date()
+
+    base_sql = """
+        WITH latest_reservation AS (
+            SELECT DISTINCT ON (r.order_id) r.*
+            FROM reservations r
+            WHERE r.status = 'confirmed'
+            ORDER BY r.order_id, r.created_at DESC, r.reservation_id DESC
+        ), base AS (
             SELECT so.order_id, so.parent_order_id,
                    COALESCE(NULLIF(a.full_name, ''), a.document_number) AS applicant_name,
-                   a.document_number,
-                   reservation.reservation_id,
-                   reservation.site,
+                   a.document_number, reservation.reservation_id, reservation.site,
+                   reservation.reserved_at,
                    reservation.appointment_day AS reservation_day,
                    reservation.appointment_date AS reservation_date,
                    reservation.appointment_hour AS reservation_hour,
                    COALESCE(reservation.program_expediente, so.program_expediente)
                        AS program_expediente,
                    COALESCE(reservation.program_plate, so.program_plate) AS program_plate,
-                   review.review_id, review.access_status, review.outcome,
+                   review.review_id, review.access_status, review.outcome AS stored_outcome,
                    review.appointment_date AS reviewed_appointment_date,
                    review.appointment_hour AS reviewed_appointment_hour,
                    review.stage_count, review.observation_count,
                    review.later_progress_observed, review.error_code,
-                   review.error_message, review.finished_at
+                   review.error_message, review.finished_at,
+                   COALESCE(review.appointment_date, reservation.appointment_day)
+                       AS display_appointment_day,
+                   CASE
+                       WHEN review.outcome IS NULL THEN
+                           CASE WHEN reservation.appointment_day >= %s
+                               THEN 'upcoming' ELSE 'review_required' END
+                       WHEN review.outcome = 'upcoming'
+                            AND reservation.appointment_day < %s THEN 'review_required'
+                       ELSE review.outcome
+                   END AS effective_outcome
             FROM service_orders so
             JOIN applicants a ON a.applicant_id = so.applicant_id
-            JOIN LATERAL (
-                SELECT r.*
-                FROM reservations r
-                WHERE r.order_id = so.order_id AND r.status = 'confirmed'
-                ORDER BY r.created_at DESC
-                LIMIT 1
-            ) reservation ON true
+            JOIN latest_reservation reservation ON reservation.order_id = so.order_id
             LEFT JOIN LATERAL (
                 SELECT pr.*
                 FROM post_appointment_reviews pr
                 WHERE pr.order_id = so.order_id
-                  AND (
-                      pr.appointment_date IS NULL
-                      OR pr.appointment_date = reservation.appointment_day
-                  )
-                ORDER BY pr.finished_at DESC
+                  AND (pr.appointment_date IS NULL
+                       OR pr.appointment_date = reservation.appointment_day)
+                ORDER BY pr.finished_at DESC, pr.created_at DESC, pr.review_id DESC
                 LIMIT 1
             ) review ON true
-            ORDER BY COALESCE(review.finished_at, reservation.reserved_at) ASC
-            """
+        )
+    """
+    filter_sql = {
+        "all": "TRUE",
+        "active": "effective_outcome NOT IN ('completed', 'access_lost', 'upcoming')",
+        "attention": (
+            "effective_outcome IN ('awaiting_update', 'observation_no_progress', "
+            "'portal_unavailable', 'review_required')"
+        ),
+        "observations": (
+            "effective_outcome IN ('observation_no_progress', "
+            "'observation_with_progress')"
+        ),
+        "progressed": (
+            "effective_outcome IN ('in_progress', 'observation_with_progress')"
+        ),
+        "history": "effective_outcome IN ('completed', 'access_lost')",
+        "access_lost": "effective_outcome = 'access_lost'",
+    }[filter_name]
+    search_sql = """
+        AND (
+            %s = ''
+            OR strpos(lower(COALESCE(applicant_name, '')), %s) > 0
+            OR strpos(lower('***' || right(document_number, 4)), %s) > 0
+            OR strpos(lower(order_id), %s) > 0
+            OR strpos(lower(COALESCE(program_expediente, '')), %s) > 0
+            OR strpos(lower(COALESCE(program_plate, '')), %s) > 0
+            OR strpos(lower(COALESCE(site, '')), %s) > 0
+            OR strpos(lower(effective_outcome), %s) > 0
+            OR EXISTS (
+                SELECT 1 FROM post_appointment_stage_snapshots snapshot
+                WHERE snapshot.review_id = base.review_id
+                  AND strpos(lower(COALESCE(snapshot.message_text, '')), %s) > 0
+            )
+        )
+    """
+    search_params = (normalized_search,) * 9
+    sort_sql = {
+        "legacy": "COALESCE(finished_at, reserved_at)",
+        "priority": """CASE effective_outcome
+            WHEN 'observation_no_progress' THEN 0 WHEN 'portal_unavailable' THEN 1
+            WHEN 'awaiting_update' THEN 2 WHEN 'review_required' THEN 3
+            WHEN 'observation_with_progress' THEN 4 WHEN 'in_progress' THEN 5
+            WHEN 'upcoming' THEN 6 WHEN 'completed' THEN 7
+            WHEN 'access_lost' THEN 8 ELSE 99 END""",
+        "appointment_date": "display_appointment_day",
+        "last_reviewed_at": "finished_at",
+        "applicant": "lower(applicant_name)",
+    }[sort]
+    nulls = (
+        "NULLS LAST"
+        if sort in {"legacy", "appointment_date", "last_reviewed_at"}
+        else ""
+    )
+
+    with _connection(_database_url(settings)) as connection:
+        counts = connection.execute(
+            base_sql
+            + """
+            SELECT count(*) AS total_confirmed,
+                   count(*) FILTER (
+                       WHERE effective_outcome NOT IN ('completed', 'access_lost')
+                   ) AS active_followups,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN (
+                           'awaiting_update', 'observation_no_progress',
+                           'portal_unavailable', 'review_required'
+                       )
+                   ) AS needs_attention,
+                   count(*) FILTER (
+                       WHERE effective_outcome = 'access_lost'
+                   ) AS access_lost,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN (
+                           'in_progress', 'completed', 'observation_with_progress'
+                       )
+                   ) AS progressed_or_completed,
+                   count(*) FILTER (
+                       WHERE effective_outcome NOT IN (
+                           'completed', 'access_lost', 'upcoming'
+                       )
+                   ) AS filter_active,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN (
+                           'awaiting_update', 'observation_no_progress',
+                           'portal_unavailable', 'review_required'
+                       )
+                   ) AS filter_attention,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN (
+                           'observation_no_progress', 'observation_with_progress'
+                       )
+                   ) AS filter_observations,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN (
+                           'in_progress', 'observation_with_progress'
+                       )
+                   ) AS filter_progressed,
+                   count(*) FILTER (
+                       WHERE effective_outcome IN ('completed', 'access_lost')
+                   ) AS filter_history,
+                   count(*) FILTER (
+                       WHERE effective_outcome = 'access_lost'
+                   ) AS filter_access_lost,
+                   count(*) FILTER (WHERE effective_outcome = 'completed') AS completed
+            FROM base
+            """,
+            (today, today),
+        ).fetchone()
+        upcoming_rows = (
+            connection.execute(
+                base_sql
+                + """
+                SELECT order_id, applicant_name, document_number, site, reservation_day,
+                       reservation_date, reservation_hour, program_expediente, program_plate
+                FROM base
+                WHERE effective_outcome = 'upcoming' AND reservation_day >= %s
+                ORDER BY reservation_day ASC, reservation_hour ASC NULLS LAST, order_id ASC
+                """,
+                (today, today, today),
+            ).fetchall()
+            if include_upcoming
+            else None
+        )
+        total_row = connection.execute(
+            base_sql
+            + f"SELECT count(*) AS total FROM base WHERE {filter_sql} {search_sql}",
+            (today, today, *search_params),
+        ).fetchone()
+        rows = connection.execute(
+            base_sql
+            + f"""
+            SELECT * FROM base
+            WHERE {filter_sql} {search_sql}
+            ORDER BY {sort_sql} {direction.upper()} {nulls}, order_id ASC
+            LIMIT %s OFFSET %s
+            """,
+            (today, today, *search_params, limit, offset),
         ).fetchall()
         review_ids = [str(row["review_id"]) for row in rows if row["review_id"]]
         stage_rows = (
@@ -201,19 +374,13 @@ def list_post_appointment_followups(
         )
 
     now = datetime.now(LIMA_TZ)
-    today = now.date()
     items: list[dict[str, Any]] = []
     for row in rows:
         review_id = str(row["review_id"]) if row["review_id"] else None
         reservation_date = _parse_stored_date(row["reservation_day"]) or _parse_stored_date(
             row["reservation_date"]
         )
-        stored_outcome = str(row["outcome"]) if row["outcome"] else None
-        outcome = stored_outcome or (
-            "upcoming" if reservation_date and reservation_date >= today else "review_required"
-        )
-        if reservation_date and reservation_date < today and outcome == "upcoming":
-            outcome = "review_required"
+        outcome = str(row["effective_outcome"])
         last_reviewed_at = _as_datetime(row["finished_at"])
         review_freshness = _review_freshness(
             appointment_date=reservation_date,
@@ -257,34 +424,72 @@ def list_post_appointment_followups(
             }
         )
 
-    attention_outcomes = {
-        "awaiting_update",
-        "observation_no_progress",
-        "portal_unavailable",
-        "review_required",
-    }
-    terminal_outcomes = TERMINAL_POST_APPOINTMENT_OUTCOMES
     automation = post_appointment_automation_status(
         service_date=today,
         settings=settings,
     )
     return {
         "summary": {
-            "total_confirmed": len(items),
-            "active_followups": sum(
-                item["outcome"] not in terminal_outcomes for item in items
-            ),
-            "needs_attention": sum(item["outcome"] in attention_outcomes for item in items),
-            "access_lost": sum(item["outcome"] == "access_lost" for item in items),
-            "progressed_or_completed": sum(
-                item["outcome"]
-                in {"in_progress", "completed", "observation_with_progress"}
-                for item in items
-            ),
+            "total_confirmed": int(counts["total_confirmed"] or 0),
+            "active_followups": int(counts["active_followups"] or 0),
+            "needs_attention": int(counts["needs_attention"] or 0),
+            "access_lost": int(counts["access_lost"] or 0),
+            "progressed_or_completed": int(counts["progressed_or_completed"] or 0),
+        },
+        "filter_counts": {
+            "active": int(counts["filter_active"] or 0),
+            "attention": int(counts["filter_attention"] or 0),
+            "observations": int(counts["filter_observations"] or 0),
+            "progressed": int(counts["filter_progressed"] or 0),
+            "history": int(counts["filter_history"] or 0),
+            "access_lost": int(counts["filter_access_lost"] or 0),
+            "completed": int(counts["completed"] or 0),
         },
         "automation": automation,
+        **({"upcoming": [
+            {
+                "order_id": str(row["order_id"]),
+                "applicant_name": str(row["applicant_name"]),
+                "document_number_masked": _mask_document(str(row["document_number"])),
+                "site": row["site"],
+                "appointment_date": _iso(row["reservation_day"])
+                or str(row["reservation_date"] or ""),
+                "appointment_hour": row["reservation_hour"],
+                "program_expediente": row["program_expediente"],
+                "program_plate": row["program_plate"],
+            }
+            for row in upcoming_rows or []
+        ]} if include_upcoming else {}),
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "total": int(total_row["total"] or 0),
+        },
         "items": items,
     }
+
+
+def get_post_appointment_followup(
+    order_id: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any] | None:
+    payload = list_post_appointment_followups(
+        filter_name="active",
+        search=order_id,
+        limit=50,
+        settings=settings,
+    )
+    item = next((item for item in payload["items"] if item["order_id"] == order_id), None)
+    if item is not None:
+        return item
+    payload = list_post_appointment_followups(
+        filter_name="history",
+        search=order_id,
+        limit=50,
+        settings=settings,
+    )
+    return next((item for item in payload["items"] if item["order_id"] == order_id), None)
 
 
 def claim_next_post_appointment_automatic_review(

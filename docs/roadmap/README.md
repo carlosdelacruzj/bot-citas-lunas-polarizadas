@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-29`.
+Ultima priorizacion: `2026-08-30`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -53,9 +53,9 @@ fuente stale y accion bloqueada.
 
 ### Rendimiento del dashboard
 
-Paginar post-cita, mensajes y detalle; evitar listados completos cuando una vista
-solo necesita resumen. Medir la carga periodica de `/service-orders` y
-`/operator-inbox`.
+Paginar mensajes y detalles restantes; evitar listados completos cuando una
+vista solo necesita resumen. La lista de ordenes ya usa una proyeccion propia y
+post-cita pagina en servidor.
 
 Cierre: payloads proporcionales a la vista y sin consultas duplicadas costosas.
 
@@ -99,7 +99,6 @@ No iniciar antes de estabilizar P0-P2:
 3. dividir `dashboard/src/app/app.ts` por dominio;
 4. reducir `ViewEncapsulation.None` gradualmente;
 5. uniformar errores HTTP con `request_id` y respuesta sanitizada;
-6. tipar facades y payloads del dashboard que aun usan `any`.
 
 ### Limpieza integral auditada
 

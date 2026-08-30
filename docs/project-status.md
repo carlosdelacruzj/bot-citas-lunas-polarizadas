@@ -105,8 +105,16 @@ sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea.
 
 **Citas y recordatorios** separa proximas citas, casos que requieren revision e
 historial. Permite anticipacion de `1..3` dias y mantiene el seguimiento post-cita
-conservador y paginado. Los recordatorios tienen modos `disabled`, `dry_run` y
-`live`; ya no existe un modo canario ni una lista especial de ordenes de prueba.
+conservador y paginado en PostgreSQL/API. Busqueda, filtros, orden y paginas no
+requieren descargar el historial completo. Proximas citas pagina localmente el
+resultado ya filtrado y ordenado, con tamanos de `5`, `10` o `20`. Los
+recordatorios tienen modos
+`disabled`, `dry_run` y `live`; ya no existe un modo canario ni una lista
+especial de ordenes de prueba.
+
+El contrato entre el contenedor Angular y sus vistas esta tipado. La lista de
+ordenes usa una proyeccion especifica del dashboard; el endpoint completo de
+compatibilidad y el detalle autorizado permanecen separados.
 
 Las rafagas de oportunidad y la reobservacion unica posterior a un `slot_lost`
 son capacidades estables. Su admision se gobierna en PostgreSQL con
@@ -168,7 +176,7 @@ el contrato en [`contracts/finance.md`](contracts/finance.md).
   persistidos por tarea;
 - faltan observaciones naturales de algunos flujos WhatsApp, post-cita y cierre;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
-- varias cargas del dashboard aun transportan mas detalle del necesario;
+- mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
 - existen ciclos y modulos grandes para refactor posterior.
 

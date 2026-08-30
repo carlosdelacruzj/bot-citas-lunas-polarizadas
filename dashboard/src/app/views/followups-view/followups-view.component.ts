@@ -8,6 +8,7 @@ import {
   AppointmentApiService,
   AppointmentReminderStatus,
   PostAppointmentFollowup,
+  PostAppointmentPayload,
 } from '../../appointment-api.service';
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
@@ -18,6 +19,7 @@ type ReminderFilter = 'all' | 'pending' | 'missing_contact' | 'sent';
 type ReminderSort = 'soonest' | 'latest' | 'applicant' | 'status';
 type PostAppointmentSort = 'attention' | 'appointment_soonest' | 'recent' | 'applicant';
 type ReminderCandidate = AppointmentReminderStatus['candidates'][number];
+type UpcomingFollowup = NonNullable<PostAppointmentPayload['upcoming']>[number];
 interface UpcomingAppointment {
   order_id: string;
   applicant_name: string | null;
@@ -39,6 +41,13 @@ const PERU_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 });
+const REMINDER_CANDIDATE_PAGE_SIZES = [5, 10, 20] as const;
+
+function paginationWindow(current: number, total: number): number[] {
+  const start = Math.max(1, Math.min(current - 2, total - 4));
+  const end = Math.min(total, start + 4);
+  return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+}
 
 @Component({
   selector: 'app-followups-view',
@@ -68,23 +77,19 @@ export class FollowupsViewComponent {
   protected readonly reminderCandidateSearch = signal('');
   protected readonly reminderCandidateFilter = signal<ReminderFilter>('all');
   protected readonly reminderCandidateSort = signal<ReminderSort>('soonest');
+  protected readonly reminderCandidatePage = signal(1);
+  protected readonly reminderCandidatePageSize = signal(10);
   protected readonly postAppointmentSort = signal<PostAppointmentSort>('attention');
   protected readonly reminderLeadDayOptions: readonly ReminderLeadDays[] = [1, 2, 3];
 
   protected readonly postAppointmentOperationalCount = computed(() =>
-    (this.dashboard.postAppointmentPayload()?.items ?? []).filter(
-      (item: PostAppointmentFollowup) => this.needsPostAppointmentReview(item),
-    ).length,
+    this.dashboard.postAppointmentPayload()?.filter_counts.active ?? 0,
   );
   protected readonly postAppointmentHistoryCount = computed(() =>
-    (this.dashboard.postAppointmentPayload()?.items ?? []).filter(
-      (item: { outcome: string }) => ['completed', 'access_lost'].includes(item.outcome),
-    ).length,
+    this.dashboard.postAppointmentPayload()?.filter_counts.history ?? 0,
   );
   protected readonly postAppointmentCompletedCount = computed(() =>
-    (this.dashboard.postAppointmentPayload()?.items ?? []).filter(
-      (item: { outcome: string }) => item.outcome === 'completed',
-    ).length,
+    this.dashboard.postAppointmentPayload()?.filter_counts.completed ?? 0,
   );
 
   protected readonly upcomingAppointments = computed<UpcomingAppointment[]>(() => {
@@ -92,11 +97,9 @@ export class FollowupsViewComponent {
     const reminderByOrder = new Map<string, ReminderCandidate>(
       reminderCandidates.map((candidate) => [candidate.order_id, candidate]),
     );
-    const future = (this.dashboard.postAppointmentPayload()?.items ?? [])
-      .filter((item: PostAppointmentFollowup) =>
-        item.outcome === 'upcoming' && this.isTodayOrFuture(item.appointment_date),
-      )
-      .map((item: PostAppointmentFollowup): UpcomingAppointment => {
+    const future = (this.dashboard.postAppointmentPayload()?.upcoming ?? [])
+      .filter((item: UpcomingFollowup) => this.isTodayOrFuture(item.appointment_date))
+      .map((item: UpcomingFollowup): UpcomingAppointment => {
         const reminder = reminderByOrder.get(item.order_id);
         reminderByOrder.delete(item.order_id);
         return {
@@ -111,7 +114,7 @@ export class FollowupsViewComponent {
           document_number_masked: item.document_number_masked,
           program_expediente: item.program_expediente,
           program_plate: item.program_plate,
-          stage_messages: item.stages.map((stage: { message_text: string | null }) => stage.message_text),
+          stage_messages: [],
         };
       });
     const reminderOnly = [...reminderByOrder.values()]
@@ -126,7 +129,7 @@ export class FollowupsViewComponent {
     return [...future, ...reminderOnly];
   });
 
-  protected readonly reminderCandidates = computed(() => {
+  protected readonly filteredReminderCandidates = computed(() => {
     const search = this.reminderCandidateSearch().trim().toLocaleLowerCase('es');
     const filter = this.reminderCandidateFilter();
     const candidates = this.upcomingAppointments().filter((candidate) => {
@@ -170,6 +173,31 @@ export class FollowupsViewComponent {
     });
   });
 
+  protected readonly reminderCandidateTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredReminderCandidates().length / this.reminderCandidatePageSize())),
+  );
+  protected readonly currentReminderCandidatePage = computed(() =>
+    Math.min(this.reminderCandidatePage(), this.reminderCandidateTotalPages()),
+  );
+  protected readonly reminderCandidates = computed(() => {
+    const start = (this.currentReminderCandidatePage() - 1) * this.reminderCandidatePageSize();
+    return this.filteredReminderCandidates().slice(start, start + this.reminderCandidatePageSize());
+  });
+  protected readonly reminderCandidatePageStart = computed(() =>
+    this.filteredReminderCandidates().length === 0
+      ? 0
+      : (this.currentReminderCandidatePage() - 1) * this.reminderCandidatePageSize() + 1,
+  );
+  protected readonly reminderCandidatePageEnd = computed(() =>
+    Math.min(
+      this.currentReminderCandidatePage() * this.reminderCandidatePageSize(),
+      this.filteredReminderCandidates().length,
+    ),
+  );
+  protected readonly reminderCandidatePageNumbers = computed(() =>
+    paginationWindow(this.currentReminderCandidatePage(), this.reminderCandidateTotalPages()),
+  );
+
   protected readonly reminderFilterCounts = computed(() => {
     const candidates = this.upcomingAppointments();
     return {
@@ -210,9 +238,38 @@ export class FollowupsViewComponent {
     void this.router.navigate([], { relativeTo: this.route, queryParams: { tab: workspace }, replaceUrl: true });
   }
 
-  protected setReminderCandidateSearch(value: string): void { this.reminderCandidateSearch.set(value); }
-  protected chooseReminderFilter(filter: ReminderFilter): void { this.reminderCandidateFilter.set(filter); }
-  protected chooseReminderSort(sort: ReminderSort): void { this.reminderCandidateSort.set(sort); }
+  protected setReminderCandidateSearch(value: string): void {
+    this.reminderCandidateSearch.set(value);
+    this.reminderCandidatePage.set(1);
+  }
+
+  protected chooseReminderFilter(filter: ReminderFilter): void {
+    this.reminderCandidateFilter.set(filter);
+    this.reminderCandidatePage.set(1);
+  }
+
+  protected chooseReminderSort(sort: ReminderSort): void {
+    this.reminderCandidateSort.set(sort);
+    this.reminderCandidatePage.set(1);
+  }
+
+  protected changeReminderCandidatePageSize(value: number | string): void {
+    const pageSize = Number(value);
+    if (!REMINDER_CANDIDATE_PAGE_SIZES.includes(
+      pageSize as (typeof REMINDER_CANDIDATE_PAGE_SIZES)[number],
+    )) return;
+    this.reminderCandidatePageSize.set(pageSize);
+    this.reminderCandidatePage.set(1);
+  }
+
+  protected goToReminderCandidatePage(page: number): void {
+    const target = Math.min(Math.max(1, page), this.reminderCandidateTotalPages());
+    if (target === this.currentReminderCandidatePage()) return;
+    this.reminderCandidatePage.set(target);
+    window.requestAnimationFrame(() => {
+      document.querySelector('.followups-controls')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
 
   protected choosePostAppointmentSort(sort: PostAppointmentSort): void {
     this.postAppointmentSort.set(sort);

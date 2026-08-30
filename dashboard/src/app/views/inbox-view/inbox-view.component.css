@@ -18,8 +18,6 @@
 
 .inbox-hero h2,
 .inbox-hero p,
-.inbox-empty h3,
-.inbox-empty p,
 .inbox-row p {
   margin: 0;
 }
@@ -58,32 +56,6 @@
 .inbox-total span {
   font-size: 0.82rem;
   font-weight: 800;
-}
-
-.inbox-empty {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border-color: #86efac;
-  background: #f0fdf4;
-}
-
-.inbox-empty > span {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  flex: none;
-  border-radius: 50%;
-  place-items: center;
-  background: #22c55e;
-  color: #ffffff;
-  font-size: 1.4rem;
-  font-weight: 900;
-}
-
-.inbox-empty > div {
-  display: grid;
-  gap: 3px;
 }
 
 .inbox-list-panel,

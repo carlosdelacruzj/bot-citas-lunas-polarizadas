@@ -84,8 +84,12 @@ Un HTTP `201` confirma persistencia, no activacion. El consumidor debe releer
 hasta observar preflight validado y estado `ready` antes de asumir que la orden
 busca cupos.
 
-Las respuestas de lista son resumidas y enmascaradas. Credenciales completas
-solo atraviesan endpoints y procesos autorizados; no se devuelven por defecto.
+Las respuestas de lista son resumidas y enmascaradas. El dashboard solicita
+`GET /api/v1/service-orders?projection=dashboard`, que omite diagnostico y
+campos sin consumidor visual; una llamada sin `projection` conserva el payload
+completo de compatibilidad. El detalle autorizado permanece separado en
+`GET /api/v1/service-orders/{order_id}`. Credenciales completas solo atraviesan
+endpoints y procesos autorizados; no se devuelven por defecto.
 
 El contacto WhatsApp se normaliza en backend. Un numero peruano de nueve
 digitos recibe `+51`; formatos internacionales validos conservan `+`.
@@ -105,8 +109,13 @@ Los recordatorios se consultan y actualizan mediante `GET` y `POST` en la
 superficie `/api/v1/appointment-reminders`. Plantillas, modo y scheduler son
 controles separados.
 
-La revision post-cita es de solo lectura y expone resumen paginado, frescura y
-acciones manuales seguras. Una preparacion no equivale a envio.
+La revision post-cita es de solo lectura y expone resumen, conteos por filtro,
+frescura y acciones manuales seguras. `GET /api/v1/post-appointment-followups`
+acepta `filter`, `search`, `sort`, `direction`, `limit`, `offset` e
+`include_upcoming`; `limit` se acota a `1..500`. El dashboard pagina en servidor
+y pide `include_upcoming=true` solo al cargar la vista. Una llamada sin query
+conserva temporalmente la respuesta historica completa para consumidores
+anteriores. Una preparacion no equivale a envio.
 
 ## WhatsApp
 

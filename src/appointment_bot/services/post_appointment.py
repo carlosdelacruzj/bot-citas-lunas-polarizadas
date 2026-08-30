@@ -19,8 +19,8 @@ from appointment_bot.db.post_appointment import (
     claim_next_post_appointment_automatic_review,
     fail_stale_post_appointment_automatic_reviews,
     finish_post_appointment_automatic_review,
+    get_post_appointment_followup,
     get_post_appointment_target,
-    list_post_appointment_followups,
     post_appointment_automation_status,
     record_post_appointment_review,
 )
@@ -283,8 +283,9 @@ def review_post_appointment_order(
             with _ACTIVE_REVIEWS_LOCK:
                 _ACTIVE_REVIEWS.discard(order_id)
 
-    payload = list_post_appointment_followups(settings=settings)
-    item = next(item for item in payload["items"] if item["order_id"] == order_id)
+    item = get_post_appointment_followup(order_id, settings=settings)
+    if item is None:
+        raise RuntimeError("Post-appointment follow-up was not found after review.")
     item["review_id"] = review_id
     return item
 
