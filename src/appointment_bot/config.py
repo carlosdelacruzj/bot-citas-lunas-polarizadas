@@ -137,7 +137,6 @@ class Settings:
     client_video_height: int
     record_client_sessions: bool
     record_client_video_final_mp4: bool
-    evidence_profile: str
     log_level: str
     telegram_enabled: bool
     telegram_bot_token: str
@@ -157,18 +156,14 @@ class Settings:
     queue_delay_min_seconds: int
     queue_delay_max_seconds: int
     continuous_worker_enabled: bool
-    continuous_interval_min_seconds: int
-    continuous_interval_max_seconds: int
+    worker_progress_grace_seconds: int
     final_ready_review_enabled: bool
     worker_daily_cutoff_time: datetime_time
-    appointment_reminders_enabled: bool
-    appointment_reminders_dry_run: bool
     appointment_reminders_time: datetime_time
     appointment_reminders_summary_grace_minutes: int
     appointment_reminders_reconcile_seconds: int
     appointment_reminders_send_interval_seconds: int
     appointment_reminders_daily_limit: int
-    session_rotation_seconds: int
     observer_session_seconds: int
     observer_max_attempts: int
     observer_captcha_sample_limit: int
@@ -231,12 +226,6 @@ class Settings:
 def load_settings(*, require_login: bool = True) -> Settings:
     load_dotenv()
 
-    legacy_site_toggle_interval_seconds = _parse_int(
-        os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS"),
-        default=2,
-        minimum=1,
-    )
-
     evidence_profile = _parse_evidence_profile(os.getenv("EVIDENCE_PROFILE"))
     screenshot_on_error = _parse_bool(os.getenv("SCREENSHOT_ON_ERROR"), default=True)
     screenshot_on_relevant_result = _parse_bool(
@@ -289,7 +278,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         record_client_sessions=record_client_sessions,
         record_client_video_final_mp4=record_client_video_final_mp4,
-        evidence_profile=evidence_profile,
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
         telegram_enabled=_parse_bool(os.getenv("TELEGRAM_ENABLED"), default=False),
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
@@ -364,13 +352,8 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("CONTINUOUS_WORKER_ENABLED"),
             default=False,
         ),
-        continuous_interval_min_seconds=_parse_int(
-            os.getenv("CONTINUOUS_INTERVAL_MIN_SECONDS"),
-            default=30,
-            minimum=1,
-        ),
-        continuous_interval_max_seconds=_parse_int(
-            os.getenv("CONTINUOUS_INTERVAL_MAX_SECONDS"),
+        worker_progress_grace_seconds=_parse_int(
+            os.getenv("WORKER_PROGRESS_GRACE_SECONDS"),
             default=55,
             minimum=1,
         ),
@@ -381,14 +364,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
         worker_daily_cutoff_time=_parse_time(
             os.getenv("WORKER_DAILY_CUTOFF_TIME"),
             default=datetime_time(hour=18),
-        ),
-        appointment_reminders_enabled=_parse_bool(
-            os.getenv("APPOINTMENT_REMINDERS_ENABLED"),
-            default=False,
-        ),
-        appointment_reminders_dry_run=_parse_bool(
-            os.getenv("APPOINTMENT_REMINDERS_DRY_RUN"),
-            default=True,
         ),
         appointment_reminders_time=_parse_time(
             os.getenv("APPOINTMENT_REMINDERS_TIME"),
@@ -413,11 +388,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
             os.getenv("APPOINTMENT_REMINDERS_DAILY_LIMIT"),
             default=100,
             minimum=1,
-        ),
-        session_rotation_seconds=_parse_int(
-            os.getenv("SESSION_ROTATION_SECONDS"),
-            default=1500,
-            minimum=60,
         ),
         observer_session_seconds=_parse_int(
             os.getenv("OBSERVER_SESSION_SECONDS"),
@@ -455,12 +425,12 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         observer_site_toggle_interval_min_seconds=_parse_int(
             os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_MIN_SECONDS"),
-            default=legacy_site_toggle_interval_seconds,
+            default=2,
             minimum=1,
         ),
         observer_site_toggle_interval_max_seconds=_parse_int(
             os.getenv("OBSERVER_SITE_TOGGLE_INTERVAL_MAX_SECONDS"),
-            default=legacy_site_toggle_interval_seconds,
+            default=2,
             minimum=1,
         ),
         observer_reload_probe_after_attempt=_parse_int(
@@ -647,12 +617,6 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError(
             "RESERVATION_MATH_PRE_SUBMIT_DELAY_MAX_SECONDS must be greater than or equal "
             "to RESERVATION_MATH_PRE_SUBMIT_DELAY_MIN_SECONDS"
-        )
-
-    if settings.continuous_interval_max_seconds < settings.continuous_interval_min_seconds:
-        raise ValueError(
-            "CONTINUOUS_INTERVAL_MAX_SECONDS must be greater than or equal to "
-            "CONTINUOUS_INTERVAL_MIN_SECONDS"
         )
 
     if settings.observer_interval_max_seconds < settings.observer_interval_min_seconds:

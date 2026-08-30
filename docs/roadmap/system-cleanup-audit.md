@@ -448,34 +448,57 @@ Resultado: **Paso 3 completado**. Los Grupos A, B y C quedaron cerrados.
 Riesgo: medio. Revisar despliegues externos y archivos de entorno antes de
 retirar nombres publicos.
 
-- [ ] `appointment_reminders_enabled` / `APPOINTMENT_REMINDERS_ENABLED`: se
+- [x] `appointment_reminders_enabled` / `APPOINTMENT_REMINDERS_ENABLED`: se
   cargan, pero no se leen; el control real vive en PostgreSQL.
-- [ ] `appointment_reminders_dry_run` / `APPOINTMENT_REMINDERS_DRY_RUN`: se
+- [x] `appointment_reminders_dry_run` / `APPOINTMENT_REMINDERS_DRY_RUN`: se
   cargan, pero no se leen; el modo real vive en PostgreSQL.
-- [ ] `session_rotation_seconds` / `SESSION_ROTATION_SECONDS`: se carga, pero no
+- [x] `session_rotation_seconds` / `SESSION_ROTATION_SECONDS`: se carga, pero no
   tiene consumidor.
-- [ ] `continuous_interval_min_seconds`: solo participa en validacion de
+- [x] `continuous_interval_min_seconds`: solo participa en validacion de
   configuracion; no controla esperas.
-- [ ] `continuous_interval_max_seconds`: se usa como umbral de salud, no como
-  intervalo. Renombrar segun su funcion antes de eliminarlo.
-- [ ] Campo `Settings.evidence_profile`: es redundante despues de construir los
+- [x] `continuous_interval_max_seconds`: se renombro como
+  `worker_progress_grace_seconds`; su ENV canonico es ahora
+  `WORKER_PROGRESS_GRACE_SECONDS`.
+- [x] Campo `Settings.evidence_profile`: es redundante despues de construir los
   settings. Conservar el ENV `EVIDENCE_PROFILE`, porque si deriva configuracion
   funcional de video y screenshots.
-- [ ] Mantener `OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS` hasta decidir retirar su
-  fallback de compatibilidad.
+- [x] Retirar el fallback `OBSERVER_SITE_TOGGLE_INTERVAL_SECONDS`: el despliegue
+  local, el ejemplo y los consumidores usan las variantes `MIN` y `MAX`.
 
-En el `.env` local se observaron claves ignoradas:
+Del `.env` local se retiraron las claves ignoradas autorizadas:
 
 - `ORDER_RULE_COOLDOWN_SECONDS`;
 - `OPPORTUNITY_BURST_ENABLED`.
 
-No modificarlas como parte automatica de la limpieza. El usuario debe autorizar
-explicitamente cambios en `.env` y primero se debe verificar que ningun script o
-servicio externo dependa de ellas.
+Tambien se retiraron `SESSION_ROTATION_SECONDS` y
+`CONTINUOUS_INTERVAL_MIN_SECONDS`, y se migro
+`CONTINUOUS_INTERVAL_MAX_SECONDS=55` a `WORKER_PROGRESS_GRACE_SECONDS=55`.
+`EVIDENCE_PROFILE` y los intervalos `MIN/MAX` del observer se conservaron.
+
+#### Registro de ejecucion del Paso 4
+
+Corte de la comprobacion: `2026-08-30 America/Lima`.
+
+- El unico arranque externo local identificado es la tarea programada
+  `AppointmentBotContinuousWorker`, que inicia `scripts/start-runtime.pyw` y los
+  procesos del mismo repositorio. Los scripts no consumen los nombres retirados.
+- Recordatorios y rafagas conservan sus controles persistidos en PostgreSQL;
+  eliminar flags ignorados no cambia esos modos ni el cortacircuitos.
+- El margen de salud conserva el valor efectivo `55` y el calculo de estancamiento
+  permanece igual. No se modificaron esperas del observer ni reintentos de sesion.
+- `.env.example` describe solamente opciones con efecto real. El `.env` local se
+  limpio por autorizacion explicita y permanece fuera de Git.
+- No se reiniciaron procesos ni se modificaron datos, reservas, trabajos
+  WhatsApp o comandos operativos.
+- Validaciones finales: carga aislada de configuracion y perfiles, consulta de
+  controles persistidos, `compileall`, Ruff, `59 passed`, validador documental y
+  `git diff --check`.
 
 Criterio de cierre: cada variable documentada cambia comportamiento real; los
 nombres conservados describen su uso y no existen flags que aparenten gobernar
 controles persistidos.
+
+Resultado: **Paso 4 completado**.
 
 ## Paso 5 - Auditar y retirar superficies de compatibilidad
 

@@ -737,7 +737,7 @@ class ContinuousWorker:
             return False, "worker_progress_timestamp_invalid"
         stale_after = max(
             180,
-            self.settings.continuous_interval_max_seconds
+            self.settings.worker_progress_grace_seconds
             + self.settings.login_timeout_seconds
             + self.settings.postback_timeout_seconds
             + self.settings.read_timeout_seconds
