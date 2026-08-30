@@ -9,7 +9,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 68
+SCHEMA_VERSION = 69
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -350,13 +350,12 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_followup_messages_schema(connection)
     _create_whatsapp_automation_jobs_schema(connection)
     _create_appointment_reminder_schema(connection)
-    _create_appointment_reminder_control_schema(connection)
+    _create_current_appointment_reminder_control_schema(connection)
     _create_appointment_reminder_lead_days_schema(connection)
     _create_whatsapp_message_template_schema(connection)
     _create_whatsapp_automation_template_trace_schema(connection)
     _create_whatsapp_message_template_trace_schema(connection)
     _create_whatsapp_followup_template_trace_schema(connection)
-    _unify_appointment_reminder_template_schema(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
@@ -956,7 +955,6 @@ def _validate_current_schema(connection: Connection) -> None:
         "whatsapp_automation_jobs",
         "appointment_reminder_days",
         "appointment_reminder_control",
-        "appointment_reminder_template_versions",
         "whatsapp_message_templates",
         "whatsapp_message_template_versions",
         "captcha_shadow_outbox",
@@ -1103,10 +1101,7 @@ def _validate_current_schema(connection: Connection) -> None:
         ("appointment_reminder_days", "last_reconciled_at"),
         ("appointment_reminder_control", "mode"),
         ("appointment_reminder_control", "lead_days"),
-        ("appointment_reminder_control", "message_template"),
         ("appointment_reminder_control", "revision"),
-        ("appointment_reminder_template_versions", "revision"),
-        ("appointment_reminder_template_versions", "message_template"),
         ("whatsapp_message_templates", "template_key"),
         ("whatsapp_message_templates", "message_template"),
         ("whatsapp_message_templates", "revision"),
@@ -1242,6 +1237,10 @@ def _validate_current_schema(connection: Connection) -> None:
     }
     missing = sorted(required_tables - tables)
     missing.extend(f"{table}.{column}" for table, column in sorted(required_columns - columns))
+    if "appointment_reminder_template_versions" in tables:
+        missing.append("retired:appointment_reminder_template_versions")
+    if ("appointment_reminder_control", "message_template") in columns:
+        missing.append("retired:appointment_reminder_control.message_template")
     missing.extend(sorted(required_constraints - constraints))
     missing.extend(
         f"unvalidated:{row['conname']}"
@@ -2083,6 +2082,36 @@ def _create_appointment_reminder_control_schema(connection: Connection) -> None:
     )
 
 
+def _create_current_appointment_reminder_control_schema(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS appointment_reminder_control (
+            id integer PRIMARY KEY CHECK (id = 1),
+            mode text NOT NULL DEFAULT 'disabled'
+                CONSTRAINT ck_appointment_reminder_control_mode CHECK (
+                    mode IN ('disabled', 'dry_run', 'live')
+                ),
+            lead_days smallint NOT NULL DEFAULT 1,
+            revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+            updated_at timestamptz NOT NULL,
+            updated_by text NOT NULL,
+            CONSTRAINT ck_appointment_reminder_control_lead_days CHECK (
+                lead_days BETWEEN 1 AND 3
+            )
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO appointment_reminder_control (
+            id, mode, lead_days, revision, updated_at, updated_by
+        ) VALUES (1, 'disabled', 1, 1, %s, 'schema-migration')
+        ON CONFLICT (id) DO NOTHING
+        """,
+        (datetime.now(UTC),),
+    )
+
+
 def _create_appointment_reminder_lead_days_schema(connection: Connection) -> None:
     connection.execute(
         """
@@ -2405,6 +2434,110 @@ def _unify_appointment_reminder_template_schema(connection: Connection) -> None:
             control["updated_by"],
         ),
     )
+
+
+def _retire_appointment_reminder_legacy_schema(connection: Connection) -> None:
+    legacy_table = connection.execute(
+        "SELECT to_regclass('appointment_reminder_template_versions') AS table_name"
+    ).fetchone()
+    if legacy_table is None or legacy_table["table_name"] is None:
+        raise RuntimeError("Legacy appointment reminder template history is missing.")
+
+    legacy_versions = connection.execute(
+        """
+        SELECT revision, message_template, created_at, created_by
+        FROM appointment_reminder_template_versions
+        ORDER BY revision
+        """
+    ).fetchall()
+    if not legacy_versions:
+        raise RuntimeError("Legacy appointment reminder template history is empty.")
+
+    for version in legacy_versions:
+        revision = int(version["revision"])
+        current = connection.execute(
+            """
+            SELECT message_template
+            FROM whatsapp_message_template_versions
+            WHERE template_key = 'appointment_reminder' AND revision = %s
+            """,
+            (revision,),
+        ).fetchone()
+        if current is not None and str(current["message_template"]) != str(
+            version["message_template"]
+        ):
+            references = connection.execute(
+                """
+                SELECT
+                    (SELECT count(*) FROM whatsapp_automation_jobs
+                     WHERE template_key = 'appointment_reminder'
+                       AND template_revision = %s)
+                  + (SELECT count(*) FROM whatsapp_followup_messages
+                     WHERE template_key = 'appointment_reminder'
+                       AND template_revision = %s)
+                  + (SELECT count(*) FROM whatsapp_messages
+                     WHERE confirmation_template_key = 'appointment_reminder'
+                       AND confirmation_template_revision = %s)
+                  + (SELECT count(*) FROM whatsapp_messages
+                     WHERE payment_template_key = 'appointment_reminder'
+                       AND payment_template_revision = %s) AS count
+                """,
+                (revision, revision, revision, revision),
+            ).fetchone()
+            if references is not None and int(references["count"]) > 0:
+                raise RuntimeError(
+                    "Cannot replace differing appointment reminder template "
+                    f"revision {revision}; persisted work references it."
+                )
+        connection.execute(
+            """
+            INSERT INTO whatsapp_message_template_versions (
+                template_key, revision, message_template, created_at, created_by
+            ) VALUES ('appointment_reminder', %s, %s, %s, %s)
+            ON CONFLICT (template_key, revision) DO UPDATE
+            SET message_template = EXCLUDED.message_template,
+                created_at = EXCLUDED.created_at,
+                created_by = EXCLUDED.created_by
+            """,
+            (
+                revision,
+                version["message_template"],
+                version["created_at"],
+                version["created_by"],
+            ),
+        )
+
+    mismatch = connection.execute(
+        """
+        SELECT count(*) AS count
+        FROM appointment_reminder_template_versions legacy
+        LEFT JOIN whatsapp_message_template_versions unified
+          ON unified.template_key = 'appointment_reminder'
+         AND unified.revision = legacy.revision
+        WHERE unified.revision IS NULL
+           OR unified.message_template IS DISTINCT FROM legacy.message_template
+           OR unified.created_at IS DISTINCT FROM legacy.created_at
+           OR unified.created_by IS DISTINCT FROM legacy.created_by
+        """
+    ).fetchone()
+    if mismatch is None or int(mismatch["count"]) != 0:
+        raise RuntimeError("Appointment reminder template history was not preserved.")
+
+    missing_frozen_text = connection.execute(
+        """
+        SELECT count(*) AS count
+        FROM whatsapp_automation_jobs
+        WHERE job_kind = 'appointment_reminder'
+          AND NULLIF(BTRIM(message_text), '') IS NULL
+        """
+    ).fetchone()
+    if missing_frozen_text is None or int(missing_frozen_text["count"]) != 0:
+        raise RuntimeError("An appointment reminder job has no frozen message text.")
+
+    connection.execute(
+        "ALTER TABLE appointment_reminder_control DROP COLUMN message_template"
+    )
+    connection.execute("DROP TABLE appointment_reminder_template_versions")
 
 
 def _stored_appointment_day(value: object) -> object | None:
@@ -3438,6 +3571,13 @@ def migrate_database(connection: Connection) -> None:
             (68,),
         )
         current_version = 68
+    if current_version == 68:
+        _retire_appointment_reminder_legacy_schema(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (69,),
+        )
+        current_version = 69
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

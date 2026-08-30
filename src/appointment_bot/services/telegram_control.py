@@ -40,6 +40,10 @@ LIMA_TIMEZONE = ZoneInfo("America/Lima")
 DEFAULT_ADMIN_API_URL = "http://127.0.0.1:8766"
 DEFAULT_POLL_TIMEOUT_SECONDS = 30
 RETRY_DELAY_SECONDS = 5
+WORKER_MONITOR_INTERVAL_SECONDS = 300
+WORKER_MONITOR_FAILURE_THRESHOLD = 3
+WORKER_MONITOR_START_MINUTE = 7 * 60 + 30
+WORKER_MONITOR_END_MINUTE = 18 * 60
 CONFIRMATION_TTL_SECONDS = 120
 CONVERSATION_TTL_SECONDS = 300
 CAPTCHA_REVIEW_TTL_SECONDS = 600
@@ -98,7 +102,97 @@ class TelegramControlConfig:
     admin_api_token: str
     offset_path: Path
     poll_timeout_seconds: int
+    worker_monitor_enabled: bool
     authorized_user_ids: frozenset[str] = frozenset()
+
+
+@dataclass
+class WorkerHealthMonitor:
+    enabled: bool
+    next_check_at: float = 0.0
+    consecutive_failures: int = 0
+    alert_sent: bool = False
+    last_failure_kind: str | None = None
+
+    def tick(
+        self,
+        *,
+        now: datetime,
+        monotonic_now: float,
+        admin_api: AdminApiClient,
+        telegram: TelegramBotApi,
+        chat_ids: frozenset[str],
+    ) -> None:
+        if not self.enabled:
+            return
+        minute = now.hour * 60 + now.minute
+        if not WORKER_MONITOR_START_MINUTE <= minute < WORKER_MONITOR_END_MINUTE:
+            self._reset()
+            self.next_check_at = monotonic_now + WORKER_MONITOR_INTERVAL_SECONDS
+            return
+        if monotonic_now < self.next_check_at:
+            return
+        self.next_check_at = monotonic_now + WORKER_MONITOR_INTERVAL_SECONDS
+
+        failure_kind = self._failure_kind(admin_api)
+        if failure_kind is None:
+            if self.consecutive_failures:
+                logger.info(
+                    "Telegram worker monitor recovered after %s failed checks.",
+                    self.consecutive_failures,
+                )
+            self._reset()
+            return
+
+        self.consecutive_failures += 1
+        self.last_failure_kind = failure_kind
+        logger.warning(
+            "Telegram worker monitor check failed (%s/%s): %s",
+            self.consecutive_failures,
+            WORKER_MONITOR_FAILURE_THRESHOLD,
+            failure_kind,
+        )
+        if self.consecutive_failures < WORKER_MONITOR_FAILURE_THRESHOLD or self.alert_sent:
+            return
+
+        message = (
+            "ALERTA OPERATIVA\n\n"
+            "El worker lleva tres revisiones consecutivas sin estado saludable.\n"
+            f"Causa: {failure_kind}.\n\n"
+            "Accion: revisa Estado del sistema.\n"
+            "No se ejecuto ningun reinicio automatico."
+        )
+        markup = {
+            "inline_keyboard": [
+                [{"text": "Estado del sistema", "callback_data": "ui:status:show"}]
+            ]
+        }
+        try:
+            for chat_id in sorted(chat_ids):
+                telegram.send_message(chat_id, message, reply_markup=markup)
+        except TelegramControlError as exc:
+            logger.warning("Telegram worker monitor could not send alert: %s", exc)
+            return
+        self.alert_sent = True
+
+    def _failure_kind(self, admin_api: AdminApiClient) -> str | None:
+        try:
+            payload = admin_api.get_worker()
+        except TelegramControlError:
+            try:
+                admin_api.get_health()
+            except TelegramControlError:
+                return "Admin API inaccesible"
+            return "consulta administrativa rechazada"
+        if payload.get("worker_running") is not True:
+            return "worker sin lease activo"
+        logger.info("Telegram worker monitor check healthy.")
+        return None
+
+    def _reset(self) -> None:
+        self.consecutive_failures = 0
+        self.alert_sent = False
+        self.last_failure_kind = None
 
 
 @dataclass(frozen=True)
@@ -702,6 +796,11 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
         admin_api_token=admin_api_token,
         offset_path=offset_path,
         poll_timeout_seconds=poll_timeout,
+        worker_monitor_enabled=os.getenv(
+            "TELEGRAM_WORKER_MONITOR_ENABLED",
+            "false",
+        ).strip().lower()
+        in {"1", "true", "yes", "on"},
     )
 
 
@@ -752,6 +851,7 @@ def run_control(*, check_only: bool = False) -> int:
     captcha_conversations: dict[str, CaptchaReviewConversation] = {}
     recent_orders: dict[str, deque[str]] = defaultdict(lambda: deque(maxlen=8))
     rate_limiter = TelegramRateLimiter()
+    worker_monitor = WorkerHealthMonitor(enabled=config.worker_monitor_enabled)
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
     telegram.set_operator_commands()
@@ -760,6 +860,13 @@ def run_control(*, check_only: bool = False) -> int:
     try:
         while not stop_event.is_set():
             try:
+                worker_monitor.tick(
+                    now=datetime.now(LIMA_TIMEZONE),
+                    monotonic_now=time.monotonic(),
+                    admin_api=admin_api,
+                    telegram=telegram,
+                    chat_ids=config.authorized_chat_ids,
+                )
                 updates = telegram.get_updates(
                     offset=next_offset,
                     timeout_seconds=config.poll_timeout_seconds,

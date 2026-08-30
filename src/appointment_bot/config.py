@@ -156,6 +156,7 @@ class Settings:
     queue_delay_min_seconds: int
     queue_delay_max_seconds: int
     continuous_worker_enabled: bool
+    worker_embedded_api_enabled: bool
     worker_progress_grace_seconds: int
     final_ready_review_enabled: bool
     worker_daily_cutoff_time: datetime_time
@@ -351,6 +352,10 @@ def load_settings(*, require_login: bool = True) -> Settings:
         continuous_worker_enabled=_parse_bool(
             os.getenv("CONTINUOUS_WORKER_ENABLED"),
             default=False,
+        ),
+        worker_embedded_api_enabled=_parse_bool(
+            os.getenv("WORKER_EMBEDDED_API_ENABLED"),
+            default=True,
         ),
         worker_progress_grace_seconds=_parse_int(
             os.getenv("WORKER_PROGRESS_GRACE_SECONDS"),

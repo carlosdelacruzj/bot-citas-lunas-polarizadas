@@ -1,6 +1,6 @@
 # Arquitectura actual
 
-Ultima verificacion: `2026-08-29`.
+Ultima verificacion: `2026-08-30`.
 
 ## Procesos
 
@@ -25,7 +25,8 @@ CAPTCHA de la reserva, submit y confirmacion.
 ### Telegram
 
 Cliente operativo de Admin API. No conoce credenciales de PostgreSQL, no ejecuta
-SQL y no inicia PowerShell directamente.
+SQL y no inicia PowerShell directamente. Su receptor incluye un monitor
+autenticado del lease del worker, sin reinicios automaticos.
 
 ### CAPTCHA sombra
 
@@ -56,7 +57,8 @@ CAPTCHA sombra (opcional) -----> PostgreSQL/artefactos
 - Worker decide cuando una operacion del navegador es segura.
 - PostgreSQL es la fuente compartida; archivos runtime no sustituyen estado.
 - WhatsApp tiene un solo perfil propietario.
-- n8n orquesta; no contiene logica critica ni opera el navegador.
+- n8n conserva temporalmente el monitor externo anterior durante la ventana de
+  comparacion; no contiene logica critica ni opera el navegador.
 - cada orden tiene contexto Playwright aislado.
 
 ## Comandos y controles

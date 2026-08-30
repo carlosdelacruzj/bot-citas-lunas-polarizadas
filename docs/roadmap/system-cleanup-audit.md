@@ -517,24 +517,54 @@ Hallazgo:
 
 Secuencia:
 
-- [ ] Medir logs de acceso durante una ventana representativa.
-- [ ] Revisar n8n, scripts, proxies y clientes externos.
-- [ ] Marcar v1 como deprecada con fecha y alternativa v2.
+- [x] Medir logs de acceso durante una ventana representativa.
+- [x] Revisar n8n, scripts, proxies y clientes externos.
+- [x] Marcar v1 como deprecada con fecha y alternativa v2.
 - [ ] Mantener una ventana de compatibilidad acordada.
-- [ ] Retirar metodo e interfaz frontend v1.
+- [x] Retirar metodo e interfaz frontend v1.
 - [ ] Retirar ruta, payload y consulta backend v1.
-- [ ] Actualizar contrato Admin API y documentacion.
+- [x] Actualizar contrato Admin API y documentacion.
 
 ### API embebida del Worker en `8765`
 
 Hallazgo: el servicio se inicia siempre, mientras la operacion normal usa Admin
 API `8766`. La documentacion conserva `8765` como rollback.
 
-- [ ] Medir trafico y revisar n8n, proxy, scripts y monitores externos.
-- [ ] Confirmar si alguna recuperacion depende realmente de `8765`.
+- [x] Medir trafico y revisar n8n, proxy, scripts y monitores externos.
+- [x] Confirmar si alguna recuperacion depende realmente de `8765`.
 - [ ] Si no tiene consumidores, primero deshabilitarlo de forma reversible.
 - [ ] Observar una ventana operativa completa.
 - [ ] Retirar el servidor y actualizar topologia/runbooks solo al final.
+
+### Registro de ejecucion parcial del Paso 5
+
+Corte de la comprobacion: `2026-08-30 11:18-11:41 America/Lima`.
+
+- Los logs del `2026-08-16` al `2026-08-30` registraron cero accesos al resumen
+  mensual v1 y `619` al v2. No aparecieron consumidores v1 en dashboard,
+  scripts, proxy ni los cuatro workflows n8n.
+- Se retiro del frontend el metodo y la interfaz v1. El endpoint backend conserva
+  por ahora el mismo JSON, registra cada acceso y emite `Deprecation`, `Sunset`
+  y enlace a v2. La compatibilidad termina al cierre del `2026-09-03`; el retiro
+  puede ejecutarse desde el `2026-09-04`.
+- `8765` recibio `1,829` solicitudes en la misma ventana: `1,805` fueron
+  revisiones `/health` del workflow n8n activo. Por tanto no estaba sin
+  consumidores y no se apago.
+- Telegram Control incorpora el reemplazo nativo: consulta autenticadamente
+  `/api/v1/worker` cada cinco minutos entre `07:30` y `18:00`, alerta tras tres
+  fallos y no reinicia. Se activo localmente, se reinicio solo ese proceso y su
+  primera revision confirmo salud del worker.
+- Los cuatro workflows se exportaron a
+  `.runtime/n8n-backup-20260830T1140/`. El contenedor y el volumen permanecen
+  intactos y el monitor anterior sigue activo durante la comparacion.
+- Se agrego `WORKER_EMBEDDED_API_ENABLED` para que el apagado posterior sea
+  reversible. Permanece `true` mientras n8n observa `8765`.
+- Al corte no habia sesiones manuales ni rafagas activas; worker, `8765`, `8766`,
+  Telegram y n8n permanecian operativos.
+
+Resultado: **Paso 5 en observacion**. No borrar el backend v1 antes del
+`2026-09-04`, ni detener n8n o `8765` antes de completar una jornada operativa
+sin diferencias entre ambos monitores.
 
 Criterio de cierre: existe evidencia de cero consumidores externos durante la
 ventana acordada y hay rollback documentado.
@@ -543,18 +573,49 @@ ventana acordada y hay rollback documentado.
 
 Riesgo: alto por historia y trazabilidad.
 
-- [ ] Auditar las seis filas observadas en
+- [x] Auditar las seis filas observadas en
   `appointment_reminder_template_versions`.
-- [ ] Comparar revisiones antiguas con `whatsapp_message_template_versions`.
-- [ ] Preservar contenido historico distinto, especialmente revision 1.
-- [ ] Diseñar archivo o migracion explicita; no borrar la tabla directamente.
-- [ ] Evaluar la columna duplicada
+- [x] Comparar revisiones antiguas con `whatsapp_message_template_versions`.
+- [x] Preservar contenido historico distinto, especialmente revision 1.
+- [x] Diseñar archivo o migracion explicita; no borrar la tabla directamente.
+- [x] Evaluar la columna duplicada
   `appointment_reminder_control.message_template`: el runtime usa la plantilla
   unificada y no se encontro consumidor funcional de esa copia.
-- [ ] Retirar columna y tabla legacy solo en una migracion nueva, con validacion
+- [x] Retirar columna y tabla legacy solo en una migracion nueva, con validacion
   de trazas historicas.
-- [ ] Confirmar que reportes y trabajos congelados siguen renderizando la
+- [x] Confirmar que reportes y trabajos congelados siguen renderizando la
   revision que les corresponde.
+
+### Registro de ejecucion del Paso 6
+
+Corte de la comprobacion: `2026-08-30 11:43-12:03 America/Lima`.
+
+- La tabla legacy contenia seis revisiones. Las revisiones 2 a 6 ya coincidian
+  exactamente con la autoridad unificada; la revision 1 conservaba el unico
+  texto historico que decia "manana" y no tenia trabajos que la referenciaran.
+- La migracion `v69` sustituyo la revision 1 unificada por el texto, fecha y
+  autor historicos, valido las seis revisiones dentro de la misma transaccion y
+  solo entonces retiro la tabla legacy y la columna duplicada del control.
+- `AppointmentReminderControl` conserva modo, anticipacion, revision operativa,
+  fecha y actor. El texto vigente se lee exclusivamente desde
+  `whatsapp_message_templates`; no se mezclo la revision del control `11` con
+  la revision de plantilla `6`.
+- Los `44` trabajos de recordatorio enviados conservan texto congelado: `34`
+  anteriores a la traza de plantilla y `10` con revision `6`. No existen textos
+  vacios ni referencias a versiones ausentes.
+- Antes del despliegue se guardo un respaldo local en
+  `.runtime/step6-reminder-schema-v68-20260830.sql`. La migracion se valido
+  primero sobre una copia temporal de PostgreSQL, eliminada despues de la
+  comprobacion.
+- No habia orden, lease de orden, sesion manual, rafaga, trabajo WhatsApp,
+  recordatorio o revision post-cita activos. Admin API y worker se reiniciaron;
+  el worker respeto el vencimiento natural de su lease anterior sin liberarlo
+  manualmente.
+- Estado final: PostgreSQL `v69`, worker activo, Admin API saludable, endpoint
+  de recordatorios correcto y perfil WhatsApp `session_ready` sin envio.
+
+Resultado: **Paso 6 completado**. Existe una sola autoridad de plantillas y
+toda revision historica necesaria sigue siendo reconstruible.
 
 Criterio de cierre: existe una sola autoridad para plantillas nuevas y toda
 plantilla historica necesaria sigue siendo reconstruible.

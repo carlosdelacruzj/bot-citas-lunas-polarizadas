@@ -4,6 +4,7 @@ import hmac
 import json
 import mimetypes
 import os
+from collections.abc import Mapping
 from http import HTTPStatus
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler
@@ -95,12 +96,16 @@ def send_json(
     handler: BaseHTTPRequestHandler,
     status: HTTPStatus,
     payload: dict[str, Any],
+    *,
+    headers: Mapping[str, str] | None = None,
 ) -> None:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Cache-Control", "no-store")
     handler.send_header("X-Content-Type-Options", "nosniff")
+    for name, value in (headers or {}).items():
+        handler.send_header(name, value)
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)

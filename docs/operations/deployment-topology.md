@@ -1,6 +1,6 @@
 # Topologia operativa
 
-Estado: vigente. Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-08-30`.
 
 Este documento describe como iniciar, verificar y recuperar la topologia actual.
 
@@ -28,7 +28,7 @@ PostgreSQL
   |-- appointment-bot-admin-api + dashboard + WhatsApp + schedulers
   |-- appointment-bot-telegram-control
   |-- captcha-shadow opcional
-  |-- n8n supervisor externo
+  |-- n8n monitor externo temporal durante la comparacion
 ```
 
 El admin API y el worker comparten base y modulos `core`/`db`, pero no memoria.
@@ -99,7 +99,15 @@ inyeccion del token fuera de Angular y apunta a `127.0.0.1:8766`.
 
 El worker conserva su API embebida en `http://127.0.0.1:8765`. Si se necesita
 rollback temporal del dashboard, cambiar `dashboard/proxy.conf.cjs` a `8765`.
-Para validar la arquitectura vigente, usar `8766`.
+Para validar la arquitectura vigente, usar `8766`. La API embebida puede
+desactivarse reversiblemente con `WORKER_EMBEDDED_API_ENABLED=false`, pero solo
+despues de retirar sus consumidores y completar una ventana operativa.
+
+Telegram Control puede vigilar el lease real mediante
+`TELEGRAM_WORKER_MONITOR_ENABLED=true`. Consulta autenticadamente
+`GET /api/v1/worker` cada cinco minutos entre `07:30` y `18:00`, alerta tras tres
+fallos consecutivos y no ejecuta reinicios. Mientras se compara con el workflow
+anterior, mantener n8n y `8765` activos.
 
 No levantar el admin API fuera de loopback sin `APPOINTMENT_BOT_API_TOKEN`.
 No cambiar `.env` para pruebas temporales; usar variables de entorno de la

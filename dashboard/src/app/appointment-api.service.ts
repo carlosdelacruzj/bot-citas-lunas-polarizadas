@@ -658,51 +658,6 @@ export interface ManualSession {
 
 export type ManualSessionMode = 'appointment' | 'portal' | 'diagnostic';
 
-export interface MonthlySummary {
-  month: string;
-  period: { start: string; end: string };
-  metrics: {
-    revenue_collected: number;
-    payments_received: number;
-    reservations_confirmed: number;
-    orders_created: number;
-    active_orders: number;
-    pending_payments: number;
-    pending_amount: number;
-    average_ticket: number;
-    conversion_rate: number;
-  };
-  previous: {
-    month: string;
-    revenue_collected: number;
-    payments_received: number;
-  };
-  daily_revenue: Array<{ date: string; amount: number; payments: number }>;
-  sources: Array<{
-    source: string;
-    orders_created: number;
-    reservations_confirmed: number;
-    revenue_collected: number;
-  }>;
-  attention: {
-    missing_contact_count: number;
-    pending_payments: Array<{
-      order_id: string;
-      name: string;
-      source: string;
-      amount_agreed: number;
-      reservation_date: string | null;
-      reservation_hour: string | null;
-    }>;
-    aged_active_orders: Array<{
-      order_id: string;
-      name: string;
-      status: string;
-      created_date: string;
-    }>;
-  };
-}
-
 export interface MetricRatio {
   value: number;
   numerator: number;
@@ -1372,13 +1327,6 @@ export class AppointmentApiService {
   async getManualSessions(scope?: RequestScope): Promise<ManualSession[]> {
     const response = await this.read<ManualSessionsResponse>('/api/v1/manual-sessions', scope);
     return response.manual_sessions;
-  }
-
-  async getMonthlySummary(month: string, scope?: RequestScope): Promise<MonthlySummary> {
-    return this.read<MonthlySummary>(
-      `/api/v1/monthly-summary?month=${encodeURIComponent(month)}`,
-      scope,
-    );
   }
 
   async getMonthlySummaryV2(month: string, scope?: RequestScope): Promise<MonthlySummaryV2> {

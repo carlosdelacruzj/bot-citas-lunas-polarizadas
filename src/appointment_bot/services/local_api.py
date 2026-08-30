@@ -312,8 +312,20 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/monthly-summary":
             if not self._require_authorized(strict=True):
                 return
+            logger.warning(
+                "Deprecated API accessed: GET /api/v1/monthly-summary; "
+                "use /api/v2/monthly-summary"
+            )
             status, payload = monthly_dashboard_payload(query)
-            self._send_json(status, payload)
+            self._send_json(
+                status,
+                payload,
+                headers={
+                    "Deprecation": "true",
+                    "Sunset": "Fri, 04 Sep 2026 05:00:00 GMT",
+                    "Link": '</api/v2/monthly-summary>; rel="successor-version"',
+                },
+            )
             return
 
         if path == "/api/v2/monthly-summary":
@@ -942,8 +954,14 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     def _read_json(self) -> dict[str, Any]:
         return read_json(self)
 
-    def _send_json(self, status: HTTPStatus, payload: dict) -> None:
-        send_json(self, status, payload)
+    def _send_json(
+        self,
+        status: HTTPStatus,
+        payload: dict,
+        *,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        send_json(self, status, payload, headers=headers)
 
 
 def create_local_api_server(

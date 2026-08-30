@@ -1,6 +1,6 @@
 # Contrato de comunicaciones WhatsApp
 
-Estado: vigente. Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-08-30`.
 
 Codigo propietario: `src/appointment_bot/services/whatsapp*` y
 `src/appointment_bot/db/whatsapp*`.
@@ -54,6 +54,11 @@ reescribe mensajes historicos o ya preparados.
 
 Las plantillas se versionan en PostgreSQL y usan variables allowlisted. Preview,
 edicion, restauracion y guardado aplican revision optimista.
+
+`whatsapp_message_templates` y `whatsapp_message_template_versions` son la
+unica autoridad de texto para plantillas nuevas e historicas, incluido
+`appointment_reminder`. El control de recordatorios conserva modo, anticipacion
+y su propia revision operativa, pero no duplica el texto de la plantilla.
 
 Al preparar un trabajo futuro se congela:
 

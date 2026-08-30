@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-08-29`.
+Estado verificado documentalmente: `2026-08-30`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL actual: `v68`;
+- esquema PostgreSQL actual: `v69`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
@@ -46,6 +46,10 @@ Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp.
 Telegram y n8n no ejecutan SQL, PowerShell ni logica del navegador directamente.
+Telegram Control revisa cada cinco minutos el lease real del worker mediante
+Admin API entre `07:30` y `18:00`; alerta tras tres fallos y nunca reinicia por
+su cuenta. El monitor n8n permanece temporalmente en paralelo durante la ventana
+de comparacion.
 
 ### Persistencia
 

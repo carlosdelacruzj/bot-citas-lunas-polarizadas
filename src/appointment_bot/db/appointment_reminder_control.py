@@ -20,7 +20,6 @@ class AppointmentReminderControlConflict(RuntimeError):
 class AppointmentReminderControl:
     mode: str
     lead_days: int
-    message_template: str
     revision: int
     updated_at: datetime
     updated_by: str
@@ -37,8 +36,7 @@ def get_appointment_reminder_control(
     with _connection(_database_url(resolved)) as connection:
         row = connection.execute(
             """
-            SELECT mode, lead_days, message_template, revision,
-                   updated_at, updated_by
+            SELECT mode, lead_days, revision, updated_at, updated_by
             FROM appointment_reminder_control
             WHERE id = 1
             """
@@ -84,8 +82,7 @@ def update_appointment_reminder_control(
             SET mode = %s, lead_days = %s,
                 revision = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
             WHERE id = 1
-            RETURNING mode, lead_days, message_template, revision,
-                      updated_at, updated_by
+            RETURNING mode, lead_days, revision, updated_at, updated_by
             """,
             (
                 normalized_mode,
@@ -113,7 +110,6 @@ def _from_row(row) -> AppointmentReminderControl:
     return AppointmentReminderControl(
         mode=str(row["mode"]),
         lead_days=int(row["lead_days"]),
-        message_template=str(row["message_template"]),
         revision=int(row["revision"]),
         updated_at=row["updated_at"],
         updated_by=str(row["updated_by"]),

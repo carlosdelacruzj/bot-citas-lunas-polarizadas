@@ -34,10 +34,13 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     stop_event = external_stop_event or threading.Event()
     restart_event = threading.Event()
     worker = ContinuousWorker(settings)
-    server = create_local_api_server(
-        worker_controller=worker,
-        restart_callback=restart_event.set,
-    )
+    server = None
+    server_thread = None
+    if settings.worker_embedded_api_enabled:
+        server = create_local_api_server(
+            worker_controller=worker,
+            restart_callback=restart_event.set,
+        )
     captcha_shadow_dispatcher = configure_captcha_shadow(settings)
     captcha_shadow_dispatcher.start()
     telegram_alert_dispatcher = configure_telegram_alerts(settings)
@@ -60,13 +63,16 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         name="appointment-bot-worker",
         daemon=True,
     )
-    server_thread = threading.Thread(
-        target=server.serve_forever,
-        name="appointment-bot-local-api",
-        daemon=True,
-    )
-    host, port = server.server_address[:2]
-    logger.info("Continuous worker API listening on http://%s:%s", host, port)
+    if server is not None:
+        server_thread = threading.Thread(
+            target=server.serve_forever,
+            name="appointment-bot-local-api",
+            daemon=True,
+        )
+        host, port = server.server_address[:2]
+        logger.info("Continuous worker API listening on http://%s:%s", host, port)
+    else:
+        logger.info("Continuous worker embedded API is disabled.")
     worker_thread.start()
     if not worker.wait_until_ready(timeout=10):
         stop_event.set()
@@ -78,7 +84,8 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         raise RuntimeError("Continuous worker did not become ready before timeout.")
     if worker.shutdown_reason == LEASE_UNAVAILABLE_REASON:
         logger.warning("Another host owns the worker lease; retrying later.")
-        server.server_close()
+        if server is not None:
+            server.server_close()
         worker_thread.join(timeout=5)
         captcha_shadow_dispatcher.stop()
         telegram_alert_dispatcher.stop()
@@ -89,7 +96,8 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         if worker_failure:
             raise RuntimeError("Continuous worker failed during startup.") from worker_failure[0]
         raise RuntimeError("Continuous worker stopped during startup.")
-    server_thread.start()
+    if server_thread is not None:
+        server_thread.start()
     try:
         while not stop_event.wait(1):
             if restart_event.is_set():
@@ -139,9 +147,11 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
                 enqueue_daily_slot_summary(settings)
             except Exception:
                 logger.exception("Could not queue the daily WhatsApp slot summary")
-        server.shutdown()
-        server.server_close()
-        server_thread.join(timeout=10)
+        if server is not None:
+            server.shutdown()
+            server.server_close()
+        if server_thread is not None:
+            server_thread.join(timeout=10)
         captcha_shadow_dispatcher.stop()
         telegram_alert_dispatcher.stop()
         if worker_thread.is_alive():

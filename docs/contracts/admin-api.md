@@ -47,7 +47,12 @@ El catálogo exacto vive en los routers. Los grupos estables son:
 - citas, recordatorios y seguimiento post-cita;
 - plantillas, mensajes, jobs y conciliacion WhatsApp;
 - sesiones manuales controladas;
-- reportes mensuales v1/v2.
+- reporte mensual v2.
+
+`GET /api/v1/monthly-summary` permanece disponible hasta el final del
+`2026-09-03`; su retiro esta previsto desde el `2026-09-04`. Los consumidores deben usar
+`GET /api/v2/monthly-summary`; v1 emite `Deprecation`, `Sunset` y un enlace a
+la version sucesora.
 
 No mantener aqui un inventario exhaustivo de URLs: debe verificarse en
 `local_api.py` y los routers antes de agregar o retirar una ruta.
