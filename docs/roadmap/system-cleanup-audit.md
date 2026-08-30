@@ -938,16 +938,49 @@ siguen resolviendo evidencia antigua y una purga no elimina comparabilidad.
 
 ## Paso 11 - Validacion integral y cierre
 
-- [ ] Ejecutar validacion Python existente.
-- [ ] Ejecutar build del dashboard si hubo cambios frontend.
-- [ ] Ejecutar el validador documental.
-- [ ] Ejecutar `git diff --check`.
-- [ ] Revisar visualmente pantallas afectadas.
-- [ ] Revisar rutas API afectadas con datos no sensibles.
-- [ ] Confirmar que no se crearon envios, reservas ni reintentos ambiguos.
-- [ ] Actualizar `docs/project-status.md` si cambio una capacidad vigente.
-- [ ] Actualizar `docs/roadmap/README.md` si cambio prioridad o trabajo futuro.
-- [ ] Hacer commits separados por dominio y revisar cada diff antes de publicar.
+- [x] Ejecutar validacion Python existente.
+- [x] Ejecutar build del dashboard si hubo cambios frontend.
+- [x] Ejecutar el validador documental.
+- [x] Ejecutar `git diff --check`.
+- [x] Revisar visualmente pantallas afectadas.
+- [x] Revisar rutas API afectadas con datos no sensibles.
+- [x] Confirmar que no se crearon envios, reservas ni reintentos ambiguos.
+- [x] Actualizar `docs/project-status.md` si cambio una capacidad vigente.
+- [x] Actualizar `docs/roadmap/README.md` si cambio prioridad o trabajo futuro.
+- [x] Hacer commits separados por dominio y revisar cada diff antes de publicar.
+
+### Registro de ejecucion del Paso 11
+
+Corte final: `2026-08-30 16:19 America/Lima`.
+
+- `compileall`, Ruff, las `59` pruebas existentes, el build Angular, el
+  validador documental y `git diff --check` terminaron correctamente. El build
+  conserva los dos avisos de presupuesto preexistentes.
+- No se modificaron archivos del dashboard ni superficies visuales. Se revisaron
+  directamente manifiesto, punteros y destinos archivados; no habia una pantalla
+  afectada que justificara una aceptacion visual adicional.
+- Admin API respondio, el endpoint autenticado del worker confirmo proceso vivo
+  y el ultimo reinicio coordinado quedo `applied`. El worker regreso a
+  `outside_hot_window`, sin orden ni error activo.
+- PostgreSQL confirmo cero leases o submissions activos, cero rafagas, cero jobs
+  WhatsApp en ejecucion y cero runs, intentos, reservas o jobs creados durante
+  esta intervencion. No se libero ningun backoff ni se creo un reintento.
+- Una auditoria independiente encontro dos bloqueos antes de publicar: cobertura
+  incompleta de sanitizacion futura y un glob contractual antiguo. Ambos se
+  corrigieron y se verificaron con datos sinteticos sin escribir evidencia real.
+  Tambien se validaron enlaces cuando el puntero usa una ruta personalizada.
+- La equivalencia final conserva `2,700` eventos utiles unicos, `12` exclusiones
+  `Sin Cupos` en el snapshot legacy, `411` casos de optimizacion y `579`
+  parciales. Agregados, manifiesto, privacidad y enlaces coinciden.
+- `docs/project-status.md` declara la rotacion vigente. El roadmap retiro los
+  agregados y esta limpieza integral de la cola futura; backup externo,
+  retencion de artefactos y observaciones naturales permanecen pendientes.
+- Commit de implementacion revisado: `74f33d9` (`chore: rotate evidence history
+  and refresh indexes`). Este cierre documental se conserva por separado.
+
+Resultado: **Pasos 1 a 11 cerrados**. Codigo, runtime, PostgreSQL, reportes y
+documentacion coinciden en el alcance de esta auditoria. Los pendientes reales
+restantes viven unicamente en `docs/roadmap/README.md`.
 
 Comandos base:
 

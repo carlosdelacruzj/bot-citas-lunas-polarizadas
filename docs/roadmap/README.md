@@ -65,7 +65,6 @@ Cierre: payloads proporcionales a la vista y sin consultas duplicadas costosas.
 
 - configurar backup externo y verificar restauracion;
 - completar watchdogs y retencion de artefactos externos;
-- crear agregados diarios antes de purgar datos crudos;
 - mostrar cobertura, ultimo backup y proxima purga;
 - bloquear reportes con datos personales o respuestas CAPTCHA.
 
@@ -99,16 +98,6 @@ No iniciar antes de estabilizar P0-P2:
 3. dividir `dashboard/src/app/app.ts` por dominio;
 4. reducir `ViewEncapsulation.None` gradualmente;
 5. uniformar errores HTTP con `request_id` y respuesta sanitizada;
-
-### Limpieza integral auditada
-
-Ejecutar por etapas el
-[`plan de limpieza y alineacion`](system-cleanup-audit.md): alinear primero
-runtime, esquema y documentacion; despues retirar codigo, compatibilidad,
-artefactos y evidencia redundante solo con consumidores revalidados.
-
-Cierre: codigo, datos, procesos y documentos coinciden; cada elemento conservado
-tiene proposito y cada retiro tiene evidencia y rollback proporcional.
 
 ## Fuera de alcance o sin autorizacion
 
