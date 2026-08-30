@@ -1,5 +1,11 @@
 # Contrato financiero
 
+Estado: vigente.
+
+Ultima verificacion: `2026-08-30`.
+
+Responsable: `db/finance.py` y `services/api/finance_routes.py`.
+
 ## Fuente de verdad
 
 PostgreSQL es la fuente de verdad. `finance_categories` normaliza las categorias

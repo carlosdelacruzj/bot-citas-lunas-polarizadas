@@ -2,6 +2,18 @@
 
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
+## Corte y cobertura
+- Generado: `2026-08-30 10:25:57 America/Lima`.
+- Rango real de eventos indexados: `2026-06-30 08:27:37` a `2026-08-29 12:00:24` (America/Lima).
+- Cobertura temporal verificable: 2699/2699 eventos con hora de cierre.
+- Fuente: filas sanitizadas del indice compacto de evidencia.
+
+## Limites
+- Es un snapshot generado; no representa el runtime ni PostgreSQL en vivo.
+- Incluye solo eventos utiles definidos por la politica de evidencia, no todos los runs.
+- Una ruta indexada no prueba que el artefacto siga retenido; verificarla antes de citarla.
+- La ausencia de un evento no demuestra que el portal no haya sido consultado.
+
 ## Totales
 - Eventos indexados: 2699
 - Reservas registradas: 200

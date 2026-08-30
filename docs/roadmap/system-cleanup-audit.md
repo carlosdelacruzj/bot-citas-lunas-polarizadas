@@ -271,25 +271,54 @@ misma version; no hay trabajo ambiguo creado por el despliegue.
 
 Riesgo: bajo. Realizar despues de conocer el runtime real.
 
-- [ ] `docs/project-status.md`: declarar solo el esquema realmente desplegado o
+- [x] `docs/project-status.md`: declarar solo el esquema realmente desplegado o
   mostrar explicitamente la diferencia temporal frente al codigo publicado.
-- [ ] `reports/optimization/latest.md`: cambiar “Decision actual” por “Decision
+- [x] `reports/optimization/latest.md`: cambiar “Decision actual” por “Decision
   al corte” y tratarlo como baseline fechado. El texto antiguo de “sin cambios
   funcionales” contradice la promocion estable posterior y su propio encabezado.
-- [ ] `reports/operations/latest.md`: retirar la afirmacion de que la mejora aun
+- [x] `reports/operations/latest.md`: retirar la afirmacion de que la mejora aun
   vive en roadmap y corregir “Sin alertas” cuando el mismo reporte registra dos
   defensas.
-- [ ] `docs/evidence-summary.md` y su generador: agregar `generated_at`, rango,
+- [x] `docs/evidence-summary.md` y su generador: agregar `generated_at`, rango,
   cobertura y limites. El archivo generado no debe parecer estado vivo.
-- [ ] `docs/contracts/whatsapp.md`: identificar la autoridad exacta del paquete
+- [x] `docs/contracts/whatsapp.md`: identificar la autoridad exacta del paquete
   y orden de PDFs. En el corte, la autoridad efectiva era
   `.runtime/whatsapp-followup/followup-details.json`, no un contrato escrito.
-- [ ] `docs/README.md`: retirar “reportes de negocio” de `reports/` mientras no
+- [x] `docs/README.md`: retirar “reportes de negocio” de `reports/` mientras no
   exista ese dominio o crear una ubicacion real si se decide conservarlo.
-- [ ] `docs/contracts/reservation-safety.md`: agregar estado, ultima verificacion
+- [x] `docs/contracts/reservation-safety.md`: agregar estado, ultima verificacion
   y responsable.
-- [ ] `docs/contracts/finance.md`: agregar estado, ultima verificacion y
+- [x] `docs/contracts/finance.md`: agregar estado, ultima verificacion y
   responsable.
+
+### Registro de ejecucion del Paso 2
+
+Corte de la comprobacion: `2026-08-30 10:20-10:27 America/Lima`.
+
+- `docs/project-status.md` ya declaraba el esquema desplegado `v68`, confirmado
+  en el Paso 1, por lo que no requirio una segunda edicion.
+- Los dos `latest.md` quedaron identificados como cortes historicos: optimizacion
+  usa `Decision al corte` y operacion reconoce las dos defensas observadas sin
+  afirmar que la correccion sigue pendiente en el roadmap.
+- El generador de evidencia ahora escribe fecha de generacion, ventana solicitada
+  cuando aplica, rango real, cobertura temporal y limites. El snapshot vigente
+  se regenero desde el indice sanitizado: `2,699/2,699` eventos tienen hora de
+  cierre y cubren del `2026-06-30 08:27:37` al `2026-08-29 12:00:24` en Lima.
+- El contrato WhatsApp declara que `.runtime/whatsapp-followup/followup-details.json`
+  gobierna seleccion y orden de paquetes futuros, exige originales bajo `pdfs/`
+  y congela la lista preparada en PostgreSQL. El orden verificado es
+  `Formato_Tramite.pdf`, `requisitos.pdf`, `Formato_Tramite_Ejemplo.pdf`.
+- `docs/README.md` ya no atribuye un dominio de negocio inexistente a `reports/`.
+  Los contratos de reserva y finanzas indican estado, ultima verificacion y
+  responsable por codigo propietario.
+- No se modifico runtime, PostgreSQL, `.env`, clientes, reservas ni trabajos
+  WhatsApp. No se agregaron pruebas nuevas; se extendio la prueba existente del
+  generador para cubrir los metadatos nuevos.
+- Validaciones: `compileall`, Ruff, `59 passed`, validador documental y
+  `git diff --check`.
+
+Resultado: **Paso 2 completado**. Los snapshots activos declaran su corte y
+limites, y los contratos afectados identifican autoridad y verificacion.
 
 Validacion:
 

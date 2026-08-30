@@ -1,10 +1,10 @@
 # Reporte semanal de operacion
 
-> Corte historico generado, no estado de runtime. La etiqueta de alertas de
-> este reporte no cubre todavia todas las defensas contabilizadas; esa mejora
-> esta planificada en `docs/roadmap/README.md`.
+> Corte historico generado, no estado de runtime. La etiqueta original de
+> alertas no cubria todas las defensas contabilizadas y se corrige aqui sin
+> convertir este snapshot en una fuente viva.
 
-- Rango actual: `2026-08-01` a `2026-08-08` (America/Lima, inclusivo).
+- Rango del reporte: `2026-08-01` a `2026-08-08` (America/Lima, inclusivo).
 - Rango comparable anterior: `2026-07-24` a `2026-07-31`.
 - Runs medidos: 5299 actuales; 4234 anteriores.
 - Intentos medidos: 78 actuales; 21 anteriores.
@@ -39,9 +39,10 @@
 - Mas de 10s: 0.
 - Mas de 20s: 0.
 
-## Alertas
+## Defensas observadas
 
-- Sin alertas para este rango.
+- Se registraron `2` senales de defensa en este rango. El reporte no conserva
+  aqui clasificacion suficiente para presentarlas como incidentes distintos.
 
 ## Acumulado historico
 

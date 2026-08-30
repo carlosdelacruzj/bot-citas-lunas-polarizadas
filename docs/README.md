@@ -51,7 +51,7 @@ investigacion necesite cronologia o evidencia de una decision antigua.
 
 - `evidence-summary.md` y `evidence-index.csv` son snapshots generados por el
   codigo y permanecen en `docs/` porque esa ruta es contrato del generador.
-- `reports/` contiene cortes operativos, de optimizacion y negocio.
+- `reports/` contiene cortes operativos, de optimizacion y salidas de evidencia.
 - Un archivo llamado `latest.md` es el ultimo artefacto escrito, no prueba de
   estado vivo.
 

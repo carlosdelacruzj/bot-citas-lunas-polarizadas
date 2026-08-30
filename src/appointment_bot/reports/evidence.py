@@ -89,22 +89,37 @@ def export_evidence_summary(
     now: datetime | None = None,
     update_current: bool = False,
 ) -> EvidenceSummaryResult:
+    effective_now = now or datetime.now(UTC)
+    if effective_now.tzinfo is None:
+        effective_now = effective_now.replace(tzinfo=UTC)
     output_dir.mkdir(parents=True, exist_ok=True)
     rows = [
         row
         for run in runs
-        if _run_in_days(run, days=days, now=now)
+        if _run_in_days(run, days=days, now=effective_now)
         for row in [evidence_row_from_run_detail(run)]
         if row is not None
     ]
-    stamp = datetime.now(LIMA_TZ).strftime("%Y%m%d")
+    stamp = effective_now.astimezone(LIMA_TZ).strftime("%Y%m%d")
     csv_path = output_dir / f"evidence-events-{stamp}.csv"
     markdown_path = output_dir / f"evidence-summary-{stamp}.md"
     write_evidence_rows(csv_path, rows)
-    write_evidence_summary(markdown_path, rows, title=f"Resumen de evidencia - ultimos {days} dias")
+    requested_range = _requested_range(effective_now, days)
+    write_evidence_summary(
+        markdown_path,
+        rows,
+        title=f"Resumen de evidencia - ultimos {days} dias",
+        generated_at=effective_now,
+        requested_range=requested_range,
+    )
     if update_current:
         write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
-        write_evidence_summary(EVIDENCE_SUMMARY_PATH, rows)
+        write_evidence_summary(
+            EVIDENCE_SUMMARY_PATH,
+            rows,
+            generated_at=effective_now,
+            requested_range=requested_range,
+        )
     return EvidenceSummaryResult(csv_path, markdown_path, len(rows))
 
 
@@ -190,6 +205,8 @@ def write_evidence_summary(
     rows: Iterable[dict[str, str]],
     *,
     title: str = "Resumen digerido de evidencia",
+    generated_at: datetime | None = None,
+    requested_range: str | None = None,
 ) -> None:
     rows = sorted(
         [row for row in rows if _is_useful_evidence_row(row)],
@@ -197,7 +214,16 @@ def write_evidence_summary(
         reverse=True,
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_summary_markdown(rows, title=title), encoding="utf-8", newline="\n")
+    path.write_text(
+        _summary_markdown(
+            rows,
+            title=title,
+            generated_at=generated_at or datetime.now(UTC),
+            requested_range=requested_range,
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def _evidence_row(
@@ -347,17 +373,56 @@ def detect_defense_signal(message: str, details: dict[str, Any] | None = None) -
     return ""
 
 
-def _summary_markdown(rows: list[dict[str, str]], *, title: str) -> str:
+def _summary_markdown(
+    rows: list[dict[str, str]],
+    *,
+    title: str,
+    generated_at: datetime,
+    requested_range: str | None,
+) -> str:
     total = len(rows)
     by_status = Counter(row.get("status", "") for row in rows)
     by_origin = Counter(row.get("detection_origin", "") for row in rows)
     defenses = [row for row in rows if row.get("defense_signal")]
     latest = rows[:10]
+    finished_times = sorted(
+        row["finished_at_lima"] for row in rows if row.get("finished_at_lima")
+    )
     lines = [
         f"# {title}\n",
         "\n",
         "Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.\n",
         "\n",
+        "## Corte y cobertura\n",
+        f"- Generado: `{_lima_timestamp(generated_at)}`.\n",
+    ]
+    if requested_range:
+        lines.append(f"- Ventana solicitada: {requested_range}.\n")
+    if finished_times:
+        lines.append(
+            "- Rango real de eventos indexados: "
+            f"`{finished_times[0]}` a `{finished_times[-1]}` (America/Lima).\n"
+        )
+    else:
+        lines.append("- Rango real de eventos indexados: sin eventos con hora de cierre.\n")
+    lines.extend(
+        [
+            "- Cobertura temporal verificable: "
+            f"{len(finished_times)}/{total} eventos con hora de cierre.\n",
+            "- Fuente: filas sanitizadas del indice compacto de evidencia.\n",
+            "\n",
+            "## Limites\n",
+            "- Es un snapshot generado; no representa el runtime ni PostgreSQL en vivo.\n",
+            "- Incluye solo eventos utiles definidos por la politica de evidencia, "
+            "no todos los runs.\n",
+            "- Una ruta indexada no prueba que el artefacto siga retenido; "
+            "verificarla antes de citarla.\n",
+            "- La ausencia de un evento no demuestra que el portal no haya sido consultado.\n",
+            "\n",
+        ]
+    )
+    lines.extend(
+        [
         "## Totales\n",
         f"- Eventos indexados: {total}\n",
         f"- Reservas registradas: {by_status.get('registered', 0)}\n",
@@ -367,7 +432,8 @@ def _summary_markdown(rows: list[dict[str, str]], *, title: str) -> str:
         f"- Senales de defensa: {len(defenses)}\n",
         "\n",
         "## Origen de deteccion\n",
-    ]
+        ]
+    )
     origins = [(origin, count) for origin, count in sorted(by_origin.items()) if origin]
     if not origins:
         lines.append("- Sin eventos indexados todavia.\n")
@@ -406,6 +472,17 @@ def _summary_markdown(rows: list[dict[str, str]], *, title: str) -> str:
     lines.append("- Abrir las rutas de evidencia solo cuando este resumen apunte a un evento.\n")
     lines.append("- Comparar cambios contra `docs/optimization.md`.\n")
     return "".join(lines)
+
+
+def _requested_range(now: datetime, days: int) -> str:
+    start = now - timedelta(days=max(days, 1))
+    return f"`{_lima_timestamp(start)}` a `{_lima_timestamp(now)}`"
+
+
+def _lima_timestamp(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return f"{value.astimezone(LIMA_TZ).strftime('%Y-%m-%d %H:%M:%S')} America/Lima"
 
 
 def _run_in_days(run: RunDetail, *, days: int, now: datetime | None) -> bool:

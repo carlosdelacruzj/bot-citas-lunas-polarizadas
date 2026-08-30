@@ -137,7 +137,12 @@ class EvidenceSummaryTests(unittest.TestCase):
             with result.csv_path.open("r", encoding="utf-8", newline="") as file:
                 rows = list(csv.DictReader(file))
             self.assertEqual(rows[0]["run_id"], "run-1")
-            self.assertIn("Reservas registradas: 1", result.markdown_path.read_text())
+            summary = result.markdown_path.read_text(encoding="utf-8")
+            self.assertIn("Generado: `2026-07-04 10:00:00 America/Lima`", summary)
+            self.assertIn("Rango real de eventos indexados", summary)
+            self.assertIn("Cobertura temporal verificable: 1/1", summary)
+            self.assertIn("Es un snapshot generado", summary)
+            self.assertIn("Reservas registradas: 1", summary)
 
     def test_defense_signal_detection(self) -> None:
         self.assertEqual(detect_defense_signal("HTTP 403 forbidden"), "http_403")

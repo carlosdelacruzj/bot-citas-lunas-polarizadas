@@ -37,6 +37,19 @@ crea un trabajo separado y enlaza la conciliacion del original.
 Los postpagos nuevos referencian los PDF originales definidos por el contrato
 de negocio; no crean copias por cliente. El orden documental debe preservarse.
 
+Para paquetes nuevos, la autoridad de seleccion y orden es
+`.runtime/whatsapp-followup/followup-details.json`, campo `documents`. Cada ruta
+debe resolver a un PDF original existente bajo `pdfs/`; el API vuelve a validar
+esa pertenencia antes de servir un adjunto. El orden vigente es:
+
+1. `pdfs/Formato_Tramite.pdf`;
+2. `pdfs/requisitos.pdf`;
+3. `pdfs/Formato_Tramite_Ejemplo.pdf`.
+
+Al preparar el mensaje, la lista ordenada queda congelada dentro de sus pasos en
+PostgreSQL. Cambiar la configuracion local solo afecta paquetes futuros y no
+reescribe mensajes historicos o ya preparados.
+
 ## Plantillas
 
 Las plantillas se versionan en PostgreSQL y usan variables allowlisted. Preview,

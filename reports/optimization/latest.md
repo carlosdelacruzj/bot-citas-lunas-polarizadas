@@ -10,7 +10,9 @@
 - `registered`: 15.
 - Conversion base: `40.5%` (`registered / intentos compatibles`).
 
-No se modificaron clics, esperas, CAPTCHA, orden, concurrencia ni confirmacion.
+Durante este corte no se modificaron clics, esperas, CAPTCHA, orden,
+concurrencia ni confirmacion. Esta afirmacion describe solo la linea base del
+`2026-07-06` al `2026-07-12`; no describe las promociones estables posteriores.
 
 ## Tiempos base
 
@@ -50,8 +52,10 @@ Permanece observacional y no autoriza reservas.
 - Los nuevos runs guardaran lectura de opciones, postback de fecha, estabilizacion de hora y cantidades candidatas.
 - No se elimino ninguna espera; primero se acumularan muestras con DOM estable.
 
-## Decision actual
+## Decision al corte
 
-- Mantener el flujo productivo sin cambios funcionales.
-- No cambiar proveedor/timeout CAPTCHA ni activar concurrencia.
-- Revisar esta linea base cuando existan nuevas muestras reales.
+- Al cerrar este corte se decidio mantener el flujo productivo sin cambios.
+- En ese momento no se autorizo cambiar proveedor/timeout CAPTCHA ni activar
+  concurrencia.
+- La decision vigente debe consultarse en `docs/project-status.md`; este archivo
+  conserva solamente la referencia historica para comparacion.
