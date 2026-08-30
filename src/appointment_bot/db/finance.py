@@ -240,11 +240,10 @@ def finance_month_summary(
         "prepaid_consumption": _money(totals["prepaid_consumption"]),
         "unconverted_entries": int(totals["unconverted_entries"] or 0),
         "active_entries": int(totals["active_entries"] or 0),
-        "is_complete": int(totals["unconverted_entries"] or 0) == 0,
         "conversion_complete": int(totals["unconverted_entries"] or 0) == 0,
         "cost_capture_complete": None,
         "completeness_semantics": (
-            "is_complete only confirms that every active movement in the period has a PEN "
+            "conversion_complete only confirms that every active movement in the period has a PEN "
             "conversion; it does not attest that all costs were captured or that margin is "
             "net profit."
         ),

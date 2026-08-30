@@ -43,6 +43,10 @@ No interpretar un PID o un HTTP `200` aislado como salud funcional.
 6. Revisar submissions, leases, rafagas y sesiones manuales activas.
 7. Confirmar frescura de la fuente relevante para la tarea.
 
+Durante la ventana `2026-08-31` a `2026-09-06`, aplicar tambien
+[`current-only-observation.md`](current-only-observation.md) antes de retirar
+interfaces compatibles.
+
 ## Antes de reiniciar
 
 No reiniciar si existe:

@@ -57,8 +57,9 @@ CAPTCHA sombra (opcional) -----> PostgreSQL/artefactos
 - Worker decide cuando una operacion del navegador es segura.
 - PostgreSQL es la fuente compartida; archivos runtime no sustituyen estado.
 - WhatsApp tiene un solo perfil propietario.
-- n8n conserva temporalmente el monitor externo anterior durante la ventana de
-  comparacion; no contiene logica critica ni opera el navegador.
+- el monitor externo anterior de n8n esta inactivo; n8n no contiene logica
+  critica ni opera el navegador y su export local sirve solo como rollback
+  durante la observacion.
 - cada orden tiene contexto Playwright aislado.
 
 ## Comandos y controles

@@ -858,8 +858,7 @@ export interface FinanceSummary {
   prepaid_consumption: number;
   unconverted_entries: number;
   active_entries: number;
-  is_complete: boolean;
-  conversion_complete?: boolean;
+  conversion_complete: boolean;
   cost_capture_complete?: null;
   completeness_semantics?: string;
   by_category: Array<{

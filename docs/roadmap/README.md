@@ -18,6 +18,22 @@ generados en `reports/`.
 
 ## P0 - Aceptacion natural y seguridad
 
+### Ventana de retiro de compatibilidad actual
+
+Observar del `2026-08-31` al `2026-09-06` conforme a
+[`../operations/current-only-observation.md`](../operations/current-only-observation.md).
+El monitor n8n ya esta inactivo; no apagar aun `8765` ni retirar respuestas API
+historicas sin demostrar cero consumidores.
+
+- retirar el resumen mensual v1 desde `2026-09-04` si no registra accesos;
+- confirmar cero sondeos naturales a `8765` y salud continua por Admin API;
+- medir llamadas sin `projection` a ordenes y sin query a post-cita;
+- cerrar la ventana solo con Telegram, dashboard, finanzas, worker y paquetes
+  postpago funcionando con los contratos actuales.
+
+Cierre: siete dias sin consumidores antiguos, sin alertas perdidas y con
+rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
+
 ### Flujos naturales pendientes
 
 Observar, sin crear envios de prueba:

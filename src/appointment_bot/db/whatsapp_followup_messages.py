@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from uuid import uuid4
 
@@ -246,7 +245,7 @@ def get_followup_message(
         str(row["recipient_phone"]) if row["recipient_phone"] is not None else None
     )
     recipient_username = row["recipient_username"]
-    message_text = _stored_or_legacy_followup_text(row, steps)
+    message_text = _stored_followup_text(row)
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -324,7 +323,7 @@ def get_followup_web_draft(
     ]
     if not attachment_paths:
         raise ValueError("El seguimiento post-pago no tiene PDFs adjuntos.")
-    message_text = _stored_or_legacy_followup_text(row, steps)
+    message_text = _stored_followup_text(row)
     return {
         "message_id": str(row["message_id"]),
         "order_id": row["order_id"],
@@ -610,40 +609,11 @@ def _load_steps(value: object) -> list[dict[str, object]]:
     raise ValueError("El paquete de seguimiento post-pago esta corrupto.")
 
 
-def _stored_or_legacy_followup_text(
-    row: object,
-    steps: list[dict[str, object]],
-) -> str:
+def _stored_followup_text(row: object) -> str:
     message_text = str(row["message_text"] or "").strip()
     if message_text:
         return message_text
-    if row["template_key"] is not None or row["template_revision"] is not None:
-        raise ValueError("El paquete trazado no conserva el texto post-pago preparado.")
-    return _legacy_combined_followup_text(steps)
-
-
-def _legacy_combined_followup_text(steps: list[dict[str, object]]) -> str:
-    full_text = "\n\n".join(str(step.get("text") or "").strip() for step in steps)
-    reservation = _extract_followup_line(full_text, "Reserva")
-    site = _extract_followup_line(full_text, "Sede")
-    extra_lines = [value for value in (reservation, site) if value]
-    details = "\n" + "\n".join(extra_lines) if extra_lines else ""
-    return (
-        "✅ *¡Pago confirmado!*\n"
-        "Cita reservada. Llegue 30 min antes y vaya con el vehículo ya polarizado."
-        f"{details}\n\n"
-        "📄 Lleve los PDFs adjuntos impresos, llenados y firmados. Revise requisitos "
-        "y copias.\n\n"
-        "🔍 El peritaje dura aprox. 5 min. Después de pasarlo, en 2 días consulte "
-        "su autorización virtual en la misma web de reserva.\n\n"
-        "Gracias por confiar en nosotros. Si puede dejarnos un comentario en TikTok "
-        "nos ayuda muchísimo: @citaspolarizadasperu"
-    )
-
-
-def _extract_followup_line(text: str, label: str) -> str:
-    match = re.search(rf"^{re.escape(label)}:\s*(.+)$", text, flags=re.MULTILINE)
-    return f"{label}: {match.group(1).strip()}" if match else ""
+    raise ValueError("El paquete post-pago no conserva el texto preparado.")
 
 
 def _step_attachments(step: dict[str, object]) -> list[str]:

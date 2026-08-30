@@ -178,22 +178,6 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
     return [_candidate_from_row(row) for row in rows]
 
 
-def list_compatible_orders_for_slot(
-    appointment_date: str,
-    appointment_hour: str,
-    *,
-    exclude_order_ids: Iterable[str] = (),
-    limit: int | None = None,
-    settings: Settings | None = None,
-) -> list[ServiceOrderCandidate]:
-    return list_compatible_orders_for_opportunities(
-        ((appointment_date, appointment_hour),),
-        exclude_order_ids=exclude_order_ids,
-        limit=limit,
-        settings=settings,
-    )
-
-
 def list_compatible_orders_for_opportunities(
     opportunities: Iterable[tuple[str, str]],
     *,

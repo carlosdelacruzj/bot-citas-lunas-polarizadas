@@ -2231,7 +2231,7 @@ export class App implements OnDestroy {
   }
 
   public financeConversionComplete(summary: FinanceSummary): boolean {
-    return summary.conversion_complete ?? summary.is_complete;
+    return summary.conversion_complete;
   }
 
   public formatOriginalMoney(entry: FinanceEntry): string {

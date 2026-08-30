@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 from psycopg import Connection
@@ -9,7 +10,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 69
+SCHEMA_VERSION = 70
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -356,6 +357,7 @@ def create_current_schema(connection: Connection) -> None:
     _create_whatsapp_automation_template_trace_schema(connection)
     _create_whatsapp_message_template_trace_schema(connection)
     _create_whatsapp_followup_template_trace_schema(connection)
+    _freeze_historical_whatsapp_followup_text(connection)
     _create_captcha_shadow_outbox_schema(connection)
     _create_telegram_alert_outbox_schema(connection)
     _create_captcha_sampling_control_schema(connection)
@@ -1241,6 +1243,19 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("retired:appointment_reminder_template_versions")
     if ("appointment_reminder_control", "message_template") in columns:
         missing.append("retired:appointment_reminder_control.message_template")
+    if (
+        "whatsapp_followup_messages" in tables
+        and ("whatsapp_followup_messages", "message_text") in columns
+    ):
+        empty_followup_text = connection.execute(
+            """
+            SELECT count(*) AS count
+            FROM whatsapp_followup_messages
+            WHERE NULLIF(BTRIM(message_text), '') IS NULL
+            """
+        ).fetchone()
+        if empty_followup_text is None or int(empty_followup_text["count"]) != 0:
+            missing.append("whatsapp_followup_messages.message_text empty")
     missing.extend(sorted(required_constraints - constraints))
     missing.extend(
         f"unvalidated:{row['conname']}"
@@ -2540,6 +2555,95 @@ def _retire_appointment_reminder_legacy_schema(connection: Connection) -> None:
     connection.execute("DROP TABLE appointment_reminder_template_versions")
 
 
+def _freeze_historical_whatsapp_followup_text(connection: Connection) -> None:
+    rows = connection.execute(
+        """
+        SELECT message_id, steps, template_key, template_revision
+        FROM whatsapp_followup_messages
+        WHERE NULLIF(BTRIM(message_text), '') IS NULL
+        ORDER BY message_id
+        """
+    ).fetchall()
+    traced = [
+        row
+        for row in rows
+        if row["template_key"] is not None or row["template_revision"] is not None
+    ]
+    if traced:
+        raise RuntimeError("A traced post-payment package has no frozen message text.")
+
+    connection.execute(
+        """
+        ALTER TABLE whatsapp_followup_messages
+        DROP CONSTRAINT ck_whatsapp_followup_messages_template_trace
+        """
+    )
+    for row in rows:
+        steps_value = row["steps"]
+        if isinstance(steps_value, str):
+            steps_value = json.loads(steps_value)
+        if not isinstance(steps_value, list):
+            raise RuntimeError("A historical post-payment package has invalid steps.")
+        steps = [item for item in steps_value if isinstance(item, dict)]
+        full_text = "\n\n".join(str(step.get("text") or "").strip() for step in steps)
+        detail_lines: list[str] = []
+        for label in ("Reserva", "Sede"):
+            prefix = f"{label}:"
+            value = next(
+                (
+                    line[len(prefix) :].strip()
+                    for line in full_text.splitlines()
+                    if line.startswith(prefix) and line[len(prefix) :].strip()
+                ),
+                "",
+            )
+            if value:
+                detail_lines.append(f"{label}: {value}")
+        details = "\n" + "\n".join(detail_lines) if detail_lines else ""
+        message_text = (
+            "✅ *¡Pago confirmado!*\n"
+            "Cita reservada. Llegue 30 min antes y vaya con el vehículo ya polarizado."
+            f"{details}\n\n"
+            "📄 Lleve los PDFs adjuntos impresos, llenados y firmados. Revise requisitos "
+            "y copias.\n\n"
+            "🔍 El peritaje dura aprox. 5 min. Después de pasarlo, en 2 días consulte "
+            "su autorización virtual en la misma web de reserva.\n\n"
+            "Gracias por confiar en nosotros. Si puede dejarnos un comentario en TikTok "
+            "nos ayuda muchísimo: @citaspolarizadasperu"
+        )
+        if len(message_text) > 4096:
+            raise RuntimeError("A historical post-payment package exceeds 4096 characters.")
+        connection.execute(
+            """
+            UPDATE whatsapp_followup_messages
+            SET message_text = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE message_id = %s
+            """,
+            (message_text, row["message_id"]),
+        )
+
+    connection.execute(
+        "ALTER TABLE whatsapp_followup_messages ALTER COLUMN message_text SET NOT NULL"
+    )
+    connection.execute(
+        """
+        ALTER TABLE whatsapp_followup_messages
+        ADD CONSTRAINT ck_whatsapp_followup_messages_template_trace CHECK (
+            char_length(message_text) BETWEEN 1 AND 4096
+            AND (
+                (template_key IS NULL AND template_revision IS NULL)
+                OR (
+                    template_key IS NOT NULL
+                    AND char_length(template_key) BETWEEN 1 AND 80
+                    AND template_revision IS NOT NULL
+                    AND template_revision > 0
+                )
+            )
+        )
+        """
+    )
+
+
 def _stored_appointment_day(value: object) -> object | None:
     text = str(value or "").strip()
     for pattern in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
@@ -3578,6 +3682,13 @@ def migrate_database(connection: Connection) -> None:
             (69,),
         )
         current_version = 69
+    if current_version == 69:
+        _freeze_historical_whatsapp_followup_text(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (70,),
+        )
+        current_version = 70
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

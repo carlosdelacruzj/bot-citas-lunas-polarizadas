@@ -566,6 +566,24 @@ Resultado: **Paso 5 en observacion**. No borrar el backend v1 antes del
 `2026-09-04`, ni detener n8n o `8765` antes de completar una jornada operativa
 sin diferencias entre ambos monitores.
 
+Actualizacion `2026-08-30 16:51-17:03 America/Lima`:
+
+- el workflow `AppointmentBotMonitor` se exporto antes y despues del cambio en
+  `.runtime/n8n-backup-current-only-20260830T165103/`, se desactivo y n8n
+  reinicio saludable;
+- el ultimo sondeo periodico de n8n a `8765` fue a las `16:50:15`; Telegram
+  continuo validando el worker por Admin API cada cinco minutos;
+- `8765` permanece habilitado solo como rollback durante la ventana semanal;
+- el runtime retiro el alias financiero `is_complete`, un wrapper Python sin
+  consumidores y la reconstruccion postpago; la migracion `v70` congelo el
+  texto de `142` paquetes historicos y dejo cero textos vacios;
+- las respuestas sin `projection` de ordenes y sin query de post-cita tuvieron
+  uso reciente y permanecen bajo medicion, no se retiraron a ciegas.
+
+Resultado actualizado: **Paso 5 sigue en observacion externa**. La deuda interna
+ya fue retirada; quedan solo fronteras con posible consumidor externo y fecha
+de corte documentada.
+
 Criterio de cierre: existe evidencia de cero consumidores externos durante la
 ventana acordada y hay rollback documentado.
 
@@ -978,9 +996,10 @@ Corte final: `2026-08-30 16:19 America/Lima`.
 - Commit de implementacion revisado: `74f33d9` (`chore: rotate evidence history
   and refresh indexes`). Este cierre documental se conserva por separado.
 
-Resultado: **Pasos 1 a 11 cerrados**. Codigo, runtime, PostgreSQL, reportes y
-documentacion coinciden en el alcance de esta auditoria. Los pendientes reales
-restantes viven unicamente en `docs/roadmap/README.md`.
+Resultado: **Pasos 1 a 4 y 6 a 11 cerrados; Paso 5 en observacion externa**.
+Codigo, runtime, PostgreSQL, reportes y documentacion coinciden en el alcance
+implementado. El retiro final de contratos externos se gobierna unicamente
+desde `docs/roadmap/README.md`.
 
 Comandos base:
 

@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL actual: `v69`;
+- esquema PostgreSQL actual: `v70`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
@@ -48,8 +48,8 @@ salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp.
 Telegram y n8n no ejecutan SQL, PowerShell ni logica del navegador directamente.
 Telegram Control revisa cada cinco minutos el lease real del worker mediante
 Admin API entre `07:30` y `18:00`; alerta tras tres fallos y nunca reinicia por
-su cuenta. El monitor n8n permanece temporalmente en paralelo durante la ventana
-de comparacion.
+su cuenta. El monitor n8n anterior esta inactivo; su export previo permanece
+como rollback local durante la observacion de siete dias.
 
 ### Persistencia
 
@@ -98,7 +98,7 @@ desde un valor global.
 | `/seguimiento` | Citas, recordatorios y revisiones post-cita. |
 | `/finanzas` | Cobros, costos, cierres y diferencias. |
 | `/mensajes` | Plantillas y trazabilidad de comunicaciones. |
-| `/captchas` | Compatibilidad; CAPTCHA no forma parte de Pendientes. |
+| `/captchas` | Superficie dedicada; CAPTCHA no forma parte de Pendientes. |
 
 **Pendientes** consume `GET /api/v1/operator-inbox`. El total excluye CAPTCHA y
 reune acceso, pausas, contacto, cobro, postpago y comunicaciones. Incluye
@@ -129,7 +129,9 @@ sobre cualquier modo y el maximo sigue siendo dos sesiones Playwright.
 
 Las plantillas editables se versionan en PostgreSQL. Cada trabajo nuevo congela
 texto, clave y revision al prepararse; editar una plantilla no modifica trabajos
-historicos ni ya encolados.
+historicos ni ya encolados. Los paquetes postpago historicos tambien conservan
+texto congelado. El runtime ya no reconstruye mensajes desde pasos antiguos ni
+emite el alias financiero `is_complete`; el contrato usa `conversion_complete`.
 
 Reglas vigentes:
 

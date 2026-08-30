@@ -60,8 +60,8 @@ No guardar tokens, credenciales ni datos personales dentro de evidencia o notas.
 
 ## Calidad y cierre mensual
 
-`is_complete` se conserva por compatibilidad y significa únicamente que todos
-los movimientos activos del periodo tienen conversión monetaria a PEN. No
+`conversion_complete` significa únicamente que todos los movimientos activos
+del periodo tienen conversión monetaria a PEN. No
 certifica captura completa de costos, utilidad neta ni conciliación contable.
 
 El centro de calidad separa movimientos `actual`, `estimated` y `pending`,
