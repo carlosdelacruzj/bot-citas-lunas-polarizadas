@@ -101,6 +101,16 @@ No iniciar antes de estabilizar P0-P2:
 5. uniformar errores HTTP con `request_id` y respuesta sanitizada;
 6. tipar facades y payloads del dashboard que aun usan `any`.
 
+### Limpieza integral auditada
+
+Ejecutar por etapas el
+[`plan de limpieza y alineacion`](system-cleanup-audit.md): alinear primero
+runtime, esquema y documentacion; despues retirar codigo, compatibilidad,
+artefactos y evidencia redundante solo con consumidores revalidados.
+
+Cierre: codigo, datos, procesos y documentos coinciden; cada elemento conservado
+tiene proposito y cada retiro tiene evidencia y rollback proporcional.
+
 ## Fuera de alcance o sin autorizacion
 
 - desplegar Cloudinary;

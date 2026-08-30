@@ -20,15 +20,22 @@ def notify_multiple_programs(
         try:
             should_notify = record_order_program_listing(order_id, details, settings=settings)
         except Exception:
-            logger.exception("Could not persist multiple program listing for %s", order_id)
+            logger.exception("Could not persist program listing for %s", order_id)
 
     if not should_notify:
-        logger.info("Multiple program listing unchanged for %s; skipping alert", order_id)
+        logger.info("Program listing unchanged for %s; skipping alert", order_id)
         return
 
     rows = details.get("rows") if isinstance(details.get("rows"), list) else []
+    pending_count = int(details.get("pending_count") or 0)
+    if pending_count == 1:
+        title = "UN SOLO TRAMITE PENDIENTE"
+    elif pending_count > 1:
+        title = "MULTIPLES TRAMITES PENDIENTES DETECTADOS"
+    else:
+        title = "LISTADO SIN TRAMITES PENDIENTES"
     lines = [
-        "MULTIPLES TRAMITES DETECTADOS",
+        title,
         f"Orden: {order_id or 'observer'}",
     ]
     if client_name:
@@ -66,4 +73,4 @@ def notify_multiple_programs(
     try:
         send_telegram_message(settings, "\n".join(lines))
     except Exception:
-        logger.exception("Could not notify multiple program actions")
+        logger.exception("Could not notify program listing")
