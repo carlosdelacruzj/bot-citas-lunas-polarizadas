@@ -82,8 +82,28 @@ El margen porcentual, costo por reserva, costo CAPTCHA por reserva, CAC y ROAS
 permanecen ocultos mientras la captura de costos o atribución no esté
 conciliada.
 
+Para prepagos, la conciliación operativa del consumo debe cumplir:
+
+`consumo = saldo inicial + recargas - saldo final - reembolsos`.
+
+Recarga y consumo son hechos distintos: una recarga mueve caja y el consumo
+reconoce costo. Registrar ambos como gasto duplicaría el mismo importe.
+
+Las métricas de captación usan un mismo periodo y solo atribución demostrable:
+
+```text
+CAC = gasto de captación / clientes nuevos cobrados atribuibles
+ROAS = ingreso cobrado atribuible / gasto publicitario
+```
+
+Una publicación orgánica puede tener gasto publicitario cero. El tiempo humano
+solo entra como costo cuando existen minutos y valor por hora documentados.
+
 ## Categorias iniciales
 
 `captcha`, `marketing`, `payment_fee`, `refund`, `internet`, `electricity`, `hosting`,
 `backup`, `equipment`, `human_time`, `tax` y `other`. Cada categoria se clasifica como costo
 variable, fijo o mixto.
+
+La secuencia operativa del cierre vive en
+[`../finance/README.md`](../finance/README.md).

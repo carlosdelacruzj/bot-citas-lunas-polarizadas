@@ -112,6 +112,8 @@ recordatorios tienen modos
 `disabled`, `dry_run` y `live`; ya no existe un modo canario ni una lista
 especial de ordenes de prueba.
 
+Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups.md).
+
 El contrato entre el contenedor Angular y sus vistas esta tipado. La lista de
 ordenes usa una proyeccion especifica del dashboard; el endpoint completo de
 compatibilidad y el detalle autorizado permanecen separados.

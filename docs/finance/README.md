@@ -1,91 +1,67 @@
-# Registro financiero operativo
+# Operacion financiera mensual
 
-Este directorio conserva los costos del negocio que no viven en las tablas de pagos. El
-objetivo inicial no es tener contabilidad perfecta: es dejar de tratar los ingresos cobrados
-como si fueran utilidad.
+Este runbook explica como registrar costos y cerrar un mes desde la vista
+**Finanzas**. La semantica contable, estados, categorias y reglas de calculo
+pertenecen al [`contrato financiero`](../contracts/finance.md).
 
-## Fuente de verdad
+## Registro cotidiano
 
-El registro serio vive en PostgreSQL y se administra desde la vista **Finanzas**
-del dashboard. La estructura y API estan documentadas en
-[`../contracts/finance.md`](../contracts/finance.md). El CSV inicial estimado fue
-retirado; no era fuente de calculo ni formato autorizado para nuevas altas.
+Registrar desde el dashboard cada costo con la mejor evidencia disponible:
 
-Desde el dashboard se puede crear, editar y anular. La anulacion reemplaza la eliminacion
-fisica para mantener auditoria.
+1. fecha real del movimiento;
+2. tipo y categoria definidos por el contrato;
+3. importe y moneda originales;
+4. tipo de cambio realmente aplicado cuando no sea PEN;
+5. proveedor, canal, campana u orden solo cuando correspondan;
+6. referencia de evidencia sin tokens, credenciales ni datos personales.
 
-## Regla para 2Captcha
+La accion **Anular** conserva auditoria. No intentar borrar directamente un
+movimiento en PostgreSQL.
 
-La recarga y el consumo no son el mismo costo:
+## 2Captcha
 
-- categoria `captcha` + `entry_kind=prepaid_topup`: dinero convertido en saldo
-  prepagado. Es salida de caja, pero no debe sumarse nuevamente como gasto
-  cuando se calcula el consumo.
-- categoria `captcha` + `entry_kind=prepaid_consumption`: saldo realmente
-  consumido durante el periodo. Este es el costo que debe compararse con los
-  ingresos del periodo.
+Al cierre, obtener del panel el saldo inicial, recargas, saldo final,
+reembolsos y consumo informado. Registrar recarga y consumo como movimientos
+distintos conforme al contrato para evitar contar dos veces el mismo dinero.
 
-Para conciliarlo al cierre de cada mes:
+Si el consumo debe reconstruirse, conservar la fuente y comprobar:
 
 ```text
 consumo = saldo_inicial + recargas - saldo_final - reembolsos
 ```
 
-Si 2Captcha muestra directamente el costo consumido, registrar ese valor y guardar en
-`evidence` una referencia al panel o comprobante. Nunca guardar la API key.
+Nunca guardar la API key como evidencia o nota.
 
 ## TikTok y captacion
 
-Registrar cada pago o recarga publicitaria, incluso si el monto es pequeno. Completar
-`channel=tiktok` y, si se conoce, `campaign`. El gasto debe compararse con ordenes e ingresos
-atribuidos al mismo canal y periodo.
+Registrar cada pago o recarga publicitaria con `channel=tiktok` y la campana
+cuando se conozca. Para calcular CAC o ROAS, usar un mismo periodo y solamente
+clientes o ingresos con atribucion demostrable. Una publicacion organica tiene
+gasto publicitario cero; el tiempo humano se registra aparte cuando exista una
+metodologia documentada.
 
-```text
-CAC = gasto de captacion / clientes nuevos cobrados atribuibles
-ROAS = ingreso cobrado atribuible / gasto publicitario
-```
+No presentar CAC o ROAS como concluyentes si faltan gastos, atribucion o
+conversion monetaria. Las formulas y barreras de publicacion viven en el
+contrato.
 
-Si una publicacion fue organica, el gasto publicitario es cero, pero se pueden registrar las
-horas humanas por separado cuando exista una estimacion razonable.
+## Checklist de cierre mensual
 
-## Categorias minimas
+1. Revisar movimientos `pending`, estimados y sin conversion a PEN.
+2. Conciliar saldo inicial, recargas, consumo, reembolsos y saldo final de
+   prepagos.
+3. Revisar publicidad por canal y campana.
+4. Registrar comisiones, devoluciones y costos demostrables faltantes.
+5. Resolver diferencias entre pagos cobrados y montos acordados.
+6. Separar ingresos cobrados, costos reconocidos y overhead aun no medido.
+7. Valorar tiempo humano solo con minutos y tarifa documentados.
+8. Confirmar que no existan bloqueos de calidad antes de conciliar el mes.
+9. Registrar responsable, notas y estado del cierre desde el dashboard.
 
-Empezar solo con costos que tengan evidencia:
+No reconstruir costos historicos sin evidencia. Si se hace una estimacion,
+marcarla como tal y explicar su metodo.
 
-1. categoria `captcha`, usando `prepaid_topup` o `prepaid_consumption` segun el
-   movimiento.
-2. categoria `marketing` para TikTok u otros canales.
-3. categorias de comision o devolucion cuando aparezcan y esten definidas en
-   PostgreSQL.
-4. Internet, electricidad, hosting, backup y equipo cuando exista recibo o una
-   metodologia documentada de reparto.
-5. Tiempo humano cuando se midan minutos y se defina un valor por hora.
-6. Impuestos cuando corresponda y exista criterio contable.
+## Resultado esperado
 
-No hace falta reconstruir hoy todos los costos historicos. Registrar desde ahora los gastos
-reales y marcar cualquier reconstruccion anterior como `estimated`.
-
-## Cierre mensual minimo
-
-Al final de cada mes, usando la vista Finanzas:
-
-1. Conciliar saldo inicial, recargas y saldo final de 2Captcha.
-2. Sumar publicidad por canal y campana.
-3. Registrar comisiones, devoluciones y otros pagos demostrables.
-4. Convertir USD a PEN con el tipo de cambio realmente aplicado; conservar ambos importes.
-5. Comparar costos del periodo con ingresos cuyo `paid_at` pertenezca al mismo mes.
-6. Separar utilidad antes del tiempo del propietario y utilidad despues de valorizarlo.
-
-```text
-margen_operativo_pre_tiempo = ingresos_cobrados - costos_monetarios
-utilidad_economica = margen_operativo_pre_tiempo - valor_del_tiempo_humano
-```
-
-## Calidad del dato
-
-- `actual`: importe respaldado por panel, recibo o movimiento.
-- `estimated`: calculo razonable que todavia debe conciliarse.
-- `pending`: se conoce el evento, pero falta monto o evidencia.
-
-Los campos `order_id`, `campaign` y `evidence` son opcionales. No registrar documentos,
-credenciales, tokens ni datos personales del cliente en este archivo.
+El cierre debe permitir distinguir caja, costo reconocido, margen operativo
+antes de costos no registrados y calidad del dato. Una vista incompleta no debe
+presentarse como utilidad neta.

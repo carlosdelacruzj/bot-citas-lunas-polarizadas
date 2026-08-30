@@ -99,6 +99,8 @@ Los schedulers pertenecen a Admin API. Mantener una sola sesion de solo lectura,
 pausas de `4-7` segundos, cap diario `20` y breaker ante ambiguedad. Preparacion,
 envio, entrega y lectura permanecen separados.
 
+Contrato: [`../contracts/appointment-followups.md`](../contracts/appointment-followups.md).
+
 ## CAPTCHA
 
 El CAPTCHA HTML matematico y el servicio grafico en sombra son sistemas

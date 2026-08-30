@@ -107,7 +107,8 @@ El contrato detallado vive en [`worker-control.md`](worker-control.md).
 
 Los recordatorios se consultan y actualizan mediante `GET` y `POST` en la
 superficie `/api/v1/appointment-reminders`. Plantillas, modo y scheduler son
-controles separados.
+controles separados. Autoridad, lotes y deduplicacion se rigen por
+[`appointment-followups.md`](appointment-followups.md).
 
 La revision post-cita es de solo lectura y expone resumen, conteos por filtro,
 frescura y acciones manuales seguras. `GET /api/v1/post-appointment-followups`

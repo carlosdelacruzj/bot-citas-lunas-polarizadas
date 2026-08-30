@@ -1,9 +1,12 @@
 # Contrato de optimizacion observacional
 
-Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-08-30`.
 
-Este documento define como comparar cambios del monitor y la reserva. No
-contiene métricas vivas ni crea una cola distinta del roadmap.
+Codigo propietario: `worker/`, `reservation_engine/` y reportes de
+optimizacion.
+
+Este contrato define como comparar cambios del monitor y la reserva. No contiene
+metricas vivas ni crea una cola distinta del roadmap.
 
 ## Objetivo
 
@@ -16,7 +19,7 @@ Optimizar `registered / intentos compatibles`, no tiempo aislado. Los resultados
 - no mezclar intervalos, orden, proveedor CAPTCHA, leases y confirmacion;
 - mantener maximo dos sesiones concurrentes;
 - preservar fallback y breakers;
-- no promover una mejora con muestras pequeñas o periodos incomparables.
+- no promover una mejora con muestras pequenas o periodos incomparables.
 
 ## Evidencia minima
 
@@ -40,7 +43,7 @@ Fuentes:
 
 - baseline generado: `reports/optimization/latest.md`;
 - observaciones fechadas: `reports/optimization/observation-*.md`;
-- operación: `reports/operations/latest.md`;
+- operacion: `reports/operations/latest.md`;
 - evidencia: `docs/evidence-summary.md` y `docs/evidence-index.csv`;
 - verdad actual: PostgreSQL.
 
@@ -50,8 +53,8 @@ Fuentes:
 
 Los runbooks de seguridad viven en:
 
-- [`operations/opportunity-bursts.md`](operations/opportunity-bursts.md);
-- [`operations/reservation-critical-path.md`](operations/reservation-critical-path.md).
+- [`../operations/opportunity-bursts.md`](../operations/opportunity-bursts.md);
+- [`../operations/reservation-critical-path.md`](../operations/reservation-critical-path.md).
 
 La cronologia retirada puede recuperarse mediante
-[`history/README.md`](history/README.md).
+[`../history/README.md`](../history/README.md).

@@ -1,156 +1,112 @@
-# Topologia operativa
+# Despliegue y recuperacion local
 
 Estado: vigente. Ultima verificacion: `2026-08-30`.
 
-Este documento describe como iniciar, verificar y recuperar la topologia actual.
+Este runbook contiene arranque, comprobacion, desarrollo y rollback. La
+propiedad de procesos, dependencias y fronteras vive exclusivamente en
+[`../architecture/current-runtime.md`](../architecture/current-runtime.md).
 
-## Topologia heredada de rollback
+## Arranque recomendado en Windows
 
-```text
-scripts/start-worker.ps1
-  -> docker compose up -d
-  -> appointment-bot-worker
-       -> ContinuousWorker
-       -> API local embebida
-  -> PostgreSQL
-  -> n8n supervisa externamente
-```
+La tarea programada `AppointmentBotContinuousWorker` ejecuta
+`scripts/start-runtime.pyw` con `pythonw.exe` al iniciar sesion. El lanzador
+invoca `scripts/start-runtime.ps1`, mantiene un supervisor raiz y comprueba los
+componentes cada 15 segundos.
 
-Esta topologia embebida ya no es la arquitectura administrativa principal. Se
-conserva solo como rollback local: el worker y la API de `8765` comparten
-memoria con `ContinuousWorker`.
-
-## Topologia actual
-
-```text
-PostgreSQL
-  |-- appointment-bot-worker
-  |-- appointment-bot-admin-api + dashboard + WhatsApp + schedulers
-  |-- appointment-bot-telegram-control
-  |-- captcha-shadow opcional
-  |-- n8n monitor externo temporal durante la comparacion
-```
-
-El admin API y el worker comparten base y modulos `core`/`db`, pero no memoria.
-Los comandos al worker deben persistirse antes de consumirse.
-
-## Ejecucion manual minima del worker
+La tarea se crea o recupera con:
 
 ```powershell
-python -m pip install -e .
-python -m playwright install chromium
-docker compose up -d
-appointment-bot-worker
+powershell -ExecutionPolicy Bypass -File scripts/install-startup-task.ps1
 ```
 
-En Windows, el camino recomendado sigue siendo:
+El arranque normal es:
 
 ```powershell
-scripts/start-worker.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-runtime.ps1
 ```
 
-En la maquina operativa, la tarea programada `AppointmentBotContinuousWorker`
-ejecuta `scripts/start-runtime.pyw` con `pythonw.exe` al iniciar sesion. Ese host
-sin consola ejecuta `scripts/start-runtime.ps1`, que inicia
-el bootstrap del worker, `scripts/start-admin-dashboard.ps1`,
-`scripts/start-telegram-control.ps1` y, solo cuando
-`CAPTCHA_SHADOW_SERVICE_ENABLED=true`, `scripts/start-captcha-shadow.ps1` en
-segundo plano. Cada bootstrap habilitado supervisa y reinicia su proceso sin
-compartir memoria con los demás.
+Este camino levanta los supervisores de worker, Admin API/dashboard y Telegram.
+CAPTCHA sombra solo se incluye cuando su feature esta habilitada. Si un
+supervisor termina, el lanzador inicia solamente ese componente.
 
-La tarea se crea o recupera con `scripts/install-startup-task.ps1`. Este diseno
-no usa Windows Script Host, VBS ni `ExecutionPolicy Bypass`, y no deja una
-ventana de `cmd` o PowerShell abierta en el escritorio.
-El lanzador permanece como supervisor raíz de tres procesos obligatorios y del
-CAPTCHA opcional, y comprueba su presencia cada 15 segundos. Si un supervisor
-habilitado desaparece, inicia solo ese componente. La tarea programada permanece
-`Running` y sus reglas de reinicio vuelven a ser efectivas si el propio
-supervisor raíz termina.
+No interpretar una tarea `Running`, un PID o un HTTP `200` aislado como salud
+funcional.
 
-## Procesos administrativos
+## Arranque manual por componente
 
-Ejecucion local recomendada en tres procesos obligatorios y uno opcional:
+Para diagnostico controlado:
 
 ```powershell
-# Terminal 1
-scripts/start-worker.ps1
-
-# Terminal 2
-scripts/start-admin-dashboard.ps1
-
-# Terminal 3
-scripts/start-telegram-control.ps1
-
-# Terminal 4, solo con CAPTCHA_SHADOW_SERVICE_ENABLED=true
-scripts/start-captcha-shadow.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-worker.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-admin-dashboard.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-telegram-control.ps1
 ```
 
-Abrir `http://127.0.0.1:8766/`. El admin API sirve el build Angular y entrega
-una sesion local `HttpOnly`/`SameSite=Strict` para autorizar `/api/v1` sin
-guardar el token en el navegador. Este modo solo acepta loopback y no abre CORS.
-
-## Rollback y desarrollo
-
-Para desarrollo del dashboard, ejecutar `appointment-bot-admin-api` y `npm
-start` dentro de `dashboard/`. El proxy `dashboard/proxy.conf.cjs` conserva la
-inyeccion del token fuera de Angular y apunta a `127.0.0.1:8766`.
-
-## Compatibilidad con API embebida
-
-El worker conserva su API embebida en `http://127.0.0.1:8765`. Si se necesita
-rollback temporal del dashboard, cambiar `dashboard/proxy.conf.cjs` a `8765`.
-Para validar la arquitectura vigente, usar `8766`. La API embebida puede
-desactivarse reversiblemente con `WORKER_EMBEDDED_API_ENABLED=false`, pero solo
-despues de retirar sus consumidores y completar una ventana operativa.
-
-Telegram Control puede vigilar el lease real mediante
-`TELEGRAM_WORKER_MONITOR_ENABLED=true`. Consulta autenticadamente
-`GET /api/v1/worker` cada cinco minutos entre `07:30` y `18:00`, alerta tras tres
-fallos consecutivos y no ejecuta reinicios. Mientras se compara con el workflow
-anterior, mantener n8n y `8765` activos.
-
-No levantar el admin API fuera de loopback sin `APPOINTMENT_BOT_API_TOKEN`.
-No cambiar `.env` para pruebas temporales; usar variables de entorno de la
-terminal cuando se necesite modificar host, puerto o sesion manual.
-
-Validacion minima de esta topologia:
+CAPTCHA sombra es opcional:
 
 ```powershell
-Invoke-WebRequest http://127.0.0.1:8766/health
-cd dashboard
-npm run build
-cd ..
-python -m compileall src
-python -m ruff check src tests
-python -m pytest
+powershell -ExecutionPolicy Bypass -File scripts/start-captcha-shadow.ps1
 ```
 
-Para el estado validado y el orden de trabajo usar `docs/project-status.md` y
-`docs/roadmap/README.md`. Este archivo conserva solamente arranque y rollback.
+No iniciar un segundo propietario del mismo componente. Admin API es el unico
+proceso autorizado para poseer el perfil persistente de WhatsApp.
 
-## Seguridad operativa
+## Verificacion despues del arranque
 
-- Mantener API en loopback para la primera version.
-- No exponer dashboard a Internet.
-- No guardar secretos en Angular.
-- No versionar `.env`, logs, screenshots, videos, dumps ni `node_modules`.
-- Usar `GET /health` para liveness.
-- Usar `GET /api/v1/worker` para fase real y lease vigente del worker.
-- Usar `worker_commands` para controlar el worker desde procesos que no tienen
-  `ContinuousWorker` en memoria.
-- Autorizar el receptor de Telegram con una lista explicita de `chat_id` y no
-  registrar identificadores completos en logs.
+1. Confirmar PostgreSQL y `schema_version` esperado.
+2. Consultar `http://127.0.0.1:8766/health`.
+3. Consultar la fase y lease reales del worker mediante Admin API.
+4. Verificar Telegram con una actualizacion nueva.
+5. Verificar WhatsApp `session_ready`, no solo el proceso.
+6. Revisar jobs, submissions, leases, rafagas y sesiones manuales activas.
+7. Abrir `http://127.0.0.1:8766/` y comprobar la superficie afectada.
+
+La API embebida del worker en `8765` es compatibilidad de rollback. Para validar
+la topologia vigente usar `8766`.
+
+## Desarrollo del dashboard
+
+Ejecutar Admin API y, dentro de `dashboard/`:
+
+```powershell
+npm start
+```
+
+`dashboard/proxy.conf.cjs` apunta a `127.0.0.1:8766` e inyecta el token fuera de
+Angular. No guardar secretos en el bundle ni cambiar `.env` para una prueba
+temporal.
+
+## Antes de reiniciar
+
+No reiniciar mientras exista una reserva o submit en curso, lease no drenable,
+rafaga abierta, sesion manual, trabajo WhatsApp activo o lote de
+recordatorios/post-cita en ejecucion.
+
+Si es seguro, reiniciar solo el proceso propietario. No liberar backoff,
+conciliar trabajos ni reenviar como efecto lateral.
 
 ## Rollback
 
-Si una fase falla:
+Ante un fallo:
 
-1. detener solo el nuevo proceso agregado en esa fase;
-2. dejar `scripts/start-worker.ps1` y `appointment-bot-worker` como camino
-   operativo;
-3. revertir el commit de la fase;
-4. validar `python -m compileall src`, `python -m ruff check src tests` y
-   `python -m pytest`.
+1. detener solo el componente nuevo o afectado;
+2. conservar worker y PostgreSQL si siguen saludables;
+3. volver temporalmente al camino de compatibilidad documentado;
+4. revertir el commit del dominio;
+5. repetir salud, fase, leases y validacion tecnica.
 
-No mezclar cambios de topologia con cambios de reserva o schema en un mismo
-commit.
+No mezclar cambios de topologia con reserva o esquema en un mismo commit.
+
+## Validacion tecnica
+
+```powershell
+python -m compileall -q src
+python -m ruff check src tests
+python -m pytest -q
+Push-Location dashboard
+npm run build
+Pop-Location
+git diff --check
+```
+
+El runbook general de diagnostico esta en [`README.md`](README.md).

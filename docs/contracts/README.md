@@ -1,6 +1,6 @@
 # Contratos vigentes
 
-Ultima verificacion: `2026-08-29`.
+Ultima verificacion: `2026-08-30`.
 
 Los contratos describen invariantes actuales. No contienen cronologias,
 resultados de canarios ni listas de trabajo futuro.
@@ -14,6 +14,8 @@ resultados de canarios ni listas de trabajo futuro.
 | [`captcha.md`](captcha.md) | `reservation_captcha*`, `services/captcha_shadow.py` | CAPTCHA HTML y servicio grafico opcional. |
 | [`whatsapp.md`](whatsapp.md) | `services/whatsapp*`, `db/whatsapp*` | Jobs, plantillas, evidencia y conciliacion. |
 | [`finance.md`](finance.md) | `db/finance*`, `services/api/finance*` | Cobros, costos, cierres y calidad. |
+| [`appointment-followups.md`](appointment-followups.md) | `services/appointment_reminders.py`, `services/post_appointment.py` | Recordatorios, lotes, revision post-cita y frescura. |
+| [`optimization.md`](optimization.md) | `worker/`, `reservation_engine/` | Comparabilidad, evidencia y limites de optimizacion. |
 
 Si un contrato contradice el codigo activo o PostgreSQL, verificar primero el
 runtime y corregir el contrato en el mismo cambio. Los contratos supersedidos se

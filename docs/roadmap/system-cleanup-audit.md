@@ -804,31 +804,57 @@ historia.
 
 ### Fusionar o recortar
 
-- [ ] `docs/finance/README.md`: conserva checklist operativo de TikTok/CAC y
+- [x] `docs/finance/README.md`: conserva checklist operativo de TikTok/CAC y
   mueve reglas duplicadas al contrato `docs/contracts/finance.md`.
-- [ ] `docs/operations/deployment-topology.md`: conserva arranque, verificacion y
+- [x] `docs/operations/deployment-topology.md`: conserva arranque, verificacion y
   rollback; recorta arquitectura repetida de `current-runtime.md`.
-- [ ] `docs/optimization.md`: clasificar formalmente como contrato o mover su
+- [x] `docs/optimization.md`: clasificar formalmente como contrato o mover su
   contenido normativo a `docs/contracts/`.
 
 ### Agregar contratos o runbooks faltantes
 
-- [ ] Contrato breve de recordatorios y post-cita: autoridad, deduplicacion,
+- [x] Contrato breve de recordatorios y post-cita: autoridad, deduplicacion,
   modos, dia congelado, limite 20, estados y conciliacion.
 - [x] Runbook de backup y restore que referencie
   `scripts/verify-postgres-backup.ps1`.
-- [ ] Autoridad y orden exactos del paquete PDF postpago.
+- [x] Autoridad y orden exactos del paquete PDF postpago.
 
 ### Conservar
 
-- [ ] `README.md`, `docs/README.md`, `docs/project-status.md` y roadmap.
-- [ ] arquitectura actual y su README de redireccion.
-- [ ] contratos Admin API, ciclo de orden, reserva, worker, CAPTCHA, WhatsApp y
+- [x] `README.md`, `docs/README.md`, `docs/project-status.md` y roadmap.
+- [x] arquitectura actual y su README de redireccion.
+- [x] contratos Admin API, ciclo de orden, reserva, worker, CAPTCHA, WhatsApp y
   finanzas.
-- [ ] runbooks operativos vigentes.
-- [ ] `docs/resumen-del-negocio.md`.
-- [ ] indice y milestones historicos.
-- [ ] README cortos de paquetes y dashboard.
+- [x] runbooks operativos vigentes.
+- [x] `docs/resumen-del-negocio.md`.
+- [x] indice y milestones historicos.
+- [x] README cortos de paquetes y dashboard.
+
+### Registro de ejecucion del Paso 9
+
+Corte de la comprobacion: `2026-08-30 America/Lima`.
+
+- Finanzas separa la semantica contable en `contracts/finance.md` del checklist
+  de registro y cierre en `finance/README.md`.
+- `operations/deployment-topology.md` conserva solamente arranque,
+  comprobacion, desarrollo y rollback; `architecture/current-runtime.md` sigue
+  siendo la autoridad de procesos y fronteras.
+- El contrato observacional se movio a `contracts/optimization.md` y se agrego
+  al mapa de lectura.
+- `contracts/appointment-followups.md` consolida autoridad, modos,
+  deduplicacion, dia congelado, barrera del resumen, estados y frescura. Aclara
+  que el limite fijo `20` es de post-cita; recordatorios usa un limite
+  configurable con valor predeterminado `100`.
+- El runbook de backup ya se habia formalizado en el Paso 8. El contrato
+  WhatsApp y la configuracion local coinciden en los tres PDF originales y su
+  orden; no se modificaron paquetes historicos.
+- Se preservaron documentos de entrada, contratos vigentes, runbooks, resumen
+  de negocio, indice, milestones y README de paquetes.
+- `compileall`, Ruff, `59 passed`, build Angular, validador documental y
+  `git diff --check` pasaron. El build conserva los dos avisos de presupuesto
+  preexistentes.
+
+Resultado: **Paso 9 implementado sin cambios de runtime, esquema ni datos**.
 
 No se encontro un documento activo completo que fuera basura pura. El problema
 documental era deriva puntual, tres snapshots engañosos y duplicacion parcial,

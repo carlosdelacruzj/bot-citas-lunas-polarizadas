@@ -21,7 +21,7 @@ Para el resto, abrir solo el dominio de la tarea.
 | Arquitectura | [`architecture/current-runtime.md`](architecture/current-runtime.md) | Procesos, fronteras y dependencias actuales. |
 | Contratos | [`contracts/README.md`](contracts/README.md) | Invariantes que el codigo no debe romper. |
 | Operacion | [`operations/README.md`](operations/README.md) | Arranque, diagnostico, reinicio y recuperacion. |
-| Finanzas | [`finance/README.md`](finance/README.md) | Fuentes y limites del analisis financiero. |
+| Finanzas | [`finance/README.md`](finance/README.md) | Registro cotidiano y checklist de cierre mensual. |
 | Negocio | [`resumen-del-negocio.md`](resumen-del-negocio.md) | Oferta y lectura comercial estable. |
 | Evidencia | [`operations/evidence-policy.md`](operations/evidence-policy.md) | Privacidad, cobertura y uso de artefactos. |
 
@@ -32,8 +32,10 @@ Para el resto, abrir solo el dominio de la tarea.
 | API, Telegram o n8n | `contracts/admin-api.md`, `contracts/worker-control.md` |
 | Ordenes o pagos | `contracts/order-lifecycle.md`, `contracts/finance.md` |
 | Reservas | `contracts/reservation-safety.md` |
+| Recordatorios o post-cita | `contracts/appointment-followups.md` |
 | CAPTCHA | `contracts/captcha.md` |
 | WhatsApp | `contracts/whatsapp.md` |
+| Optimizacion del monitor | `contracts/optimization.md` |
 | Runtime o reinicios | `operations/README.md`, `architecture/current-runtime.md` |
 | Evidencia o reportes | `operations/evidence-policy.md` |
 
