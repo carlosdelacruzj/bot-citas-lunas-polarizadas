@@ -405,7 +405,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         print(f"Runs medidos: {result.run_count}")
         print(f"Reporte generado: {result.markdown_path}")
         print(f"Metricas generadas: {result.metrics_path}")
-        print(f"Resumen vigente: {result.latest_path}")
+        print(f"Puntero al ultimo reporte: {result.latest_path}")
         if args.notify and result.alerts:
             settings = load_settings(require_login=False)
             send_telegram_message(
@@ -437,9 +437,9 @@ def run(argv: Sequence[str] | None = None) -> int:
         print(f"Runs observados: {result.run_count}")
         print(f"Reporte generado: {result.report_path}")
         if result.baseline_path is not None:
-            print(f"Linea base vigente: {result.baseline_path}")
+            print(f"Referencia de linea base actualizada: {result.baseline_path}")
         else:
-            print("Linea base vigente sin cambios; usa --set-baseline para reemplazarla.")
+            print("Referencia sin cambios; usa --set-baseline para actualizarla.")
         return 0
 
     if args.command == "contact":

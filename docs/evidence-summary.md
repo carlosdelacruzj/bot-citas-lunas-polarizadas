@@ -3,9 +3,10 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-08-30 10:25:57 America/Lima`.
-- Rango real de eventos indexados: `2026-06-30 08:27:37` a `2026-08-29 12:00:24` (America/Lima).
-- Cobertura temporal verificable: 2699/2699 eventos con hora de cierre.
+- Generado: `2026-08-30 16:00:24 America/Lima`.
+- Ventana solicitada: mes activo 2026-08 (America/Lima).
+- Rango real de eventos indexados: `2026-08-01 08:09:51` a `2026-08-29 12:00:24` (America/Lima).
+- Cobertura temporal verificable: 2053/2053 eventos con hora de cierre.
 - Fuente: filas sanitizadas del indice compacto de evidencia.
 
 ## Limites
@@ -15,15 +16,15 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - La ausencia de un evento no demuestra que el portal no haya sido consultado.
 
 ## Totales
-- Eventos indexados: 2699
-- Reservas registradas: 200
-- Reservas no confirmadas: 5
-- Disponibilidades completas: 1716
-- Disponibilidades parciales: 562
-- Senales de defensa: 15
+- Eventos indexados: 2053
+- Reservas registradas: 133
+- Reservas no confirmadas: 0
+- Disponibilidades completas: 1293
+- Disponibilidades parciales: 510
+- Senales de defensa: 9
 
 ## Origen de deteccion
-- normal: 2691
+- normal: 2045
 - slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
@@ -46,7 +47,7 @@ Call log:
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
 - 2026-08-26 08:54:58 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
-- 2026-08-18 17:22:49 | order-***-1be4d862e11fa4c6 | network | Locator.wait_for: Timeout 30000ms exceeded.
+- 2026-08-18 17:22:49 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
 - 2026-08-17 12:22:53 |  | network | Locator.wait_for: Timeout 30000ms exceeded.
@@ -64,7 +65,6 @@ Call log:
 - 2026-08-06 15:22:59 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("#MainContent_idUcitas_cbosede") to be visible
-- 2026-07-24 11:30:36 | order-*** | http_403 | La reserva fue confirmada por mensaje de exito del portal.
 
 ## Lectura recomendada
 - Usar `docs/evidence-index.csv` para filtrar el caso exacto.

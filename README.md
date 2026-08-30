@@ -117,6 +117,7 @@ sustituye validacion visual o una observacion natural requerida.
 - Política: [`docs/operations/evidence-policy.md`](docs/operations/evidence-policy.md).
 - Resumen generado: [`docs/evidence-summary.md`](docs/evidence-summary.md).
 - Indice filtrable: `docs/evidence-index.csv`.
+- Historia mensual: [`reports/evidence/index.md`](reports/evidence/index.md).
 - Reportes: [`reports/README.md`](reports/README.md).
 
 Los artefactos generados son snapshots; confirmar fecha, cobertura y estado vivo

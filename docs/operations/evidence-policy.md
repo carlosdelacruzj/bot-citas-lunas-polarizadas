@@ -2,16 +2,17 @@
 
 ## Orden de lectura
 
-1. `docs/evidence-summary.md`: snapshot generado; leer su fecha de corte.
-2. `docs/evidence-index.csv`: indice compacto y filtrable.
-3. `reports/evidence/`: salidas fechadas regenerables.
-4. HTML y screenshots: solo para investigar un evento concreto.
+1. `docs/evidence-summary.md`: snapshot del mes activo; leer su fecha de corte.
+2. `docs/evidence-index.csv`: indice compacto del mes activo.
+3. `reports/evidence/index.md`: manifiesto de indices y agregados mensuales.
+4. `reports/evidence/`: salidas fechadas y bitacoras mensuales.
+5. HTML y screenshots: solo para investigar un evento concreto.
 
 `docs/project-status.md` conserva el estado vigente. `docs/evidence-summary.md`
 y `docs/evidence-index.csv` son snapshots generados; deben declarar fecha de
 generacion, cobertura real y faltantes antes de usarse para comparar periodos.
-`reports/evidence/` conserva resultados fechados. No copiar el mismo artefacto
-pesado entre ambos.
+`reports/evidence/` conserva la historia mensual y resultados fechados. No
+copiar el mismo artefacto pesado entre ambos.
 
 ## Retencion
 
@@ -43,8 +44,9 @@ pesado entre ambos.
   completos de orden, cuentas, tokens, passwords y respuestas CAPTCHA deben
   estar enmascarados en todo archivo versionado.
 - Los generadores pasan texto por sanitizacion antes de escribir CSV/Markdown.
-- Una ruta sanitizada del indice no prueba que el artefacto siga retenido. Todo
-  indice nuevo debe distinguir `path_available` o `artifact_retained`.
+- Una ruta sanitizada del indice no prueba que el artefacto siga retenido. El
+  manifiesto mensual declara esa disponibilidad como no verificada; una
+  investigacion concreta debe comprobar el archivo antes de citarlo.
 - Antes de compartir, revisar el resumen y el indice; nunca compartir dumps,
   `.env`, cookies, HTML crudo o screenshots sin inspeccion.
 

@@ -56,6 +56,8 @@ de comparacion.
 PostgreSQL es la fuente de verdad para ordenes, credenciales cifradas, pagos,
 intentos, reservas, comandos, mensajes y auditoria. `.runtime/`, screenshots,
 videos y reportes son soporte o evidencia; no sustituyen el estado persistido.
+La evidencia compacta rota por mes con agregados diarios y un manifiesto
+estable; el snapshot bajo `docs/` conserva solo el mes activo.
 
 ## Flujo de una orden
 

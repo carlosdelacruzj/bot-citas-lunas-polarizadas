@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -24,7 +25,7 @@ def export_optimization_observation(
     start: date,
     end: date,
     output_dir: Path = Path("reports/optimization"),
-    baseline_path: Path = Path("reports/optimization/latest.md"),
+    baseline_path: Path | None = None,
     promote_baseline: bool = False,
 ) -> OptimizationObservationResult:
     runs = list(runs)
@@ -56,13 +57,28 @@ def export_optimization_observation(
         fetch=fetch,
         selector_observations=selector_observations,
     )
-    output_dir.mkdir(parents=True, exist_ok=True)
-    report_path = output_dir / f"observation-{start:%Y%m%d}-{end:%Y%m%d}.md"
+    archive_dir = output_dir / "archive" / f"{end:%Y-%m}"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    report_path = archive_dir / f"observation-{start:%Y%m%d}-{end:%Y%m%d}.md"
     report_path.write_text(markdown, encoding="utf-8", newline="\n")
     promoted_path = None
     if promote_baseline:
-        baseline_path.write_text(markdown, encoding="utf-8", newline="\n")
-        promoted_path = baseline_path
+        effective_baseline = baseline_path or output_dir / "latest.md"
+        effective_baseline.parent.mkdir(parents=True, exist_ok=True)
+        relative_report = Path(
+            os.path.relpath(report_path, effective_baseline.parent)
+        ).as_posix()
+        effective_baseline.write_text(
+            "# Linea base observacional publicada\n\n"
+            f"- Generada: `{datetime.now(UTC).isoformat(timespec='seconds')}`.\n"
+            f"- Rango: `{start}` a `{end}` (America/Lima, inclusivo).\n"
+            f"- Runs observados: {len(runs)}.\n"
+            f"- Reporte: [`{report_path.name}`]({relative_report}).\n\n"
+            "Es una referencia historica promovida; no representa el runtime actual.\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        promoted_path = effective_baseline
     return OptimizationObservationResult(report_path, promoted_path, len(runs))
 
 

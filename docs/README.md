@@ -51,11 +51,12 @@ investigacion necesite cronologia o evidencia de una decision antigua.
 
 ## Documentos generados
 
-- `evidence-summary.md` y `evidence-index.csv` son snapshots generados por el
-  codigo y permanecen en `docs/` porque esa ruta es contrato del generador.
+- `evidence-summary.md` y `evidence-index.csv` son snapshots del mes activo y
+  permanecen en `docs/` porque esa ruta es contrato del generador.
+- `reports/evidence/index.md` resuelve indices y agregados mensuales antiguos.
 - `reports/` contiene cortes operativos, de optimizacion y salidas de evidencia.
-- Un archivo llamado `latest.md` es el ultimo artefacto escrito, no prueba de
-  estado vivo.
+- Un archivo llamado `latest.md` es un puntero a un corte publicado, no prueba
+  de estado vivo.
 
 Los generados no forman parte de la lectura inicial y sus cifras deben
 refrescarse antes de una conclusion actual. `.ignore` y `codegraph.json` los

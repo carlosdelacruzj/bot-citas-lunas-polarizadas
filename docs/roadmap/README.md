@@ -64,7 +64,7 @@ Cierre: payloads proporcionales a la vista y sin consultas duplicadas costosas.
 ### Backup, retencion y restore
 
 - configurar backup externo y verificar restauracion;
-- completar watchdogs, rotacion y retencion;
+- completar watchdogs y retencion de artefactos externos;
 - crear agregados diarios antes de purgar datos crudos;
 - mostrar cobertura, ultimo backup y proxima purga;
 - bloquear reportes con datos personales o respuestas CAPTCHA.

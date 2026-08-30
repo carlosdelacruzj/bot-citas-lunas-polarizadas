@@ -882,19 +882,56 @@ archivos versionados sumaban aproximadamente `1.64 MB` y once ignorados unos
 `71 KB`. Cada append relee el archivo completo, por lo que el problema es de
 crecimiento y costo de escritura, no solo espacio en disco.
 
-- [ ] Identificar todos los escritores y lectores de las rutas canonicas.
-- [ ] Diseñar rotacion mensual conservando un indice o puntero estable.
-- [ ] Crear agregados diarios antes de archivar o purgar crudos.
-- [ ] Mantener fecha, rango, cobertura y limites en cada snapshot.
-- [ ] Archivar por mes los snapshots fechados de operaciones/optimizacion.
-- [ ] Hacer que `latest.md` sea puntero o baseline honesto, no afirmacion de
+- [x] Identificar todos los escritores y lectores de las rutas canonicas.
+- [x] Diseñar rotacion mensual conservando un indice o puntero estable.
+- [x] Crear agregados diarios antes de archivar o purgar crudos.
+- [x] Mantener fecha, rango, cobertura y limites en cada snapshot.
+- [x] Archivar por mes los snapshots fechados de operaciones/optimizacion.
+- [x] Hacer que `latest.md` sea puntero o baseline honesto, no afirmacion de
   runtime actual.
-- [ ] Verificar los CSV ignorados antes de borrarlos:
+- [x] Verificar los CSV ignorados antes de borrarlos:
   `evidence-events-20260713.csv` estaba completamente duplicado en el indice
   actual; `evidence-events-20260712.csv` conservaba 13 eventos ausentes y debe
   archivarse, no borrarse a ciegas.
-- [ ] Regenerar indices y validar que ningun resumen apunte a rutas retiradas.
-- [ ] Aplicar politica de privacidad antes de conservar reportes compartibles.
+- [x] Regenerar indices y validar que ningun resumen apunte a rutas retiradas.
+- [x] Aplicar politica de privacidad antes de conservar reportes compartibles.
+
+### Registro de ejecucion del Paso 10
+
+Corte de la migracion: `2026-08-30 15:58-16:08 America/Lima`.
+
+- Se auditaron escritores y lectores antes de migrar. El worker estaba fuera de
+  ventana caliente, sin orden, sesion ni rafaga activa.
+- El indice monolitico tenia `2,699` runs unicos. El snapshot `20260712`
+  aportaba `13` ausentes: se preservo el error util del `2026-06-29` y las `12`
+  filas `Sin Cupos` quedaron solo en el snapshot legacy, conforme a la politica.
+- La historia compacta quedo en `2,700` eventos unicos: junio `4`, julio `643`
+  y agosto `2,053`. Los agregados diarios suman exactamente esos conteos.
+- `docs/evidence-index.csv` conserva agosto como mes activo. El manifiesto
+  `reports/evidence/index.md` resuelve junio, julio y agosto y declara que la
+  retencion de artefactos no fue verificada por una ruta sanitizada.
+- Las bitacoras se dividieron en `411` casos de optimizacion y `579` parciales;
+  se retiro un Run duplicado y las rutas monoliticas quedaron como indices.
+- Los cortes semanales y observacionales se archivaron por mes. Las versiones
+  corregidas de ambos `latest.md` se conservaron como canonicas y `latest.md`
+  paso a ser un puntero pequeño.
+- El export ignorado `20260713` fue confirmado como `95/95` duplicado y movido
+  a `.runtime/retired-step10/`, recuperable localmente. Sus SHA-256 son
+  `C1B2D0D30EA40D3AAE01AA8236E3AD9C9E9B77D5AA0E05C845E2F31AA6DFBCBE`
+  y `EDE8CE9A42E3B874FED2BC3277A852B37667E2BE3EC1083C75336C19A7BF3651`.
+- La migracion remascaro todo identificador de orden residual y corrigio enlaces
+  a `docs/contracts/optimization.md`. No se modificaron PostgreSQL, `.env`,
+  reservas, clientes ni trabajos WhatsApp.
+- Tras comprobar cero leases, submissions ambiguos, rafagas, sesiones manuales
+  y jobs WhatsApp activos, se reinicio solo el worker mediante Admin API. El
+  comando quedo `applied` sin liberar backoffs y el worker volvio saludable.
+- Validaciones: `compileall`, Ruff, `59 passed`, build Angular, validador
+  documental y `git diff --check`. El build conserva sus dos avisos de
+  presupuesto preexistentes.
+
+Resultado: **Paso 10 implementado**. Los escritores leen solo el mes destino,
+la historia conserva comparabilidad y una purga futura puede partir de
+agregados y manifiestos verificables.
 
 Criterio de cierre: los escritores no releen historicos ilimitados, los indices
 siguen resolviendo evidencia antigua y una purga no elimina comparabilidad.

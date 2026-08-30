@@ -3,11 +3,15 @@
 Estos archivos son snapshots y logs derivados. No forman parte de la lectura
 inicial del proyecto ni sustituyen consultas actuales a PostgreSQL.
 
-- `operations/`: cortes semanales; `latest.md` es el ultimo artefacto escrito.
-- `optimization/`: baselines y observaciones fechadas.
-- `evidence/`: exportaciones historicas y logs append-only.
+- `operations/archive/YYYY-MM/`: cortes semanales; `latest.md` apunta al ultimo
+  corte publicado.
+- `optimization/archive/YYYY-MM/`: baselines y observaciones; `latest.md` apunta
+  solo a la referencia promovida.
+- `evidence/monthly/`: indices compactos mensuales; `evidence/daily/` contiene
+  agregados y `evidence/index.md` resuelve la historia.
+- `evidence/history/`: bitacoras mensuales; las rutas antiguas son indices
+  estables hacia cada mes.
 
 Antes de usar una cifra, comprobar fecha de corte, cobertura, dias faltantes y
-fuente. Los dos logs bajo `evidence/history/` son append-only y deben rotarse por
-periodo cuando se implemente la politica de retencion; no se leen completos para
-una consulta ordinaria.
+fuente. Los escritores solo leen el archivo del mes destino; PostgreSQL sigue
+siendo la autoridad del runtime.

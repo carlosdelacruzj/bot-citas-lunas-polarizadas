@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import csv
+import re
+import tempfile
+import threading
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -22,6 +25,9 @@ from appointment_bot.utils.sanitization import sanitize_text
 
 EVIDENCE_INDEX_PATH = Path("docs/evidence-index.csv")
 EVIDENCE_SUMMARY_PATH = Path("docs/evidence-summary.md")
+EVIDENCE_MONTHLY_DIRECTORY = Path("reports/evidence/monthly")
+EVIDENCE_DAILY_DIRECTORY = Path("reports/evidence/daily")
+EVIDENCE_MANIFEST_PATH = Path("reports/evidence/index.md")
 EVIDENCE_STATUSES = {
     ResultStatus.AVAILABLE,
     ResultStatus.REGISTERED,
@@ -38,6 +44,7 @@ DEFENSE_PATTERNS = (
     ("network", ("err_network", "network changed", "connection reset", "timeout")),
 )
 OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
+ORDER_IDENTIFIER_PATTERN = re.compile(r"(?i)\border-[a-z0-9_*.-]+\b")
 CSV_FIELDS = (
     "run_id",
     "finished_at_lima",
@@ -64,6 +71,7 @@ CSV_FIELDS = (
     "evidence_paths",
     "message",
 )
+_EVIDENCE_WRITE_LOCK = threading.RLock()
 
 
 @dataclass(frozen=True)
@@ -77,8 +85,56 @@ def append_evidence_case(report: RunReport) -> None:
     row = evidence_row_from_report(report)
     if row is None:
         return
-    append_evidence_rows(EVIDENCE_INDEX_PATH, [row])
-    write_evidence_summary(EVIDENCE_SUMMARY_PATH, read_evidence_rows(EVIDENCE_INDEX_PATH))
+    with _EVIDENCE_WRITE_LOCK:
+        month = _evidence_month(row)
+        monthly_path = _monthly_evidence_path(month)
+        append_evidence_rows(monthly_path, [row])
+        monthly_rows = read_evidence_rows(monthly_path)
+        _write_daily_aggregate(month, monthly_rows)
+        _write_evidence_manifest({month: monthly_rows})
+        if month == datetime.now(LIMA_TZ).strftime("%Y-%m"):
+            _write_current_evidence_snapshot(month, monthly_rows)
+
+
+def rebuild_evidence_rotation(
+    rows: Iterable[dict[str, str]],
+    *,
+    active_month: str | None = None,
+) -> None:
+    with _EVIDENCE_WRITE_LOCK:
+        grouped = _group_unique_evidence_rows(rows)
+        manifest_rows: dict[str, list[dict[str, str]]] = {}
+        for month, month_rows in sorted(grouped.items()):
+            write_evidence_rows(_monthly_evidence_path(month), month_rows)
+            written_rows = read_evidence_rows(_monthly_evidence_path(month))
+            _write_daily_aggregate(month, written_rows)
+            manifest_rows[month] = written_rows
+        _write_evidence_manifest(manifest_rows)
+        effective_month = active_month or (max(grouped) if grouped else None)
+        if effective_month is not None:
+            current_rows = read_evidence_rows(_monthly_evidence_path(effective_month))
+            _write_current_evidence_snapshot(effective_month, current_rows)
+
+
+def merge_evidence_rotation(
+    rows: Iterable[dict[str, str]],
+    *,
+    active_month: str,
+) -> None:
+    with _EVIDENCE_WRITE_LOCK:
+        grouped: dict[str, list[dict[str, str]]] = {}
+        manifest_rows: dict[str, list[dict[str, str]]] = {}
+        for row in rows:
+            grouped.setdefault(_evidence_month(row), []).append(row)
+        for month, month_rows in sorted(grouped.items()):
+            path = _monthly_evidence_path(month)
+            append_evidence_rows(path, month_rows)
+            written_rows = read_evidence_rows(path)
+            _write_daily_aggregate(month, written_rows)
+            manifest_rows[month] = written_rows
+        _write_evidence_manifest(manifest_rows)
+        current_rows = read_evidence_rows(_monthly_evidence_path(active_month))
+        _write_current_evidence_snapshot(active_month, current_rows)
 
 
 def export_evidence_summary(
@@ -113,12 +169,9 @@ def export_evidence_summary(
         requested_range=requested_range,
     )
     if update_current:
-        write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
-        write_evidence_summary(
-            EVIDENCE_SUMMARY_PATH,
+        merge_evidence_rotation(
             rows,
-            generated_at=effective_now,
-            requested_range=requested_range,
+            active_month=effective_now.astimezone(LIMA_TZ).strftime("%Y-%m"),
         )
     return EvidenceSummaryResult(csv_path, markdown_path, len(rows))
 
@@ -156,41 +209,35 @@ def evidence_row_from_report(report: RunReport) -> dict[str, str] | None:
 
 
 def append_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
-    rows = [row for row in rows if _is_useful_evidence_row(row)]
-    if not rows:
-        return
-    _ensure_current_csv_header(path)
-    existing_ids = _existing_run_ids(path)
-    new_rows = [row for row in rows if row.get("run_id") not in existing_ids]
-    if not new_rows:
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    write_header = not path.exists() or path.stat().st_size == 0
-    with path.open("a", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, extrasaction="ignore")
-        if write_header:
-            writer.writeheader()
-        writer.writerows(_normalized_row(row) for row in new_rows)
-
-
-def _ensure_current_csv_header(path: Path) -> None:
-    if not path.exists() or path.stat().st_size == 0:
-        return
-    with path.open("r", encoding="utf-8", newline="") as file:
-        header = next(csv.reader(file), [])
-    if tuple(header) == CSV_FIELDS:
-        return
-    write_evidence_rows(path, read_evidence_rows(path))
+    with _EVIDENCE_WRITE_LOCK:
+        useful_rows = [row for row in rows if _is_useful_evidence_row(row)]
+        if not useful_rows:
+            return
+        existing = read_evidence_rows(path)
+        existing_ids = {row.get("run_id", "") for row in existing}
+        new_rows = [row for row in useful_rows if row.get("run_id") not in existing_ids]
+        if new_rows:
+            write_evidence_rows(path, [*existing, *new_rows])
 
 
 def write_evidence_rows(path: Path, rows: Iterable[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as file:
+    unique: dict[str, dict[str, str]] = {}
+    for row in rows:
+        if _is_useful_evidence_row(row):
+            unique.setdefault(str(row.get("run_id") or ""), row)
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        newline="",
+        dir=path.parent,
+        delete=False,
+    ) as file:
+        temporary_path = Path(file.name)
         writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(
-            _normalized_row(row) for row in rows if _is_useful_evidence_row(row)
-        )
+        writer.writerows(_normalized_row(row) for row in unique.values())
+    temporary_path.replace(path)
 
 
 def read_evidence_rows(path: Path) -> list[dict[str, str]]:
@@ -198,6 +245,125 @@ def read_evidence_rows(path: Path) -> list[dict[str, str]]:
         return []
     with path.open("r", encoding="utf-8", newline="") as file:
         return list(csv.DictReader(file))
+
+
+def _evidence_month(row: dict[str, str]) -> str:
+    value = str(row.get("finished_at_lima") or "").strip()
+    month = value[:7]
+    try:
+        datetime.strptime(month, "%Y-%m")
+    except ValueError:
+        return datetime.now(LIMA_TZ).strftime("%Y-%m")
+    return month
+
+
+def _monthly_evidence_path(month: str) -> Path:
+    return EVIDENCE_MONTHLY_DIRECTORY / f"evidence-{month}.csv"
+
+
+def _write_current_evidence_snapshot(
+    month: str,
+    rows: list[dict[str, str]],
+) -> None:
+    write_evidence_rows(EVIDENCE_INDEX_PATH, rows)
+    write_evidence_summary(
+        EVIDENCE_SUMMARY_PATH,
+        rows,
+        requested_range=f"mes activo {month} (America/Lima)",
+    )
+
+
+def _write_daily_aggregate(month: str, rows: Iterable[dict[str, str]]) -> None:
+    fields = (
+        "date_lima",
+        "events",
+        "registered",
+        "available",
+        "reservation_unconfirmed",
+        "unknown",
+        "defense_signals",
+        "slot_lost",
+        "captcha_invalid",
+    )
+    daily: dict[str, Counter[str]] = {}
+    for row in rows:
+        day = str(row.get("finished_at_lima") or "")[:10]
+        if not day.startswith(month) or len(day) != 10:
+            continue
+        counts = daily.setdefault(day, Counter())
+        counts["events"] += 1
+        status = str(row.get("status") or "")
+        if status in {"registered", "available", "reservation_unconfirmed", "unknown"}:
+            counts[status] += 1
+        if row.get("defense_signal"):
+            counts["defense_signals"] += 1
+        outcome = str(row.get("submission_outcome") or "")
+        if outcome in {"slot_lost", "captcha_invalid"}:
+            counts[outcome] += 1
+    path = EVIDENCE_DAILY_DIRECTORY / f"evidence-daily-{month}.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        newline="",
+        dir=path.parent,
+        delete=False,
+    ) as file:
+        temporary_path = Path(file.name)
+        writer = csv.DictWriter(file, fieldnames=fields)
+        writer.writeheader()
+        for day, counts in sorted(daily.items()):
+            writer.writerow(
+                {
+                    field: day if field == "date_lima" else counts[field]
+                    for field in fields
+                }
+            )
+    temporary_path.replace(path)
+
+
+def _write_evidence_manifest(
+    updated_months: dict[str, list[dict[str, str]]] | None = None,
+) -> None:
+    lines = [
+        "# Indice mensual de evidencia\n\n",
+        f"- Generado: `{datetime.now(LIMA_TZ).isoformat(timespec='seconds')}`.\n",
+        "- Los CSV mensuales son la historia compacta canonica.\n",
+        "- `docs/evidence-index.csv` conserva solo el mes activo.\n",
+        "- Los agregados diarios no sustituyen los eventos ni PostgreSQL.\n\n",
+        "| Mes | Eventos | Rango real | CSV | Agregado diario | Artefactos |\n",
+        "| --- | ---: | --- | --- | --- | --- |\n",
+    ]
+    monthly_lines: dict[str, str] = {}
+    if EVIDENCE_MANIFEST_PATH.exists():
+        for line in EVIDENCE_MANIFEST_PATH.read_text(encoding="utf-8").splitlines():
+            match = re.match(r"\| `(\d{4}-\d{2})` \|", line)
+            if match:
+                monthly_lines[match.group(1)] = f"{line}\n"
+    EVIDENCE_MONTHLY_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    effective_updates = updated_months
+    if effective_updates is None:
+        effective_updates = {
+            path.stem.removeprefix("evidence-"): read_evidence_rows(path)
+            for path in sorted(EVIDENCE_MONTHLY_DIRECTORY.glob("evidence-????-??.csv"))
+        }
+    for month, rows in effective_updates.items():
+        path = _monthly_evidence_path(month)
+        dates = sorted(
+            value
+            for row in rows
+            if (value := str(row.get("finished_at_lima") or "")[:10])
+        )
+        coverage = f"{dates[0]} a {dates[-1]}" if dates else "sin eventos"
+        daily_path = EVIDENCE_DAILY_DIRECTORY / f"evidence-daily-{month}.csv"
+        monthly_lines[month] = (
+            f"| `{month}` | {len(rows)} | {coverage} | "
+            f"[`{path.name}`](monthly/{path.name}) | "
+            f"[`{daily_path.name}`](daily/{daily_path.name}) | no verificados |\n"
+        )
+    lines.extend(monthly_lines[month] for month in sorted(monthly_lines))
+    EVIDENCE_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_write_text(EVIDENCE_MANIFEST_PATH, "".join(lines))
 
 
 def write_evidence_summary(
@@ -214,16 +380,39 @@ def write_evidence_summary(
         reverse=True,
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    _atomic_write_text(
+        path,
         _summary_markdown(
             rows,
             title=title,
             generated_at=generated_at or datetime.now(UTC),
             requested_range=requested_range,
         ),
+    )
+
+
+def _group_unique_evidence_rows(
+    rows: Iterable[dict[str, str]],
+) -> dict[str, list[dict[str, str]]]:
+    grouped: dict[str, dict[str, dict[str, str]]] = {}
+    for row in rows:
+        month = _evidence_month(row)
+        grouped.setdefault(month, {}).setdefault(str(row.get("run_id") or ""), row)
+    return {month: list(unique.values()) for month, unique in grouped.items()}
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w",
         encoding="utf-8",
         newline="\n",
-    )
+        dir=path.parent,
+        delete=False,
+    ) as file:
+        temporary_path = Path(file.name)
+        file.write(content)
+    temporary_path.replace(path)
 
 
 def _evidence_row(
@@ -258,7 +447,7 @@ def _evidence_row(
     return {
         "run_id": detail_text(run_id),
         "finished_at_lima": _format_lima_datetime(finished_at),
-        "order_id": detail_text(order_id),
+        "order_id": _masked_order_id(order_id),
         "status": status_value.value,
         "detection_origin": detection_origin(details),
         "site": detail_text(details.get("sede") or details.get("site")),
@@ -495,12 +684,20 @@ def _run_in_days(run: RunDetail, *, days: int, now: datetime | None) -> bool:
     return parsed >= current - timedelta(days=max(days, 1))
 
 
-def _existing_run_ids(path: Path) -> set[str]:
-    return {row.get("run_id", "") for row in read_evidence_rows(path)}
-
-
 def _normalized_row(row: dict[str, str]) -> dict[str, str]:
-    return {field: sanitize_text(detail_text(row.get(field))) for field in CSV_FIELDS}
+    normalized = {
+        field: ORDER_IDENTIFIER_PATTERN.sub(
+            "order-***",
+            sanitize_text(detail_text(row.get(field))),
+        )
+        for field in CSV_FIELDS
+    }
+    normalized["order_id"] = _masked_order_id(row.get("order_id"))
+    return normalized
+
+
+def _masked_order_id(value: object) -> str:
+    return "order-***" if detail_text(value) else ""
 
 
 def _evidence_paths(details: dict[str, Any], screenshot_paths: list[str]) -> str:

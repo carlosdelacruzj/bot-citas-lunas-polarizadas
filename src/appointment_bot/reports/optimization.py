@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,41 +21,34 @@ from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger(__name__)
 
-OPTIMIZATION_LOG_PATH = Path("reports/evidence/history/reservation-optimization-log.md")
-PARTIAL_AVAILABILITY_LOG_PATH = Path("reports/evidence/history/partial-availability-log.md")
+OPTIMIZATION_LOG_DIRECTORY = Path("reports/evidence/history/reservation-optimization")
+PARTIAL_AVAILABILITY_LOG_DIRECTORY = Path("reports/evidence/history/partial-availability")
+ORDER_IDENTIFIER_PATTERN = re.compile(r"(?i)\border-[a-z0-9_*.-]+\b")
 REJECTED_AFTER_SUBMISSION = {"captcha_invalid", "slot_lost", "rejected"}
 OBSOLETE_CAPTCHA_PANEL_ARTIFACT = "04-reserva-captcha-panel-tecnico-2captcha"
 
 _LAST_ORDER_FINISH: tuple[str, datetime] | None = None
+_LOG_WRITE_LOCK = threading.RLock()
 
 
 def append_optimization_case(report: RunReport) -> None:
     """Append one curated optimization entry when a run reached a useful outcome."""
     global _LAST_ORDER_FINISH
 
-    switch_context = _switch_context(report, _LAST_ORDER_FINISH)
-    if report.order_id and report.finished_at:
-        finished_at = _parse_datetime(report.finished_at)
-        if finished_at is not None:
-            _LAST_ORDER_FINISH = (report.order_id, finished_at)
-
-    entry = _entry_for_report(report, switch_context=switch_context)
-    if entry is None:
-        return
-
-    OPTIMIZATION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    existing = (
-        OPTIMIZATION_LOG_PATH.read_text(encoding="utf-8") if OPTIMIZATION_LOG_PATH.exists() else ""
-    )
-    if report.run_id and f"- Run: {report.run_id}" in existing:
-        return
-
-    with OPTIMIZATION_LOG_PATH.open("a", encoding="utf-8", newline="\n") as file:
-        if not existing:
-            file.write(_document_header())
-        elif not existing.endswith("\n"):
-            file.write("\n")
-        file.write(entry)
+    with _LOG_WRITE_LOCK:
+        switch_context = _switch_context(report, _LAST_ORDER_FINISH)
+        if report.order_id and report.finished_at:
+            finished_at = _parse_datetime(report.finished_at)
+            if finished_at is not None:
+                _LAST_ORDER_FINISH = (report.order_id, finished_at)
+        entry = _entry_for_report(report, switch_context=switch_context)
+        if entry is not None:
+            _append_monthly_entry(
+                _monthly_log_path(OPTIMIZATION_LOG_DIRECTORY, report.finished_at),
+                entry,
+                run_id=report.run_id,
+                header=_document_header(),
+            )
 
 
 def append_partial_availability_case(report: RunReport) -> None:
@@ -62,18 +57,29 @@ def append_partial_availability_case(report: RunReport) -> None:
     if entry is None:
         return
 
-    PARTIAL_AVAILABILITY_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    existing = (
-        PARTIAL_AVAILABILITY_LOG_PATH.read_text(encoding="utf-8")
-        if PARTIAL_AVAILABILITY_LOG_PATH.exists()
-        else ""
-    )
-    if report.run_id and f"- Run: {report.run_id}" in existing:
-        return
+    with _LOG_WRITE_LOCK:
+        _append_monthly_entry(
+            _monthly_log_path(PARTIAL_AVAILABILITY_LOG_DIRECTORY, report.finished_at),
+            entry,
+            run_id=report.run_id,
+            header=_partial_document_header(),
+        )
 
-    with PARTIAL_AVAILABILITY_LOG_PATH.open("a", encoding="utf-8", newline="\n") as file:
+
+def _append_monthly_entry(
+    path: Path,
+    entry: str,
+    *,
+    run_id: str | None,
+    header: str,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    if run_id and f"- Run: {run_id}" in existing:
+        return
+    with path.open("a", encoding="utf-8", newline="\n") as file:
         if not existing:
-            file.write(_partial_document_header())
+            file.write(header)
         elif not existing.endswith("\n"):
             file.write("\n")
         file.write(entry)
@@ -103,7 +109,7 @@ def _partial_entry_for_report(report: RunReport) -> str | None:
         f"- Opciones fecha: {_text(_list_text(details.get('date_options')))}\n",
         f"- Opciones hora: {_text(_list_text(details.get('hour_options')))}\n",
         f"- Origen deteccion: {detection_origin(details)}\n",
-        f"- Resultado: {sanitize_text(report.message)}\n",
+        f"- Resultado: {_text(report.message)}\n",
         "- Reglas/decision:\n",
         f"  - Bloqueado por regla: {_bool_text(details.get('blocked_by_order_rule'))}\n",
         "  - Seleccionado solo para evidencia: "
@@ -182,7 +188,7 @@ def _partial_technical_observation(report: RunReport, details: dict[str, Any]) -
         notes.append("Aparecio fecha sin hora seleccionable.")
     if details.get("blocked_by_order_rule"):
         notes.append("No se reservo porque la disponibilidad no cumplia reglas.")
-    return " ".join(notes) or sanitize_text(report.message)
+    return " ".join(notes) or _text(report.message)
 
 
 def _entry_for_report(
@@ -371,7 +377,7 @@ def _result_summary(report: RunReport) -> str:
         return "CAPTCHA resuelto, click en Reservar enviado, confirmacion inmediata no validada."
     if outcome in REJECTED_AFTER_SUBMISSION:
         return f"Envio final alcanzado, pero el portal respondio {outcome}."
-    return sanitize_text(report.message)
+    return _text(report.message)
 
 
 def _post_confirmation(details: dict[str, Any]) -> str:
@@ -529,11 +535,19 @@ def _float(value: Any) -> float | None:
 
 
 def _text(value: Any) -> str:
-    return detail_text(value, collapse_newlines=True)
+    return ORDER_IDENTIFIER_PATTERN.sub(
+        "order-***",
+        sanitize_text(detail_text(value, collapse_newlines=True)),
+    )
 
 
 def _masked_order_id(value: Any) -> str:
-    return sanitize_text(_text(value)) or "order-***"
+    return "order-***" if detail_text(value) else "no registrado"
+
+
+def _monthly_log_path(directory: Path, value: str | None) -> Path:
+    parsed = _parse_datetime(value) or datetime.now(LIMA_TZ)
+    return directory / f"{parsed.astimezone(LIMA_TZ):%Y-%m}.md"
 
 
 def _masked_presence(value: Any) -> str:

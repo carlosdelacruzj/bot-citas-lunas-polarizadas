@@ -111,9 +111,9 @@ Contrato: [`../contracts/captcha.md`](../contracts/captcha.md).
 
 ## Evidencia y reportes
 
-Seguir [`evidence-policy.md`](evidence-policy.md). `evidence-summary.md`,
-`evidence-index.csv` y `reports/*/latest.md` son snapshots; verificar fecha de
-corte y fuente viva antes de concluir.
+Seguir [`evidence-policy.md`](evidence-policy.md). `evidence-summary.md` y
+`evidence-index.csv` son snapshots; `reports/*/latest.md` son punteros o
+baselines historicas. Verificar corte y fuente viva antes de concluir.
 
 ## Backup y restauracion
 

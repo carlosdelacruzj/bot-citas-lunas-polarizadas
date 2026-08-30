@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import os
 import statistics
 from collections import Counter
 from collections.abc import Iterable
@@ -40,7 +41,7 @@ def export_weekly_report(
     start: date,
     end: date,
     output_dir: Path = Path("reports/operations"),
-    latest_path: Path = Path("reports/operations/latest.md"),
+    latest_path: Path | None = None,
 ) -> WeeklyReportResult:
     if end < start:
         raise ValueError("end must be greater than or equal to start.")
@@ -62,15 +63,39 @@ def export_weekly_report(
         previous_end=previous_end,
         alerts=alerts,
     )
-    output_dir.mkdir(parents=True, exist_ok=True)
+    archive_dir = output_dir / "archive" / f"{end:%Y-%m}"
+    archive_dir.mkdir(parents=True, exist_ok=True)
     stem = f"weekly-{start:%Y%m%d}-{end:%Y%m%d}"
-    markdown_path = output_dir / f"{stem}.md"
-    metrics_path = output_dir / f"{stem}.csv"
+    markdown_path = archive_dir / f"{stem}.md"
+    metrics_path = archive_dir / f"{stem}.csv"
     markdown_path.write_text(markdown, encoding="utf-8", newline="\n")
-    latest_path.parent.mkdir(parents=True, exist_ok=True)
-    latest_path.write_text(markdown, encoding="utf-8", newline="\n")
     _write_metrics_csv(metrics_path, current_metrics, previous_metrics)
-    return WeeklyReportResult(markdown_path, metrics_path, latest_path, len(current), alerts)
+    effective_latest = latest_path or output_dir / "latest.md"
+    effective_latest.parent.mkdir(parents=True, exist_ok=True)
+    relative_markdown = Path(
+        os.path.relpath(markdown_path, effective_latest.parent)
+    ).as_posix()
+    relative_metrics = Path(
+        os.path.relpath(metrics_path, effective_latest.parent)
+    ).as_posix()
+    effective_latest.write_text(
+        "# Ultimo reporte semanal publicado\n\n"
+        f"- Generado: `{datetime.now(LIMA_TZ).isoformat(timespec='seconds')}`.\n"
+        f"- Rango: `{start}` a `{end}` (America/Lima, inclusivo).\n"
+        f"- Runs medidos: {len(current)}.\n"
+        f"- Reporte: [`{markdown_path.name}`]({relative_markdown}).\n"
+        f"- Metricas: [`{metrics_path.name}`]({relative_metrics}).\n\n"
+        "Este puntero identifica un corte historico generado; no representa el runtime actual.\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return WeeklyReportResult(
+        markdown_path,
+        metrics_path,
+        effective_latest,
+        len(current),
+        alerts,
+    )
 
 
 def _metrics(runs: list[RunDetail]) -> dict[str, Any]:
@@ -136,6 +161,10 @@ def _metrics(runs: list[RunDetail]) -> dict[str, Any]:
 
 def _alerts(current: dict[str, Any], previous: dict[str, Any]) -> tuple[str, ...]:
     alerts = []
+    if current["counts"]["defense_signals"]:
+        alerts.append(
+            f"Defensas: {current['counts']['defense_signals']} senales observadas en el rango."
+        )
     captcha = current["captcha_thresholds"]
     if captcha[10]:
         alerts.append(f"CAPTCHA: {captcha[10]} respuestas superaron 10 segundos.")

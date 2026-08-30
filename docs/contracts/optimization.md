@@ -42,7 +42,7 @@ tecnico de valor comercial.
 Fuentes:
 
 - baseline generado: `reports/optimization/latest.md`;
-- observaciones fechadas: `reports/optimization/observation-*.md`;
+- observaciones fechadas: `reports/optimization/archive/YYYY-MM/observation-*.md`;
 - operacion: `reports/operations/latest.md`;
 - evidencia: `docs/evidence-summary.md` y `docs/evidence-index.csv`;
 - verdad actual: PostgreSQL.

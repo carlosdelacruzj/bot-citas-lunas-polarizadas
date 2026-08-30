@@ -1,0 +1,9 @@
+run_id,finished_at_lima,order_id,status,detection_origin,site,appointment_date,appointment_hour,slots,submission_outcome,confirmation_source,defense_signal,duration_seconds,total_from_available_seconds,selection_seconds,captcha_solver_seconds,captcha_field_fill_seconds,pre_click_validation_seconds,submission_intent_seconds,selection_stabilization_mode,click_to_portal_response_seconds,screenshot_path,evidence_paths,message
+***-082556-34136cfe,2026-06-30 08:27:37,order-***,error,normal,,,,,,,network,101.210,,,,,,,,,error-***-082556-34136cfe-order-***,error-***-082556-34136cfe-order-***,"Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to ""https://sistemas.policia.gob.pe/lunasoscurecidas/solicitud_menu.aspx"", waiting until ""domcontentloaded"""
+***-083738-eb808447,2026-06-30 08:39:02,order-***,reservation_unconfirmed,normal,LIMA-LA VICTORIA,15/07/2026,11:00,,unknown,,,84.334,,,,,,,,,reservation-confirmation-***-083738-eb808447-order-***,reservation-confirmation-***-083738-eb808447-order-*** | process-stages-***-083738-eb808447-order-*** | result-available-***-083738-eb808447-order-***,"Se resolvio el captcha y se hizo click en Reservar, pero no se confirmo la etapa Programado."
+***-093108-a8710f24,2026-06-30 09:31:22,order-***,completed,normal,,15/07/2026 11:00,,,,,,14.767,,,,,,,,,process-stages-***-093108-a8710f24-order-***,process-stages-***-093108-a8710f24-order-***,La etapa Separa Cita Peritaje ya esta en estado Programado. No hay una cita pendiente por reservar.
+***-122818-05ec60c4,2026-06-29 12:30:08,order-***,error,normal,,,,,,,network,110.028,,,,,,,,,error-***-122818-05ec60c4-order-***,error-***-122818-05ec60c4-order-***,"Locator.wait_for: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(""#MainContent_idUcitas_cbosede"") to be visible"
