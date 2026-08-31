@@ -80,7 +80,10 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
 Una incompatibilidad de fecha es `partial / blocked_by_order_rule`; no activa
-backoff general. Un submit ambiguo nunca se reintenta automaticamente.
+backoff general. Si la seleccion incompatible quedo sincronizada, posee captura
+canonica previa y no inicio reserva, puede activar auxiliares compatibles; un
+`partial` generico conserva el fallback secuencial. Un submit ambiguo nunca se
+reintenta automaticamente.
 
 ## Servicios y precios
 

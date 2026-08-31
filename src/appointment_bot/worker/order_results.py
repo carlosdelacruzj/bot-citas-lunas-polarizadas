@@ -68,7 +68,7 @@ def handle_observer_order_report(
         )
         return ObserverOrderDecision(
             compatible_handoff_order_ids=compatible_order_ids,
-            follow_up_order_ids=(order.order_id,) if compatible_order_ids else (),
+            follow_up_order_ids=(order.order_id,),
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.TERMINAL_STAGE:

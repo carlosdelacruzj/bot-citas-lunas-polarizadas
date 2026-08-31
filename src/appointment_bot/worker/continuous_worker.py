@@ -287,6 +287,11 @@ class ContinuousWorker:
                 return
         if self._opportunity_burst_started:
             logger.info("Sequential opportunity handoff skipped after guarded burst")
+            if self._rapid_queue_follow_up_order_ids and self.settings.auto_reserve:
+                self._run_rapid_queue(
+                    target_order_ids=tuple(self._rapid_queue_follow_up_order_ids),
+                    inter_order_delay_enabled=False,
+                )
         elif self._compatible_handoff_order_ids and self.settings.auto_reserve:
             self._run_rapid_queue(
                 target_order_ids=self._compatible_handoff_order_ids,

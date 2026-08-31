@@ -127,6 +127,7 @@ def _control_payload(control: OpportunityRuntimeControl) -> dict[str, Any]:
     return {
         "revision": control.revision,
         "source": "database",
+        "max_sessions": settings.opportunity_burst_max_sessions,
         "obs006": _mode_payload(control, "obs006", control.burst_mode),
         "obs007": _mode_payload(control, "obs007", control.obs007_mode),
         "breaker": {

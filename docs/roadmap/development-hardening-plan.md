@@ -436,6 +436,10 @@ necesitan.
   conservando prioridad exclusiva y continuidad de subordenes.
 - [x] Evitar que la pertenencia al bloque activo adelante un candidato amplio y
   volver a revisar al originador restringido al final del traspaso.
+- [x] Permitir rafaga inmediata desde una seleccion bloqueada sincronizada, con
+  captura canonica y sin intento; conservar el traspaso secuencial como fallback.
+- [x] Exponer el maximo configurado desde Admin API y eliminar el limite `2`
+  duplicado en el dashboard.
 - [x] Ampliar la rafaga a tres sesiones aisladas: detector y dos auxiliares.
 - [x] Elevar a `v72` los limites persistidos de sesiones configuradas y activas.
 - [x] Aplicar `v72` sin tocar el intento ambiguo existente; el worker permanecio

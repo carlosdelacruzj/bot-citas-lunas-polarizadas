@@ -174,6 +174,7 @@ export interface OpportunityActiveBurst {
 export interface OpportunityControl {
   revision: number;
   source: string;
+  max_sessions?: number;
   obs006: OpportunityControlMode;
   obs007: OpportunityControlMode;
   breaker: {

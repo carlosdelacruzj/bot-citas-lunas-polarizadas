@@ -70,6 +70,11 @@ una oportunidad bloqueada o una rafaga, se atiende primero a quien acepta menos
 de las oportunidades observadas y posee reglas mas restrictivas; prioridad y
 antiguedad desempatan despues, salvo prioridad exclusiva.
 
+Una incompatibilidad con seleccion sincronizada, captura canonica previa y cero
+intento de reserva puede iniciar inmediatamente una rafaga para otros candidatos
+compatibles. Si falta cualquiera de esas barreras, conserva el traspaso
+secuencial como fallback.
+
 Si el traspaso recorrio al menos un candidato compatible, la orden restringida
 que lo origino se revisa una vez mas al final de esa misma ventana. Si entretanto
 aparece una fecha valida puede reservarla; si sigue siendo incompatible conserva

@@ -4,8 +4,11 @@ Estado: estable y vigente.
 
 ## Activacion
 
-Solo una disponibilidad real y compatible inicia una rafaga. La rafaga admite
-como maximo tres sesiones Playwright aisladas: el detector y hasta dos
+Una disponibilidad real compatible con el detector inicia una rafaga. Tambien
+puede iniciarla una seleccion `blocked_by_order_rule` cuando esta sincronizada,
+tiene fecha y hora exactas, conserva captura canonica previa y no inicio una
+reserva. Un `partial` generico o evidencia incompleta no es admisible. La rafaga
+admite como maximo tres sesiones Playwright aisladas: el detector y hasta dos
 auxiliares. Cada orden conserva credenciales, cookies, claim, lease, reglas e
 intento propios.
 
@@ -26,9 +29,15 @@ El traspaso secuencial queda reservado para una orden que observo un cupo real
 pero no pudo usarlo por sus propias reglas. Una orden que ya reservo continua
 por la cola general y no genera ese traspaso.
 
-Despues de recorrer candidatos compatibles, la orden restringida que origino el
-traspaso obtiene una revision final dentro de la misma ventana. No se repite si
-no hubo ningun candidato que justificara abrir el traspaso.
+Si una incompatibilidad segura inicio la rafaga, no se repite el traspaso de sus
+candidatos. Al terminar el detector bloqueado se admite otro candidato si queda
+capacidad; si la rafaga no pudo comenzar, el traspaso secuencial permanece como
+fallback.
+
+Despues de una rafaga o de recorrer candidatos compatibles por fallback, la
+orden restringida que origino la oportunidad obtiene una revision final dentro
+de la misma ventana. El fallback no la repite si no hubo ningun candidato que
+justificara abrir el traspaso.
 
 ## Reobservacion de cupo perdido
 

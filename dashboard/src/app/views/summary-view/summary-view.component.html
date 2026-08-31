@@ -720,7 +720,7 @@
       <div class="panel-header">
         <div>
           <h2 id="opportunity-control-title">Control de oportunidades</h2>
-          <p>Ráfagas y reobservación de cupos · máximo 2 sesiones</p>
+          <p>Ráfagas y reobservación de cupos · máximo {{ dashboard.opportunityMaxSessions() }} sesiones</p>
         </div>
         <span
           class="badge {{ dashboard.opportunityControlTone() }}"
@@ -769,7 +769,7 @@
           <section class="opportunity-control-row" aria-labelledby="obs006-control-title">
             <div>
               <h3 id="obs006-control-title">Ráfagas de oportunidad</h3>
-              <p>Ráfaga de oportunidades con un máximo de 2 sesiones simultáneas.</p>
+              <p>Ráfaga de oportunidades con un máximo de {{ dashboard.opportunityMaxSessions() }} sesiones simultáneas.</p>
             </div>
             <div class="opportunity-control-state">
               <span class="badge {{ dashboard.opportunityModeTone(control.obs006.effective_mode) }}">
@@ -833,7 +833,7 @@
           >
             <strong>Ráfaga activa</strong>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
-            <span>{{ burst.max_active_sessions }} de 2 sesiones máximas</span>
+            <span>{{ burst.max_active_sessions }} de {{ dashboard.opportunityMaxSessions() }} sesiones máximas</span>
             <span>Inició {{ dashboard.formatDateTime(burst.started_at) }}</span>
           </div>
         } @else if (dashboard.latestOpportunityBurst(); as burst) {

@@ -3293,6 +3293,13 @@ export class App implements OnDestroy {
     return this.opportunityControl()?.[target] ?? null;
   }
 
+  public opportunityMaxSessions(): number {
+    const configured = this.opportunityControl()?.max_sessions;
+    return Number.isInteger(configured) && Number(configured) >= 2
+      ? Number(configured)
+      : 3;
+  }
+
   public opportunityModeLabel(mode: string | null | undefined): string {
     const normalized = normalizeDashboardText(mode);
     if (normalized === 'enabled' || normalized === 'active') {
@@ -3455,8 +3462,7 @@ export class App implements OnDestroy {
     const copy: Record<OpportunityControlAction, { title: string; message: string }> = {
       activate: {
         title: `Activar ${targetLabel}`,
-        message:
-          'Se aplicará a nuevas detecciones. El máximo seguirá siendo 2 sesiones y no cambiarán los intervalos ni CAPTCHA.',
+        message: `Se aplicará a nuevas detecciones. El máximo seguirá siendo ${this.opportunityMaxSessions()} sesiones y no cambiarán los intervalos ni CAPTCHA.`,
       },
       deactivate: {
         title: `Desactivar ${targetLabel}`,

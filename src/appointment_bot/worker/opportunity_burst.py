@@ -144,10 +144,9 @@ class OpportunityBurstCoordinator:
             return False
         if self.cancel_event is not None and self.cancel_event.is_set():
             return False
-        if result.status != "available":
-            return False
         details = dict(result.details or {})
-        if details.get("fetch_probe") or details.get("blocked_by_order_rule"):
+        trigger_kind = _burst_trigger_kind(result, details)
+        if trigger_kind is None:
             return False
         opportunities = observed_opportunities(details)
         if not opportunities:
@@ -196,6 +195,7 @@ class OpportunityBurstCoordinator:
                     {"date": date_text, "hour": hour_text}
                     for date_text, hour_text in opportunities
                 ],
+                trigger_kind=trigger_kind,
                 settings=self.settings,
             )
         except Exception:
@@ -613,6 +613,7 @@ def _create_burst(
     detector_order_id: str,
     candidates: list[dict],
     opportunities: list[dict],
+    trigger_kind: str,
     settings: Settings,
 ) -> tuple[str, dict[str, str]]:
     from appointment_bot.db.opportunity_bursts import (
@@ -643,6 +644,7 @@ def _create_burst(
             "max_seconds": settings.opportunity_burst_max_seconds,
             "session_seconds": settings.opportunity_burst_session_seconds,
             "attempts": settings.opportunity_burst_attempts,
+            "trigger_kind": trigger_kind,
         },
         burst_id=burst_id,
         settings=settings,
@@ -801,11 +803,52 @@ def _detector_decision(report: RunReport) -> tuple[bool, str | None]:
     outcome = classify_order_report(report)
     if outcome is OrderReportOutcome.REGISTERED:
         return True, None
+    if outcome is OrderReportOutcome.BLOCKED:
+        return True, None
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
         return False, "detector_reservation_unconfirmed"
     if outcome is OrderReportOutcome.FAILURE:
         return False, "detector_technical_error"
     return False, None
+
+
+def _burst_trigger_kind(
+    result: AvailabilityResult,
+    details: dict[str, object],
+) -> str | None:
+    if details.get("fetch_probe"):
+        return None
+    if result.status == "available" and not details.get("blocked_by_order_rule"):
+        return "compatible_availability"
+    if result.status != "partial" or not details.get("blocked_by_order_rule"):
+        return None
+    if not details.get("blocked_selected_for_evidence"):
+        return None
+    if details.get("blocked_evidence_synchronized") is not True:
+        return None
+    capture = details.get("canonical_slot_capture")
+    if not isinstance(capture, dict):
+        return None
+    if capture.get("phase") != "blocked_by_order_rule":
+        return None
+    if capture.get("captured_before_captcha") is not True:
+        return None
+    date_text = str(capture.get("date") or "").strip()
+    hour_text = str(capture.get("hour") or "").strip()
+    if not date_text or not hour_text:
+        return None
+    selected_date = str(details.get("fecha") or "").strip()
+    selected_hour = str(details.get("hora") or "").strip()
+    if selected_date != date_text or selected_hour != hour_text:
+        return None
+    if details.get("blocked_evidence_error"):
+        return None
+    submission_outcome = str(details.get("submission_outcome") or "").strip()
+    if submission_outcome and submission_outcome != "blocked_by_order_rule":
+        return None
+    if details.get("reservation_attempted") is True:
+        return None
+    return "blocked_by_order_rule"
 
 
 def _apply_auxiliary_result(

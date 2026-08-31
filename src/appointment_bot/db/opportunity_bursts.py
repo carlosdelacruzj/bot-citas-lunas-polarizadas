@@ -46,6 +46,7 @@ _CONFIG_KEYS = {
     "max_seconds",
     "session_seconds",
     "attempts",
+    "trigger_kind",
     "reload_probe_after_attempt",
     "slot_lost_reobservation_seconds",
     "slot_lost_reobservation_attempts",
