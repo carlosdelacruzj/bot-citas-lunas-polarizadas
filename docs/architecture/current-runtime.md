@@ -60,7 +60,9 @@ CAPTCHA sombra (opcional) -----> PostgreSQL/artefactos
 - el monitor externo anterior de n8n esta inactivo; n8n no contiene logica
   critica ni opera el navegador y su export local sirve solo como rollback
   durante la observacion.
-- cada orden tiene contexto Playwright aislado.
+- cada orden tiene contexto Playwright aislado;
+- worker, preflight, revision post-cita y sesion manual coordinan propiedad por
+  cuenta mediante el lease persistido de la orden.
 
 ## Comandos y controles
 

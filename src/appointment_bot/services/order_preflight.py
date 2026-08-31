@@ -4,7 +4,9 @@ import logging
 import re
 import threading
 from pathlib import Path
+from uuid import uuid4
 
+from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.db.orders import (
@@ -61,7 +63,14 @@ def schedule_order_preflight(
         if order_id in _ACTIVE_ORDERS:
             return False
         _ACTIVE_ORDERS.add(order_id)
+    browser_lease: BrowserOwnershipLease | None = None
     try:
+        browser_lease = BrowserOwnershipLease.acquire(
+            settings,
+            order_id,
+            owner_token=f"preflight-{uuid4().hex}",
+            purpose="preflight",
+        )
         preflight_cycle = mark_order_preflight_pending(
             order_id,
             new_cycle=new_cycle,
@@ -69,12 +78,14 @@ def schedule_order_preflight(
         )
         thread = threading.Thread(
             target=_run_scheduled_preflight,
-            args=(order_id, preflight_cycle, settings),
+            args=(order_id, preflight_cycle, settings, browser_lease),
             name=f"order-preflight-{order_id}",
             daemon=True,
         )
         thread.start()
     except Exception:
+        if browser_lease is not None:
+            browser_lease.close()
         with _ACTIVE_LOCK:
             _ACTIVE_ORDERS.discard(order_id)
         raise
@@ -86,8 +97,34 @@ def validate_order_preflight(
     *,
     preflight_cycle: int | None = None,
     settings: Settings | None = None,
+    _browser_lease: BrowserOwnershipLease | None = None,
 ) -> dict[str, object]:
     settings = settings or load_settings(require_login=False)
+    if _browser_lease is not None:
+        return _validate_order_preflight_owned(
+            order_id,
+            preflight_cycle=preflight_cycle,
+            settings=settings,
+        )
+    with BrowserOwnershipLease.acquire(
+        settings,
+        order_id,
+        owner_token=f"preflight-{uuid4().hex}",
+        purpose="preflight",
+    ):
+        return _validate_order_preflight_owned(
+            order_id,
+            preflight_cycle=preflight_cycle,
+            settings=settings,
+        )
+
+
+def _validate_order_preflight_owned(
+    order_id: str,
+    *,
+    preflight_cycle: int | None,
+    settings: Settings,
+) -> dict[str, object]:
     current_cycle = mark_order_preflight_running(order_id, settings=settings)
     if preflight_cycle is None:
         preflight_cycle = current_cycle
@@ -243,12 +280,14 @@ def _run_scheduled_preflight(
     order_id: str,
     preflight_cycle: int,
     settings: Settings,
+    browser_lease: BrowserOwnershipLease,
 ) -> None:
     try:
         validate_order_preflight(
             order_id,
             preflight_cycle=preflight_cycle,
             settings=settings,
+            _browser_lease=browser_lease,
         )
     except Exception as exc:
         logger.exception("Unexpected order preflight failure for %s", order_id)
@@ -257,6 +296,7 @@ def _run_scheduled_preflight(
         except Exception:
             logger.exception("Could not persist unexpected preflight failure for %s", order_id)
     finally:
+        browser_lease.close()
         with _ACTIVE_LOCK:
             _ACTIVE_ORDERS.discard(order_id)
 

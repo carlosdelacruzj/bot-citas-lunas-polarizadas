@@ -97,6 +97,17 @@ Una sesion manual debe:
 - estar deshabilitada por defecto;
 - aceptar solo clientes loopback.
 
+La admision se serializa por cuenta del portal mediante un bloqueo de fila y un
+propietario persistido en el lease de la orden. Debe rechazar antes de abrir
+Chromium si la cuenta tiene lease de worker, intento activo o incierto,
+preflight pendiente/en curso, revision post-cita activa u otra sesion manual.
+El propietario se renueva mientras el navegador vive y se libera solamente
+despues de cerrar el contexto.
+
+El inventario usa `opening`, `active`, `closing` y `close_timeout`. Agotar el
+tiempo de cierre no elimina la sesion: permanece bloqueando nuevas aperturas y
+reinicios hasta que el thread y Chromium terminen realmente.
+
 ## Acciones administrativas concurrentes
 
 El backend debe proteger acciones peligrosas si una orden esta reclamada:

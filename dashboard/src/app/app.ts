@@ -317,6 +317,7 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   cancelled: { label: 'Cancelado', tone: 'neutral' },
   claimed: { label: 'En proceso', tone: 'warn' },
   closing: { label: 'Cerrando', tone: 'warn' },
+  close_timeout: { label: 'Cierre demorado', tone: 'bad' },
   closed: { label: 'Cerrado', tone: 'neutral' },
   completed: { label: 'Completado', tone: 'good' },
   observation_with_progress: { label: 'Observación con avance', tone: 'warn' },
@@ -4353,7 +4354,16 @@ export class App implements OnDestroy {
       await this.api.closeManualSession(session.session_id);
       this.activeManualSessionIds.delete(session.session_id);
       this.manualSessions.update((sessions) =>
-        sessions.filter((item) => item.session_id !== session.session_id),
+        sessions.map((item) =>
+          item.session_id === session.session_id
+            ? {
+                ...item,
+                status: 'closing',
+                close_requested: true,
+                status_message: 'Cierre solicitado; esperando que Chromium termine.',
+              }
+            : item,
+        ),
       );
       this.showToast('Cierre solicitado');
     } catch (error) {

@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from playwright.sync_api import Error as PlaywrightError
 
+from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import ServiceOrderRuntime
@@ -36,6 +37,8 @@ class ManualSessionHandle:
     started_at: str
     updated_at: str
     close_requested: threading.Event
+    browser_lease: BrowserOwnershipLease
+    thread: threading.Thread | None
     diagnostic_report_path: str | None
     diagnostic_event_count: int
     diagnostic_submission_seen: bool
@@ -78,6 +81,12 @@ def open_manual_session_for_order(
         password=order.password,
         document_type=order.document_type,
     )
+    browser_lease = BrowserOwnershipLease.acquire(
+        settings,
+        order.order_id,
+        owner_token=session_id,
+        purpose="manual",
+    )
     now = datetime.now(UTC).isoformat(timespec="seconds")
     handle = ManualSessionHandle(
         session_id=session_id,
@@ -90,14 +99,20 @@ def open_manual_session_for_order(
         started_at=now,
         updated_at=now,
         close_requested=threading.Event(),
+        browser_lease=browser_lease,
+        thread=None,
         diagnostic_report_path=None,
         diagnostic_event_count=0,
         diagnostic_submission_seen=False,
         diagnostic_honeypot_blocked=False,
     )
-    with _ACTIVE_SESSION_LOCK:
-        _ACTIVE_SESSIONS[session_id] = handle
-        active_count = len(_ACTIVE_SESSIONS)
+    try:
+        with _ACTIVE_SESSION_LOCK:
+            _ACTIVE_SESSIONS[session_id] = handle
+            active_count = len(_ACTIVE_SESSIONS)
+    except Exception:
+        browser_lease.close()
+        raise
     logger.info(
         "Manual session registered: session_id=%s order_id=%s active_sessions=%s",
         session_id,
@@ -111,7 +126,13 @@ def open_manual_session_for_order(
         args=(settings, order, handle),
         daemon=True,
     )
-    thread.start()
+    handle.thread = thread
+    try:
+        thread.start()
+    except Exception:
+        _clear_active_session(session_id)
+        browser_lease.close()
+        raise
     return session_id
 
 
@@ -119,7 +140,8 @@ def close_manual_session(session_id: str) -> bool:
     with _ACTIVE_SESSION_LOCK:
         handle = _ACTIVE_SESSIONS.get(session_id)
         if handle is not None:
-            handle.status = "closing"
+            if handle.status != "close_timeout":
+                handle.status = "closing"
             handle.updated_at = datetime.now(UTC).isoformat(timespec="seconds")
     if handle is None:
         return False
@@ -142,6 +164,15 @@ def close_manual_session(session_id: str) -> bool:
 def list_manual_sessions() -> list[dict[str, Any]]:
     with _ACTIVE_SESSION_LOCK:
         return [handle.summary() for handle in _ACTIVE_SESSIONS.values()]
+
+
+def blocking_manual_sessions() -> list[dict[str, Any]]:
+    with _ACTIVE_SESSION_LOCK:
+        return [
+            handle.summary()
+            for handle in _ACTIVE_SESSIONS.values()
+            if handle.status in {"opening", "active", "closing", "close_timeout"}
+        ]
 
 
 def _run_manual_session(
@@ -202,7 +233,7 @@ def _run_manual_session(
                     diagnostic.record("preparation_error", error=type(exc).__name__)
                 _set_session_status(
                     session_id,
-                    "error",
+                    "active",
                     "No se pudo preparar la vista solicitada; el navegador sigue abierto.",
                 )
                 logger.exception(
@@ -257,6 +288,14 @@ def _wait_until_manual_session_closed(
     while not closed_event.wait(1):
         if handle.close_requested.is_set():
             break
+        if handle.browser_lease.lost:
+            _set_session_status(
+                handle.session_id,
+                "closing",
+                "La propiedad exclusiva de la cuenta se perdio; cerrando navegador.",
+            )
+            handle.close_requested.set()
+            break
         try:
             if page.is_closed() or not page.context.pages:
                 break
@@ -285,7 +324,7 @@ def _prepare_manual_session(
     if mode in {"portal", "diagnostic"}:
         _set_session_status(
             session_id,
-            "ready",
+            "active",
             (
                 "Medicion sanitizada activa desde el inicio del portal."
                 if mode == "diagnostic"
@@ -308,7 +347,7 @@ def _prepare_manual_session(
     select_available_site(page, required_site=settings.observer_required_site)
     _set_session_status(
         session_id,
-        "ready",
+        "active",
         "Panel de citas abierto para revisión manual.",
     )
     logger.info(
@@ -363,9 +402,14 @@ def _expire_closing_session(session_id: str, expected_handle: ManualSessionHandl
         current = _ACTIVE_SESSIONS.get(session_id)
         if current is not expected_handle or not current.close_requested.is_set():
             return
-        _ACTIVE_SESSIONS.pop(session_id, None)
+        current.status = "close_timeout"
+        current.status_message = (
+            "El navegador no termino dentro del tiempo esperado; sigue bloqueando reinicios."
+        )
+        current.updated_at = datetime.now(UTC).isoformat(timespec="seconds")
     logger.warning(
-        "Manual session removed after close timeout: session_id=%s order_id=%s grace_seconds=%s",
+        "Manual session still active after close timeout: "
+        "session_id=%s order_id=%s grace_seconds=%s",
         session_id,
         expected_handle.order_id,
         MANUAL_SESSION_CLOSE_GRACE_SECONDS,

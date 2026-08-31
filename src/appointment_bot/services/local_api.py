@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from appointment_bot.manual_session.session import blocking_manual_sessions
 from appointment_bot.services.api.appointment_reminder_routes import (
     appointment_reminders_payload,
     update_appointment_reminders_payload,
@@ -845,6 +846,21 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
         if path == "/api/v1/worker/restart":
             if not self._require_authorized(strict=True):
+                return
+            manual_sessions = blocking_manual_sessions()
+            if manual_sessions:
+                self._send_json(
+                    HTTPStatus.CONFLICT,
+                    error_payload(
+                        "manual_session_active",
+                        "No se puede reiniciar mientras exista una sesion manual "
+                        "abierta o cerrando.",
+                        blocking_session_count=len(manual_sessions),
+                        blocking_session_statuses=sorted(
+                            {str(item.get("status") or "") for item in manual_sessions}
+                        ),
+                    ),
+                )
                 return
             request_payload = self._read_json()
             release_safe_backoffs = request_payload.get("release_safe_backoffs", False)

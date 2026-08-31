@@ -319,6 +319,30 @@ class LocalApiTests(unittest.TestCase):
         self.assertEqual(response["status"], "restarting")
         self.assertTrue(restarted.is_set())
 
+    def test_restart_is_rejected_while_manual_session_remains_registered(self) -> None:
+        restarted = threading.Event()
+        blocking = [{"session_id": "manual-session-test", "status": "close_timeout"}]
+        with (
+            patch(
+                "appointment_bot.services.local_api.blocking_manual_sessions",
+                return_value=blocking,
+            ),
+            _running_server(restart_callback=restarted.set) as base_url,
+            self.assertRaises(HTTPError) as context,
+        ):
+            _json_request(
+                f"{base_url}/api/v1/worker/restart",
+                method="POST",
+                token="secret",
+            )
+
+        payload = json.loads(context.exception.read())
+        self.assertEqual(context.exception.code, 409)
+        self.assertEqual(payload["status"], "manual_session_active")
+        self.assertEqual(payload["blocking_session_count"], 1)
+        self.assertEqual(payload["blocking_session_statuses"], ["close_timeout"])
+        self.assertFalse(restarted.is_set())
+
 
 def _json_request(
     url: str,

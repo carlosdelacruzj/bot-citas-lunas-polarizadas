@@ -22,6 +22,8 @@ Estado general:
   operativa;
 - esquema PostgreSQL actual: `v71`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
+- propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
+  sesiones manuales, con cierre visible hasta terminar Chromium;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
 - reservas, pagos, comunicaciones y seguimiento post-cita persistidos;

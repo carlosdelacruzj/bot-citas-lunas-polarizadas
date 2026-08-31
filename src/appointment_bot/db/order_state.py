@@ -13,6 +13,10 @@ from appointment_bot.core.order_priority import (
     FOCUSED_PRIORITY_THRESHOLD,
 )
 from appointment_bot.core.statuses import OrderStateStatus, ResultStatus
+from appointment_bot.db.browser_ownership import (
+    BrowserOwnershipConflict,
+    acquire_browser_ownership,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -161,26 +165,18 @@ def claim_service_order(
         raise ValueError("owner_token is required to claim a service order.")
     if lease_seconds <= 0:
         raise ValueError("lease_seconds must be greater than zero.")
-    settings = _settings(settings)
-    init_database(settings)
-    with _connection(_database_url(settings)) as connection:
-        cursor = connection.execute(
-            """
-            UPDATE service_orders AS so
-            SET lease_owner = %s,
-                lease_expires_at = CURRENT_TIMESTAMP + (%s * INTERVAL '1 second'),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE so.order_id = %s
-              AND so.status = 'ready'
-              AND (
-                  so.lease_owner = %s
-                  OR so.lease_expires_at IS NULL
-                  OR so.lease_expires_at <= CURRENT_TIMESTAMP
-              )
-            """,
-            (owner_token, lease_seconds, order_id, owner_token),
+    try:
+        acquire_browser_ownership(
+            order_id,
+            owner_token=owner_token,
+            purpose="worker",
+            lease_seconds=lease_seconds,
+            require_ready=True,
+            settings=settings,
         )
-        return bool(cursor.rowcount)
+    except BrowserOwnershipConflict:
+        return False
+    return True
 
 
 def release_service_order_claim(

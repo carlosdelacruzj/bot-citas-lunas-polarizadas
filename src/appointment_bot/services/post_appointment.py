@@ -8,10 +8,13 @@ import unicodedata
 from dataclasses import replace
 from datetime import UTC, date, datetime
 from typing import Any
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.db.browser_ownership import BrowserOwnershipConflict
 from appointment_bot.db.order_credentials import get_service_order_runtime
 from appointment_bot.db.post_appointment import (
     POST_APPOINTMENT_AUTOMATION_DAILY_LIMIT,
@@ -187,8 +190,19 @@ def review_post_appointment_order(
     if order is None:
         raise ValueError("La orden ya no existe.")
 
+    try:
+        browser_lease = BrowserOwnershipLease.acquire(
+            settings,
+            order_id,
+            owner_token=f"post-appointment-{uuid4().hex}",
+            purpose="post_appointment",
+        )
+    except BrowserOwnershipConflict as exc:
+        raise PostAppointmentReviewConflict(str(exc)) from exc
+
     with _ACTIVE_REVIEWS_LOCK:
         if order_id in _ACTIVE_REVIEWS:
+            browser_lease.close()
             raise PostAppointmentReviewConflict("La orden ya se está revisando.")
         _ACTIVE_REVIEWS.add(order_id)
 
@@ -282,6 +296,7 @@ def review_post_appointment_order(
         finally:
             with _ACTIVE_REVIEWS_LOCK:
                 _ACTIVE_REVIEWS.discard(order_id)
+            browser_lease.close()
 
     item = get_post_appointment_followup(order_id, settings=settings)
     if item is None:

@@ -46,6 +46,10 @@ Admin API crea el comando como `pending`. El worker reclama FIFO, registra su
 owner y lo termina como `applied` o `failed`. Aceptar el HTTP no equivale a que
 el comando ya fue aplicado.
 
+Admin API no encola ni aplica `restart` mientras exista una sesion manual en
+`opening`, `active`, `closing` o `close_timeout`. La barrera responde `409`; un
+timeout de cierre sigue contando como navegador vivo hasta su baja real.
+
 No ampliar la allowlist sin implementar semantica idempotente, autorizacion,
 auditoria y tratamiento seguro de trabajo activo.
 

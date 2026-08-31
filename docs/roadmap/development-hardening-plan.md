@@ -399,19 +399,27 @@ callbacks de intento para `blocked_by_order_rule`.
 Objetivo: impedir que una sesion manual compita con worker, preflight, intentos
 o con otra sesion de la misma cuenta.
 
-- [ ] Definir la clave de exclusividad: orden, cuenta y propietario global.
-- [ ] Crear una admision atomica persistida o coordinada por Admin API.
-- [ ] Rechazar con `409` lease, intento activo, preflight incompatible, job de
+- [x] Definir la clave de exclusividad: orden, cuenta y propietario global.
+- [x] Crear una admision atomica persistida o coordinada por Admin API.
+- [x] Rechazar con `409` lease, intento activo, preflight incompatible, job de
   navegador o sesion existente.
-- [ ] Conservar la sesion como `closing` hasta terminar realmente thread,
+- [x] Conservar la sesion como `closing` hasta terminar realmente thread,
   contexto y Chromium.
-- [ ] Exponer `close_timeout` sin eliminar el handle del inventario.
-- [ ] Incluir sesiones `opening`, `active`, `closing` y `close_timeout` en la
+- [x] Exponer `close_timeout` sin eliminar el handle del inventario.
+- [x] Incluir sesiones `opening`, `active`, `closing` y `close_timeout` en la
   barrera previa a restart.
-- [ ] Probar aperturas concurrentes y cierre bloqueado.
+- [x] Probar aperturas concurrentes y cierre bloqueado.
 
 Criterio de cierre: nunca existen dos propietarios compatibles del navegador y
 un restart no puede observar cero sesiones mientras una siga viva.
+
+Implementacion cerrada el `2026-08-31`: la admision bloquea atomicamente la
+cuenta del portal en PostgreSQL y conserva un propietario renovable en el lease
+de la orden. Worker, preflight, revision post-cita y sesion manual comparten la
+misma frontera. Un cierre agotado queda visible como `close_timeout`; solo el
+`finally` posterior al cierre del contexto libera el lease y retira el handle.
+Admin API responde `409 manual_session_active` ante restart mientras permanezca
+una sesion bloqueante.
 
 ### 1.4 Clasificacion conservadora de excepciones WhatsApp
 

@@ -150,6 +150,13 @@ La apertura controlada admite modos `auto`, `appointment`, `portal` y
 detienen en limites definidos y conservan trazas sanitizadas. Solo puede existir
 una sesion compatible con los recursos activos.
 
+La apertura responde `409` con codigo estable si encuentra lease de worker,
+intento activo, preflight incompatible, trabajo de navegador u otra sesion de
+la misma cuenta. El listado conserva sesiones `opening`, `active`, `closing` y
+`close_timeout`; solicitar cierre no equivale a que Chromium ya termino.
+`POST /api/v1/worker/restart` responde `409 manual_session_active` mientras el
+inventario contenga una de esas sesiones.
+
 ## Errores
 
 Las respuestas de error usan mensaje claro y codigo estable cuando existe. No

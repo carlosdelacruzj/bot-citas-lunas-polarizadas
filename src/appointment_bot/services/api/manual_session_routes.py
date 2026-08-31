@@ -5,6 +5,7 @@ from http import HTTPStatus
 from typing import Any
 
 from appointment_bot.config import load_settings
+from appointment_bot.db.browser_ownership import BrowserOwnershipConflict
 from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.manual_session.session import (
     close_manual_session,
@@ -59,7 +60,10 @@ def open_manual_session_payload(
             "invalid_state",
             "Appointment mode is available only for ready orders. Use portal mode instead.",
         )
-    session_id = open_manual_session_for_order(settings, order, mode=mode)
+    try:
+        session_id = open_manual_session_for_order(settings, order, mode=mode)
+    except BrowserOwnershipConflict as exc:
+        return HTTPStatus.CONFLICT, error_payload(exc.code, exc.message)
     return HTTPStatus.ACCEPTED, {
         "status": "opening",
         "session_id": session_id,
