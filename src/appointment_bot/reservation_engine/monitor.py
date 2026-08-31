@@ -6,7 +6,7 @@ import threading
 import time
 from collections.abc import Callable
 from contextvars import ContextVar, Token
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import uuid4
 
@@ -30,12 +30,14 @@ from appointment_bot.reservation_engine.reservation_flow import (
     capture_blocked_captcha_evidence,
     complete_available_reservation,
 )
+from appointment_bot.reservation_engine.slot_evidence import (
+    CanonicalSlotCaptureError,
+    capture_canonical_selected_slot,
+)
 from appointment_bot.reservation_engine.timings import ReservationTiming
 from appointment_bot.utils.screenshots import (
-    archive_unique_slot_capture,
     save_centered_modal_screenshot,
     save_result_screenshot,
-    save_revealed_centered_modal_screenshot,
     save_screenshot,
 )
 
@@ -310,19 +312,33 @@ def _try_reservation_from_availability(
         session_age_seconds=time.monotonic() - session_started,
         check_duration_seconds=time.monotonic() - check_started,
     )
-    if selected_result.status == "available":
-        selected_screenshot_path = save_available_appointment_snapshot(page, settings)
-        if selected_screenshot_path is not None:
-            screenshot_path = selected_screenshot_path
-            archived_path = archive_unique_slot_capture(
-                settings,
-                selected_result.details or {},
-                selected_screenshot_path,
-            )
-            if archived_path is None:
-                logger.warning(
-                    "Could not archive selected appointment screenshot immediately"
+    selected_slot = selected_result.status == "available" or bool(
+        (selected_result.details or {}).get("blocked_selected_for_evidence")
+    )
+    if selected_slot:
+        try:
+            selected_result, selected_screenshot_path, _ = (
+                capture_canonical_selected_slot(
+                    page,
+                    settings,
+                    selected_result,
+                    phase=(
+                        "blocked_by_order_rule"
+                        if selected_result.status == "partial"
+                        else "initial_selection"
+                    ),
                 )
+            )
+        except CanonicalSlotCaptureError as exc:
+            failed_result = _slot_capture_failure_result(selected_result, exc)
+            if on_check is not None:
+                on_check(failed_result, attempt, None)
+            return ReservationAttemptOutcome(
+                completed_result=(failed_result, screenshot_path, screenshot_paths),
+                selected_result=selected_result,
+            )
+        screenshot_path = selected_screenshot_path
+        screenshot_paths = _unique_paths([selected_screenshot_path], screenshot_paths)
     if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
         if on_check is not None:
             on_check(selected_result, attempt, None)
@@ -650,7 +666,26 @@ def _reobserve_after_slot_lost(
             )
             observation["selected_status"] = selected_result.status
             if selected_result.status == "available":
-                recovered_screenshot_path = save_available_appointment_snapshot(page, settings)
+                try:
+                    selected_result, recovered_screenshot_path, _ = (
+                        capture_canonical_selected_slot(
+                            page,
+                            settings,
+                            selected_result,
+                            phase="slot_lost_reobservation",
+                        )
+                    )
+                except CanonicalSlotCaptureError as exc:
+                    observation["canonical_slot_capture_error"] = str(exc)
+                    return _finish_slot_lost_reobservation(
+                        original_completed_result,
+                        settings,
+                        observations,
+                        started_at,
+                        reload_probe_used,
+                        reobservation_id=reobservation_id,
+                        outcome="evidence_capture_failed",
+                    )
                 if on_check is not None:
                     on_check(
                         selected_result,
@@ -1015,6 +1050,24 @@ def _slot_evidence(result: AvailabilityResult, screenshot_path: Path) -> dict[st
     }
 
 
+def _slot_capture_failure_result(
+    result: AvailabilityResult,
+    error: CanonicalSlotCaptureError,
+) -> AvailabilityResult:
+    details = dict(result.details or {})
+    details["canonical_slot_capture_failed"] = True
+    details["canonical_slot_capture_error"] = str(error)
+    return replace(
+        result,
+        status="partial" if result.status == "partial" else "error",
+        message=(
+            "Se detecto un cupo, pero la reserva se detuvo porque no pudo "
+            "preservarse su captura canonica."
+        ),
+        details=details,
+    )
+
+
 def _appointment_panel_is_visible(page) -> bool:
     try:
         site = page.locator("#MainContent_idUcitas_cbosede").first
@@ -1165,17 +1218,3 @@ def save_relevant_result_snapshot(page, settings: Settings, status: str) -> Path
         return centered_path
 
     return save_screenshot(page, settings, label=label_by_status[status])
-
-
-def save_available_appointment_snapshot(page, settings: Settings) -> Path | None:
-    label = "03-modal-reserva-citas-cupo-disponible"
-    path = save_revealed_centered_modal_screenshot(
-        page,
-        settings,
-        label,
-        APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
-    )
-    if path is not None:
-        return path
-    logger.warning("Falling back to a full-page screenshot for available appointment")
-    return save_screenshot(page, settings, label)

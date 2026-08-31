@@ -375,16 +375,24 @@ financieros, definir una asignacion contable explicita antes de reintentar.
 Objetivo: conservar fecha y hora exactas antes de CAPTCHA o submit, tambien para
 `partial / blocked_by_order_rule` y reobservaciones recuperadas.
 
-- [ ] Caracterizar `available`, `partial`, regla bloqueada y reobservacion.
-- [ ] Capturar el modal estabilizado inmediatamente despues de seleccionar.
-- [ ] Llamar a `archive_unique_slot_capture()` antes de entrar a CAPTCHA.
-- [ ] Mantener `reservation_attempted=false` y cero filas de intento para un
+- [x] Caracterizar `available`, `partial`, regla bloqueada y reobservacion.
+- [x] Capturar el modal estabilizado inmediatamente despues de seleccionar.
+- [x] Llamar a `archive_unique_slot_capture()` antes de entrar a CAPTCHA.
+- [x] Mantener `reservation_attempted=false` y cero filas de intento para un
   cupo solo observado por regla.
-- [ ] Evitar que la captura CAPTCHA sustituya la captura del cupo.
-- [ ] Verificar nombres, indice, watermark y notificacion sin crear una reserva.
+- [x] Evitar que la captura CAPTCHA sustituya la captura del cupo.
+- [x] Verificar nombres, indice, watermark y notificacion sin crear una reserva.
 
 Criterio de cierre: cada fecha/hora seleccionable tiene screenshot canonico y
 su resultado distingue deteccion, regla, CAPTCHA e intento.
+
+Implementacion cerrada el `2026-08-31`: la autoridad compartida
+`capture_canonical_selected_slot()` captura y archiva el modal estable antes de
+entrar a CAPTCHA o submit tanto en seleccion inicial, bloqueo por regla y
+reobservacion tras `slot_lost`. Si falta fecha/hora o falla la persistencia, el
+flujo se detiene sin iniciar la reserva. La evidencia CAPTCHA queda como
+secundaria y las pruebas verifican indice, watermark, orden de evidencia y cero
+callbacks de intento para `blocked_by_order_rule`.
 
 ### 1.3 Exclusividad real de sesiones manuales
 

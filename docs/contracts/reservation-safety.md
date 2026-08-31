@@ -2,7 +2,7 @@
 
 Estado: vigente.
 
-Ultima verificacion: `2026-08-30`.
+Ultima verificacion: `2026-08-31`.
 
 Responsable: dominios `reservation_engine/`, `worker/` y persistencia de
 intentos de reserva en `db/`.
@@ -46,6 +46,13 @@ submit. La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsa
 `blocked_by_order_rule` y `priority_deferred` deben conservar
 `reservation_attempted=false` y no deben crear una fila en
 `reservation_attempts`.
+
+Esta captura canonica debe contener fecha y hora exactas del modal ya
+estabilizado y conservarse antes de continuar en los tres caminos: seleccion
+inicial, seleccion bloqueada por regla y reobservacion recuperada tras
+`slot_lost`. Si no puede guardarse o archivarse, el flujo debe detenerse antes
+de crear la intencion de reserva. La captura CAPTCHA es evidencia secundaria y
+no puede sustituir a la captura canonica del cupo.
 
 ## Confirmacion
 

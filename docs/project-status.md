@@ -70,7 +70,9 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 5. Cada cupo se contrasta con las reglas exactas de la orden.
 6. La seleccion usa estabilizacion por eventos y validacion DOM atomica; si la
    lectura no es concluyente vuelve automaticamente al camino conservador.
-7. Una seleccion valida conserva screenshot antes de CAPTCHA o submit.
+7. Una seleccion valida conserva y archiva su screenshot canonico antes de
+   CAPTCHA o submit, incluso si queda bloqueada por regla o procede de una
+   reobservacion; si falla esa evidencia, no inicia el intento.
 8. La reserva solo se confirma con evidencia suficiente del portal.
 9. Pago y comunicaciones siguen estados independientes.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.

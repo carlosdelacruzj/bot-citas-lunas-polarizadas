@@ -28,6 +28,11 @@ copiar el mismo artefacto pesado entre ambos.
 - Eliminar capturas rutinarias sin hallazgo conforme a la retencion configurada.
 - El CAPTCHA original derivado del HTML es canonico; no conservar un recorte
   duplicado salvo que el original no exista.
+- Para un cupo con fecha y hora seleccionables, el modal estable seleccionado
+  es la evidencia primaria. Se archiva inmediatamente en `cupos-unicos` con la
+  clave de fecha/hora y encola su copia con watermark antes de cualquier
+  captura CAPTCHA, submit o reobservacion recuperada. El CAPTCHA permanece como
+  evidencia secundaria.
 - La limpieza configurada recorre subcarpetas de logs, screenshots y videos.
   Nunca entra en `screenshots/whatsapp/`, `screenshots/whatsapp-outgoing/` ni
   `screenshots/preflight/`. Los seguimientos post-pago referencian directamente

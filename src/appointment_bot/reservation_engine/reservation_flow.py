@@ -582,7 +582,7 @@ def capture_blocked_captcha_evidence(
         captcha_audit["captcha_shadow_event_id"] = shadow_event_id
         captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_enqueued
     screenshot_paths = [
-        path for path in [captcha_path, screenshot_path] if path is not None
+        path for path in [screenshot_path, captcha_path] if path is not None
     ]
     details = add_reservation_timing_details(result.details, timing)
     details.update(captcha_audit)
