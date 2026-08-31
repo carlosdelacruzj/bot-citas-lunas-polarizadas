@@ -522,6 +522,14 @@ def solve_reservation_captcha_and_click_reserve(
         post_collector.attach(page)
     else:
         ensure_reservation_honeypot_empty(page)
+    if cancel_event is not None and cancel_event.is_set():
+        raise AppointmentWorkflowCancelled(
+            "La ejecucion fue cancelada despues de registrar la intencion y antes del submit."
+        )
+    if can_submit is not None and not can_submit():
+        raise AppointmentWorkflowCancelled(
+            "La propiedad de la reserva cambio despues de registrar la intencion."
+        )
     try:
         if timing is not None:
             timing.mark("reserve_click_started")

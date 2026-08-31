@@ -40,7 +40,9 @@ Estado general:
 El worker continuo toma ordenes listas desde PostgreSQL, abre una sesion
 Playwright aislada por orden, aplica restricciones, preserva claims y leases, y
 registra intentos, screenshots y resultados. Nunca comparte sesion de navegador
-entre clientes.
+entre clientes. El lease global se renueva en un thread independiente durante
+toda la vida del worker; su perdida cancela admision y submit conservadoramente,
+sin depender del heartbeat separado del claim de orden.
 
 ### Admin API
 
@@ -201,6 +203,8 @@ el contrato en [`contracts/finance.md`](contracts/finance.md).
 
 - Pendientes no posee aun `actionable_since`, vencimiento ni responsable
   persistidos por tarea;
+- la rafaga de tres sesiones esta implementada, pero aun requiere comparacion
+  natural contra el baseline de dos sesiones;
 - faltan observaciones naturales de algunos flujos WhatsApp, post-cita y cierre;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;

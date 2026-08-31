@@ -18,9 +18,10 @@ No ejecuta el navegador de reservas.
 
 ### Worker
 
-Consume ordenes y comandos desde PostgreSQL, mantiene heartbeat y abre una
-sesion Playwright nueva por cliente. Es propietario del monitoreo, seleccion,
-CAPTCHA de la reserva, submit y confirmacion.
+Consume ordenes y comandos desde PostgreSQL, mantiene un heartbeat dedicado del
+lease global y un heartbeat separado por claim de orden, y abre una sesion
+Playwright nueva por cliente. Es propietario del monitoreo, seleccion, CAPTCHA
+de la reserva, submit y confirmacion.
 
 ### Telegram
 

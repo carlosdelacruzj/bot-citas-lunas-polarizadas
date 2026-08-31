@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import base64
 import tempfile
+import threading
 import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     save_reservation_captcha_image,
 )
@@ -195,6 +197,44 @@ class ReservationCaptchaTests(unittest.TestCase):
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "screenshot")
             self.assertEqual(events, ["intent", "started"])
+
+    def test_lease_loss_after_intent_stops_before_submit_click(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = make_settings(root)
+            captcha = root / "captcha.png"
+            captcha.write_bytes(b"image")
+            cancel_event = threading.Event()
+            events: list[str] = []
+
+            def record_intent(_details) -> None:
+                events.append("intent")
+                cancel_event.set()
+
+            with (
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit.save_reservation_captcha_image",
+                    return_value=captcha,
+                ),
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
+                    return_value="1234",
+                ),
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
+                ),
+            ):
+                with self.assertRaises(AppointmentWorkflowCancelled):
+                    solve_reservation_captcha_and_click_reserve(
+                        _Page(),
+                        settings,
+                        cancel_event=cancel_event,
+                        can_submit=lambda: not cancel_event.is_set(),
+                        on_submission_intent=record_intent,
+                        on_submission_started=lambda: events.append("started"),
+                    )
+
+            self.assertEqual(events, ["intent"])
 
     def test_original_html_captcha_is_sent_to_solver_when_available(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -19,7 +19,12 @@ from appointment_bot.db.orders import (
     record_order_program_listing,
 )
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
-from appointment_bot.db.worker_state import get_worker_state
+from appointment_bot.db.worker_state import (
+    acquire_worker_lease,
+    get_worker_state,
+    release_worker_lease,
+    renew_worker_lease,
+)
 from tests.helpers import database_connection, make_settings
 
 
@@ -102,6 +107,37 @@ class DatabaseTests(unittest.TestCase):
                     settings=settings,
                 )
             )
+
+    def test_worker_lease_never_has_two_database_owners(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            init_database(settings)
+            try:
+                self.assertTrue(
+                    acquire_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                )
+                self.assertFalse(
+                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings)
+                )
+                self.assertTrue(
+                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                )
+                with database_connection(settings) as connection:
+                    connection.execute(
+                        "UPDATE worker_state SET lease_expires_at = CURRENT_TIMESTAMP - "
+                        "INTERVAL '1 second' WHERE id = 1"
+                    )
+                self.assertFalse(
+                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                )
+                self.assertTrue(
+                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings)
+                )
+                release_worker_lease("owner-one", settings=settings)
+                self.assertEqual(get_worker_state(settings).owner_token, "owner-two")
+            finally:
+                release_worker_lease("owner-one", settings=settings)
+                release_worker_lease("owner-two", settings=settings)
 
     def test_public_service_order_summary_does_not_expose_password(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -13,6 +13,7 @@ from appointment_bot.core.models import RunReport, ServiceOrderRuntime, WorkerSt
 from appointment_bot.db.worker_state import update_worker_state
 from appointment_bot.reservation_engine import observer
 from appointment_bot.worker.continuous_worker import ContinuousWorker
+from appointment_bot.worker.lease import WorkerLease, WorkerLeaseLost
 from tests.helpers import make_settings
 
 
@@ -22,6 +23,7 @@ class ContinuousWorkerTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             worker = ContinuousWorker(settings)
             worker._worker_lease.owner_token = "owner"
+            worker._worker_lease._lease_deadline = time.monotonic() + 300
             order = ServiceOrderRuntime(
                 order_id="order-1",
                 name="Order 1",
@@ -232,6 +234,163 @@ class ContinuousWorkerTests(unittest.TestCase):
             ]
             self.assertTrue(startup_calls)
             self.assertIsNotNone(startup_calls[0]["last_check_at"])
+
+    def test_global_lease_loss_cancels_and_stops_new_admission(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            worker = ContinuousWorker(make_settings(Path(directory)))
+
+            worker._on_worker_lease_lost()
+
+            self.assertEqual(worker.shutdown_reason, "lease_lost")
+            self.assertTrue(worker._cancel_event.is_set())
+            self.assertTrue(worker._stop_event.is_set())
+
+
+class WorkerLeaseHeartbeatTests(unittest.TestCase):
+    def test_heartbeat_renews_during_a_simulated_six_minute_block(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            enough_renewals = threading.Event()
+
+            def renew(*_args, **_kwargs):
+                clock[0] += 61.0
+                if clock[0] > 5 * 60:
+                    enough_renewals.set()
+                return True
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                lease_seconds=5 * 60,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch(
+                    "appointment_bot.worker.lease.renew_worker_lease",
+                    side_effect=renew,
+                ) as renew_mock,
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(enough_renewals.wait(timeout=2))
+                lease.ensure_owned()
+                lease.release()
+
+            self.assertGreaterEqual(renew_mock.call_count, 5)
+            self.assertFalse(lease.lost)
+
+    def test_transient_database_failure_recovers_before_local_expiry(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            recovered = threading.Event()
+            attempts = 0
+
+            def renew(*_args, **_kwargs):
+                nonlocal attempts
+                attempts += 1
+                clock[0] += 30.0
+                if attempts == 1:
+                    raise ConnectionError("postgres temporarily unavailable")
+                recovered.set()
+                return True
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                lease_seconds=5 * 60,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", side_effect=renew),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(recovered.wait(timeout=2))
+                lease.ensure_owned()
+                lease.release()
+
+            self.assertEqual(attempts, 2)
+            self.assertFalse(lease.lost)
+
+    def test_definitive_lease_loss_notifies_and_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            lost = threading.Event()
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", return_value=False),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(lost.wait(timeout=2))
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lease.lost)
+
+    def test_database_outage_past_local_expiry_marks_lease_lost(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            lost = threading.Event()
+
+            def renew(*_args, **_kwargs):
+                clock[0] = 301.0
+                raise ConnectionError("postgres unavailable past lease expiry")
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                lease_seconds=300,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", side_effect=renew),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(lost.wait(timeout=2))
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lease.lost)
+
+    def test_local_expiry_fails_closed_before_the_next_heartbeat(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            lost = threading.Event()
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                lease_seconds=300,
+                renew_interval_seconds=600,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                clock[0] = 300.0
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lost.is_set())
+            self.assertTrue(lease.lost)
 
 
 if __name__ == "__main__":

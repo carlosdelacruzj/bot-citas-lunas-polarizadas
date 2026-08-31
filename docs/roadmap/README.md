@@ -57,6 +57,7 @@ rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
 Observar, sin crear envios de prueba:
 
 - proximo album de reserva/cobro procesado por el dispatcher;
+- proxima rafaga natural de tres sesiones comparada con el baseline de dos;
 - proximo postpago con documentos y texto separados;
 - variantes pendientes del aviso de registro;
 - proximo recordatorio con plantilla versionada;

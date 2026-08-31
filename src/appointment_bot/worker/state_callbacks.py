@@ -24,14 +24,12 @@ class WorkerStateCallbacks:
         settings: Settings,
         *,
         update_state: Callable[..., None],
-        renew_worker_lease: Callable[[], None],
         reset_errors: Callable[..., None],
         extend_hot_window_after_availability: Callable[[], None],
         record_window_metric: Callable[[RunReport], None],
     ) -> None:
         self.settings = settings
         self._update_state = update_state
-        self._renew_worker_lease = renew_worker_lease
         self._reset_errors = reset_errors
         self._extend_hot_window_after_availability = extend_hot_window_after_availability
         self._record_window_metric = record_window_metric
@@ -39,7 +37,6 @@ class WorkerStateCallbacks:
         self._availability_alert_signatures: set[str] = set()
 
     def record_check(self, report: RunReport) -> None:
-        self._renew_worker_lease()
         self._record_window_metric(report)
         self._update_state(
             last_check_at=_now(),
@@ -59,7 +56,6 @@ class WorkerStateCallbacks:
         attempt: int,
         next_check_seconds: int | None,
     ) -> None:
-        self._renew_worker_lease()
         if result.status not in {"error", "unknown", "reservation_unconfirmed"}:
             self._reset_errors(clear_session=False)
         monitoring_mode = str((result.details or {}).get("monitoring_mode") or "normal")
@@ -74,7 +70,6 @@ class WorkerStateCallbacks:
         self,
         order: ServiceOrderCandidate | ServiceOrderRuntime,
     ) -> None:
-        self._renew_worker_lease()
         order_settings = continuous_order_settings(self.settings, order)
         self._update_state(
             phase="rapid_queue",
@@ -99,7 +94,6 @@ class WorkerStateCallbacks:
         attempt: int,
         next_check_seconds: int | None,
     ) -> None:
-        self._renew_worker_lease()
         if result.status not in {"error", "unknown", "reservation_unconfirmed"}:
             self._reset_errors(clear_session=False)
         self._update_state(

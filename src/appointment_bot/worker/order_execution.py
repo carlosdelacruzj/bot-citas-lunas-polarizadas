@@ -339,7 +339,7 @@ def run_service_order(
                 cancel_event=effective_cancel_event,
                 on_check=handle_check,
                 can_submit=lambda: (
-                    not heartbeat.lost_event.is_set()
+                    not effective_cancel_event.is_set()
                     and order_can_submit(order.order_id, lease_owner, settings)
                 ),
                 is_allowed_appointment=_appointment_filter_for_order(

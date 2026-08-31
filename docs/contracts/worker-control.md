@@ -66,9 +66,27 @@ nunca el chat o usuario completo.
 
 - `0`: cierre normal;
 - `75`: reinicio coordinado;
-- `76`: host sin lease o detencion coordinada que no debe reiniciarse en bucle.
+- `76`: host sin lease, lease perdido o detencion coordinada que no debe
+  reiniciarse en bucle.
 
 Los supervisores respetan estos codigos y mantienen limite de reinicios.
+
+## Lease global
+
+El lease de `worker_state` posee un heartbeat dedicado desde que el worker lo
+adquiere hasta que termina su liberacion. No depende del loop de chequeos, de
+callbacks del observer ni del heartbeat separado del claim de una orden.
+
+Una excepcion transitoria de PostgreSQL activa reintentos breves mientras el
+ultimo vencimiento confirmado siga vigente. Si PostgreSQL confirma que el owner
+ya no puede renovar o se supera el vencimiento local sin recuperacion, la
+perdida es irreversible para ese host: se activa cancelacion, se detiene la
+admision nueva y el proceso sale con `76`.
+
+El claim de orden sigue renovandose de manera independiente. Antes del submit,
+la reserva comprueba tanto cancelacion global como propiedad de la orden. Si la
+perdida ocurre despues de persistir `intent`, no pulsa `Reservar` y conserva el
+intento como resultado no reintentable hasta conciliacion.
 
 ## Control de oportunidades
 

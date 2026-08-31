@@ -473,15 +473,18 @@ automaticamente reintentable.
 Objetivo: impedir que otro host adquiera el worker mientras el propietario
 original sigue dentro de CAPTCHA, submit o confirmacion.
 
-- [ ] Crear heartbeat del lease global durante toda la vida del host.
-- [ ] Separarlo del loop de chequeos y del heartbeat del claim de orden.
-- [ ] Propagar perdida de lease como cancelacion conservadora.
-- [ ] No transformar un submit iniciado en fallo reintentable.
-- [ ] Probar solver bloqueado por mas de cinco minutos con reloj simulado.
-- [ ] Probar caida de PostgreSQL y recuperacion sin dos hosts propietarios.
+- [x] Crear heartbeat del lease global durante toda la vida del host.
+- [x] Separarlo del loop de chequeos y del heartbeat del claim de orden.
+- [x] Propagar perdida de lease como cancelacion conservadora.
+- [x] No transformar un submit iniciado en fallo reintentable.
+- [x] Probar solver bloqueado por mas de cinco minutos con reloj simulado.
+- [x] Probar caida de PostgreSQL y recuperacion sin dos hosts propietarios.
 
 Criterio de cierre: una operacion lenta no deja vencer el lease global y una
 perdida real detiene admision nueva sin duplicar submit.
+
+Estado de fase: implementacion tecnica `1.1` a `1.5` completa. La aceptacion
+integral permanece abierta solo por la ventana natural indicada en `1.3A`.
 
 ## Fase 2 - Estabilizar esquema `v72`, pagos y paquete integral
 

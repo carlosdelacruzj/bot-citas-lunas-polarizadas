@@ -27,6 +27,12 @@ continuar si el lease sigue vigente.
 Durante la ejecucion, un heartbeat renueva el lease. Si el lease se pierde, el
 resultado debe tratarse como incierto o error controlado, no como exito normal.
 
+El lease global del host tiene un heartbeat propio y no sustituye este claim.
+La perdida de cualquiera de los dos activa la cancelacion conservadora. La
+ultima barrera se evalua despues de guardar `intent` y justo antes del clic: si
+la propiedad cambio en ese intervalo, no se envia el submit y el intento no se
+convierte en reintentable automaticamente.
+
 ## Intentos de reserva
 
 `reservation_attempts` protege el envio:

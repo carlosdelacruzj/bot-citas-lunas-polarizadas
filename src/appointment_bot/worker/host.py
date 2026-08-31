@@ -14,6 +14,7 @@ from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.telegram_alerts import configure_telegram_alerts
 from appointment_bot.worker.continuous_worker import (
     DAILY_CUTOFF_REASON,
+    LEASE_LOST_REASON,
     LEASE_UNAVAILABLE_REASON,
     ContinuousWorker,
 )
@@ -158,6 +159,9 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             raise RuntimeError("Continuous worker did not stop within operation timeouts.")
     if worker_failure:
         raise RuntimeError("Continuous worker stopped unexpectedly.") from worker_failure[0]
+    if worker.shutdown_reason == LEASE_LOST_REASON:
+        logger.error("Worker stopped after losing its global lease")
+        return LEASE_UNAVAILABLE_EXIT_CODE
     if health_failure or restart_event.is_set():
         return RESTART_EXIT_CODE
     if worker.shutdown_reason not in {None, DAILY_CUTOFF_REASON}:

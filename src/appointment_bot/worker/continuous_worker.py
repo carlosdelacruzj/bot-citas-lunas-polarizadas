@@ -40,7 +40,11 @@ from appointment_bot.worker.execution import (
     continuous_settings,
     observer_confirmation_settings,
 )
-from appointment_bot.worker.lease import LEASE_UNAVAILABLE_REASON, WorkerLease
+from appointment_bot.worker.lease import (
+    LEASE_LOST_REASON,
+    LEASE_UNAVAILABLE_REASON,
+    WorkerLease,
+)
 from appointment_bot.worker.observer_results import (
     decide_observer_confirmation,
     decide_observer_report,
@@ -83,7 +87,7 @@ class ContinuousWorker:
         self._starting = False
         self._guard = threading.RLock()
         self._ready_event = threading.Event()
-        self._worker_lease = WorkerLease(settings)
+        self._worker_lease = WorkerLease(settings, on_lost=self._on_worker_lease_lost)
         self._last_cleanup_date: date | None = None
         self._shutdown_reason: str | None = None
         self._hot_window_extended_until: datetime | None = None
@@ -97,7 +101,6 @@ class ContinuousWorker:
         self._state_callbacks = WorkerStateCallbacks(
             settings,
             update_state=self._update_state,
-            renew_worker_lease=self._renew_worker_lease_if_due,
             reset_errors=self._reset_errors,
             extend_hot_window_after_availability=self._extend_hot_window_after_availability,
             record_window_metric=lambda report: self._record_window_metric(
@@ -220,7 +223,7 @@ class ContinuousWorker:
         return True
 
     def _run_worker_cycle_once(self) -> bool:
-        self._renew_worker_lease_if_due(force=True)
+        self._worker_lease.ensure_owned()
         if self._process_pending_worker_command():
             return True
         self._cleanup_once_per_day()
@@ -319,20 +322,25 @@ class ContinuousWorker:
         self._interruptible_wait(30)
 
     def _stop_worker_loop(self) -> None:
-        if self._worker_lease.acquired and self._worker_lease.owner_token is not None:
+        owner_token = self._worker_lease.owner_token
+        if owner_token is not None:
             try:
-                update_worker_state(
-                    self.settings,
-                    expected_owner_token=self._worker_lease.owner_token,
-                    phase="stopped",
-                    current_order_id=None,
-                    masked_account=None,
-                    session_started_at=None,
-                    next_check_at=None,
-                )
+                if not self._worker_lease.lost:
+                    update_worker_state(
+                        self.settings,
+                        expected_owner_token=owner_token,
+                        phase="stopped",
+                        current_order_id=None,
+                        masked_account=None,
+                        session_started_at=None,
+                        next_check_at=None,
+                    )
             except RuntimeError:
                 logger.warning("Worker state ownership changed before shutdown.")
-            self._worker_lease.release()
+            except Exception:
+                logger.exception("Could not persist the final worker state")
+            finally:
+                self._worker_lease.release()
 
     def _monitor_order(
         self,
@@ -399,7 +407,7 @@ class ContinuousWorker:
         )
         burst_result = burst.finish_detector(
             report,
-            on_wait=self._renew_worker_lease_if_due,
+            on_wait=self._worker_lease.ensure_owned,
         )
         self._opportunity_burst_started = burst_result.started
         for execution in burst_result.executions:
@@ -637,7 +645,7 @@ class ContinuousWorker:
                 session_started_at=None,
                 next_check_at=None,
             )
-            self._renew_worker_lease_if_due()
+            self._worker_lease.ensure_owned()
             self._stop_event.wait(1)
         return True
 
@@ -646,7 +654,7 @@ class ContinuousWorker:
         while datetime.now() < deadline and not self._stop_event.is_set():
             if self._daily_cutoff_reached():
                 return
-            self._renew_worker_lease_if_due()
+            self._worker_lease.ensure_owned()
             if self._process_pending_worker_command():
                 return
             with self._guard:
@@ -790,8 +798,12 @@ class ContinuousWorker:
             confirmed_reservations=state.confirmed_reservations + amount,
         )
 
-    def _renew_worker_lease_if_due(self, *, force: bool = False) -> None:
-        self._worker_lease.renew_if_due(force=force)
+    def _on_worker_lease_lost(self) -> None:
+        with self._guard:
+            if self._shutdown_reason not in {DAILY_CUTOFF_REASON, "restart_requested"}:
+                self._shutdown_reason = LEASE_LOST_REASON
+        self._cancel_event.set()
+        self._stop_event.set()
 
     def _cleanup_once_per_day(self) -> None:
         today = date.today()
