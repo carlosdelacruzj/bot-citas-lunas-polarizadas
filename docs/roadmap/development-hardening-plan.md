@@ -18,7 +18,7 @@ Hasta cerrar las fases 0 a 4:
 - no iniciar features comerciales nuevas;
 - permitir solo correcciones, pruebas, observabilidad y refactors incluidos en
   este plan;
-- terminar o estabilizar primero el cambio local del esquema `v71` y paquete
+- terminar o estabilizar primero el cambio del esquema `v72` y paquete
   integral;
 - no aprovechar un refactor para cambiar reglas de negocio no relacionadas;
 - no desplegar una migracion, reiniciar procesos ni enviar mensajes como parte
@@ -94,7 +94,7 @@ dominio afectado.
 |---|---|---|---|
 | 0 | Congelar alcance y crear linea base | ninguna | trabajo seguro |
 | 1 | Corregir riesgos operativos P0 | fase 0 | reservas confiables |
-| 2 | Estabilizar `v71` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
+| 2 | Estabilizar `v72` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
 | 3 | Cerrar filtraciones y estados sensibles | fase 0 | diagnostico seguro |
 | 4 | Crear red automatica de seguridad | fases 1 a 3 | refactor controlado |
 | 5 | Corregir fronteras del backend | fase 4 | crecimiento modular |
@@ -421,6 +421,33 @@ misma frontera. Un cierre agotado queda visible como `close_timeout`; solo el
 Admin API responde `409 manual_session_active` ante restart mientras permanezca
 una sesion bloqueante.
 
+### 1.3A Asignacion segura de oportunidades restringidas
+
+Objetivo: evitar traspasos despues de una reserva confirmada y aumentar la
+probabilidad de aprovechar fechas escasas para clientes que realmente las
+necesitan.
+
+- [x] Limitar el traspaso secuencial a `blocked_by_order_rule` de la orden
+  observada.
+- [x] Mantener la reserva inmediata del detector cuando su propia regla acepta
+  el cupo; una confirmacion continua por la cola general, sin transferirla.
+- [x] Ordenar candidatos compatibles por menor cantidad de oportunidades
+  observadas aceptadas y mayor restriccion antes de prioridad y antiguedad,
+  conservando prioridad exclusiva y continuidad de subordenes.
+- [x] Evitar que la pertenencia al bloque activo adelante un candidato amplio y
+  volver a revisar al originador restringido al final del traspaso.
+- [x] Ampliar la rafaga a tres sesiones aisladas: detector y dos auxiliares.
+- [x] Elevar a `v72` los limites persistidos de sesiones configuradas y activas.
+- [x] Aplicar `v72` sin tocar el intento ambiguo existente; el worker permanecio
+  detenido y no se forzo ningun reinicio.
+- [ ] Validar en una ventana natural que tres sesiones no aumentan defensa,
+  errores tecnicos, CAPTCHA ni resultados inciertos frente al baseline de dos.
+
+Criterio de cierre: una orden amplia nunca crea un traspaso secuencial despues
+de reservar; una incompatibilidad puede ceder el cupo a candidatos exactos; y
+el primer auxiliar favorece al cliente con menos alternativas sin compartir
+sesion, claim ni intento.
+
 ### 1.4 Clasificacion conservadora de excepciones WhatsApp
 
 Objetivo: garantizar que un fallo posterior a una posible interaccion no quede
@@ -452,10 +479,11 @@ original sigue dentro de CAPTCHA, submit o confirmacion.
 Criterio de cierre: una operacion lenta no deja vencer el lease global y una
 perdida real detiene admision nueva sin duplicar submit.
 
-## Fase 2 - Estabilizar esquema `v71`, pagos y paquete integral
+## Fase 2 - Estabilizar esquema `v72`, pagos y paquete integral
 
-No desplegar `v71` ni registrar un paquete integral real hasta cerrar toda esta
-fase. El esquema, los resumenes y el contrato deben avanzar juntos.
+La ampliacion tecnica `v71 -> v72` ya esta aplicada. No registrar un paquete
+integral real hasta cerrar toda esta fase. El esquema, los resumenes y el
+contrato deben avanzar juntos.
 
 ### 2.1 Catalogo comercial unico
 
@@ -535,7 +563,7 @@ coinciden para una cohorte equivalente.
 - [ ] Reiniciar solo el propietario necesario si la activacion lo requiere.
 - [ ] Ejecutar un flujo natural futuro; no crear un cliente o cobro de prueba.
 
-Criterio de cierre: codigo, esquema y runtime coinciden en `v71`, y el primer
+Criterio de cierre: codigo, esquema y runtime coinciden en `v72`, y el primer
 caso natural conserva abono, tasa, saldo, mensaje y resumen correctos.
 
 ## Fase 3 - Privacidad, evidencia y secretos

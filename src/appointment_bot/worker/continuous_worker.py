@@ -292,6 +292,7 @@ class ContinuousWorker:
                 target_order_ids=self._compatible_handoff_order_ids,
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
                 initial_confirmed_order_ids=self._rapid_queue_initial_confirmed_order_ids,
+                follow_up_order_ids=self._rapid_queue_follow_up_order_ids,
                 inter_order_delay_enabled=False,
             )
         elif queue_requested and self.settings.auto_reserve:

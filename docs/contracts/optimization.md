@@ -17,7 +17,8 @@ Optimizar `registered / intentos compatibles`, no tiempo aislado. Los resultados
 
 - medir una hipotesis por vez;
 - no mezclar intervalos, orden, proveedor CAPTCHA, leases y confirmacion;
-- mantener maximo dos sesiones concurrentes;
+- mantener maximo tres sesiones concurrentes y comparar por separado el salto
+  de dos a tres;
 - preservar fallback y breakers;
 - no promover una mejora con muestras pequenas o periodos incomparables.
 

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.config import OPPORTUNITY_BURST_SESSION_LIMIT, Settings
 from appointment_bot.core.models import (
     AvailabilityResult,
     RunReport,
@@ -170,16 +170,6 @@ class OpportunityBurstCoordinator:
             limit=candidate_limit,
             settings=self.settings,
         )
-        if self.preferred_order_ids:
-            preferred_positions = {
-                order_id: index for index, order_id in enumerate(self.preferred_order_ids)
-            }
-            candidates.sort(
-                key=lambda candidate: (
-                    candidate.order_id not in preferred_positions,
-                    preferred_positions.get(candidate.order_id, len(preferred_positions)),
-                )
-            )
         candidates = self._distinct_account_candidates(candidates)
         if not candidates:
             return False
@@ -230,11 +220,17 @@ class OpportunityBurstCoordinator:
             )
             self._last_admitted_execution_id = self.detector_execution_id
             self._executor = ThreadPoolExecutor(
-                max_workers=min(self.settings.opportunity_burst_max_sessions, 2),
+                max_workers=min(
+                    self.settings.opportunity_burst_max_sessions,
+                    OPPORTUNITY_BURST_SESSION_LIMIT,
+                ),
                 thread_name_prefix="opportunity-burst",
             )
             initial_slots = (
-                min(self.settings.opportunity_burst_max_sessions, 2)
+                min(
+                    self.settings.opportunity_burst_max_sessions,
+                    OPPORTUNITY_BURST_SESSION_LIMIT,
+                )
                 - self._active_sessions_locked()
             )
             for _ in range(initial_slots):
@@ -361,7 +357,7 @@ class OpportunityBurstCoordinator:
             return False
         if self._active_sessions_locked() >= min(
             self.settings.opportunity_burst_max_sessions,
-            2,
+            OPPORTUNITY_BURST_SESSION_LIMIT,
         ):
             return False
         if not self._candidates:
@@ -633,10 +629,16 @@ def _create_burst(
             started_at + timedelta(seconds=settings.opportunity_burst_max_seconds)
         ),
         opportunities=opportunities,
-        configured_max_sessions=min(settings.opportunity_burst_max_sessions, 2),
+        configured_max_sessions=min(
+            settings.opportunity_burst_max_sessions,
+            OPPORTUNITY_BURST_SESSION_LIMIT,
+        ),
         configured_max_clients=settings.opportunity_burst_max_clients,
         config={
-            "max_sessions": min(settings.opportunity_burst_max_sessions, 2),
+            "max_sessions": min(
+                settings.opportunity_burst_max_sessions,
+                OPPORTUNITY_BURST_SESSION_LIMIT,
+            ),
             "max_clients": settings.opportunity_burst_max_clients,
             "max_seconds": settings.opportunity_burst_max_seconds,
             "session_seconds": settings.opportunity_burst_session_seconds,

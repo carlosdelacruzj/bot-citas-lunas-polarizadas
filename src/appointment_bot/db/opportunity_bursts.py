@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.config import OPPORTUNITY_BURST_SESSION_LIMIT, Settings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -76,8 +76,11 @@ def create_opportunity_burst(
     burst_id: str | None = None,
     settings: Settings | None = None,
 ) -> str:
-    if not 1 <= configured_max_sessions <= 2:
-        raise ValueError("configured_max_sessions must be between 1 and 2.")
+    if not 1 <= configured_max_sessions <= OPPORTUNITY_BURST_SESSION_LIMIT:
+        raise ValueError(
+            "configured_max_sessions must be between 1 and "
+            f"{OPPORTUNITY_BURST_SESSION_LIMIT}."
+        )
     if configured_max_clients < 0:
         raise ValueError("configured_max_clients must be non-negative.")
     identifier = burst_id or f"burst-{uuid4().hex}"
@@ -292,8 +295,11 @@ def update_burst_execution(
         if row is None:
             raise KeyError(f"Burst execution not found: {execution_id}")
         if max_active_sessions is not None:
-            if not 0 <= max_active_sessions <= 2:
-                raise ValueError("max_active_sessions must be between 0 and 2.")
+            if not 0 <= max_active_sessions <= OPPORTUNITY_BURST_SESSION_LIMIT:
+                raise ValueError(
+                    "max_active_sessions must be between 0 and "
+                    f"{OPPORTUNITY_BURST_SESSION_LIMIT}."
+                )
             connection.execute(
                 """
                 UPDATE opportunity_bursts
@@ -395,8 +401,11 @@ def finish_opportunity_burst(
     normalized_status = status.strip().lower()
     if normalized_status not in _BURST_STATUSES:
         raise ValueError(f"Unsupported terminal burst status: {status}")
-    if not 0 <= max_active_sessions <= 2:
-        raise ValueError("max_active_sessions must be between 0 and 2.")
+    if not 0 <= max_active_sessions <= OPPORTUNITY_BURST_SESSION_LIMIT:
+        raise ValueError(
+            "max_active_sessions must be between 0 and "
+            f"{OPPORTUNITY_BURST_SESSION_LIMIT}."
+        )
     safe_reason = sanitize_text(completion_reason.strip())[:240]
     if not safe_reason:
         raise ValueError("completion_reason is required.")

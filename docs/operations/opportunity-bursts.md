@@ -4,15 +4,31 @@ Estado: estable y vigente.
 
 ## Activacion
 
-Solo una disponibilidad real y compatible inicia una rafaga. La rafaga admite como
-maximo dos sesiones Playwright aisladas. Cada orden conserva credenciales,
-cookies, claim, lease, reglas e intento propios.
+Solo una disponibilidad real y compatible inicia una rafaga. La rafaga admite
+como maximo tres sesiones Playwright aisladas: el detector y hasta dos
+auxiliares. Cada orden conserva credenciales, cookies, claim, lease, reglas e
+intento propios.
+
+Los auxiliares compatibles con menos oportunidades observadas y con reglas mas
+restrictivas entran antes que los clientes amplios. La prioridad exclusiva
+conserva precedencia y las subordenes mantienen su regla de continuidad. Haber
+pertenecido al bloque activo no adelanta a un cliente amplio sobre otro mas
+restringido.
 
 ## Admisión deslizante
 
 Después de un `registered`, el coordinador puede admitir el siguiente candidato
-compatible sin exceder el limite. No sustituye una sesion activa ni transfiere
-estado del navegador.
+compatible sin exceder el limite. Esto es admision concurrente dentro de la
+rafaga, no un traspaso de la reserva confirmada. No sustituye una sesion activa
+ni transfiere estado del navegador.
+
+El traspaso secuencial queda reservado para una orden que observo un cupo real
+pero no pudo usarlo por sus propias reglas. Una orden que ya reservo continua
+por la cola general y no genera ese traspaso.
+
+Despues de recorrer candidatos compatibles, la orden restringida que origino el
+traspaso obtiene una revision final dentro de la misma ventana. No se repite si
+no hubo ningun candidato que justificara abrir el traspaso.
 
 ## Reobservacion de cupo perdido
 

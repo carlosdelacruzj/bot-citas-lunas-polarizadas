@@ -21,7 +21,7 @@ generados en `reports/`.
 No iniciar features comerciales nuevas hasta cerrar las fases 0 a 4 del
 [`plan integral de endurecimiento`](development-hardening-plan.md). Se permiten
 correcciones, pruebas, observabilidad y refactors incluidos en ese plan. El
-cambio local del esquema `v71` y paquete integral debe estabilizarse antes de
+cambio del esquema `v72` y paquete integral debe estabilizarse antes de
 otro crecimiento funcional.
 
 ## P0 - Aceptacion natural y seguridad
@@ -30,7 +30,7 @@ otro crecimiento funcional.
 
 Ejecutar en orden las fases 0 a 4 del
 [`plan integral de endurecimiento`](development-hardening-plan.md): linea base,
-riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v71`,
+riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v72`,
 privacidad y red automatizada de seguridad.
 
 Cierre: los riesgos P0 tienen pruebas, el paquete integral es coherente de
@@ -133,7 +133,6 @@ frontera por vez y no combinar refactor con cambios funcionales ajenos.
 ## Fuera de alcance o sin autorizacion
 
 - desplegar Cloudinary;
-- usar tres sesiones Playwright concurrentes;
 - activar CAPTCHA grafico sin limite, breaker y fallback;
 - reintentar automaticamente entregas ambiguas;
 - reescribir historial Git;

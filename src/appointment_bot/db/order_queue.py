@@ -268,8 +268,8 @@ def list_compatible_orders_for_opportunities(
                 (
                     priority < EXCLUSIVE_PRIORITY_THRESHOLD,
                     row.get("parent_order_id") is None,
-                    -compatibility_count,
-                    constraint_penalty,
+                    compatibility_count,
+                    -constraint_penalty,
                     -priority,
                     str(row["created_at"]),
                 ),

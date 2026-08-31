@@ -5,6 +5,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+OPPORTUNITY_BURST_SESSION_LIMIT = 3
+
 
 def _parse_bool(value: str | None, *, default: bool) -> bool:
     if value is None or value == "":
@@ -460,7 +462,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
         ),
         opportunity_burst_max_sessions=_parse_int(
             os.getenv("OPPORTUNITY_BURST_MAX_SESSIONS"),
-            default=2,
+            default=OPPORTUNITY_BURST_SESSION_LIMIT,
             minimum=2,
         ),
         opportunity_burst_max_clients=_parse_int(
@@ -659,9 +661,10 @@ def load_settings(*, require_login: bool = True) -> Settings:
             "OPPORTUNITY_BURST_MAX_SESSIONS"
         )
 
-    if settings.opportunity_burst_max_sessions != 2:
+    if settings.opportunity_burst_max_sessions > OPPORTUNITY_BURST_SESSION_LIMIT:
         raise ValueError(
-            "OPPORTUNITY_BURST_MAX_SESSIONS must remain 2"
+            "OPPORTUNITY_BURST_MAX_SESSIONS must remain between 2 and "
+            f"{OPPORTUNITY_BURST_SESSION_LIMIT}"
         )
 
     if settings.opportunity_burst_max_seconds > 300:

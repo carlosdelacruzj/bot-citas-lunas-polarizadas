@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL actual: `v71`;
+- esquema PostgreSQL requerido por el codigo: `v72`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
   sesiones manuales, con cierre visible hasta terminar Chromium;
@@ -136,7 +136,9 @@ compatibilidad y el detalle autorizado permanecen separados.
 Las rafagas de oportunidad y la reobservacion unica posterior a un `slot_lost`
 son capacidades estables. Su admision se gobierna en PostgreSQL con
 `enabled`, `disabled` y, para rafagas, `draining`; el breaker conserva prioridad
-sobre cualquier modo y el maximo sigue siendo dos sesiones Playwright.
+sobre cualquier modo. La capacidad configurada es de tres sesiones Playwright
+aisladas: un detector y hasta dos auxiliares compatibles, con preferencia por
+disponibilidad restringida.
 
 ## Comunicaciones WhatsApp
 

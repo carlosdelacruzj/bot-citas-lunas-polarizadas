@@ -68,6 +68,7 @@ def handle_observer_order_report(
         )
         return ObserverOrderDecision(
             compatible_handoff_order_ids=compatible_order_ids,
+            follow_up_order_ids=(order.order_id,) if compatible_order_ids else (),
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.TERMINAL_STAGE:
@@ -79,17 +80,11 @@ def handle_observer_order_report(
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
         mark_order_done(order.order_id, settings=settings)
-        compatible_order_ids = compatible_handoff_order_ids(
-            settings,
-            order,
-            report,
-        )
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
             confirmed_reservations=1,
             confirmed_order_ids=(order.order_id,),
-            compatible_handoff_order_ids=compatible_order_ids,
             reset_errors=True,
         )
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:

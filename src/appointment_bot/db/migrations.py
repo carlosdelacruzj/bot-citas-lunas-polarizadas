@@ -10,7 +10,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 71
+SCHEMA_VERSION = 72
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -716,12 +716,14 @@ def _create_opportunity_observability_schema(connection: Connection) -> None:
             config_json jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (
                 jsonb_typeof(config_json) = 'object'
             ),
-            configured_max_sessions smallint NOT NULL CHECK (
-                configured_max_sessions BETWEEN 1 AND 2
+            configured_max_sessions smallint NOT NULL,
+            CONSTRAINT ck_opportunity_bursts_configured_max_sessions CHECK (
+                configured_max_sessions BETWEEN 1 AND 3
             ),
             configured_max_clients integer NOT NULL CHECK (configured_max_clients >= 0),
-            max_active_sessions smallint NOT NULL DEFAULT 1 CHECK (
-                max_active_sessions BETWEEN 0 AND 2
+            max_active_sessions smallint NOT NULL DEFAULT 1,
+            CONSTRAINT ck_opportunity_bursts_max_active_sessions CHECK (
+                max_active_sessions BETWEEN 0 AND 3
             ),
             created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1250,6 +1252,8 @@ def _validate_current_schema(connection: Connection) -> None:
         "ck_post_appointment_automatic_review_finished",
         "ck_opportunity_bursts_timestamps",
         "ck_opportunity_bursts_finished",
+        "ck_opportunity_bursts_configured_max_sessions",
+        "ck_opportunity_bursts_max_active_sessions",
         "ck_opportunity_burst_candidate_timestamps",
         "ck_opportunity_burst_execution_role",
         "ck_opportunity_burst_execution_finished",
@@ -3813,6 +3817,32 @@ def migrate_database(connection: Connection) -> None:
             (71,),
         )
         current_version = 71
+    if current_version == 71:
+        connection.execute(
+            """
+            ALTER TABLE opportunity_bursts
+            DROP CONSTRAINT IF EXISTS opportunity_bursts_configured_max_sessions_check,
+            DROP CONSTRAINT IF EXISTS opportunity_bursts_max_active_sessions_check,
+            DROP CONSTRAINT IF EXISTS ck_opportunity_bursts_configured_max_sessions,
+            DROP CONSTRAINT IF EXISTS ck_opportunity_bursts_max_active_sessions
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE opportunity_bursts
+            ADD CONSTRAINT ck_opportunity_bursts_configured_max_sessions CHECK (
+                configured_max_sessions BETWEEN 1 AND 3
+            ),
+            ADD CONSTRAINT ck_opportunity_bursts_max_active_sessions CHECK (
+                max_active_sessions BETWEEN 0 AND 3
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (72,),
+        )
+        current_version = 72
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

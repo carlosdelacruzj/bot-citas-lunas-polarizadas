@@ -63,6 +63,18 @@ El ranking de admision considera prioridad, suborden, compatibilidad de reglas y
 antiguedad. El orden de ejecucion dentro del bloque también rota por suborden y
 ultima corrida; no debe presentarse como el mismo ranking.
 
+Un traspaso secuencial solo nace cuando la orden observada queda
+`blocked_by_order_rule`. Una reserva confirmada no transfiere su oportunidad:
+continua por la cola general si corresponde. Entre candidatos compatibles con
+una oportunidad bloqueada o una rafaga, se atiende primero a quien acepta menos
+de las oportunidades observadas y posee reglas mas restrictivas; prioridad y
+antiguedad desempatan despues, salvo prioridad exclusiva.
+
+Si el traspaso recorrio al menos un candidato compatible, la orden restringida
+que lo origino se revisa una vez mas al final de esa misma ventana. Si entretanto
+aparece una fecha valida puede reservarla; si sigue siendo incompatible conserva
+`ready` y no recibe backoff.
+
 Cuando aparece una oportunidad, cada candidato conserva cuenta, contexto
 Playwright, claim y lease independientes. Nunca se transfieren cookies entre
 ordenes.
