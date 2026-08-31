@@ -105,6 +105,7 @@ from appointment_bot.services.api.service_order_routes import (
     update_service_order_priority_payload,
     update_service_order_restrictions_payload,
 )
+from appointment_bot.services.api.service_package_routes import service_packages_payload
 from appointment_bot.services.api.whatsapp_message_template_routes import (
     preview_whatsapp_message_template_payload,
     update_whatsapp_message_template_payload,
@@ -307,6 +308,13 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 list_service_orders_payload(projection=projection),
             )
+            return
+
+        if path == "/api/v1/service-packages":
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = service_packages_payload()
+            self._send_json(status, payload)
             return
 
         if path == "/api/v1/operator-inbox":

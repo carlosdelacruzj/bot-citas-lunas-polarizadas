@@ -10,8 +10,14 @@ import {
 } from './program-resolution/program-resolution';
 
 import { ExcludedDateRange } from './reservation-rules.model';
+import { ServicePackageCatalog, ServicePackageKey } from './service-package.model';
 
 export type { ExcludedDateRange } from './reservation-rules.model';
+export type {
+  ServicePackageCatalog,
+  ServicePackageDefinition,
+  ServicePackageKey,
+} from './service-package.model';
 export type {
   ProgramResolutionChildPayload,
   ProgramResolutionCommunicationDecision,
@@ -260,7 +266,7 @@ export interface ServiceOrder {
   charge_required: boolean;
   service_type: 'standard' | 'selected_weekday' | 'custom';
   reservation_price: string;
-  service_package: 'standard' | 'restricted' | 'integral' | 'custom';
+  service_package: ServicePackageKey;
   official_fee_amount: string;
   initial_payment_amount: string;
   status: string;
@@ -1117,7 +1123,7 @@ export interface CreateServiceOrderPayload {
   applicant_name?: string | null;
   charge_required?: boolean;
   service_type?: 'standard' | 'selected_weekday' | 'custom';
-  service_package?: 'standard' | 'restricted' | 'integral' | 'custom';
+  service_package?: ServicePackageKey;
   reservation_price?: string;
   minimum_reservation_date?: string | null;
   maximum_reservation_date?: string | null;
@@ -1257,6 +1263,10 @@ export class AppointmentApiService {
       scope,
     );
     return response.service_orders;
+  }
+
+  async getServicePackages(scope?: RequestScope): Promise<ServicePackageCatalog> {
+    return this.read<ServicePackageCatalog>('/api/v1/service-packages', scope);
   }
 
   async getOperatorInbox(scope?: RequestScope): Promise<OperatorInboxPayload> {

@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from appointment_bot.core.service_packages import (
+    DEFAULT_RESERVATION_PRICE_TEXT,
+    SERVICE_PACKAGE_STANDARD,
+)
 from appointment_bot.core.statuses import ResultStatus
 
 
@@ -92,8 +96,8 @@ class ServiceOrderRuntime:
     program_expediente: str | None = None
     program_plate: str | None = None
     service_type: str = "standard"
-    reservation_price: str = "50.00"
-    service_package: str = "standard"
+    reservation_price: str = DEFAULT_RESERVATION_PRICE_TEXT
+    service_package: str = SERVICE_PACKAGE_STANDARD
     official_fee_amount: str = "0.00"
     initial_payment_amount: str = "0.00"
     minimum_reservation_date: str | None = None

@@ -41,10 +41,15 @@
         </dl>
 
         @if (order.service_package === 'integral') {
-          <p class="required-help">
-            Paquete integral: S/71.40 de tasa oficial y S/88.60 de gestión. Registra S/160
-            cuando hayas recibido el segundo abono de S/80.
-          </p>
+          @if (view.servicePackageDefinition(order.service_package); as servicePackage) {
+            <p class="required-help">
+              Paquete integral: {{ view.formatMoney(+servicePackage.official_fee_amount) }} de tasa
+              oficial y {{ view.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
+              gestión. Registra {{ view.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
+              hayas recibido el segundo abono de
+              {{ view.formatMoney(+(servicePackage.balance_amount || 0)) }}.
+            </p>
+          }
         }
 
         <label>
@@ -63,9 +68,15 @@
           <button type="button" class="secondary" (click)="view.setQuickPaymentAmount('40.00')">
             S/40
           </button>
-          <button type="button" class="secondary" (click)="view.setQuickPaymentAmount('50.00')">
-            S/50
-          </button>
+          @if (view.standardPackageAmount(); as standardAmount) {
+            <button
+              type="button"
+              class="secondary"
+              (click)="view.setQuickPaymentAmount(standardAmount)"
+            >
+              {{ view.formatMoney(+standardAmount) }}
+            </button>
+          }
           @if (view.paymentAmountAgreed()) {
             <button
               type="button"

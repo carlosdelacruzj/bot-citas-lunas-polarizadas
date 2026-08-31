@@ -497,14 +497,14 @@ contrato deben avanzar juntos.
 Objetivo: eliminar precios, claves y etiquetas duplicadas entre core,
 dashboard, Telegram y avisos.
 
-- [ ] Convertir `core/service_packages.py` en autoridad de clave, etiqueta,
+- [x] Convertir `core/service_packages.py` en autoridad de clave, etiqueta,
   precio total, abono, tasa, saldo y compatibilidades.
-- [ ] Reemplazar literales de `50`, `70`, `160`, `80` y `71.40` donde
+- [x] Reemplazar literales de `50`, `70`, `160`, `80` y `71.40` donde
   representen la misma regla comercial.
-- [ ] Corregir el detalle Telegram que presenta integral como estandar.
-- [ ] Mantener `service_package` separado de reglas de busqueda, con
+- [x] Corregir el detalle Telegram que presenta integral como estandar.
+- [x] Mantener `service_package` separado de reglas de busqueda, con
   combinaciones validas explicitas.
-- [ ] Alinear previews, avisos, cobro y textos futuros.
+- [x] Alinear previews, avisos, cobro y textos futuros.
 
 Este conjunto si puede resolverse unido porque comparte una sola autoridad y
 no toca migracion ni runtime del navegador.

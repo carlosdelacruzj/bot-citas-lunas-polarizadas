@@ -128,13 +128,14 @@
               [ngModel]="view.newServicePackage()"
               (ngModelChange)="view.editField(view.newServicePackage, $event)"
             >
-              <option value="standard">Servicio regular — S/50</option>
-              <option value="restricted">Disponibilidad restringida — S/70</option>
-              <option value="integral">Trámite integral — S/160 (S/80 + S/80)</option>
-              <option value="custom">Monto personalizado</option>
+              @for (servicePackage of view.servicePackages(); track servicePackage.key) {
+                <option [ngValue]="servicePackage.key">
+                  {{ view.servicePackageOptionLabel(servicePackage) }}
+                </option>
+              }
             </select>
           </label>
-          @if (view.newServicePackage() === 'custom') {
+          @if (view.newServicePackageDefinition()?.fixed_price === false) {
             <label>
               Precio acordado (S/) <span class="required-marker" aria-hidden="true">*</span>
               <input
@@ -150,21 +151,25 @@
             </label>
           }
         </div>
-        @if (view.newServicePackage() === 'restricted') {
+        @if (view.newServicePackageDefinition()?.requires_restrictions) {
           <p class="required-help">
             Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
-            disponibilidad acordada. El precio queda fijado en S/70.
+            disponibilidad acordada. El precio queda fijado en
+            {{ view.formatMoney(+(view.newServicePackageDefinition()?.total_amount || 0)) }}.
           </p>
         }
-        @if (view.newServicePackage() === 'integral') {
+        @if (view.newServicePackage() === 'integral' && view.newServicePackageDefinition(); as servicePackage) {
           <p class="required-help">
-            Al crear la orden confirmas que recibiste el primer abono de S/80 y pagaste la tasa
-            oficial de S/71.40. El sistema registrará ambos movimientos y dejará S/80 pendientes.
+            Al crear la orden confirmas que recibiste el primer abono de
+            {{ view.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
+            oficial de {{ view.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
+            registrará ambos movimientos y dejará
+            {{ view.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
           </p>
           <dl class="payment-summary">
-            <div><dt>Total</dt><dd>S/160.00</dd></div>
-            <div><dt>Tasa oficial</dt><dd>S/71.40</dd></div>
-            <div><dt>Gestión</dt><dd>S/88.60</dd></div>
+            <div><dt>Total</dt><dd>{{ view.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
+            <div><dt>Tasa oficial</dt><dd>{{ view.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
+            <div><dt>Gestión</dt><dd>{{ view.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
           </dl>
         }
       </fieldset>
@@ -173,7 +178,7 @@
         <legend>Restricción de fechas (opcional)</legend>
         <p>
           {{
-            view.newServicePackage() === 'restricted'
+            view.newServicePackageDefinition()?.requires_restrictions
               ? 'Configura obligatoriamente el periodo y las exclusiones acordadas.'
               : 'Déjalo vacío para buscar cualquier fecha disponible.'
           }}

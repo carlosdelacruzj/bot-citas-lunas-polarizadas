@@ -17,6 +17,7 @@ from appointment_bot.core.contacts import (
 from appointment_bot.core.models import (
     ServiceOrderSummary,
 )
+from appointment_bot.core.service_packages import DEFAULT_RESERVATION_PRICE_TEXT
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -628,7 +629,9 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         priority=int(row["priority"]),
         charge_required=bool(row["charge_required"]),
         service_type=str(row["service_type"]),
-        reservation_price=_decimal_text(row["reservation_price"]) or "50.00",
+        reservation_price=(
+            _decimal_text(row["reservation_price"]) or DEFAULT_RESERVATION_PRICE_TEXT
+        ),
         service_package=str(row["service_package"]),
         official_fee_amount=_decimal_text(row["official_fee_amount"]) or "0.00",
         initial_payment_amount=_decimal_text(row["initial_payment_amount"]) or "0.00",

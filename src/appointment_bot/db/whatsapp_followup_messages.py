@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from appointment_bot.config import Settings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
+from appointment_bot.core.service_packages import DEFAULT_RESERVATION_PRICE_TEXT
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
     whatsapp_template_definition,
@@ -40,7 +41,7 @@ def prepare_test_post_payment_whatsapp_message(
         site="LIMA-LA VICTORIA",
         appointment_date="15/08/2026",
         appointment_hour="10:00",
-        amount_paid="50.00",
+        amount_paid=DEFAULT_RESERVATION_PRICE_TEXT,
         settings=settings,
     )
     steps = _build_followup_steps(

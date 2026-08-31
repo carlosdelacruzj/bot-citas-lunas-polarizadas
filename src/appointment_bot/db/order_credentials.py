@@ -16,12 +16,14 @@ from appointment_bot.core.models import (
 )
 from appointment_bot.core.service_packages import (
     SERVICE_PACKAGE_INTEGRAL,
+    SERVICE_PACKAGE_STANDARD,
+    STANDARD_TOTAL_AMOUNT,
     infer_service_package,
     normalize_service_package,
     package_amounts,
+    validate_service_package_compatibility,
 )
 from appointment_bot.db.common import (
-    DEFAULT_RESERVATION_AMOUNT,
     _connection,
     _credential_cipher,
     _database_url,
@@ -80,13 +82,14 @@ def create_service_order(
     if service_type not in {"standard", "selected_weekday", "custom"}:
         raise ValueError("service_type must be standard, selected_weekday or custom.")
     effective_reservation_price = (
-        DEFAULT_RESERVATION_AMOUNT if reservation_price is None else reservation_price
+        STANDARD_TOTAL_AMOUNT if reservation_price is None else reservation_price
     )
     if effective_reservation_price <= 0:
         raise ValueError("reservation_price must be greater than zero.")
     effective_service_package = normalize_service_package(
         service_package or infer_service_package(service_type)
     )
+    validate_service_package_compatibility(effective_service_package, service_type)
     official_fee_amount, initial_payment_amount = package_amounts(
         effective_service_package,
         effective_reservation_price,
@@ -670,7 +673,7 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         program_plate=row.get("program_plate"),
         service_type=str(row.get("service_type") or "standard"),
         reservation_price=f"{row.get('reservation_price'):.2f}",
-        service_package=str(row.get("service_package") or "standard"),
+        service_package=str(row.get("service_package") or SERVICE_PACKAGE_STANDARD),
         official_fee_amount=f"{row.get('official_fee_amount') or 0:.2f}",
         initial_payment_amount=f"{row.get('initial_payment_amount') or 0:.2f}",
         minimum_reservation_date=(

@@ -90,6 +90,8 @@ reintenta automaticamente.
 ## Servicios y precios
 
 Cada orden conserva su propio `service_type` y `reservation_price`.
+El catalogo de `core/service_packages.py` gobierna claves, etiquetas y montos;
+Admin API lo entrega al dashboard y Telegram consume la misma autoridad.
 
 - servicio regular: valor predeterminado `S/50`;
 - disponibilidad restringida: valor guiado habitual `S/70`;

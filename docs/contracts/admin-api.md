@@ -92,6 +92,10 @@ completo de compatibilidad. El detalle autorizado permanece separado en
 `GET /api/v1/service-orders/{order_id}`. Credenciales completas solo atraviesan
 endpoints y procesos autorizados; no se devuelven por defecto.
 
+`GET /api/v1/service-packages` entrega el catalogo comercial definido por core:
+claves, etiquetas, montos, saldo, tasa y combinaciones de `service_type`. Es la
+fuente del formulario de alta y de los textos financieros del dashboard.
+
 El contacto WhatsApp se normaliza en backend. Un numero peruano de nueve
 digitos recibe `+51`; formatos internacionales validos conservan `+`.
 

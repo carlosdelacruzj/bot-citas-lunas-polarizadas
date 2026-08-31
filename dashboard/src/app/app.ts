@@ -62,6 +62,9 @@ import {
   ReservationRestrictionsUpdatePayload,
   RunDetail,
   RunSummary,
+  ServicePackageCatalog,
+  ServicePackageDefinition,
+  ServicePackageKey,
   ServiceOrder,
   ServiceOrderDetail,
   WorkerCommand,
@@ -101,7 +104,6 @@ import {
 } from './program-resolution/program-resolution';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type NewServicePackage = 'standard' | 'restricted' | 'integral' | 'custom';
 type ViewKey =
   | 'inbox'
   | 'summary'
@@ -661,7 +663,8 @@ export class App implements OnDestroy {
   public readonly newContactWhatsapp = signal('');
   public readonly newContactWhatsappUsername = signal('');
   public readonly newContactSource = signal('');
-  public readonly newServicePackage = signal<NewServicePackage>('standard');
+  public readonly servicePackageCatalog = signal<ServicePackageCatalog | null>(null);
+  public readonly newServicePackage = signal<ServicePackageKey>('standard');
   public readonly newCustomReservationPrice = signal('');
   public readonly newMinimumReservationDate = signal('');
   public readonly newMaximumReservationDate = signal('');
@@ -1370,14 +1373,20 @@ export class App implements OnDestroy {
   }
 
   private async refreshCommonData(scope: RequestScope): Promise<void> {
-    const [health, worker, manualSessions] = await Promise.all([
+    const currentCatalog = this.servicePackageCatalog();
+    const catalogRequest = currentCatalog
+      ? Promise.resolve(currentCatalog)
+      : this.api.getServicePackages(scope);
+    const [health, worker, manualSessions, servicePackageCatalog] = await Promise.all([
       this.api.getHealth(scope),
       this.api.getWorker(scope),
       this.api.getManualSessions(scope),
+      catalogRequest,
     ]);
     this.health.set(health);
     this.worker.set(worker);
     this.manualSessions.set(manualSessions);
+    this.servicePackageCatalog.set(servicePackageCatalog);
   }
 
   private async refreshViewData(
@@ -2393,18 +2402,8 @@ export class App implements OnDestroy {
   }
 
   public serviceTypeLabel(order: ServiceOrder): string {
-    if (order.service_package === 'integral') {
-      return 'Trámite integral';
-    }
-    if (order.service_type === 'selected_weekday') {
-      return 'Día elegido';
-    }
-    if (order.service_type === 'custom') {
-      return this.hasReservationRestrictions(order)
-        ? 'Disponibilidad restringida'
-        : 'Personalizado';
-    }
-    return 'Estándar';
+    return this.servicePackageDefinition(order.service_package)?.label
+      ?? order.service_package;
   }
 
   public servicePriceLabel(order: ServiceOrder): string {
@@ -2675,14 +2674,18 @@ export class App implements OnDestroy {
 
   public async openPayment(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id, false);
-    this.paymentAmountAgreed.set(order.amount_agreed ?? '50.00');
-    this.paymentAmountPaid.set(order.amount_agreed ?? '50.00');
+    const standardAmount = this.standardPackageAmount() ?? '';
+    const agreedAmount = order.amount_agreed ?? order.reservation_price ?? standardAmount;
+    this.paymentAmountAgreed.set(agreedAmount);
+    this.paymentAmountPaid.set(agreedAmount);
     this.openModal('payment');
     await this.loadSelectedOrderDetail(order.order_id);
     const refreshed = this.selectedOrderDetail();
     if (refreshed?.order_id === order.order_id) {
-      this.paymentAmountAgreed.set(refreshed.amount_agreed ?? '50.00');
-      this.paymentAmountPaid.set(refreshed.amount_agreed ?? '50.00');
+      const refreshedAmount =
+        refreshed.amount_agreed ?? refreshed.reservation_price ?? standardAmount;
+      this.paymentAmountAgreed.set(refreshedAmount);
+      this.paymentAmountPaid.set(refreshedAmount);
     }
   }
 
@@ -4066,6 +4069,35 @@ export class App implements OnDestroy {
     }
   }
 
+  public servicePackages(): ServicePackageDefinition[] {
+    return this.servicePackageCatalog()?.service_packages ?? [];
+  }
+
+  public servicePackageDefinition(
+    key: string | null | undefined,
+  ): ServicePackageDefinition | null {
+    return this.servicePackages().find((item) => item.key === key) ?? null;
+  }
+
+  public newServicePackageDefinition(): ServicePackageDefinition | null {
+    return this.servicePackageDefinition(this.newServicePackage());
+  }
+
+  public servicePackageOptionLabel(definition: ServicePackageDefinition): string {
+    if (!definition.total_amount) {
+      return definition.label;
+    }
+    if (definition.key === 'integral') {
+      return `${definition.label} — S/${definition.total_amount} `
+        + `(S/${definition.initial_payment_amount} + S/${definition.balance_amount})`;
+    }
+    return `${definition.label} — S/${definition.total_amount}`;
+  }
+
+  public standardPackageAmount(): string | null {
+    return this.servicePackageDefinition('standard')?.total_amount ?? null;
+  }
+
   public requestCreateOrder(): void {
     const excludedDateRanges = this.prepareExcludedDateRanges(
       this.newExcludedDateRanges(),
@@ -4076,25 +4108,27 @@ export class App implements OnDestroy {
       return;
     }
     const servicePackage = this.newServicePackage();
+    const packageDefinition = this.servicePackageDefinition(servicePackage);
+    if (!packageDefinition) {
+      this.errorMessage.set('El catálogo comercial no está disponible. Actualiza la vista.');
+      return;
+    }
     const customPrice = Number(this.newCustomReservationPrice());
     if (
-      servicePackage === 'custom' &&
+      !packageDefinition.fixed_price &&
       (!Number.isFinite(customPrice) || customPrice <= 0 || customPrice > 99999.99)
     ) {
       this.errorMessage.set('Ingresa un precio personalizado válido mayor que cero.');
       return;
     }
-    const serviceType = ['standard', 'integral'].includes(servicePackage)
-      ? 'standard'
-      : 'custom';
-    const reservationPrice =
-      servicePackage === 'standard'
-        ? '50.00'
-        : servicePackage === 'restricted'
-          ? '70.00'
-          : servicePackage === 'integral'
-            ? '160.00'
-            : customPrice.toFixed(2);
+    const serviceType = packageDefinition.default_service_type;
+    const reservationPrice = packageDefinition.fixed_price
+      ? packageDefinition.total_amount
+      : customPrice.toFixed(2);
+    if (!reservationPrice) {
+      this.errorMessage.set('El paquete seleccionado no tiene un precio válido.');
+      return;
+    }
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
       document_type: this.newDocumentType(),
@@ -4120,7 +4154,7 @@ export class App implements OnDestroy {
       return;
     }
     if (
-      servicePackage === 'restricted' &&
+      packageDefinition.requires_restrictions &&
       (!payload.minimum_reservation_date || !payload.maximum_reservation_date)
     ) {
       this.errorMessage.set(
@@ -4129,7 +4163,7 @@ export class App implements OnDestroy {
       return;
     }
     if (
-      servicePackage === 'restricted' &&
+      packageDefinition.requires_restrictions &&
       !payload.allowed_weekdays?.length &&
       !payload.excluded_date_ranges?.length
     ) {
@@ -4151,13 +4185,7 @@ export class App implements OnDestroy {
     this.setPendingAction({
       title: 'Crear orden nueva',
       message: `Crear orden para documento ${payload.document_number} como ${
-        servicePackage === 'standard'
-          ? 'servicio estándar'
-          : servicePackage === 'restricted'
-            ? 'disponibilidad restringida'
-            : servicePackage === 'integral'
-              ? 'trámite integral con abono inicial y tasa confirmados'
-              : 'servicio personalizado'
+        packageDefinition.label.toLocaleLowerCase('es-PE')
       } por S/${reservationPrice}.`,
       execute: () => this.api.createServiceOrder(payload),
       containsSecret: true,
@@ -5239,7 +5267,7 @@ export class App implements OnDestroy {
     this.newContactWhatsapp.set('');
     this.newContactWhatsappUsername.set('');
     this.newContactSource.set('');
-    this.newServicePackage.set('standard');
+    this.newServicePackage.set(this.servicePackageCatalog()?.default_package ?? 'standard');
     this.newCustomReservationPrice.set('');
     this.newMinimumReservationDate.set('');
     this.newMaximumReservationDate.set('');

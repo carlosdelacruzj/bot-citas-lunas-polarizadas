@@ -13,6 +13,7 @@ from appointment_bot.core.service_packages import (
     SERVICE_PACKAGE_INTEGRAL,
     normalize_service_package,
     package_amounts,
+    validate_service_package_compatibility,
 )
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
@@ -538,6 +539,7 @@ def _commercial_specs_for_pending_rows(
             raise ValueError(f"children[{index}].service_type is invalid.")
         price = Decimal(str(spec["reservation_price"])).quantize(Decimal("0.01"))
         package = normalize_service_package(str(spec["service_package"]))
+        validate_service_package_compatibility(package, service_type)
         package_amounts(package, price)
         if not isinstance(spec["charge_required"], bool):
             raise ValueError(f"children[{index}].charge_required must be boolean.")

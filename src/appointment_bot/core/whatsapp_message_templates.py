@@ -3,6 +3,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from appointment_bot.core.service_packages import (
+    RESTRICTED_TOTAL_AMOUNT,
+    SERVICE_PACKAGE_RESTRICTED,
+    money_text,
+    service_package_label,
+)
 from appointment_bot.utils.sanitization import sanitize_text
 
 MAX_TEMPLATE_LENGTH = 1500
@@ -109,9 +115,9 @@ _RECOMMENDED_APPOINTMENT_REMINDER = (
 
 _COMMON_PREVIEW_CONTEXT = {
     "nombre": "Carlos",
-    "servicio": "Día elegido",
-    "monto": "70.00",
-    "monto_pagado": "70.00",
+    "servicio": service_package_label(SERVICE_PACKAGE_RESTRICTED),
+    "monto": money_text(RESTRICTED_TOTAL_AMOUNT) or "",
+    "monto_pagado": money_text(RESTRICTED_TOTAL_AMOUNT) or "",
     "fecha": "06/09/2026",
     "hora": "10:30",
     "sede": "MAC Lima Norte",

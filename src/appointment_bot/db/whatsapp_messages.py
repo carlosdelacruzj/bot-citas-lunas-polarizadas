@@ -13,6 +13,7 @@ from appointment_bot.core.contacts import (
     normalize_contact_whatsapp,
     resolve_whatsapp_recipient,
 )
+from appointment_bot.core.service_packages import DEFAULT_RESERVATION_PRICE_TEXT
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
     whatsapp_template_definition,
@@ -57,7 +58,7 @@ def prepare_test_whatsapp_message(
     payment, payment_revision = _render_current_template(
         RESERVATION_PAYMENT_TEMPLATE_KEY,
         {
-            "monto": "50.00",
+            "monto": DEFAULT_RESERVATION_PRICE_TEXT,
             "numero_pago": payment_details["phone"],
             "titular_pago": payment_details["account_name"],
         },

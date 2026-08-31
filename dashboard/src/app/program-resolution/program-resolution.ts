@@ -1,4 +1,5 @@
 import { ExcludedDateRange } from '../reservation-rules.model';
+import { ServicePackageKey } from '../service-package.model';
 
 export type ProgramResolutionChoice = '' | 'one' | 'all' | 'pause';
 export type ProgramResolutionCommercialMode = '' | 'same_terms_per_program' | 'custom';
@@ -33,7 +34,7 @@ export interface ProgramResolutionOrderTerms {
   reservation_price: string;
   charge_required: boolean;
   service_type: 'standard' | 'selected_weekday' | 'custom';
-  service_package: 'standard' | 'restricted' | 'integral' | 'custom';
+  service_package: ServicePackageKey;
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;
   allowed_weekdays: number[] | null;

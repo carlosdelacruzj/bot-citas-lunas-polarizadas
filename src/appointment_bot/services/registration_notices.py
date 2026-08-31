@@ -3,6 +3,11 @@ from __future__ import annotations
 from datetime import date
 
 from appointment_bot.config import Settings
+from appointment_bot.core.service_packages import (
+    DEFAULT_RESERVATION_PRICE_TEXT,
+    SERVICE_PACKAGE_STANDARD,
+    service_package_label,
+)
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
     whatsapp_template_definition,
@@ -30,8 +35,8 @@ def enqueue_registration_notice(
     display_name: str | None,
     settings: Settings,
     service_type: str = "standard",
-    service_package: str = "standard",
-    reservation_price: str = "50.00",
+    service_package: str = SERVICE_PACKAGE_STANDARD,
+    reservation_price: str = DEFAULT_RESERVATION_PRICE_TEXT,
     minimum_reservation_date: str | None = None,
     maximum_reservation_date: str | None = None,
     allowed_weekdays: tuple[int, ...] | None = None,
@@ -94,7 +99,7 @@ def _monitoring_started_context(
     return {
         "nombre": name,
         "servicio": _service_label(service_type, service_package),
-        "monto": str(reservation_price or "50.00"),
+        "monto": str(reservation_price or DEFAULT_RESERVATION_PRICE_TEXT),
         "condiciones": _search_conditions_text(
             minimum_reservation_date,
             maximum_reservation_date,
@@ -111,13 +116,11 @@ def _registration_name_context(display_name: str | None) -> dict[str, str]:
     return {"nombre": name}
 
 
-def _service_label(service_type: str, service_package: str = "standard") -> str:
-    if service_package == "integral":
-        return "Trámite integral"
-    return {
-        "selected_weekday": "Día elegido",
-        "custom": "Personalizado",
-    }.get(service_type, "Estándar")
+def _service_label(
+    service_type: str,
+    service_package: str = SERVICE_PACKAGE_STANDARD,
+) -> str:
+    return service_package_label(service_package, service_type)
 
 
 def _weekday_name(value: int) -> str:

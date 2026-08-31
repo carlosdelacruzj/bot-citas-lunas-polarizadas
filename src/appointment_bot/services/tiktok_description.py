@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from math import prod
 
+from appointment_bot.core.service_packages import STANDARD_TOTAL_AMOUNT, money_text
+
 TITLES = (
     "🚨 Nuevas citas pueden aparecer en cualquier momento",
     "🚗 ¿Sigues buscando una cita para lunas polarizadas?",
@@ -156,7 +158,7 @@ def generate_tiktok_publication(
                 "🚗 Monitoreo de disponibilidad\n"
                 "📅 Intento de reserva de citas\n"
                 "✅ Atención rápida por WhatsApp\n"
-                "💰 Servicio: S/50 por trámite\n"
+                f"💰 Servicio: S/{money_text(STANDARD_TOTAL_AMOUNT)} por trámite\n"
                 "💳 Pagas solo cuando la cita ya fue obtenida."
             ),
             f"📲 {call_to_action}\n\nEscríbenos por WhatsApp:\n{phone}",

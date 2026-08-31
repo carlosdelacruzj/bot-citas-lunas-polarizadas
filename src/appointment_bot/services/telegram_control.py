@@ -30,6 +30,16 @@ from appointment_bot.core.contacts import (
     normalize_contact_whatsapp,
     normalize_contact_whatsapp_username,
 )
+from appointment_bot.core.service_packages import (
+    DEFAULT_RESERVATION_PRICE_TEXT,
+    SERVICE_PACKAGE_CUSTOM,
+    SERVICE_PACKAGE_INTEGRAL,
+    SERVICE_PACKAGE_RESTRICTED,
+    SERVICE_PACKAGE_STANDARD,
+    money_text,
+    service_package_definition,
+    service_package_label,
+)
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.logger import setup_logging
@@ -2657,6 +2667,12 @@ def _continue_new_client_conversation(
     return True
 
 
+def _telegram_service_package_option(package_key: str) -> str:
+    definition = service_package_definition(package_key)
+    amount = money_text(definition.total_amount)
+    return definition.label if amount is None else f"{definition.label} - S/{amount}"
+
+
 def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, Any]:
     step = conversation.step
     session_id = conversation.session_id
@@ -2695,19 +2711,19 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
     elif step == 6:
         keyboard = [
             [{
-                "text": "Estandar - S/50",
+                "text": _telegram_service_package_option(SERVICE_PACKAGE_STANDARD),
                 "callback_data": f"nf:{session_id}:service_standard",
             }],
             [{
-                "text": "Dia elegido - S/70",
+                "text": _telegram_service_package_option(SERVICE_PACKAGE_RESTRICTED),
                 "callback_data": f"nf:{session_id}:service_weekday",
             }],
             [{
-                "text": "Tramite integral - S/160",
+                "text": _telegram_service_package_option(SERVICE_PACKAGE_INTEGRAL),
                 "callback_data": f"nf:{session_id}:service_integral",
             }],
             [{
-                "text": "Monto personalizado",
+                "text": _telegram_service_package_option(SERVICE_PACKAGE_CUSTOM),
                 "callback_data": f"nf:{session_id}:service_custom",
             }],
         ]
@@ -2818,6 +2834,22 @@ def _apply_new_client_value(
     return _apply_manual_client_value(conversation, value)
 
 
+def _fixed_service_package_values(
+    package_key: str,
+    *,
+    service_type: str | None = None,
+) -> dict[str, str]:
+    definition = service_package_definition(package_key)
+    reservation_price = money_text(definition.total_amount)
+    if reservation_price is None:
+        raise ValueError(f"El paquete {package_key} exige un monto manual.")
+    return {
+        "service_type": service_type or definition.default_service_type,
+        "service_package": definition.key,
+        "reservation_price": reservation_price,
+    }
+
+
 def _apply_manual_client_value(
     conversation: NewClientConversation,
     value: str,
@@ -2898,34 +2930,29 @@ def _apply_manual_client_value(
         choice = normalized.casefold().replace(" ", "_")
         if choice in {"servicio_estandar", "estandar", "estándar"}:
             conversation.values.update(
-                {
-                    "service_type": "standard",
-                    "service_package": "standard",
-                    "reservation_price": "50.00",
-                }
+                _fixed_service_package_values(SERVICE_PACKAGE_STANDARD)
             )
             conversation.step = 8
         elif choice in {"servicio_dia_elegido", "dia_elegido", "día_elegido"}:
             conversation.values.update(
-                {
-                    "service_type": "selected_weekday",
-                    "service_package": "restricted",
-                    "reservation_price": "70.00",
-                }
+                _fixed_service_package_values(
+                    SERVICE_PACKAGE_RESTRICTED,
+                    service_type="selected_weekday",
+                )
             )
             conversation.step = 7
         elif choice in {"servicio_integral", "tramite_integral", "trámite_integral"}:
             conversation.values.update(
-                {
-                    "service_type": "standard",
-                    "service_package": "integral",
-                    "reservation_price": "160.00",
-                }
+                _fixed_service_package_values(SERVICE_PACKAGE_INTEGRAL)
             )
             conversation.step = 8
         elif choice in {"servicio_personalizado", "personalizado"}:
+            custom = service_package_definition(SERVICE_PACKAGE_CUSTOM)
             conversation.values.update(
-                {"service_type": "custom", "service_package": "custom"}
+                {
+                    "service_type": custom.default_service_type,
+                    "service_package": custom.key,
+                }
             )
         else:
             raise ValueError(
@@ -3040,7 +3067,8 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
             + _service_type_label(
                 values.get("service_type"), values.get("service_package")
             ),
-            f"Precio acordado: S/{values.get('reservation_price') or '50.00'}",
+            "Precio acordado: S/"
+            + str(values.get("reservation_price") or DEFAULT_RESERVATION_PRICE_TEXT),
             "Alcance: " + _service_scope_text(values),
             "",
             "Fecha minima: "
@@ -3055,13 +3083,10 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
 
 
 def _service_type_label(value: Any, service_package: Any = None) -> str:
-    if str(service_package or "") == "integral":
-        return "Tramite integral"
-    return {
-        "standard": "Estandar",
-        "selected_weekday": "Dia elegido",
-        "custom": "Personalizado",
-    }.get(str(value or "standard"), "Estandar")
+    return service_package_label(
+        str(service_package) if service_package else None,
+        str(value) if value else None,
+    )
 
 
 def _service_scope_text(values: dict[str, Any]) -> str:
@@ -3134,8 +3159,10 @@ def format_order_detail(order: dict[str, Any]) -> str:
         f"Estado: {_order_status_label(order.get('status'))}",
         f"Validacion: {_preflight_status_label(order.get('preflight_status'))}",
         f"Prioridad: {order.get('priority', 0)}",
-        f"Servicio: {_service_type_label(order.get('service_type'))}",
-        f"Precio acordado: S/{order.get('reservation_price') or '50.00'}",
+        "Servicio: "
+        + _service_type_label(order.get("service_type"), order.get("service_package")),
+        "Precio acordado: S/"
+        + str(order.get("reservation_price") or DEFAULT_RESERVATION_PRICE_TEXT),
         f"Reserva: {_reservation_status_label(order.get('reservation_status'))}",
         f"Pago: {_payment_status_label(order.get('payment_status'))}",
     ]

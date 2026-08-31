@@ -26,6 +26,11 @@ HTTP `201` prueba persistencia, no activacion.
 
 ## Servicio y precio
 
+`core/service_packages.py` es la autoridad comercial de claves, etiquetas,
+precio fijo, abono inicial, tasa oficial, saldo y compatibilidad. Admin API
+expone esa misma definicion en `GET /api/v1/service-packages`; dashboard,
+Telegram, previews y avisos no reconstruyen montos por su cuenta.
+
 `service_type` admite `standard`, `selected_weekday` y `custom`.
 `reservation_price` debe ser positivo y se conserva por orden. `S/50` es el
 default cuando no se especifica; un cambio global no reescribe ordenes creadas.
@@ -37,6 +42,20 @@ paquete `integral` fija `S/160`, registra un primer abono de `S/80` y conserva
 `S/71.40` como tasa oficial pagada por cuenta del cliente. Su alta supone que el
 operador ya recibio el abono, pago la tasa y creo la cuenta y solicitud antes de
 entregar las credenciales al preflight.
+
+Combinaciones admitidas para nuevas ordenes:
+
+| Paquete | Precio | `service_type` compatible |
+| --- | --- | --- |
+| `standard` | fijo `S/50` | `standard` |
+| `restricted` | fijo `S/70` | `selected_weekday`, `custom` |
+| `integral` | fijo `S/160` | `standard` |
+| `custom` | definido por orden | cualquiera vigente |
+
+El paquete describe el acuerdo comercial; las reglas de fecha siguen en
+`minimum_date`, `maximum_date`, `allowed_weekdays` y
+`excluded_date_ranges`. `selected_weekday` conserva su requisito historico de
+un unico dia, mientras `custom` permite reglas mas generales.
 
 ## Restricciones
 
