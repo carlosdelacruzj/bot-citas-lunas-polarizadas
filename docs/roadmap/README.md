@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-30`.
+Ultima priorizacion: `2026-08-31`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -16,7 +16,25 @@ generados en `reports/`.
 5. Antes de reiniciar, comprobar trabajo activo.
 6. Cerrar una tarea solo con evidencia de aceptacion.
 
+## Congelamiento temporal de features
+
+No iniciar features comerciales nuevas hasta cerrar las fases 0 a 4 del
+[`plan integral de endurecimiento`](development-hardening-plan.md). Se permiten
+correcciones, pruebas, observabilidad y refactors incluidos en ese plan. El
+cambio local del esquema `v71` y paquete integral debe estabilizarse antes de
+otro crecimiento funcional.
+
 ## P0 - Aceptacion natural y seguridad
+
+### Endurecimiento tecnico integral
+
+Ejecutar en orden las fases 0 a 4 del
+[`plan integral de endurecimiento`](development-hardening-plan.md): linea base,
+riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v71`,
+privacidad y red automatizada de seguridad.
+
+Cierre: los riesgos P0 tienen pruebas, el paquete integral es coherente de
+extremo a extremo y un clon limpio pasa CI backend/frontend reproducible.
 
 ### Ventana de retiro de compatibilidad actual
 
@@ -107,13 +125,10 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-No iniciar antes de estabilizar P0-P2:
-
-1. romper el ciclo entre `appointments.py` y `appointment_selection.py`;
-2. sustituir mutaciones globales de `queue_runtime.py`;
-3. dividir `dashboard/src/app/app.ts` por dominio;
-4. reducir `ViewEncapsulation.None` gradualmente;
-5. uniformar errores HTTP con `request_id` y respuesta sanitizada;
+No iniciar antes de cerrar las fases 0 a 4 del plan integral. Las fases 5 a 8
+gobiernan fronteras backend, ciclos, globals, modulos grandes, dashboard por
+dominio, errores HTTP, contratos, consultas y estandar permanente. Ejecutar una
+frontera por vez y no combinar refactor con cambios funcionales ajenos.
 
 ## Fuera de alcance o sin autorizacion
 
