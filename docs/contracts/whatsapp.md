@@ -2,8 +2,9 @@
 
 Estado: vigente. Ultima verificacion: `2026-08-31`.
 
-Codigo propietario: `src/appointment_bot/services/whatsapp*` y
-`src/appointment_bot/db/whatsapp*`.
+Codigo propietario: `src/appointment_bot/core/whatsapp_delivery.py`,
+`src/appointment_bot/browser/whatsapp_web.py`,
+`src/appointment_bot/services/whatsapp*` y `src/appointment_bot/db/whatsapp*`.
 
 ## Propiedad y cola
 
@@ -23,7 +24,7 @@ registro individuales al crearse por esta resolucion.
 
 - `sent`: evidencia tecnica suficiente de salida;
 - `uncertain`: hubo riesgo de interaccion o envio, pero no confirmacion segura;
-- `failed`: fallo antes de una posible entrega o fallo clasificado;
+- `failed`: fallo demostrado antes de iniciar una posible interaccion;
 - `dismissed`: decision de revision que cierra el trabajo original sin cambiar
   su resultado tecnico historico.
 
@@ -33,6 +34,25 @@ Marcadores ocultos o etiquetas genericas no deciden.
 
 `sent`, llegada al destinatario, lectura y confirmacion del cliente son hechos
 distintos. `uncertain` nunca se reintenta automaticamente.
+
+Cada intento automatico se clasifica mediante cuatro fases:
+
+1. `pre_interaction`: validacion y preparacion sin accion posible sobre el chat;
+2. `interaction_started`: el navegador entro en el limite donde pudo enviar;
+3. `confirmation_observed`: WhatsApp mostro evidencia tecnica de salida;
+4. `confirmation_persisted`: la confirmacion quedo guardada.
+
+Solo un resultado que demuestre `pre_interaction` puede terminar en `failed`.
+Una excepcion de navegador, persistencia o callback desde
+`interaction_started` termina en `uncertain`, incluso si no puede determinarse
+el componente exacto. El diagnostico durable conserva fase, componente,
+destinatario enmascarado, identificadores de contexto y la ruta de la captura
+cuando el navegador pudo producirla.
+
+Dispatcher y scheduler solo admiten trabajos `queued` o `blocked`. Un lease
+`running` vencido se cierra como `uncertain`; ni el recuperador ni los lotes de
+recordatorios vuelven a encolarlo. Un nuevo trabajo de recuperacion requiere una
+accion separada y autorizada del operador.
 
 ## Paquetes
 

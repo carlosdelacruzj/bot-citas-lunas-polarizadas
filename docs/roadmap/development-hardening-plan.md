@@ -457,13 +457,13 @@ sesion, claim ni intento.
 Objetivo: garantizar que un fallo posterior a una posible interaccion no quede
 como `failed` reintentable.
 
-- [ ] Modelar fases `pre_interaction`, `interaction_started`,
+- [x] Modelar fases `pre_interaction`, `interaction_started`,
   `confirmation_observed` y `confirmation_persisted`.
-- [ ] Marcar `uncertain` toda excepcion despues de iniciar una interaccion.
-- [ ] Preservar screenshot, componente, destinatario enmascarado y contexto.
-- [ ] Mantener `failed` solo para fallos demostrablemente anteriores a envio.
-- [ ] Probar excepcion de navegador, persistencia y callback despues del envio.
-- [ ] Confirmar que ningun scheduler o recuperador reintenta `uncertain`.
+- [x] Marcar `uncertain` toda excepcion despues de iniciar una interaccion.
+- [x] Preservar screenshot, componente, destinatario enmascarado y contexto.
+- [x] Mantener `failed` solo para fallos demostrablemente anteriores a envio.
+- [x] Probar excepcion de navegador, persistencia y callback despues del envio.
+- [x] Confirmar que ningun scheduler o recuperador reintenta `uncertain`.
 
 Criterio de cierre: no existe un camino donde un envio posible termine como
 automaticamente reintentable.

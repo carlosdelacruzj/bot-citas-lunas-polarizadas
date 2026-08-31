@@ -23,7 +23,9 @@ _HEADLESS_WHATSAPP_USER_AGENT: str | None = None
 
 
 class WhatsAppSendUncertain(RuntimeError):
-    pass
+    def __init__(self, message: str, *, evidence_path: str | None = None) -> None:
+        super().__init__(message)
+        self.evidence_path = evidence_path
 
 
 class _AttachmentBeforeFileSelectionError(RuntimeError):
@@ -450,8 +452,13 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
                 draft_mode="album",
                 manual_send_required=True,
                 sent=False,
+                delivery_phase="interaction_started",
+                evidence_path=exc.evidence_path,
             )
-        _save_whatsapp_debug_screenshot(page, "whatsapp-album-sent")
+        sent_evidence_path = _save_whatsapp_debug_screenshot(
+            page,
+            "whatsapp-album-sent",
+        )
         context.close()
         logger.info(
             "WhatsApp Web album sent automatically: message_id=%s items=%s",
@@ -465,6 +472,8 @@ def _prepare_album(context: BrowserContext, draft: dict[str, object]) -> dict[st
             draft_mode="album",
             manual_send_required=False,
             sent=True,
+            delivery_phase="confirmation_observed",
+            evidence_path=sent_evidence_path,
         )
     ready_screenshot = Path(".runtime/whatsapp-album-ready.png").resolve()
     ready_screenshot.parent.mkdir(parents=True, exist_ok=True)
@@ -589,6 +598,10 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
                 evidence_path=evidence_path,
                 delivery_components=delivery_components,
             )
+        sent_evidence_path = _save_whatsapp_debug_screenshot(
+            page,
+            f"whatsapp-followup-{_safe_whatsapp_artifact_name(message_id)}-sent",
+        )
         context.close()
         logger.info(
             "WhatsApp Web follow-up sent automatically: message_id=%s documents=%s",
@@ -602,6 +615,8 @@ def _prepare_documents(context: BrowserContext, draft: dict[str, object]) -> dic
             draft_mode="documents",
             manual_send_required=False,
             sent=True,
+            delivery_phase="confirmation_observed",
+            evidence_path=sent_evidence_path,
             delivery_components=delivery_components,
         )
     draft_mode = _fill_caption(
@@ -720,13 +735,14 @@ def _send_album(
                     initial_signatures=initial_image_signatures,
                     expected_count=expected_count,
                 ):
-                    _save_whatsapp_debug_screenshot(
+                    evidence_path = _save_whatsapp_debug_screenshot(
                         page,
                         uncertain_screenshot_name,
                     )
                     raise WhatsAppSendUncertain(
                         "WhatsApp cerro la vista previa, pero no confirmo "
-                        "la carga de todas las imagenes."
+                        "la carga de todas las imagenes.",
+                        evidence_path=evidence_path,
                     )
                 return
         elif time.monotonic() >= next_send_retry_at:
@@ -736,9 +752,13 @@ def _send_album(
                 page.keyboard.press("Enter")
             next_send_retry_at = time.monotonic() + 2
         page.wait_for_timeout(500)
-    _save_whatsapp_debug_screenshot(page, "whatsapp-album-send-not-confirmed")
+    evidence_path = _save_whatsapp_debug_screenshot(
+        page,
+        uncertain_screenshot_name,
+    )
     raise WhatsAppSendUncertain(
-        "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles."
+        "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles.",
+        evidence_path=evidence_path,
     )
 
 
@@ -904,6 +924,8 @@ def _send_daily_slot_summary(
                         "imagenes confirmadas antes de detener el envio."
                     ),
                     message_id=message_id,
+                    delivery_phase="interaction_started",
+                    evidence_path=exc.evidence_path,
                     delivery_components=delivery_components,
                 )
             confirmed_image_count += len(batch)
@@ -932,7 +954,10 @@ def _send_daily_slot_summary(
             delivery_components=delivery_components,
         )
     delivery_components["publication"] = "confirmed"
-    _save_whatsapp_debug_screenshot(page, "whatsapp-daily-summary-sent")
+    sent_evidence_path = _save_whatsapp_debug_screenshot(
+        page,
+        "whatsapp-daily-summary-sent",
+    )
     context.close()
     return _result(
         "sent",
@@ -942,6 +967,8 @@ def _send_daily_slot_summary(
         ),
         message_id=message_id,
         sent=True,
+        delivery_phase="confirmation_observed",
+        evidence_path=sent_evidence_path,
         delivery_components=delivery_components,
     )
 
@@ -973,7 +1000,7 @@ def _send_registration_notice(
                 "text-send-uncertain.png"
             ),
         )
-    _save_whatsapp_debug_screenshot(
+    sent_evidence_path = _save_whatsapp_debug_screenshot(
         page,
         f"whatsapp-registration-notice-sent-{evidence_id}",
     )
@@ -983,6 +1010,8 @@ def _send_registration_notice(
         "Aviso automatico de registro enviado.",
         message_id=message_id,
         sent=True,
+        delivery_phase="confirmation_observed",
+        evidence_path=sent_evidence_path,
     )
 
 
@@ -1013,7 +1042,7 @@ def _send_appointment_reminder(
                 "text-send-uncertain.png"
             ),
         )
-    _save_whatsapp_debug_screenshot(
+    sent_evidence_path = _save_whatsapp_debug_screenshot(
         page,
         f"whatsapp-appointment-reminder-sent-{evidence_id}",
     )
@@ -1023,6 +1052,8 @@ def _send_appointment_reminder(
         "Recordatorio automatico de cita enviado.",
         message_id=message_id,
         sent=True,
+        delivery_phase="confirmation_observed",
+        evidence_path=sent_evidence_path,
     )
 
 

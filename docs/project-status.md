@@ -157,6 +157,9 @@ Reglas vigentes:
 - albumes y paquetes postpago conservan confirmacion por componentes;
 - `sent` requiere evidencia tecnica suficiente;
 - un reloj o indicador pendiente visible veta la confirmacion;
+- los intentos distinguen preparacion, interaccion, confirmacion observada y
+  confirmacion persistida; solo la preparacion demostrable puede quedar
+  `failed`;
 - `uncertain` preserva contexto y nunca genera reintento automatico;
 - conciliacion manual registra la decision sin reescribir el resultado tecnico;
 - llegada al destinatario y lectura son afirmaciones separadas.

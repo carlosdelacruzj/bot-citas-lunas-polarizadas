@@ -15,6 +15,10 @@ from appointment_bot.browser.whatsapp_web import (
     validate_whatsapp_web_session,
 )
 from appointment_bot.config import Settings
+from appointment_bot.core.whatsapp_delivery import (
+    WhatsAppAttemptContext,
+    masked_whatsapp_recipient,
+)
 from appointment_bot.db.appointment_reminder_control import (
     REMINDER_LEAD_DAYS,
     get_appointment_reminder_control,
@@ -57,7 +61,6 @@ from appointment_bot.utils.sanitization import sanitize_text
 logger = logging.getLogger(__name__)
 POLL_SECONDS = 1.0
 LIMA_TIMEZONE = ZoneInfo("America/Lima")
-
 
 def _automation_result_detail(result: dict[str, object]) -> str:
     details = [str(result.get("message") or "WhatsApp no confirmo el envio.")]
@@ -155,27 +158,39 @@ class WhatsAppAutomationDispatcher:
     def _process_job(self, job: WhatsAppAutomationJob) -> None:
         order_id = job["order_id"]
         job_kind = job["job_kind"]
+        attempt = WhatsAppAttemptContext(
+            job_key=job["job_key"],
+            job_kind=job_kind,
+            recipient=masked_whatsapp_recipient(
+                job["recipient_phone"],
+                job["recipient_username"],
+            ),
+        )
         logger.info(
             "Starting automatic WhatsApp attempt: target=%s kind=%s",
             order_id or job["report_date"],
             job_kind,
         )
-        if job_kind == "appointment_reminder":
-            refreshed_job, skip_reason = self._revalidate_appointment_reminder(job)
-            if refreshed_job is None:
-                self._finish(
-                    job,
-                    status="skipped",
-                    error_message=sanitize_text(skip_reason),
-                )
-                logger.warning(
-                    "Appointment reminder skipped before send: job_key=%s reason=%s",
-                    job["job_key"],
-                    skip_reason,
-                )
-                return
-            job = refreshed_job
         try:
+            if job_kind == "appointment_reminder":
+                refreshed_job, skip_reason = self._revalidate_appointment_reminder(job)
+                if refreshed_job is None:
+                    self._finish(
+                        job,
+                        status="skipped",
+                        error_message=sanitize_text(skip_reason),
+                    )
+                    logger.warning(
+                        "Appointment reminder skipped before send: job_key=%s reason=%s",
+                        job["job_key"],
+                        skip_reason,
+                    )
+                    return
+                job = refreshed_job
+                attempt.recipient = masked_whatsapp_recipient(
+                    job["recipient_phone"],
+                    job["recipient_username"],
+                )
             if (
                 order_id is not None
                 and job_kind in {"reservation_album", "post_payment_followup"}
@@ -185,7 +200,9 @@ class WhatsAppAutomationDispatcher:
                     settings=self.settings,
                 )
             ):
-                self._finish(job, status="sent")
+                attempt.advance("confirmation_observed", component="existing_message")
+                if self._finish(job, status="sent"):
+                    attempt.advance("confirmation_persisted")
                 logger.info(
                     "Automatic WhatsApp job already satisfied: order_id=%s kind=%s",
                     order_id,
@@ -195,35 +212,40 @@ class WhatsAppAutomationDispatcher:
             if job_kind == "reservation_album":
                 if order_id is None:
                     raise ValueError("El trabajo de evidencia no contiene order_id.")
-                message_id, result = self._send_reservation_album(order_id)
+                message_id, result = self._send_reservation_album(order_id, attempt)
             elif job_kind == "post_payment_followup":
                 if order_id is None:
                     raise ValueError("El trabajo post-pago no contiene order_id.")
-                message_id, result = self._send_post_payment_followup(order_id)
+                message_id, result = self._send_post_payment_followup(order_id, attempt)
             elif job_kind == "daily_slot_summary":
-                message_id, result = self._send_daily_slot_summary(job)
+                message_id, result = self._send_daily_slot_summary(job, attempt)
             elif job_kind == "registration_notice":
-                message_id, result = self._send_registration_notice(job)
+                message_id, result = self._send_registration_notice(job, attempt)
             elif job_kind == "appointment_reminder":
-                message_id, result = self._send_appointment_reminder(job)
+                message_id, result = self._send_appointment_reminder(job, attempt)
             else:
                 raise ValueError(f"Tipo de trabajo WhatsApp no soportado: {job_kind}")
         except Exception as exc:
+            final_status = attempt.failure_status
+            detail = attempt.failure_detail(str(exc))
             logger.exception(
-                "Automatic WhatsApp preparation failed: order_id=%s kind=%s",
+                "Automatic WhatsApp attempt failed: order_id=%s kind=%s phase=%s",
                 order_id,
                 job_kind,
+                attempt.phase,
             )
             self._finish(
                 job,
-                status="failed",
-                error_message=sanitize_text(str(exc)),
+                status=final_status,
+                message_id=attempt.message_id,
+                error_message=sanitize_text(detail),
             )
-            self._notify_failure(job, "failed", str(exc))
+            self._notify_failure(job, final_status, detail)
             return
 
         if result.get("sent"):
-            self._finish(job, status="sent", message_id=message_id)
+            if self._finish(job, status="sent", message_id=message_id):
+                attempt.advance("confirmation_persisted")
             logger.info(
                 "Automatic WhatsApp attempt completed: order_id=%s kind=%s message_id=%s",
                 order_id,
@@ -248,22 +270,20 @@ class WhatsAppAutomationDispatcher:
                 )
             self._notify_preflight_blocked(job, message)
             return
-        final_status = (
-            "uncertain"
-            if result_status in {"web_unavailable", "send_uncertain"}
-            else "failed"
-        )
+        final_status = attempt.failure_status
+        detail = attempt.failure_detail(message)
         self._finish(
             job,
             status=final_status,
             message_id=message_id,
-            error_message=sanitize_text(message),
+            error_message=sanitize_text(detail),
         )
-        self._notify_failure(job, final_status, message, result=result)
+        self._notify_failure(job, final_status, detail, result=result)
 
     def _send_reservation_album(
         self,
         order_id: str,
+        attempt: WhatsAppAttemptContext,
     ) -> tuple[str, dict[str, object]]:
         prepared = prepare_order_whatsapp_message(
             order_id,
@@ -271,6 +291,7 @@ class WhatsAppAutomationDispatcher:
             settings=self.settings,
         )
         message_id = str(prepared["message_id"])
+        attempt.message_id = message_id
         confirmation = get_whatsapp_web_draft(
             message_id,
             draft_kind="confirmation",
@@ -281,14 +302,19 @@ class WhatsAppAutomationDispatcher:
             draft_kind="payment",
             settings=self.settings,
         )
+        attempt.advance("interaction_started", component="album")
         result = prepare_whatsapp_web_album(confirmation, payment, auto_send=True)
+        attempt.absorb_result(result)
         if result.get("sent"):
+            attempt.advance("confirmation_observed", component="album_persistence")
             mark_whatsapp_message_sent(message_id, settings=self.settings)
+            attempt.advance("confirmation_persisted")
         return message_id, result
 
     def _send_post_payment_followup(
         self,
         order_id: str,
+        attempt: WhatsAppAttemptContext,
     ) -> tuple[str, dict[str, object]]:
         prepared = prepare_post_payment_whatsapp_message(
             order_id,
@@ -296,15 +322,21 @@ class WhatsAppAutomationDispatcher:
             settings=self.settings,
         )
         message_id = str(prepared["message_id"])
+        attempt.message_id = message_id
         draft = get_followup_web_draft(message_id, settings=self.settings)
+        attempt.advance("interaction_started", component="documents_and_text")
         result = prepare_whatsapp_web_documents(draft)
+        attempt.absorb_result(result)
         if result.get("sent"):
+            attempt.advance("confirmation_observed", component="followup_persistence")
             mark_followup_message_sent(message_id, settings=self.settings)
+            attempt.advance("confirmation_persisted")
         return message_id, result
 
     def _send_daily_slot_summary(
         self,
         job: WhatsAppAutomationJob,
+        attempt: WhatsAppAttemptContext,
     ) -> tuple[str, dict[str, object]]:
         recipient_phone = job["recipient_phone"]
         message_text = job["message_text"]
@@ -321,6 +353,11 @@ class WhatsAppAutomationDispatcher:
             job["attachment_paths"],
         )
         message_id = job["job_key"]
+        attempt.advance(
+            "interaction_started",
+            component="daily_summary",
+            message_id=message_id,
+        )
         result = send_whatsapp_web_daily_slot_summary(
             message_id=message_id,
             recipient_phone=recipient_phone,
@@ -328,11 +365,13 @@ class WhatsAppAutomationDispatcher:
             publication_text=publication_text,
             attachment_paths=attachment_paths,
         )
+        attempt.absorb_result(result)
         return message_id, result
 
     def _send_registration_notice(
         self,
         job: WhatsAppAutomationJob,
+        attempt: WhatsAppAttemptContext,
     ) -> tuple[str, dict[str, object]]:
         recipient_phone = job["recipient_phone"]
         recipient_username = job["recipient_username"]
@@ -346,17 +385,20 @@ class WhatsAppAutomationDispatcher:
                 "El trabajo del aviso de registro no contiene orden, destinatario o texto."
             )
         message_id = job["job_key"]
+        attempt.advance("interaction_started", component="message", message_id=message_id)
         result = send_whatsapp_web_registration_notice(
             message_id=message_id,
             recipient_phone=recipient_phone,
             recipient_username=recipient_username,
             message_text=message_text,
         )
+        attempt.absorb_result(result)
         return message_id, result
 
     def _send_appointment_reminder(
         self,
         job: WhatsAppAutomationJob,
+        attempt: WhatsAppAttemptContext,
     ) -> tuple[str, dict[str, object]]:
         recipient_phone = job["recipient_phone"]
         recipient_username = job["recipient_username"]
@@ -371,12 +413,14 @@ class WhatsAppAutomationDispatcher:
                 "El recordatorio no contiene reserva, destinatario o texto."
             )
         message_id = job["job_key"]
+        attempt.advance("interaction_started", component="message", message_id=message_id)
         result = send_whatsapp_web_appointment_reminder(
             message_id=message_id,
             recipient_phone=recipient_phone,
             recipient_username=recipient_username,
             message_text=message_text,
         )
+        attempt.absorb_result(result)
         self._stop_event.wait(self.settings.appointment_reminders_send_interval_seconds)
         return message_id, result
 
@@ -441,7 +485,7 @@ class WhatsAppAutomationDispatcher:
         status: WhatsAppAutomationStatus,
         message_id: str | None = None,
         error_message: str | None = None,
-    ) -> None:
+    ) -> bool:
         updated = finish_whatsapp_automation_job(
             job["job_key"],
             owner_token=self.owner_token,
@@ -455,6 +499,7 @@ class WhatsAppAutomationDispatcher:
                 "WhatsApp automation job ownership changed before completion: %s",
                 job["job_key"],
             )
+        return updated
 
     def _notify_failure(
         self,
