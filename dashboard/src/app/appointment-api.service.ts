@@ -246,6 +246,9 @@ export interface ServiceOrder {
   charge_required: boolean;
   service_type: 'standard' | 'selected_weekday' | 'custom';
   reservation_price: string;
+  service_package: 'standard' | 'restricted' | 'integral' | 'custom';
+  official_fee_amount: string;
+  initial_payment_amount: string;
   status: string;
   reservation_status: string | null;
   reservation_site: string | null;
@@ -1099,6 +1102,7 @@ export interface CreateServiceOrderPayload {
   applicant_name?: string | null;
   charge_required?: boolean;
   service_type?: 'standard' | 'selected_weekday' | 'custom';
+  service_package?: 'standard' | 'restricted' | 'integral' | 'custom';
   reservation_price?: string;
   minimum_reservation_date?: string | null;
   maximum_reservation_date?: string | null;

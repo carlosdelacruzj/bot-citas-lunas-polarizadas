@@ -14,6 +14,12 @@ from appointment_bot.core.models import (
     ServiceOrderCreateResult,
     ServiceOrderRuntime,
 )
+from appointment_bot.core.service_packages import (
+    SERVICE_PACKAGE_INTEGRAL,
+    infer_service_package,
+    normalize_service_package,
+    package_amounts,
+)
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
     DEFAULT_RESERVATION_AMOUNT,
@@ -46,6 +52,7 @@ def create_service_order(
     applicant_name: str | None = None,
     charge_required: bool = True,
     service_type: str = "standard",
+    service_package: str | None = None,
     reservation_price: Decimal | None = None,
     minimum_reservation_hour: int | None = None,
     minimum_reservation_date: str | date | None = None,
@@ -76,6 +83,13 @@ def create_service_order(
     )
     if effective_reservation_price <= 0:
         raise ValueError("reservation_price must be greater than zero.")
+    effective_service_package = normalize_service_package(
+        service_package or infer_service_package(service_type)
+    )
+    official_fee_amount, initial_payment_amount = package_amounts(
+        effective_service_package,
+        effective_reservation_price,
+    )
     if minimum_reservation_hour is not None:
         raise ValueError("Las restricciones horarias ya no se aceptan.")
     parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
@@ -193,11 +207,12 @@ def create_service_order(
                     parent_order_id = None
                 else:
                     raise ValueError(f"No existe la orden padre: {parent_order_id}")
-        connection.execute(
+        persisted_order = connection.execute(
             """
             INSERT INTO service_orders (
                 order_id, applicant_id, portal_account_id, priority, charge_required,
-                service_type, reservation_price, acquisition_source, acquisition_source_origin,
+                service_type, reservation_price, service_package, official_fee_amount,
+                initial_payment_amount, acquisition_source, acquisition_source_origin,
                 minimum_hour, minimum_date, maximum_date, allowed_weekdays,
                 excluded_date_ranges,
                 parent_order_id, program_expediente, program_plate,
@@ -205,7 +220,8 @@ def create_service_order(
             )
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s
             )
             ON CONFLICT(order_id) DO UPDATE SET
                 applicant_id = excluded.applicant_id,
@@ -221,6 +237,21 @@ def create_service_order(
                     WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
                         THEN service_orders.reservation_price
                     ELSE excluded.reservation_price
+                END,
+                service_package = CASE
+                    WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
+                        THEN service_orders.service_package
+                    ELSE excluded.service_package
+                END,
+                official_fee_amount = CASE
+                    WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
+                        THEN service_orders.official_fee_amount
+                    ELSE excluded.official_fee_amount
+                END,
+                initial_payment_amount = CASE
+                    WHEN service_orders.status IN ('reserved_payment_pending', 'paid')
+                        THEN service_orders.initial_payment_amount
+                    ELSE excluded.initial_payment_amount
                 END,
                 acquisition_source = COALESCE(
                     service_orders.acquisition_source,
@@ -257,6 +288,7 @@ def create_service_order(
                     ELSE excluded.status
                 END,
                 updated_at = excluded.updated_at
+            RETURNING service_package
             """,
             (
                 order_id,
@@ -266,6 +298,9 @@ def create_service_order(
                 charge_required,
                 service_type,
                 effective_reservation_price,
+                effective_service_package,
+                official_fee_amount,
+                initial_payment_amount,
                 _optional_clean_text(contact_source),
                 "order_creation" if _optional_clean_text(contact_source) else None,
                 None,
@@ -280,7 +315,7 @@ def create_service_order(
                 now,
                 now,
             ),
-        )
+        ).fetchone()
         connection.execute(
             """
             INSERT INTO order_state (order_id, preflight_status, preflight_message)
@@ -298,6 +333,74 @@ def create_service_order(
                 "Validacion de acceso pendiente." if require_preflight else None,
             ),
         )
+        if (
+            persisted_order is not None
+            and str(persisted_order["service_package"]) == SERVICE_PACKAGE_INTEGRAL
+        ):
+            payment_id = _id_from_value("payment", order_id)
+            connection.execute(
+                """
+                INSERT INTO payments (
+                    payment_id, order_id, status, amount_agreed, amount_paid,
+                    currency, paid_at, created_at, updated_at
+                )
+                VALUES (%s, %s, 'pending', %s, %s, 'PEN', NULL, %s, %s)
+                ON CONFLICT(payment_id) DO NOTHING
+                """,
+                (
+                    payment_id,
+                    order_id,
+                    effective_reservation_price,
+                    initial_payment_amount,
+                    now,
+                    now,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO payment_receipts (
+                    receipt_id, payment_id, order_id, amount, received_at,
+                    source, actor, created_at
+                )
+                VALUES (%s, %s, %s, %s, %s, 'integral_initial_payment',
+                        'dashboard-owner', %s)
+                ON CONFLICT(receipt_id) DO NOTHING
+                """,
+                (
+                    _id_from_value("receipt", f"integral_initial:{order_id}"),
+                    payment_id,
+                    order_id,
+                    initial_payment_amount,
+                    now,
+                    now,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO finance_entries (
+                    entry_id, occurred_on, entry_kind, category_code, vendor, description,
+                    amount_original, currency, exchange_rate_pen, amount_pen, quantity, unit,
+                    order_id, notes, data_quality, status, created_at, updated_at
+                )
+                VALUES (
+                    %s, %s, 'expense', 'government_fee', %s, %s,
+                    %s, 'PEN', 1, %s, 1, 'tasa', %s, %s, 'actual', 'active', %s, %s
+                )
+                ON CONFLICT(entry_id) DO NOTHING
+                """,
+                (
+                    _id_from_value("finance", f"government_fee:{order_id}"),
+                    date.fromisoformat(now[:10]),
+                    "Págalo.pe / Banco de la Nación",
+                    "Tasa 08362 para permiso nuevo de lunas polarizadas",
+                    official_fee_amount,
+                    official_fee_amount,
+                    order_id,
+                    "Costo directo incluido en el paquete integral.",
+                    now,
+                    now,
+                ),
+            )
         if contact_whatsapp or contact_whatsapp_username or contact_name:
             contact_id = _upsert_contact(
                 connection,
@@ -555,6 +658,7 @@ def split_service_order_programs(
         parent = connection.execute(
             """
             SELECT priority, charge_required, service_type, reservation_price,
+                   service_package,
                    minimum_hour, minimum_date, maximum_date,
                    allowed_weekdays, excluded_date_ranges
             FROM service_orders
@@ -584,6 +688,7 @@ def split_service_order_programs(
                 applicant_name=runtime.name,
                 charge_required=bool(parent["charge_required"]),
                 service_type=str(parent["service_type"]),
+                service_package=str(parent["service_package"]),
                 reservation_price=parent["reservation_price"],
                 minimum_reservation_hour=None,
                 minimum_reservation_date=parent["minimum_date"],
@@ -631,6 +736,7 @@ def get_service_order_runtime(
                    wc.phone AS contact_phone, wc.username AS contact_username,
                    wc.contact_source,
                    so.priority, so.status, so.service_type, so.reservation_price,
+                   so.service_package, so.official_fee_amount, so.initial_payment_amount,
                    so.minimum_date, so.maximum_date, so.allowed_weekdays,
                    so.excluded_date_ranges,
                    so.created_at, so.updated_at,
@@ -664,6 +770,7 @@ def get_claimed_service_order_runtime(
                    wc.phone AS contact_phone, wc.username AS contact_username,
                    wc.contact_source,
                    so.priority, so.status, so.service_type, so.reservation_price,
+                   so.service_package, so.official_fee_amount, so.initial_payment_amount,
                    so.minimum_date, so.maximum_date, so.allowed_weekdays,
                    so.excluded_date_ranges,
                    so.created_at, so.updated_at,
@@ -702,6 +809,9 @@ def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRu
         program_plate=row.get("program_plate"),
         service_type=str(row.get("service_type") or "standard"),
         reservation_price=f"{row.get('reservation_price'):.2f}",
+        service_package=str(row.get("service_package") or "standard"),
+        official_fee_amount=f"{row.get('official_fee_amount') or 0:.2f}",
+        initial_payment_amount=f"{row.get('initial_payment_amount') or 0:.2f}",
         minimum_reservation_date=(
             str(row["minimum_date"]) if row.get("minimum_date") is not None else None
         ),

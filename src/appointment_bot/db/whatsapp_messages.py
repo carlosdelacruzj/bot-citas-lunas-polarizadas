@@ -114,7 +114,7 @@ def prepare_order_whatsapp_message(
                    wc.username AS contact_username,
                    r.status AS reservation_status, r.site, r.appointment_date,
                    r.appointment_hour, r.evidence_path, r.run_id,
-                   p.status AS payment_status, p.amount_agreed,
+                   p.status AS payment_status, p.amount_agreed, p.amount_paid,
                    ARRAY(
                        SELECT rs.path
                        FROM run_screenshots rs
@@ -135,7 +135,7 @@ def prepare_order_whatsapp_message(
                 LIMIT 1
             ) r ON true
             LEFT JOIN LATERAL (
-                SELECT status, amount_agreed
+                SELECT status, amount_agreed, amount_paid
                 FROM payments
                 WHERE order_id = so.order_id
                 ORDER BY created_at DESC
@@ -193,7 +193,11 @@ def prepare_order_whatsapp_message(
         },
         settings=effective_settings,
     )
-    amount = f"{row['amount_agreed']:.2f}"
+    outstanding_amount = max(
+        row["amount_agreed"] - (row["amount_paid"] or 0),
+        0,
+    )
+    amount = f"{outstanding_amount:.2f}"
     payment, payment_revision = _render_current_template(
         RESERVATION_PAYMENT_TEMPLATE_KEY,
         {

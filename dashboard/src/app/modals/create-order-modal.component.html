@@ -130,6 +130,7 @@
             >
               <option value="standard">Servicio regular — S/50</option>
               <option value="restricted">Disponibilidad restringida — S/70</option>
+              <option value="integral">Trámite integral — S/160 (S/80 + S/80)</option>
               <option value="custom">Monto personalizado</option>
             </select>
           </label>
@@ -154,6 +155,17 @@
             Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
             disponibilidad acordada. El precio queda fijado en S/70.
           </p>
+        }
+        @if (view.newServicePackage() === 'integral') {
+          <p class="required-help">
+            Al crear la orden confirmas que recibiste el primer abono de S/80 y pagaste la tasa
+            oficial de S/71.40. El sistema registrará ambos movimientos y dejará S/80 pendientes.
+          </p>
+          <dl class="payment-summary">
+            <div><dt>Total</dt><dd>S/160.00</dd></div>
+            <div><dt>Tasa oficial</dt><dd>S/71.40</dd></div>
+            <div><dt>Gestión</dt><dd>S/88.60</dd></div>
+          </dl>
         }
       </fieldset>
 

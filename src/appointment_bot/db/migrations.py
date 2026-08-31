@@ -10,7 +10,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 70
+SCHEMA_VERSION = 71
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -101,6 +101,15 @@ def create_current_schema(connection: Connection) -> None:
             service_type text NOT NULL DEFAULT 'standard',
             reservation_price numeric(12, 2) NOT NULL DEFAULT 50.00 CHECK (
                 reservation_price > 0
+            ),
+            service_package text NOT NULL DEFAULT 'standard' CHECK (
+                service_package IN ('standard', 'restricted', 'integral', 'custom')
+            ),
+            official_fee_amount numeric(12, 2) NOT NULL DEFAULT 0 CHECK (
+                official_fee_amount >= 0 AND official_fee_amount <= reservation_price
+            ),
+            initial_payment_amount numeric(12, 2) NOT NULL DEFAULT 0 CHECK (
+                initial_payment_amount >= 0 AND initial_payment_amount <= reservation_price
             ),
             CONSTRAINT ck_service_orders_service_type CHECK (
                 service_type IN ('standard', 'selected_weekday', 'custom')
@@ -311,6 +320,26 @@ def create_current_schema(connection: Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_payments_order_created
         ON payments(order_id, created_at DESC)
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS payment_receipts (
+            receipt_id text PRIMARY KEY,
+            payment_id text NOT NULL REFERENCES payments(payment_id) ON DELETE CASCADE,
+            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
+            amount numeric(12, 2) NOT NULL CHECK (amount > 0),
+            received_at timestamptz NOT NULL,
+            source text NOT NULL,
+            actor text,
+            created_at timestamptz NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_payment_receipts_received
+        ON payment_receipts(received_at, order_id)
         """
     )
     connection.execute(
@@ -945,6 +974,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "run_screenshots",
         "reservations",
         "payments",
+        "payment_receipts",
         "worker_state",
         "worker_commands",
         "remote_control_audit",
@@ -989,6 +1019,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("service_orders", "status"),
         ("service_orders", "service_type"),
         ("service_orders", "reservation_price"),
+        ("service_orders", "service_package"),
+        ("service_orders", "official_fee_amount"),
+        ("service_orders", "initial_payment_amount"),
         ("service_orders", "acquisition_source"),
         ("service_orders", "acquisition_source_origin"),
         ("service_orders", "minimum_hour"),
@@ -1039,6 +1072,9 @@ def _validate_current_schema(connection: Connection) -> None:
         ("finance_entries", "amount_original"),
         ("finance_entries", "amount_pen"),
         ("finance_entries", "status"),
+        ("payment_receipts", "payment_id"),
+        ("payment_receipts", "amount"),
+        ("payment_receipts", "received_at"),
         ("finance_month_closures", "month_start"),
         ("finance_month_closures", "opening_prepaid_balance"),
         ("finance_month_closures", "closing_prepaid_balance"),
@@ -1492,6 +1528,7 @@ def _create_finance_schema(connection: Connection) -> None:
             ('captcha', 'CAPTCHA', 'variable'),
             ('marketing', 'Marketing y publicidad', 'variable'),
             ('payment_fee', 'Comisiones de cobro', 'variable'),
+            ('government_fee', 'Tasas oficiales por cuenta del cliente', 'variable'),
             ('refund', 'Devoluciones', 'variable'),
             ('internet', 'Internet', 'fixed'),
             ('electricity', 'Electricidad', 'mixed'),
@@ -3689,6 +3726,93 @@ def migrate_database(connection: Connection) -> None:
             (70,),
         )
         current_version = 70
+    if current_version == 70:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD COLUMN service_package text NOT NULL DEFAULT 'standard',
+            ADD COLUMN official_fee_amount numeric(12, 2) NOT NULL DEFAULT 0,
+            ADD COLUMN initial_payment_amount numeric(12, 2) NOT NULL DEFAULT 0
+            """
+        )
+        connection.execute(
+            """
+            UPDATE service_orders
+            SET service_package = CASE
+                    WHEN service_type = 'selected_weekday' THEN 'restricted'
+                    WHEN service_type = 'custom' THEN 'custom'
+                    ELSE 'standard'
+                END
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD CONSTRAINT ck_service_orders_service_package CHECK (
+                service_package IN ('standard', 'restricted', 'integral', 'custom')
+            ),
+            ADD CONSTRAINT ck_service_orders_official_fee CHECK (
+                official_fee_amount >= 0 AND official_fee_amount <= reservation_price
+            ),
+            ADD CONSTRAINT ck_service_orders_initial_payment CHECK (
+                initial_payment_amount >= 0 AND initial_payment_amount <= reservation_price
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO finance_categories (
+                category_code, display_name, cost_behavior, created_at, updated_at
+            )
+            VALUES (
+                'government_fee', 'Tasas oficiales por cuenta del cliente',
+                'variable', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (category_code) DO UPDATE SET
+                display_name = excluded.display_name,
+                cost_behavior = excluded.cost_behavior,
+                active = true,
+                updated_at = excluded.updated_at
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE payment_receipts (
+                receipt_id text PRIMARY KEY,
+                payment_id text NOT NULL REFERENCES payments(payment_id) ON DELETE CASCADE,
+                order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
+                amount numeric(12, 2) NOT NULL CHECK (amount > 0),
+                received_at timestamptz NOT NULL,
+                source text NOT NULL,
+                actor text,
+                created_at timestamptz NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX idx_payment_receipts_received
+            ON payment_receipts(received_at, order_id)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO payment_receipts (
+                receipt_id, payment_id, order_id, amount, received_at, source, created_at
+            )
+            SELECT 'legacy:' || payment_id, payment_id, order_id, amount_paid,
+                   COALESCE(paid_at, updated_at, created_at), 'historical_backfill',
+                   CURRENT_TIMESTAMP
+            FROM payments
+            WHERE amount_paid > 0
+            ON CONFLICT(receipt_id) DO NOTHING
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (71,),
+        )
+        current_version = 71
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

@@ -2681,6 +2681,10 @@ def _new_client_prompt_markup(conversation: NewClientConversation) -> dict[str, 
                 "callback_data": f"nf:{session_id}:service_weekday",
             }],
             [{
+                "text": "Tramite integral - S/160",
+                "callback_data": f"nf:{session_id}:service_integral",
+            }],
+            [{
                 "text": "Monto personalizado",
                 "callback_data": f"nf:{session_id}:service_custom",
             }],
@@ -2756,7 +2760,7 @@ def _rewind_new_client(conversation: NewClientConversation) -> str:
         3: ("contact_name",),
         4: ("contact_source",),
         5: ("contact_whatsapp", "contact_whatsapp_username", "_whatsapp_recipient_mode"),
-        6: ("service_type", "reservation_price"),
+        6: ("service_type", "service_package", "reservation_price"),
         7: ("reservation_price",),
         8: (
             "minimum_reservation_date",
@@ -2872,18 +2876,39 @@ def _apply_manual_client_value(
         choice = normalized.casefold().replace(" ", "_")
         if choice in {"servicio_estandar", "estandar", "estándar"}:
             conversation.values.update(
-                {"service_type": "standard", "reservation_price": "50.00"}
+                {
+                    "service_type": "standard",
+                    "service_package": "standard",
+                    "reservation_price": "50.00",
+                }
             )
             conversation.step = 8
         elif choice in {"servicio_dia_elegido", "dia_elegido", "día_elegido"}:
             conversation.values.update(
-                {"service_type": "selected_weekday", "reservation_price": "70.00"}
+                {
+                    "service_type": "selected_weekday",
+                    "service_package": "restricted",
+                    "reservation_price": "70.00",
+                }
             )
             conversation.step = 7
+        elif choice in {"servicio_integral", "tramite_integral", "trámite_integral"}:
+            conversation.values.update(
+                {
+                    "service_type": "standard",
+                    "service_package": "integral",
+                    "reservation_price": "160.00",
+                }
+            )
+            conversation.step = 8
         elif choice in {"servicio_personalizado", "personalizado"}:
-            conversation.values["service_type"] = "custom"
+            conversation.values.update(
+                {"service_type": "custom", "service_package": "custom"}
+            )
         else:
-            raise ValueError("Elige Estandar, Dia elegido o Monto personalizado.")
+            raise ValueError(
+                "Elige Estandar, Dia elegido, Tramite integral o Monto personalizado."
+            )
     elif step == 7:
         if conversation.values.get("service_type") != "custom":
             raise ValueError("El monto manual solo corresponde al servicio personalizado.")
@@ -2989,7 +3014,10 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
                 or "no registrado"
             ),
             "",
-            f"Servicio: {_service_type_label(values.get('service_type'))}",
+            "Servicio: "
+            + _service_type_label(
+                values.get("service_type"), values.get("service_package")
+            ),
             f"Precio acordado: S/{values.get('reservation_price') or '50.00'}",
             "Alcance: " + _service_scope_text(values),
             "",
@@ -3004,7 +3032,9 @@ def _format_manual_client_details(values: dict[str, Any], *, title: str) -> str:
     )
 
 
-def _service_type_label(value: Any) -> str:
+def _service_type_label(value: Any, service_package: Any = None) -> str:
+    if str(service_package or "") == "integral":
+        return "Tramite integral"
     return {
         "standard": "Estandar",
         "selected_weekday": "Dia elegido",
@@ -4429,6 +4459,7 @@ def _process_interface_callback(
         "phone_omit": "OMITIR",
         "service_standard": "SERVICIO_ESTANDAR",
         "service_weekday": "SERVICIO_DIA_ELEGIDO",
+        "service_integral": "SERVICIO_INTEGRAL",
         "service_custom": "SERVICIO_PERSONALIZADO",
         "rules_none": "SIN_RESTRICCIONES",
         "rules_yes": "CON_RESTRICCIONES",
@@ -5201,6 +5232,7 @@ def _persisted_client_creation_matches(
         "contact_whatsapp",
         "contact_whatsapp_username",
         "service_type",
+        "service_package",
         "reservation_price",
         "minimum_reservation_date",
         "maximum_reservation_date",

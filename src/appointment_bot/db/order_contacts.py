@@ -67,7 +67,8 @@ def list_service_order_summaries(
                    wc.username AS contact_username,
                    wc.contact_source,
                    so.priority, so.charge_required, so.service_type,
-                   so.reservation_price, so.status,
+                   so.reservation_price, so.service_package, so.official_fee_amount,
+                   so.initial_payment_amount, so.status,
                    so.created_at, so.updated_at,
                    r.status AS reservation_status, r.site AS reservation_site,
                    r.appointment_date AS reservation_date, r.appointment_hour AS reservation_hour,
@@ -266,6 +267,10 @@ def mark_payment_paid(
             raise ValueError("Service order is no longer pending payment.")
         if current["payment_status"] not in {None, "pending"}:
             raise ValueError("Payment is no longer pending.")
+        previous_paid = current["amount_paid"] or 0
+        if paid < previous_paid:
+            raise ValueError("A complete payment cannot reduce the accumulated amount paid.")
+        payment_id = _id_from_value("payment", order_id)
         connection.execute(
             """
             INSERT INTO payments (
@@ -280,7 +285,16 @@ def mark_payment_paid(
                 paid_at = excluded.paid_at,
                 updated_at = excluded.updated_at
             """,
-            (_id_from_value("payment", order_id), order_id, agreed, paid, now, now, now),
+            (payment_id, order_id, agreed, paid, now, now, now),
+        )
+        _record_payment_receipt(
+            connection,
+            payment_id=payment_id,
+            order_id=order_id,
+            amount=paid - previous_paid,
+            received_at=now,
+            source="payment_complete",
+            actor=actor,
         )
         connection.execute(
             """
@@ -378,6 +392,15 @@ def record_partial_payment(
                 now,
             ),
         )
+        _record_payment_receipt(
+            connection,
+            payment_id=_id_from_value("payment", order_id),
+            order_id=order_id,
+            amount=paid - previous_paid,
+            received_at=now,
+            source="payment_partial",
+            actor=actor,
+        )
         return record_remote_control_audit_in_connection(
             connection,
             actor=actor,
@@ -390,6 +413,42 @@ def record_partial_payment(
                 "payment_status=pending; post_payment=not_queued"
             ),
         )
+
+
+def _record_payment_receipt(
+    connection: Connection,
+    *,
+    payment_id: str,
+    order_id: str,
+    amount: Decimal,
+    received_at: object,
+    source: str,
+    actor: str,
+) -> None:
+    if amount <= 0:
+        return
+    connection.execute(
+        """
+        INSERT INTO payment_receipts (
+            receipt_id, payment_id, order_id, amount, received_at,
+            source, actor, created_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            _id_from_value(
+                "receipt",
+                f"{order_id}:{source}:{received_at}:{amount}",
+            ),
+            payment_id,
+            order_id,
+            amount,
+            received_at,
+            source,
+            actor,
+            received_at,
+        ),
+    )
 
 
 def _lock_payment_state(connection: Connection, order_id: str) -> dict[str, Any]:
@@ -570,6 +629,9 @@ def _service_order_summary_from_row(row: dict[str, Any]) -> ServiceOrderSummary:
         charge_required=bool(row["charge_required"]),
         service_type=str(row["service_type"]),
         reservation_price=_decimal_text(row["reservation_price"]) or "50.00",
+        service_package=str(row["service_package"]),
+        official_fee_amount=_decimal_text(row["official_fee_amount"]) or "0.00",
+        initial_payment_amount=_decimal_text(row["initial_payment_amount"]) or "0.00",
         status=str(row["status"]),
         reservation_status=row["reservation_status"],
         reservation_site=row["reservation_site"],

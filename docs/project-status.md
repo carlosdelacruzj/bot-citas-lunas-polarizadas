@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL actual: `v70`;
+- esquema PostgreSQL actual: `v71`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - ordenes regulares y de disponibilidad restringida con precio y reglas por
   orden;
@@ -82,10 +82,16 @@ Cada orden conserva su propio `service_type` y `reservation_price`.
 - servicio regular: valor predeterminado `S/50`;
 - disponibilidad restringida: valor guiado habitual `S/70`;
 - monto personalizado: definido por el operador antes del preflight.
+- tramite integral: `S/160`, con primer abono `S/80`, tasa oficial `S/71.40`
+  y saldo final `S/80` registrados desde el paquete guiado.
 
 La disponibilidad restringida exige una ventana cerrada y al menos una regla
 aplicable. El precio acordado gobierna pago y mensajes futuros; no se reconstruye
 desde un valor global.
+
+El tramite integral se registra despues de que el operador recibe el primer
+abono, paga la tasa y crea la cuenta/solicitud. El alta persiste el abono y el
+costo de la tasa; al reservar, el mensaje de cobro usa solo el saldo pendiente.
 
 ## Dashboard vigente
 

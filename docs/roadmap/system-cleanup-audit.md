@@ -11,6 +11,90 @@ La prioridad oficial sigue viviendo en [`README.md`](README.md). Este archivo es
 el detalle operativo de la tarea de limpieza: no reemplaza el estado actual de
 [`../project-status.md`](../project-status.md), los contratos ni los runbooks.
 
+## Aceptacion pendiente despues del commit `ab91372`
+
+Ventana de observacion: `2026-08-31` a `2026-09-06`, zona `America/Lima`.
+
+Este es un checklist temporal para que el usuario valide la limpieza en uso
+real. No crear reservas, citas ni mensajes artificiales para completarlo. Las
+mediciones tecnicas y los umbrales exactos se encuentran en
+[`../operations/current-only-observation.md`](../operations/current-only-observation.md).
+
+### Lo que debe revisar el usuario
+
+- [ ] **Uso diario general:** abrir Pendientes, Resumen, Ordenes, Actividad,
+  Citas y recordatorios, Finanzas y Mensajes; confirmar que cargan sin errores
+  nuevos ni datos evidentemente ausentes.
+- [ ] **Ordenes:** buscar una orden, abrir su detalle y comprobar que filtros,
+  acciones y paginacion siguen funcionando. No modificar una orden solo para
+  probar.
+- [ ] **Citas y recordatorios:** comprobar proximas citas, casos en revision e
+  historial; cambiar busqueda, filtro, orden y tamaño de pagina. Confirmar que
+  los controles de paginacion no desaparecen al cambiar de vista.
+- [ ] **Finanzas:** abrir el mes actual y confirmar que resumen, movimientos y
+  calidad cargan. La UI debe usar `conversion_complete` sin mostrar un error por
+  la eliminacion de `is_complete`.
+- [ ] **Telegram:** usarlo normalmente durante la semana y confirmar que
+  responde, que el estado del worker es coherente con el dashboard y que no
+  aparecen alertas falsas o duplicadas del monitor anterior.
+- [ ] **Postpago natural:** cuando ocurra el siguiente caso real, comprobar que
+  el texto no esta vacio, que conserva Reserva y Sede cuando corresponden y que
+  los PDF mantienen el orden contractual. No reenviar si el resultado queda
+  `uncertain`.
+- [ ] **WhatsApp restante:** observar el siguiente album, aviso de registro,
+  recordatorio y cierre diario que ocurran naturalmente. Distinguir preparado,
+  `sent`, confirmacion tecnica y lectura del destinatario.
+- [ ] **Reinicio real:** despues del proximo reinicio normal de Windows,
+  comprobar que PostgreSQL, Admin API, worker, dashboard y Telegram se recuperan
+  sin iniciar propietarios duplicados.
+- [ ] **Diagnostico copiado:** usar una vez la opcion de copiar diagnostico y
+  confirmar visualmente que el JSON no contiene identidad, contacto,
+  credenciales, DOM, rutas locales ni datos sin enmascarar.
+- [ ] **Ausencia de regresiones:** registrar hora, pantalla y accion exactas de
+  cualquier error nuevo; no restaurar el backup ni reactivar n8n antes de
+  demostrar que el fallo depende de este commit.
+
+### Lo que debe comprobarse tecnicamente al cerrar la semana
+
+- [ ] Admin API `8766`, PostgreSQL y worker permanecieron saludables.
+- [ ] `AppointmentBotMonitor` de n8n siguio inactivo y no reaparecio su sondeo
+  periodico a `8765`.
+- [ ] `GET /api/v1/monthly-summary` no tuvo consumidores; su retiro puede
+  ejecutarse desde el `2026-09-04`.
+- [ ] No hubo consumidores reales de la lista de ordenes sin
+  `projection=dashboard` ni de post-cita sin parametros. Si aparece alguno,
+  debe migrarse y reiniciarse su ventana de observacion.
+- [ ] `8765` no recibio accesos naturales durante siete dias; los chequeos
+  manuales se separaron del trafico real.
+- [ ] PostgreSQL sigue en `v70`, todos los paquetes postpago conservan
+  `message_text` y no se crearon reintentos ambiguos como efecto de la limpieza.
+- [ ] Pasan `compileall`, Ruff, las pruebas existentes, build Angular, validador
+  documental y `git diff --check`.
+
+### Cuando se considera valido todo el proceso
+
+El cierre solo es valido cuando todas las casillas anteriores aplicables estan
+marcadas, no existe una regresion atribuible a la limpieza y las superficies
+antiguas cumplen sus umbrales de cero consumidores. Un flujo natural que no
+ocurra durante la semana no debe marcarse como probado: permanece en
+[`README.md`](README.md) como aceptacion pendiente, pero no bloquea retirar una
+compatibilidad distinta cuya ausencia de consumidores si fue demostrada.
+
+### Destino de este archivo
+
+Si, este archivo debe eliminarse despues del cierre final; no debe convertirse
+en otra bitacora permanente. La secuencia es:
+
+1. retirar las compatibilidades externas que hayan cumplido el umbral;
+2. actualizar `project-status.md` y los contratos con el estado resultante;
+3. conservar en `roadmap/README.md` solamente flujos o riesgos aun pendientes;
+4. ejecutar la validacion documental y tecnica final;
+5. eliminar `system-cleanup-audit.md` y el runbook temporal
+   `operations/current-only-observation.md`, corrigiendo sus enlaces.
+
+Git conserva esta auditoria, sus resultados y su rollback. No se necesita crear
+otro Markdown para archivarla ni copiar su cronologia a `docs/history/`.
+
 ## Como usar este documento
 
 1. No ejecutar todos los pasos en un solo cambio.

@@ -93,6 +93,9 @@ class ServiceOrderRuntime:
     program_plate: str | None = None
     service_type: str = "standard"
     reservation_price: str = "50.00"
+    service_package: str = "standard"
+    official_fee_amount: str = "0.00"
+    initial_payment_amount: str = "0.00"
     minimum_reservation_date: str | None = None
     maximum_reservation_date: str | None = None
     allowed_weekdays: tuple[int, ...] | None = None
@@ -133,6 +136,9 @@ class ServiceOrderSummary:
     charge_required: bool
     service_type: str
     reservation_price: str
+    service_package: str
+    official_fee_amount: str
+    initial_payment_amount: str
     status: str
     reservation_status: str | None
     reservation_site: str | None

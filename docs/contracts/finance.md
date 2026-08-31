@@ -12,6 +12,10 @@ PostgreSQL es la fuente de verdad. `finance_categories` normaliza las categorias
 y `finance_entries` conserva los movimientos. No existe un CSV activo como
 fuente o intercambio autorizado para los calculos del dashboard.
 
+`payment_receipts` conserva cada entrada de caja por separado. El total
+acumulado de `payments` gobierna saldo y cierre operativo; los recibos gobiernan
+la fecha real del ingreso en el resumen financiero.
+
 ## Semantica contable operativa
 
 | `entry_kind` | Caja del periodo | Costo reconocido | Uso |
@@ -101,9 +105,13 @@ solo entra como costo cuando existen minutos y valor por hora documentados.
 
 ## Categorias iniciales
 
-`captcha`, `marketing`, `payment_fee`, `refund`, `internet`, `electricity`, `hosting`,
+`captcha`, `marketing`, `payment_fee`, `government_fee`, `refund`, `internet`, `electricity`, `hosting`,
 `backup`, `equipment`, `human_time`, `tax` y `other`. Cada categoria se clasifica como costo
 variable, fijo o mixto.
+
+`government_fee` representa tasas oficiales pagadas por cuenta del cliente. El
+paquete integral crea el movimiento de `S/71.40`, con la orden vinculada, al
+confirmar en el alta que la tasa ya fue pagada.
 
 La secuencia operativa del cierre vive en
 [`../finance/README.md`](../finance/README.md).

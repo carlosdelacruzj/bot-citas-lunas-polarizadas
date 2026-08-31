@@ -204,11 +204,10 @@ def finance_month_summary(
         ).fetchone()
         revenue = connection.execute(
             """
-            SELECT COALESCE(SUM(amount_paid), 0) AS amount
-            FROM payments
-            WHERE status = 'paid' AND paid_at IS NOT NULL
-              AND (paid_at AT TIME ZONE 'America/Lima')::date >= %s
-              AND (paid_at AT TIME ZONE 'America/Lima')::date < %s
+            SELECT COALESCE(SUM(amount), 0) AS amount
+            FROM payment_receipts
+            WHERE (received_at AT TIME ZONE 'America/Lima')::date >= %s
+              AND (received_at AT TIME ZONE 'America/Lima')::date < %s
             """,
             (month_start, next_month_start),
         ).fetchone()

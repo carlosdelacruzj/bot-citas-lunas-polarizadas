@@ -97,7 +97,7 @@ import { FinanceEntryModalComponent } from './modals/finance-entry-modal.compone
 import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type NewServicePackage = 'standard' | 'restricted' | 'custom';
+type NewServicePackage = 'standard' | 'restricted' | 'integral' | 'custom';
 type ViewKey =
   | 'inbox'
   | 'summary'
@@ -2373,6 +2373,9 @@ export class App implements OnDestroy {
   }
 
   public serviceTypeLabel(order: ServiceOrder): string {
+    if (order.service_package === 'integral') {
+      return 'Trámite integral';
+    }
     if (order.service_type === 'selected_weekday') {
       return 'Día elegido';
     }
@@ -4014,13 +4017,17 @@ export class App implements OnDestroy {
       this.errorMessage.set('Ingresa un precio personalizado válido mayor que cero.');
       return;
     }
-    const serviceType = servicePackage === 'standard' ? 'standard' : 'custom';
+    const serviceType = ['standard', 'integral'].includes(servicePackage)
+      ? 'standard'
+      : 'custom';
     const reservationPrice =
       servicePackage === 'standard'
         ? '50.00'
         : servicePackage === 'restricted'
           ? '70.00'
-          : customPrice.toFixed(2);
+          : servicePackage === 'integral'
+            ? '160.00'
+            : customPrice.toFixed(2);
     const payload: CreateServiceOrderPayload = {
       document_number: this.newDocumentNumber().trim(),
       document_type: this.newDocumentType(),
@@ -4030,6 +4037,7 @@ export class App implements OnDestroy {
       contact_name: this.newContactName().trim(),
       contact_source: this.newContactSource(),
       service_type: serviceType,
+      service_package: servicePackage,
       reservation_price: reservationPrice,
       minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
       maximum_reservation_date: this.optionalText(this.newMaximumReservationDate()),
@@ -4080,7 +4088,9 @@ export class App implements OnDestroy {
           ? 'servicio estándar'
           : servicePackage === 'restricted'
             ? 'disponibilidad restringida'
-            : 'servicio personalizado'
+            : servicePackage === 'integral'
+              ? 'trámite integral con abono inicial y tasa confirmados'
+              : 'servicio personalizado'
       } por S/${reservationPrice}.`,
       execute: () => this.api.createServiceOrder(payload),
       containsSecret: true,

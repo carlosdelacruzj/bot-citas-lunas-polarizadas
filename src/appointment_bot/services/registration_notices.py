@@ -30,6 +30,7 @@ def enqueue_registration_notice(
     display_name: str | None,
     settings: Settings,
     service_type: str = "standard",
+    service_package: str = "standard",
     reservation_price: str = "50.00",
     minimum_reservation_date: str | None = None,
     maximum_reservation_date: str | None = None,
@@ -47,6 +48,7 @@ def enqueue_registration_notice(
         _monitoring_started_context(
                 display_name=display_name,
                 service_type=service_type,
+                service_package=service_package,
                 reservation_price=reservation_price,
                 minimum_reservation_date=minimum_reservation_date,
                 maximum_reservation_date=maximum_reservation_date,
@@ -78,6 +80,7 @@ def _monitoring_started_context(
     *,
     display_name: str | None,
     service_type: str,
+    service_package: str,
     reservation_price: str,
     minimum_reservation_date: str | None,
     maximum_reservation_date: str | None,
@@ -90,7 +93,7 @@ def _monitoring_started_context(
     exclusions = _excluded_dates_text(excluded_date_ranges)
     return {
         "nombre": name,
-        "servicio": _service_label(service_type),
+        "servicio": _service_label(service_type, service_package),
         "monto": str(reservation_price or "50.00"),
         "condiciones": _search_conditions_text(
             minimum_reservation_date,
@@ -108,7 +111,9 @@ def _registration_name_context(display_name: str | None) -> dict[str, str]:
     return {"nombre": name}
 
 
-def _service_label(service_type: str) -> str:
+def _service_label(service_type: str, service_package: str = "standard") -> str:
+    if service_package == "integral":
+        return "Trámite integral"
     return {
         "selected_weekday": "Día elegido",
         "custom": "Personalizado",

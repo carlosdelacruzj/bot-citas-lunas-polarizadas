@@ -40,6 +40,13 @@
           </div>
         </dl>
 
+        @if (order.service_package === 'integral') {
+          <p class="required-help">
+            Paquete integral: S/71.40 de tasa oficial y S/88.60 de gestión. Registra S/160
+            cuando hayas recibido el segundo abono de S/80.
+          </p>
+        }
+
         <label>
           Total pagado acumulado
           <input

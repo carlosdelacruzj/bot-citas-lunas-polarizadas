@@ -32,6 +32,12 @@ default cuando no se especifica; un cambio global no reescribe ordenes creadas.
 
 La reserva copia el precio al pago acordado.
 
+`service_package` separa el paquete comercial de las reglas de busqueda. El
+paquete `integral` fija `S/160`, registra un primer abono de `S/80` y conserva
+`S/71.40` como tasa oficial pagada por cuenta del cliente. Su alta supone que el
+operador ya recibio el abono, pago la tasa y creo la cuenta y solicitud antes de
+entregar las credenciales al preflight.
+
 ## Restricciones
 
 Reglas positivas:
@@ -88,6 +94,11 @@ ambiguo permanece sin reintento automatico.
 Una reserva confirmada deja la orden en `reserved_payment_pending`, salvo flujo
 sin cobro. El pago parcial debe ser positivo y menor al acordado; conserva pago
 pendiente y no encola postpago.
+
+Los cobros se conservan adicionalmente como movimientos inmutables en
+`payment_receipts`; `payments.amount_paid` sigue siendo el total acumulado. En
+el paquete integral, la reserva solicita el saldo de `S/80`, no los `S/160`
+completos.
 
 El pago completo exige la orden pendiente de cobro. Si el monto es menor al
 acordado requiere autorizacion y motivo. La transaccion marca pago/orden y

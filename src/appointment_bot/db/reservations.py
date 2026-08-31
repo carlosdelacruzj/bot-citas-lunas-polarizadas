@@ -162,7 +162,10 @@ def _record_reservation_for_order(
                         currency, created_at, updated_at
                     )
                     VALUES (%s, %s, %s, 'pending', %s, 'PEN', %s, %s)
-                    ON CONFLICT(payment_id) DO NOTHING
+                    ON CONFLICT(payment_id) DO UPDATE SET
+                        reservation_id = COALESCE(payments.reservation_id, excluded.reservation_id),
+                        amount_agreed = excluded.amount_agreed,
+                        updated_at = excluded.updated_at
                     """,
                     (
                         _id_from_value("payment", order_id),

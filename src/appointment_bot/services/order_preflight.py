@@ -278,6 +278,7 @@ def _queue_notice(
             display_name=display_name,
             settings=settings,
             service_type=order.service_type,
+            service_package=order.service_package,
             reservation_price=order.reservation_price,
             minimum_reservation_date=order.minimum_reservation_date,
             maximum_reservation_date=order.maximum_reservation_date,
