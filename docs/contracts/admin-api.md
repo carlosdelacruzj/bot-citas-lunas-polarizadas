@@ -1,6 +1,6 @@
 # Contrato de Admin API
 
-Estado: vigente. Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-08-31`.
 
 Codigo propietario: `src/appointment_bot/services/local_api.py` y
 `src/appointment_bot/services/api/`.
@@ -68,9 +68,10 @@ Devuelve:
 - `captcha`: contador separado, actualmente excluido de la cola comercial.
 
 La precedencia evita duplicar una orden con varias tarjetas. Las acciones
-incluyen corregir credenciales, reanudar, completar contacto, cobrar, preparar
-postpago y revisar comunicaciones. Contactos y datos sensibles se entregan
-enmascarados salvo en flujos autorizados de detalle.
+incluyen corregir credenciales, resolver varios tramites pendientes, reanudar,
+completar contacto, cobrar, preparar postpago y revisar comunicaciones.
+Contactos y datos sensibles se entregan enmascarados salvo en flujos autorizados
+de detalle.
 
 El frontend no debe reconstruir esta logica desde `/service-orders`.
 
@@ -93,6 +94,20 @@ endpoints y procesos autorizados; no se devuelven por defecto.
 
 El contacto WhatsApp se normaliza en backend. Un numero peruano de nueve
 digitos recibe `+51`; formatos internacionales validos conservan `+`.
+
+`POST /api/v1/service-orders/{order_id}/program-resolution` es la unica ruta
+administrativa para resolver varios expedientes pendientes. Exige la firma del
+listado observado, actor y una decision `one`, `all` o `pause`. `one` identifica
+un pendiente de forma unica; `all` exige condiciones comerciales confirmadas y
+archiva el padre tras crear todos los hijos en una sola transaccion. La respuesta
+puede incluir `communication_preview`, que nunca equivale a envio.
+
+Conflictos de este flujo usan codigos estables, entre ellos
+`program_listing_stale`, `program_target_not_unique`,
+`program_resolution_financial_allocation_required` y
+`program_integral_charge_required`. La ruta anterior `split-programs` permanece
+solo como guardia de compatibilidad y responde
+`explicit_program_resolution_required`; ningun consumidor nuevo debe usarla.
 
 ## Comandos del worker
 

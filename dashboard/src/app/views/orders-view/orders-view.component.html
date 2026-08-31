@@ -131,7 +131,16 @@
             order.preflight_status !== 'not_required' &&
             order.preflight_status !== 'validated'
           ) {
-            @if (dashboard.needsCredentialCorrection(order)) {
+            @if (dashboard.needsProgramResolution(order)) {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="dashboard.actionBusy()"
+                (click)="dashboard.openProgramResolution(order)"
+              >
+                Resolver trámites
+              </button>
+            } @else if (dashboard.needsCredentialCorrection(order)) {
               <button
                 type="button"
                 class="primary"

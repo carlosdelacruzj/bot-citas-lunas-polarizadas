@@ -3,10 +3,23 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { RequestScope } from './request-cancellation';
+import {
+  ProgramResolutionPayload,
+  ProgramResolutionPreflightDetails,
+  ProgramResolutionResponse,
+} from './program-resolution/program-resolution';
 
 import { ExcludedDateRange } from './reservation-rules.model';
 
 export type { ExcludedDateRange } from './reservation-rules.model';
+export type {
+  ProgramResolutionChildPayload,
+  ProgramResolutionCommunicationDecision,
+  ProgramResolutionPayload,
+  ProgramResolutionPreflightDetails,
+  ProgramResolutionProgram,
+  ProgramResolutionResponse,
+} from './program-resolution/program-resolution';
 
 export interface HealthPayload {
   status: string;
@@ -297,6 +310,7 @@ export interface ServiceOrderDetail extends ServiceOrder {
   document_number: string;
   contact_whatsapp: string | null;
   contact_whatsapp_username: string | null;
+  preflight_details: ProgramResolutionPreflightDetails | Record<string, unknown> | null;
 }
 
 export type OperatorInboxTaskKind =
@@ -1644,6 +1658,16 @@ export class AppointmentApiService {
     );
   }
 
+  async resolveServiceOrderPrograms(
+    orderId: string,
+    payload: ProgramResolutionPayload,
+  ): Promise<ProgramResolutionResponse> {
+    return this.post<ProgramResolutionResponse>(
+      `/api/v1/service-orders/${encodeURIComponent(orderId)}/program-resolution`,
+      payload,
+    );
+  }
+
   async restartWorker(releaseSafeBackoffs = false): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>('/api/v1/worker/restart', {
       release_safe_backoffs: releaseSafeBackoffs,
@@ -1664,18 +1688,6 @@ export class AppointmentApiService {
     return this.post<ApiActionResponse>('/api/v1/manual-session/close', {
       session_id: sessionId,
     });
-  }
-
-  async splitServiceOrderPrograms(
-    orderId: string,
-    keepParentActive: boolean,
-  ): Promise<ApiActionResponse> {
-    return this.post<ApiActionResponse>(
-      `/api/v1/service-orders/${encodeURIComponent(orderId)}/split-programs`,
-      {
-        keep_parent_active: keepParentActive,
-      },
-    );
   }
 
   private async post<T>(url: string, payload: unknown): Promise<T> {

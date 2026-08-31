@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-08-30`.
+Estado verificado documentalmente: `2026-08-31`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -63,14 +63,17 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
 
 1. Se crea con contacto, credenciales, servicio, precio y restricciones.
 2. El preflight valida identidad y acceso antes de habilitar la busqueda.
-3. El worker monitorea dentro de los limites configurados.
-4. Cada cupo se contrasta con las reglas exactas de la orden.
-5. La seleccion usa estabilizacion por eventos y validacion DOM atomica; si la
+3. Un unico expediente `PENDIENTE` sigue el flujo normal; varios pendientes
+   pausan la orden hasta elegir uno, todos o mantenerla pausada desde Dashboard
+   o Telegram, sin WhatsApp automatico.
+4. El worker monitorea dentro de los limites configurados.
+5. Cada cupo se contrasta con las reglas exactas de la orden.
+6. La seleccion usa estabilizacion por eventos y validacion DOM atomica; si la
    lectura no es concluyente vuelve automaticamente al camino conservador.
-6. Una seleccion valida conserva screenshot antes de CAPTCHA o submit.
-7. La reserva solo se confirma con evidencia suficiente del portal.
-8. Pago y comunicaciones siguen estados independientes.
-9. Citas y recordatorios alimentan el seguimiento previo y posterior.
+7. Una seleccion valida conserva screenshot antes de CAPTCHA o submit.
+8. La reserva solo se confirma con evidencia suficiente del portal.
+9. Pago y comunicaciones siguen estados independientes.
+10. Citas y recordatorios alimentan el seguimiento previo y posterior.
 
 Una incompatibilidad de fecha es `partial / blocked_by_order_rule`; no activa
 backoff general. Un submit ambiguo nunca se reintenta automaticamente.

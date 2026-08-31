@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -20,6 +21,8 @@ PROGRAM_ACTION_SELECTOR = (
     'a[id^="MainContent_gvProgramacion_btnAccion_"][href*="__doPostBack"], '
     'a[href*="gvProgramacion"][href*="btnAccion"]'
 )
+
+
 def click_program_action(
     page: Page,
     *,
@@ -41,93 +44,72 @@ def click_program_action(
 
     target = _program_target(program_expediente=program_expediente, program_plate=program_plate)
 
-    selected_row: dict[str, Any] | None = None
-    if button_count == 1 and target is None:
-        selected_button = button.first
-        program_rows = _read_program_action_rows(page)
-        selected_row = program_rows[0] if program_rows else None
-    else:
-        program_rows = _read_program_action_rows(page)
-        if target is not None:
-            selected_row = _find_target_program_row(program_rows, target)
-            multiple_details = {
-                "program_count": button_count,
-                "pending_count": len(
-                    [
-                        row
-                        for row in program_rows
-                        if str(row.get("status") or "").casefold() == "pendiente"
-                    ]
-                ),
-                "rows": program_rows,
-                "target": target,
-            }
-            if selected_row is None:
-                multiple_details["decision"] = "target_not_found"
-                if on_multiple_programs is not None:
-                    on_multiple_programs(multiple_details)
-                raise AppointmentWorkflowUnavailable(
-                    "No se encontro el tramite objetivo en la lista programable."
-                )
-            status = str(selected_row.get("status") or "").strip().casefold()
-            if status and status != "pendiente":
-                multiple_details["decision"] = "target_not_pending"
-                multiple_details["selected_row"] = selected_row
-                if on_multiple_programs is not None:
-                    on_multiple_programs(multiple_details)
-                raise AppointmentWorkflowUnavailable(
-                    "El tramite objetivo existe, pero no figura como PENDIENTE."
-                )
-            multiple_details["decision"] = "target_selected"
-            multiple_details["selected_row"] = selected_row
-            if on_multiple_programs is not None:
-                on_multiple_programs(multiple_details)
-            selected_button = button.nth(int(selected_row["action_index"]))
-            logger.info("Selected target program row: %s", selected_row)
-        elif button_count == 1:
-            selected_button = button.first
-        else:
-            pending_rows = [
-                row
-                for row in program_rows
-                if str(row.get("status") or "").casefold() == "pendiente"
-            ]
-            multiple_details = {
-                "program_count": button_count,
-                "pending_count": len(pending_rows),
-                "rows": program_rows,
-            }
+    program_rows = _read_program_action_rows(page)
+    pending_rows = [row for row in program_rows if _program_is_pending(row)]
+    decision_details: dict[str, Any] = {
+        "program_count": button_count,
+        "pending_count": len(pending_rows),
+        "rows": program_rows,
+    }
+    if target is not None:
+        decision_details["target"] = target
 
-            if len(pending_rows) == 1:
-                multiple_details["decision"] = "single_pending_selected"
-                multiple_details["selected_row"] = pending_rows[0]
-                if on_multiple_programs is not None:
-                    on_multiple_programs(multiple_details)
-                selected_button = button.nth(int(pending_rows[0]["action_index"]))
-                selected_row = pending_rows[0]
-                logger.info(
-                    "Multiple program actions found; selecting the only pending program: %s",
-                    pending_rows[0],
-                )
-            elif len(pending_rows) > 1:
-                multiple_details["decision"] = "multiple_pending_first_selected"
-                multiple_details["selected_row"] = pending_rows[0]
-                if on_multiple_programs is not None:
-                    on_multiple_programs(multiple_details)
-                selected_button = button.nth(int(pending_rows[0]["action_index"]))
-                selected_row = pending_rows[0]
-                logger.info(
-                    "Multiple pending program actions found; "
-                    "selecting the first pending program: %s",
-                    pending_rows[0],
-                )
-            else:
-                multiple_details["decision"] = "no_pending_blocked"
-                if on_multiple_programs is not None:
-                    on_multiple_programs(multiple_details)
-                raise AppointmentWorkflowUnavailable(
-                    "Hay varios tramites programables, pero ninguno figura como PENDIENTE."
-                )
+    if not _program_rows_are_complete(program_rows, button_count):
+        decision_details["decision"] = "program_rows_unavailable"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "No se pudo verificar de forma completa el estado de los tramites programables."
+        )
+
+    selected_row: dict[str, Any]
+    if target is not None:
+        target_rows = _find_target_program_rows(program_rows, target)
+        pending_target_rows = [row for row in target_rows if _program_is_pending(row)]
+        if not target_rows:
+            decision_details["decision"] = "target_not_found"
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "No se encontro el tramite objetivo en la lista programable."
+            )
+        if len(pending_target_rows) > 1:
+            decision_details["decision"] = "target_ambiguous"
+            decision_details["matching_rows"] = target_rows
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "El tramite objetivo coincide con varias filas y no se puede "
+                "seleccionar con seguridad."
+            )
+        if not pending_target_rows:
+            decision_details["decision"] = "target_not_pending"
+            decision_details["selected_row"] = target_rows[0]
+            _notify_program_decision(on_multiple_programs, decision_details)
+            raise AppointmentWorkflowUnavailable(
+                "El tramite objetivo existe, pero no figura como PENDIENTE."
+            )
+        selected_row = pending_target_rows[0]
+        decision_details["decision"] = "target_selected"
+        logger.info("Selected target pending program row: %s", selected_row)
+    elif len(pending_rows) == 1:
+        selected_row = pending_rows[0]
+        decision_details["decision"] = "single_pending_selected"
+        logger.info("Selected the only pending program row: %s", selected_row)
+    elif len(pending_rows) > 1:
+        decision_details["decision"] = "multiple_pending_blocked"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "Hay varios tramites PENDIENTES y la orden no identifica cual debe seleccionarse."
+        )
+    else:
+        decision_details["decision"] = "no_pending_blocked"
+        _notify_program_decision(on_multiple_programs, decision_details)
+        raise AppointmentWorkflowUnavailable(
+            "No hay un tramite PENDIENTE que pueda seleccionarse con seguridad."
+        )
+
+    decision_details["selected_row"] = selected_row
+    if button_count > 1 or target is not None:
+        _notify_program_decision(on_multiple_programs, decision_details)
+    selected_button = button.nth(int(selected_row["action_index"]))
 
     if selected_row is not None and on_program_selected is not None:
         on_program_selected(dict(selected_row))
@@ -186,36 +168,75 @@ def _program_target(
     program_plate: str | None,
 ) -> dict[str, str] | None:
     target = {
-        key: _normalize_program_value(value)
+        key: _normalize_program_identifier(key, value)
         for key, value in {
             "expediente": program_expediente,
             "placa": program_plate,
         }.items()
-        if _normalize_program_value(value)
+        if _normalize_program_identifier(key, value)
     }
     return target or None
+
+
+def _find_target_program_rows(
+    rows: list[dict[str, Any]],
+    target: dict[str, str],
+) -> list[dict[str, Any]]:
+    matches = []
+    for row in rows:
+        expediente_matches = (
+            "expediente" not in target
+            or _normalize_program_identifier("expediente", row.get("expediente"))
+            == target["expediente"]
+        )
+        plate_matches = (
+            "placa" not in target
+            or _normalize_program_identifier("placa", row.get("placa")) == target["placa"]
+        )
+        if expediente_matches and plate_matches:
+            matches.append(row)
+    return matches
 
 
 def _find_target_program_row(
     rows: list[dict[str, Any]],
     target: dict[str, str],
 ) -> dict[str, Any] | None:
-    for row in rows:
-        expediente_matches = (
-            "expediente" not in target
-            or _normalize_program_value(row.get("expediente")) == target["expediente"]
-        )
-        plate_matches = (
-            "placa" not in target
-            or _normalize_program_value(row.get("placa")) == target["placa"]
-        )
-        if expediente_matches and plate_matches:
-            return row
-    return None
+    matches = _find_target_program_rows(rows, target)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _program_is_pending(row: dict[str, Any]) -> bool:
+    return _normalize_program_value(row.get("status")) == "pendiente"
+
+
+def _program_rows_are_complete(rows: list[dict[str, Any]], button_count: int) -> bool:
+    if len(rows) != button_count:
+        return False
+    try:
+        action_indexes = [int(row["action_index"]) for row in rows]
+    except (KeyError, TypeError, ValueError):
+        return False
+    return sorted(action_indexes) == list(range(button_count))
+
+
+def _notify_program_decision(
+    callback: Callable[[dict[str, Any]], None] | None,
+    details: dict[str, Any],
+) -> None:
+    if callback is not None:
+        callback(details)
 
 
 def _normalize_program_value(value: object) -> str:
     return "".join(str(value or "").split()).casefold()
+
+
+def _normalize_program_identifier(key: str, value: object) -> str:
+    normalized = _normalize_program_value(value)
+    if key == "placa":
+        return re.sub(r"[^a-z0-9]", "", normalized)
+    return normalized
 
 
 def _read_program_action_rows(page: Page) -> list[dict[str, Any]]:

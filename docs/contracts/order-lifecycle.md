@@ -1,6 +1,6 @@
 # Contrato de ciclo de vida de ordenes
 
-Estado: vigente. Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-08-31`.
 
 Codigo propietario: `core/models.py`, `core/rules.py`, `db/order_*`,
 `db/reservations.py` y `services/api/service_order_routes.py`.
@@ -106,9 +106,23 @@ encola postpago durable; no implica entrega WhatsApp.
 
 ## Subordenes
 
-Una cuenta con varios tramites se divide mediante `parent_order_id`, expediente
-y placa objetivo. Precio, reglas y credenciales se heredan al dividir y el padre
-se archiva. Cada suborden mantiene estado, reserva y pago propios.
+Los estados historicos no determinan multiplicidad: solo las filas
+`PENDIENTE` son reservables. Una fila pendiente junto con filas canceladas o
+atendidas conserva el flujo normal. Cero pendientes bloquea; mas de una exige
+una decision interna antes de seleccionar, CAPTCHA o submit.
+
+La decision se aplica contra la revision exacta del listado observado. Resolver
+uno exige expediente exacto o una placa que identifique una sola fila pendiente.
+Resolver todos crea atomicamente una suborden por expediente mediante
+`parent_order_id` y archiva el padre. Cada suborden mantiene objetivo, reglas,
+reserva, evidencia y estado propios.
+
+Precio y condiciones no se multiplican implicitamente. El operador debe
+confirmar las mismas condiciones para todos o definir servicio, reglas, precio y
+`charge_required` por hijo. Una orden integral o con historia financiera falla
+cerrado al dividir hasta que exista una regla explicita de asignacion contable.
+Repetir la misma decision es idempotente; una revision obsoleta produce
+conflicto y obliga a actualizar.
 
 ## Cierre
 

@@ -1,0 +1,138 @@
+.program-resolution-card {
+  display: grid;
+  gap: 1rem;
+  grid-column: 1 / -1;
+}
+
+.program-resolution-heading,
+.program-resolution-row,
+.program-resolution-result {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.program-resolution-heading h3,
+.program-resolution-heading p,
+.program-resolution-result p {
+  margin: 0;
+}
+
+.program-resolution-summary,
+.program-commercial-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.program-resolution-summary > div,
+.program-resolution-row,
+.program-commercial-card,
+.inherited-terms,
+.communication-preview {
+  background: #f7fafc;
+  border: 1px solid #d9e2e8;
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+}
+
+.program-resolution-summary span,
+.program-resolution-row span,
+.program-commercial-card small,
+.inherited-terms span,
+.communication-preview span,
+.communication-preview small {
+  color: #65737d;
+  display: block;
+  font-size: 0.8rem;
+}
+
+.program-resolution-list,
+.program-resolution-options,
+.program-commercial-card,
+.program-resolution-result,
+.communication-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.program-resolution-options {
+  border: 1px solid #d9e2e8;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.program-resolution-options legend {
+  font-weight: 800;
+  padding: 0 0.35rem;
+}
+
+.choice-card,
+.explicit-confirmation {
+  align-items: flex-start;
+  border: 1px solid #d9e2e8;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.8rem;
+}
+
+.choice-card:has(input:checked),
+.explicit-confirmation:has(input:checked) {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.choice-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.choice-card input,
+.explicit-confirmation input {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+}
+
+.choice-card span,
+.choice-card small {
+  display: block;
+}
+
+.program-commercial-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.program-commercial-confirmation {
+  grid-column: 1 / -1;
+}
+
+.program-resolution-result {
+  align-items: stretch;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.75rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.communication-preview pre {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .program-resolution-heading,
+  .program-resolution-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .program-resolution-summary,
+  .program-commercial-grid {
+    grid-template-columns: 1fr;
+  }
+}

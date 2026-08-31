@@ -45,14 +45,18 @@ def notify_multiple_programs(
     decision = str(details.get("decision") or "").strip()
     if decision == "single_pending_selected":
         lines.append("Accion: se eligio el unico PENDIENTE")
-    elif decision == "multiple_pending_first_selected":
-        lines.append("Accion: se eligio solo el primer PENDIENTE")
+    elif decision == "multiple_pending_blocked":
+        lines.append("Accion: detenido; elegir uno o todos desde Dashboard o Telegram")
     elif decision == "target_selected":
         lines.append("Accion: se eligio el tramite objetivo")
     elif decision == "target_not_found":
         lines.append("Accion: detenido; no se encontro el tramite objetivo")
     elif decision == "target_not_pending":
         lines.append("Accion: detenido; el tramite objetivo no esta PENDIENTE")
+    elif decision == "target_ambiguous":
+        lines.append("Accion: detenido; el objetivo coincide con varios PENDIENTE")
+    elif decision == "program_rows_unavailable":
+        lines.append("Accion: detenido; no se pudo leer el listado completo de tramites")
     elif decision == "no_pending_blocked":
         lines.append("Accion: detenido sin PENDIENTE")
     for index, row in enumerate(rows[:5], start=1):

@@ -54,9 +54,23 @@ def _order_task(order: ServiceOrderSummary) -> dict[str, Any] | None:
         return None
     if order.preflight_status == "failed":
         preflight_details = order.preflight_details or {}
-        invalid_credentials = (
-            str(preflight_details.get("error_type") or "") == "invalid_credentials"
-        )
+        error_type = str(preflight_details.get("error_type") or "")
+        invalid_credentials = error_type == "invalid_credentials"
+        multiple_pending = error_type == "multiple_pending_resolution_required"
+        if multiple_pending:
+            return _task(
+                order,
+                key_prefix="programs",
+                kind="program_resolution",
+                title="Resolver trámites pendientes",
+                description=order.preflight_message
+                or "Hay más de un expediente pendiente y debes indicar cuáles atender.",
+                label="Trámites",
+                action="resolve_programs",
+                action_label="Resolver trámites",
+                tone="warn",
+                state=order.preflight_status,
+            )
         return _task(
             order,
             key_prefix="preflight",

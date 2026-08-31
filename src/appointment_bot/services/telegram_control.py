@@ -31,6 +31,7 @@ from appointment_bot.core.contacts import (
     normalize_contact_whatsapp_username,
 )
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
+from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.utils.sanitization import sanitize_text
 
@@ -286,7 +287,7 @@ class TelegramRateLimiter:
 
 def _callback_is_mutation(data: str) -> bool:
     if data.startswith(
-        ("wc:", "oc:", "nc:", "pq:", "py:", "wk:", "op:", "cp:", "nf:", "rf:")
+        ("wc:", "oc:", "nc:", "pq:", "py:", "wk:", "op:", "cp:", "nf:", "rf:", "pr:")
     ):
         return True
     if data.startswith(("ui:manual:", "ui:captcha:", "ui:cancel:")):
@@ -516,6 +517,20 @@ class AdminApiClient:
             "POST",
             f"/api/v1/service-orders/{quote(order_id, safe='')}/validate",
             payload={},
+            actor=actor,
+        )
+
+    def resolve_service_order_programs(
+        self,
+        order_id: str,
+        resolution: dict[str, Any],
+        *,
+        actor: str,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/service-orders/{quote(order_id, safe='')}/program-resolution",
+            payload=resolution,
             actor=actor,
         )
 
@@ -1957,6 +1972,8 @@ def _send_pending_attention(
             callback_data = f"om:{order_id}:access"
         elif action == "revalidate":
             callback_data = f"om:{order_id}:validate"
+        elif action in {"resolve_programs", "resolve_multiple_pending", "program_resolution"}:
+            callback_data = f"pr:{order_id}:show"
         else:
             callback_data = f"om:{order_id}:show_pending"
             if action not in {"view_order"}:
@@ -2377,7 +2394,12 @@ def _send_order_panel(
             if isinstance(preflight_details, dict)
             else ""
         )
-        if error_type == "invalid_credentials":
+        if error_type == "multiple_pending_resolution_required":
+            keyboard.append([{
+                "text": "Resolver programas",
+                "callback_data": f"pr:{order_id}:show",
+            }])
+        elif error_type == "invalid_credentials":
             keyboard.append([{
                 "text": "Corregir acceso",
                 "callback_data": f"om:{order_id}:access",
@@ -4056,11 +4078,28 @@ def _process_interface_callback(
 ) -> bool:
     parts = data.split(":")
     if len(parts) != 3 or parts[0] not in {
-        "ui", "om", "op", "pq", "py", "wk", "nf", "rf"
+        "ui", "om", "op", "pq", "py", "wk", "nf", "rf", "pr"
     }:
         return False
     prefix, subject, action = parts
     telegram.answer_callback_query(callback_id, "Procesando...")
+    if prefix == "pr":
+        if action in {"informed", "keep"}:
+            telegram_program_resolution.set_communication_decision(
+                chat_id, subject, action, telegram,
+                pending_order_changes, confirmation_lock,
+            )
+        elif not _valid_order_id(subject):
+            telegram.send_message(chat_id, "La orden seleccionada no es valida.")
+        elif action == "show":
+            telegram_program_resolution.send_panel(chat_id, subject, telegram, admin_api)
+        else:
+            telegram_program_resolution.request_resolution(
+                chat_id, subject, action, telegram, admin_api,
+                pending_order_changes, confirmation_lock, PendingOrderChange,
+                confirmation_ttl_seconds=CONFIRMATION_TTL_SECONDS,
+            )
+        return True
     if prefix == "ui":
         if subject == "menu":
             _send_main_menu(chat_id, telegram, admin_api)
@@ -4724,6 +4763,16 @@ def _execute_order_change(
     telegram: TelegramBotApi,
     admin_api: AdminApiClient,
 ) -> None:
+    if change.action == "program_resolution":
+        telegram_program_resolution.execute_resolution(
+            change,
+            telegram,
+            admin_api,
+            actor=_telegram_actor(change.chat_id),
+            audit=_record_audit_safe,
+            display_text=_display_text,
+        )
+        return
     operation_short = change.operation_id[:8]
     actor = _telegram_actor(change.chat_id)
     credentials_saved = False

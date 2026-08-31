@@ -95,6 +95,10 @@ import { OrderActionsModalComponent } from './modals/order-actions-modal.compone
 import { CreateOrderModalComponent } from './modals/create-order-modal.component';
 import { FinanceEntryModalComponent } from './modals/finance-entry-modal.component';
 import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
+import {
+  ProgramResolutionPayload,
+  ProgramResolutionResponse,
+} from './program-resolution/program-resolution';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type NewServicePackage = 'standard' | 'restricted' | 'integral' | 'custom';
@@ -244,7 +248,14 @@ type PendingAction = {
   onSettled?: () => void;
 };
 type OrderNextAction = {
-  key: 'manual-session' | 'activate' | 'payment' | 'post-payment-whatsapp' | 'review' | 'none';
+  key:
+    | 'manual-session'
+    | 'activate'
+    | 'payment'
+    | 'post-payment-whatsapp'
+    | 'program-resolution'
+    | 'review'
+    | 'none';
   label: string;
   description: string;
   disabled: boolean;
@@ -640,7 +651,7 @@ export class App implements OnDestroy {
   public readonly paymentAmountPaid = signal('');
   public readonly paymentAmountAgreed = signal('');
   public readonly editOrderSection = signal<
-    'all' | 'contact' | 'credentials' | 'restrictions'
+    'all' | 'contact' | 'credentials' | 'restrictions' | 'program-resolution'
   >('all');
   public readonly newDocumentNumber = signal('');
   public readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
@@ -657,7 +668,6 @@ export class App implements OnDestroy {
   public readonly newExcludedDateRanges = signal<ExcludedDateRange[]>([]);
   public readonly newExcludedDateStart = signal('');
   public readonly newExcludedDateEnd = signal('');
-  public readonly splitKeepParentActive = signal(false);
   public readonly closureReason = signal<ClosureReason>('client_withdrew');
   public readonly closureNote = signal('');
   public readonly actionBusy = signal(false);
@@ -981,6 +991,15 @@ export class App implements OnDestroy {
         label: 'Sin acciones pendientes',
         description: `La orden esta cerrada como ${this.closureDisplay(order)}.`,
         disabled: true,
+      };
+    }
+    if (this.needsProgramResolution(order)) {
+      return {
+        key: 'program-resolution',
+        label: 'Resolver trámites pendientes',
+        description:
+          'El portal devolvió varios expedientes pendientes. Elige explícitamente el alcance acordado.',
+        disabled: this.actionBusy(),
       };
     }
     if (order.payment_status === 'pending') {
@@ -2638,10 +2657,17 @@ export class App implements OnDestroy {
 
   public async openEditOrder(
     order: ServiceOrder,
-    section: 'all' | 'contact' | 'credentials' | 'restrictions' = 'all',
+    section: 'all' | 'contact' | 'credentials' | 'restrictions' | 'program-resolution' = 'all',
   ): Promise<void> {
     this.selectOrder(order.order_id, false);
     this.editOrderSection.set(section);
+    this.openModal('edit-order');
+    await this.loadSelectedOrderDetail(order.order_id);
+  }
+
+  public async openProgramResolution(order: ServiceOrder): Promise<void> {
+    this.selectOrder(order.order_id, false);
+    this.editOrderSection.set('program-resolution');
     this.openModal('edit-order');
     await this.loadSelectedOrderDetail(order.order_id);
   }
@@ -3508,12 +3534,17 @@ export class App implements OnDestroy {
       void this.openPayment(order);
     } else if (action.key === 'post-payment-whatsapp') {
       void this.openPostPaymentWhatsApp(order);
+    } else if (action.key === 'program-resolution') {
+      void this.openProgramResolution(order);
     } else if (action.key === 'review') {
       void this.openWhatsAppReview(order);
     }
   }
 
   public rowPrimaryActionLabel(order: ServiceOrder): string {
+    if (this.needsProgramResolution(order)) {
+      return 'Resolver trámites';
+    }
     if (order.payment_status === 'pending') {
       return 'Registrar pago';
     }
@@ -3542,6 +3573,10 @@ export class App implements OnDestroy {
   }
 
   public runRowPrimaryAction(order: ServiceOrder): void {
+    if (this.needsProgramResolution(order)) {
+      void this.openProgramResolution(order);
+      return;
+    }
     if (order.payment_status === 'pending') {
       void this.openPayment(order);
       return;
@@ -3703,6 +3738,31 @@ export class App implements OnDestroy {
 
   public needsCredentialCorrection(order: ServiceOrder): boolean {
     return order.preflight_error_type === 'invalid_credentials';
+  }
+
+  public needsProgramResolution(order: ServiceOrder): boolean {
+    return order.preflight_error_type === 'multiple_pending_resolution_required';
+  }
+
+  public requestProgramResolution(
+    payload: ProgramResolutionPayload,
+    confirmationLabel: string,
+    onSuccess: (response: ProgramResolutionResponse) => void,
+  ): void {
+    const order = this.requireSelectedOrder();
+    if (!order) {
+      return;
+    }
+    this.setPendingAction({
+      title: 'Confirmar alcance de trámites',
+      message: `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
+      execute: async () => {
+        const response = await this.api.resolveServiceOrderPrograms(order.order_id, payload);
+        onSuccess(response);
+        return response;
+      },
+      successMessage: (response) => response.message ?? 'Resolución registrada sin envío',
+    });
   }
 
   public toggleOrderPasswordVisibility(): void {
@@ -4464,20 +4524,6 @@ export class App implements OnDestroy {
     return messageClass === 'observation' && !item.later_progress_observed
       ? 'stage-observation'
       : 'stage-ok';
-  }
-
-  public requestSplitPrograms(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    this.setPendingAction({
-      title: 'Dividir tramites',
-      message: `Crear subordenes pendientes desde ${order.order_id}.`,
-      execute: () =>
-        this.api.splitServiceOrderPrograms(order.order_id, this.splitKeepParentActive()),
-      onSuccess: () => this.activeModal.set(null),
-    });
   }
 
   public async copyDashboardSnapshot(): Promise<void> {

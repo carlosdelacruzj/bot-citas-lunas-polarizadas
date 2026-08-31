@@ -88,25 +88,7 @@
           >
             Medir flujo manual
           </button>
-          <button
-            type="button"
-            class="secondary"
-            [disabled]="order.status !== 'ready'"
-            (click)="view.requestSplitPrograms()"
-          >
-            Dividir tramites
-          </button>
         </div>
-
-        <label class="check-row">
-          <input
-            name="modalSplitKeepParentActive"
-            type="checkbox"
-            [ngModel]="view.splitKeepParentActive()"
-            (ngModelChange)="view.splitKeepParentActive.set($event)"
-          />
-          Mantener padre activo
-        </label>
 
         <section class="admin-block action-card">
           <h3>Cerrar orden</h3>

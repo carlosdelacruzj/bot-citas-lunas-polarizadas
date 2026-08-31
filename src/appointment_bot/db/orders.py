@@ -15,11 +15,14 @@ from appointment_bot.db.order_contacts import (
     record_partial_payment,
 )
 from appointment_bot.db.order_credentials import (
+    ProgramResolutionConflict,
+    ProgramResolutionNotFound,
     create_service_order,
     get_claimed_service_order_runtime,
     get_order_program_listing,
     get_service_order_runtime,
     record_order_program_listing,
+    resolve_service_order_programs,
     split_service_order_programs,
     update_service_order_credentials,
     update_service_order_document_type,

@@ -86,6 +86,7 @@ from appointment_bot.services.api.service_order_routes import (
     payment_paid_path,
     payment_partial_path,
     record_partial_payment_payload,
+    resolve_service_order_programs_payload,
     revalidate_service_order_payload,
     search_service_orders_payload,
     service_order_action,
@@ -93,6 +94,7 @@ from appointment_bot.services.api.service_order_routes import (
     service_order_contact_path,
     service_order_credentials_path,
     service_order_priority_path,
+    service_order_program_resolution_path,
     service_order_restrictions_path,
     service_order_revalidate_path,
     service_order_split_programs_path,
@@ -815,6 +817,18 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = split_service_order_programs_payload(
                 split_order_id,
                 self._read_json(),
+            )
+            self._send_json(status, payload)
+            return
+
+        program_resolution_order_id = service_order_program_resolution_path(path)
+        if program_resolution_order_id is not None:
+            if not self._require_authorized(strict=True):
+                return
+            status, payload = resolve_service_order_programs_payload(
+                program_resolution_order_id,
+                self._read_json(),
+                requested_by=self.headers.get("X-Appointment-Actor"),
             )
             self._send_json(status, payload)
             return

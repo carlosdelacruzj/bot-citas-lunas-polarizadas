@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
@@ -8,6 +9,8 @@ from urllib.parse import unquote
 
 from appointment_bot.core.contacts import ContactValidationError
 from appointment_bot.db.orders import (
+    ProgramResolutionConflict,
+    ProgramResolutionNotFound,
     add_or_update_service_order_contact,
     close_service_order,
     create_service_order,
@@ -18,6 +21,7 @@ from appointment_bot.db.orders import (
     mark_payment_paid,
     mark_service_order_no_charge,
     record_partial_payment,
+    resolve_service_order_programs,
     set_order_paused,
     split_service_order_programs,
     update_service_order_credentials,
@@ -560,6 +564,10 @@ def split_service_order_programs_payload(
     archive_parent = not _optional_bool(payload, "keep_parent_active", default=False)
     try:
         created = split_service_order_programs(order_id, archive_parent=archive_parent)
+    except ProgramResolutionNotFound as exc:
+        return HTTPStatus.NOT_FOUND, error_payload(exc.code, str(exc))
+    except ProgramResolutionConflict as exc:
+        return HTTPStatus.CONFLICT, error_payload(exc.code, str(exc))
     except ValueError as exc:
         message = str(exc)
         status = HTTPStatus.NOT_FOUND if "No existe la orden" in message else HTTPStatus.BAD_REQUEST
@@ -573,6 +581,49 @@ def split_service_order_programs_payload(
         "parent_archived": archive_parent,
         "service_orders": [asdict(item) for item in created],
     }
+
+
+def resolve_service_order_programs_payload(
+    order_id: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    actor = _normalize_program_resolution_actor(requested_by)
+    try:
+        result = resolve_service_order_programs(
+            order_id,
+            resolution=str(payload.get("resolution") or ""),
+            listing_signature=str(payload.get("listing_signature") or ""),
+            communication_decision=str(payload.get("communication_decision") or ""),
+            actor=actor,
+            program_expediente=_optional_text(payload, "program_expediente"),
+            program_plate=_optional_text(payload, "program_plate"),
+            children=payload.get("children"),
+            confirm_same_commercial_terms=_optional_bool(
+                payload,
+                "confirm_same_commercial_terms",
+                default=False,
+            ),
+        )
+    except ProgramResolutionNotFound as exc:
+        return HTTPStatus.NOT_FOUND, error_payload(exc.code, str(exc))
+    except ProgramResolutionConflict as exc:
+        return HTTPStatus.CONFLICT, error_payload(exc.code, str(exc))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    if result.get("preflight_scheduled"):
+        result["preflight_scheduled"] = schedule_order_preflight(order_id)
+    return HTTPStatus.OK, result
+
+
+def _normalize_program_resolution_actor(value: str | None) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return "admin_api"
+    if len(normalized) > 64 or re.fullmatch(r"[A-Za-z0-9:_-]+", normalized) is None:
+        return "admin_api"
+    return normalized
 
 
 def service_order_contact_path(path: str) -> str | None:
@@ -669,6 +720,15 @@ def service_order_split_programs_path(path: str) -> str | None:
     if not path.startswith(prefix) or not path.endswith(suffix):
         return None
     return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_program_resolution_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/program-resolution"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+    return order_id if order_id and "/" not in order_id else None
 
 
 def _optional_text(payload: dict[str, Any], name: str) -> str | None:

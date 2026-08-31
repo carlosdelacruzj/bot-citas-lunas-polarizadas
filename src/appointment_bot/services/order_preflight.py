@@ -8,6 +8,7 @@ from pathlib import Path
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings, load_settings
 from appointment_bot.db.orders import (
+    get_order_program_listing,
     get_service_order_runtime,
     list_service_order_summaries,
     mark_order_preflight_failed,
@@ -120,6 +121,9 @@ def validate_order_preflight(
                 "source": "registration_preflight",
             }
             record_order_program_listing(order_id, listing, settings=settings)
+            stored_listing = get_order_program_listing(order_id, settings=settings) or {}
+            listing_signature = str(stored_listing.get("signature") or "")
+            listing_revision = int(stored_listing.get("revision") or 1)
             if not pending_rows:
                 result = _fail_preflight(
                     order_id,
@@ -136,12 +140,63 @@ def validate_order_preflight(
                     settings=settings,
                 )
                 return result
+            target = {
+                key: value
+                for key, value in {
+                    "expediente": order.program_expediente,
+                    "placa": order.program_plate,
+                }.items()
+                if _normalize_program_identifier(key, value)
+            }
+            selected_pending_rows = pending_rows
+            if target:
+                selected_pending_rows = [
+                    row
+                    for row in pending_rows
+                    if all(
+                        _normalize_program_identifier(key, row.get(key))
+                        == _normalize_program_identifier(key, value)
+                        for key, value in target.items()
+                    )
+                ]
+                if len(selected_pending_rows) != 1:
+                    return _fail_preflight(
+                        order_id,
+                        "El tramite objetivo no coincide con un unico tramite PENDIENTE.",
+                        "program_target_not_unique",
+                        settings,
+                        details={
+                            "program_count": len(rows),
+                            "pending_count": len(pending_rows),
+                            "pending_programs": pending_rows[:10],
+                            "program_target": target,
+                            "listing_signature": listing_signature,
+                            "listing_revision": listing_revision,
+                        },
+                    )
+            elif len(pending_rows) > 1:
+                return _fail_preflight(
+                    order_id,
+                    "La cuenta tiene varios tramites PENDIENTE. "
+                    "El operador debe confirmar si se atendera uno o todos.",
+                    "multiple_pending_resolution_required",
+                    settings,
+                    details={
+                        "program_count": len(rows),
+                        "pending_count": len(pending_rows),
+                        "pending_programs": pending_rows[:10],
+                        "listing_signature": listing_signature,
+                        "listing_revision": listing_revision,
+                    },
+                )
             details = {
                 "applicant_name": applicant_name,
                 "document_type": order.document_type,
                 "program_count": len(rows),
                 "pending_count": len(pending_rows),
-                "programs": pending_rows[:10],
+                "programs": selected_pending_rows[:10],
+                "listing_signature": listing_signature,
+                "listing_revision": listing_revision,
             }
             mark_order_preflight_validated(
                 order_id,
@@ -229,22 +284,49 @@ def _looks_like_document(name: str, document_number: str) -> bool:
     )
 
 
+def _normalize_program_value(value: object) -> str:
+    return "".join(str(value or "").split()).casefold()
+
+
+def _normalize_program_identifier(key: str, value: object) -> str:
+    normalized = _normalize_program_value(value)
+    if key == "placa":
+        return "".join(character for character in normalized if character.isalnum())
+    return normalized
+
+
 def _fail_preflight(
     order_id: str,
     message: str,
     error_type: str,
     settings: Settings,
+    *,
+    details: dict[str, object] | None = None,
 ) -> dict[str, object]:
     safe_message = sanitize_text(message) or "No se pudo validar la cuenta en el portal."
-    details = {"error_type": error_type}
+    failure_details = {"error_type": error_type, **(details or {})}
     mark_order_preflight_failed(
         order_id,
         safe_message,
-        details=details,
+        details=failure_details,
         settings=settings,
     )
     logger.warning("Order preflight failed: order=%s error=%s", order_id, safe_message)
-    if error_type not in {"invalid_credentials", "no_pending_request"}:
+    if error_type == "multiple_pending_resolution_required":
+        pending_count = failure_details.get("pending_count", "varios")
+        send_telegram_message(
+            settings,
+            "\n".join(
+                [
+                    "Se requiere definir el alcance de tramites PENDIENTE.",
+                    f"Orden: {order_id}",
+                    f"Tramites PENDIENTE detectados: {pending_count}",
+                    "Accion requerida: elegir uno, todos o mantener la orden pausada.",
+                    "No se envio ningun mensaje automatico al cliente.",
+                ]
+            ),
+        )
+    elif error_type not in {"invalid_credentials", "no_pending_request"}:
         send_telegram_message(
             settings,
             "\n".join(
@@ -257,7 +339,7 @@ def _fail_preflight(
                 ]
             ),
         )
-    return {"status": "failed", "message": safe_message, **details}
+    return {"status": "failed", "message": safe_message, **failure_details}
 
 
 def _queue_notice(

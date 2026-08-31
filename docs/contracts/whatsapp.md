@@ -1,6 +1,6 @@
 # Contrato de comunicaciones WhatsApp
 
-Estado: vigente. Ultima verificacion: `2026-08-30`.
+Estado: vigente. Ultima verificacion: `2026-08-31`.
 
 Codigo propietario: `src/appointment_bot/services/whatsapp*` y
 `src/appointment_bot/db/whatsapp*`.
@@ -12,6 +12,12 @@ Otros procesos preparan o encolan trabajos durables; no abren emisores paralelos
 
 Cada job conserva tipo, orden, payload, deduplicacion, intentos, resultado
 tecnico y, cuando aplica, mensaje o paquete asociado.
+
+Detectar, bloquear o resolver varios expedientes pendientes es una accion
+interna y nunca encola WhatsApp. Si el operador solicita una confirmacion
+conjunta, primero recibe el texto exacto como preview; el envio sigue siendo una
+accion separada y expresamente autorizada. Las subordenes no generan avisos de
+registro individuales al crearse por esta resolucion.
 
 ## Estados y evidencia
 

@@ -274,21 +274,89 @@ fallos, pruebas, rollout y rollback son distintos.
 
 ### 1.1 Fallar cerrado con multiples tramites pendientes
 
-Objetivo: impedir que una cuenta con varios tramites `PENDIENTE` reserve el
-primero por posicion cuando la orden no identifica su objetivo.
+Objetivo: representar el alcance comercial acordado para los tramites de una
+misma cuenta e impedir que el sistema elija, active, cobre o comunique uno por
+posicion. Todos los expedientes pertenecen al titular; la ambiguedad es sobre
+cual o cuales tramites se contrataron, no sobre la identidad de la persona.
 
-- [ ] Crear pruebas de caracterizacion para cero, uno y varios pendientes.
-- [ ] Exigir `program_expediente` o `program_plate` cuando haya mas de un
-  pendiente, o exigir division previa en subordenes.
-- [ ] Hacer que preflight no marque `validated/ready` una orden ambigua.
-- [ ] Hacer que el motor rechace igualmente una orden antigua que haya evadido
-  el nuevo preflight.
-- [ ] Mostrar en dashboard y Telegram la accion necesaria sin elegir por el
-  operador de forma implicita.
-- [ ] Verificar que una sola fila pendiente siga funcionando sin regresion.
+#### 1.1.1 Clasificar el listado correctamente
 
-Criterio de cierre: ninguna ruta puede llegar a seleccion o submit con mas de
-un tramite pendiente y sin identidad persistida.
+- [x] Crear pruebas de caracterizacion para cero, uno y varios `PENDIENTE`,
+  incluyendo una fila `CANCELADO` y otra `PENDIENTE` con los mismos datos.
+- [x] Usar `pending_count`, no el total historico de filas, para decidir si se
+  requiere intervencion. `CANCELADO`, `ATENDIDO` y otros estados no cuentan
+  como tramites reservables.
+- [x] Si existe un solo `PENDIENTE`, seleccionarlo sin presentar el caso como
+  multiple y conservar el flujo normal sin regresion.
+- [x] Registrar listado, estado, expediente y placa observados sin interpretar
+  datos iguales como duplicidad ni como pertenencia a otra persona.
+
+#### 1.1.2 Persistir lo acordado con el cliente
+
+- [x] Cuando haya varios `PENDIENTE`, mantener la orden pausada y registrar una
+  accion interna `multiple_pending_resolution_required`; no marcar
+  `validated/ready` mientras falte la decision.
+- [x] Permitir al operador elegir explicitamente `resolver_uno`,
+  `resolver_todos` o `mantener_pausado`, conservando actor, fecha y revision del
+  listado sobre el que decidio.
+- [x] Para `resolver_uno`, exigir expediente exacto. Aceptar placa como clave
+  unica solo cuando identifica una sola fila `PENDIENTE`; una placa repetida no
+  puede seleccionar la primera coincidencia.
+- [x] Para `resolver_todos`, crear una suborden por cada expediente pendiente y
+  archivar siempre el padre para evitar monitoreo duplicado.
+- [x] Hacer la division idempotente y atomica: una falla no puede dejar solo
+  parte de los hijos creados ni duplicarlos al repetir la accion.
+- [x] Rechazar con conflicto una decision basada en un listado que cambio;
+  refrescarlo y pedir nueva confirmacion en lugar de aplicar datos obsoletos.
+
+#### 1.1.3 Conservar condiciones comerciales por tramite
+
+- [x] Antes de activar subordenes, confirmar por cada una servicio, reglas,
+  precio y `charge_required`. Permitir aplicar los mismos valores a todas solo
+  mediante una confirmacion explicita.
+- [x] No clonar silenciosamente el monto del padre como deuda independiente de
+  cada hijo. Distinguir precio por expediente, precio total compartido y
+  tramite sin cobro adicional segun lo acordado.
+- [x] Mantener reserva, evidencia y estado propios por suborden sin presentar la
+  division como garantia de conseguir todas las citas.
+
+#### 1.1.4 Controlar toda comunicacion al cliente
+
+- [x] Detectar multiples pendientes, bloquear preflight o pedir una decision
+  solo genera acciones internas en dashboard y Telegram. No encola WhatsApp ni
+  una aclaracion automatica al cliente.
+- [x] En el caso `CANCELADO + PENDIENTE`, no enviar explicaciones sobre
+  multiples expedientes; el aviso normal de registro puede seguir su politica
+  ordinaria una sola vez.
+- [x] Despues de resolver varios pendientes, exigir una decision persistida:
+  `cliente_ya_informado`, `previsualizar_confirmacion_unica` o
+  `mantener_sin_envio`. Ninguna opcion envia por defecto.
+- [x] Si se considera comunicar `resolver_todos`, mostrar primero un unico texto
+  conjunto. Resolver solo guarda el preview y nunca envia ni encola; cualquier
+  envio exige una accion posterior separada y autorizada.
+- [x] Conservar trazabilidad de la decision de comunicacion. Un envio posterior
+  sigue el contrato WhatsApp: `sent` no prueba lectura y `uncertain` nunca se
+  reintenta solo.
+
+#### 1.1.5 Defensa en profundidad y aceptacion
+
+- [x] Hacer que preflight bloquee la ambiguedad antes de activar la orden y que
+  el motor rechace igualmente una orden antigua que haya evadido esa barrera.
+- [x] Mostrar en dashboard y Telegram las filas pendientes y la accion exacta,
+  sin resolver implicitamente por el operador.
+- [x] Probar expediente exacto, placa unica, placa repetida, listado obsoleto,
+  division completa, rollback transaccional y repeticion idempotente.
+- [x] Probar que deteccion, bloqueo, resolucion y preview no crean ningun job
+  WhatsApp.
+
+Criterio de cierre: ninguna ruta llega a seleccion, CAPTCHA o submit con varios
+`PENDIENTE` sin alcance e identidad de tramite persistidos; resolver todos no
+duplica padre, hijos ni cobros; y ninguna deteccion o decision ambigua comunica
+al cliente sin contenido visible y autorizacion explicita.
+
+Limite seguro: una orden integral, con historia financiera, lease o intento
+activo no puede dividirse. Requiere cerrar primero esa condicion y, para datos
+financieros, definir una asignacion contable explicita antes de reintentar.
 
 ### 1.2 Preservar la captura canonica de todo cupo seleccionable
 
