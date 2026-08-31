@@ -15,15 +15,9 @@ from appointment_bot.db.order_contacts import (
     record_partial_payment,
 )
 from appointment_bot.db.order_credentials import (
-    ProgramResolutionConflict,
-    ProgramResolutionNotFound,
     create_service_order,
     get_claimed_service_order_runtime,
-    get_order_program_listing,
     get_service_order_runtime,
-    record_order_program_listing,
-    resolve_service_order_programs,
-    split_service_order_programs,
     update_service_order_credentials,
     update_service_order_document_type,
 )
@@ -61,4 +55,12 @@ from appointment_bot.db.order_state import (
     update_order_state,
     update_service_order_priority,
     update_service_order_reservation_constraints,
+)
+from appointment_bot.db.program_resolution import (
+    ProgramResolutionConflict,
+    ProgramResolutionNotFound,
+    get_order_program_listing,
+    record_order_program_listing,
+    resolve_service_order_programs,
+    split_service_order_programs,
 )

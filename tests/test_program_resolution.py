@@ -6,19 +6,19 @@ from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
-from appointment_bot.db.order_credentials import (
-    ProgramResolutionConflict,
-    create_service_order,
-    get_order_program_listing,
-    record_order_program_listing,
-    resolve_service_order_programs,
-    split_service_order_programs,
-)
+from appointment_bot.db.order_credentials import create_service_order
 from appointment_bot.db.order_preflight import (
     mark_order_preflight_failed,
     mark_order_preflight_pending,
 )
 from appointment_bot.db.orders import list_service_order_summaries
+from appointment_bot.db.program_resolution import (
+    ProgramResolutionConflict,
+    get_order_program_listing,
+    record_order_program_listing,
+    resolve_service_order_programs,
+    split_service_order_programs,
+)
 from appointment_bot.services.api.operator_inbox_routes import _order_task
 from appointment_bot.services.api.service_order_routes import (
     resolve_service_order_programs_payload,
@@ -378,7 +378,7 @@ class ProgramResolutionTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.db.order_credentials.create_service_order",
+                    "appointment_bot.db.program_resolution.create_service_order",
                     side_effect=fail_second_child,
                 ),
                 self.assertRaises(RuntimeError),

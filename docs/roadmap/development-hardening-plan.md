@@ -349,6 +349,18 @@ cual o cuales tramites se contrataron, no sobre la identidad de la persona.
 - [x] Probar que deteccion, bloqueo, resolucion y preview no crean ningun job
   WhatsApp.
 
+#### 1.1.6 Consolidar la implementacion sin ampliar comportamiento
+
+- [x] Extraer listado, resolucion transaccional y guardias financieras a
+  `db/program_resolution.py`; `order_credentials.py` conserva credenciales,
+  creacion y lectura runtime.
+- [x] Encapsular estado, validacion, plantilla y estilos del flujo visual en un
+  componente de resolucion dedicado; el modal general y `App` quedan como glue.
+- [x] Mantener el mismo contrato API, decisiones, errores estables y politica
+  sin envio durante la extraccion.
+- [x] Repetir pruebas backend, TypeScript y build para demostrar que el refactor
+  no cambia comportamiento.
+
 Criterio de cierre: ninguna ruta llega a seleccion, CAPTCHA o submit con varios
 `PENDIENTE` sin alcance e identidad de tramite persistidos; resolver todos no
 duplica padre, hijos ni cobros; y ninguna deteccion o decision ambigua comunica
