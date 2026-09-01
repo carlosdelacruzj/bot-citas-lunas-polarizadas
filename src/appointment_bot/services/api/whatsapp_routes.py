@@ -136,7 +136,7 @@ def resolve_whatsapp_review_payload(
     *,
     requested_by: str | None,
 ) -> tuple[HTTPStatus, dict[str, Any]]:
-    actor = requested_by or "dashboard-owner"
+    actor = requested_by or "system"
     try:
         result = resolve_whatsapp_automation_review(
             job_key,

@@ -5,6 +5,7 @@ from http import HTTPStatus
 from typing import Any
 from urllib.parse import unquote
 
+from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.runs import get_run, list_runs
 from appointment_bot.services.api.http import error_payload
 
@@ -65,7 +66,8 @@ def _public_run_detail(run: Any, *, include_details: bool) -> dict[str, Any]:
     payload = asdict(run)
     public_payload = {field: payload.get(field) for field in PUBLIC_RUN_DETAIL_FIELDS}
     if include_details:
-        public_payload["details"] = payload.get("details")
+        details = payload.get("details")
+        public_payload["details"] = sanitize_details(details) if isinstance(details, dict) else None
     return public_payload
 
 

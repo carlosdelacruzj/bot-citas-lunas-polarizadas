@@ -7,7 +7,7 @@ from pathlib import Path
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunRecord, RunReport
-from appointment_bot.core.statuses import ResultStatus, sanitize_details
+from appointment_bot.core.statuses import ResultStatus, redact_captcha_answers, sanitize_details
 from appointment_bot.db.runs import record_run_outcome
 from appointment_bot.reports.evidence import append_evidence_case
 from appointment_bot.reports.optimization import (
@@ -46,7 +46,7 @@ def report_from_result(
     )
     if exit_code is not None:
         effective_exit_code = exit_code
-    details = dict(result.details or {})
+    details = redact_captcha_answers(dict(result.details or {})) or {}
     unique_slot_evidence = details.pop("_unique_slot_evidence", None)
     submission_outcome = str(details.get("submission_outcome") or "").strip()
     return RunReport(

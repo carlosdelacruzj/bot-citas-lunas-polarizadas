@@ -73,6 +73,11 @@ POST /api/v1/finance/payments/{payment_id}/reconcile-amount
 POST /api/v1/finance/month-closure
 ```
 
+Conciliar una diferencia recibe `resolution_type` y `reason`; cerrar el mes
+recibe saldos, estado y notas. `reconciled_by` es solo un campo de salida
+historico: el servidor lo deriva del principal autenticado e ignora cualquier
+texto homonimo enviado en el body.
+
 Crear y editar reciben el movimiento completo. Campos obligatorios:
 `occurred_on`, `entry_kind`, `category_code`, `description` y `amount_original`. Los campos
 opcionales incluyen proveedor, tipo de cambio, cantidad/unidad, canal/campana, orden,

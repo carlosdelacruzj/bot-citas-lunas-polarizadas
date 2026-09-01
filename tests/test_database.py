@@ -520,6 +520,7 @@ class DatabaseTests(unittest.TestCase):
                     password="secret",
                     service_package="integral",
                     reservation_price=Decimal("160.00"),
+                    actor="api:sha256:testactor",
                     settings=settings,
                 )
 
@@ -543,7 +544,7 @@ class DatabaseTests(unittest.TestCase):
                 ).fetchone()
                 receipt = connection.execute(
                     """
-                    SELECT COUNT(*) AS count, SUM(amount) AS amount
+                    SELECT COUNT(*) AS count, SUM(amount) AS amount, MAX(actor) AS actor
                     FROM payment_receipts
                     WHERE order_id = %s AND source = 'integral_initial_payment'
                     """,
@@ -569,6 +570,7 @@ class DatabaseTests(unittest.TestCase):
             self.assertEqual(payment["amount_paid"], Decimal("80.00"))
             self.assertEqual(receipt["count"], 1)
             self.assertEqual(receipt["amount"], Decimal("80.00"))
+            self.assertEqual(receipt["actor"], "api:sha256:testactor")
             self.assertEqual(fee["count"], 1)
             self.assertEqual(fee["amount"], Decimal("71.40"))
 

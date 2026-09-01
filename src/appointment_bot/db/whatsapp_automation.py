@@ -722,7 +722,7 @@ def resolve_whatsapp_automation_review(
     safe_note = sanitize_text(" ".join(str(note or "").split()))[:500] or None
     if normalized_resolution == "dismissed" and safe_note is None:
         raise ValueError("Indica el motivo para cerrar el pendiente sin envio.")
-    actor = sanitize_text(" ".join(reviewed_by.split()))[:80] or "dashboard-owner"
+    actor = sanitize_text(" ".join(reviewed_by.split()))[:80] or "system"
     effective_settings = _settings(settings)
     init_database(effective_settings)
     now = _now()

@@ -47,6 +47,7 @@ from appointment_bot.services.api.finance_routes import (
 )
 from appointment_bot.services.api.http import (
     RequestBodyError,
+    authenticated_actor,
     error_payload,
     read_json,
     require_authorized,
@@ -526,7 +527,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_appointment_reminders_payload(
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -536,7 +537,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_captcha_sampling_control_payload(
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -546,7 +547,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_captcha_authority_control_payload(
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -556,7 +557,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             status, payload = update_opportunity_control_payload(
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -568,7 +569,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = save_captcha_shadow_human_label_payload(
                 captcha_event_id,
                 self._read_json(),
-                reviewer=self.headers.get("X-Appointment-Actor") or "dashboard-owner",
+                reviewer=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -576,7 +577,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/service-orders":
             if not self._require_authorized(strict=True):
                 return
-            status, payload = create_service_order_payload(self._read_json())
+            status, payload = create_service_order_payload(
+                self._read_json(),
+                requested_by=self._authenticated_actor(),
+            )
             self._send_json(status, payload)
             return
 
@@ -689,7 +693,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = resolve_whatsapp_review_payload(
                 whatsapp_review_job_key,
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -720,7 +724,10 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/finance/month-closure":
             if not self._require_authorized(strict=True):
                 return
-            status, payload = upsert_finance_month_closure_payload(self._read_json())
+            status, payload = upsert_finance_month_closure_payload(
+                self._read_json(),
+                requested_by=self._authenticated_actor(),
+            )
             self._send_json(status, payload)
             return
 
@@ -731,6 +738,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = reconcile_payment_amount_payload(
                 finance_payment_id,
                 self._read_json(),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -794,7 +802,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = mark_payment_paid_payload(
                 paid_order_id,
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -806,7 +814,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = record_partial_payment_payload(
                 partial_order_id,
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -837,7 +845,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             status, payload = resolve_service_order_programs_payload(
                 program_resolution_order_id,
                 self._read_json(),
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -883,7 +891,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return
             if release_safe_backoffs:
                 status, payload = enqueue_restart_with_safe_backoff_release_payload(
-                    requested_by=self.headers.get("X-Appointment-Actor"),
+                    requested_by=self._authenticated_actor(),
                 )
                 self._send_json(status, payload)
                 return
@@ -892,7 +900,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if controller is None or restart_callback is None:
                 status, payload = enqueue_worker_command_payload(
                     "restart",
-                    requested_by=self.headers.get("X-Appointment-Actor"),
+                    requested_by=self._authenticated_actor(),
                 )
                 self._send_json(status, payload)
                 return
@@ -901,7 +909,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             if controller_settings is not None:
                 record_worker_control_audit(
                     command="restart",
-                    requested_by=self.headers.get("X-Appointment-Actor"),
+                    requested_by=self._authenticated_actor(),
                     status="accepted",
                     detail="control_path=embedded_api",
                     settings=controller_settings,
@@ -946,7 +954,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             command = "pause" if path.endswith("/pause") else "resume"
             status, payload = enqueue_worker_command_payload(
                 command,
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
             )
             self._send_json(status, payload)
             return
@@ -956,7 +964,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         if controller_settings is not None:
             record_worker_control_audit(
                 command=command,
-                requested_by=self.headers.get("X-Appointment-Actor"),
+                requested_by=self._authenticated_actor(),
                 status="applied",
                 detail="control_path=embedded_api",
                 settings=controller_settings,
@@ -989,7 +997,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
         status, payload = update_whatsapp_message_template_payload(
             template_key,
             self._read_json(),
-            requested_by=self.headers.get("X-Appointment-Actor"),
+            requested_by=self._authenticated_actor(),
         )
         self._send_json(status, payload)
 
@@ -998,6 +1006,9 @@ class LocalApiHandler(BaseHTTPRequestHandler):
 
     def _require_authorized(self, *, strict: bool = False) -> bool:
         return require_authorized(self, strict=strict)
+
+    def _authenticated_actor(self) -> str:
+        return authenticated_actor(self)
 
     def _read_json(self) -> dict[str, Any]:
         return read_json(self)

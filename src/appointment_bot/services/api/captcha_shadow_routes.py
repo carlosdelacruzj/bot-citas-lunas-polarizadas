@@ -275,7 +275,7 @@ def save_captcha_shadow_human_label_payload(
     event_id: str,
     payload: dict[str, Any],
     *,
-    reviewer: str = "dashboard-owner",
+    reviewer: str = "system",
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     answer = str(payload.get("answer") or "").strip().upper()
     image_sha256 = str(payload.get("expected_image_sha256") or "").strip().lower()
@@ -305,7 +305,7 @@ def save_captcha_shadow_human_label_payload(
             {
                 "answer": answer,
                 "expected_image_sha256": image_sha256,
-                "reviewer": str(reviewer or "dashboard-owner")[:100],
+                "reviewer": str(reviewer or "system")[:100],
                 "note": note[:500],
             },
         )

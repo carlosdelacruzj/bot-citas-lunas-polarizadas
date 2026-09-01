@@ -49,6 +49,8 @@ copiar el mismo artefacto pesado entre ambos.
   completos de orden, cuentas, tokens, passwords y respuestas CAPTCHA deben
   estar enmascarados en todo archivo versionado.
 - Los generadores pasan texto por sanitizacion antes de escribir CSV/Markdown.
+- La sanitizacion de detalles es recursiva: elimina claves de credencial,
+  secretos y respuestas CAPTCHA en mapas y colecciones, y redacta binarios.
 - Una ruta sanitizada del indice no prueba que el artefacto siga retenido. El
   manifiesto mensual declara esa disponibilidad como no verificada; una
   investigacion concreta debe comprobar el archivo antes de citarlo.

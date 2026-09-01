@@ -612,36 +612,36 @@ caso natural conserva abono, tasa, saldo, mensaje y resumen correctos.
 Objetivo: que cerrar o cancelar un modal elimine passwords y datos que no deben
 quedar visibles.
 
-- [ ] Limpiar siempre `newPassword` al cerrar alta.
-- [ ] Conservar como borrador solo datos no sensibles si esa experiencia sigue
+- [x] Limpiar siempre `newPassword` al cerrar alta.
+- [x] Conservar como borrador solo datos no sensibles si esa experiencia sigue
   siendo necesaria.
-- [ ] Hacer efectiva `containsSecret` o retirarla si se reemplaza por una
+- [x] Hacer efectiva `containsSecret` o retirarla si se reemplaza por una
   politica mas clara.
-- [ ] Enmascarar documento en confirmaciones y copias de diagnostico.
-- [ ] Probar cierre, cancelacion, error HTTP y alta exitosa.
+- [x] Enmascarar documento en confirmaciones y copias de diagnostico.
+- [x] Probar cierre, cancelacion, error HTTP y alta exitosa.
 
 ### 3.2 No persistir respuestas CAPTCHA en detalles generales
 
 Objetivo: mantener la solucion solamente donde sea imprescindible y evitar que
 termine en `runs.details_json`, endpoints o exportes.
 
-- [ ] Retirar `captcha_solution_sent` antes de construir el reporte general.
-- [ ] Mantener correlacion de autoridad en almacenamiento restringido si es
+- [x] Retirar `captcha_solution_sent` antes de construir el reporte general.
+- [x] Mantener correlacion de autoridad en almacenamiento restringido si es
   necesaria para el sistema sombra.
-- [ ] Agregar redaccion recursiva por clave y tipo de dato.
-- [ ] Probar reportes, API, CSV, Markdown y diagnostico copiado.
-- [ ] Revisar datos historicos sin modificarlos ni publicarlos automaticamente.
+- [x] Agregar redaccion recursiva por clave y tipo de dato.
+- [x] Probar reportes, API, CSV, Markdown y diagnostico copiado.
+- [x] Revisar datos historicos sin modificarlos ni publicarlos automaticamente.
 
 ### 3.3 Trazabilidad de actor confiable
 
 Objetivo: que auditoria y conciliacion identifiquen al principal autenticado,
 no un texto enviado por el cliente o un literal fijo.
 
-- [ ] Resolver actor una vez en la frontera HTTP/Telegram.
-- [ ] Pasarlo a casos de uso y transacciones.
-- [ ] No aceptar `reconciled_by` como identidad autoritativa desde el body.
-- [ ] Eliminar el literal `dashboard-owner` del registro integral.
-- [ ] Mantener actor enmascarado o hasheado cuando corresponda.
+- [x] Resolver actor una vez en la frontera HTTP/Telegram.
+- [x] Pasarlo a casos de uso y transacciones.
+- [x] No aceptar `reconciled_by` como identidad autoritativa desde el body.
+- [x] Eliminar el literal `dashboard-owner` del registro integral.
+- [x] Mantener actor enmascarado o hasheado cuando corresponda.
 
 Criterio de cierre de fase: cerrar o fallar un flujo no deja secrets visibles,
 las respuestas CAPTCHA no cruzan superficies generales y toda accion sensible

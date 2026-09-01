@@ -190,7 +190,11 @@ def get_service_order_credentials_payload(
     }
 
 
-def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+def create_service_order_payload(
+    payload: dict[str, Any],
+    *,
+    requested_by: str = "system",
+) -> tuple[HTTPStatus, dict[str, Any]]:
     required = (
         "document_number",
         "document_type",
@@ -245,6 +249,7 @@ def create_service_order_payload(payload: dict[str, Any]) -> tuple[HTTPStatus, d
             parent_order_id=_optional_text(payload, "parent_order_id"),
             program_expediente=_optional_text(payload, "program_expediente"),
             program_plate=_optional_text(payload, "program_plate"),
+            actor=requested_by,
         )
     except ContactValidationError as exc:
         return HTTPStatus.BAD_REQUEST, error_payload(
@@ -506,7 +511,7 @@ def mark_payment_paid_payload(
             order_id,
             amount_paid=payload["amount_paid"],
             amount_agreed=payload.get("amount_agreed"),
-            actor=requested_by or "dashboard-owner",
+            actor=requested_by or "system",
             allow_difference=_optional_bool(payload, "allow_difference", default=False),
             difference_reason=_optional_text(payload, "difference_reason"),
             expected_payment_status=_optional_text(payload, "expected_payment_status"),
@@ -536,7 +541,7 @@ def record_partial_payment_payload(
             order_id,
             amount_paid=payload["amount_paid"],
             amount_agreed=payload.get("amount_agreed"),
-            actor=requested_by or "dashboard-owner",
+            actor=requested_by or "system",
             expected_payment_status=_optional_text(payload, "expected_payment_status"),
             expected_amount_agreed=payload.get("expected_amount_agreed"),
             expected_amount_paid=payload.get("expected_amount_paid"),

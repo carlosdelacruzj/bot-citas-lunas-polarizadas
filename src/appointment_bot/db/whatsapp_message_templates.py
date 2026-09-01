@@ -81,7 +81,7 @@ def update_whatsapp_message_template(
         raise ValueError(errors["message_template"])
     if expected_revision < 1:
         raise ValueError("expected_revision must be at least 1.")
-    actor = sanitize_text(updated_by.strip())[:120] or "dashboard-owner"
+    actor = sanitize_text(updated_by.strip())[:120] or "system"
     resolved = _settings(settings)
     init_database(resolved)
     with _connection(_database_url(resolved)) as connection:

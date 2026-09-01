@@ -120,7 +120,11 @@ class EvidenceSummaryTests(unittest.TestCase):
                 screenshot_path="result.png",
                 screenshot_count=1,
                 created_at="2026-07-04T14:01:00+00:00",
-                details={"fecha": "14/07/2026", "hora": "11:00"},
+                details={
+                    "fecha": "14/07/2026",
+                    "hora": "11:00",
+                    "captcha_attempts": [{"captcha_solution_sent": "ZX90"}],
+                },
                 screenshot_paths=["result.png"],
             )
 
@@ -143,6 +147,8 @@ class EvidenceSummaryTests(unittest.TestCase):
             self.assertIn("Cobertura temporal verificable: 1/1", summary)
             self.assertIn("Es un snapshot generado", summary)
             self.assertIn("Reservas registradas: 1", summary)
+            self.assertNotIn("ZX90", summary)
+            self.assertNotIn("ZX90", result.csv_path.read_text(encoding="utf-8"))
 
     def test_defense_signal_detection(self) -> None:
         self.assertEqual(detect_defense_signal("HTTP 403 forbidden"), "http_403")

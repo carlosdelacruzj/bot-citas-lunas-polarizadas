@@ -32,6 +32,12 @@ estricta.
 - si falta configuracion segura, la API falla cerrado con
   `configuration_error`.
 
+El actor de auditoria se resuelve una sola vez al autenticar. La cookie local
+produce `dashboard:local`; un bearer produce una huella SHA-256 corta. Telegram
+puede adjuntar su actor ya hasheado con una firma HMAC ligada al bearer. Un
+`X-Appointment-Actor` sin firma valida y los campos de identidad del body no son
+autoridad y no reemplazan al principal autenticado.
+
 `GET /health` puede usarse para liveness, pero una respuesta HTTP no prueba que
 WhatsApp, PostgreSQL, worker o schedulers esten funcionales.
 

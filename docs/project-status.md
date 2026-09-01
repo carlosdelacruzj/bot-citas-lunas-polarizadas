@@ -143,6 +143,9 @@ El contrato entre el contenedor Angular y sus vistas esta tipado. La lista de
 ordenes usa una proyeccion especifica del dashboard; el endpoint completo de
 compatibilidad y el detalle autorizado permanecen separados.
 
+Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
+confirmaciones y la copia diagnostica no muestran esos datos personales.
+
 Las rafagas de oportunidad y la reobservacion unica posterior a un `slot_lost`
 son capacidades estables. Su admision se gobierna en PostgreSQL con
 `enabled`, `disabled` y, para rafagas, `draining`; el breaker conserva prioridad
@@ -210,6 +213,8 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - preservar screenshots de cupos unicos antes de CAPTCHA o submit;
 - videos de reserva son evidencia local sensible y se graban sin mascaras;
 - no publicar dumps, credenciales, placas, expedientes ni respuestas CAPTCHA;
+- respuestas CAPTCHA no entran en reportes, runs, reservas, CSV ni Markdown;
+- auditoria usa dashboard local, Telegram hasheado o huella SHA-256 del bearer;
 - reescribir el historial Git requiere autorizacion independiente.
 
 ## Limitaciones abiertas
@@ -227,7 +232,6 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 
 La prioridad y criterios de cierre estan solo en
 [`roadmap/README.md`](roadmap/README.md).
-
 ## Validacion base
 
 ```powershell
@@ -242,9 +246,4 @@ sustituye validacion visual real ni observacion natural.
 
 ## Regla de mantenimiento
 
-1. Reemplazar aqui el estado anterior; no agregar cronologia.
-2. Actualizar el roadmap solo si cambia trabajo futuro o prioridad.
-3. No acumular implementacion fechada; Git conserva la version anterior y
-   `history/milestones.md` resume solo decisiones durables.
-4. Mantener este archivo por debajo de `250` lineas.
-5. Verificar enlaces y `git diff --check`.
+Reemplazar el estado anterior, dejar lo futuro en roadmap, mantener menos de 250 lineas y verificar enlaces y `git diff --check`.

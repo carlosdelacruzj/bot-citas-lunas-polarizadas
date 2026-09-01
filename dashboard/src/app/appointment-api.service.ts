@@ -982,7 +982,6 @@ export interface FinanceMonthClosurePayload {
   opening_prepaid_balance: string | null;
   closing_prepaid_balance: string | null;
   status: 'draft' | 'reconciled';
-  reconciled_by: string | null;
   notes: string | null;
 }
 
@@ -1483,7 +1482,7 @@ export class AppointmentApiService {
 
   async reconcileFinancePaymentAmount(
     paymentId: string,
-    payload: { resolution_type: PaymentResolutionType; reason: string; reconciled_by: string },
+    payload: { resolution_type: PaymentResolutionType; reason: string },
   ): Promise<ApiActionResponse> {
     return this.post<ApiActionResponse>(
       `/api/v1/finance/payments/${encodeURIComponent(paymentId)}/reconcile-amount`,

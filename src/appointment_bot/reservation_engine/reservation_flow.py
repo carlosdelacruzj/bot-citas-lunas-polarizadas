@@ -9,6 +9,7 @@ from pathlib import Path
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.core.statuses import redact_captcha_answers
 from appointment_bot.db.captcha_authority import resolve_captcha_authority_decision
 from appointment_bot.reservation_engine.appointments import (
     AppointmentWorkflowCancelled,
@@ -130,7 +131,7 @@ def _build_reservation_details(
     artifacts = {key: values for key, values in diagnostic_artifacts.items() if values}
     if artifacts:
         details["diagnostic_artifacts"] = artifacts
-    return details
+    return redact_captcha_answers(details) or {}
 
 
 def complete_available_reservation(

@@ -22,6 +22,11 @@ externo preservado.
 Una prediccion en sombra no confirma una reserva ni autoriza un submit por si
 sola.
 
+La solucion usada puede vivir durante la correlacion inmediata dentro del
+dominio CAPTCHA, pero se retira antes de construir un reporte general. La
+sanitizacion recursiva por clave y contenedor protege lecturas historicas sin
+reescribir automaticamente filas anteriores.
+
 ## Integridad de evidencia
 
 - conservar bytes y SHA del artefacto antes de etiquetar;

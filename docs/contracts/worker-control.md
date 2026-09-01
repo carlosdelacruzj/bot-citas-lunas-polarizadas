@@ -58,9 +58,11 @@ auditoria y tratamiento seguro de trabajo activo.
 Los controles requieren autenticacion estricta mediante bearer o sesion local
 confiable. Sin configuracion segura fallan cerrado.
 
-`X-Appointment-Actor` admite hasta 64 caracteres en `[A-Za-z0-9:_-]`; un valor
-ausente o invalido se normaliza a `admin_api`. Telegram persiste un hash corto,
-nunca el chat o usuario completo.
+El actor se deriva de la cookie local o del bearer autenticado. Un
+`X-Appointment-Actor` solo se acepta con su firma HMAC valida, hasta 64
+caracteres en `[A-Za-z0-9:_-]`; sin firma se usa la huella SHA-256 corta del
+bearer. Telegram firma y persiste un hash corto, nunca el chat o usuario
+completo.
 
 ## Salida coordinada
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import mimetypes
 import os
+import re
 from collections.abc import Mapping
 from http import HTTPStatus
 from http.cookies import CookieError, SimpleCookie
@@ -12,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 MAX_JSON_BODY_BYTES = 64 * 1024
+AUTHENTICATED_ACTOR_PATTERN = re.compile(r"^[A-Za-z0-9:_-]{1,64}$")
 
 
 class RequestBodyError(ValueError):
@@ -26,6 +29,7 @@ def require_authorized(
     strict: bool = False,
 ) -> bool:
     if _trusted_dashboard_session(handler):
+        handler._authenticated_principal = "dashboard:local"
         return True
     token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
     if not token:
@@ -39,10 +43,12 @@ def require_authorized(
                 ),
             )
             return False
+        handler._authenticated_principal = "local:unconfigured"
         return True
 
     header_value = handler.headers.get("Authorization", "")
     if hmac.compare_digest(header_value, f"Bearer {token}"):
+        handler._authenticated_principal = _bearer_actor(handler, token)
         return True
     send_json(
         handler,
@@ -50,6 +56,32 @@ def require_authorized(
         error_payload("unauthorized", "Invalid local API token."),
     )
     return False
+
+
+def authenticated_actor(handler: BaseHTTPRequestHandler) -> str:
+    actor = getattr(handler, "_authenticated_principal", "")
+    if not isinstance(actor, str) or not actor:
+        raise RuntimeError("The request has no authenticated principal.")
+    return actor
+
+
+def signed_actor_signature(token: str, actor: str) -> str:
+    return hmac.new(
+        token.encode("utf-8"),
+        actor.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _bearer_actor(handler: BaseHTTPRequestHandler, token: str) -> str:
+    claimed_actor = handler.headers.get("X-Appointment-Actor", "").strip()
+    claimed_signature = handler.headers.get("X-Appointment-Actor-Signature", "").strip()
+    if claimed_actor and AUTHENTICATED_ACTOR_PATTERN.fullmatch(claimed_actor):
+        expected_signature = signed_actor_signature(token, claimed_actor)
+        if hmac.compare_digest(claimed_signature, expected_signature):
+            return claimed_actor
+    fingerprint = hashlib.sha256(token.encode("utf-8")).hexdigest()[:12]
+    return f"api:sha256:{fingerprint}"
 
 
 def _trusted_dashboard_session(handler: BaseHTTPRequestHandler) -> bool:

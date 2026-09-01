@@ -63,6 +63,7 @@ def create_service_order(
     parent_order_id: str | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
+    actor: str = "system",
     require_preflight: bool = True,
     settings: Settings | None = None,
     _connection_override: Connection | None = None,
@@ -74,6 +75,7 @@ def create_service_order(
         raise ValueError("document_number is required.")
     if not password:
         raise ValueError("password is required.")
+    actor = " ".join(actor.split())[:120] or "system"
     document_type = normalize_document_type(document_type)
     if priority < 0:
         raise ValueError("priority must be non-negative.")
@@ -386,7 +388,7 @@ def create_service_order(
                     source, actor, created_at
                 )
                 VALUES (%s, %s, %s, %s, %s, 'integral_initial_payment',
-                        'dashboard-owner', %s)
+                        %s, %s)
                 ON CONFLICT(receipt_id) DO NOTHING
                 """,
                 (
@@ -395,6 +397,7 @@ def create_service_order(
                     order_id,
                     initial_payment_amount,
                     now,
+                    actor,
                     now,
                 ),
             )

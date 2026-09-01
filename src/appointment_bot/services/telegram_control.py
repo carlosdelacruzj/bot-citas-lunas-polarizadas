@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import logging
 import mimetypes
@@ -602,6 +603,11 @@ class AdminApiClient:
         headers = {"Authorization": f"Bearer {self.token}"}
         if actor:
             headers["X-Appointment-Actor"] = actor
+            headers["X-Appointment-Actor-Signature"] = hmac.new(
+                self.token.encode("utf-8"),
+                actor.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
         body = None
         if payload is not None:
             headers["Content-Type"] = "application/json"

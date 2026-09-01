@@ -59,7 +59,7 @@ def update_appointment_reminder_control(
         raise ValueError("Unsupported appointment reminder mode.")
     if isinstance(lead_days, bool) or lead_days not in REMINDER_LEAD_DAYS:
         raise ValueError("Appointment reminder lead days must be 1, 2, or 3.")
-    actor = sanitize_text(updated_by.strip())[:120] or "dashboard-owner"
+    actor = sanitize_text(updated_by.strip())[:120] or "system"
     resolved = _settings(settings)
     init_database(resolved)
     with _connection(_database_url(resolved)) as connection:

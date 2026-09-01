@@ -161,7 +161,7 @@ def update_whatsapp_message_template_payload(
             template_key=definition.key,
             message_template=message_template,
             expected_revision=int(expected_revision),
-            updated_by=requested_by or "dashboard-owner",
+            updated_by=requested_by or "system",
             settings=settings,
         )
     except WhatsAppMessageTemplateConflict as exc:

@@ -245,7 +245,6 @@ type PendingAction = {
   message: string;
   execute: () => Promise<ApiActionResponse>;
   successMessage?: string | ((response: ApiActionResponse) => string);
-  containsSecret?: boolean;
   onSuccess?: (response: ApiActionResponse) => void;
   afterRefresh?: (response: ApiActionResponse) => void | Promise<void>;
   onSettled?: () => void;
@@ -605,12 +604,10 @@ export class App implements OnDestroy {
   public readonly financeLoading = signal(false);
   public readonly financeClosureOpeningBalance = signal('');
   public readonly financeClosureClosingBalance = signal('');
-  public readonly financeClosureReconciledBy = signal('');
   public readonly financeClosureNotes = signal('');
   public readonly financeMismatchPaymentId = signal('');
   public readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
   public readonly financeMismatchReason = signal('');
-  public readonly financeMismatchReconciledBy = signal('');
   public readonly editingFinanceEntryId = signal('');
   public readonly financeOccurredOn = signal(INITIAL_DATE);
   public readonly financeEntryKind = signal<FinanceEntryKind>('expense');
@@ -2272,20 +2269,17 @@ export class App implements OnDestroy {
     this.financeMismatchPaymentId.set(paymentId);
     this.financeMismatchResolution.set('discount');
     this.financeMismatchReason.set('');
-    this.financeMismatchReconciledBy.set('');
   }
 
   public cancelFinanceMismatchResolution(): void {
     this.financeMismatchPaymentId.set('');
     this.financeMismatchReason.set('');
-    this.financeMismatchReconciledBy.set('');
   }
 
   public requestReconcileFinancePayment(paymentId: string): void {
     const reason = this.financeMismatchReason().trim();
-    const reconciledBy = this.financeMismatchReconciledBy().trim();
-    if (reason.length < 3 || !reconciledBy) {
-      this.errorMessage.set('Indica una causa de al menos 3 caracteres y el responsable.');
+    if (reason.length < 3) {
+      this.errorMessage.set('Indica una causa de al menos 3 caracteres.');
       return;
     }
     const resolution = this.financeMismatchResolution();
@@ -2296,7 +2290,6 @@ export class App implements OnDestroy {
         this.api.reconcileFinancePaymentAmount(paymentId, {
           resolution_type: resolution,
           reason,
-          reconciled_by: reconciledBy,
         }),
       successMessage: 'Diferencia de pago conciliada',
       onSuccess: () => this.cancelFinanceMismatchResolution(),
@@ -2314,9 +2307,8 @@ export class App implements OnDestroy {
   public requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
     const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
     const closing = String(this.financeClosureClosingBalance() ?? '').trim();
-    const reconciledBy = this.financeClosureReconciledBy().trim();
-    if (status === 'reconciled' && (!opening || !closing || !reconciledBy)) {
-      this.errorMessage.set('Para conciliar, completa saldo inicial, saldo final y responsable.');
+    if (status === 'reconciled' && (!opening || !closing)) {
+      this.errorMessage.set('Para conciliar, completa saldo inicial y saldo final.');
       return;
     }
     void this.setPendingAction({
@@ -2331,7 +2323,6 @@ export class App implements OnDestroy {
           opening_prepaid_balance: opening || null,
           closing_prepaid_balance: closing || null,
           status,
-          reconciled_by: status === 'reconciled' ? reconciledBy : null,
           notes: this.financeClosureNotes().trim() || null,
         }),
       successMessage: status === 'reconciled' ? 'Mes financiero conciliado' : 'Borrador de cierre guardado',
@@ -3500,6 +3491,9 @@ export class App implements OnDestroy {
     this.pendingAction.set(null);
     this.formDirty.set(false);
     this.hydrateSelectedOrderForms();
+    if (modal === 'create-order') {
+      this.clearCreateOrderForm();
+    }
     if (modal === 'finance-entry') {
       this.clearFinanceForm();
     }
@@ -3791,7 +3785,6 @@ export class App implements OnDestroy {
     this.setPendingAction({
       title: documentChanged ? 'Cambiar usuario y contraseña' : 'Cambiar contraseña',
       message,
-      containsSecret: true,
       execute: () =>
         this.api.updateServiceOrderCredentials(order.order_id, {
           document_number: documentNumber,
@@ -3803,6 +3796,10 @@ export class App implements OnDestroy {
         this.orderPasswordVisible.set(false);
         this.activeModal.set(null);
         this.selectedOrderDetail.set(null);
+      },
+      onSettled: () => {
+        this.orderPassword.set('');
+        this.orderPasswordVisible.set(false);
       },
     });
   }
@@ -4172,16 +4169,15 @@ export class App implements OnDestroy {
     }
     this.setPendingAction({
       title: 'Crear orden nueva',
-      message: `Crear orden para documento ${payload.document_number} como ${
+      message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${
         packageDefinition.label.toLocaleLowerCase('es-PE')
       } por S/${reservationPrice}.`,
       execute: () => this.api.createServiceOrder(payload),
-      containsSecret: true,
       onSuccess: () => {
         this.clearCreateOrderForm();
         this.activeModal.set(null);
       },
-      onSettled: () => this.newPassword.set(''),
+      onSettled: () => this.clearCreateOrderSensitiveFields(),
     });
   }
 
@@ -5265,6 +5261,22 @@ export class App implements OnDestroy {
     this.newExcludedDateEnd.set('');
   }
 
+  private clearCreateOrderSensitiveFields(): void {
+    this.newDocumentNumber.set('');
+    this.newPassword.set('');
+    this.newContactName.set('');
+    this.newContactWhatsapp.set('');
+    this.newContactWhatsappUsername.set('');
+  }
+
+  private maskDocumentNumber(value: string): string {
+    const normalized = value.trim();
+    if (normalized.length <= 3) {
+      return '***';
+    }
+    return `${normalized.slice(0, 2)}${'*'.repeat(Math.max(normalized.length - 3, 1))}${normalized.slice(-1)}`;
+  }
+
   private financeFormPayload(): FinanceEntryPayload | null {
     const amountOriginal = String(this.financeAmountOriginal() ?? '').trim();
     const exchangeRate = String(this.financeExchangeRatePen() ?? '').trim();
@@ -5341,7 +5353,6 @@ export class App implements OnDestroy {
         ? ''
         : String(payload.closure.closing_prepaid_balance),
     );
-    this.financeClosureReconciledBy.set(payload.closure?.reconciled_by ?? '');
     this.financeClosureNotes.set(payload.closure?.notes ?? '');
   }
 

@@ -74,7 +74,7 @@ def update_appointment_reminders_payload(
             mode=mode,
             lead_days=int(lead_days),
             expected_revision=int(expected_revision),
-            updated_by=requested_by or "dashboard-owner",
+            updated_by=requested_by or "system",
             settings=settings,
         )
     except AppointmentReminderControlConflict as exc:

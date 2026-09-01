@@ -80,13 +80,15 @@ def finance_month_closure_payload(
 
 def upsert_finance_month_closure_payload(
     payload: dict[str, Any],
+    *,
+    requested_by: str,
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     parsed = _month_range({"month": [str(payload.get("month") or "").strip()]})
     if isinstance(parsed, tuple) and len(parsed) == 2 and isinstance(parsed[0], HTTPStatus):
         return parsed
     month_start, next_month_start = parsed
     try:
-        values = _normalize_month_closure(payload)
+        values = _normalize_month_closure(payload, requested_by=requested_by)
         closure = upsert_finance_month_closure(
             month_start, next_month_start, values
         )
@@ -98,24 +100,25 @@ def upsert_finance_month_closure_payload(
 def reconcile_payment_amount_payload(
     payment_id: str,
     payload: dict[str, Any],
+    *,
+    requested_by: str,
 ) -> tuple[HTTPStatus, dict[str, Any]]:
     resolution_type = str(payload.get("resolution_type") or "").strip()
     reason = str(payload.get("reason") or "").strip()
-    reconciled_by = str(payload.get("reconciled_by") or "").strip()
     if resolution_type not in PAYMENT_RESOLUTION_TYPES:
         return HTTPStatus.BAD_REQUEST, error_payload(
             "bad_request", "resolution_type must be discount, waiver or correction."
         )
-    if len(reason) < 3 or not reconciled_by:
+    if len(reason) < 3:
         return HTTPStatus.BAD_REQUEST, error_payload(
-            "bad_request", "reason and reconciled_by are required."
+            "bad_request", "reason must contain at least 3 characters."
         )
     try:
         reconciliation = reconcile_payment_amount(
             payment_id,
             resolution_type=resolution_type,
             reason=reason,
-            reconciled_by=reconciled_by,
+            reconciled_by=requested_by,
         )
     except ValueError as exc:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
@@ -248,7 +251,11 @@ def _normalize_entry(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _normalize_month_closure(payload: dict[str, Any]) -> dict[str, Any]:
+def _normalize_month_closure(
+    payload: dict[str, Any],
+    *,
+    requested_by: str,
+) -> dict[str, Any]:
     status = str(payload.get("status") or "draft").strip()
     if status not in {"draft", "reconciled"}:
         raise ValueError("status must be draft or reconciled.")
@@ -258,18 +265,15 @@ def _normalize_month_closure(payload: dict[str, Any]) -> dict[str, Any]:
     closing = _optional_non_negative_decimal(
         payload.get("closing_prepaid_balance"), "closing_prepaid_balance"
     )
-    reconciled_by = _optional_text(payload.get("reconciled_by"))
-    if status == "reconciled" and (
-        opening is None or closing is None or reconciled_by is None
-    ):
+    if status == "reconciled" and (opening is None or closing is None):
         raise ValueError(
-            "A reconciled close requires opening and closing balances and reconciled_by."
+            "A reconciled close requires opening and closing balances."
         )
     return {
         "opening_prepaid_balance": opening,
         "closing_prepaid_balance": closing,
         "status": status,
-        "reconciled_by": reconciled_by,
+        "reconciled_by": requested_by if status == "reconciled" else None,
         "notes": _optional_text(payload.get("notes")),
     }
 
