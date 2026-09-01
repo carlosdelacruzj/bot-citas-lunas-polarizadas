@@ -653,23 +653,25 @@ tiene actor derivado de autenticacion.
 
 Objetivo: que otro equipo o CI pueda instalar exactamente el entorno soportado.
 
-- [ ] Declarar `pytest` y herramientas de validacion usadas dentro del extra
+- [x] Declarar `pytest` y herramientas de validacion usadas dentro del extra
   de desarrollo.
-- [ ] Elegir y documentar una estrategia de lock Python reproducible.
-- [ ] Mantener `package-lock.json` y usar `npm ci` en CI.
-- [ ] Ejecutar auditoria de vulnerabilidades Python y frontend.
-- [ ] Definir politica de actualizacion y rollback de dependencias.
+- [x] Elegir y documentar una estrategia de lock Python reproducible.
+- [x] Mantener `package-lock.json` y usar `npm ci` en CI.
+- [x] Ejecutar auditoria de vulnerabilidades Python y frontend.
+- [x] Definir politica de actualizacion y rollback de dependencias.
 
 ### 4.2 CI obligatorio
 
 Objetivo: impedir que una rama verde localmente falle al integrarse.
 
-- [ ] Crear pipeline para Python `3.12` con compileall, Ruff y pytest.
-- [ ] Agregar build Angular, typecheck estricto, validador documental y
+- [x] Crear pipeline para Python `3.12` con compileall, Ruff y pytest.
+- [x] Agregar build Angular, typecheck estricto, validador documental y
   `git diff --check`.
-- [ ] Ejecutar instalacion reproducible, no depender del entorno del operador.
-- [ ] Guardar resultados y hacer obligatorios los checks antes de integrar.
-- [ ] No incluir credenciales reales ni conectarse al runtime productivo.
+- [x] Ejecutar instalacion reproducible, no depender del entorno del operador.
+- [x] Guardar resultados de pytest y del build como artefactos de CI.
+- [ ] Hacer obligatorios `Backend` y `Frontend` antes de integrar, despues de
+  su primera ejecucion remota verde.
+- [x] No incluir credenciales reales ni conectarse al runtime productivo.
 
 ### 4.3 Pruebas backend por riesgo
 

@@ -45,6 +45,12 @@ def make_settings(root: Path) -> Settings:
         {
             "TARGET_URL": "https://example.invalid",
             "APPOINTMENT_DATABASE_URL": _schema_url(database_url, schema),
+            "APPOINTMENT_CREDENTIAL_KEYS": (
+                "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+            ),
+            "TELEGRAM_BOT_TOKEN": "test-only-token",
+            "TELEGRAM_CHAT_ID": "123456789",
+            "TELEGRAM_ENABLED": "true",
             "CONTINUOUS_WORKER_ENABLED": "true",
             "AUTO_RESERVE": "true",
             "CLIENT_VIDEO_WIDTH": "1920",

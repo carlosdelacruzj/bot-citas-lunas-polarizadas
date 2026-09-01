@@ -126,6 +126,12 @@ La verificacion local de dump y restore esta documentada en
 base temporal aislada, compara conteos y elimina sus artefactos; no conserva un
 backup ni sustituye el backup externo pendiente.
 
+## Desarrollo reproducible
+
+Dependencias, locks, auditorias, actualizacion, rollback y CI se gobiernan en
+[`dependency-management.md`](dependency-management.md). CI usa estado temporal
+y nunca consume credenciales ni servicios operativos.
+
 ## Diagnostico por sintoma
 
 | Sintoma | Primera comprobacion |

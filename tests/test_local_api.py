@@ -57,6 +57,9 @@ def _running_server(
         "APPOINTMENT_BOT_API_HOST": "127.0.0.1",
         "APPOINTMENT_BOT_API_PORT": "0",
         "APPOINTMENT_BOT_API_TOKEN": "secret",
+        "APPOINTMENT_CREDENTIAL_KEYS": (
+            "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+        ),
     }
     if extra_environment:
         environment_values.update(extra_environment)

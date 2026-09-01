@@ -6,7 +6,7 @@ finanzas y diagnostico a traves de Admin API.
 ## Desarrollo
 
 ```powershell
-npm install
+npm ci
 npm start
 ```
 

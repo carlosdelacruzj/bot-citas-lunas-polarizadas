@@ -37,11 +37,12 @@ No versionar `.env`, credenciales, dumps ni evidencia sensible.
 ## Instalacion
 
 ```powershell
-python -m pip install -e .
+python -m pip install --require-hashes -r requirements-dev.lock
+python -m pip install --no-deps --no-build-isolation -e .
 python -m playwright install chromium
 
 Set-Location dashboard
-npm install
+npm ci
 ```
 
 ## Inicio
