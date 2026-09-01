@@ -65,8 +65,14 @@ jobs:
         run: python scripts/check-architecture.py --report reports/ci/architecture.json
 
       - name: Report Python dead code
-        continue-on-error: true
-        run: python -m vulture src/appointment_bot --min-confidence 80 > reports/ci/vulture.txt
+        run: |
+          set +e
+          python -m vulture src/appointment_bot --min-confidence 80 > reports/ci/vulture.txt
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 3 ]; then
+            exit "$status"
+          fi
 
       - name: Test backend
         run: >-
