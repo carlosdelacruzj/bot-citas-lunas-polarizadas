@@ -21,8 +21,8 @@ generados en `reports/`.
 No iniciar features comerciales nuevas hasta cerrar las fases 0 a 4 del
 [`plan integral de endurecimiento`](development-hardening-plan.md). Se permiten
 correcciones, pruebas, observabilidad y refactors incluidos en ese plan. El
-cambio del esquema `v74` y paquete integral debe estabilizarse antes de
-otro crecimiento funcional.
+esquema `v74` ya esta activo; el paquete integral debe cerrar su primera
+aceptacion natural antes de otro crecimiento funcional.
 
 ## P0 - Aceptacion natural y seguridad
 

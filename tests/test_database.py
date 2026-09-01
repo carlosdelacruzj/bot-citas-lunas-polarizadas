@@ -91,6 +91,13 @@ class DatabaseTests(unittest.TestCase):
                 password="secret",
                 settings=settings,
             )
+            integral_result = create_service_order(
+                document_number="87654321",
+                password="secret",
+                service_package="integral",
+                reservation_price=Decimal("160.00"),
+                settings=settings,
+            )
             with database_connection(settings) as connection:
                 connection.execute(
                     "UPDATE service_orders SET status = 'reserved_payment_pending' "
@@ -140,6 +147,14 @@ class DatabaseTests(unittest.TestCase):
                 connection.execute(
                     "ALTER TABLE service_orders "
                     "DROP CONSTRAINT ck_service_orders_integral_terms"
+                )
+                connection.execute(
+                    """
+                    UPDATE service_orders
+                    SET service_type = 'custom', status = 'paid'
+                    WHERE order_id = %s
+                    """,
+                    (integral_result.order_id,),
                 )
                 connection.execute("UPDATE schema_version SET version = 72 WHERE id = 1")
             _INITIALIZED_URLS.discard(settings.database_url)
@@ -200,6 +215,10 @@ class DatabaseTests(unittest.TestCase):
                     """,
                     (result.order_id,),
                 ).fetchone()
+                migrated_integral = connection.execute(
+                    "SELECT service_type FROM service_orders WHERE order_id = %s",
+                    (integral_result.order_id,),
+                ).fetchone()
             self.assertEqual(version, 74)
             for constraint_name in (
                 "ck_service_orders_integral_terms",
@@ -229,6 +248,7 @@ class DatabaseTests(unittest.TestCase):
             self.assertEqual(migrated_receipt["amount"], Decimal("20.00"))
             self.assertIsNone(migrated_receipt["corrects_receipt_id"])
             self.assertIsNone(migrated_receipt["correction_reason"])
+            self.assertEqual(migrated_integral["service_type"], "standard")
 
     def test_expired_order_claims_are_cleaned_and_reclaimable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

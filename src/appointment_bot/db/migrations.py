@@ -4022,6 +4022,19 @@ def migrate_database(connection: Connection) -> None:
     if current_version == 72:
         connection.execute(
             """
+            UPDATE service_orders
+            SET service_type = 'standard'
+            WHERE service_package = 'integral'
+              AND service_type <> 'standard'
+              AND status = 'paid'
+              AND charge_required = true
+              AND reservation_price = 160.00
+              AND official_fee_amount = 71.40
+              AND initial_payment_amount = 80.00
+            """
+        )
+        connection.execute(
+            """
             ALTER TABLE service_orders
             ADD CONSTRAINT ck_service_orders_integral_terms CHECK (
                 service_package <> 'integral' OR (

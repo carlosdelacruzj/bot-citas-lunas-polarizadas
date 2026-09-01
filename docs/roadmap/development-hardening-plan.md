@@ -589,13 +589,18 @@ coinciden para una cohorte equivalente.
 
 ### 2.6 Activacion controlada
 
-- [ ] Pasar pruebas nuevas, base tecnica y verificador documental.
-- [ ] Revisar el diff completo del cambio local preexistente.
-- [ ] Crear backup recuperable y probar restore aislado antes de migrar.
-- [ ] Comprobar trabajo activo y aplicar la migracion una sola vez.
-- [ ] Verificar esquema, conteos, constraints, indices y datos de control.
-- [ ] Reiniciar solo el propietario necesario si la activacion lo requiere.
+- [x] Pasar pruebas nuevas, base tecnica y verificador documental.
+- [x] Revisar el diff completo del cambio local preexistente.
+- [x] Crear backup recuperable y probar restore aislado antes de migrar.
+- [x] Comprobar trabajo activo y aplicar la migracion una sola vez.
+- [x] Verificar esquema, conteos, constraints, indices y datos de control.
+- [x] Reiniciar solo el propietario necesario si la activacion lo requiere.
 - [ ] Ejecutar un flujo natural futuro; no crear un cliente o cobro de prueba.
+
+La activacion tecnica esta completa en `v74`. El unico tramite integral previo
+conservo S/160 cobrados, S/71.40 de tasa, recibos y comunicaciones; su tipo de
+busqueda quedo normalizado a `standard`. Finanzas y resumen mensual coinciden
+en vivo. El cierre funcional espera el primer caso integral natural posterior.
 
 Criterio de cierre: codigo, esquema y runtime coinciden en `v74`, y el primer
 caso natural conserva abono, tasa, saldo, mensaje y resumen correctos.

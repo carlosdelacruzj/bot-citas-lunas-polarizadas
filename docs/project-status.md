@@ -20,8 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL requerido por el codigo: `v74`; la base operativa sigue en
-  `v72` hasta la activacion controlada de la fase `2.6`;
+- esquema PostgreSQL requerido por el codigo y base operativa: `v74`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
   sesiones manuales, con cierre visible hasta terminar Chromium;
@@ -220,6 +219,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - la rafaga de tres sesiones esta implementada, pero aun requiere comparacion
   natural contra el baseline de dos sesiones;
 - faltan observaciones naturales de algunos flujos WhatsApp, post-cita y cierre;
+- el primer tramite integral natural posterior a `v74` debe validar abono, tasa, saldo, mensaje y resumen sin crear un caso de prueba;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
