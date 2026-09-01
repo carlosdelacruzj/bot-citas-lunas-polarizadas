@@ -537,9 +537,13 @@ def mark_service_order_no_charge(
     with _connection(_database_url(settings)) as connection:
         order = connection.execute(
             """
-            SELECT service_package
-            FROM service_orders
-            WHERE order_id = %s
+            SELECT so.service_package,
+                   EXISTS (
+                       SELECT 1 FROM payment_receipts receipt
+                       WHERE receipt.order_id = so.order_id
+                   ) AS has_receipts
+            FROM service_orders so
+            WHERE so.order_id = %s
             FOR UPDATE
             """,
             (order_id,),
@@ -550,6 +554,11 @@ def mark_service_order_no_charge(
             raise ValueError(
                 "El paquete Trámite integral no puede convertirse en sin cobro; "
                 "se requiere una corrección contable auditada."
+            )
+        if bool(order["has_receipts"]):
+            raise ValueError(
+                "La orden tiene recibos de caja inmutables y no puede convertirse en "
+                "sin cobro; requiere un flujo de corrección contable auditado."
             )
         cursor = connection.execute(
             """
@@ -589,7 +598,11 @@ def close_service_order(
     with _connection(_database_url(settings)) as connection:
         current = connection.execute(
             """
-            SELECT so.service_package, p.status AS payment_status
+            SELECT so.service_package, p.status AS payment_status,
+                   EXISTS (
+                       SELECT 1 FROM payment_receipts receipt
+                       WHERE receipt.order_id = so.order_id
+                   ) AS has_receipts
             FROM service_orders so
             LEFT JOIN payments p ON p.order_id = so.order_id
             WHERE so.order_id = %s
@@ -611,6 +624,11 @@ def close_service_order(
                     "El paquete Trámite integral debe acumular S/160.00 mediante el flujo "
                     "de pago antes de cerrarse como completado."
                 )
+        if closure_reason in NO_CHARGE_CLOSURE_REASONS and bool(current["has_receipts"]):
+            raise ValueError(
+                "La orden tiene recibos de caja inmutables y no puede cerrarse sin cobro; "
+                "usa uncollectible para conservarlos o un flujo de corrección auditado."
+            )
         cursor = connection.execute(
             """
             UPDATE service_orders

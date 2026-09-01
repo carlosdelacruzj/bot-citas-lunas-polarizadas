@@ -18,7 +18,7 @@ Hasta cerrar las fases 0 a 4:
 - no iniciar features comerciales nuevas;
 - permitir solo correcciones, pruebas, observabilidad y refactors incluidos en
   este plan;
-- terminar o estabilizar primero el cambio del esquema `v73` y paquete
+- terminar o estabilizar primero el cambio del esquema `v74` y paquete
   integral;
 - no aprovechar un refactor para cambiar reglas de negocio no relacionadas;
 - no desplegar una migracion, reiniciar procesos ni enviar mensajes como parte
@@ -94,7 +94,7 @@ dominio afectado.
 |---|---|---|---|
 | 0 | Congelar alcance y crear linea base | ninguna | trabajo seguro |
 | 1 | Corregir riesgos operativos P0 | fase 0 | reservas confiables |
-| 2 | Estabilizar `v73` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
+| 2 | Estabilizar `v74` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
 | 3 | Cerrar filtraciones y estados sensibles | fase 0 | diagnostico seguro |
 | 4 | Crear red automatica de seguridad | fases 1 a 3 | refactor controlado |
 | 5 | Corregir fronteras del backend | fase 4 | crecimiento modular |
@@ -486,12 +486,13 @@ perdida real detiene admision nueva sin duplicar submit.
 Estado de fase: implementacion tecnica `1.1` a `1.5` completa. La aceptacion
 integral permanece abierta solo por la ventana natural indicada en `1.3A`.
 
-## Fase 2 - Estabilizar pagos y paquete integral (`v72 -> v73`)
+## Fase 2 - Estabilizar pagos y paquete integral (`v72 -> v74`)
 
 La ampliacion tecnica `v71 -> v72` ya esta aplicada. No registrar un paquete
 integral real hasta cerrar toda esta fase. El endurecimiento de `2.2` prepara
-`v73`, cuya aplicacion al runtime pertenece exclusivamente a `2.6`. El esquema,
-los resumenes y el contrato deben avanzar juntos.
+`v73`; la integridad de recibos de `2.3` la extiende a `v74`. Su aplicacion al
+runtime pertenece exclusivamente a `2.6`. El esquema, los resumenes y el
+contrato deben avanzar juntos.
 
 ### 2.1 Catalogo comercial unico
 
@@ -534,12 +535,18 @@ invalida y ninguna orden integral puede cerrarse dejando el saldo incoherente.
 
 Objetivo: asegurar que cada recibo pertenece al pago y orden correctos.
 
-- [ ] Eliminar `order_id` redundante o crear una FK compuesta consistente.
-- [ ] Indexar claves foraneas y consultas por fecha/orden necesarias.
-- [ ] Nombrar y validar constraints e indices en esquema fresco y migrado.
-- [ ] Probar doble registro, reduccion invalida, pago parcial y pago completo.
-- [ ] Mantener recibos inmutables; correcciones deben ser movimientos
+- [x] Eliminar `order_id` redundante o crear una FK compuesta consistente.
+- [x] Indexar claves foraneas y consultas por fecha/orden necesarias.
+- [x] Nombrar y validar constraints e indices en esquema fresco y migrado.
+- [x] Probar doble registro, reduccion invalida, pago parcial y pago completo.
+- [x] Mantener recibos inmutables; correcciones deben ser movimientos
   explicitos, no sobrescrituras silenciosas.
+
+Se conserva `order_id` para consultas, protegido junto con `payment_id` por una
+FK compuesta. Las cascadas destructivas se reemplazan por `RESTRICT`; triggers
+vetan `UPDATE/DELETE`. Una correccion futura debe ser una fila negativa que
+referencie el recibo original, identifique actor y motivo y no exceda su monto.
+No se expone aun una accion operativa de correccion.
 
 ### 2.4 Semantica del backfill historico
 
@@ -577,7 +584,7 @@ coinciden para una cohorte equivalente.
 - [ ] Reiniciar solo el propietario necesario si la activacion lo requiere.
 - [ ] Ejecutar un flujo natural futuro; no crear un cliente o cobro de prueba.
 
-Criterio de cierre: codigo, esquema y runtime coinciden en `v73`, y el primer
+Criterio de cierre: codigo, esquema y runtime coinciden en `v74`, y el primer
 caso natural conserva abono, tasa, saldo, mensaje y resumen correctos.
 
 ## Fase 3 - Privacidad, evidencia y secretos

@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL requerido por el codigo: `v73`; la base operativa sigue en
+- esquema PostgreSQL requerido por el codigo: `v74`; la base operativa sigue en
   `v72` hasta la activacion controlada de la fase `2.6`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
@@ -189,6 +189,12 @@ separado para no presentar una preparacion como envio ni un envio como lectura.
 Cobros realizados, saldos pendientes, costos reconocidos y overhead no medido
 son categorias distintas. Un cierre mensual solo se consolida con datos
 suficientes y conciliados; snapshots no sustituyen PostgreSQL.
+
+Cada recibo pertenece al par exacto pago/orden, es inmutable y posee indices por
+pago, orden y fecha. PostgreSQL bloquea su actualizacion, borrado y cascadas que
+eliminen caja historica. Una correccion solo puede representarse como otro
+movimiento negativo referenciado, con motivo y actor; todavia no existe una
+accion operativa para crearlo.
 
 El resumen estable vive en [`resumen-del-negocio.md`](resumen-del-negocio.md) y
 el contrato en [`contracts/finance.md`](contracts/finance.md).

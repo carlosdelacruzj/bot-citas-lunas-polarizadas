@@ -144,6 +144,13 @@ el paquete integral, la reserva solicita el saldo de `S/80`, no los `S/160`
 completos. El pago completo debe conservar `amount_agreed=S/160` y acumular
 `amount_paid=S/160`; no admite descuento ni cierre directo como completado.
 
+Cada recibo conserva `payment_id` y `order_id`; una FK compuesta garantiza que
+ambos pertenecen al mismo pago. PostgreSQL bloquea `UPDATE`, `DELETE` y el
+borrado en cascada del pago. Una correccion se representa como una nueva fila
+negativa `payment_correction`, referenciada al recibo original del mismo pago y
+orden, con motivo y actor. No puede corregir otra correccion ni exceder el monto
+original. No existe todavia una accion API para crearla.
+
 El pago completo exige la orden pendiente de cobro. Si el monto es menor al
 acordado requiere autorizacion y motivo. La transaccion marca pago/orden y
 encola postpago durable; no implica entrega WhatsApp.
@@ -152,6 +159,8 @@ Una orden integral no puede convertirse en sin cobro ni archivarse mediante la
 accion generica `done`. Un cierre `uncollectible` conserva el abono inicial, el
 costo oficial y deja el pago como `written_off`; los cierres que implican
 devolucion permanecen bloqueados hasta una correccion contable auditada.
+En cualquier paquete, una orden con recibos tampoco puede pasar por un cierre
+sin cobro que intente eliminar su pago.
 
 ## Subordenes
 

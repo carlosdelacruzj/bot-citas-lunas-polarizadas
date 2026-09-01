@@ -575,9 +575,13 @@ def mark_order_done(
         if order_status == "archived":
             package = connection.execute(
                 """
-                SELECT service_package
-                FROM service_orders
-                WHERE order_id = %s
+                SELECT so.service_package, so.charge_required,
+                       EXISTS (
+                           SELECT 1 FROM payment_receipts receipt
+                           WHERE receipt.order_id = so.order_id
+                       ) AS has_receipts
+                FROM service_orders so
+                WHERE so.order_id = %s
                 FOR UPDATE
                 """,
                 (order_id,),
@@ -588,6 +592,11 @@ def mark_order_done(
                 raise ValueError(
                     "El paquete Trámite integral no puede archivarse con la acción done; "
                     "registra el pago completo o usa un cierre contable explícito."
+                )
+            if not bool(package["charge_required"]) and bool(package["has_receipts"]):
+                raise ValueError(
+                    "La orden tiene recibos de caja inmutables y no puede archivarse "
+                    "como sin cobro sin un flujo de corrección contable auditado."
                 )
         cursor = connection.execute(
             """

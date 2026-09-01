@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from psycopg.errors import CheckViolation
+from psycopg.errors import CheckViolation, ForeignKeyViolation, RaiseException
 
 from appointment_bot.core.models import RunRecord
 from appointment_bot.db.common import _INITIALIZED_URLS, init_database
@@ -23,6 +23,7 @@ from appointment_bot.db.orders import (
     mark_payment_paid,
     mark_service_order_no_charge,
     record_order_program_listing,
+    record_partial_payment,
 )
 from appointment_bot.db.reservations import _record_reservation_for_order
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
@@ -81,11 +82,61 @@ class DatabaseTests(unittest.TestCase):
             self.assertNotIn("reservation_rules", tables)
             self.assertIsNone(get_worker_state(settings).owner_token)
 
-    def test_schema_72_migrates_integral_constraint_to_73(self) -> None:
+    def test_schema_72_migrates_integral_and_receipt_constraints_to_74(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             init_database(settings)
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                settings=settings,
+            )
             with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = %s",
+                    (result.order_id,),
+                )
+            record_partial_payment(
+                result.order_id,
+                amount_paid=20,
+                amount_agreed=50,
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "DROP TRIGGER trg_payment_receipts_validate_insert "
+                    "ON payment_receipts"
+                )
+                connection.execute(
+                    "DROP TRIGGER trg_payment_receipts_immutable ON payment_receipts"
+                )
+                connection.execute(
+                    "DROP INDEX idx_payment_receipts_correction_original"
+                )
+                connection.execute("DROP INDEX idx_payment_receipts_payment_order")
+                connection.execute("DROP INDEX idx_payment_receipts_order_received")
+                connection.execute(
+                    """
+                    ALTER TABLE payment_receipts
+                    DROP CONSTRAINT fk_payment_receipts_correction_original,
+                    DROP CONSTRAINT fk_payment_receipts_payment_order,
+                    DROP CONSTRAINT uq_payment_receipts_identity_payment_order,
+                    DROP CONSTRAINT ck_payment_receipts_movement,
+                    DROP COLUMN corrects_receipt_id,
+                    DROP COLUMN correction_reason,
+                    ADD CONSTRAINT payment_receipts_payment_id_fkey
+                        FOREIGN KEY (payment_id) REFERENCES payments(payment_id)
+                        ON DELETE CASCADE,
+                    ADD CONSTRAINT payment_receipts_order_id_fkey
+                        FOREIGN KEY (order_id) REFERENCES service_orders(order_id)
+                        ON DELETE CASCADE,
+                    ADD CONSTRAINT payment_receipts_amount_check CHECK (amount > 0)
+                    """
+                )
+                connection.execute(
+                    "ALTER TABLE payments DROP CONSTRAINT uq_payments_payment_order"
+                )
                 connection.execute(
                     "ALTER TABLE service_orders "
                     "DROP CONSTRAINT ck_service_orders_integral_terms"
@@ -99,18 +150,85 @@ class DatabaseTests(unittest.TestCase):
                 version = connection.execute(
                     "SELECT version FROM schema_version WHERE id = 1"
                 ).fetchone()["version"]
-                constraint = connection.execute(
+                constraints = {
+                    row["conname"]: bool(row["convalidated"])
+                    for row in connection.execute(
+                        """
+                        SELECT conname, convalidated
+                        FROM pg_constraint
+                        WHERE connamespace = (
+                            SELECT oid FROM pg_namespace WHERE nspname = current_schema()
+                        )
+                        """
+                    )
+                }
+                indexes = {
+                    row["indexname"]
+                    for row in connection.execute(
+                        "SELECT indexname FROM pg_indexes WHERE schemaname = current_schema()"
+                    )
+                }
+                triggers = {
+                    row["tgname"]
+                    for row in connection.execute(
+                        """
+                        SELECT trigger.tgname
+                        FROM pg_trigger trigger
+                        JOIN pg_class relation ON relation.oid = trigger.tgrelid
+                        JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+                        WHERE namespace.nspname = current_schema()
+                          AND relation.relname = 'payment_receipts'
+                          AND NOT trigger.tgisinternal
+                        """
+                    )
+                }
+                columns = {
+                    row["column_name"]
+                    for row in connection.execute(
+                        """
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_schema = current_schema()
+                          AND table_name = 'payment_receipts'
+                        """
+                    )
+                }
+                migrated_receipt = connection.execute(
                     """
-                    SELECT convalidated
-                    FROM pg_constraint
-                    WHERE connamespace = (
-                        SELECT oid FROM pg_namespace WHERE nspname = current_schema()
-                    ) AND conname = 'ck_service_orders_integral_terms'
-                    """
+                    SELECT amount, corrects_receipt_id, correction_reason
+                    FROM payment_receipts WHERE order_id = %s
+                    """,
+                    (result.order_id,),
                 ).fetchone()
-            self.assertEqual(version, 73)
-            self.assertIsNotNone(constraint)
-            self.assertTrue(constraint["convalidated"])
+            self.assertEqual(version, 74)
+            for constraint_name in (
+                "ck_service_orders_integral_terms",
+                "uq_payments_payment_order",
+                "uq_payment_receipts_identity_payment_order",
+                "fk_payment_receipts_payment_order",
+                "fk_payment_receipts_correction_original",
+                "ck_payment_receipts_movement",
+            ):
+                self.assertTrue(constraints.get(constraint_name), constraint_name)
+            for index_name in (
+                "idx_payment_receipts_received",
+                "idx_payment_receipts_order_received",
+                "idx_payment_receipts_payment_order",
+                "idx_payment_receipts_correction_original",
+            ):
+                self.assertIn(index_name, indexes)
+            self.assertEqual(
+                triggers,
+                {
+                    "trg_payment_receipts_validate_insert",
+                    "trg_payment_receipts_immutable",
+                },
+            )
+            self.assertIn("corrects_receipt_id", columns)
+            self.assertIn("correction_reason", columns)
+            self.assertEqual(migrated_receipt["amount"], Decimal("20.00"))
+            self.assertIsNone(migrated_receipt["corrects_receipt_id"])
+            self.assertIsNone(migrated_receipt["correction_reason"])
 
     def test_expired_order_claims_are_cleaned_and_reclaimable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -194,6 +312,184 @@ class DatabaseTests(unittest.TestCase):
             self.assertEqual(summaries[0].document_number, "12345678")
             self.assertEqual(summaries[0].document_number_masked, "12***8")
             self.assertFalse(hasattr(summaries[0], "password"))
+
+    def test_payment_receipts_are_idempotent_across_partial_and_full_payment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = %s",
+                    (result.order_id,),
+                )
+
+            record_partial_payment(
+                result.order_id,
+                amount_paid=20,
+                amount_agreed=50,
+                settings=settings,
+            )
+            record_partial_payment(
+                result.order_id,
+                amount_paid=20,
+                amount_agreed=50,
+                settings=settings,
+            )
+            with self.assertRaisesRegex(ValueError, "cannot reduce"):
+                record_partial_payment(
+                    result.order_id,
+                    amount_paid=10,
+                    amount_agreed=50,
+                    settings=settings,
+                )
+            with patch("appointment_bot.db.order_contacts.enqueue_whatsapp_automation_job"):
+                mark_payment_paid(
+                    result.order_id,
+                    amount_paid=50,
+                    amount_agreed=50,
+                    settings=settings,
+                )
+
+            with database_connection(settings) as connection:
+                payment = connection.execute(
+                    """
+                    SELECT status, amount_agreed, amount_paid
+                    FROM payments WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+                receipts = connection.execute(
+                    """
+                    SELECT COUNT(*) AS count, SUM(amount) AS amount
+                    FROM payment_receipts WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+            self.assertEqual(payment["status"], "paid")
+            self.assertEqual(payment["amount_agreed"], Decimal("50.00"))
+            self.assertEqual(payment["amount_paid"], Decimal("50.00"))
+            self.assertEqual(receipts["count"], 2)
+            self.assertEqual(receipts["amount"], Decimal("50.00"))
+
+    def test_payment_receipts_enforce_order_ownership_and_immutable_corrections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            orders = [
+                create_service_order(
+                    document_number=document_number,
+                    password="secret",
+                    settings=settings,
+                )
+                for document_number in ("12345678", "87654321")
+            ]
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = ANY(%s)",
+                    ([order.order_id for order in orders],),
+                )
+            for order, amount in zip(orders, (20, 10), strict=True):
+                record_partial_payment(
+                    order.order_id,
+                    amount_paid=amount,
+                    amount_agreed=50,
+                    settings=settings,
+                )
+
+            with database_connection(settings) as connection:
+                first = connection.execute(
+                    """
+                    SELECT receipt_id, payment_id, order_id
+                    FROM payment_receipts
+                    WHERE order_id = %s
+                    """,
+                    (orders[0].order_id,),
+                ).fetchone()
+            with database_connection(settings) as connection:
+                with self.assertRaises(ForeignKeyViolation):
+                    connection.execute(
+                        """
+                        INSERT INTO payment_receipts (
+                            receipt_id, payment_id, order_id, amount, received_at,
+                            source, actor, created_at
+                        ) VALUES (
+                            'receipt-wrong-order', %s, %s, 1, CURRENT_TIMESTAMP,
+                            'payment_partial', 'test', CURRENT_TIMESTAMP
+                        )
+                        """,
+                        (first["payment_id"], orders[1].order_id),
+                    )
+                connection.rollback()
+            for statement in (
+                "UPDATE payment_receipts SET amount = 19 WHERE receipt_id = %s",
+                "DELETE FROM payment_receipts WHERE receipt_id = %s",
+            ):
+                with self.subTest(statement=statement), database_connection(settings) as connection:
+                    with self.assertRaises(RaiseException):
+                        connection.execute(statement, (first["receipt_id"],))
+                    connection.rollback()
+            with database_connection(settings) as connection:
+                with self.assertRaises(ForeignKeyViolation):
+                    connection.execute(
+                        "DELETE FROM payments WHERE payment_id = %s",
+                        (first["payment_id"],),
+                    )
+                connection.rollback()
+
+            with database_connection(settings) as connection:
+                connection.execute(
+                    """
+                    INSERT INTO payment_receipts (
+                        receipt_id, payment_id, order_id, amount, received_at,
+                        source, actor, corrects_receipt_id, correction_reason, created_at
+                    ) VALUES (
+                        'receipt-correction-1', %s, %s, -5, CURRENT_TIMESTAMP,
+                        'payment_correction', 'finance-owner', %s,
+                        'Corrección explícita de importe', CURRENT_TIMESTAMP
+                    )
+                    """,
+                    (
+                        first["payment_id"],
+                        first["order_id"],
+                        first["receipt_id"],
+                    ),
+                )
+            with database_connection(settings) as connection:
+                with self.assertRaises(RaiseException):
+                    connection.execute(
+                        """
+                        INSERT INTO payment_receipts (
+                            receipt_id, payment_id, order_id, amount, received_at,
+                            source, actor, corrects_receipt_id,
+                            correction_reason, created_at
+                        ) VALUES (
+                            'receipt-correction-too-large', %s, %s, -16,
+                            CURRENT_TIMESTAMP, 'payment_correction', 'finance-owner',
+                            %s, 'Excede el recibo original', CURRENT_TIMESTAMP
+                        )
+                        """,
+                        (
+                            first["payment_id"],
+                            first["order_id"],
+                            first["receipt_id"],
+                        ),
+                    )
+                connection.rollback()
+            with database_connection(settings) as connection:
+                total = connection.execute(
+                    """
+                    SELECT COUNT(*) AS count, SUM(amount) AS amount
+                    FROM payment_receipts WHERE order_id = %s
+                    """,
+                    (orders[0].order_id,),
+                ).fetchone()
+            self.assertEqual(total["count"], 2)
+            self.assertEqual(total["amount"], Decimal("15.00"))
 
     def test_integral_creation_is_idempotent_and_records_fixed_amounts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -434,28 +730,74 @@ class DatabaseTests(unittest.TestCase):
                     "WHERE order_id = %s",
                     (result.order_id,),
                 )
-            mark_payment_paid(
-                result.order_id,
-                amount_paid=40,
-                amount_agreed=40,
-                settings=settings,
-            )
-            with database_connection(settings) as connection:
                 connection.execute(
                     """
-                    UPDATE payments
-                    SET status = 'pending', amount_paid = NULL, paid_at = NULL
-                    WHERE order_id = %s
+                    INSERT INTO payments (
+                        payment_id, order_id, status, amount_agreed, currency,
+                        created_at, updated_at
+                    ) VALUES (
+                        'payment-no-charge-action', %s, 'pending', 50, 'PEN',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
                     """,
                     (result.order_id,),
                 )
-
             mark_service_order_no_charge(result.order_id, settings=settings)
 
             summary = list_service_order_summaries(settings)[0]
             self.assertFalse(summary.charge_required)
             self.assertIsNone(summary.payment_status)
             self.assertIsNone(summary.amount_agreed)
+
+    def test_no_charge_rejects_orders_with_immutable_receipts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "UPDATE service_orders SET status = 'reserved_payment_pending' "
+                    "WHERE order_id = %s",
+                    (result.order_id,),
+                )
+            record_partial_payment(
+                result.order_id,
+                amount_paid=20,
+                amount_agreed=50,
+                settings=settings,
+            )
+
+            with self.assertRaisesRegex(ValueError, "recibos de caja inmutables"):
+                mark_service_order_no_charge(result.order_id, settings=settings)
+            with self.assertRaisesRegex(ValueError, "recibos de caja inmutables"):
+                close_service_order(
+                    result.order_id,
+                    closure_reason="client_withdrew",
+                    settings=settings,
+                )
+
+            with database_connection(settings) as connection:
+                row = connection.execute(
+                    """
+                    SELECT so.status AS order_status, so.charge_required,
+                           p.status AS payment_status, p.amount_paid,
+                           COUNT(receipt.receipt_id) AS receipt_count
+                    FROM service_orders so
+                    JOIN payments p ON p.order_id = so.order_id
+                    JOIN payment_receipts receipt ON receipt.order_id = so.order_id
+                    WHERE so.order_id = %s
+                    GROUP BY so.status, so.charge_required, p.status, p.amount_paid
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+            self.assertEqual(row["order_status"], "reserved_payment_pending")
+            self.assertTrue(row["charge_required"])
+            self.assertEqual(row["payment_status"], "pending")
+            self.assertEqual(row["amount_paid"], Decimal("20.00"))
+            self.assertEqual(row["receipt_count"], 1)
 
     def test_close_order_with_no_charge_reason_clears_pending_payment(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -472,22 +814,18 @@ class DatabaseTests(unittest.TestCase):
                     "WHERE order_id = %s",
                     (result.order_id,),
                 )
-            mark_payment_paid(
-                result.order_id,
-                amount_paid=40,
-                amount_agreed=40,
-                settings=settings,
-            )
-            with database_connection(settings) as connection:
                 connection.execute(
                     """
-                    UPDATE payments
-                    SET status = 'pending', amount_paid = NULL, paid_at = NULL
-                    WHERE order_id = %s
+                    INSERT INTO payments (
+                        payment_id, order_id, status, amount_agreed, currency,
+                        created_at, updated_at
+                    ) VALUES (
+                        'payment-no-charge-close', %s, 'pending', 50, 'PEN',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
                     """,
                     (result.order_id,),
                 )
-
             close_service_order(
                 result.order_id,
                 closure_reason="external_slot",

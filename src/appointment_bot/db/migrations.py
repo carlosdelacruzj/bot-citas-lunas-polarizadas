@@ -10,7 +10,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 73
+SCHEMA_VERSION = 74
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -319,6 +319,7 @@ def create_current_schema(connection: Connection) -> None:
                 (amount_agreed IS NULL OR amount_agreed >= 0)
                 AND (amount_paid IS NULL OR amount_paid >= 0)
             ),
+            CONSTRAINT uq_payments_payment_order UNIQUE (payment_id, order_id),
             CONSTRAINT fk_payments_reservation_order
                 FOREIGN KEY (reservation_id, order_id)
                 REFERENCES reservations(reservation_id, order_id)
@@ -339,13 +340,39 @@ def create_current_schema(connection: Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS payment_receipts (
             receipt_id text PRIMARY KEY,
-            payment_id text NOT NULL REFERENCES payments(payment_id) ON DELETE CASCADE,
-            order_id text NOT NULL REFERENCES service_orders(order_id) ON DELETE CASCADE,
-            amount numeric(12, 2) NOT NULL CHECK (amount > 0),
+            payment_id text NOT NULL,
+            order_id text NOT NULL,
+            amount numeric(12, 2) NOT NULL,
             received_at timestamptz NOT NULL,
             source text NOT NULL,
             actor text,
-            created_at timestamptz NOT NULL
+            corrects_receipt_id text,
+            correction_reason text,
+            created_at timestamptz NOT NULL,
+            CONSTRAINT uq_payment_receipts_identity_payment_order
+                UNIQUE (receipt_id, payment_id, order_id),
+            CONSTRAINT fk_payment_receipts_payment_order
+                FOREIGN KEY (payment_id, order_id)
+                REFERENCES payments(payment_id, order_id) ON DELETE RESTRICT,
+            CONSTRAINT fk_payment_receipts_correction_original
+                FOREIGN KEY (corrects_receipt_id, payment_id, order_id)
+                REFERENCES payment_receipts(receipt_id, payment_id, order_id)
+                ON DELETE RESTRICT,
+            CONSTRAINT ck_payment_receipts_movement CHECK (
+                (
+                    source <> 'payment_correction'
+                    AND amount > 0
+                    AND corrects_receipt_id IS NULL
+                    AND correction_reason IS NULL
+                ) OR (
+                    source = 'payment_correction'
+                    AND amount < 0
+                    AND corrects_receipt_id IS NOT NULL
+                    AND NULLIF(BTRIM(correction_reason), '') IS NOT NULL
+                    AND NULLIF(BTRIM(actor), '') IS NOT NULL
+                    AND corrects_receipt_id <> receipt_id
+                )
+            )
         )
         """
     )
@@ -355,6 +382,26 @@ def create_current_schema(connection: Connection) -> None:
         ON payment_receipts(received_at, order_id)
         """
     )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_payment_receipts_order_received
+        ON payment_receipts(order_id, received_at DESC)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_payment_receipts_payment_order
+        ON payment_receipts(payment_id, order_id)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_payment_receipts_correction_original
+        ON payment_receipts(corrects_receipt_id, payment_id, order_id)
+        WHERE corrects_receipt_id IS NOT NULL
+        """
+    )
+    _create_payment_receipt_triggers(connection)
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS worker_state (
@@ -973,6 +1020,80 @@ def _create_opportunity_observability_schema(connection: Connection) -> None:
     )
 
 
+def _create_payment_receipt_triggers(connection: Connection) -> None:
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION validate_payment_receipt_insert()
+        RETURNS trigger
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+            original_amount numeric(12, 2);
+            corrected_amount numeric(12, 2);
+            original_source text;
+        BEGIN
+            IF NEW.source <> 'payment_correction' THEN
+                RETURN NEW;
+            END IF;
+
+            SELECT amount, source
+            INTO original_amount, original_source
+            FROM payment_receipts
+            WHERE receipt_id = NEW.corrects_receipt_id
+              AND payment_id = NEW.payment_id
+              AND order_id = NEW.order_id;
+
+            IF NOT FOUND OR original_source = 'payment_correction' THEN
+                RAISE EXCEPTION
+                    'payment correction must reference an original receipt from the same payment';
+            END IF;
+
+            SELECT COALESCE(SUM(amount), 0)
+            INTO corrected_amount
+            FROM payment_receipts
+            WHERE corrects_receipt_id = NEW.corrects_receipt_id
+              AND payment_id = NEW.payment_id
+              AND order_id = NEW.order_id;
+
+            IF original_amount + corrected_amount + NEW.amount < 0 THEN
+                RAISE EXCEPTION 'payment correction exceeds the original receipt amount';
+            END IF;
+            RETURN NEW;
+        END;
+        $$
+        """
+    )
+    connection.execute(
+        """
+        CREATE OR REPLACE FUNCTION reject_payment_receipt_mutation()
+        RETURNS trigger
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+            RAISE EXCEPTION
+                'payment_receipts are immutable; insert an explicit correction movement';
+        END;
+        $$
+        """
+    )
+    connection.execute(
+        """
+        DROP TRIGGER IF EXISTS trg_payment_receipts_validate_insert ON payment_receipts;
+        CREATE TRIGGER trg_payment_receipts_validate_insert
+        BEFORE INSERT ON payment_receipts
+        FOR EACH ROW EXECUTE FUNCTION validate_payment_receipt_insert()
+        """
+    )
+    connection.execute(
+        """
+        DROP TRIGGER IF EXISTS trg_payment_receipts_immutable ON payment_receipts;
+        CREATE TRIGGER trg_payment_receipts_immutable
+        BEFORE UPDATE OR DELETE ON payment_receipts
+        FOR EACH ROW EXECUTE FUNCTION reject_payment_receipt_mutation()
+        """
+    )
+
+
 def _validate_current_schema(connection: Connection) -> None:
     required_tables = {
         "schema_version",
@@ -1088,8 +1209,13 @@ def _validate_current_schema(connection: Connection) -> None:
         ("finance_entries", "amount_pen"),
         ("finance_entries", "status"),
         ("payment_receipts", "payment_id"),
+        ("payment_receipts", "order_id"),
         ("payment_receipts", "amount"),
         ("payment_receipts", "received_at"),
+        ("payment_receipts", "source"),
+        ("payment_receipts", "actor"),
+        ("payment_receipts", "corrects_receipt_id"),
+        ("payment_receipts", "correction_reason"),
         ("finance_month_closures", "month_start"),
         ("finance_month_closures", "opening_prepaid_balance"),
         ("finance_month_closures", "closing_prepaid_balance"),
@@ -1245,6 +1371,11 @@ def _validate_current_schema(connection: Connection) -> None:
         "fk_reservations_run_order",
         "fk_payments_reservation_order",
         "ck_payments_paid_fields",
+        "uq_payments_payment_order",
+        "uq_payment_receipts_identity_payment_order",
+        "fk_payment_receipts_payment_order",
+        "fk_payment_receipts_correction_original",
+        "ck_payment_receipts_movement",
         "fk_worker_state_current_order",
         "ck_whatsapp_messages_sent",
         "ck_whatsapp_messages_recipient",
@@ -1330,6 +1461,14 @@ def _validate_current_schema(connection: Connection) -> None:
         missing.append("idx_worker_commands_pending")
     if "idx_finance_entries_occurred" not in indexes:
         missing.append("idx_finance_entries_occurred")
+    for index_name in (
+        "idx_payment_receipts_received",
+        "idx_payment_receipts_order_received",
+        "idx_payment_receipts_payment_order",
+        "idx_payment_receipts_correction_original",
+    ):
+        if index_name not in indexes:
+            missing.append(index_name)
     if "idx_whatsapp_messages_order_prepared" not in indexes:
         missing.append("idx_whatsapp_messages_order_prepared")
     if "idx_whatsapp_followup_messages_order_prepared" not in indexes:
@@ -1368,6 +1507,29 @@ def _validate_current_schema(connection: Connection) -> None:
     ):
         if index_name not in indexes:
             missing.append(index_name)
+    receipt_triggers = {
+        row["tgname"]
+        for row in connection.execute(
+            """
+            SELECT trigger.tgname
+            FROM pg_trigger trigger
+            JOIN pg_class relation ON relation.oid = trigger.tgrelid
+            JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+            WHERE namespace.nspname = current_schema()
+              AND relation.relname = 'payment_receipts'
+              AND NOT trigger.tgisinternal
+            """
+        )
+    }
+    missing.extend(
+        sorted(
+            {
+                "trg_payment_receipts_validate_insert",
+                "trg_payment_receipts_immutable",
+            }
+            - receipt_triggers
+        )
+    )
     if missing:
         message = f"Database schema v{SCHEMA_VERSION} is incomplete: "
         raise RuntimeError(message + ", ".join(missing))
@@ -3881,6 +4043,87 @@ def migrate_database(connection: Connection) -> None:
             (73,),
         )
         current_version = 73
+    if current_version == 73:
+        inconsistent_receipts = connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM payment_receipts receipt
+            LEFT JOIN payments payment
+              ON payment.payment_id = receipt.payment_id
+             AND payment.order_id = receipt.order_id
+            WHERE payment.payment_id IS NULL
+            """
+        ).fetchone()
+        if inconsistent_receipts is None or int(inconsistent_receipts["count"] or 0):
+            raise RuntimeError(
+                "Database schema v74 migration found payment_receipts that do not "
+                "belong to the referenced payment and order."
+            )
+        connection.execute(
+            """
+            ALTER TABLE payments
+            ADD CONSTRAINT uq_payments_payment_order UNIQUE (payment_id, order_id)
+            """
+        )
+        connection.execute(
+            """
+            ALTER TABLE payment_receipts
+            ADD COLUMN corrects_receipt_id text,
+            ADD COLUMN correction_reason text,
+            DROP CONSTRAINT payment_receipts_payment_id_fkey,
+            DROP CONSTRAINT payment_receipts_order_id_fkey,
+            DROP CONSTRAINT payment_receipts_amount_check,
+            ADD CONSTRAINT uq_payment_receipts_identity_payment_order
+                UNIQUE (receipt_id, payment_id, order_id),
+            ADD CONSTRAINT fk_payment_receipts_payment_order
+                FOREIGN KEY (payment_id, order_id)
+                REFERENCES payments(payment_id, order_id) ON DELETE RESTRICT,
+            ADD CONSTRAINT fk_payment_receipts_correction_original
+                FOREIGN KEY (corrects_receipt_id, payment_id, order_id)
+                REFERENCES payment_receipts(receipt_id, payment_id, order_id)
+                ON DELETE RESTRICT,
+            ADD CONSTRAINT ck_payment_receipts_movement CHECK (
+                (
+                    source <> 'payment_correction'
+                    AND amount > 0
+                    AND corrects_receipt_id IS NULL
+                    AND correction_reason IS NULL
+                ) OR (
+                    source = 'payment_correction'
+                    AND amount < 0
+                    AND corrects_receipt_id IS NOT NULL
+                    AND NULLIF(BTRIM(correction_reason), '') IS NOT NULL
+                    AND NULLIF(BTRIM(actor), '') IS NOT NULL
+                    AND corrects_receipt_id <> receipt_id
+                )
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX idx_payment_receipts_order_received
+            ON payment_receipts(order_id, received_at DESC)
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX idx_payment_receipts_payment_order
+            ON payment_receipts(payment_id, order_id)
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX idx_payment_receipts_correction_original
+            ON payment_receipts(corrects_receipt_id, payment_id, order_id)
+            WHERE corrects_receipt_id IS NOT NULL
+            """
+        )
+        _create_payment_receipt_triggers(connection)
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (74,),
+        )
+        current_version = 74
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

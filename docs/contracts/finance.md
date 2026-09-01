@@ -14,7 +14,15 @@ fuente o intercambio autorizado para los calculos del dashboard.
 
 `payment_receipts` conserva cada entrada de caja por separado. El total
 acumulado de `payments` gobierna saldo y cierre operativo; los recibos gobiernan
-la fecha real del ingreso en el resumen financiero.
+la fecha real del ingreso en el resumen financiero. Cada recibo pertenece al
+par exacto pago/orden mediante FK compuesta y no admite actualizacion, borrado
+ni cascada destructiva.
+
+Los cobros normales son positivos. Una correccion es otro movimiento negativo
+con `source=payment_correction`, referencia al recibo original, motivo y actor;
+la suma firmada conserva la caja corregida sin reescribir el hecho previo. El
+esquema impide corregir una correccion o exceder el monto original. No existe
+todavia una accion API para registrar estas correcciones.
 
 ## Semantica contable operativa
 

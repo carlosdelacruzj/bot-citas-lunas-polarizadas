@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-08-31`.
+Ultima priorizacion: `2026-09-01`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -21,7 +21,7 @@ generados en `reports/`.
 No iniciar features comerciales nuevas hasta cerrar las fases 0 a 4 del
 [`plan integral de endurecimiento`](development-hardening-plan.md). Se permiten
 correcciones, pruebas, observabilidad y refactors incluidos en ese plan. El
-cambio del esquema `v73` y paquete integral debe estabilizarse antes de
+cambio del esquema `v74` y paquete integral debe estabilizarse antes de
 otro crecimiento funcional.
 
 ## P0 - Aceptacion natural y seguridad
@@ -30,7 +30,7 @@ otro crecimiento funcional.
 
 Ejecutar en orden las fases 0 a 4 del
 [`plan integral de endurecimiento`](development-hardening-plan.md): linea base,
-riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v73`,
+riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v74`,
 privacidad y red automatizada de seguridad.
 
 Cierre: los riesgos P0 tienen pruebas, el paquete integral es coherente de
