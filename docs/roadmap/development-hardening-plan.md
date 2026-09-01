@@ -698,11 +698,11 @@ Despues:
 Objetivo: proteger formularios, payloads y acciones sensibles antes de dividir
 `app.ts`.
 
-- [ ] Elegir runner compatible con Angular actual.
-- [ ] Probar reglas y payloads puros.
-- [ ] Probar servicio HTTP por verbo, URL, body y conflicto.
-- [ ] Probar modales de alta, pago, credenciales y WhatsApp.
-- [ ] Agregar smoke E2E local para navegacion y errores `409`, sin enviar ni
+- [x] Elegir runner compatible con Angular actual.
+- [x] Probar reglas y payloads puros.
+- [x] Probar servicio HTTP por verbo, URL, body y conflicto.
+- [x] Probar modales de alta, pago, credenciales y WhatsApp.
+- [x] Agregar smoke E2E local para navegacion y errores `409`, sin enviar ni
   reservar.
 
 ### 4.5 Guardas de arquitectura y codigo muerto

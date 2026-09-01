@@ -128,16 +128,29 @@ jobs:
       - name: Audit frontend dependencies
         run: npm audit --audit-level=high
 
+      - name: Install Chromium for frontend smoke tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Test frontend units and contracts
+        run: npm run test:unit
+
+      - name: Test frontend smoke flow
+        run: npm run test:e2e
+
       - name: Typecheck frontend
         run: npm run typecheck
 
       - name: Build frontend
         run: npm run build
 
-      - name: Upload frontend build
+      - name: Upload frontend results
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: dashboard-build
-          path: dashboard/dist/dashboard
-          if-no-files-found: error
+          name: frontend-results
+          path: |
+            dashboard/dist/dashboard
+            dashboard/playwright-report
+            dashboard/test-results
+          if-no-files-found: warn
           retention-days: 7

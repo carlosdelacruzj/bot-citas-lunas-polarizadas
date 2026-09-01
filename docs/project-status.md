@@ -241,8 +241,8 @@ python -m pytest -q
 git diff --check
 ```
 
-Para dashboard: `npm ci` y `npm run build` desde `dashboard/`. Un build correcto no
-sustituye validacion visual real ni observacion natural.
+Para dashboard: `npm ci`, `npm run test:unit`, `npm run test:e2e`, `npm run typecheck`
+y `npm run build` desde `dashboard/`; el smoke usa API simulada y no ejecuta mutaciones reales.
 
 ## Regla de mantenimiento
 

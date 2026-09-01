@@ -32,7 +32,6 @@ import {
   CaptchaSummary,
   CloseServiceOrderPayload,
   ContactUpdatePayload,
-  CreateServiceOrderPayload,
   ExcludedDateRange,
   FinanceCategory,
   FinanceDataQuality,
@@ -54,7 +53,6 @@ import {
   OpportunityControl,
   OpportunityControlAction,
   OpportunityControlTarget,
-  PaymentPaidPayload,
   PostAppointmentFollowup,
   PostAppointmentPayload,
   PostAppointmentQuery,
@@ -103,6 +101,7 @@ import {
   ProgramResolutionPayload,
   ProgramResolutionResponse,
 } from './program-resolution/program-resolution';
+import { buildCreateOrderPayload, buildPaymentPayload } from './sensitive-form-payloads';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type ViewKey =
@@ -4004,23 +4003,18 @@ export class App implements OnDestroy {
     if (!order) {
       return;
     }
-    const payload: PaymentPaidPayload = {
-      amount_paid: String(this.paymentAmountPaid() ?? '').trim(),
-      amount_agreed: this.optionalText(String(this.paymentAmountAgreed() ?? '')),
+    const result = buildPaymentPayload(this.paymentAmountPaid(), this.paymentAmountAgreed(), {
       expected_payment_status: order.payment_status,
       expected_amount_agreed: order.amount_agreed,
       expected_amount_paid: order.amount_paid ?? '0.00',
-    };
-    if (!payload.amount_paid) {
-      this.errorMessage.set('Ingresa el monto pagado.');
+    });
+    if (!result.payload) {
+      this.errorMessage.set(result.error);
       return;
     }
+    const payload = result.payload;
     const paid = Number(payload.amount_paid);
     const agreed = Number(payload.amount_agreed);
-    if (!Number.isFinite(paid) || paid <= 0) {
-      this.errorMessage.set('El total pagado debe ser mayor que cero.');
-      return;
-    }
     const isPartial = Number.isFinite(agreed) && paid < agreed;
     this.setPendingAction({
       title: isPartial ? 'Registrar abono' : 'Confirmar pago completo',
@@ -4094,79 +4088,27 @@ export class App implements OnDestroy {
     }
     const servicePackage = this.newServicePackage();
     const packageDefinition = this.servicePackageDefinition(servicePackage);
-    if (!packageDefinition) {
-      this.errorMessage.set('El catálogo comercial no está disponible. Actualiza la vista.');
-      return;
-    }
-    const customPrice = Number(this.newCustomReservationPrice());
-    if (
-      !packageDefinition.fixed_price &&
-      (!Number.isFinite(customPrice) || customPrice <= 0 || customPrice > 99999.99)
-    ) {
-      this.errorMessage.set('Ingresa un precio personalizado válido mayor que cero.');
-      return;
-    }
-    const serviceType = packageDefinition.default_service_type;
-    const reservationPrice = packageDefinition.fixed_price
-      ? packageDefinition.total_amount
-      : customPrice.toFixed(2);
-    if (!reservationPrice) {
-      this.errorMessage.set('El paquete seleccionado no tiene un precio válido.');
-      return;
-    }
-    const payload: CreateServiceOrderPayload = {
-      document_number: this.newDocumentNumber().trim(),
-      document_type: this.newDocumentType(),
+    const result = buildCreateOrderPayload({
+      documentNumber: this.newDocumentNumber(),
+      documentType: this.newDocumentType(),
       password: this.newPassword(),
-      contact_whatsapp: this.optionalText(this.newContactWhatsapp()),
-      contact_whatsapp_username: this.optionalText(this.newContactWhatsappUsername()),
-      contact_name: this.newContactName().trim(),
-      contact_source: this.newContactSource(),
-      service_type: serviceType,
-      service_package: servicePackage,
-      reservation_price: reservationPrice,
-      minimum_reservation_date: this.optionalText(this.newMinimumReservationDate()),
-      maximum_reservation_date: this.optionalText(this.newMaximumReservationDate()),
-      allowed_weekdays: this.newAllowedWeekdays().length > 0 ? this.newAllowedWeekdays() : null,
-      excluded_date_ranges: excludedDateRanges,
-    };
-    if (
-      payload.minimum_reservation_date &&
-      payload.maximum_reservation_date &&
-      payload.maximum_reservation_date < payload.minimum_reservation_date
-    ) {
-      this.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
+      contactWhatsapp: this.newContactWhatsapp(),
+      contactWhatsappUsername: this.newContactWhatsappUsername(),
+      contactName: this.newContactName(),
+      contactSource: this.newContactSource(),
+      servicePackage,
+      customReservationPrice: this.newCustomReservationPrice(),
+      minimumReservationDate: this.newMinimumReservationDate(),
+      maximumReservationDate: this.newMaximumReservationDate(),
+      allowedWeekdays: this.newAllowedWeekdays(),
+      excludedDateRanges,
+    }, packageDefinition);
+    if (!result.payload || !packageDefinition) {
+      this.errorMessage.set(result.error);
       return;
     }
-    if (
-      packageDefinition.requires_restrictions &&
-      (!payload.minimum_reservation_date || !payload.maximum_reservation_date)
-    ) {
-      this.errorMessage.set(
-        'La disponibilidad restringida exige una fecha inicial y una fecha final.',
-      );
-      return;
-    }
-    if (
-      packageDefinition.requires_restrictions &&
-      !payload.allowed_weekdays?.length &&
-      !payload.excluded_date_ranges?.length
-    ) {
-      this.errorMessage.set(
-        'Indica días permitidos o fechas excluidas para delimitar la disponibilidad restringida.',
-      );
-      return;
-    }
-    if (
-      !payload.document_number ||
-      !payload.document_type ||
-      !payload.password ||
-      !payload.contact_name ||
-      !payload.contact_source
-    ) {
-      this.errorMessage.set('Usuario, contrasena, contacto y fuente son obligatorios.');
-      return;
-    }
+    const payload = result.payload;
+    const reservationPrice = payload.reservation_price;
     this.setPendingAction({
       title: 'Crear orden nueva',
       message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${

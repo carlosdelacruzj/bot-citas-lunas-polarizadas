@@ -4,7 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.cjs",
+    "start:e2e": "ng serve --host 127.0.0.1 --port 4200",
     "build": "ng build",
+    "test:unit": "ng test --watch=false",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "watch": "ng build --watch --configuration development"
   },
@@ -37,6 +40,10 @@
     "@angular/build": "^20.3.33",
     "@angular/cli": "^20.3.33",
     "@angular/compiler-cli": "^20.3.27",
-    "typescript": "~5.9.2"
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^22.20.1",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.7"
   }
 }
