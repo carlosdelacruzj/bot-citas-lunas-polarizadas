@@ -19,7 +19,7 @@ exterior.
 Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
-  operativa, con dependencias fijadas por locks y CI reproducible definido;
+  operativa, con locks, CI reproducible y cobertura critica por riesgo;
 - esquema PostgreSQL requerido por el codigo y base operativa: `v74`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y

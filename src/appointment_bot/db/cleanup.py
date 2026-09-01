@@ -70,4 +70,3 @@ def cleanup_database_history(settings: Settings | None = None) -> dict[str, int]
             cursor = connection.execute(statement, (cutoff,))
             removed[label] = max(cursor.rowcount, 0)
     return removed
-

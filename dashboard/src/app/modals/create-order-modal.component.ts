@@ -13,4 +13,3 @@ import { ReservationRulesEditorComponent } from '../reservation-rules-editor/res
 export class CreateOrderModalComponent {
   protected readonly view = inject(DASHBOARD_VIEW_FACADE);
 }
-

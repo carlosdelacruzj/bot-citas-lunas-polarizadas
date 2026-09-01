@@ -679,19 +679,19 @@ Objetivo: cubrir invariantes, no perseguir un porcentaje cosmetico.
 
 Prioridad inicial:
 
-- [ ] multiples tramites y preflight;
-- [ ] screenshot bloqueado y reobservacion;
-- [ ] lease global y claim de orden;
-- [ ] sesiones manuales concurrentes;
-- [ ] ambiguedad WhatsApp posterior a interaccion;
-- [ ] migracion y contabilidad integral;
-- [ ] submit `intent/pending/unknown` y confirmacion `Programado`.
+- [x] multiples tramites y preflight;
+- [x] screenshot bloqueado y reobservacion;
+- [x] lease global y claim de orden;
+- [x] sesiones manuales concurrentes;
+- [x] ambiguedad WhatsApp posterior a interaccion;
+- [x] migracion y contabilidad integral;
+- [x] submit `intent/pending/unknown` y confirmacion `Programado`.
 
 Despues:
 
-- [ ] medir cobertura por modulo critico;
-- [ ] fijar umbrales iniciales realistas y elevarlos gradualmente;
-- [ ] prohibir que una excepcion critica quede sin escenario de prueba.
+- [x] medir cobertura por modulo critico;
+- [x] fijar umbrales iniciales realistas y elevarlos gradualmente;
+- [x] prohibir que una excepcion critica quede sin escenario de prueba.
 
 ### 4.4 Pruebas frontend minimas
 

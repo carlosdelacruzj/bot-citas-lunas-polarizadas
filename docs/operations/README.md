@@ -132,6 +132,9 @@ Dependencias, locks, auditorias, actualizacion, rollback y CI se gobiernan en
 [`dependency-management.md`](dependency-management.md). CI usa estado temporal
 y nunca consume credenciales ni servicios operativos.
 
+La matriz de riesgos y sus umbrales iniciales se gobiernan en
+[`backend-test-policy.md`](backend-test-policy.md).
+
 ## Diagnostico por sintoma
 
 | Sintoma | Primera comprobacion |

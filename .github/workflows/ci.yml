@@ -62,7 +62,16 @@ jobs:
         run: python -m ruff check src tests
 
       - name: Test backend
-        run: python -m pytest -q --junitxml=reports/ci/pytest.xml
+        run: >-
+          python -m pytest -q
+          --junitxml=reports/ci/pytest.xml
+          --cov=appointment_bot
+          --cov-branch
+          --cov-report=term
+          --cov-report=json:reports/ci/coverage.json
+
+      - name: Enforce critical backend coverage
+        run: python scripts/check-critical-coverage.py reports/ci/coverage.json
 
       - name: Audit Python dependencies
         run: python -m pip_audit --require-hashes -r requirements-dev.lock
@@ -89,7 +98,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: backend-test-results
-          path: reports/ci/pytest.xml
+          path: |
+            reports/ci/pytest.xml
+            reports/ci/coverage.json
           if-no-files-found: error
           retention-days: 14
 
