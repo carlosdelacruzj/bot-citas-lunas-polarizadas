@@ -731,7 +731,7 @@ pasar las pruebas creadas en la fase 4.
 Objetivo: separar coordinacion de negocio de SQL sin perder atomicidad.
 
 - [x] Extraer `CreateServiceOrder` de `db/order_credentials.py`.
-- [ ] Extraer `RegisterPayment` de `db/order_contacts.py`.
+- [x] Extraer `RegisterPayment` de `db/order_contacts.py`.
 - [ ] Extraer `ConfirmReservation` de `db/reservations.py`.
 - [x] Introducir una unidad de trabajo o transaccion explicita compartida.
 - [ ] Mantener repositorios enfocados en leer y escribir agregados.
@@ -739,6 +739,12 @@ Objetivo: separar coordinacion de negocio de SQL sin perder atomicidad.
 
 No extraer los tres casos en un solo commit. Completar uno, validar y observar
 antes de continuar.
+
+`RegisterPayment` coordina pagos parciales y completos sobre la unidad de
+trabajo compartida. El repositorio de pagos conserva bloqueo y escrituras SQL;
+el caso de uso aplica reglas, recibos, cambio de orden, auditoria y encolado
+postpago en la misma transaccion. Antes de iniciar `ConfirmReservation`, observar
+el proximo cobro natural sin crear uno de prueba.
 
 ### 5.2 Puertos del motor de reservas
 

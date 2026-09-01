@@ -17,9 +17,7 @@ from appointment_bot.db.orders import (
     has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
-    mark_payment_paid,
     mark_service_order_no_charge,
-    record_partial_payment,
     resolve_service_order_programs,
     set_order_paused,
     split_service_order_programs,
@@ -29,6 +27,10 @@ from appointment_bot.db.orders import (
 )
 from appointment_bot.services.api.http import error_payload
 from appointment_bot.services.application.create_service_order import create_service_order
+from appointment_bot.services.application.register_payment import (
+    mark_payment_paid,
+    record_partial_payment,
+)
 from appointment_bot.services.order_preflight import schedule_order_preflight
 
 PUBLIC_SERVICE_ORDER_FIELDS = (

@@ -17,7 +17,6 @@ from appointment_bot.db.orders import (
     list_service_order_summaries,
     mark_order_done,
     mark_order_preflight_failed,
-    mark_payment_paid,
     mark_service_order_no_charge,
     set_order_paused,
     split_service_order_programs,
@@ -29,6 +28,7 @@ from appointment_bot.reports.observation import export_optimization_observation
 from appointment_bot.reports.status import generate_status_report_images
 from appointment_bot.reports.weekly import LIMA_TZ, export_weekly_report
 from appointment_bot.services.application.create_service_order import create_service_order
+from appointment_bot.services.application.register_payment import mark_payment_paid
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.order_preflight import validate_order_preflight
 

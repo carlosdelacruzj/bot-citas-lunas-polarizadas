@@ -49,7 +49,7 @@ sin depender del heartbeat separado del claim de orden.
 Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp;
-el alta principal entra por `CreateServiceOrder` con transaccion explicita.
+el alta entra por `CreateServiceOrder` y los cobros por `RegisterPayment`, ambos con transaccion explicita.
 Telegram y n8n no ejecutan SQL, PowerShell ni logica del navegador directamente.
 Telegram Control revisa cada cinco minutos el lease real del worker mediante
 Admin API entre `07:30` y `18:00`; alerta tras tres fallos y nunca reinicia por

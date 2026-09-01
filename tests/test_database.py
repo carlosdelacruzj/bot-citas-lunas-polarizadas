@@ -5,7 +5,6 @@ import unittest
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
 
 from psycopg.errors import CheckViolation, ForeignKeyViolation, RaiseException
 
@@ -19,10 +18,8 @@ from appointment_bot.db.orders import (
     get_order_program_listing,
     list_service_order_summaries,
     mark_order_done,
-    mark_payment_paid,
     mark_service_order_no_charge,
     record_order_program_listing,
-    record_partial_payment,
 )
 from appointment_bot.db.reservations import _record_reservation_for_order
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
@@ -33,6 +30,10 @@ from appointment_bot.db.worker_state import (
     renew_worker_lease,
 )
 from appointment_bot.services.application.create_service_order import create_service_order
+from appointment_bot.services.application.register_payment import (
+    mark_payment_paid,
+    record_partial_payment,
+)
 from tests.helpers import database_connection, make_settings
 
 
@@ -367,13 +368,12 @@ class DatabaseTests(unittest.TestCase):
                     amount_agreed=50,
                     settings=settings,
                 )
-            with patch("appointment_bot.db.order_contacts.enqueue_whatsapp_automation_job"):
-                mark_payment_paid(
-                    result.order_id,
-                    amount_paid=50,
-                    amount_agreed=50,
-                    settings=settings,
-                )
+            mark_payment_paid(
+                result.order_id,
+                amount_paid=50,
+                amount_agreed=50,
+                settings=settings,
+            )
 
             with database_connection(settings) as connection:
                 payment = connection.execute(
@@ -643,13 +643,12 @@ class DatabaseTests(unittest.TestCase):
                     difference_reason="invalid integral discount",
                     settings=settings,
                 )
-            with patch("appointment_bot.db.order_contacts.enqueue_whatsapp_automation_job"):
-                mark_payment_paid(
-                    result.order_id,
-                    amount_paid=160,
-                    amount_agreed=160,
-                    settings=settings,
-                )
+            mark_payment_paid(
+                result.order_id,
+                amount_paid=160,
+                amount_agreed=160,
+                settings=settings,
+            )
 
             with database_connection(settings) as connection:
                 payment = connection.execute(

@@ -10,9 +10,7 @@ from appointment_bot.db.order_contacts import (
     add_or_update_service_order_contact,
     close_service_order,
     list_service_order_summaries,
-    mark_payment_paid,
     mark_service_order_no_charge,
-    record_partial_payment,
 )
 from appointment_bot.db.order_credentials import (
     get_claimed_service_order_runtime,
