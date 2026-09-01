@@ -98,8 +98,6 @@ inyectan claves y destinos ficticios dentro de cada escenario. CI no carga
 `.env`, no abre el portal y no se conecta a PostgreSQL, WhatsApp o Telegram
 operativos.
 
-`Backend` conserva el JUnit de pytest durante 14 dias. `Frontend` conserva el
-build durante 7 dias. Despues del primer push y una ejecucion verde, configurar
-en GitHub la proteccion de la rama destino para exigir ambos checks. No activar
-esa proteccion antes de que GitHub reconozca los nombres, porque bloquearia la
-integracion sin una comprobacion ejecutable.
+`Backend` conserva JUnit y cobertura durante 14 dias. `Frontend` conserva el
+build durante 7 dias. La rama `main` exige ambos checks con estado actualizado
+respecto de su base; GitHub no permite integrar si alguno falta o falla.

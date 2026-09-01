@@ -669,7 +669,7 @@ Objetivo: impedir que una rama verde localmente falle al integrarse.
   `git diff --check`.
 - [x] Ejecutar instalacion reproducible, no depender del entorno del operador.
 - [x] Guardar resultados de pytest y del build como artefactos de CI.
-- [ ] Hacer obligatorios `Backend` y `Frontend` antes de integrar, despues de
+- [x] Hacer obligatorios `Backend` y `Frontend` antes de integrar, despues de
   su primera ejecucion remota verde.
 - [x] No incluir credenciales reales ni conectarse al runtime productivo.
 
