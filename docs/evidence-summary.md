@@ -3,10 +3,10 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-08-30 16:00:24 America/Lima`.
+- Generado: `2026-08-31 15:36:03 America/Lima`.
 - Ventana solicitada: mes activo 2026-08 (America/Lima).
-- Rango real de eventos indexados: `2026-08-01 08:09:51` a `2026-08-29 12:00:24` (America/Lima).
-- Cobertura temporal verificable: 2053/2053 eventos con hora de cierre.
+- Rango real de eventos indexados: `2026-08-01 08:09:51` a `2026-08-31 15:36:02` (America/Lima).
+- Cobertura temporal verificable: 2081/2081 eventos con hora de cierre.
 - Fuente: filas sanitizadas del indice compacto de evidencia.
 
 ## Limites
@@ -16,28 +16,28 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - La ausencia de un evento no demuestra que el portal no haya sido consultado.
 
 ## Totales
-- Eventos indexados: 2053
-- Reservas registradas: 133
+- Eventos indexados: 2081
+- Reservas registradas: 139
 - Reservas no confirmadas: 0
 - Disponibilidades completas: 1293
-- Disponibilidades parciales: 510
+- Disponibilidades parciales: 517
 - Senales de defensa: 9
 
 ## Origen de deteccion
-- normal: 2045
+- normal: 2073
 - slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
-- 2026-08-29 12:00:24 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 12:00:19 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 12:00:14 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 12:00:10 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 12:00:05 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 11:59:59 | order-*** | partial | normal | 23/09/2026 11:00 | blocked_by_order_rule
-- 2026-08-29 11:59:53 | order-*** | partial | normal | 23/09/2026 10:00 | blocked_by_order_rule
-- 2026-08-29 11:59:49 | order-*** | partial | normal | 23/09/2026 10:00 | blocked_by_order_rule
-- 2026-08-29 11:59:44 | order-*** | partial | normal | 23/09/2026 10:00 | blocked_by_order_rule
-- 2026-08-29 11:59:39 | order-*** | partial | normal | 23/09/2026 10:00 | blocked_by_order_rule
+- 2026-08-31 15:36:02 | order-*** | unavailable | normal | 22/09/2026 12:00 | slot_lost
+- 2026-08-31 15:35:59 | order-*** | unavailable | normal | 22/09/2026 12:00 | slot_lost
+- 2026-08-31 15:35:49 | order-*** | registered | normal | 22/09/2026 12:00 | confirmed
+- 2026-08-31 15:35:35 | order-*** | partial | normal | 22/09/2026 12:00 | blocked_by_order_rule
+- 2026-08-31 15:24:35 | order-*** | unavailable | normal | 22/09/2026 11:00 | slot_lost
+- 2026-08-31 15:24:32 | order-*** | unavailable | normal | 22/09/2026 11:00 | slot_lost
+- 2026-08-31 15:24:23 | order-*** | registered | normal | 22/09/2026 11:00 | confirmed
+- 2026-08-31 15:24:07 | order-*** | partial | normal | 22/09/2026 11:00 | blocked_by_order_rule
+- 2026-08-31 15:21:50 | order-*** | unavailable | normal | 22/09/2026 12:00 | slot_lost
+- 2026-08-31 15:21:43 | order-*** | registered | normal | 22/09/2026 12:00 | confirmed
 
 ## Senales de defensa
 - 2026-08-28 09:22:52 | order-*** | network | Locator.wait_for: Timeout 30000ms exceeded.

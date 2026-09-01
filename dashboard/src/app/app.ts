@@ -83,6 +83,7 @@ import {
   formatPeruTime,
   peruDateTimeSortValue,
 } from './peru-date-time';
+import { formatReservationDateRules } from './reservation-rule-labels';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
 import {
@@ -2429,20 +2430,7 @@ export class App implements OnDestroy {
   }
 
   public restrictionTimingLabel(order: ServiceOrder): string {
-    const limits: string[] = [];
-    if (order.minimum_reservation_date) {
-      limits.push(`A partir del ${this.formatDate(order.minimum_reservation_date)}`);
-    }
-    if (order.maximum_reservation_date) {
-      limits.push(`Hasta el ${this.formatDate(order.maximum_reservation_date)}`);
-    }
-    if ((order.excluded_date_ranges?.length ?? 0) > 0) {
-      const ranges = order.excluded_date_ranges.map(
-        (range) => `${this.formatDate(range.start_date)}–${this.formatDate(range.end_date)}`,
-      );
-      limits.push(`Excepto ${ranges.join(', ')}`);
-    }
-    return limits.length ? limits.join(' · ') : 'Sin restricciones de fecha';
+    return formatReservationDateRules(order);
   }
 
   public metricPeriodLabel(period: MetricPeriod): string {

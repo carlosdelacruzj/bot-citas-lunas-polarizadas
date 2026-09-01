@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { formatPeruDate } from '../peru-date-time';
+import { formatReservationDateRange } from '../reservation-rule-labels';
 import { ExcludedDateRange } from '../reservation-rules.model';
 
 type ReservationRulePreset = 'any' | 'saturdays' | 'from-date' | 'exclude-range' | 'date-window';
@@ -41,7 +41,7 @@ export class ReservationRulesEditorComponent {
   @Output() readonly removeExcludedDateRange = new EventEmitter<number>();
   @Output() readonly clearExcludedDateRanges = new EventEmitter<void>();
 
-  protected readonly formatDate = formatPeruDate;
+  protected readonly formatDateRange = formatReservationDateRange;
   protected readonly weekdays = WEEKDAYS;
   protected activePreset: ReservationRulePreset | null = null;
 

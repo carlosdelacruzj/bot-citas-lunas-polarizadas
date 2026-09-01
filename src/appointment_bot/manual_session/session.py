@@ -257,6 +257,7 @@ def _run_manual_session(
                 error=diagnostic_error,
             )
             _sync_diagnostic_status(session_id, diagnostic)
+        handle.browser_lease.close()
         _clear_active_session(session_id)
         logger.info(
             "Manual session closed: session_id=%s order_id=%s",

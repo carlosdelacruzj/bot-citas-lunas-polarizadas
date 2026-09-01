@@ -1992,6 +1992,7 @@ def _plain_text_send_is_confirmed(
     confirmed_signatures = _outgoing_message_signatures(
         page,
         confirmed_only=True,
+        expected_text=expected,
     )
     return (
         not _plain_text_ready(page, expected)
@@ -2003,7 +2004,11 @@ def _outgoing_message_signatures(
     page: Page,
     *,
     confirmed_only: bool = False,
+    expected_text: str | None = None,
 ) -> set[str]:
+    expected_compact = (
+        _compact_alphanumeric_text(expected_text) if expected_text is not None else None
+    )
     selectors = (
         ("div.message-out", False),
         ("div[data-id^='true_']", False),
@@ -2020,6 +2025,10 @@ def _outgoing_message_signatures(
                 continue
             if confirmed_only and not _message_container_has_confirmed_status(message):
                 continue
+            if expected_compact is not None:
+                actual_text = _compact_alphanumeric_text(_safe_text_content(message))
+                if not expected_compact or expected_compact not in actual_text:
+                    continue
             signatures.add(_message_container_signature(message))
     return signatures
 

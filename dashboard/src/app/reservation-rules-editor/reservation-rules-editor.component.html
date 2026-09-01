@@ -117,15 +117,12 @@
         let index = $index
       ) {
         <span class="excluded-range-chip">
-          {{ formatDate(range.start_date) }} – {{ formatDate(range.end_date) }}
+          {{ formatDateRange(range.start_date, range.end_date) }}
           <button
             type="button"
             [disabled]="disabled"
             [attr.aria-label]="
-              'Eliminar rango ' +
-              formatDate(range.start_date) +
-              ' a ' +
-              formatDate(range.end_date)
+              'Eliminar ' + formatDateRange(range.start_date, range.end_date)
             "
             (click)="removeExcludedDateRange.emit(index)"
           >
