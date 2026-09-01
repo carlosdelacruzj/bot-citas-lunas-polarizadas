@@ -13,7 +13,6 @@ from appointment_bot.core.contacts import CONTACT_SOURCES, ContactValidationErro
 from appointment_bot.db.common import init_database
 from appointment_bot.db.orders import (
     add_or_update_service_order_contact,
-    create_service_order,
     has_active_child_service_orders,
     list_service_order_summaries,
     mark_order_done,
@@ -29,6 +28,7 @@ from appointment_bot.reports.evidence import export_evidence_summary
 from appointment_bot.reports.observation import export_optimization_observation
 from appointment_bot.reports.status import generate_status_report_images
 from appointment_bot.reports.weekly import LIMA_TZ, export_weekly_report
+from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.notifier import send_telegram_message
 from appointment_bot.services.order_preflight import validate_order_preflight
 

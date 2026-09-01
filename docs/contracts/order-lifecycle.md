@@ -3,7 +3,9 @@
 Estado: vigente. Ultima verificacion: `2026-09-01`.
 
 Codigo propietario: `core/models.py`, `core/rules.py`, `db/order_*`,
-`db/reservations.py` y `services/api/service_order_routes.py`.
+`db/reservations.py`, `db/service_order_repository.py`, `db/unit_of_work.py`,
+`services/application/create_service_order.py` y
+`services/api/service_order_routes.py`.
 
 ## Estados de orden
 

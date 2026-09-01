@@ -6,7 +6,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
-from appointment_bot.db.order_credentials import create_service_order
 from appointment_bot.db.order_preflight import (
     mark_order_preflight_failed,
     mark_order_preflight_pending,
@@ -19,11 +18,13 @@ from appointment_bot.db.program_resolution import (
     resolve_service_order_programs,
     split_service_order_programs,
 )
+from appointment_bot.db.service_order_repository import persist_service_order
 from appointment_bot.services.api.operator_inbox_routes import _order_task
 from appointment_bot.services.api.service_order_routes import (
     resolve_service_order_programs_payload,
     split_service_order_programs_payload,
 )
+from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.order_preflight import validate_order_preflight
 from tests.helpers import database_connection, make_settings
 
@@ -366,7 +367,7 @@ class ProgramResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             order, listing = self._order_with_listing(settings, "45777777")
-            real_create = create_service_order
+            real_create = persist_service_order
             calls = 0
 
             def fail_second_child(*args, **kwargs):
@@ -378,7 +379,7 @@ class ProgramResolutionTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.db.program_resolution.create_service_order",
+                    "appointment_bot.db.program_resolution.persist_service_order",
                     side_effect=fail_second_child,
                 ),
                 self.assertRaises(RuntimeError),

@@ -9,7 +9,7 @@ from pathlib import Path
 from appointment_bot.db.common import _INITIALIZED_URLS, init_database
 from appointment_bot.db.finance import finance_data_quality, finance_month_summary
 from appointment_bot.db.monthly_dashboard_v2 import monthly_dashboard_summary_v2
-from appointment_bot.db.orders import create_service_order
+from appointment_bot.services.application.create_service_order import create_service_order
 from tests.helpers import database_connection, make_settings
 
 

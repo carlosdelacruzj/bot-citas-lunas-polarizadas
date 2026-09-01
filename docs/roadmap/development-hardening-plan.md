@@ -730,10 +730,10 @@ pasar las pruebas creadas en la fase 4.
 
 Objetivo: separar coordinacion de negocio de SQL sin perder atomicidad.
 
-- [ ] Extraer `CreateServiceOrder` de `db/order_credentials.py`.
+- [x] Extraer `CreateServiceOrder` de `db/order_credentials.py`.
 - [ ] Extraer `RegisterPayment` de `db/order_contacts.py`.
 - [ ] Extraer `ConfirmReservation` de `db/reservations.py`.
-- [ ] Introducir una unidad de trabajo o transaccion explicita compartida.
+- [x] Introducir una unidad de trabajo o transaccion explicita compartida.
 - [ ] Mantener repositorios enfocados en leer y escribir agregados.
 - [ ] Mover cifrado fuera de la dependencia `db -> services`.
 

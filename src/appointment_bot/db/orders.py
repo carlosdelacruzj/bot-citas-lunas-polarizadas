@@ -15,7 +15,6 @@ from appointment_bot.db.order_contacts import (
     record_partial_payment,
 )
 from appointment_bot.db.order_credentials import (
-    create_service_order,
     get_claimed_service_order_runtime,
     get_service_order_runtime,
     update_service_order_credentials,

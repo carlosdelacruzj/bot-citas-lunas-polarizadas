@@ -9,7 +9,6 @@ from pathlib import Path
 from appointment_bot.core.models import RunReport
 from appointment_bot.db.orders import (
     claim_service_order,
-    create_service_order,
     mark_order_submission_intent,
     mark_order_submission_pending,
     order_reservation_pending,
@@ -20,6 +19,7 @@ from appointment_bot.db.reservations import (
     mark_reservation_attempt_pending,
     resolve_reservation_attempt,
 )
+from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.order_transitions import (
     order_can_submit,
     reconcile_pending_submission,

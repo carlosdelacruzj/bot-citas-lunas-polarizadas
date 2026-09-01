@@ -16,7 +16,6 @@ from appointment_bot.db.orders import (
     claim_service_order,
     cleanup_expired_service_order_claims,
     close_service_order,
-    create_service_order,
     get_order_program_listing,
     list_service_order_summaries,
     mark_order_done,
@@ -33,6 +32,7 @@ from appointment_bot.db.worker_state import (
     release_worker_lease,
     renew_worker_lease,
 )
+from appointment_bot.services.application.create_service_order import create_service_order
 from tests.helpers import database_connection, make_settings
 
 

@@ -15,13 +15,13 @@ from appointment_bot.db.browser_ownership import (
 )
 from appointment_bot.db.orders import (
     claim_service_order,
-    create_service_order,
     release_service_order_claim,
 )
 from appointment_bot.db.reservations import create_reservation_attempt
 from appointment_bot.manual_session import session as manual_sessions
 from appointment_bot.manual_session.session import ManualSessionHandle
 from appointment_bot.services.api.manual_session_routes import open_manual_session_payload
+from appointment_bot.services.application.create_service_order import create_service_order
 from tests.helpers import make_settings
 
 

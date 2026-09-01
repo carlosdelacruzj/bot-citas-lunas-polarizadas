@@ -25,10 +25,10 @@ from appointment_bot.db.common import (
     init_database,
 )
 from appointment_bot.db.order_contacts import _optional_clean_text
-from appointment_bot.db.order_credentials import create_service_order
 from appointment_bot.db.remote_control_audit import (
     record_remote_control_audit_in_connection,
 )
+from appointment_bot.db.service_order_repository import persist_service_order
 
 COMMUNICATION_DECISIONS = {
     "client_already_informed",
@@ -573,7 +573,7 @@ def _create_program_children_in_connection(
     for row in pending_rows:
         expediente = str(_optional_clean_text(row.get("expediente")))
         spec = commercial_specs[expediente]
-        result = create_service_order(
+        result = persist_service_order(
             document_number=str(parent["username"]),
             password=password,
             document_type=str(parent["document_type"]),

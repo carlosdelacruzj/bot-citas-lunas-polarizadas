@@ -13,7 +13,6 @@ from appointment_bot.db.orders import (
     ProgramResolutionNotFound,
     add_or_update_service_order_contact,
     close_service_order,
-    create_service_order,
     get_service_order_runtime,
     has_active_child_service_orders,
     list_service_order_summaries,
@@ -29,6 +28,7 @@ from appointment_bot.db.orders import (
     update_service_order_reservation_constraints,
 )
 from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.order_preflight import schedule_order_preflight
 
 PUBLIC_SERVICE_ORDER_FIELDS = (

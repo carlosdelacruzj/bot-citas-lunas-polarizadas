@@ -13,7 +13,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from appointment_bot.db.order_preflight import mark_order_preflight_validated
-from appointment_bot.db.orders import create_service_order
+from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.local_api import create_local_api_server
 from tests.helpers import make_settings
 
