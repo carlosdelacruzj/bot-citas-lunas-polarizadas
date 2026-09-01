@@ -552,11 +552,19 @@ No se expone aun una accion operativa de correccion.
 
 Objetivo: no presentar una fecha inferida como fecha real de caja.
 
-- [ ] Medir cuantos pagos historicos no permiten reconstruir cada abono.
-- [ ] Conservar `source=historical_backfill` y exponer su calidad.
-- [ ] Declarar fecha de corte desde la cual cada recibo es exacto.
-- [ ] Evitar comparaciones mensuales concluyentes sobre periodos aproximados.
-- [ ] Validar migracion `70 -> 71` en base nueva y restore aislado.
+- [x] Medir cuantos pagos historicos no permiten reconstruir cada abono.
+- [x] Conservar `source=historical_backfill` y exponer su calidad.
+- [x] Declarar fecha de corte desde la cual cada recibo es exacto.
+- [x] Evitar comparaciones mensuales concluyentes sobre periodos aproximados.
+- [x] Validar migracion `70 -> 71` en base nueva y restore aislado.
+
+La auditoria de solo lectura del `2026-09-01` encontro `219` pagos historicos,
+por `S/10,145`, cuyo monto acumulado se conserva pero cuyos abonos individuales
+no pueden reconstruirse. El corte se deriva del `created_at` del backfill de
+cada base; en la base operativa corresponde al `2026-08-30 18:51:46` de Lima.
+El contrato comun expone calidad, conteos y montos en Finanzas, calidad y
+resumen mensual. Las pruebas cubren esquema fresco y una restauracion aislada
+con forma `v70`, incluyendo los fallbacks `paid_at` y `updated_at` hasta `v74`.
 
 Criterio de cierre: reportes y contratos distinguen fecha exacta de fecha
 inferida, sin inventar precision historica.

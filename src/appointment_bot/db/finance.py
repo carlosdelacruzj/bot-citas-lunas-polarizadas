@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
+from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
 
 LIMA_TZ = ZoneInfo("America/Lima")
 
@@ -227,6 +228,11 @@ def finance_month_summary(
             """,
             (month_start, next_month_start),
         ).fetchall()
+        receipt_date_quality = payment_receipt_date_quality(
+            connection,
+            month_start,
+            next_month_start,
+        )
     income = _money(revenue["amount"])
     costs = _money(totals["recognized_costs"])
     return {
@@ -240,6 +246,7 @@ def finance_month_summary(
         "unconverted_entries": int(totals["unconverted_entries"] or 0),
         "active_entries": int(totals["active_entries"] or 0),
         "conversion_complete": int(totals["unconverted_entries"] or 0) == 0,
+        "receipt_date_quality": receipt_date_quality,
         "cost_capture_complete": None,
         "completeness_semantics": (
             "conversion_complete only confirms that every active movement in the period has a PEN "
@@ -303,6 +310,11 @@ def finance_data_quality(
             """,
             (month_start, next_month_start),
         ).fetchall()
+        receipt_date_quality = payment_receipt_date_quality(
+            connection,
+            month_start,
+            next_month_start,
+        )
 
     qualities = {
         quality: {"entry_count": 0, "amount_pen": 0.0, "unconverted_count": 0}
@@ -357,6 +369,7 @@ def finance_data_quality(
         )
     return {
         "month": month_start.strftime("%Y-%m"),
+        "receipt_date_quality": receipt_date_quality,
         "data_quality": qualities,
         "unconverted_entries": unconverted,
         "paid_amount_mismatches": mismatches,

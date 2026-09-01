@@ -72,7 +72,14 @@
           {{ dashboard.metricPeriodLabel(summary.period_metrics.period) }}
         </small>
         @if (summary.comparisons.same_day_window; as comparison) {
-          <p>{{ dashboard.monthlyRevenueComparison(comparison) }}</p>
+          @if (
+            comparison.selected.metrics.receipt_date_quality.comparison_conclusive &&
+            comparison.previous.metrics.receipt_date_quality.comparison_conclusive
+          ) {
+            <p>{{ dashboard.monthlyRevenueComparison(comparison) }}</p>
+          } @else {
+            <p>Fechas históricas inferidas · comparación de ingresos no concluyente</p>
+          }
         }
       </article>
       <div class="summary-mini-metrics">
@@ -102,6 +109,12 @@
             <p>Cuándo ingresó el dinero durante el periodo.</p>
           </div>
         </div>
+        @if (!summary.period_metrics.receipt_date_quality.comparison_conclusive) {
+          <p class="notice warn compact-notice">
+            {{ summary.period_metrics.receipt_date_quality.inferred_receipt_count }} cobros históricos
+            conservan el monto, pero usan una fecha inferida.
+          </p>
+        }
         @if (summary.period_metrics.daily_revenue.length) {
           <div class="bar-list">
             @for (day of summary.period_metrics.daily_revenue; track day.date) {
@@ -209,12 +222,28 @@
         @if (summary.comparisons.same_day_window; as comparison) {
           <article class="monthly-card comparison-card">
             <span class="universe-code">Comparación MTD justa</span>
-            <strong>{{ dashboard.monthlyRevenueComparison(comparison) }}</strong>
+            @if (
+              comparison.selected.metrics.receipt_date_quality.comparison_conclusive &&
+              comparison.previous.metrics.receipt_date_quality.comparison_conclusive
+            ) {
+              <strong>{{ dashboard.monthlyRevenueComparison(comparison) }}</strong>
+            } @else {
+              <strong>Comparación no concluyente</strong>
+            }
             <p>
               {{ dashboard.metricPeriodLabel(comparison.selected.period) }} frente a
               {{ dashboard.metricPeriodLabel(comparison.previous.period) }}.
             </p>
-            <small>Mismos {{ comparison.elapsed_days }} días; ingresos cobrados contra ingresos cobrados.</small>
+            <small>
+              @if (
+                comparison.selected.metrics.receipt_date_quality.comparison_conclusive &&
+                comparison.previous.metrics.receipt_date_quality.comparison_conclusive
+              ) {
+                Mismos {{ comparison.elapsed_days }} días; ingresos cobrados contra ingresos cobrados.
+              } @else {
+                Uno de los rangos contiene fechas históricas inferidas.
+              }
+            </small>
           </article>
         } @else {
           <article class="monthly-card comparison-card">
@@ -225,12 +254,28 @@
         }
         <article class="monthly-card comparison-card">
           <span class="universe-code">Mes cerrado contra mes cerrado</span>
-          <strong>{{ dashboard.closedMonthRevenueComparison(summary) }}</strong>
+          @if (
+            summary.comparisons.closed_months.selected.metrics.receipt_date_quality.comparison_conclusive &&
+            summary.comparisons.closed_months.previous.metrics.receipt_date_quality.comparison_conclusive
+          ) {
+            <strong>{{ dashboard.closedMonthRevenueComparison(summary) }}</strong>
+          } @else {
+            <strong>Comparación no concluyente</strong>
+          }
           <p>
             {{ dashboard.metricPeriodLabel(summary.comparisons.closed_months.selected.period) }} frente a
             {{ dashboard.metricPeriodLabel(summary.comparisons.closed_months.previous.period) }}.
           </p>
-          <small>Ambos rangos contienen meses completos.</small>
+          <small>
+            @if (
+              summary.comparisons.closed_months.selected.metrics.receipt_date_quality.comparison_conclusive &&
+              summary.comparisons.closed_months.previous.metrics.receipt_date_quality.comparison_conclusive
+            ) {
+              Ambos rangos contienen meses completos y fechas de caja exactas.
+            } @else {
+              Al menos un mes contiene fechas históricas inferidas.
+            }
+          </small>
         </article>
       </div>
     </section>

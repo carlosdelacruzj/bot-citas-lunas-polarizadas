@@ -54,6 +54,18 @@
       </article>
     </div>
 
+    @if (!finance.receipt_date_quality.comparison_conclusive) {
+      <p class="notice warn compact-finance-notice" role="status">
+        Este periodo contiene {{ finance.receipt_date_quality.inferred_receipt_count }} recibos
+        históricos por {{ dashboard.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
+        El monto acumulado se conserva, pero sus fechas son inferidas y no permiten una comparación
+        mensual concluyente.
+        @if (finance.receipt_date_quality.exact_since; as cutoff) {
+          Los recibos nuevos son exactos desde {{ dashboard.formatDateTime(cutoff) }}.
+        }
+      </p>
+    }
+
     <div class="finance-grid">
       <article class="monthly-card">
         <div class="monthly-card-header">

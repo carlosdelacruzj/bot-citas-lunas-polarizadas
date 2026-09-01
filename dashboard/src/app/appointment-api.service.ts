@@ -719,12 +719,25 @@ export interface MetricPeriod {
   is_closed: boolean;
 }
 
+export interface ReceiptDateQuality {
+  status: 'no_receipts' | 'exact' | 'inferred' | 'mixed';
+  comparison_conclusive: boolean;
+  exact_since: string | null;
+  inferred_receipt_count: number;
+  inferred_payment_count: number;
+  inferred_amount: number;
+  exact_receipt_count: number;
+  exact_amount: number;
+  semantics: string;
+}
+
 export interface MonthlyEventMetrics {
   orders_created: number;
   confirmed_reservation_events: number;
   orders_reserved: number;
   payments_received: number;
   revenue_collected: number;
+  receipt_date_quality: ReceiptDateQuality;
   average_ticket: MetricRatio;
   daily_revenue: Array<{ date: string; amount: number; payments: number }>;
 }
@@ -883,6 +896,7 @@ export interface FinanceSummary {
   unconverted_entries: number;
   active_entries: number;
   conversion_complete: boolean;
+  receipt_date_quality: ReceiptDateQuality;
   cost_capture_complete?: null;
   completeness_semantics?: string;
   by_category: Array<{
@@ -896,6 +910,7 @@ export type PaymentResolutionType = 'discount' | 'waiver' | 'correction';
 
 export interface FinanceDataQualitySummary {
   month: string;
+  receipt_date_quality: ReceiptDateQuality;
   data_quality: Record<FinanceDataQuality, {
     entry_count: number;
     amount_pen: number;

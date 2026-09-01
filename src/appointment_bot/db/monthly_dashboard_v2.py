@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.config import Settings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
+from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
 
 LIMA_TZ = ZoneInfo("America/Lima")
 LIMA_SQL_DATE = "AT TIME ZONE 'America/Lima'"
@@ -105,12 +106,14 @@ def _period_metrics(connection: Any, start: date, end: date) -> dict[str, Any]:
     ).fetchall()
     payments = int(row["payments_received"] or 0)
     revenue = _money(row["revenue_collected"])
+    receipt_date_quality = payment_receipt_date_quality(connection, start, end)
     return {
         "orders_created": int(row["orders_created"] or 0),
         "confirmed_reservation_events": int(row["confirmed_reservation_events"] or 0),
         "orders_reserved": int(row["orders_reserved"] or 0),
         "payments_received": payments,
         "revenue_collected": revenue,
+        "receipt_date_quality": receipt_date_quality,
         "average_ticket": {
             "value": round(revenue / payments, 2) if payments else 0.0,
             "numerator": revenue,

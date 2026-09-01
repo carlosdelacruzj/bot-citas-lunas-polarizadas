@@ -196,6 +196,8 @@ eliminen caja historica. Una correccion solo puede representarse como otro
 movimiento negativo referenciado, con motivo y actor; todavia no existe una
 accion operativa para crearlo.
 
+`historical_backfill` conserva el monto acumulado, no la fecha de cada abono.
+Finanzas y resumen exponen su calidad y marcan comparaciones no concluyentes.
 El resumen estable vive en [`resumen-del-negocio.md`](resumen-del-negocio.md) y
 el contrato en [`contracts/finance.md`](contracts/finance.md).
 

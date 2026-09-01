@@ -13,10 +13,13 @@ y `finance_entries` conserva los movimientos. No existe un CSV activo como
 fuente o intercambio autorizado para los calculos del dashboard.
 
 `payment_receipts` conserva cada entrada de caja por separado. El total
-acumulado de `payments` gobierna saldo y cierre operativo; los recibos gobiernan
-la fecha real del ingreso en el resumen financiero. Cada recibo pertenece al
-par exacto pago/orden mediante FK compuesta y no admite actualizacion, borrado
-ni cascada destructiva.
+acumulado de `payments` gobierna saldo y cierre operativo. Los recibos nativos
+gobiernan la fecha real del ingreso en el resumen financiero; una fila con
+`source=historical_backfill` conserva el monto acumulado anterior, pero su
+`received_at` es una fecha inferida mediante `paid_at`, `updated_at` o
+`created_at` y no demuestra cada abono. Cada recibo pertenece al par exacto
+pago/orden mediante FK compuesta y no admite actualizacion, borrado ni cascada
+destructiva.
 
 Los cobros normales son positivos. Una correccion es otro movimiento negativo
 con `source=payment_correction`, referencia al recibo original, motivo y actor;
@@ -71,6 +74,14 @@ evidencia y notas.
 No guardar tokens, credenciales ni datos personales dentro de evidencia o notas.
 
 ## Calidad y cierre mensual
+
+`receipt_date_quality` se expone en el resumen financiero, centro de calidad y
+metricas mensuales. Distingue `exact`, `inferred`, `mixed` y `no_receipts`,
+separa cantidades y montos exactos/inferidos y publica `exact_since`. Este
+corte es el instante de creacion del backfill en cada base, no una constante
+global. Si un rango contiene al menos un recibo inferido,
+`comparison_conclusive=false` y la interfaz no presenta una variacion mensual
+de ingresos como concluyente.
 
 `conversion_complete` significa únicamente que todos los movimientos activos
 del periodo tienen conversión monetaria a PEN. No
