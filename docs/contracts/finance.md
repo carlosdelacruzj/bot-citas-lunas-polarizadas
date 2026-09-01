@@ -2,7 +2,7 @@
 
 Estado: vigente.
 
-Ultima verificacion: `2026-08-30`.
+Ultima verificacion: `2026-09-01`.
 
 Responsable: `db/finance.py` y `services/api/finance_routes.py`.
 
@@ -111,7 +111,10 @@ variable, fijo o mixto.
 
 `government_fee` representa tasas oficiales pagadas por cuenta del cliente. El
 paquete integral crea el movimiento de `S/71.40`, con la orden vinculada, al
-confirmar en el alta que la tasa ya fue pagada.
+confirmar en el alta que la tasa ya fue pagada. Repetir el alta no duplica el
+movimiento. Cancelar con saldo incobrable conserva este costo y el abono; una
+devolucion o correccion exige movimientos contables auditados y no reescribe los
+hechos originales.
 
 La secuencia operativa del cierre vive en
 [`../finance/README.md`](../finance/README.md).

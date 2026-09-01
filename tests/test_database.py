@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from psycopg.errors import CheckViolation
 
 from appointment_bot.core.models import RunRecord
-from appointment_bot.db.common import init_database
+from appointment_bot.db.common import _INITIALIZED_URLS, init_database
 from appointment_bot.db.migrations import SCHEMA_VERSION
 from appointment_bot.db.orders import (
     claim_service_order,
@@ -14,10 +19,12 @@ from appointment_bot.db.orders import (
     create_service_order,
     get_order_program_listing,
     list_service_order_summaries,
+    mark_order_done,
     mark_payment_paid,
     mark_service_order_no_charge,
     record_order_program_listing,
 )
+from appointment_bot.db.reservations import _record_reservation_for_order
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
 from appointment_bot.db.worker_state import (
     acquire_worker_lease,
@@ -73,6 +80,37 @@ class DatabaseTests(unittest.TestCase):
             self.assertNotIn(("applicants", "document_type"), columns)
             self.assertNotIn("reservation_rules", tables)
             self.assertIsNone(get_worker_state(settings).owner_token)
+
+    def test_schema_72_migrates_integral_constraint_to_73(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            init_database(settings)
+            with database_connection(settings) as connection:
+                connection.execute(
+                    "ALTER TABLE service_orders "
+                    "DROP CONSTRAINT ck_service_orders_integral_terms"
+                )
+                connection.execute("UPDATE schema_version SET version = 72 WHERE id = 1")
+            _INITIALIZED_URLS.discard(settings.database_url)
+
+            init_database(settings)
+
+            with database_connection(settings) as connection:
+                version = connection.execute(
+                    "SELECT version FROM schema_version WHERE id = 1"
+                ).fetchone()["version"]
+                constraint = connection.execute(
+                    """
+                    SELECT convalidated
+                    FROM pg_constraint
+                    WHERE connamespace = (
+                        SELECT oid FROM pg_namespace WHERE nspname = current_schema()
+                    ) AND conname = 'ck_service_orders_integral_terms'
+                    """
+                ).fetchone()
+            self.assertEqual(version, 73)
+            self.assertIsNotNone(constraint)
+            self.assertTrue(constraint["convalidated"])
 
     def test_expired_order_claims_are_cleaned_and_reclaimable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -156,6 +194,230 @@ class DatabaseTests(unittest.TestCase):
             self.assertEqual(summaries[0].document_number, "12345678")
             self.assertEqual(summaries[0].document_number_masked, "12***8")
             self.assertFalse(hasattr(summaries[0], "password"))
+
+    def test_integral_creation_is_idempotent_and_records_fixed_amounts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            for _ in range(2):
+                result = create_service_order(
+                    document_number="12345678",
+                    password="secret",
+                    service_package="integral",
+                    reservation_price=Decimal("160.00"),
+                    settings=settings,
+                )
+
+            with database_connection(settings) as connection:
+                order = connection.execute(
+                    """
+                    SELECT charge_required, service_type, reservation_price,
+                           official_fee_amount, initial_payment_amount
+                    FROM service_orders
+                    WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+                payment = connection.execute(
+                    """
+                    SELECT status, amount_agreed, amount_paid
+                    FROM payments
+                    WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+                receipt = connection.execute(
+                    """
+                    SELECT COUNT(*) AS count, SUM(amount) AS amount
+                    FROM payment_receipts
+                    WHERE order_id = %s AND source = 'integral_initial_payment'
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+                fee = connection.execute(
+                    """
+                    SELECT COUNT(*) AS count, SUM(amount_pen) AS amount
+                    FROM finance_entries
+                    WHERE order_id = %s AND category_code = 'government_fee'
+                      AND status = 'active'
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+
+            self.assertTrue(order["charge_required"])
+            self.assertEqual(order["service_type"], "standard")
+            self.assertEqual(order["reservation_price"], Decimal("160.00"))
+            self.assertEqual(order["official_fee_amount"], Decimal("71.40"))
+            self.assertEqual(order["initial_payment_amount"], Decimal("80.00"))
+            self.assertEqual(payment["status"], "pending")
+            self.assertEqual(payment["amount_agreed"], Decimal("160.00"))
+            self.assertEqual(payment["amount_paid"], Decimal("80.00"))
+            self.assertEqual(receipt["count"], 1)
+            self.assertEqual(receipt["amount"], Decimal("80.00"))
+            self.assertEqual(fee["count"], 1)
+            self.assertEqual(fee["amount"], Decimal("71.40"))
+
+    def test_integral_terms_are_rejected_by_domain_and_postgres(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            with self.assertRaisesRegex(ValueError, "charge_required=true"):
+                create_service_order(
+                    document_number="12345678",
+                    password="secret",
+                    charge_required=False,
+                    service_package="integral",
+                    reservation_price=Decimal("160.00"),
+                    settings=settings,
+                )
+            result = create_service_order(
+                document_number="87654321",
+                password="secret",
+                service_package="integral",
+                reservation_price=Decimal("160.00"),
+                settings=settings,
+            )
+            invalid_updates = (
+                "UPDATE service_orders SET charge_required = false WHERE order_id = %s",
+                "UPDATE service_orders SET reservation_price = 159 WHERE order_id = %s",
+                "UPDATE service_orders SET official_fee_amount = 70 WHERE order_id = %s",
+                "UPDATE service_orders SET initial_payment_amount = 79 WHERE order_id = %s",
+                "UPDATE service_orders SET status = 'archived' WHERE order_id = %s",
+            )
+            for statement in invalid_updates:
+                with self.subTest(statement=statement), database_connection(settings) as connection:
+                    with self.assertRaises(CheckViolation):
+                        connection.execute(statement, (result.order_id,))
+                    connection.rollback()
+
+    def test_integral_reservation_collects_only_balance_and_closes_at_160(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                service_package="integral",
+                reservation_price=Decimal("160.00"),
+                settings=settings,
+            )
+            report = SimpleNamespace(
+                details={},
+                run_id=None,
+                reservation_confirmed=True,
+                screenshot_path=None,
+                screenshot_paths=[],
+            )
+            _record_reservation_for_order(
+                result.order_id,
+                report,
+                confirmed=True,
+                settings=settings,
+            )
+
+            summary = list_service_order_summaries(settings)[0]
+            self.assertEqual(summary.status, "reserved_payment_pending")
+            self.assertEqual(summary.amount_agreed, "160.00")
+            self.assertEqual(summary.amount_paid, "80.00")
+            with self.assertRaisesRegex(ValueError, "debe acumular S/160.00"):
+                mark_payment_paid(
+                    result.order_id,
+                    amount_paid=150,
+                    amount_agreed=160,
+                    allow_difference=True,
+                    difference_reason="invalid integral discount",
+                    settings=settings,
+                )
+            with patch("appointment_bot.db.order_contacts.enqueue_whatsapp_automation_job"):
+                mark_payment_paid(
+                    result.order_id,
+                    amount_paid=160,
+                    amount_agreed=160,
+                    settings=settings,
+                )
+
+            with database_connection(settings) as connection:
+                payment = connection.execute(
+                    """
+                    SELECT status, amount_agreed, amount_paid
+                    FROM payments WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+                receipts = connection.execute(
+                    """
+                    SELECT COUNT(*) AS count, SUM(amount) AS amount
+                    FROM payment_receipts WHERE order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+            self.assertEqual(payment["status"], "paid")
+            self.assertEqual(payment["amount_agreed"], Decimal("160.00"))
+            self.assertEqual(payment["amount_paid"], Decimal("160.00"))
+            self.assertEqual(receipts["count"], 2)
+            self.assertEqual(receipts["amount"], Decimal("160.00"))
+
+    def test_integral_correction_and_no_charge_close_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            result = create_service_order(
+                document_number="12345678",
+                password="secret",
+                service_package="integral",
+                reservation_price=Decimal("160.00"),
+                settings=settings,
+            )
+            with self.assertRaisesRegex(ValueError, "corrección contable auditada"):
+                create_service_order(
+                    document_number="12345678",
+                    password="secret",
+                    service_package="standard",
+                    reservation_price=Decimal("50.00"),
+                    settings=settings,
+                )
+            with self.assertRaisesRegex(ValueError, "no puede convertirse en sin cobro"):
+                mark_service_order_no_charge(result.order_id, settings=settings)
+            with self.assertRaisesRegex(ValueError, "no puede cerrarse sin cobro"):
+                close_service_order(
+                    result.order_id,
+                    closure_reason="client_withdrew",
+                    settings=settings,
+                )
+            with self.assertRaisesRegex(ValueError, "debe acumular S/160.00"):
+                close_service_order(
+                    result.order_id,
+                    closure_reason="completed_by_us",
+                    settings=settings,
+                )
+            with self.assertRaisesRegex(ValueError, "no puede archivarse"):
+                mark_order_done(result.order_id, status="completed", settings=settings)
+
+            close_service_order(
+                result.order_id,
+                closure_reason="uncollectible",
+                closure_note="Saldo pendiente no recuperable",
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                row = connection.execute(
+                    """
+                    SELECT so.status AS order_status, so.closure_reason,
+                           p.status AS payment_status, p.amount_paid,
+                           (SELECT COUNT(*) FROM payment_receipts pr
+                            WHERE pr.order_id = so.order_id) AS receipt_count,
+                           (SELECT COUNT(*) FROM finance_entries fe
+                            WHERE fe.order_id = so.order_id
+                              AND fe.category_code = 'government_fee'
+                              AND fe.status = 'active') AS fee_count
+                    FROM service_orders so
+                    JOIN payments p ON p.order_id = so.order_id
+                    WHERE so.order_id = %s
+                    """,
+                    (result.order_id,),
+                ).fetchone()
+            self.assertEqual(row["order_status"], "archived")
+            self.assertEqual(row["closure_reason"], "uncollectible")
+            self.assertEqual(row["payment_status"], "written_off")
+            self.assertEqual(row["amount_paid"], Decimal("80.00"))
+            self.assertEqual(row["receipt_count"], 1)
+            self.assertEqual(row["fee_count"], 1)
 
     def test_no_charge_clears_pending_payment(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

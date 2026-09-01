@@ -169,6 +169,40 @@ def package_amounts(
     return definition.official_fee_amount, definition.initial_payment_amount
 
 
+def validate_service_package_terms(
+    service_package: str,
+    service_type: str,
+    reservation_price: Decimal,
+    *,
+    charge_required: bool,
+) -> tuple[Decimal, Decimal]:
+    validate_service_package_compatibility(service_package, service_type)
+    official_fee_amount, initial_payment_amount = package_amounts(
+        service_package,
+        reservation_price,
+    )
+    if service_package == SERVICE_PACKAGE_INTEGRAL and not charge_required:
+        raise ValueError("El paquete Trámite integral exige charge_required=true.")
+    return official_fee_amount, initial_payment_amount
+
+
+def validate_integral_payment_totals(
+    service_package: str,
+    *,
+    amount_agreed: Decimal,
+    amount_paid: Decimal,
+    complete: bool,
+) -> None:
+    if service_package != SERVICE_PACKAGE_INTEGRAL:
+        return
+    if amount_agreed != INTEGRAL_TOTAL_AMOUNT:
+        raise ValueError("El paquete Trámite integral exige un monto acordado de S/160.00.")
+    if amount_paid < INTEGRAL_INITIAL_PAYMENT:
+        raise ValueError("El paquete Trámite integral ya registra un abono inicial de S/80.00.")
+    if complete and amount_paid != INTEGRAL_TOTAL_AMOUNT:
+        raise ValueError("El pago completo del paquete Trámite integral debe acumular S/160.00.")
+
+
 def service_package_label(
     service_package: str | None,
     service_type: str | None = None,
@@ -205,5 +239,7 @@ __all__ = [
     "service_package_catalog_payload",
     "service_package_definition",
     "service_package_label",
+    "validate_integral_payment_totals",
     "validate_service_package_compatibility",
+    "validate_service_package_terms",
 ]

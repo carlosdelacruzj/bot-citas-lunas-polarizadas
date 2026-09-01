@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-08-31`.
+Estado verificado documentalmente: `2026-09-01`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -20,7 +20,8 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa;
-- esquema PostgreSQL requerido por el codigo: `v72`;
+- esquema PostgreSQL requerido por el codigo: `v73`; la base operativa sigue en
+  `v72` hasta la activacion controlada de la fase `2.6`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
   sesiones manuales, con cierre visible hasta terminar Chromium;
@@ -106,6 +107,9 @@ desde un valor global.
 El tramite integral se registra despues de que el operador recibe el primer
 abono, paga la tasa y crea la cuenta/solicitud. El alta persiste el abono y el
 costo de la tasa; al reservar, el mensaje de cobro usa solo el saldo pendiente.
+Exige cobro, montos fijos y pago acumulado de `S/160`; reintentos identicos no
+duplican recibo ni costo. Una correccion con historia financiera o un cierre sin
+cobro falla cerrado hasta disponer de una correccion contable auditada.
 
 ## Dashboard vigente
 

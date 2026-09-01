@@ -18,7 +18,7 @@ Hasta cerrar las fases 0 a 4:
 - no iniciar features comerciales nuevas;
 - permitir solo correcciones, pruebas, observabilidad y refactors incluidos en
   este plan;
-- terminar o estabilizar primero el cambio del esquema `v72` y paquete
+- terminar o estabilizar primero el cambio del esquema `v73` y paquete
   integral;
 - no aprovechar un refactor para cambiar reglas de negocio no relacionadas;
 - no desplegar una migracion, reiniciar procesos ni enviar mensajes como parte
@@ -94,7 +94,7 @@ dominio afectado.
 |---|---|---|---|
 | 0 | Congelar alcance y crear linea base | ninguna | trabajo seguro |
 | 1 | Corregir riesgos operativos P0 | fase 0 | reservas confiables |
-| 2 | Estabilizar `v72` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
+| 2 | Estabilizar `v73` y paquete integral | fase 0; partes de 1 | finanzas coherentes |
 | 3 | Cerrar filtraciones y estados sensibles | fase 0 | diagnostico seguro |
 | 4 | Crear red automatica de seguridad | fases 1 a 3 | refactor controlado |
 | 5 | Corregir fronteras del backend | fase 4 | crecimiento modular |
@@ -486,11 +486,12 @@ perdida real detiene admision nueva sin duplicar submit.
 Estado de fase: implementacion tecnica `1.1` a `1.5` completa. La aceptacion
 integral permanece abierta solo por la ventana natural indicada en `1.3A`.
 
-## Fase 2 - Estabilizar esquema `v72`, pagos y paquete integral
+## Fase 2 - Estabilizar pagos y paquete integral (`v72 -> v73`)
 
 La ampliacion tecnica `v71 -> v72` ya esta aplicada. No registrar un paquete
-integral real hasta cerrar toda esta fase. El esquema, los resumenes y el
-contrato deben avanzar juntos.
+integral real hasta cerrar toda esta fase. El endurecimiento de `2.2` prepara
+`v73`, cuya aplicacion al runtime pertenece exclusivamente a `2.6`. El esquema,
+los resumenes y el contrato deben avanzar juntos.
 
 ### 2.1 Catalogo comercial unico
 
@@ -513,12 +514,18 @@ no toca migracion ni runtime del navegador.
 
 Objetivo: impedir estados contables imposibles.
 
-- [ ] Hacer que integral exija `charge_required=true`.
-- [ ] Validar precio `S/160`, abono `S/80` y tasa `S/71.40` en dominio.
-- [ ] Reforzar invariantes representables mediante constraints PostgreSQL.
-- [ ] Preservar idempotencia de recibo y costo en reintentos de alta.
-- [ ] Verificar que reserva cobre solo el saldo y pago completo acumule S/160.
-- [ ] Definir comportamiento al corregir o cancelar una alta integral.
+- [x] Hacer que integral exija `charge_required=true`.
+- [x] Validar precio `S/160`, abono `S/80` y tasa `S/71.40` en dominio.
+- [x] Reforzar invariantes representables mediante constraints PostgreSQL.
+- [x] Preservar idempotencia de recibo y costo en reintentos de alta.
+- [x] Verificar que reserva cobre solo el saldo y pago completo acumule S/160.
+- [x] Definir comportamiento al corregir o cancelar una alta integral.
+
+Una repeticion identica del alta reutiliza pago, recibo y costo. Una correccion
+de condiciones con historia financiera falla cerrada hasta existir un flujo
+contable auditado. Los cierres sin cobro y la accion generica `done` se rechazan;
+`uncollectible` conserva el abono y la tasa y da de baja solamente el saldo
+pendiente. Completar exige usar el flujo de pago y acumular `S/160`.
 
 Criterio de cierre: API, dominio y PostgreSQL rechazan la misma combinacion
 invalida y ninguna orden integral puede cerrarse dejando el saldo incoherente.
@@ -570,7 +577,7 @@ coinciden para una cohorte equivalente.
 - [ ] Reiniciar solo el propietario necesario si la activacion lo requiere.
 - [ ] Ejecutar un flujo natural futuro; no crear un cliente o cobro de prueba.
 
-Criterio de cierre: codigo, esquema y runtime coinciden en `v72`, y el primer
+Criterio de cierre: codigo, esquema y runtime coinciden en `v73`, y el primer
 caso natural conserva abono, tasa, saldo, mensaje y resumen correctos.
 
 ## Fase 3 - Privacidad, evidencia y secretos

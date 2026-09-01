@@ -1,6 +1,6 @@
 # Contrato de ciclo de vida de ordenes
 
-Estado: vigente. Ultima verificacion: `2026-08-31`.
+Estado: vigente. Ultima verificacion: `2026-09-01`.
 
 Codigo propietario: `core/models.py`, `core/rules.py`, `db/order_*`,
 `db/reservations.py` y `services/api/service_order_routes.py`.
@@ -41,7 +41,14 @@ La reserva copia el precio al pago acordado.
 paquete `integral` fija `S/160`, registra un primer abono de `S/80` y conserva
 `S/71.40` como tasa oficial pagada por cuenta del cliente. Su alta supone que el
 operador ya recibio el abono, pago la tasa y creo la cuenta y solicitud antes de
-entregar las credenciales al preflight.
+entregar las credenciales al preflight. Siempre exige `charge_required=true`;
+dominio y PostgreSQL rechazan otra combinacion de precio, abono, tasa o tipo.
+
+Repetir exactamente el alta integral es idempotente: reutiliza el pago y los
+identificadores deterministas del recibo y costo. Cuando ya existe historia
+financiera no se permiten correcciones silenciosas del paquete, precio, tipo o
+cobro. Una devolucion o reclasificacion requiere movimientos y auditoria
+explicitos antes de habilitar un flujo de correccion.
 
 Combinaciones admitidas para nuevas ordenes:
 
@@ -134,11 +141,17 @@ pendiente y no encola postpago.
 Los cobros se conservan adicionalmente como movimientos inmutables en
 `payment_receipts`; `payments.amount_paid` sigue siendo el total acumulado. En
 el paquete integral, la reserva solicita el saldo de `S/80`, no los `S/160`
-completos.
+completos. El pago completo debe conservar `amount_agreed=S/160` y acumular
+`amount_paid=S/160`; no admite descuento ni cierre directo como completado.
 
 El pago completo exige la orden pendiente de cobro. Si el monto es menor al
 acordado requiere autorizacion y motivo. La transaccion marca pago/orden y
 encola postpago durable; no implica entrega WhatsApp.
+
+Una orden integral no puede convertirse en sin cobro ni archivarse mediante la
+accion generica `done`. Un cierre `uncollectible` conserva el abono inicial, el
+costo oficial y deja el pago como `written_off`; los cierres que implican
+devolucion permanecen bloqueados hasta una correccion contable auditada.
 
 ## Subordenes
 

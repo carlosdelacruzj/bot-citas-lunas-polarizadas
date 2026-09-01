@@ -20,8 +20,7 @@ from appointment_bot.core.service_packages import (
     STANDARD_TOTAL_AMOUNT,
     infer_service_package,
     normalize_service_package,
-    package_amounts,
-    validate_service_package_compatibility,
+    validate_service_package_terms,
 )
 from appointment_bot.db.common import (
     _connection,
@@ -89,10 +88,11 @@ def create_service_order(
     effective_service_package = normalize_service_package(
         service_package or infer_service_package(service_type)
     )
-    validate_service_package_compatibility(effective_service_package, service_type)
-    official_fee_amount, initial_payment_amount = package_amounts(
+    official_fee_amount, initial_payment_amount = validate_service_package_terms(
         effective_service_package,
+        service_type,
         effective_reservation_price,
+        charge_required=charge_required,
     )
     if minimum_reservation_hour is not None:
         raise ValueError("Las restricciones horarias ya no se aceptan.")
@@ -211,6 +211,25 @@ def create_service_order(
                     parent_order_id = None
                 else:
                     raise ValueError(f"No existe la orden padre: {parent_order_id}")
+        existing_commercial_terms = connection.execute(
+            """
+            SELECT service_package, service_type, reservation_price, charge_required
+            FROM service_orders
+            WHERE order_id = %s
+            FOR UPDATE
+            """,
+            (order_id,),
+        ).fetchone()
+        if existing_commercial_terms is not None:
+            _validate_integral_commercial_correction(
+                connection,
+                order_id=order_id,
+                current=existing_commercial_terms,
+                service_package=effective_service_package,
+                service_type=service_type,
+                reservation_price=effective_reservation_price,
+                charge_required=charge_required,
+            )
         persisted_order = connection.execute(
             """
             INSERT INTO service_orders (
@@ -421,6 +440,43 @@ def create_service_order(
         portal_account_id=portal_account_id,
         contact_id=contact_id,
     )
+
+
+def _validate_integral_commercial_correction(
+    connection: Connection,
+    *,
+    order_id: str,
+    current: dict[str, object],
+    service_package: str,
+    service_type: str,
+    reservation_price: Decimal,
+    charge_required: bool,
+) -> None:
+    current_package = str(current["service_package"])
+    if SERVICE_PACKAGE_INTEGRAL not in {current_package, service_package}:
+        return
+    unchanged = (
+        current_package == service_package
+        and str(current["service_type"]) == service_type
+        and current["reservation_price"] == reservation_price
+        and bool(current["charge_required"]) == charge_required
+    )
+    if unchanged:
+        return
+    has_financial_history = connection.execute(
+        """
+        SELECT EXISTS (SELECT 1 FROM payments WHERE order_id = %s)
+            OR EXISTS (SELECT 1 FROM payment_receipts WHERE order_id = %s)
+            OR EXISTS (SELECT 1 FROM finance_entries WHERE order_id = %s)
+            AS present
+        """,
+        (order_id, order_id, order_id),
+    ).fetchone()
+    if has_financial_history is not None and bool(has_financial_history["present"]):
+        raise ValueError(
+            "Las condiciones del paquete Trámite integral no pueden corregirse después "
+            "de registrar abonos o costos; se requiere una corrección contable auditada."
+        )
 
 
 def update_service_order_document_type(

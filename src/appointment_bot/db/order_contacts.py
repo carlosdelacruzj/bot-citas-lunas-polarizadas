@@ -17,7 +17,11 @@ from appointment_bot.core.contacts import (
 from appointment_bot.core.models import (
     ServiceOrderSummary,
 )
-from appointment_bot.core.service_packages import DEFAULT_RESERVATION_PRICE_TEXT
+from appointment_bot.core.service_packages import (
+    DEFAULT_RESERVATION_PRICE_TEXT,
+    SERVICE_PACKAGE_INTEGRAL,
+    validate_integral_payment_totals,
+)
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -269,6 +273,12 @@ def mark_payment_paid(
         if current["payment_status"] not in {None, "pending"}:
             raise ValueError("Payment is no longer pending.")
         previous_paid = current["amount_paid"] or 0
+        validate_integral_payment_totals(
+            current["service_package"],
+            amount_agreed=agreed,
+            amount_paid=paid,
+            complete=True,
+        )
         if paid < previous_paid:
             raise ValueError("A complete payment cannot reduce the accumulated amount paid.")
         payment_id = _id_from_value("payment", order_id)
@@ -368,6 +378,12 @@ def record_partial_payment(
                 "A partial payment must remain below amount_agreed; use payment/paid instead."
             )
         previous_paid = current["amount_paid"] or 0
+        validate_integral_payment_totals(
+            current["service_package"],
+            amount_agreed=effective_agreed,
+            amount_paid=paid,
+            complete=False,
+        )
         if paid < previous_paid:
             raise ValueError("A partial payment cannot reduce the accumulated amount paid.")
         connection.execute(
@@ -454,7 +470,12 @@ def _record_payment_receipt(
 
 def _lock_payment_state(connection: Connection, order_id: str) -> dict[str, Any]:
     order = connection.execute(
-        "SELECT status FROM service_orders WHERE order_id = %s FOR UPDATE",
+        """
+        SELECT status, service_package
+        FROM service_orders
+        WHERE order_id = %s
+        FOR UPDATE
+        """,
         (order_id,),
     ).fetchone()
     if order is None:
@@ -470,6 +491,7 @@ def _lock_payment_state(connection: Connection, order_id: str) -> dict[str, Any]
     ).fetchone()
     return {
         "order_status": order["status"],
+        "service_package": str(order["service_package"]),
         "payment_status": payment["status"] if payment is not None else None,
         "amount_agreed": payment["amount_agreed"] if payment is not None else None,
         "amount_paid": payment["amount_paid"] if payment is not None else None,
@@ -513,6 +535,22 @@ def mark_service_order_no_charge(
     init_database(settings)
     now = _now()
     with _connection(_database_url(settings)) as connection:
+        order = connection.execute(
+            """
+            SELECT service_package
+            FROM service_orders
+            WHERE order_id = %s
+            FOR UPDATE
+            """,
+            (order_id,),
+        ).fetchone()
+        if order is None:
+            raise ValueError(f"Service order not found: {order_id}")
+        if str(order["service_package"]) == SERVICE_PACKAGE_INTEGRAL:
+            raise ValueError(
+                "El paquete Trámite integral no puede convertirse en sin cobro; "
+                "se requiere una corrección contable auditada."
+            )
         cursor = connection.execute(
             """
             UPDATE service_orders
@@ -549,6 +587,30 @@ def close_service_order(
     charge_required = closure_reason not in NO_CHARGE_CLOSURE_REASONS
     order_status = "paid" if closure_reason == "completed_by_us" else "archived"
     with _connection(_database_url(settings)) as connection:
+        current = connection.execute(
+            """
+            SELECT so.service_package, p.status AS payment_status
+            FROM service_orders so
+            LEFT JOIN payments p ON p.order_id = so.order_id
+            WHERE so.order_id = %s
+            FOR UPDATE OF so
+            """,
+            (order_id,),
+        ).fetchone()
+        if current is None:
+            raise ValueError(f"Service order not found: {order_id}")
+        if str(current["service_package"]) == SERVICE_PACKAGE_INTEGRAL:
+            if closure_reason in NO_CHARGE_CLOSURE_REASONS:
+                raise ValueError(
+                    "El paquete Trámite integral no puede cerrarse sin cobro; usa "
+                    "uncollectible para conservar el abono y costo, o una corrección "
+                    "contable auditada si hubo devolución."
+                )
+            if closure_reason == "completed_by_us" and current["payment_status"] != "paid":
+                raise ValueError(
+                    "El paquete Trámite integral debe acumular S/160.00 mediante el flujo "
+                    "de pago antes de cerrarse como completado."
+                )
         cursor = connection.execute(
             """
             UPDATE service_orders

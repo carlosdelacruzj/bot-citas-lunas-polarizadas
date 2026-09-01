@@ -10,7 +10,7 @@ from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
 
-SCHEMA_VERSION = 72
+SCHEMA_VERSION = 73
 _MIGRATION_LOCK_ID = 1_047_296_811
 
 
@@ -113,6 +113,19 @@ def create_current_schema(connection: Connection) -> None:
             ),
             CONSTRAINT ck_service_orders_service_type CHECK (
                 service_type IN ('standard', 'selected_weekday', 'custom')
+            ),
+            CONSTRAINT ck_service_orders_integral_terms CHECK (
+                service_package <> 'integral' OR (
+                    charge_required = true
+                    AND service_type = 'standard'
+                    AND reservation_price = 160.00
+                    AND official_fee_amount = 71.40
+                    AND initial_payment_amount = 80.00
+                    AND (
+                        status <> 'archived'
+                        OR COALESCE(closure_reason = 'uncollectible', false)
+                    )
+                )
             ),
             acquisition_source text,
             acquisition_source_origin text CHECK (
@@ -1224,6 +1237,7 @@ def _validate_current_schema(connection: Connection) -> None:
         "uq_portal_accounts_identity",
         "fk_service_orders_account_applicant",
         "ck_service_orders_lease_pair",
+        "ck_service_orders_integral_terms",
         "uq_runs_order",
         "ck_runs_timestamps",
         "ck_runs_reservation_flags",
@@ -3843,6 +3857,30 @@ def migrate_database(connection: Connection) -> None:
             (72,),
         )
         current_version = 72
+    if current_version == 72:
+        connection.execute(
+            """
+            ALTER TABLE service_orders
+            ADD CONSTRAINT ck_service_orders_integral_terms CHECK (
+                service_package <> 'integral' OR (
+                    charge_required = true
+                    AND service_type = 'standard'
+                    AND reservation_price = 160.00
+                    AND official_fee_amount = 71.40
+                    AND initial_payment_amount = 80.00
+                    AND (
+                        status <> 'archived'
+                        OR COALESCE(closure_reason = 'uncollectible', false)
+                    )
+                )
+            )
+            """
+        )
+        connection.execute(
+            "UPDATE schema_version SET version = %s WHERE id = 1",
+            (73,),
+        )
+        current_version = 73
     if current_version != SCHEMA_VERSION:
         raise RuntimeError(
             f"Database schema version {current_version} is unsupported; "

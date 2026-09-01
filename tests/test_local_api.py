@@ -6,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from contextlib import contextmanager
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
@@ -219,6 +220,53 @@ class LocalApiTests(unittest.TestCase):
             self.assertIsNone(detail["minimum_reservation_hour"])
             self.assertEqual(detail["minimum_reservation_date"], "2026-08-01")
             self.assertEqual(detail["allowed_weekdays"], [1, 6])
+
+    def test_integral_create_rejects_invalid_commercial_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            base_payload = {
+                "document_number": "87654321",
+                "document_type": "dni",
+                "password": "secret",
+                "contact_name": "Cliente integral",
+                "contact_source": "whatsapp",
+                "service_type": "standard",
+                "service_package": "integral",
+                "reservation_price": "160.00",
+            }
+            with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
+                for payload, expected_message in (
+                    ({**base_payload, "charge_required": False}, "charge_required=true"),
+                    ({**base_payload, "reservation_price": "159.00"}, "S/160.00"),
+                ):
+                    with self.subTest(payload=payload), self.assertRaises(HTTPError) as context:
+                        _json_request(
+                            f"{base_url}/api/v1/service-orders",
+                            method="POST",
+                            token="secret",
+                            payload=payload,
+                        )
+                    error = json.loads(context.exception.read())
+                    self.assertEqual(context.exception.code, 400)
+                    self.assertIn(expected_message, error["message"])
+
+                result = create_service_order(
+                    document_number="11223344",
+                    password="secret",
+                    service_package="integral",
+                    reservation_price=Decimal("160.00"),
+                    settings=settings,
+                )
+                for action in ("no-charge", "done"):
+                    with self.subTest(action=action), self.assertRaises(HTTPError) as context:
+                        _json_request(
+                            f"{base_url}/api/v1/service-orders/{result.order_id}/{action}",
+                            method="POST",
+                            token="secret",
+                        )
+                    error = json.loads(context.exception.read())
+                    self.assertEqual(context.exception.code, 400)
+                    self.assertEqual(error["status"], "bad_request")
 
     def test_service_order_close_action_publishes_closure_reason(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -461,7 +461,12 @@ def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] |
         else:
             raise ValueError(f"Unsupported service order action: {action_name}")
     except ValueError as exc:
-        return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
     return HTTPStatus.OK, {"status": "ok"}
 
 

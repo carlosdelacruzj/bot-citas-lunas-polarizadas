@@ -572,6 +572,23 @@ def mark_order_done(
         "reserved_payment_pending" if status in {"registered", "programmed"} else "archived"
     )
     with _connection(_database_url(settings)) as connection:
+        if order_status == "archived":
+            package = connection.execute(
+                """
+                SELECT service_package
+                FROM service_orders
+                WHERE order_id = %s
+                FOR UPDATE
+                """,
+                (order_id,),
+            ).fetchone()
+            if package is None:
+                raise ValueError(f"Service order not found: {order_id}")
+            if str(package["service_package"]) == "integral":
+                raise ValueError(
+                    "El paquete Trámite integral no puede archivarse con la acción done; "
+                    "registra el pago completo o usa un cierre contable explícito."
+                )
         cursor = connection.execute(
             """
             UPDATE service_orders
