@@ -25,6 +25,7 @@ dev = [
     "pytest-cov>=7.0.0,<8",
     "ruff>=0.15.22,<0.16",
     "setuptools>=84,<85",
+    "vulture>=2.14,<3",
 ]
 
 [project.scripts]

@@ -709,14 +709,14 @@ Objetivo: proteger formularios, payloads y acciones sensibles antes de dividir
 
 Objetivo: impedir que vuelvan dependencias inversas y simbolos sin consumidor.
 
-- [ ] Activar `noUnusedLocals` y `noUnusedParameters` en el check, resolviendo
+- [x] Activar `noUnusedLocals` y `noUnusedParameters` en el check, resolviendo
   primero `needsPostAppointmentReview()` y falsos positivos.
-- [ ] Definir imports permitidos entre `core`, `db`, `services`,
+- [x] Definir imports permitidos entre `core`, `db`, `services`,
   `reservation_engine` y `worker`.
-- [ ] Detectar ciclos en CI.
-- [ ] Ejecutar detector de clones y codigo muerto como reporte; hacerlo
+- [x] Detectar ciclos en CI.
+- [x] Ejecutar detector de clones y codigo muerto como reporte; hacerlo
   bloqueante solo despues de limpiar la linea base.
-- [ ] No borrar compatibilidad o callbacks dinamicos por un reporte aislado.
+- [x] No borrar compatibilidad o callbacks dinamicos por un reporte aislado.
 
 Criterio de cierre de fase: un clon limpio puede instalar, compilar, probar y
 construir todo sin estado local, y las regresiones P0 tienen pruebas obligatorias.

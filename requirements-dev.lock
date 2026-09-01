@@ -1062,6 +1062,10 @@ urllib3==2.7.0 \
     --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
     --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
     # via requests
+vulture==2.16 \
+    --hash=sha256:6e0f1c312cef1c87856957e5c2ca9608834a7c794c2180477f30bf0e4cc58eee \
+    --hash=sha256:f8d9f6e2af03011664a3c6c240c9765b3f392917d3135fddca6d6a68d359f717
+    # via obtener-lunas-polarizadas (pyproject.toml)
 wheel==0.48.0 \
     --hash=sha256:3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab \
     --hash=sha256:94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322

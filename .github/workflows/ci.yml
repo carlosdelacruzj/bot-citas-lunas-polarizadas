@@ -59,7 +59,14 @@ jobs:
         run: python -m compileall -q src
 
       - name: Lint Python
-        run: python -m ruff check src tests
+        run: python -m ruff check src tests scripts/check-architecture.py
+
+      - name: Enforce architecture baseline
+        run: python scripts/check-architecture.py --report reports/ci/architecture.json
+
+      - name: Report Python dead code
+        continue-on-error: true
+        run: python -m vulture src/appointment_bot --min-confidence 80 > reports/ci/vulture.txt
 
       - name: Test backend
         run: >-
@@ -101,6 +108,8 @@ jobs:
           path: |
             reports/ci/pytest.xml
             reports/ci/coverage.json
+            reports/ci/architecture.json
+            reports/ci/vulture.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -137,6 +146,10 @@ jobs:
       - name: Test frontend smoke flow
         run: npm run test:e2e
 
+      - name: Report frontend clones
+        continue-on-error: true
+        run: npm run report:clones
+
       - name: Typecheck frontend
         run: npm run typecheck
 
@@ -152,5 +165,6 @@ jobs:
             dashboard/dist/dashboard
             dashboard/playwright-report
             dashboard/test-results
+            reports/ci/jscpd
           if-no-files-found: warn
           retention-days: 7

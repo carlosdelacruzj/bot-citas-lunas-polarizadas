@@ -18,23 +18,12 @@ generados en `reports/`.
 
 ## Congelamiento temporal de features
 
-No iniciar features comerciales nuevas hasta cerrar las fases 0 a 4 del
-[`plan integral de endurecimiento`](development-hardening-plan.md). Se permiten
-correcciones, pruebas, observabilidad y refactors incluidos en ese plan. El
-esquema `v74` ya esta activo; el paquete integral debe cerrar su primera
-aceptacion natural antes de otro crecimiento funcional.
+Las fases 0 a 4 del
+[`plan integral de endurecimiento`](development-hardening-plan.md) estan
+cerradas. El esquema `v74` ya esta activo; el paquete integral debe cerrar su
+primera aceptacion natural antes de otro crecimiento funcional.
 
 ## P0 - Aceptacion natural y seguridad
-
-### Endurecimiento tecnico integral
-
-Ejecutar en orden las fases 0 a 4 del
-[`plan integral de endurecimiento`](development-hardening-plan.md): linea base,
-riesgos de reserva/WhatsApp/sesiones/leases, estabilizacion financiera `v74`,
-privacidad y red automatizada de seguridad.
-
-Cierre: los riesgos P0 tienen pruebas, el paquete integral es coherente de
-extremo a extremo y un clon limpio pasa CI backend/frontend reproducible.
 
 ### Ventana de retiro de compatibilidad actual
 

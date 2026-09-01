@@ -8,6 +8,7 @@
     "build": "ng build",
     "test:unit": "ng test --watch=false",
     "test:e2e": "playwright test",
+    "report:clones": "jscpd src --min-lines 5 --min-tokens 50 --reporters console,json --output ../reports/ci/jscpd --ignore \"**/*.spec.ts\"",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "watch": "ng build --watch --configuration development"
   },
@@ -42,6 +43,7 @@
     "@angular/compiler-cli": "^20.3.27",
     "@playwright/test": "^1.62.1",
     "@types/node": "^22.20.1",
+    "jscpd": "^4.3.0",
     "jsdom": "^26.1.0",
     "typescript": "~5.9.2",
     "vitest": "^3.2.7"

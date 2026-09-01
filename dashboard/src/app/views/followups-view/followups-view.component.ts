@@ -437,11 +437,6 @@ export class FollowupsViewComponent {
     return target.toISOString().slice(0, 10);
   }
 
-  private needsPostAppointmentReview(item: PostAppointmentFollowup): boolean {
-    return this.isExpiredUpcoming(item)
-      || !['upcoming', 'completed', 'access_lost'].includes(item.outcome);
-  }
-
   private isExpiredUpcoming(item: PostAppointmentFollowup): boolean {
     return item.outcome === 'upcoming' && !this.isTodayOrFuture(item.appointment_date);
   }

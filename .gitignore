@@ -21,6 +21,7 @@ reports/operations/weekly-*.md
 reports/optimization/observation-*.md
 reports/timings/*
 reports/diagnostics/
+reports/ci/
 dashboard/playwright-report/
 dashboard/test-results/
 !logs/.gitkeep

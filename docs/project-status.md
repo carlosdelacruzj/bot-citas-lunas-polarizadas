@@ -228,7 +228,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
-- existen ciclos y modulos grandes para refactor posterior.
+- dos ciclos y 19 imports inversos quedan baselinados; CI impide que crezcan.
 
 La prioridad y criterios de cierre estan solo en
 [`roadmap/README.md`](roadmap/README.md).
