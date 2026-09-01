@@ -68,7 +68,7 @@
         <span>Ingresos cobrados</span>
         <strong>{{ dashboard.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
         <small>
-          {{ summary.period_metrics.payments_received }} pagos ·
+          {{ summary.period_metrics.payments_received }} cobros ·
           {{ dashboard.metricPeriodLabel(summary.period_metrics.period) }}
         </small>
         @if (summary.comparisons.same_day_window; as comparison) {
@@ -123,7 +123,7 @@
                 <div class="bar-track" aria-hidden="true">
                   <span [style.width.%]="dashboard.dailyRevenueWidth(summary, day.amount)"></span>
                 </div>
-                <small>{{ dashboard.formatMoney(day.amount) }} · {{ day.payments }} pago{{ day.payments === 1 ? '' : 's' }}</small>
+                <small>{{ dashboard.formatMoney(day.amount) }} · {{ day.payments }} cobro{{ day.payments === 1 ? '' : 's' }}</small>
               </div>
             }
           </div>
@@ -196,7 +196,7 @@
         <article class="monthly-kpi primary-kpi">
           <span>Ingresos cobrados</span>
           <strong>{{ dashboard.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
-          <small>{{ summary.period_metrics.payments_received }} pagos del periodo</small>
+          <small>{{ summary.period_metrics.payments_received }} cobros del periodo</small>
         </article>
         <article class="monthly-kpi">
           <span>Reservas confirmadas</span>
@@ -209,11 +209,11 @@
           <small>Altas ocurridas dentro del rango</small>
         </article>
         <article class="monthly-kpi">
-          <span>Ticket promedio</span>
+          <span>Cobro promedio</span>
           <strong>{{ dashboard.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
           <small>
             {{ dashboard.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
-            {{ summary.period_metrics.average_ticket.denominator }} pagos
+            {{ summary.period_metrics.average_ticket.denominator }} cobros
           </small>
         </article>
       </div>

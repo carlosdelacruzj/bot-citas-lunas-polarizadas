@@ -573,11 +573,16 @@ inferida, sin inventar precision historica.
 
 Objetivo: evitar que Finanzas y Resumen muestren ingresos distintos.
 
-- [ ] Extraer consulta o CTE comun basada en `payment_receipts`.
-- [ ] Migrar resumen financiero, mensual v2, serie diaria y conteos.
-- [ ] Definir si `payments_received` cuenta recibos, ordenes o pagos cerrados.
-- [ ] Probar un abono y cierre en meses diferentes.
-- [ ] Comparar ambos endpoints para el mismo periodo y fixture.
+- [x] Extraer consulta o CTE comun basada en `payment_receipts`.
+- [x] Migrar resumen financiero, mensual v2, serie diaria y conteos.
+- [x] Definir si `payments_received` cuenta recibos, ordenes o pagos cerrados.
+- [x] Probar un abono y cierre en meses diferentes.
+- [x] Comparar ambos endpoints para el mismo periodo y fixture.
+
+`payments_received` cuenta movimientos firmados de `payment_receipts`; los
+conteos distintos de pago y orden se exponen por separado. Finanzas y mensual
+v2 comparten el mismo agregado y la misma serie diaria, y la cohorte atribuye
+ingreso acumulado desde esos recibos aunque el cierre ocurra despues.
 
 Criterio de cierre: todos los indicadores de caja usan la misma semantica y
 coinciden para una cohorte equivalente.

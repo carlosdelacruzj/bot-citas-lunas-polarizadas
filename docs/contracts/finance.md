@@ -21,6 +21,13 @@ gobiernan la fecha real del ingreso en el resumen financiero; una fila con
 pago/orden mediante FK compuesta y no admite actualizacion, borrado ni cascada
 destructiva.
 
+Finanzas y el resumen mensual calculan `revenue_collected`, la serie diaria y
+sus conteos desde la misma consulta de recibos. `payments_received` conserva su
+nombre de contrato, pero cuenta movimientos firmados de `payment_receipts`, no
+ordenes ni pagos cerrados. `distinct_payments` y `orders_with_receipts`
+distinguen esos otros universos. Un abono pertenece al periodo de
+`received_at`, aunque el pago se complete en otro mes.
+
 Los cobros normales son positivos. Una correccion es otro movimiento negativo
 con `source=payment_correction`, referencia al recibo original, motivo y actor;
 la suma firmada conserva la caja corregida sin reescribir el hecho previo. El

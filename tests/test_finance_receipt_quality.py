@@ -14,6 +14,106 @@ from tests.helpers import database_connection, make_settings
 
 
 class FinanceReceiptQualityTests(unittest.TestCase):
+    def test_partial_and_closing_receipts_share_one_cash_semantics_across_months(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            init_database(settings)
+            order = create_service_order(
+                document_number="11223344",
+                password="secret",
+                settings=settings,
+            )
+            with database_connection(settings) as connection:
+                connection.execute(
+                    """
+                    UPDATE service_orders
+                    SET created_at = '2026-06-10T10:00:00-05:00'
+                    WHERE order_id = %s
+                    """,
+                    (order.order_id,),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO payments (
+                        payment_id, order_id, status, amount_agreed, amount_paid,
+                        currency, paid_at, created_at, updated_at
+                    ) VALUES (
+                        'payment-cross-month', %s, 'paid', 160, 160, 'PEN',
+                        '2026-07-05T09:00:00-05:00',
+                        '2026-06-10T10:00:00-05:00',
+                        '2026-07-05T09:00:00-05:00'
+                    )
+                    """,
+                    (order.order_id,),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO payment_receipts (
+                        receipt_id, payment_id, order_id, amount, received_at,
+                        source, actor, created_at
+                    ) VALUES
+                        (
+                            'receipt-initial-june', 'payment-cross-month', %s, 80,
+                            '2026-06-10T10:00:00-05:00',
+                            'integral_initial_payment', 'test',
+                            '2026-06-10T10:00:00-05:00'
+                        ),
+                        (
+                            'receipt-closing-july', 'payment-cross-month', %s, 80,
+                            '2026-07-05T09:00:00-05:00',
+                            'payment_complete', 'test',
+                            '2026-07-05T09:00:00-05:00'
+                        )
+                    """,
+                    (order.order_id, order.order_id),
+                )
+
+            june_finance = finance_month_summary(
+                date(2026, 6, 1),
+                date(2026, 7, 1),
+                settings=settings,
+            )
+            june_monthly = monthly_dashboard_summary_v2(
+                date(2026, 6, 1),
+                date(2026, 7, 1),
+                date(2026, 5, 1),
+                settings=settings,
+            )
+            july_finance = finance_month_summary(
+                date(2026, 7, 1),
+                date(2026, 8, 1),
+                settings=settings,
+            )
+            july_monthly = monthly_dashboard_summary_v2(
+                date(2026, 7, 1),
+                date(2026, 8, 1),
+                date(2026, 6, 1),
+                settings=settings,
+            )
+
+            for finance, monthly, expected_date in (
+                (june_finance, june_monthly, "2026-06-10"),
+                (july_finance, july_monthly, "2026-07-05"),
+            ):
+                period = monthly["period_metrics"]
+                self.assertEqual(finance["revenue_collected"], 80.0)
+                self.assertEqual(finance["revenue_collected"], period["revenue_collected"])
+                self.assertEqual(finance["payments_received"], 1)
+                self.assertEqual(finance["payments_received"], period["payments_received"])
+                self.assertEqual(
+                    finance["payments_received_semantics"],
+                    period["payments_received_semantics"],
+                )
+                self.assertEqual(
+                    finance["daily_revenue"],
+                    [{"date": expected_date, "amount": 80.0, "payments": 1}],
+                )
+                self.assertEqual(finance["daily_revenue"], period["daily_revenue"])
+
+            self.assertEqual(june_monthly["cohort_metrics"]["revenue_ever_collected"], 160.0)
+
     def test_fresh_database_reports_native_receipt_dates_as_exact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))

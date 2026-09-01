@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from appointment_bot.config import Settings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
+from appointment_bot.db.payment_receipt_reporting import payment_receipt_period_metrics
 
 LIMA_TZ = ZoneInfo("America/Lima")
 LIMA_SQL_DATE = "AT TIME ZONE 'America/Lima'"
@@ -76,57 +77,25 @@ def _period_metrics(connection: Any, start: date, end: date) -> dict[str, Any]:
              WHERE r.status = 'confirmed'
                AND (r.reserved_at {LIMA_SQL_DATE})::date >= %s
                AND (r.reserved_at {LIMA_SQL_DATE})::date < %s)
-                AS orders_reserved,
-            (SELECT COUNT(*)
-             FROM payments p
-             WHERE p.status = 'paid'
-               AND (p.paid_at {LIMA_SQL_DATE})::date >= %s
-               AND (p.paid_at {LIMA_SQL_DATE})::date < %s) AS payments_received,
-            (SELECT COALESCE(SUM(p.amount_paid), 0)
-             FROM payments p
-             WHERE p.status = 'paid'
-               AND (p.paid_at {LIMA_SQL_DATE})::date >= %s
-               AND (p.paid_at {LIMA_SQL_DATE})::date < %s) AS revenue_collected
+                AS orders_reserved
         """,
-        (start, end, start, end, start, end, start, end, start, end),
+        (start, end, start, end, start, end),
     ).fetchone()
-    daily_rows = connection.execute(
-        f"""
-        SELECT (paid_at {LIMA_SQL_DATE})::date AS day,
-               COALESCE(SUM(amount_paid), 0) AS amount,
-               COUNT(*) AS payments
-        FROM payments
-        WHERE status = 'paid'
-          AND (paid_at {LIMA_SQL_DATE})::date >= %s
-          AND (paid_at {LIMA_SQL_DATE})::date < %s
-        GROUP BY day
-        ORDER BY day
-        """,
-        (start, end),
-    ).fetchall()
-    payments = int(row["payments_received"] or 0)
-    revenue = _money(row["revenue_collected"])
+    receipt_metrics = payment_receipt_period_metrics(connection, start, end)
+    payments = receipt_metrics["payments_received"]
+    revenue = receipt_metrics["revenue_collected"]
     receipt_date_quality = payment_receipt_date_quality(connection, start, end)
     return {
         "orders_created": int(row["orders_created"] or 0),
         "confirmed_reservation_events": int(row["confirmed_reservation_events"] or 0),
         "orders_reserved": int(row["orders_reserved"] or 0),
-        "payments_received": payments,
-        "revenue_collected": revenue,
+        **receipt_metrics,
         "receipt_date_quality": receipt_date_quality,
         "average_ticket": {
             "value": round(revenue / payments, 2) if payments else 0.0,
             "numerator": revenue,
             "denominator": payments,
         },
-        "daily_revenue": [
-            {
-                "date": daily["day"].isoformat(),
-                "amount": _money(daily["amount"]),
-                "payments": int(daily["payments"] or 0),
-            }
-            for daily in daily_rows
-        ],
     }
 
 
@@ -144,9 +113,9 @@ def _cohort_metrics(connection: Any, start: date, end: date) -> dict[str, Any]:
                 WHERE p.order_id = so.order_id AND p.status = 'paid'
             )) AS orders_ever_paid,
             COALESCE(SUM((
-                SELECT SUM(p.amount_paid)
-                FROM payments p
-                WHERE p.order_id = so.order_id AND p.status = 'paid'
+                SELECT SUM(receipt.amount)
+                FROM payment_receipts receipt
+                WHERE receipt.order_id = so.order_id
             )), 0) AS revenue_ever_collected,
             COUNT(*) FILTER (WHERE os.preflight_status = 'validated')
                 AS validated_orders,
@@ -234,9 +203,9 @@ def _cohort_metrics(connection: Any, start: date, end: date) -> dict[str, Any]:
                 WHERE p.order_id = so.order_id AND p.status = 'paid'
             )) AS orders_ever_paid,
             COALESCE(SUM((
-                SELECT SUM(p.amount_paid)
-                FROM payments p
-                WHERE p.order_id = so.order_id AND p.status = 'paid'
+                SELECT SUM(receipt.amount)
+                FROM payment_receipts receipt
+                WHERE receipt.order_id = so.order_id
             )), 0) AS revenue_ever_collected
         FROM service_orders so
         LEFT JOIN applicant_contacts ac

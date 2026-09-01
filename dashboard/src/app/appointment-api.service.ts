@@ -736,6 +736,9 @@ export interface MonthlyEventMetrics {
   confirmed_reservation_events: number;
   orders_reserved: number;
   payments_received: number;
+  distinct_payments: number;
+  orders_with_receipts: number;
+  payments_received_semantics: string;
   revenue_collected: number;
   receipt_date_quality: ReceiptDateQuality;
   average_ticket: MetricRatio;
@@ -887,6 +890,11 @@ export interface FinanceEntryPayload {
 
 export interface FinanceSummary {
   month: string;
+  payments_received: number;
+  distinct_payments: number;
+  orders_with_receipts: number;
+  payments_received_semantics: string;
+  daily_revenue: Array<{ date: string; amount: number; payments: number }>;
   revenue_collected: number;
   recognized_costs: number;
   operating_margin_before_unregistered_costs: number;

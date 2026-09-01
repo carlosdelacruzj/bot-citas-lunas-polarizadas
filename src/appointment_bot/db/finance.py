@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from appointment_bot.config import Settings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
+from appointment_bot.db.payment_receipt_reporting import payment_receipt_period_metrics
 
 LIMA_TZ = ZoneInfo("America/Lima")
 
@@ -203,15 +204,11 @@ def finance_month_summary(
             """,
             (month_start, next_month_start),
         ).fetchone()
-        revenue = connection.execute(
-            """
-            SELECT COALESCE(SUM(amount), 0) AS amount
-            FROM payment_receipts
-            WHERE (received_at AT TIME ZONE 'America/Lima')::date >= %s
-              AND (received_at AT TIME ZONE 'America/Lima')::date < %s
-            """,
-            (month_start, next_month_start),
-        ).fetchone()
+        receipt_metrics = payment_receipt_period_metrics(
+            connection,
+            month_start,
+            next_month_start,
+        )
         categories = connection.execute(
             """
             SELECT fe.category_code, fc.display_name,
@@ -233,10 +230,11 @@ def finance_month_summary(
             month_start,
             next_month_start,
         )
-    income = _money(revenue["amount"])
+    income = receipt_metrics["revenue_collected"]
     costs = _money(totals["recognized_costs"])
     return {
         "month": month_start.strftime("%Y-%m"),
+        **receipt_metrics,
         "revenue_collected": income,
         "recognized_costs": costs,
         "operating_margin_before_unregistered_costs": round(income - costs, 2),
