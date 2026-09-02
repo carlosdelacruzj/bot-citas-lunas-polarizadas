@@ -1,6 +1,33 @@
 # Arquitectura actual
 
-Ultima verificacion: `2026-08-30`.
+Ultima verificacion: `2026-09-02`.
+
+## Estilo de arquitectura
+
+El producto es un **monolito modular multiproceso**: comparte repositorio,
+modelos y PostgreSQL, pero ejecuta Admin API, worker, Telegram y servicios
+opcionales como procesos con ownership distinto. No es una arquitectura de
+microservicios y no requiere red distribuida entre cada dominio para mantener
+sus limites.
+
+La estructura combina capas con puertos y adaptadores selectivos:
+
+| Capa | Responsabilidad |
+|---|---|
+| `core/` | modelos, reglas y cifrado sin infraestructura exterior |
+| `services/application/` | casos de uso y coordinacion transaccional |
+| `db/` | repositorios, unidad de trabajo, esquema y migraciones |
+| `reservation_engine/` | portal, seleccion, CAPTCHA y submit mediante puertos |
+| `services/` | Admin API, Telegram, WhatsApp, schedulers y notificaciones |
+| `worker/` | composicion, cola, leases, supervision e inyeccion de adaptadores |
+| `browser/`, `utils/`, `reports/` | infraestructura y evidencia compartida |
+
+No se presenta como Clean Architecture o hexagonal pura: todavia existe una
+excepcion de dependencia baselinada y quedan modulos grandes por separar. La
+direccion permitida y la deuda aceptada se controlan en
+[`dependency-rules.md`](dependency-rules.md). El objetivo es conservar dominio,
+casos de uso y contratos migrables sin introducir complejidad distribuida antes
+de necesitarla.
 
 ## Procesos
 

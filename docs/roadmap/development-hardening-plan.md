@@ -805,21 +805,103 @@ despues de verificar cero consumidores.
 
 Objetivo: reducir conflictos y hacer visible el ownership.
 
-Orden recomendado:
+Esta fase no es un unico refactor. Cada modulo es un bloque independiente y
+cada casilla interna debe cerrarse con su propio diff revisable. No trabajar dos
+modulos grandes simultaneamente ni mezclar su division con cambios funcionales.
 
-1. `telegram_control.py`: cliente API, Bot API, router, conversaciones de alta,
-   pagos, CAPTCHA y presentacion;
-2. `local_api.py`: registro declarativo por metodo y patron;
-3. `migrations.py`: funciones `vNN_to_vNN` registradas en secuencia;
-4. `config.py`: settings agrupados por dominio con fachada temporal;
-5. `whatsapp_web.py`: navegacion, destinatario, adjuntos y confirmacion.
+Reglas comunes para cada bloque:
 
-- [ ] Fijar pruebas de caracterizacion antes de cada division.
-- [ ] No modificar migraciones historicas aplicadas; extraerlas conservando su
-  texto y orden.
-- [ ] Definir un limite orientativo de tamano/ramificacion, no una regla ciega
-  de lineas.
-- [ ] Retirar la fachada temporal al migrar el ultimo consumidor.
+- [ ] Fijar pruebas de caracterizacion antes de mover comportamiento.
+- [ ] Extraer una responsabilidad por commit y conservar una fachada temporal
+  cuando existan consumidores aun no migrados.
+- [ ] Migrar consumidores explicitos y revisar entrypoints, callbacks, rutas e
+  imports diferidos antes de retirar la fachada.
+- [ ] Ejecutar pruebas focalizadas, suite completa, guardas de arquitectura,
+  documentacion y `git diff --check` en cada cierre.
+- [ ] Comparar comportamiento y observabilidad; una reduccion de lineas no
+  demuestra por si sola una mejora arquitectonica.
+
+Limites orientativos para activar revision, no objetivos mecanicos: modulo de
+mas de `800` lineas, funcion de mas de `100` lineas o dispatcher con mas de `20`
+ramas. Una excepcion puede conservarse si tiene ownership claro, cohesion,
+pruebas y una razon documentada. No dividir por capas artificiales que solo
+trasladen el acoplamiento.
+
+#### 5.5.1 Separar Telegram Control
+
+Ownership destino: adaptadores Telegram dentro de `services/telegram/`; Admin
+API sigue siendo la unica frontera administrativa.
+
+- [ ] Caracterizar polling, offset, autorizacion, rate limit, callbacks y
+  expiracion de conversaciones.
+- [ ] Extraer `AdminApiClient` sin cambiar rutas, payloads ni autenticacion.
+- [ ] Extraer `TelegramBotApi` sin cambiar confirmacion de callbacks ni manejo
+  de errores.
+- [ ] Extraer router y estado de actualizaciones, conservando deduplicacion y
+  avance seguro del offset.
+- [ ] Extraer por separado conversaciones de alta, pagos/reglas, CAPTCHA y
+  controles operativos.
+- [ ] Extraer presentacion y dejar `telegram_control.py` como composicion y
+  entrypoint hasta migrar el ultimo consumidor.
+
+#### 5.5.2 Declarar el router de Admin API
+
+Ownership destino: transporte en `services/local_api.py` y handlers de dominio
+en `services/api/`.
+
+- [ ] Caracterizar metodo, patron, autenticacion, actor, limite JSON, errores y
+  headers de cada ruta.
+- [ ] Introducir un registro declarativo comun sin crear otro framework.
+- [ ] Migrar GET, POST y PUT en commits separados, reutilizando los handlers
+  existentes.
+- [ ] Dejar `LocalApiHandler` limitado a transporte HTTP y retirar switches
+  solamente cuando todas sus rutas esten registradas.
+
+#### 5.5.3 Registrar migraciones en secuencia
+
+Ownership destino: orquestacion y version en `db/migrations.py`; pasos
+historicos inmutables en modulos `db/migration_steps/`.
+
+- [ ] Caracterizar base nueva, version minima soportada, orden, atomicidad y
+  rechazo de versiones desconocidas.
+- [ ] Extraer funciones `vNN_to_vNN` conservando literalmente SQL, parametros y
+  orden de cada migracion aplicada.
+- [ ] Registrar los pasos en una secuencia explicita sin saltos ni duplicados.
+- [ ] No corregir, formatear ni combinar SQL historico durante la extraccion.
+- [ ] Validar base nueva, cadena completa y restore aislado antes de retirar el
+  dispatcher anterior.
+
+#### 5.5.4 Agrupar configuracion por dominio
+
+Ownership destino: parsers compartidos y settings de runtime, reservas,
+WhatsApp, CAPTCHA y evidencia; `Settings` permanece como fachada temporal.
+
+- [ ] Caracterizar defaults, limites, aliases y fallos por variable invalida o
+  ausente.
+- [ ] Extraer parsers puros antes de dividir grupos de settings.
+- [ ] Crear grupos por dominio sin cambiar nombres de entorno ni `.env`.
+- [ ] Migrar consumidores dominio por dominio y evitar un nuevo objeto global
+  que reproduzca el mismo acoplamiento.
+- [ ] Retirar la fachada solo cuando el ultimo consumidor use el grupo dueño.
+
+#### 5.5.5 Separar WhatsApp Web
+
+Ownership destino: infraestructura de navegador bajo `browser/whatsapp/`; los
+servicios conservan preparacion, persistencia y politica de trabajos.
+
+- [ ] Caracterizar sesion, destinatario, adjuntos, preview, texto y estados
+  `failed`, `uncertain` y `sent` sin realizar envios de prueba.
+- [ ] Extraer primero detectores DOM puros y confirmacion tecnica, preservando
+  que cualquier indicador pendiente veta el exito.
+- [ ] Extraer navegacion y validacion exacta del destinatario.
+- [ ] Extraer imagenes, albumes, documentos y previews sin mezclar sus etapas.
+- [ ] Extraer composicion y envio conservando screenshot y contexto ante
+  ambiguedad.
+- [ ] Migrar consumidores y retirar la fachada solo despues de pruebas y de la
+  siguiente aceptacion natural aplicable; nunca reintentar `uncertain`.
+
+Orden obligatorio: Telegram, Admin API, migraciones, configuracion y WhatsApp.
+Terminar y publicar cada bloque antes de abrir el siguiente.
 
 Criterio de cierre de fase: core y motor no dependen de adaptadores, los casos
 de uso no viven dentro de repositorios y no existen ciclos ni monkey patches
