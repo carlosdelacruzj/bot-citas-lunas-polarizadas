@@ -6,10 +6,11 @@ import threading
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from zoneinfo import ZoneInfo
 
 from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
+from appointment_bot.reservation_engine.ports import CaptchaSolveResult
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     save_reservation_captcha_image,
 )
@@ -168,16 +169,20 @@ class ReservationCaptchaTests(unittest.TestCase):
             captcha.write_bytes(b"image")
             events: list[str] = []
             captcha_audit: dict[str, object] = {}
+            captcha_authority = Mock()
+            captcha_authority.sample_limit.return_value = 1
+            captcha_authority.solve.return_value = CaptchaSolveResult(
+                answer="1234",
+                source="2captcha",
+                decision_id=None,
+                fallback_reason="mode_2captcha",
+            )
 
             with (
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.save_reservation_captcha_image",
                     return_value=captcha,
                 ),
-                patch(
-                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
-                    return_value="1234",
-                ) as solve_captcha,
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
@@ -189,10 +194,12 @@ class ReservationCaptchaTests(unittest.TestCase):
                     on_submission_intent=lambda details: events.append("intent"),
                     on_submission_started=lambda: events.append("started"),
                     captcha_audit=captcha_audit,
+                    captcha_authority=captcha_authority,
                 )
 
             self.assertTrue(captcha.exists())
-            solve_captcha.assert_called_once_with(captcha, settings)
+            captcha_authority.solve.assert_called_once()
+            self.assertEqual(captcha_authority.solve.call_args.args, (captcha, settings))
             self.assertEqual(captcha_audit["captcha_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "screenshot")
@@ -206,6 +213,14 @@ class ReservationCaptchaTests(unittest.TestCase):
             captcha.write_bytes(b"image")
             cancel_event = threading.Event()
             events: list[str] = []
+            captcha_authority = Mock()
+            captcha_authority.sample_limit.return_value = 1
+            captcha_authority.solve.return_value = CaptchaSolveResult(
+                answer="1234",
+                source="2captcha",
+                decision_id=None,
+                fallback_reason="mode_2captcha",
+            )
 
             def record_intent(_details) -> None:
                 events.append("intent")
@@ -215,10 +230,6 @@ class ReservationCaptchaTests(unittest.TestCase):
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.save_reservation_captcha_image",
                     return_value=captcha,
-                ),
-                patch(
-                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
-                    return_value="1234",
                 ),
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
@@ -232,6 +243,7 @@ class ReservationCaptchaTests(unittest.TestCase):
                         can_submit=lambda: not cancel_event.is_set(),
                         on_submission_intent=record_intent,
                         on_submission_started=lambda: events.append("started"),
+                        captcha_authority=captcha_authority,
                     )
 
             self.assertEqual(events, ["intent"])
@@ -245,6 +257,14 @@ class ReservationCaptchaTests(unittest.TestCase):
             captcha.write_bytes(b"screenshot")
             original.write_bytes(b"original")
             captcha_audit: dict[str, object] = {}
+            captcha_authority = Mock()
+            captcha_authority.sample_limit.return_value = 1
+            captcha_authority.solve.return_value = CaptchaSolveResult(
+                answer="1234",
+                source="2captcha",
+                decision_id=None,
+                fallback_reason="mode_2captcha",
+            )
 
             def save_captcha(*args, **kwargs):
                 audit = kwargs["captcha_audit"]
@@ -257,10 +277,6 @@ class ReservationCaptchaTests(unittest.TestCase):
                     side_effect=save_captcha,
                 ),
                 patch(
-                    "appointment_bot.reservation_engine.reservation_submit.solve_normal_captcha",
-                    return_value="1234",
-                ) as solve_captcha,
-                patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
             ):
@@ -269,9 +285,11 @@ class ReservationCaptchaTests(unittest.TestCase):
                     settings,
                     can_submit=lambda: True,
                     captcha_audit=captcha_audit,
+                    captcha_authority=captcha_authority,
                 )
 
-            solve_captcha.assert_called_once_with(original, settings)
+            captcha_authority.solve.assert_called_once()
+            self.assertEqual(captcha_authority.solve.call_args.args, (original, settings))
             self.assertEqual(captcha_audit["captcha_image_path"], str(original))
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "original_html")

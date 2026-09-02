@@ -7,7 +7,7 @@ import unittest
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from appointment_bot.core.models import RunReport, ServiceOrderRuntime, WorkerState
 from appointment_bot.db.worker_state import update_worker_state
@@ -94,8 +94,17 @@ class ContinuousWorkerTests(unittest.TestCase):
             )
             paths = [Path(directory) / f"captcha-{index}.png" for index in range(5)]
             next_path = iter(paths)
+            captcha_authority = Mock()
+            captcha_authority.enqueue_prediction.return_value = True
 
-            def save_captcha(_page, _settings, _label, *, captcha_audit):
+            def save_captcha(
+                _page,
+                _settings,
+                _label,
+                *,
+                captcha_audit,
+                alert_sink=None,
+            ):
                 path = next(next_path)
                 captcha_audit["captcha_original_html_path"] = str(path)
                 captcha_audit["captcha_sent_source"] = "original_html"
@@ -110,10 +119,6 @@ class ContinuousWorkerTests(unittest.TestCase):
                     "appointment_bot.reservation_engine.observer.refresh_reservation_captcha",
                     return_value=True,
                 ) as refresh_captcha,
-                patch(
-                    "appointment_bot.reservation_engine.observer.enqueue_shadow_prediction",
-                    return_value=True,
-                ) as enqueue_shadow,
             ):
                 captured_paths, event_ids = observer._collect_observer_captcha_samples(
                     object(),
@@ -122,6 +127,7 @@ class ContinuousWorkerTests(unittest.TestCase):
                     run_id="run-test",
                     availability_details={"detection_origin": "observer"},
                     should_continue=None,
+                    captcha_authority=captcha_authority,
                 )
 
             self.assertEqual(captured_paths, paths)
@@ -131,11 +137,12 @@ class ContinuousWorkerTests(unittest.TestCase):
             )
             self.assertEqual(save_captcha_mock.call_count, 5)
             self.assertEqual(refresh_captcha.call_count, 4)
-            self.assertEqual(enqueue_shadow.call_count, 5)
+            self.assertEqual(captcha_authority.enqueue_prediction.call_count, 5)
 
     def test_observer_keeps_available_result_when_captcha_capture_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
+            captcha_authority = Mock()
 
             with patch(
                 "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
@@ -148,6 +155,7 @@ class ContinuousWorkerTests(unittest.TestCase):
                     run_id="run-test",
                     availability_details={},
                     should_continue=None,
+                    captcha_authority=captcha_authority,
                 )
 
             self.assertEqual(captured_paths, [])

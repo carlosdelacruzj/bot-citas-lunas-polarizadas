@@ -12,7 +12,6 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunReport
-from appointment_bot.reports.run_reporting import finalize_report
 from appointment_bot.reservation_engine.appointments import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
@@ -23,6 +22,11 @@ from appointment_bot.reservation_engine.appointments import (
     select_available_site_for_observer,
 )
 from appointment_bot.reservation_engine.login import login
+from appointment_bot.reservation_engine.ports import (
+    AlertSink,
+    CaptchaAuthority,
+    ReservationEnginePorts,
+)
 from appointment_bot.reservation_engine.programs import click_program_action
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     save_reservation_captcha_image,
@@ -33,7 +37,6 @@ from appointment_bot.reservation_engine.reservation_captcha_math import (
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     refresh_reservation_captcha,
 )
-from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
 from appointment_bot.utils.screenshots import (
     archive_unique_slot_capture,
     save_result_screenshot,
@@ -54,6 +57,7 @@ def run_observer_with_report(
         None,
     ]
     | None = None,
+    ports: ReservationEnginePorts,
 ) -> RunReport:
     run_id = f"observer-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
     started_at_dt = datetime.now(UTC)
@@ -75,6 +79,8 @@ def run_observer_with_report(
                     run_id=run_id,
                     capture_captcha_samples=capture_captcha_samples,
                     should_continue_captcha_sampling=should_continue_captcha_sampling,
+                    captcha_authority=ports.captcha,
+                    alert_sink=ports.alerts,
                 )
                 if result_screenshot is not None:
                     screenshot_paths.insert(0, result_screenshot)
@@ -82,7 +88,7 @@ def run_observer_with_report(
                 details = dict(result.details or {})
                 details["mode"] = "observer"
                 result = AvailabilityResult(result.status, result.message, details)
-                report = finalize_report(
+                report = ports.runs.finalize_report(
                     RunReport(
                         status=result.status,
                         message=result.message,
@@ -107,7 +113,7 @@ def run_observer_with_report(
                 raise
     except Exception as exc:
         logger.exception("Observer availability check failed")
-        return finalize_report(
+        return ports.runs.finalize_report(
             RunReport(
                 status="error",
                 message=str(exc),
@@ -135,6 +141,8 @@ def _monitor_observer(
     run_id: str,
     capture_captcha_samples: bool,
     should_continue_captcha_sampling: Callable[[], bool] | None,
+    captcha_authority: CaptchaAuthority,
+    alert_sink: AlertSink,
 ) -> tuple[AvailabilityResult, Path | None]:
     deadline = time.monotonic() + settings.monitor_window_seconds
     attempt = 1
@@ -188,6 +196,8 @@ def _monitor_observer(
                     run_id=run_id,
                     availability_details=dict(result.details or {}),
                     should_continue=should_continue_captcha_sampling,
+                    captcha_authority=captcha_authority,
+                    alert_sink=alert_sink,
                 )
                 if captcha_paths:
                     details = dict(result.details or {})
@@ -334,6 +344,8 @@ def _collect_observer_captcha_samples(
     run_id: str,
     availability_details: dict[str, object],
     should_continue: Callable[[], bool] | None,
+    captcha_authority: CaptchaAuthority,
+    alert_sink: AlertSink | None = None,
 ) -> tuple[list[Path], list[str]]:
     captcha_paths: list[Path] = []
     shadow_event_ids: list[str] = []
@@ -358,6 +370,7 @@ def _collect_observer_captcha_samples(
                 settings,
                 f"observer-captcha-sample-{sample_number}",
                 captcha_audit=captcha_audit,
+                alert_sink=alert_sink,
             )
             original_path = captcha_audit.get("captcha_original_html_path")
             if not original_path:
@@ -367,7 +380,7 @@ def _collect_observer_captcha_samples(
             captcha_path = Path(str(original_path))
             captcha_paths.append(captcha_path)
             event_id = f"{run_id}:observer:captcha-{sample_number}"
-            enqueued = enqueue_shadow_prediction(
+            enqueued = captcha_authority.enqueue_prediction(
                 event_id=event_id,
                 image_path=str(captcha_path.resolve()),
                 metadata={

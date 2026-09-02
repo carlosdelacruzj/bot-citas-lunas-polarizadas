@@ -11,11 +11,10 @@ from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import open_appointment_panel
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.reservation_engine.monitor import monitor_appointment_availability
-from appointment_bot.reservation_engine.program_notifications import notify_multiple_programs
+from appointment_bot.reservation_engine.ports import ReservationEnginePorts
 from appointment_bot.reservation_engine.programs import click_program_action
 from appointment_bot.reservation_engine.results import with_client_context
 from appointment_bot.reservation_engine.stages import appointment_stage_result, read_process_stages
-from appointment_bot.services.notifier import notify_result
 from appointment_bot.utils.screenshots import save_screenshot
 
 logger = logging.getLogger(__name__)
@@ -47,6 +46,7 @@ def execute_session_flow(
     program_expediente: str | None = None,
     program_plate: str | None = None,
     notify_mode: str = "full",
+    ports: ReservationEnginePorts,
 ) -> SessionFlowResult:
     selected_program_expediente = program_expediente
     selected_program_plate = program_plate
@@ -61,7 +61,7 @@ def execute_session_flow(
     login(page, settings)
     page = click_program_action(
         page,
-        on_multiple_programs=lambda details: notify_multiple_programs(
+        on_multiple_programs=lambda details: ports.alerts.notify_programs(
             settings,
             order_id,
             client_name,
@@ -84,7 +84,7 @@ def execute_session_flow(
         )
         screenshot_path = save_process_stages_snapshot(page, settings)
         if notify_mode == "full":
-            notify_result(stage_result, settings, screenshot_path)
+            ports.alerts.notify_result(stage_result, settings, screenshot_path)
         logger.info("Finished appointment check: %s", stage_result.status)
         return SessionFlowResult(stage_result, screenshot_path, [])
 
@@ -106,6 +106,7 @@ def execute_session_flow(
         selected_program_plate,
         run_id,
         order_id,
+        ports=ports,
     )
     result = with_client_context(
         result,
@@ -116,7 +117,7 @@ def execute_session_flow(
         program_plate=selected_program_plate,
     )
     if notify_mode == "full":
-        notify_result(
+        ports.alerts.notify_result(
             result,
             settings,
             screenshot_path,

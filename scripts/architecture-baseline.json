@@ -1,21 +1,5 @@
 {
   "inverse_dependencies": [
-    ["appointment_bot.reservation_engine.monitor", "appointment_bot.db.opportunity_bursts"],
-    ["appointment_bot.reservation_engine.monitor", "appointment_bot.db.opportunity_controls"],
-    ["appointment_bot.reservation_engine.observer", "appointment_bot.services.captcha_shadow"],
-    ["appointment_bot.reservation_engine.program_notifications", "appointment_bot.db.orders"],
-    ["appointment_bot.reservation_engine.program_notifications", "appointment_bot.services.notifier"],
-    ["appointment_bot.reservation_engine.reservation_captcha_capture", "appointment_bot.services.telegram_alerts"],
-    ["appointment_bot.reservation_engine.reservation_captcha_sampling", "appointment_bot.db.captcha_sampling_control"],
-    ["appointment_bot.reservation_engine.reservation_captcha_sampling", "appointment_bot.services.captcha_shadow"],
-    ["appointment_bot.reservation_engine.reservation_flow", "appointment_bot.db.captcha_authority"],
-    ["appointment_bot.reservation_engine.reservation_flow", "appointment_bot.services.captcha_shadow"],
-    ["appointment_bot.reservation_engine.reservation_submit", "appointment_bot.services.captcha"],
-    ["appointment_bot.reservation_engine.reservation_submit", "appointment_bot.services.captcha_authority"],
-    ["appointment_bot.reservation_engine.reservation_submit", "appointment_bot.services.captcha_shadow"],
-    ["appointment_bot.reservation_engine.runner", "appointment_bot.services.client_video"],
-    ["appointment_bot.reservation_engine.runner", "appointment_bot.services.notifier"],
-    ["appointment_bot.reservation_engine.session_flow", "appointment_bot.services.notifier"],
     ["appointment_bot.services.api.worker_routes", "appointment_bot.worker.recovery"]
   ],
   "cycles": [

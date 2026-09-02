@@ -1,6 +1,6 @@
 # Direccion de dependencias y deuda estructural
 
-Vigente desde: `2026-09-01`.
+Vigente desde: `2026-09-02`.
 
 Este contrato evita que crezcan dependencias inversas y ciclos mientras la
 fase 5 retira la deuda existente. El control obligatorio vive en
@@ -23,7 +23,7 @@ ciclo que atraviese `utils`, `browser` u otra superficie neutral.
 
 ## Baseline temporal
 
-La baseline conserva 17 imports inversos y dos componentes circulares ya
+La baseline conserva un import inverso y dos componentes circulares ya
 existentes. El check falla si aparece deuda nueva y tambien si una excepcion
 desaparece sin retirar su entrada: cada mejora debe reducir la baseline en el
 mismo commit. La fase 5.3 la lleva a cero; no se esconden ciclos nuevos mediante

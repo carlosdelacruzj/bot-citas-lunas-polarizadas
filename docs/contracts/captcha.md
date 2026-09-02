@@ -1,6 +1,6 @@
 # Contrato CAPTCHA
 
-Estado: vigente. Ultima verificacion: `2026-08-29`.
+Estado: vigente. Ultima verificacion: `2026-09-02`.
 
 ## Dos problemas distintos
 
@@ -21,6 +21,9 @@ externo preservado.
 
 Una prediccion en sombra no confirma una reserva ni autoriza un submit por si
 sola.
+
+El motor consume solucion, muestreo y correlacion mediante `CaptchaAuthority`;
+el worker conecta ese puerto con la autoridad y persistencia productivas.
 
 La solucion usada puede vivir durante la correlacion inmediata dentro del
 dominio CAPTCHA, pero se retira antes de construir un reporte general. La

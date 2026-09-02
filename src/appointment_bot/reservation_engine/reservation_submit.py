@@ -19,6 +19,11 @@ from appointment_bot.reservation_engine.appointments import (
     ReservationSubmissionUncertain,
     validate_selected_appointment,
 )
+from appointment_bot.reservation_engine.ports import (
+    AlertSink,
+    CaptchaAuthority,
+    CaptchaSolveResult,
+)
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
     save_reservation_captcha_image,
@@ -40,15 +45,6 @@ from appointment_bot.reservation_engine.reservation_post_audit import (
     validate_reservation_form_audit,
 )
 from appointment_bot.reservation_engine.timings import ReservationTiming
-from appointment_bot.services.captcha import solve_normal_captcha
-from appointment_bot.services.captcha_authority import (
-    CaptchaAuthorityResult,
-    solve_reservation_captcha,
-)
-from appointment_bot.services.captcha_shadow import (
-    enqueue_shadow_external_result,
-    enqueue_shadow_prediction,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +173,8 @@ def solve_reservation_captcha_and_click_reserve(
     run_id: str | None = None,
     order_id: str | None = None,
     captcha_event_context: str | None = None,
+    captcha_authority: CaptchaAuthority | None = None,
+    alert_sink: AlertSink | None = None,
 ) -> Page:
     effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
     if can_submit is not None and not can_submit():
@@ -208,12 +206,15 @@ def solve_reservation_captcha_and_click_reserve(
         run_id=run_id,
         order_id=order_id,
         event_context=captcha_event_context,
+        captcha_authority=captcha_authority,
+        alert_sink=alert_sink,
     )
     captcha_path = save_reservation_captcha_image(
         page,
         settings,
         "04-reserva-captcha-tecnico-2captcha",
         captcha_audit=effective_captcha_audit,
+        alert_sink=alert_sink,
     )
     captcha_path_for_solver = captcha_submission_image_path(
         captcha_path,
@@ -271,14 +272,16 @@ def solve_reservation_captcha_and_click_reserve(
                 page,
                 expected_signature=expected_math_signature,
             )
-            authority_result = CaptchaAuthorityResult(
+            authority_result = CaptchaSolveResult(
                 answer=math_challenge.answer,
                 source="local_math",
                 decision_id=None,
                 fallback_reason="html_math",
             )
         else:
-            authority_result = solve_reservation_captcha(
+            if captcha_authority is None:
+                raise RuntimeError("CaptchaAuthority is required to solve image CAPTCHA.")
+            authority_result = captcha_authority.solve(
                 captcha_path_for_solver,
                 settings,
                 event_id=shadow_event_id,
@@ -286,7 +289,6 @@ def solve_reservation_captcha_and_click_reserve(
                 order_id=order_id,
                 attempt_number=attempt_number,
                 metadata=shadow_metadata,
-                fallback_solver=solve_normal_captcha,
             )
         captcha_solution = authority_result.answer
         captcha_solver_duration_ms = round(
@@ -296,12 +298,14 @@ def solve_reservation_captcha_and_click_reserve(
         shadow_prediction_enqueued = False
         shadow_external_enqueued = False
         if shadow_event_id:
-            shadow_prediction_enqueued = enqueue_shadow_prediction(
+            if captcha_authority is None:
+                raise RuntimeError("CaptchaAuthority is required for CAPTCHA shadow data.")
+            shadow_prediction_enqueued = captcha_authority.enqueue_prediction(
                 event_id=shadow_event_id,
                 image_path=str(captcha_path_for_solver.resolve()),
                 metadata=shadow_metadata,
             )
-            shadow_external_enqueued = enqueue_shadow_external_result(
+            shadow_external_enqueued = captcha_authority.enqueue_external_result(
                 event_id=shadow_event_id,
                 external_answer=captcha_solution,
                 portal_accepted=None,

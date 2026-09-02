@@ -39,6 +39,7 @@ from appointment_bot.services.order_transitions import (
     order_can_submit,
     reconcile_pending_submission,
 )
+from appointment_bot.worker.reservation_engine_ports import build_reservation_engine_ports
 
 logger = logging.getLogger(__name__)
 
@@ -352,6 +353,7 @@ def run_service_order(
                 notify_mode=(
                     "deferred" if rapid_mode or observer_mode or burst_mode else "full"
                 ),
+                ports=build_reservation_engine_ports(),
             )
             lease_lost = heartbeat.lost_event.is_set()
     finally:

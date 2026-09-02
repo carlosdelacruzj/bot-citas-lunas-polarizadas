@@ -12,6 +12,7 @@ from PIL import Image
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reports.run_reporting import report_from_result
 from appointment_bot.reservation_engine import monitor
+from appointment_bot.reservation_engine.ports import ReservationEnginePorts
 from appointment_bot.reservation_engine.reservation_flow import (
     capture_blocked_captcha_evidence,
 )
@@ -33,6 +34,15 @@ def _available_result() -> AvailabilityResult:
         status="available",
         message="Cupo seleccionado.",
         details={"sede": "Lima", "fecha": "01/09/2026", "hora": "10:30"},
+    )
+
+
+def _engine_ports() -> ReservationEnginePorts:
+    return ReservationEnginePorts(
+        runs=Mock(),
+        alerts=Mock(),
+        captcha=Mock(),
+        opportunities=Mock(),
     )
 
 
@@ -183,6 +193,7 @@ class SlotEvidenceTests(unittest.TestCase):
                 None,
                 "run-test",
                 "order-test",
+                _engine_ports(),
             )
 
         self.assertEqual(outcome.completed_result[0].status, "error")
@@ -253,6 +264,7 @@ class SlotEvidenceTests(unittest.TestCase):
                 program_plate=None,
                 run_id="run-test",
                 order_id="order-test",
+                ports=_engine_ports(),
             )
 
         self.assertEqual(outcome.completed_result[0].status, "partial")
@@ -426,6 +438,7 @@ class SlotEvidenceTests(unittest.TestCase):
                     program_plate=None,
                     run_id="run-test",
                     order_id="order-test",
+                    ports=_engine_ports(),
                 )
 
             self.assertEqual(calls, ["archive", "submit"])

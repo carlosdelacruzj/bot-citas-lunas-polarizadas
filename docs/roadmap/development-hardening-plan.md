@@ -755,13 +755,19 @@ completo, su auditoria y el despacho tecnico postpago; `sent` no prueba lectura.
 Objetivo: que `reservation_engine/` reciba dependencias pequeñas y devuelva
 resultados/eventos, sin administrar Telegram, reportes o DB directamente.
 
-- [ ] Definir puertos como `RunSink`, `AlertSink`, `CaptchaAuthority` y
+- [x] Definir puertos como `RunSink`, `AlertSink`, `CaptchaAuthority` y
   `OpportunityControl` solo donde haya un consumidor real.
-- [ ] Inyectarlos desde `worker`.
-- [ ] Retirar imports directos del motor hacia servicios y reportes.
-- [ ] Mantener Playwright, reglas y modelos dentro del camino critico.
-- [ ] Verificar que observer y reserva normal sigan compartiendo solo lo
+- [x] Inyectarlos desde `worker`.
+- [x] Retirar imports directos del motor hacia servicios y reportes.
+- [x] Mantener Playwright, reglas y modelos dentro del camino critico.
+- [x] Verificar que observer y reserva normal sigan compartiendo solo lo
   necesario.
+
+`reservation_engine/ports.py` define las cuatro fronteras. El adaptador de
+`worker/reservation_engine_ports.py` conecta reportes, video, Telegram,
+persistencia y servicios CAPTCHA. Observer comparte captura y autoridad CAPTCHA,
+pero no recibe controles de reserva ni callbacks de submit; el flujo normal
+mantiene esas barreras en `worker/order_execution.py`.
 
 ### 5.3 Romper ciclos de importacion
 

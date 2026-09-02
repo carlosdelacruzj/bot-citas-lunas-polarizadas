@@ -5,7 +5,8 @@ Estado: vigente.
 Ultima verificacion: `2026-09-02`.
 
 Responsable: dominios `reservation_engine/`, `worker/`, caso transaccional
-`services/application/confirm_reservation.py` y persistencia en `db/`.
+`services/application/confirm_reservation.py`, puertos inyectados desde
+`worker/reservation_engine_ports.py` y persistencia en `db/`.
 
 Este documento define las garantias que no deben romperse al separar admin API,
 worker y dashboard.

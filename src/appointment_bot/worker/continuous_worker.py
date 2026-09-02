@@ -64,6 +64,7 @@ from appointment_bot.worker.recovery import (
     portal_defense_signal,
     recovery_wait_seconds,
 )
+from appointment_bot.worker.reservation_engine_ports import build_reservation_engine_ports
 from appointment_bot.worker.state_callbacks import WorkerStateCallbacks
 from appointment_bot.worker.windows_runtime import (
     DAILY_CUTOFF_REASON,
@@ -98,6 +99,7 @@ class ContinuousWorker:
         self._opportunity_burst_started = False
         self._opportunity_burst_recovery_report: RunReport | None = None
         self._deferred_order_reports = DeferredOrderReports(settings)
+        self._reservation_engine_ports = build_reservation_engine_ports()
         self._state_callbacks = WorkerStateCallbacks(
             settings,
             update_state=self._update_state,
@@ -549,6 +551,7 @@ class ContinuousWorker:
             cancel_event=self._cancel_event,
             should_continue_captcha_sampling=self._observer_captcha_sampling_allowed,
             on_check=self._state_callbacks.on_observer_check,
+            ports=self._reservation_engine_ports,
         )
         self._record_check(report)
         if self._maybe_recovery_backoff(report):
@@ -581,6 +584,7 @@ class ContinuousWorker:
             observer_confirmation_settings(self.settings),
             cancel_event=self._cancel_event,
             capture_captcha_samples=False,
+            ports=self._reservation_engine_ports,
         )
 
     def _observer_captcha_sampling_allowed(self) -> bool:

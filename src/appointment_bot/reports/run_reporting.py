@@ -7,6 +7,7 @@ from pathlib import Path
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunRecord, RunReport
+from appointment_bot.core.run_reports import reservation_confirmed
 from appointment_bot.core.statuses import ResultStatus, redact_captcha_answers, sanitize_details
 from appointment_bot.reports.evidence import append_evidence_case
 from appointment_bot.reports.optimization import (
@@ -92,14 +93,6 @@ def settings_for_order(
     )
 
 
-def reservation_confirmed(report: RunReport) -> bool:
-    if report.status == ResultStatus.REGISTERED or report.reservation_confirmed:
-        return True
-    if _programmed_stage_confirmed(report):
-        return True
-    return False
-
-
 def finalize_report(
     report: RunReport,
     settings: Settings,
@@ -169,12 +162,3 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
 
 def _report_should_record_reservation(report: RunReport) -> bool:
     return reservation_confirmed(report)
-
-
-def _programmed_stage_confirmed(report: RunReport) -> bool:
-    if report.status != ResultStatus.COMPLETED:
-        return False
-    details = report.details or {}
-    status = str(details.get("estado") or "").strip().casefold()
-    date_text = str(details.get("fecha") or "").strip()
-    return status == "programado" and bool(date_text)

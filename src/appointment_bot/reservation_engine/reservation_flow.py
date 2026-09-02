@@ -10,7 +10,6 @@ from pathlib import Path
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.statuses import redact_captcha_answers
-from appointment_bot.db.captcha_authority import resolve_captcha_authority_decision
 from appointment_bot.reservation_engine.appointments import (
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
@@ -18,6 +17,7 @@ from appointment_bot.reservation_engine.appointments import (
     ReservationSubmissionUncertain,
     validate_selected_appointment,
 )
+from appointment_bot.reservation_engine.ports import AlertSink, CaptchaAuthority
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     refresh_reservation_captcha,
 )
@@ -33,10 +33,6 @@ from appointment_bot.reservation_engine.timings import (
     ReservationTiming,
     add_reservation_timing_details,
 )
-from appointment_bot.services.captcha_shadow import (
-    enqueue_shadow_external_result,
-    enqueue_shadow_prediction,
-)
 from appointment_bot.utils.diagnostics import (
     read_visible_page_text,
     save_sanitized_page_html,
@@ -49,6 +45,7 @@ logger = logging.getLogger(__name__)
 def _enqueue_shadow_portal_result(
     captcha_audit: dict[str, object],
     submission_outcome: str,
+    captcha_authority: CaptchaAuthority,
 ) -> None:
     event_id = captcha_audit.get("captcha_shadow_event_id")
     external_answer = captcha_audit.get("captcha_solution_sent")
@@ -61,12 +58,13 @@ def _enqueue_shadow_portal_result(
         if submission_outcome == "captcha_invalid"
         else None
     )
-    resolve_captcha_authority_decision(
+    captcha_authority.resolve_portal_outcome(
         str(event_id),
         portal_outcome=submission_outcome,
     )
     captcha_audit["captcha_shadow_portal_accepted"] = portal_accepted
-    captcha_audit["captcha_shadow_result_enqueued"] = enqueue_shadow_external_result(
+    captcha_audit["captcha_shadow_result_enqueued"] = (
+        captcha_authority.enqueue_external_result(
         event_id=str(event_id),
         external_answer=str(external_answer),
         portal_accepted=portal_accepted,
@@ -74,7 +72,8 @@ def _enqueue_shadow_portal_result(
             captcha_audit.get("captcha_solver_duration_ms")
         ),
         final_result=True,
-        answer_source=str(captcha_audit.get("captcha_solver_source") or "2captcha"),
+            answer_source=str(captcha_audit.get("captcha_solver_source") or "2captcha"),
+        )
     )
 
 
@@ -146,9 +145,12 @@ def complete_available_reservation(
     on_submission_intent: Callable[[dict | None], None] | None = None,
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
+    *,
     run_id: str | None = None,
     order_id: str | None = None,
     captcha_event_context: str | None = None,
+    captcha_authority: CaptchaAuthority,
+    alert_sink: AlertSink,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     submission_started = False
     confirmation_source = "unconfirmed"
@@ -208,6 +210,8 @@ def complete_available_reservation(
                     run_id=run_id,
                     order_id=order_id,
                     captcha_event_context=captcha_event_context,
+                    captcha_authority=captcha_authority,
+                    alert_sink=alert_sink,
                 )
             except ReservationDeferredForPriority as exc:
                 if timing is not None:
@@ -267,7 +271,11 @@ def complete_available_reservation(
                 }
             )
             captcha_audit["submission_outcome"] = submission_outcome
-            _enqueue_shadow_portal_result(captcha_audit, submission_outcome)
+            _enqueue_shadow_portal_result(
+                captcha_audit,
+                submission_outcome,
+                captcha_authority,
+            )
             captcha_audit["duration_seconds"] = round(
                 max(time.monotonic() - attempt_started, 0.0),
                 3,
@@ -450,7 +458,11 @@ def complete_available_reservation(
     if submission_error:
         details["confirmacion_error"] = submission_error
     if programmed_stage is not None:
-        _enqueue_shadow_portal_result(latest_captcha_audit, "confirmed")
+        _enqueue_shadow_portal_result(
+            latest_captcha_audit,
+            "confirmed",
+            captcha_authority,
+        )
         if captcha_attempts:
             captcha_attempts[-1] = dict(latest_captcha_audit)
         details = reservation_details()
@@ -510,6 +522,8 @@ def capture_blocked_captcha_evidence(
     *,
     run_id: str | None = None,
     order_id: str | None = None,
+    captcha_authority: CaptchaAuthority | None = None,
+    alert_sink: AlertSink | None = None,
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     captcha_audit: dict[str, object] = {}
     capture_error: str | None = None
@@ -530,6 +544,8 @@ def capture_blocked_captcha_evidence(
             timing=timing,
             run_id=run_id,
             order_id=order_id,
+            captcha_authority=captcha_authority,
+            alert_sink=alert_sink,
         )
     except ReservationDeferredForPriority as exc:
         captcha_audit.update(exc.captcha_audit)
@@ -566,7 +582,9 @@ def capture_blocked_captcha_evidence(
         and captcha_audit.get("captcha_kind") != "html_math"
     ):
         shadow_event_id = f"{run_id}:{order_id or 'observer'}:captcha-1"
-        shadow_enqueued = enqueue_shadow_prediction(
+        if captcha_authority is None:
+            raise RuntimeError("CaptchaAuthority is required for CAPTCHA evidence.")
+        shadow_enqueued = captcha_authority.enqueue_prediction(
             event_id=shadow_event_id,
             image_path=str(captcha_path.resolve()),
             metadata={

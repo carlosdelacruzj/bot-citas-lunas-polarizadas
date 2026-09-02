@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import RunReport
-from appointment_bot.reports.run_reporting import reservation_confirmed
+from appointment_bot.core.run_reports import reservation_confirmed
 
 logger = logging.getLogger(__name__)
 FFMPEG_TIMEOUT_SECONDS = 120

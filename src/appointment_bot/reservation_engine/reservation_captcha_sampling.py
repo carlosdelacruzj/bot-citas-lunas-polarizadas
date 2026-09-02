@@ -11,8 +11,8 @@ from typing import Any
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
-from appointment_bot.db.captcha_sampling_control import get_captcha_sampling_control
 from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
+from appointment_bot.reservation_engine.ports import AlertSink, CaptchaAuthority
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,
     save_reservation_captcha_image,
@@ -23,7 +23,6 @@ from appointment_bot.reservation_engine.reservation_captcha_math import (
 from appointment_bot.reservation_engine.reservation_captcha_refresh import (
     refresh_reservation_captcha,
 )
-from appointment_bot.services.captcha_shadow import enqueue_shadow_prediction
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,8 @@ def collect_reservation_captcha_training_samples(
     run_id: str | None,
     order_id: str | None,
     event_context: str | None = None,
+    captcha_authority: CaptchaAuthority | None = None,
+    alert_sink: AlertSink | None = None,
 ) -> None:
     if has_reservation_math_captcha(page):
         captcha_audit["captcha_training_sample_limit"] = 1
@@ -49,7 +50,7 @@ def collect_reservation_captcha_training_samples(
         logger.info("Skipping five-character CAPTCHA sampling for HTML math captcha")
         return
 
-    sample_limit = _resolve_sample_limit(settings)
+    sample_limit = _resolve_sample_limit(settings, captcha_authority)
     extra_sample_count = sample_limit - 1
     if extra_sample_count <= 0:
         return
@@ -78,6 +79,7 @@ def collect_reservation_captcha_training_samples(
                     f"{attempt_number}-{sample_number}"
                 ),
                 captcha_audit=sample_audit,
+                alert_sink=alert_sink,
             )
             sample_path = captcha_submission_image_path(captured_path, sample_audit)
         except Exception as exc:
@@ -103,7 +105,11 @@ def collect_reservation_captcha_training_samples(
                 f"-training-{sample_number}"
             )
             try:
-                enqueued = enqueue_shadow_prediction(
+                if captcha_authority is None:
+                    raise RuntimeError(
+                        "CaptchaAuthority is required for CAPTCHA training samples."
+                    )
+                enqueued = captcha_authority.enqueue_prediction(
                     event_id=event_id,
                     image_path=str(Path(sample_path).resolve()),
                     metadata={
@@ -184,18 +190,22 @@ def collect_reservation_captcha_training_samples(
     )
 
 
-def _resolve_sample_limit(settings: Settings) -> int:
+def _resolve_sample_limit(
+    settings: Settings,
+    captcha_authority: CaptchaAuthority | None,
+) -> int:
     if not settings.reservation_captcha_runtime_control_enabled:
         return 1
     try:
-        control = get_captcha_sampling_control(settings)
+        if captcha_authority is None:
+            raise RuntimeError("CaptchaAuthority is not configured.")
+        return captcha_authority.sample_limit(settings)
     except Exception as exc:
         logger.warning(
             "Could not read runtime CAPTCHA sampling control; using configured fallback: %s",
             exc,
         )
         return settings.reservation_captcha_sample_limit
-    return control.effective_sample_limit
 
 
 def _ensure_reservation_can_continue(

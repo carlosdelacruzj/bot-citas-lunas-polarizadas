@@ -8,11 +8,9 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunReport
-from appointment_bot.reports.run_reporting import finalize_report, report_from_result
+from appointment_bot.reservation_engine.ports import ReservationEnginePorts, SessionVideo
 from appointment_bot.reservation_engine.results import cleanup_unconfirmed_session_screenshots
 from appointment_bot.reservation_engine.session_flow import execute_session_flow
-from appointment_bot.services.client_video import ClientSessionVideoRecorder
-from appointment_bot.services.notifier import notify_error
 from appointment_bot.utils.screenshots import save_error_screenshot
 
 logger = logging.getLogger(__name__)
@@ -35,6 +33,7 @@ def run_with_report(
     program_expediente: str | None = None,
     program_plate: str | None = None,
     notify_mode: str = "full",
+    ports: ReservationEnginePorts,
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
     settings = replace(
@@ -45,9 +44,9 @@ def run_with_report(
     started_at = started_at_dt.isoformat(timespec="seconds")
     screenshot_path = None
     screenshot_paths = []
-    video_recorder: ClientSessionVideoRecorder | None = None
+    video_recorder: SessionVideo | None = None
     try:
-        video_recorder = ClientSessionVideoRecorder.create(
+        video_recorder = ports.runs.create_video(
             settings,
             order_id=order_id,
             client_name=client_name,
@@ -59,7 +58,7 @@ def run_with_report(
         if cancel_event is not None and cancel_event.is_set():
             if video_recorder is not None:
                 video_recorder.cleanup()
-            return finalize_report(
+            return ports.runs.finalize_report(
                 RunReport(
                     status="paused",
                     message="El trabajador esta pausado.",
@@ -102,6 +101,7 @@ def run_with_report(
                     program_expediente=program_expediente,
                     program_plate=program_plate,
                     notify_mode=notify_mode,
+                    ports=ports,
                 )
                 final_result = flow_result.final_result
                 screenshot_path = flow_result.screenshot_path
@@ -121,6 +121,7 @@ def run_with_report(
             screenshot_paths=screenshot_paths,
             video_recorder=video_recorder,
             notify_mode=notify_mode,
+            ports=ports,
         )
     except Exception as exc:
         return _finalize_failed_run(
@@ -134,6 +135,7 @@ def run_with_report(
             screenshot_paths=screenshot_paths,
             video_recorder=video_recorder,
             notify_mode=notify_mode,
+            ports=ports,
         )
 
 
@@ -147,10 +149,11 @@ def _finalize_successful_run(
     started_at_dt: datetime,
     screenshot_path,
     screenshot_paths: list,
-    video_recorder: ClientSessionVideoRecorder | None,
+    video_recorder: SessionVideo | None,
     notify_mode: str,
+    ports: ReservationEnginePorts,
 ) -> RunReport:
-    report = report_from_result(
+    report = ports.runs.report_from_result(
         final_result,
         run_id=run_id,
         order_id=order_id,
@@ -162,7 +165,11 @@ def _finalize_successful_run(
         video_path = video_recorder.finalize(report)
         if video_path is not None:
             logger.info("Client session video saved: %s", video_path)
-    finalized_report = finalize_report(report, settings, started_at_dt=started_at_dt)
+    finalized_report = ports.runs.finalize_report(
+        report,
+        settings,
+        started_at_dt=started_at_dt,
+    )
     if notify_mode == "full":
         cleanup_unconfirmed_session_screenshots(finalized_report)
     return finalized_report
@@ -178,11 +185,12 @@ def _finalize_failed_run(
     started_at_dt: datetime,
     screenshot_path,
     screenshot_paths: list,
-    video_recorder: ClientSessionVideoRecorder | None,
+    video_recorder: SessionVideo | None,
     notify_mode: str,
+    ports: ReservationEnginePorts,
 ) -> RunReport:
     logger.exception("Appointment check failed")
-    notify_error(error, settings, screenshot_path)
+    ports.alerts.notify_error(error, settings, screenshot_path)
     error_report = RunReport(
         status="error",
         message=str(error),
@@ -196,7 +204,11 @@ def _finalize_failed_run(
     )
     if video_recorder is not None:
         video_recorder.finalize(error_report)
-    finalized_report = finalize_report(error_report, settings, started_at_dt=started_at_dt)
+    finalized_report = ports.runs.finalize_report(
+        error_report,
+        settings,
+        started_at_dt=started_at_dt,
+    )
     if notify_mode == "full":
         cleanup_unconfirmed_session_screenshots(finalized_report)
     return finalized_report

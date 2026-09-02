@@ -37,12 +37,12 @@ Estado general:
 
 ### Worker
 
-El worker continuo toma ordenes listas desde PostgreSQL, abre una sesion
-Playwright aislada por orden, aplica restricciones, preserva claims y leases, y
-registra intentos, screenshots y resultados. Nunca comparte sesion de navegador
-entre clientes. El lease global se renueva en un thread independiente durante
-toda la vida del worker; su perdida cancela admision y submit conservadoramente,
-sin depender del heartbeat separado del claim de orden.
+El worker inyecta al motor puertos de runs, alertas, CAPTCHA y oportunidad; el
+motor conserva Playwright, reglas y resultados sin importar DB ni servicios.
+El worker continuo toma ordenes listas desde PostgreSQL en sesiones Playwright
+aisladas, aplica restricciones y preserva claims, leases e intentos. La perdida
+del lease cancela admision y submit conservadoramente sin compartir navegador
+entre clientes.
 
 ### Admin API
 
@@ -229,7 +229,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
-- dos ciclos y 17 imports inversos quedan baselinados; CI impide que crezcan.
+- dos ciclos y un import inverso quedan baselinados; CI impide que crezcan.
 
 La prioridad y criterios de cierre estan solo en
 [`roadmap/README.md`](roadmap/README.md).
