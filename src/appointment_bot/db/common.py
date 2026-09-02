@@ -11,9 +11,9 @@ from typing import Any
 from psycopg import Connection
 
 from appointment_bot.config import Settings, load_settings
+from appointment_bot.core.credential_cipher import CredentialCipher
 from appointment_bot.db.migrations import migrate_database
 from appointment_bot.db.pool import pooled_connection
-from appointment_bot.services.credential_cipher import CredentialCipher
 
 _INITIALIZED_URLS: set[str] = set()
 _INITIALIZATION_LOCK = threading.Lock()

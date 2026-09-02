@@ -21,13 +21,15 @@ from appointment_bot.db.orders import (
     mark_service_order_no_charge,
     record_order_program_listing,
 )
-from appointment_bot.db.reservations import _record_reservation_for_order
 from appointment_bot.db.runs import create_run_record, get_run, list_runs
 from appointment_bot.db.worker_state import (
     acquire_worker_lease,
     get_worker_state,
     release_worker_lease,
     renew_worker_lease,
+)
+from appointment_bot.services.application.confirm_reservation import (
+    record_reservation_for_order,
 )
 from appointment_bot.services.application.create_service_order import create_service_order
 from appointment_bot.services.application.register_payment import (
@@ -623,7 +625,7 @@ class DatabaseTests(unittest.TestCase):
                 screenshot_path=None,
                 screenshot_paths=[],
             )
-            _record_reservation_for_order(
+            record_reservation_for_order(
                 result.order_id,
                 report,
                 confirmed=True,

@@ -8,12 +8,12 @@ from pathlib import Path
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunRecord, RunReport
 from appointment_bot.core.statuses import ResultStatus, redact_captcha_answers, sanitize_details
-from appointment_bot.db.runs import record_run_outcome
 from appointment_bot.reports.evidence import append_evidence_case
 from appointment_bot.reports.optimization import (
     append_optimization_case,
     append_partial_availability_case,
 )
+from appointment_bot.services.application.confirm_reservation import record_run_outcome
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import (
     archive_unique_slot_screenshots,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -8,108 +8,80 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
-from appointment_bot.core.documents import normalize_document_type
 from appointment_bot.core.models import ServiceOrderCreateResult
-from appointment_bot.core.service_packages import (
-    SERVICE_PACKAGE_INTEGRAL,
-    STANDARD_TOTAL_AMOUNT,
-    infer_service_package,
-    normalize_service_package,
-    validate_service_package_terms,
-)
+from appointment_bot.core.service_packages import SERVICE_PACKAGE_INTEGRAL
 from appointment_bot.db.common import (
-    _credential_cipher,
     _excluded_date_ranges_json,
     _id_from_value,
-    _now,
     _operation_connection,
-    _parse_allowed_weekdays,
-    _parse_excluded_date_ranges,
-    _parse_maximum_reservation_date,
-    _parse_minimum_reservation_date,
     _settings,
     init_database,
 )
 from appointment_bot.db.order_contacts import _optional_clean_text, _upsert_contact
 
 
+@dataclass(frozen=True, slots=True, repr=False)
+class ServiceOrderPersistenceRequest:
+    document_number: str
+    encrypted_password: str
+    document_type: str
+    priority: int
+    contact_whatsapp: str | None
+    contact_whatsapp_username: str | None
+    contact_name: str | None
+    contact_source: str | None
+    applicant_name: str | None
+    charge_required: bool
+    service_type: str
+    service_package: str
+    reservation_price: Decimal
+    official_fee_amount: Decimal
+    initial_payment_amount: Decimal
+    minimum_date: date | None
+    maximum_date: date | None
+    allowed_weekdays: list[int] | None
+    excluded_date_ranges: list[tuple[date, date]]
+    parent_order_id: str | None
+    program_expediente: str | None
+    program_plate: str | None
+    actor: str
+    require_preflight: bool
+    occurred_at: str
+
+
 def persist_service_order(
+    request: ServiceOrderPersistenceRequest,
     *,
-    document_number: str,
-    password: str,
-    document_type: str = "dni",
-    priority: int = 0,
-    contact_whatsapp: str | None = None,
-    contact_whatsapp_username: str | None = None,
-    contact_name: str | None = None,
-    contact_source: str | None = None,
-    applicant_name: str | None = None,
-    charge_required: bool = True,
-    service_type: str = "standard",
-    service_package: str | None = None,
-    reservation_price: Decimal | None = None,
-    minimum_reservation_hour: int | None = None,
-    minimum_reservation_date: str | date | None = None,
-    maximum_reservation_date: str | date | None = None,
-    allowed_weekdays: Iterable[int] | None = None,
-    excluded_date_ranges: Iterable[dict[str, object] | Iterable[object]] | None = None,
-    parent_order_id: str | None = None,
-    program_expediente: str | None = None,
-    program_plate: str | None = None,
-    actor: str = "system",
-    require_preflight: bool = True,
     settings: Settings | None = None,
     _connection_override: Connection | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)
     init_database(settings)
-    document_number = document_number.strip()
-    if not document_number:
-        raise ValueError("document_number is required.")
-    if not password:
-        raise ValueError("password is required.")
-    actor = " ".join(actor.split())[:120] or "system"
-    document_type = normalize_document_type(document_type)
-    if priority < 0:
-        raise ValueError("priority must be non-negative.")
-    service_type = service_type.strip().lower()
-    if service_type not in {"standard", "selected_weekday", "custom"}:
-        raise ValueError("service_type must be standard, selected_weekday or custom.")
-    effective_reservation_price = (
-        STANDARD_TOTAL_AMOUNT if reservation_price is None else reservation_price
-    )
-    if effective_reservation_price <= 0:
-        raise ValueError("reservation_price must be greater than zero.")
-    effective_service_package = normalize_service_package(
-        service_package or infer_service_package(service_type)
-    )
-    official_fee_amount, initial_payment_amount = validate_service_package_terms(
-        effective_service_package,
-        service_type,
-        effective_reservation_price,
-        charge_required=charge_required,
-    )
-    if minimum_reservation_hour is not None:
-        raise ValueError("Las restricciones horarias ya no se aceptan.")
-    parsed_minimum_date = _parse_minimum_reservation_date(minimum_reservation_date)
-    parsed_maximum_date = _parse_maximum_reservation_date(maximum_reservation_date)
-    parsed_allowed_weekdays = _parse_allowed_weekdays(allowed_weekdays)
-    if service_type == "selected_weekday" and (
-        parsed_allowed_weekdays is None or len(parsed_allowed_weekdays) != 1
-    ):
-        raise ValueError("selected_weekday requires exactly one allowed weekday.")
-    if (
-        parsed_minimum_date is not None
-        and parsed_maximum_date is not None
-        and parsed_maximum_date < parsed_minimum_date
-    ):
-        raise ValueError("maximum_reservation_date cannot be before minimum_reservation_date.")
-    parsed_excluded_date_ranges = _parse_excluded_date_ranges(excluded_date_ranges)
-
-    now = _now()
-    encrypted_password = _credential_cipher(settings).encrypt(password)
-    program_expediente = _optional_clean_text(program_expediente)
-    program_plate = _optional_clean_text(program_plate)
+    document_number = request.document_number
+    encrypted_password = request.encrypted_password
+    document_type = request.document_type
+    priority = request.priority
+    contact_whatsapp = request.contact_whatsapp
+    contact_whatsapp_username = request.contact_whatsapp_username
+    contact_name = request.contact_name
+    contact_source = request.contact_source
+    applicant_name = request.applicant_name
+    charge_required = request.charge_required
+    service_type = request.service_type
+    effective_service_package = request.service_package
+    effective_reservation_price = request.reservation_price
+    official_fee_amount = request.official_fee_amount
+    initial_payment_amount = request.initial_payment_amount
+    parsed_minimum_date = request.minimum_date
+    parsed_maximum_date = request.maximum_date
+    parsed_allowed_weekdays = request.allowed_weekdays
+    parsed_excluded_date_ranges = request.excluded_date_ranges
+    parent_order_id = request.parent_order_id
+    program_expediente = request.program_expediente
+    program_plate = request.program_plate
+    actor = request.actor
+    require_preflight = request.require_preflight
+    now = request.occurred_at
     applicant_id = _id_from_value("applicant", document_number)
     portal_account_id = _id_from_value("portal", document_number)
     parent_order_id = _optional_clean_text(parent_order_id)

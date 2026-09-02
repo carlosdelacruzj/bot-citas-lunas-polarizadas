@@ -26,8 +26,9 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
                 observed["uow"] = (received_settings, connection_override)
                 yield connection
 
-            def repository(**values):
-                observed["repository"] = values
+            def repository(persistence_request, **values):
+                observed["repository_request"] = persistence_request
+                observed["repository_options"] = values
                 return ServiceOrderCreateResult(
                     order_id="order-12345678",
                     applicant_id="applicant-12345678",
@@ -50,11 +51,14 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
 
             self.assertEqual(result.order_id, "order-12345678")
             self.assertEqual(observed["uow"], (settings, None))
-            persisted = observed["repository"]
-            self.assertIs(persisted["settings"], settings)
-            self.assertIs(persisted["_connection_override"], connection)
-            self.assertEqual(persisted["document_number"], "12345678")
-            self.assertEqual(persisted["password"], "secret")
+            persisted = observed["repository_request"]
+            options = observed["repository_options"]
+            self.assertIs(options["settings"], settings)
+            self.assertIs(options["_connection_override"], connection)
+            self.assertEqual(persisted.document_number, "12345678")
+            self.assertNotEqual(persisted.encrypted_password, "secret")
+            self.assertEqual(persisted.service_type, "standard")
+            self.assertEqual(persisted.reservation_price, 50)
 
     def test_rolls_back_all_creation_rows_when_repository_fails(self) -> None:
         from appointment_bot.db.service_order_repository import persist_service_order
@@ -62,8 +66,8 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
 
-            def failing_repository(**values):
-                persist_service_order(**values)
+            def failing_repository(persistence_request, **values):
+                persist_service_order(persistence_request, **values)
                 raise RuntimeError("forced failure after persistence")
 
             use_case = CreateServiceOrder(repository=failing_repository)
@@ -90,6 +94,23 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
                     )
                 }
             self.assertEqual(counts, {table: 0 for table in counts})
+
+    def test_rejects_invalid_terms_before_opening_the_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+
+            def repository(*args, **kwargs):
+                raise AssertionError("repository must not run")
+
+            use_case = CreateServiceOrder(repository=repository)
+            request = CreateServiceOrderRequest(
+                document_number="12345678",
+                password="secret",
+                reservation_price=0,
+            )
+
+            with self.assertRaisesRegex(ValueError, "greater than zero"):
+                use_case.execute(request, settings=settings)
 
     def test_request_representation_never_exposes_password(self) -> None:
         request = CreateServiceOrderRequest(document_number="12345678", password="secret")

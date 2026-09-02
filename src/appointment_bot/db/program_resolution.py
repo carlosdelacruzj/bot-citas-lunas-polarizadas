@@ -14,13 +14,17 @@ from appointment_bot.core.service_packages import (
     normalize_service_package,
     package_amounts,
     validate_service_package_compatibility,
+    validate_service_package_terms,
 )
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
     _connection,
-    _credential_cipher,
     _database_url,
     _now,
+    _parse_allowed_weekdays,
+    _parse_excluded_date_ranges,
+    _parse_maximum_reservation_date,
+    _parse_minimum_reservation_date,
     _settings,
     init_database,
 )
@@ -28,7 +32,10 @@ from appointment_bot.db.order_contacts import _optional_clean_text
 from appointment_bot.db.remote_control_audit import (
     record_remote_control_audit_in_connection,
 )
-from appointment_bot.db.service_order_repository import persist_service_order
+from appointment_bot.db.service_order_repository import (
+    ServiceOrderPersistenceRequest,
+    persist_service_order,
+)
 
 COMMUNICATION_DECISIONS = {
     "client_already_informed",
@@ -568,29 +575,65 @@ def _create_program_children_in_connection(
     listing: dict[str, Any],
     settings: Settings,
 ) -> list[ServiceOrderCreateResult]:
-    password = _credential_cipher(settings).decrypt(str(parent["password"]))
     created: list[ServiceOrderCreateResult] = []
     for row in pending_rows:
         expediente = str(_optional_clean_text(row.get("expediente")))
         spec = commercial_specs[expediente]
+        service_type = str(spec["service_type"])
+        service_package = str(spec["service_package"])
+        reservation_price = Decimal(str(spec["reservation_price"]))
+        charge_required = bool(spec["charge_required"])
+        official_fee_amount, initial_payment_amount = validate_service_package_terms(
+            service_package,
+            service_type,
+            reservation_price,
+            charge_required=charge_required,
+        )
+        minimum_date = _parse_minimum_reservation_date(
+            spec.get("minimum_reservation_date")
+        )
+        maximum_date = _parse_maximum_reservation_date(
+            spec.get("maximum_reservation_date")
+        )
+        allowed_weekdays = _parse_allowed_weekdays(spec.get("allowed_weekdays"))
+        if service_type == "selected_weekday" and (
+            allowed_weekdays is None or len(allowed_weekdays) != 1
+        ):
+            raise ValueError("selected_weekday requires exactly one allowed weekday.")
+        if minimum_date is not None and maximum_date is not None and maximum_date < minimum_date:
+            raise ValueError(
+                "maximum_reservation_date cannot be before minimum_reservation_date."
+            )
         result = persist_service_order(
-            document_number=str(parent["username"]),
-            password=password,
-            document_type=str(parent["document_type"]),
-            priority=int(parent["priority"]),
-            applicant_name=str(parent["applicant_name"]),
-            charge_required=bool(spec["charge_required"]),
-            service_type=str(spec["service_type"]),
-            service_package=str(spec["service_package"]),
-            reservation_price=Decimal(str(spec["reservation_price"])),
-            minimum_reservation_date=spec.get("minimum_reservation_date"),
-            maximum_reservation_date=spec.get("maximum_reservation_date"),
-            allowed_weekdays=spec.get("allowed_weekdays"),
-            excluded_date_ranges=spec.get("excluded_date_ranges"),
-            parent_order_id=str(parent["order_id"]),
-            program_expediente=expediente,
-            program_plate=_optional_clean_text(row.get("placa")),
-            require_preflight=False,
+            ServiceOrderPersistenceRequest(
+                document_number=str(parent["username"]),
+                encrypted_password=str(parent["password"]),
+                document_type=str(parent["document_type"]),
+                priority=int(parent["priority"]),
+                contact_whatsapp=None,
+                contact_whatsapp_username=None,
+                contact_name=None,
+                contact_source=None,
+                applicant_name=str(parent["applicant_name"]),
+                charge_required=charge_required,
+                service_type=service_type,
+                service_package=service_package,
+                reservation_price=reservation_price,
+                official_fee_amount=official_fee_amount,
+                initial_payment_amount=initial_payment_amount,
+                minimum_date=minimum_date,
+                maximum_date=maximum_date,
+                allowed_weekdays=allowed_weekdays,
+                excluded_date_ranges=_parse_excluded_date_ranges(
+                    spec.get("excluded_date_ranges")
+                ),
+                parent_order_id=str(parent["order_id"]),
+                program_expediente=expediente,
+                program_plate=_optional_clean_text(row.get("placa")),
+                actor="system",
+                require_preflight=False,
+                occurred_at=_now(),
+            ),
             settings=settings,
             _connection_override=connection,
         )

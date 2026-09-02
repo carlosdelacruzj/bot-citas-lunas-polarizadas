@@ -1,10 +1,10 @@
 # Contrato de ciclo de vida de ordenes
 
-Estado: vigente. Ultima verificacion: `2026-09-01`.
+Estado: vigente. Ultima verificacion: `2026-09-02`.
 
-Codigo propietario: `core/models.py`, `core/rules.py`, `db/order_*`,
-`db/reservations.py`, `db/service_order_repository.py`, `db/unit_of_work.py`, `db/payment_repository.py`, `services/application/create_service_order.py`,
-`services/application/register_payment.py` y
+Codigo propietario: `core/credential_cipher.py`, `core/models.py`, `core/rules.py`, `db/order_*`,
+`db/reservations.py`, `db/reservation_repository.py`, `db/service_order_repository.py`, `db/unit_of_work.py`, `db/payment_repository.py`,
+`services/application/confirm_reservation.py`, `services/application/create_service_order.py`, `services/application/register_payment.py` y
 `services/api/service_order_routes.py`.
 
 ## Estados de orden
@@ -22,9 +22,9 @@ estados alternativos de esta columna.
 
 ## Creacion y preflight
 
-Cada orden persiste contacto, credenciales cifradas, servicio, precio y reglas.
-Si requiere preflight nace pausada; solo vuelve a `ready` tras validacion. Un
-HTTP `201` prueba persistencia, no activacion.
+`CreateServiceOrder` prepara contacto, credenciales cifradas, servicio, precio
+y reglas; el repositorio no conoce la clave. Con preflight nace pausada y solo
+vuelve a `ready` tras validacion. Un HTTP `201` prueba persistencia, no activacion.
 
 ## Servicio y precio
 

@@ -732,19 +732,23 @@ Objetivo: separar coordinacion de negocio de SQL sin perder atomicidad.
 
 - [x] Extraer `CreateServiceOrder` de `db/order_credentials.py`.
 - [x] Extraer `RegisterPayment` de `db/order_contacts.py`.
-- [ ] Extraer `ConfirmReservation` de `db/reservations.py`.
+- [x] Extraer `ConfirmReservation` de `db/reservations.py`.
 - [x] Introducir una unidad de trabajo o transaccion explicita compartida.
-- [ ] Mantener repositorios enfocados en leer y escribir agregados.
-- [ ] Mover cifrado fuera de la dependencia `db -> services`.
+- [x] Mantener repositorios enfocados en leer y escribir agregados.
+- [x] Mover cifrado fuera de la dependencia `db -> services`.
 
 No extraer los tres casos en un solo commit. Completar uno, validar y observar
 antes de continuar.
 
 `RegisterPayment` coordina pagos parciales y completos sobre la unidad de
-trabajo compartida. El repositorio de pagos conserva bloqueo y escrituras SQL;
-el caso de uso aplica reglas, recibos, cambio de orden, auditoria y encolado
-postpago en la misma transaccion. Antes de iniciar `ConfirmReservation`, observar
-el proximo cobro natural sin crear uno de prueba.
+trabajo compartida. `ConfirmReservation` conserva en otra transaccion explicita
+la reserva, pago pendiente y estado de orden; el registro conjunto del run usa
+esa misma unidad. `CreateServiceOrder` prepara reglas, terminos comerciales y
+credenciales cifradas antes de entregar un agregado listo para persistir. Los
+repositorios contienen las escrituras SQL y las protecciones ligadas al estado
+persistido. El cifrado vive en `core/` y la division por programas reutiliza el
+ciphertext del padre sin descifrarlo. La observacion natural confirmo un cobro
+completo, su auditoria y el despacho tecnico postpago; `sent` no prueba lectura.
 
 ### 5.2 Puertos del motor de reservas
 

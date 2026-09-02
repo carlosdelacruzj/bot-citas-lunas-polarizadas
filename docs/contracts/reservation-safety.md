@@ -2,10 +2,10 @@
 
 Estado: vigente.
 
-Ultima verificacion: `2026-08-31`.
+Ultima verificacion: `2026-09-02`.
 
-Responsable: dominios `reservation_engine/`, `worker/` y persistencia de
-intentos de reserva en `db/`.
+Responsable: dominios `reservation_engine/`, `worker/`, caso transaccional
+`services/application/confirm_reservation.py` y persistencia en `db/`.
 
 Este documento define las garantias que no deben romperse al separar admin API,
 worker y dashboard.

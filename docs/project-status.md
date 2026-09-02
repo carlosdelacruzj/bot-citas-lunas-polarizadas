@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-01`.
+Estado verificado documentalmente: `2026-09-02`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -49,7 +49,7 @@ sin depender del heartbeat separado del claim de orden.
 Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp;
-el alta entra por `CreateServiceOrder` y los cobros por `RegisterPayment`, ambos con transaccion explicita.
+altas, cobros y confirmaciones entran por casos de uso con transaccion explicita.
 Telegram y n8n no ejecutan SQL, PowerShell ni logica del navegador directamente.
 Telegram Control revisa cada cinco minutos el lease real del worker mediante
 Admin API entre `07:30` y `18:00`; alerta tras tres fallos y nunca reinicia por
@@ -229,7 +229,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
-- dos ciclos y 19 imports inversos quedan baselinados; CI impide que crezcan.
+- dos ciclos y 17 imports inversos quedan baselinados; CI impide que crezcan.
 
 La prioridad y criterios de cierre estan solo en
 [`roadmap/README.md`](roadmap/README.md).

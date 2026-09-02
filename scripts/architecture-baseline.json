@@ -1,7 +1,5 @@
 {
   "inverse_dependencies": [
-    ["appointment_bot.db.common", "appointment_bot.services.credential_cipher"],
-    ["appointment_bot.db.reservations", "appointment_bot.services.detail_helpers"],
     ["appointment_bot.reservation_engine.monitor", "appointment_bot.db.opportunity_bursts"],
     ["appointment_bot.reservation_engine.monitor", "appointment_bot.db.opportunity_controls"],
     ["appointment_bot.reservation_engine.observer", "appointment_bot.services.captcha_shadow"],

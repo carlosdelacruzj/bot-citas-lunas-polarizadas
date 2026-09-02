@@ -23,7 +23,7 @@ ciclo que atraviese `utils`, `browser` u otra superficie neutral.
 
 ## Baseline temporal
 
-La baseline conserva 19 imports inversos y dos componentes circulares ya
+La baseline conserva 17 imports inversos y dos componentes circulares ya
 existentes. El check falla si aparece deuda nueva y tambien si una excepcion
 desaparece sin retirar su entrada: cada mejora debe reducir la baseline en el
 mismo commit. La fase 5.3 la lleva a cero; no se esconden ciclos nuevos mediante

@@ -3,25 +3,19 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from appointment_bot.config import Settings
-from appointment_bot.core.rules import parse_appointment_date
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
     _connection,
     _database_url,
     _detail_text,
-    _id_from_value,
     _now,
-    _operation_connection,
-    _optional_text_value,
     _settings,
     init_database,
 )
 from appointment_bot.db.whatsapp_messages import archive_whatsapp_evidence
-from appointment_bot.services.detail_helpers import appointment_datetime_details
 
 
 def replace_confirmed_reservation_evidence(
@@ -55,147 +49,6 @@ def replace_confirmed_reservation_evidence(
         archived.unlink(missing_ok=True)
         raise ValueError("La orden no tiene una reserva confirmada para actualizar.")
     return archived
-
-
-def _record_reservation_for_order(
-    order_id: str,
-    report: object,
-    *,
-    confirmed: bool | None = None,
-    settings: Settings | None = None,
-    _connection_override: Connection | None = None,
-) -> None:
-    settings = _settings(settings)
-    init_database(settings)
-    details = getattr(report, "details", None) or {}
-    now = _now()
-    run_id = getattr(report, "run_id", None)
-    is_confirmed = (
-        bool(getattr(report, "reservation_confirmed", False)) if confirmed is None else confirmed
-    )
-    appointment_date_raw, appointment_hour_raw = appointment_datetime_details(details)
-    appointment_date = _optional_text_value(appointment_date_raw)
-    appointment_day = (
-        parse_appointment_date(appointment_date) if appointment_date is not None else None
-    )
-    appointment_hour = _optional_text_value(appointment_hour_raw)
-    status = "confirmed" if is_confirmed else "unconfirmed"
-    reservation_id = _id_from_value("reservation", f"{order_id}-{run_id or now}")
-    with _operation_connection(settings, _connection_override) as connection:
-        order = connection.execute(
-            """
-            SELECT order_id, charge_required, reservation_price,
-                   program_expediente, program_plate
-            FROM service_orders
-            WHERE order_id = %s
-            """,
-            (order_id,),
-        ).fetchone()
-        if order is None:
-            return
-        program_expediente = _detail_text(details, "program_expediente") or order[
-            "program_expediente"
-        ]
-        program_plate = _detail_text(details, "program_plate") or order["program_plate"]
-        evidence_path = getattr(report, "screenshot_path", None)
-        if status == "confirmed":
-            archived = archive_whatsapp_evidence(
-                order_id,
-                [*(getattr(report, "screenshot_paths", None) or []), evidence_path],
-            )
-            if archived is not None:
-                evidence_path = str(archived)
-        connection.execute(
-            """
-            INSERT INTO reservations (
-                reservation_id, order_id, run_id, status, site, appointment_date,
-                appointment_day, appointment_hour, slots, evidence_path, details_json,
-                program_expediente, program_plate, reserved_at, created_at, updated_at
-            )
-            VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s
-            )
-            ON CONFLICT(reservation_id) DO UPDATE SET
-                status = excluded.status,
-                appointment_date = COALESCE(
-                    excluded.appointment_date, reservations.appointment_date
-                ),
-                appointment_day = COALESCE(excluded.appointment_day, reservations.appointment_day),
-                appointment_hour = COALESCE(
-                    excluded.appointment_hour, reservations.appointment_hour
-                ),
-                evidence_path = excluded.evidence_path,
-                details_json = excluded.details_json,
-                program_expediente = COALESCE(
-                    excluded.program_expediente, reservations.program_expediente
-                ),
-                program_plate = COALESCE(excluded.program_plate, reservations.program_plate),
-                updated_at = excluded.updated_at
-            """,
-            (
-                reservation_id,
-                order_id,
-                run_id,
-                status,
-                _detail_text(details, "sede"),
-                appointment_date,
-                appointment_day,
-                appointment_hour,
-                _detail_text(details, "cupos"),
-                evidence_path,
-                Jsonb(sanitize_details(details)) if details else None,
-                program_expediente,
-                program_plate,
-                now,
-                now,
-                now,
-            ),
-        )
-        if status == "confirmed":
-            no_charge = not bool(order["charge_required"])
-            if not no_charge:
-                connection.execute(
-                    """
-                    INSERT INTO payments (
-                        payment_id, order_id, reservation_id, status, amount_agreed,
-                        currency, created_at, updated_at
-                    )
-                    VALUES (%s, %s, %s, 'pending', %s, 'PEN', %s, %s)
-                    ON CONFLICT(payment_id) DO UPDATE SET
-                        reservation_id = COALESCE(payments.reservation_id, excluded.reservation_id),
-                        amount_agreed = excluded.amount_agreed,
-                        updated_at = excluded.updated_at
-                    """,
-                    (
-                        _id_from_value("payment", order_id),
-                        order_id,
-                        reservation_id,
-                        order["reservation_price"],
-                        now,
-                        now,
-                    ),
-                )
-            connection.execute(
-                """
-                UPDATE service_orders
-                SET status = CASE
-                        WHEN status = 'paid' THEN 'paid'
-                        ELSE %s
-                    END,
-                    program_expediente = COALESCE(program_expediente, %s),
-                    program_plate = COALESCE(program_plate, %s),
-                    updated_at = %s
-                WHERE order_id = %s
-                """,
-                (
-                    "archived" if no_charge else "reserved_payment_pending",
-                    program_expediente,
-                    program_plate,
-                    now,
-                    order_id,
-                ),
-            )
 
 
 def create_reservation_attempt(

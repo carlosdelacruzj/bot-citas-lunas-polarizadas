@@ -10,7 +10,7 @@ class CredentialDecryptionError(ValueError):
 
 
 class CredentialCipher:
-    """Cifra credenciales recuperables con la primera clave y acepta claves anteriores."""
+    """Encrypt recoverable credentials with key rotation support."""
 
     def __init__(self, keys: tuple[str, ...]) -> None:
         if not keys:

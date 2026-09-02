@@ -20,8 +20,6 @@ from appointment_bot.db.common import (
     _settings,
     init_database,
 )
-from appointment_bot.db.orders import _update_applicant_name_for_order
-from appointment_bot.db.reservations import _record_reservation_for_order
 from appointment_bot.utils.sanitization import public_filename, sanitize_text
 
 
@@ -83,42 +81,6 @@ def create_run_record(
             """,
             rows,
         )
-
-
-def record_run_outcome(
-    settings: Settings | None,
-    record: RunRecord,
-    screenshot_paths: Iterable[str],
-    *,
-    report: object,
-    person_name: str | None,
-    include_reservation: bool,
-) -> None:
-    """Persist a run and its domain effects in one transaction."""
-    settings = _settings(settings)
-    init_database(settings)
-    with _connection(_database_url(settings)) as connection:
-        create_run_record(
-            settings,
-            record,
-            screenshot_paths,
-            _connection_override=connection,
-        )
-        if record.order_id and person_name:
-            _update_applicant_name_for_order(
-                record.order_id,
-                person_name,
-                settings=settings,
-                _connection_override=connection,
-            )
-        if record.order_id and include_reservation:
-            _record_reservation_for_order(
-                record.order_id,
-                report,
-                confirmed=True,
-                settings=settings,
-                _connection_override=connection,
-            )
 
 
 def list_runs(
