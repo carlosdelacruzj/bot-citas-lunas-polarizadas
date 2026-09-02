@@ -30,6 +30,7 @@ def click_program_action(
     on_program_selected: Callable[[dict[str, Any]], None] | None = None,
     program_expediente: str | None = None,
     program_plate: str | None = None,
+    observer_read_only: bool = False,
 ) -> Page:
     logger.info("Clicking program action button")
     button = page.locator(PROGRAM_ACTION_SELECTOR)
@@ -62,7 +63,14 @@ def click_program_action(
         )
 
     selected_row: dict[str, Any]
-    if target is not None:
+    if observer_read_only:
+        selected_row = program_rows[0]
+        decision_details["decision"] = "observer_first_available_selected"
+        logger.info(
+            "Observer selected the first program row without status filtering: %s",
+            selected_row,
+        )
+    elif target is not None:
         target_rows = _find_target_program_rows(program_rows, target)
         pending_target_rows = [row for row in target_rows if _program_is_pending(row)]
         if not target_rows:
@@ -107,7 +115,7 @@ def click_program_action(
         )
 
     decision_details["selected_row"] = selected_row
-    if button_count > 1 or target is not None:
+    if button_count > 1 or target is not None or observer_read_only:
         _notify_program_decision(on_multiple_programs, decision_details)
     selected_button = button.nth(int(selected_row["action_index"]))
 

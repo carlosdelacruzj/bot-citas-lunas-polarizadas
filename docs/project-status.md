@@ -39,10 +39,9 @@ Estado general:
 
 El worker inyecta al motor puertos de runs, alertas, CAPTCHA y oportunidad; el
 motor conserva Playwright, reglas y resultados sin importar DB ni servicios.
-El worker continuo toma ordenes listas desde PostgreSQL en sesiones Playwright
-aisladas, aplica restricciones y preserva claims, leases e intentos. La perdida
-del lease cancela admision y submit conservadoramente sin compartir navegador
-entre clientes.
+Claims, leases e intentos protegen cada submit. La cuenta observadora generica abre
+el primer expediente disponible sin filtrar su estado porque solo consulta; las
+cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exactamente.
 
 ### Admin API
 

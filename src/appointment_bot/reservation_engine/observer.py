@@ -75,7 +75,7 @@ def run_observer_with_report(
         with open_page(settings) as page:
             try:
                 login(page, settings)
-                page = click_program_action(page)
+                page = click_program_action(page, observer_read_only=True)
                 page = open_hidden_appointment_panel_for_observer(page)
                 result, result_screenshot = _monitor_observer(
                     page,
@@ -277,7 +277,7 @@ def _reload_and_recheck_observer_availability(
             wait_until="domcontentloaded",
             timeout=settings.postback_timeout_seconds * 1_000,
         )
-        page = click_program_action(page)
+        page = click_program_action(page, observer_read_only=True)
         page = open_hidden_appointment_panel_for_observer(page)
         page = select_available_site_for_observer(
             page,
