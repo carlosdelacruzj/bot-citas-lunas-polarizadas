@@ -1,0 +1,228 @@
+<section class="template-intro panel" aria-labelledby="message-templates-title">
+  <div>
+    <p class="eyebrow">Contenido comercial</p>
+    <h2 id="message-templates-title">Mensajes claros, sin entrar al código</h2>
+    <p>
+      Edita el texto, comprueba los datos ficticios y guarda una nueva revisión. Los cambios
+      solo podrán aplicarse a trabajos futuros cuando cada disparador sea conectado.
+    </p>
+  </div>
+  <div class="template-safety" aria-label="Garantías del editor">
+    <span><strong>{{ dashboard.whatsappMessageTemplates().length }}</strong> mensajes</span>
+    <span><strong>0</strong> envíos desde aquí</span>
+    <span><strong>1</strong> revisión por guardado</span>
+  </div>
+</section>
+
+@if (selectedTemplate(); as template) {
+  <section class="template-studio" aria-label="Editor de mensajes de WhatsApp">
+    <aside class="template-catalog panel" aria-labelledby="template-catalog-title">
+      <div class="catalog-heading">
+        <p class="eyebrow">Biblioteca</p>
+        <h3 id="template-catalog-title">Elige un mensaje</h3>
+        <p>Cada mensaje conserva variables y revisión propias.</p>
+      </div>
+
+      <div class="template-list" role="tablist" aria-orientation="vertical">
+        @for (item of dashboard.whatsappMessageTemplates(); track item.template_key) {
+          <button
+            type="button"
+            role="tab"
+            class="template-option"
+            [class.active]="item.template_key === template.template_key"
+            [attr.aria-selected]="item.template_key === template.template_key"
+            (click)="chooseTemplate(item.template_key)"
+          >
+            <span class="template-option-code" aria-hidden="true">{{ templateCode(item.template_key) }}</span>
+            <span>
+              <strong>{{ item.display_name }}</strong>
+              <small>Revisión {{ item.revision }}</small>
+            </span>
+            <span class="template-option-state" [class.connected]="item.consumer_connected">
+              {{ item.consumer_connected ? 'Conectado' : 'En preparación' }}
+            </span>
+          </button>
+        }
+      </div>
+
+      <p class="catalog-footnote">
+        Seleccionar un mensaje no lo modifica ni lo envía.
+      </p>
+    </aside>
+
+    <article class="template-editor panel" role="tabpanel">
+      <header class="template-editor-header">
+        <div>
+          <p class="eyebrow">{{ appliesFromLabel(template.applies_from) }}</p>
+          <h3>{{ template.display_name }}</h3>
+          <p>{{ template.usage }}</p>
+        </div>
+        <div class="revision-stamp" aria-label="Revisión vigente">
+          <span>REV</span>
+          <strong>{{ template.revision }}</strong>
+          <small>{{ dashboard.formatDateTime(template.updated_at, 'sin fecha') }}</small>
+        </div>
+      </header>
+
+      <ol class="template-workflow" aria-label="Flujo del editor">
+        <li class="active"><span>1</span><strong>Escribe</strong><small>Texto y variables</small></li>
+        <li [class.active]="previewState() === 'ready'"><span>2</span><strong>Revisa</strong><small>Datos ficticios</small></li>
+        <li [class.active]="saveReviewOpen()"><span>3</span><strong>Guarda</strong><small>Nueva revisión</small></li>
+      </ol>
+
+      <div class="template-editor-grid">
+        <section class="template-compose" aria-labelledby="template-compose-title">
+          <div class="compose-heading">
+            <div>
+              <h4 id="template-compose-title">Texto del mensaje</h4>
+              <p>Las variables obligatorias están marcadas con un punto.</p>
+            </div>
+            <button type="button" class="text-action" (click)="restoreRecommended()">
+              Restaurar recomendado
+            </button>
+          </div>
+
+          <div class="variable-tray" aria-label="Variables disponibles">
+            @for (variable of template.allowed_variables; track variable) {
+              <button
+                type="button"
+                class="variable-chip"
+                [class.required]="isRequired(variable, template)"
+                [attr.title]="isRequired(variable, template) ? 'Variable obligatoria' : 'Variable opcional'"
+                (click)="insertVariable(variable)"
+              >
+                {{ variable }}
+              </button>
+            }
+          </div>
+
+          <textarea
+            #templateEditor
+            name="whatsappMessageTemplate"
+            rows="15"
+            [attr.aria-invalid]="previewState() === 'error'"
+            [attr.aria-describedby]="previewError() ? 'template-preview-error' : 'template-character-count'"
+            [ngModel]="draft()"
+            (ngModelChange)="onDraftChange($event)"
+          ></textarea>
+
+          <div class="compose-meta">
+            <span id="template-character-count" [class.over-limit]="draft().length > maxTemplateLength">
+              {{ draft().length }} / {{ maxTemplateLength }} caracteres
+            </span>
+            <span>{{ template.required_variables.length }} variables obligatorias</span>
+          </div>
+
+          @if (previewError()) {
+            <p id="template-preview-error" class="template-feedback error" role="alert">
+              {{ previewError() }}
+            </p>
+          }
+        </section>
+
+        <aside class="template-preview" aria-labelledby="template-preview-title">
+          <div class="preview-heading">
+            <div>
+              <p class="eyebrow">Vista previa segura</p>
+              <h4 id="template-preview-title">Así se leerá</h4>
+            </div>
+            <span class="preview-status" [class.loading]="previewState() === 'loading'">
+              {{ previewState() === 'loading' ? 'Validando…' : 'Datos ficticios' }}
+            </span>
+          </div>
+
+          <div class="conversation-preview">
+            <div class="conversation-date">EJEMPLO</div>
+            @if (previewState() === 'loading') {
+              <div class="message-placeholder" aria-label="Generando vista previa">
+                <span></span><span></span><span></span>
+              </div>
+            } @else if (previewState() === 'error') {
+              <div class="preview-empty">
+                Corrige el texto para volver a generar la vista previa.
+              </div>
+            } @else {
+              <div class="message-bubble">
+                <p>{{ preview() }}</p>
+                <small>10:30 <span aria-label="Vista previa, no enviado">✓✓</span></small>
+              </div>
+            }
+          </div>
+
+          <details class="preview-data">
+            <summary>Ver datos usados en el ejemplo</summary>
+            <dl>
+              @for (entry of previewContextEntries(); track entry[0]) {
+                <div><dt>{{ '{' + entry[0] + '}' }}</dt><dd>{{ entry[1] }}</dd></div>
+              }
+            </dl>
+          </details>
+        </aside>
+      </div>
+
+      @if (conflictCurrent(); as current) {
+        <section class="template-conflict" role="alert" aria-labelledby="template-conflict-title">
+          <div>
+            <p class="eyebrow">Conflicto de revisión</p>
+            <h4 id="template-conflict-title">Ya existe la revisión {{ current.revision }}</h4>
+            <p>{{ saveError() }}</p>
+          </div>
+          <div class="conflict-actions">
+            <button type="button" class="secondary" (click)="loadCurrentVersion()">
+              Cargar versión vigente
+            </button>
+            <button type="button" class="primary" (click)="keepDraftWithCurrentRevision()">
+              Conservar mi borrador
+            </button>
+          </div>
+        </section>
+      } @else if (saveError()) {
+        <p class="template-feedback error" role="alert">{{ saveError() }}</p>
+      }
+
+      @if (saveSuccess()) {
+        <p class="template-feedback success" role="status">{{ saveSuccess() }}</p>
+      }
+
+      @if (saveReviewOpen()) {
+        <section class="save-review" aria-labelledby="save-review-title">
+          <div>
+            <p class="eyebrow">Confirmar guardado</p>
+            <h4 id="save-review-title">Crear la revisión {{ template.revision + 1 }}</h4>
+            <p>
+              Se guardará el texto y su historial. Esta acción no prepara, encola ni envía WhatsApp.
+            </p>
+          </div>
+          <div class="save-review-actions">
+            <button type="button" class="secondary" [disabled]="saving()" (click)="cancelSaveReview()">
+              Seguir editando
+            </button>
+            <button type="button" class="primary" [disabled]="saving()" (click)="confirmSave()">
+              {{ saving() ? 'Guardando…' : 'Confirmar y guardar' }}
+            </button>
+          </div>
+        </section>
+      } @else {
+        <footer class="template-editor-actions">
+          <div>
+            <strong>{{ isDirty() ? 'Cambios sin guardar' : 'Texto al día' }}</strong>
+            <small>{{ template.consumer_connected ? 'Aplica según el disparador.' : 'Aún no conectado a envíos productivos.' }}</small>
+          </div>
+          <div>
+            <button type="button" class="secondary" [disabled]="saving()" (click)="refreshPreviewNow()">
+              Actualizar vista previa
+            </button>
+            <button
+              type="button"
+              class="primary"
+              [disabled]="saving() || draft().length > maxTemplateLength"
+              (click)="requestSave()"
+            >
+              Revisar y guardar
+            </button>
+          </div>
+        </footer>
+      }
+    </article>
+  </section>
+}

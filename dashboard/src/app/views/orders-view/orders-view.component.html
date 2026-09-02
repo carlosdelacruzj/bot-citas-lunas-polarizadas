@@ -1,0 +1,651 @@
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Ordenes</h2>
+      <p>
+        Mostrando {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de
+        {{ dashboard.filteredOrders().length }} resultados · {{ dashboard.orders().length }} cargadas
+      </p>
+    </div>
+    <div class="panel-actions">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="dashboard.whatsappSessionBusy()"
+        (click)="dashboard.validateWhatsAppSession()"
+      >
+        {{
+          dashboard.whatsappSessionBusy()
+            ? 'Validando WhatsApp...'
+            : dashboard.whatsappSessionState() === 'ready'
+              ? 'WhatsApp listo'
+              : 'Validar WhatsApp'
+        }}
+      </button>
+      <button type="button" class="secondary" (click)="dashboard.openWhatsAppEvidenceTest()">
+        Probar evidencias
+      </button>
+      <button type="button" class="secondary" (click)="dashboard.openWhatsAppTest()">
+        Probar post-pago
+      </button>
+      <button type="button" class="primary" (click)="dashboard.openCreateOrder()">Nueva orden</button>
+    </div>
+  </div>
+
+  @if (dashboard.orderPanelOpen()) {
+    @if (dashboard.selectedOrder(); as order) {
+      <button
+        type="button"
+        class="order-drawer-backdrop"
+        aria-label="Cerrar detalle de orden"
+        (click)="dashboard.closeOrderPanel()"
+      ></button>
+      <aside
+        class="order-workspace"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="selected-order-title"
+        tabindex="-1"
+        data-order-panel
+      >
+        <div class="order-workspace-header">
+          <div>
+            <p class="eyebrow">Orden seleccionada</p>
+            <h3 id="selected-order-title">{{ order.applicant_name ?? order.order_id }}</h3>
+            <p>{{ order.order_id }} · {{ order.document_number_masked }}</p>
+          </div>
+          <button type="button" class="icon-button" (click)="dashboard.closeOrderPanel()">
+            Cerrar
+          </button>
+        </div>
+        <div class="next-action-card">
+          <span>Control previo del portal</span>
+          <strong class="badge {{ dashboard.statusTone(order.preflight_status) }}">
+            {{ dashboard.preflightLabel(order) }}
+          </strong>
+          @if (order.preflight_message) {
+            <small>{{ order.preflight_message }}</small>
+          }
+          @if (order.registration_notice_status) {
+            <small>
+              Aviso de registro: {{ dashboard.statusLabel(order.registration_notice_type) }} ·
+              {{ dashboard.statusLabel(order.registration_notice_status) }}
+            </small>
+            @if (order.registration_notice_error) {
+              <small>{{ order.registration_notice_error }}</small>
+            }
+          }
+        </div>
+        <div class="next-action-card">
+          <span>Siguiente accion valida</span>
+          <strong>{{ dashboard.orderNextAction().label }}</strong>
+          <small>{{ dashboard.orderNextAction().description }}</small>
+          <div class="next-action-buttons">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="dashboard.orderNextAction().disabled || dashboard.actionBusy()"
+              (click)="dashboard.runNextOrderAction()"
+            >
+              {{ dashboard.orderNextAction().label }}
+            </button>
+            @if (order.payment_status === 'pending') {
+              <button
+                type="button"
+                class="whatsapp-action"
+                [disabled]="!dashboard.canPrepareOrderWhatsApp(order) || dashboard.actionBusy()"
+                [title]="dashboard.whatsappPreparationHint(order)"
+                (click)="dashboard.openOrderWhatsApp(order)"
+              >
+                {{
+                  order.whatsapp_message_status === 'sent'
+                    ? 'Reenviar WhatsApp'
+                    : 'Enviar por WhatsApp'
+                }}
+              </button>
+            } @else if (order.payment_status === 'paid') {
+              <button
+                type="button"
+                class="whatsapp-action"
+                [disabled]="!dashboard.canPreparePostPaymentWhatsApp(order) || dashboard.actionBusy()"
+                [title]="dashboard.postPaymentWhatsAppHint(order)"
+                (click)="dashboard.openPostPaymentWhatsApp(order)"
+              >
+                {{
+                  order.whatsapp_followup_status === 'sent'
+                    ? 'Reenviar post-pago'
+                    : 'Enviar post-pago'
+                }}
+              </button>
+            }
+          </div>
+          @if (order.payment_status === 'pending') {
+            <small>{{ dashboard.whatsappPreparationHint(order) }}</small>
+          } @else if (order.payment_status === 'paid') {
+            <small>{{ dashboard.postPaymentWhatsAppHint(order) }}</small>
+          }
+        </div>
+
+        <div class="drawer-quick-actions" aria-label="Acciones rápidas de la orden">
+          @if (
+            order.preflight_status !== 'not_required' &&
+            order.preflight_status !== 'validated'
+          ) {
+            @if (dashboard.needsProgramResolution(order)) {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="dashboard.actionBusy()"
+                (click)="dashboard.openProgramResolution(order)"
+              >
+                Resolver trámites
+              </button>
+            } @else if (dashboard.needsCredentialCorrection(order)) {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="dashboard.actionBusy()"
+                (click)="dashboard.openEditOrder(order, 'credentials')"
+              >
+                Corregir acceso
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.preflight_status === 'running' || dashboard.actionBusy()"
+                (click)="dashboard.requestOrderValidation(order)"
+              >
+                {{
+                  order.preflight_status === 'failed' ? 'Volver a validar' : 'Validar acceso'
+                }}
+              </button>
+            }
+          }
+          @if (order.payment_status === 'pending') {
+            <button type="button" class="primary" (click)="dashboard.openPayment(order)">
+              Registrar pago
+            </button>
+          }
+          <button type="button" class="secondary" (click)="dashboard.openEditOrder(order, 'contact')">
+            Editar contacto
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            (click)="dashboard.openEditOrder(order, 'restrictions')"
+          >
+            Editar reglas
+          </button>
+          @if (order.status === 'ready') {
+            <button
+              type="button"
+              class="secondary"
+              (click)="dashboard.requestOrderAction('pause', 'Pausar orden')"
+            >
+              Pausar
+            </button>
+          } @else if (order.status === 'paused') {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="
+                dashboard.hasActiveChildOrders(order) ||
+                (order.preflight_status !== 'not_required' &&
+                  order.preflight_status !== 'validated')
+              "
+              (click)="dashboard.requestOrderAction('activate', 'Activar orden')"
+            >
+              Activar
+            </button>
+          }
+          @if (order.status !== 'ready') {
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="dashboard.actionBusy()"
+              (click)="dashboard.requestManualSession()"
+            >
+              Abrir portal
+            </button>
+          }
+          <button type="button" class="secondary" (click)="dashboard.openOrderActions(order)">
+            Más acciones
+          </button>
+        </div>
+
+        <div class="order-task-grid">
+          <article>
+            <h4>Cliente</h4>
+            <dl>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ order.contact_name ?? 'sin contacto' }}</dd>
+              </div>
+              <div>
+                <dt>WhatsApp</dt>
+                <dd>
+                  @if (dashboard.orderDetailLoading()) {
+                    Cargando contacto...
+                  } @else {
+                    {{ dashboard.selectedOrderWhatsapp() }}
+                  }
+                </dd>
+              </div>
+              <div class="inline-actions">
+                @if (dashboard.selectedOrderDetail()?.contact_whatsapp) {
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="dashboard.openSelectedOrderWhatsapp()"
+                  >
+                    Abrir WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="dashboard.copySelectedOrderWhatsapp()"
+                  >
+                    {{ dashboard.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
+                  </button>
+                } @else if (dashboard.selectedOrderDetail()?.contact_whatsapp_username) {
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="dashboard.copySelectedOrderWhatsapp()"
+                  >
+                    {{ dashboard.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="dashboard.openEditOrder(order, 'contact')"
+                  >
+                    Agregar WhatsApp
+                  </button>
+                }
+              </div>
+              <div>
+                <dt>Fuente</dt>
+                <dd>{{ order.contact_source ?? 'sin fuente' }}</dd>
+              </div>
+            </dl>
+            @if (!dashboard.isClosedOrder(order)) {
+              <button
+                type="button"
+                class="secondary"
+                (click)="dashboard.openEditOrder(order, 'credentials')"
+              >
+                Editar acceso al portal
+              </button>
+            }
+          </article>
+          <article>
+            <h4>Reglas y prioridad</h4>
+            <dl>
+              <div>
+                <dt>Servicio</dt>
+                <dd>
+                  {{ dashboard.serviceTypeLabel(order) }} ·
+                  {{ dashboard.servicePriceLabel(order) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Prioridad {{ order.priority }}</dt>
+                <dd>{{ dashboard.priorityExplanation(order) }}</dd>
+              </div>
+              <div>
+                <dt>Días permitidos</dt>
+                <dd>{{ dashboard.restrictionDaysLabel(order) }}</dd>
+              </div>
+              <div>
+                <dt>Fechas autorizadas</dt>
+                <dd>{{ dashboard.restrictionTimingLabel(order) }}</dd>
+              </div>
+            </dl>
+            <div class="priority-presets">
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="order.priority === 0 || dashboard.isClosedOrder(order)"
+                (click)="dashboard.setQuickPriority(0)"
+              >
+                Cola normal
+              </button>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.priority === 100 || dashboard.isClosedOrder(order)"
+                (click)="dashboard.setQuickPriority(100)"
+              >
+                Enfoque 100
+              </button>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="order.priority === 200 || dashboard.isClosedOrder(order)"
+                (click)="dashboard.setQuickPriority(200)"
+              >
+                Exclusivo 200
+              </button>
+            </div>
+          </article>
+          <article>
+            <h4>Reserva</h4>
+            <dl>
+              <div>
+                <dt>Estado</dt>
+                <dd>{{ dashboard.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+              </div>
+              <div>
+                <dt>Fecha</dt>
+                <dd>
+                  {{ dashboard.formatDate(order.reservation_date, 'sin fecha') }}
+                  {{ dashboard.formatTime(order.reservation_hour) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Sede</dt>
+                <dd>{{ order.reservation_site ?? 'sin sede' }}</dd>
+              </div>
+            </dl>
+          </article>
+          <article>
+            <h4>Pago y cierre</h4>
+            <dl>
+              <div>
+                <dt>Pago</dt>
+                <dd>{{ dashboard.paymentLabel(order) }} {{ dashboard.paymentAmountLabel(order) }}</dd>
+              </div>
+              <div>
+                <dt>WhatsApp cliente</dt>
+                <dd>
+                  {{ order.whatsapp_message_status ?? 'sin preparar' }}
+                  @if (order.whatsapp_message_sent_at) {
+                    · {{ dashboard.formatDateTime(order.whatsapp_message_sent_at) }}
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Cierre</dt>
+                <dd>{{ dashboard.closureDisplay(order) }}</dd>
+              </div>
+              <div>
+                <dt>Nota</dt>
+                <dd>{{ order.closure_note ?? 'sin nota' }}</dd>
+              </div>
+            </dl>
+          </article>
+          <article class="program-hierarchy">
+            <h4>Jerarquia de tramite</h4>
+            <dl>
+              <div>
+                <dt>Orden padre</dt>
+                <dd>{{ order.parent_order_id ?? 'esta orden es raiz' }}</dd>
+              </div>
+              <div>
+                <dt>Expediente</dt>
+                <dd>{{ order.program_expediente ?? 'sin expediente' }}</dd>
+              </div>
+              <div>
+                <dt>Placa</dt>
+                <dd>{{ order.program_plate ?? 'sin placa' }}</dd>
+              </div>
+              <div>
+                <dt>Subordenes</dt>
+                <dd>{{ dashboard.selectedOrderChildren().length }}</dd>
+              </div>
+            </dl>
+            @if (dashboard.selectedOrderChildren().length) {
+              <ul>
+                @for (child of dashboard.selectedOrderChildren(); track child.order_id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="run-link"
+                      (click)="dashboard.selectOrder(child.order_id)"
+                    >
+                      {{ child.order_id }}
+                    </button>
+                    · {{ dashboard.statusLabel(child.status) }}
+                  </li>
+                }
+              </ul>
+            }
+          </article>
+        </div>
+      </aside>
+    }
+  }
+
+  <div class="order-controls" aria-label="Filtros de ordenes">
+    <div class="quick-filters">
+      @for (filter of dashboard.orderQuickFilters(); track filter.key) {
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="dashboard.orderQuickFilter() === filter.key"
+          (click)="dashboard.setOrderQuickFilter(filter.key)"
+        >
+          {{ filter.label }}
+          <span>{{ filter.count }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="order-tool-row">
+      <label class="filter">
+        Buscar
+        <input
+          name="orderFilter"
+          type="search"
+          [ngModel]="dashboard.orderFilter()"
+          (ngModelChange)="dashboard.setOrderFilter($event)"
+        />
+      </label>
+      <label class="filter">
+        Ordenar
+        <select
+          name="orderSort"
+          [ngModel]="dashboard.orderSortKey()"
+          (ngModelChange)="dashboard.chooseOrderSort($event)"
+        >
+          <option value="queue">Orden real</option>
+          <option value="priority">Prioridad</option>
+          <option value="updated_at">Actualizacion</option>
+          <option value="created_at">Creacion</option>
+          <option value="status">Estado</option>
+          <option value="reservation">Reserva</option>
+          <option value="payment">Pago</option>
+          <option value="closure">Cierre</option>
+          <option value="applicant">Solicitante</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="secondary sort-direction"
+        (click)="dashboard.toggleOrderSortDirection()"
+      >
+        {{ dashboard.orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap order-table-wrap">
+    <table class="responsive-table order-table">
+      <thead>
+        <tr>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('applicant')">
+            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('applicant')">
+              Cliente {{ dashboard.sortIndicator('applicant') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('status')">
+            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('status')">
+              Estado {{ dashboard.sortIndicator('status') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('reservation')">
+            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('reservation')">
+              Reserva {{ dashboard.sortIndicator('reservation') }}
+            </button>
+          </th>
+          <th [attr.aria-sort]="dashboard.orderAriaSort('payment')">
+            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('payment')">
+              Pago {{ dashboard.sortIndicator('payment') }}
+            </button>
+          </th>
+          <th>Reglas de fecha</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of dashboard.paginatedOrders(); track order.order_id) {
+          <tr
+            class="selectable-row"
+            tabindex="0"
+            [attr.data-order-row]="order.order_id"
+            [class.selected-row]="dashboard.selectedOrderId() === order.order_id"
+            (click)="dashboard.selectOrder(order.order_id)"
+            (keydown.enter)="dashboard.selectOrder(order.order_id)"
+            (keydown.space)="$event.preventDefault(); dashboard.selectOrder(order.order_id)"
+          >
+            <td data-label="Cliente">
+              <strong>{{
+                order.applicant_name ?? order.contact_name ?? 'sin nombre'
+              }}</strong>
+              <span>
+                {{ order.document_number_masked }} ·
+                {{ order.contact_source ?? 'sin fuente' }}
+              </span>
+            </td>
+            <td data-label="Estado">
+              <span class="badge {{ dashboard.statusTone(order.status) }}">{{
+                dashboard.orderStatusDisplay(order)
+              }}</span>
+              <span class="badge {{ dashboard.statusTone(order.preflight_status) }}">
+                {{ dashboard.preflightLabel(order) }}
+              </span>
+            </td>
+            <td data-label="Reserva">
+              {{ dashboard.statusLabel(order.reservation_status, 'Pendiente') }}
+              <span>
+                {{ dashboard.formatDate(order.reservation_date) }}
+                {{ dashboard.formatTime(order.reservation_hour) }}
+              </span>
+            </td>
+            <td data-label="Pago">
+              {{ dashboard.paymentLabel(order) }}
+              <span>{{ dashboard.paymentAmountLabel(order) }}</span>
+            </td>
+            <td data-label="Reglas de fecha" class="restriction-cell">
+              <div
+                class="restriction-summary"
+                [class.unrestricted]="!dashboard.hasReservationRestrictions(order)"
+              >
+                <strong>
+                  {{
+                    dashboard.hasReservationRestrictions(order)
+                      ? dashboard.restrictionDaysLabel(order)
+                      : 'Sin reglas'
+                  }}
+                </strong>
+                <span>{{ dashboard.restrictionTimingLabel(order) }}</span>
+              </div>
+            </td>
+            <td data-label="Acciones">
+              <div
+                class="row-actions"
+                [class.button-row]="order.status === 'ready'"
+              >
+                <button
+                  type="button"
+                  class="primary row-main-action"
+                  [disabled]="dashboard.actionBusy()"
+                  (click)="$event.stopPropagation(); dashboard.runRowPrimaryAction(order)"
+                >
+                  {{ dashboard.rowPrimaryActionLabel(order) }}
+                </button>
+                @if (order.status === 'ready') {
+                  <button
+                    type="button"
+                    class="secondary"
+                    [disabled]="dashboard.actionBusy()"
+                    title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+                    (click)="$event.stopPropagation(); dashboard.openManualSessionNow(order, 'diagnostic')"
+                  >
+                    Abrir con medición
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">
+              <app-view-state
+                state="empty"
+                [compact]="true"
+                title="No hay órdenes para mostrar"
+                message="Prueba otro filtro o crea una nueva orden."
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="order-table-footer">
+    <span>
+      {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de {{ dashboard.filteredOrders().length }} resultados ·
+      Página {{ dashboard.currentOrderPage() }} de {{ dashboard.orderTotalPages() }}
+    </span>
+    <label class="filter">
+      Filas por página
+      <select
+        name="orderPageSize"
+        [ngModel]="dashboard.orderPageSize()"
+        (ngModelChange)="dashboard.changeOrderPageSize($event)"
+      >
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </label>
+  </div>
+
+  @if (dashboard.orderTotalPages() > 1) {
+    <nav class="order-pagination" aria-label="Páginas de órdenes">
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="dashboard.currentOrderPage() === 1"
+        (click)="dashboard.goToOrderPage(dashboard.currentOrderPage() - 1)"
+      >
+        Anterior
+      </button>
+      @for (page of dashboard.orderPageNumbers(); track page) {
+        <button
+          type="button"
+          class="page-button"
+          [class.active]="page === dashboard.currentOrderPage()"
+          [attr.aria-current]="page === dashboard.currentOrderPage() ? 'page' : null"
+          [attr.aria-label]="'Página ' + page"
+          (click)="dashboard.goToOrderPage(page)"
+        >
+          {{ page }}
+        </button>
+      }
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="dashboard.currentOrderPage() === dashboard.orderTotalPages()"
+        (click)="dashboard.goToOrderPage(dashboard.currentOrderPage() + 1)"
+      >
+        Siguiente
+      </button>
+    </nav>
+  }
+</section>

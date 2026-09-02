@@ -1,0 +1,51 @@
+{
+  "name": "dashboard",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --proxy-config proxy.conf.cjs",
+    "start:e2e": "ng serve --host 127.0.0.1 --port 4200",
+    "build": "ng build",
+    "test:unit": "ng test --watch=false",
+    "test:e2e": "playwright test",
+    "report:clones": "jscpd src --min-lines 5 --min-tokens 50 --reporters console,json --output ../reports/ci/jscpd --ignore \"**/*.spec.ts\"",
+    "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
+    "watch": "ng build --watch --configuration development"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^20.3.27",
+    "@angular/compiler": "^20.3.27",
+    "@angular/core": "^20.3.27",
+    "@angular/forms": "^20.3.27",
+    "@angular/platform-browser": "^20.3.27",
+    "@angular/router": "^20.3.27",
+    "rxjs": "~7.8.0",
+    "sweetalert2": "^11.26.25",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^20.3.33",
+    "@angular/cli": "^20.3.33",
+    "@angular/compiler-cli": "^20.3.27",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^22.20.1",
+    "jscpd": "^4.3.0",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.7"
+  }
+}

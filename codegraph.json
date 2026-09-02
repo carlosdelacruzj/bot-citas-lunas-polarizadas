@@ -1,0 +1,15 @@
+{
+  "exclude": [
+    ".runtime/",
+    "logs/",
+    "screenshots/",
+    "videos/",
+    "backups/",
+    "docs/history/",
+    "docs/evidence-index.csv",
+    "docs/evidence-summary.md",
+    "reports/",
+    "dashboard/node_modules/",
+    "dashboard/dist/"
+  ]
+}

@@ -1,0 +1,391 @@
+<section class="panel finance-dashboard" aria-labelledby="finance-dashboard-title">
+  <div class="panel-header monthly-header">
+    <div>
+      <p class="eyebrow">Dinero</p>
+      <h2 id="finance-dashboard-title">Ingresos y gastos del mes</h2>
+      <p>Cuánto entró, cuánto salió y cuánto quedó.</p>
+    </div>
+    <div class="finance-header-actions">
+      <label class="filter month-filter">
+        Mes
+        <input
+          name="financeMonth"
+          type="month"
+          [ngModel]="dashboard.selectedMonth()"
+          [disabled]="dashboard.financeLoading()"
+          (ngModelChange)="dashboard.changeMonth($event)"
+        />
+      </label>
+      <button type="button" class="primary" (click)="dashboard.openNewFinanceEntry()">
+        Nuevo movimiento
+      </button>
+    </div>
+  </div>
+
+  @if (dashboard.financeLoading()) {
+    <p class="monthly-loading">Actualizando finanzas...</p>
+  } @else if (dashboard.financeSummary(); as finance) {
+    <div class="monthly-kpis finance-kpis">
+      <article class="monthly-kpi primary-kpi">
+        <span>Ingresos cobrados</span>
+        <strong>{{ dashboard.formatMoney(finance.revenue_collected) }}</strong>
+        <small>Pagos recibidos en el mes</small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Gastos registrados</span>
+        <strong>{{ dashboard.formatMoney(finance.recognized_costs) }}</strong>
+        <small>Gastos usados para calcular el resultado</small>
+      </article>
+      <article class="monthly-kpi" [class.warn-kpi]="!dashboard.financeConversionComplete(finance)">
+        <span>Resultado aproximado</span>
+        <strong>{{ dashboard.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
+        <small>
+          {{
+            dashboard.financeConversionComplete(finance)
+              ? 'Ingresos menos gastos registrados'
+              : finance.unconverted_entries + ' movimientos necesitan revisión'
+          }}
+        </small>
+      </article>
+      <article class="monthly-kpi">
+        <span>Dinero que salió</span>
+        <strong>{{ dashboard.formatMoney(finance.net_cash_outflow) }}</strong>
+        <small>Salida real de efectivo del mes</small>
+      </article>
+    </div>
+
+    @if (!finance.receipt_date_quality.comparison_conclusive) {
+      <p class="notice warn compact-finance-notice" role="status">
+        Este periodo contiene {{ finance.receipt_date_quality.inferred_receipt_count }} recibos
+        históricos por {{ dashboard.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
+        El monto acumulado se conserva, pero sus fechas son inferidas y no permiten una comparación
+        mensual concluyente.
+        @if (finance.receipt_date_quality.exact_since; as cutoff) {
+          Los recibos nuevos son exactos desde {{ dashboard.formatDateTime(cutoff) }}.
+        }
+      </p>
+    }
+
+    <div class="finance-grid">
+      <article class="monthly-card">
+        <div class="monthly-card-header">
+          <div>
+            <h3>¿En qué se gastó?</h3>
+            <p>Distribución de los gastos registrados.</p>
+          </div>
+        </div>
+        @if (finance.by_category.length) {
+          <div class="summary-list finance-category-list">
+            @for (category of finance.by_category; track category.category_code) {
+              <div>
+                <dt>{{ category.category_name }}</dt>
+                <dd>{{ dashboard.formatMoney(category.recognized_cost) }}</dd>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty compact-empty">Todavía no hay costos reconocidos este mes.</p>
+        }
+      </article>
+
+      <article class="monthly-card finance-rule-card" hidden>
+        <div class="monthly-card-header">
+          <div>
+            <h3>Regla de 2Captcha</h3>
+            <p>Evita duplicar el costo.</p>
+          </div>
+        </div>
+        <dl class="summary-list">
+          <div>
+            <dt>Recarga</dt>
+            <dd>Salida de caja y aumento de saldo</dd>
+          </div>
+          <div>
+            <dt>Consumo</dt>
+            <dd>Costo reconocido del periodo</dd>
+          </div>
+        </dl>
+      </article>
+    </div>
+
+    <details class="finance-advanced">
+      <summary>
+        <span>
+          <strong>Datos que necesitan revisión</strong>
+          <small>Abre solo si aparece algo pendiente</small>
+        </span>
+        @if (dashboard.financeQuality(); as quality) {
+          <span class="badge {{ dashboard.financeReviewIssueCount() ? 'warn' : 'good' }}">
+            {{ dashboard.financeReviewIssueCount() }} por revisar
+          </span>
+        }
+      </summary>
+      <div class="finance-advanced-body">
+    <div class="notice neutral finance-completeness-note" role="note">
+      <strong>“Conversión completa” no significa contabilidad completa.</strong>
+      <span>
+        Solo confirma que los movimientos registrados tienen valor en PEN. Este margen no es
+        utilidad neta y no certifica que se hayan capturado todos los costos.
+      </span>
+    </div>
+
+    @if (dashboard.financeQuality(); as quality) {
+      <section class="finance-quality-center" aria-labelledby="finance-quality-title">
+        <div class="monthly-card-header">
+          <div>
+            <p class="eyebrow">Revisión</p>
+            <h3 id="finance-quality-title">Información incompleta o diferente</h3>
+            <p>Corrige estos datos antes de dar el mes por terminado.</p>
+          </div>
+        </div>
+
+        <div class="quality-metrics">
+          <article [class.quality-clear]="(dashboard.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0) === 0">
+            <span>Clientes sin contacto</span>
+            <strong>{{ dashboard.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0 }}</strong>
+            <small>Sin teléfono ni @usuario</small>
+          </article>
+          <article [class.quality-clear]="dashboard.missingAcquisitionSourceOrders() === 0">
+            <span>Clientes sin origen</span>
+            <strong>{{ dashboard.missingAcquisitionSourceOrders() }}</strong>
+            <small>Cohorte de {{ dashboard.selectedMonthLabel() }}</small>
+          </article>
+          <article [class.quality-clear]="quality.data_quality.actual.unconverted_count === 0">
+            <span>Gastos confirmados</span>
+            <strong>{{ quality.data_quality.actual.entry_count }}</strong>
+            <small>{{ quality.data_quality.actual.unconverted_count }} sin conversión</small>
+          </article>
+          <article [class.quality-clear]="quality.data_quality.estimated.entry_count === 0">
+            <span>Gastos aproximados</span>
+            <strong>{{ quality.data_quality.estimated.entry_count }}</strong>
+            <small>Falta confirmar el importe real</small>
+          </article>
+          <article [class.quality-clear]="quality.data_quality.pending.entry_count === 0">
+            <span>Registros incompletos</span>
+            <strong>{{ quality.data_quality.pending.entry_count }}</strong>
+            <small>Deben completarse antes del cierre</small>
+          </article>
+          <article [class.quality-clear]="quality.unreconciled_paid_amount_mismatch_count === 0">
+            <span>Cobros diferentes a lo acordado</span>
+            <strong>{{ quality.unreconciled_paid_amount_mismatch_count }}</strong>
+            <small>Requieren una causa explícita</small>
+          </article>
+        </div>
+
+        @if (quality.unconverted_entries.length) {
+          <article class="quality-list-card">
+            <h4>Registros sin importe en soles</h4>
+            <div class="quality-list">
+              @for (entry of quality.unconverted_entries; track entry.entry_id) {
+                <div>
+                  <span><strong>{{ entry.description }}</strong><small>{{ dashboard.formatDate(entry.occurred_on) }} · {{ entry.amount_original }} {{ entry.currency }} · {{ entry.data_quality }}</small></span>
+                  <button type="button" class="secondary" (click)="dashboard.openEditFinanceEntryById(entry.entry_id)">Completar</button>
+                </div>
+              }
+            </div>
+          </article>
+        }
+
+        @if (quality.paid_amount_mismatches.length) {
+          <article class="quality-list-card">
+            <h4>Cobros que no coinciden con lo acordado</h4>
+            <p>Indica por qué cambió el importe.</p>
+            <div class="quality-list mismatch-list">
+              @for (item of quality.paid_amount_mismatches; track item.payment_id) {
+                <div class="mismatch-item">
+                  <div class="mismatch-summary">
+                    <span>
+                      <strong>{{ item.order_id }}</strong>
+                      <small>
+                        Acordado {{ dashboard.formatMoney(item.amount_agreed ?? 0) }} · Cobrado
+                        {{ dashboard.formatMoney(item.amount_paid ?? 0) }} · Diferencia
+                        {{ dashboard.formatMoney(item.difference ?? 0) }}
+                      </small>
+                    </span>
+                    @if (item.reconciliation; as reconciliation) {
+                      <span class="badge good">{{ dashboard.financeResolutionLabel(reconciliation.resolution_type) }} · conciliado</span>
+                    } @else if (dashboard.financeMismatchPaymentId() !== item.payment_id) {
+                      <button type="button" class="secondary" (click)="dashboard.startFinanceMismatchResolution(item.payment_id)">Explicar diferencia</button>
+                    }
+                  </div>
+                  @if (!item.reconciliation && dashboard.financeMismatchPaymentId() === item.payment_id) {
+                    <div class="mismatch-form">
+                      <label>Causa explícita
+                        <select [ngModel]="dashboard.financeMismatchResolution()" (ngModelChange)="dashboard.financeMismatchResolution.set($event)">
+                          <option value="discount">Descuento</option>
+                          <option value="waiver">Condonación</option>
+                          <option value="correction">Corrección</option>
+                        </select>
+                      </label>
+                      <label>Motivo
+                        <input type="text" [ngModel]="dashboard.financeMismatchReason()" (ngModelChange)="dashboard.financeMismatchReason.set($event)" placeholder="Explica la decisión" />
+                      </label>
+                      <small>El responsable se toma de la sesión autenticada.</small>
+                      <div class="quality-actions">
+                        <button type="button" class="secondary" (click)="dashboard.cancelFinanceMismatchResolution()">Cancelar</button>
+                        <button type="button" class="primary" [disabled]="dashboard.actionBusy()" (click)="dashboard.requestReconcileFinancePayment(item.payment_id)">Guardar explicación</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    }
+
+    @if (dashboard.financeMonthClosure(); as monthClosure) {
+      <section class="finance-month-closure" aria-labelledby="finance-closure-title">
+        <div class="monthly-card-header">
+          <div>
+            <p class="eyebrow">Terminar el mes</p>
+            <h3 id="finance-closure-title">Comprobar el saldo de 2Captcha</h3>
+            <p>Indica con cuánto empezó y terminó el saldo.</p>
+          </div>
+          <span class="badge {{ monthClosure.closure?.status === 'reconciled' ? 'good' : 'warn' }}">
+            {{ monthClosure.closure?.status === 'reconciled' ? 'Conciliado' : 'Borrador' }}
+          </span>
+        </div>
+
+        <dl class="closure-movements">
+          <div><dt>Recargas</dt><dd>{{ dashboard.formatMoney(monthClosure.movements.prepaid_topups) }}</dd></div>
+          <div><dt>Consumo</dt><dd>{{ dashboard.formatMoney(monthClosure.movements.prepaid_consumption) }}</dd></div>
+          <div><dt>Reembolsos</dt><dd>{{ dashboard.formatMoney(monthClosure.movements.refunds) }}</dd></div>
+          <div><dt>Estimados / pendientes</dt><dd>{{ monthClosure.movements.estimated_entries }} / {{ monthClosure.movements.pending_entries }}</dd></div>
+        </dl>
+
+        <div class="closure-form">
+          <label>Saldo inicial
+            <input type="number" min="0" step="0.01" [ngModel]="dashboard.financeClosureOpeningBalance()" (ngModelChange)="dashboard.financeClosureOpeningBalance.set($event)" />
+          </label>
+          <label>Saldo final observado
+            <input type="number" min="0" step="0.01" [ngModel]="dashboard.financeClosureClosingBalance()" (ngModelChange)="dashboard.financeClosureClosingBalance.set($event)" />
+          </label>
+          <small>El responsable del cierre se toma de la sesión autenticada.</small>
+          <label class="closure-notes">Notas
+            <textarea rows="2" [ngModel]="dashboard.financeClosureNotes()" (ngModelChange)="dashboard.financeClosureNotes.set($event)"></textarea>
+          </label>
+        </div>
+
+        <div class="closure-balance-line">
+          <span>Saldo final esperado</span>
+          <strong>{{ monthClosure.expected_closing_prepaid_balance === null ? 'Completa el saldo inicial' : dashboard.formatMoney(monthClosure.expected_closing_prepaid_balance) }}</strong>
+          <span>Diferencia observada</span>
+          <strong>{{ monthClosure.balance_difference === null ? 'Pendiente' : dashboard.formatMoney(monthClosure.balance_difference) }}</strong>
+        </div>
+
+        @if (!dashboard.financeClosureCanReconcile()) {
+          <p class="notice warn compact-finance-notice">
+            @if (!dashboard.financeSelectedMonthIsClosed()) {
+              Este mes todavía no terminó. Puedes guardar los datos y completarlos al finalizar.
+            } @else {
+              Aún faltan importes o explicaciones antes de terminar el mes.
+            }
+          </p>
+        }
+        <div class="quality-actions closure-actions">
+          <button type="button" class="secondary" [disabled]="dashboard.actionBusy()" (click)="dashboard.requestSaveFinanceMonthClosure('draft')">Guardar borrador</button>
+          <button type="button" class="primary" [disabled]="dashboard.actionBusy() || !dashboard.financeClosureCanReconcile()" (click)="dashboard.requestSaveFinanceMonthClosure('reconciled')">Terminar mes</button>
+        </div>
+        @if (monthClosure.closure?.reconciled_at) {
+          <small class="closure-audit">Conciliado por {{ monthClosure.closure?.reconciled_by }} · {{ dashboard.formatDateTime(monthClosure.closure?.reconciled_at) }}</small>
+        }
+      </section>
+    }
+      </div>
+    </details>
+
+    <details class="monthly-card finance-ledger finance-movements">
+      <summary>
+        <span>
+          <strong>Ver movimientos registrados</strong>
+          <small>{{ dashboard.financeEntries().length }} movimientos en este mes</small>
+        </span>
+      </summary>
+      <div class="finance-movements-body">
+      <div class="monthly-card-header">
+        <div>
+          <h3>Movimientos</h3>
+          <p>Aquí puedes editar o anular un registro.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="responsive-table finance-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Categoría / detalle</th>
+              <th>Importe</th>
+              <th>Valor PEN</th>
+              <th>Calidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of dashboard.financeEntries(); track entry.entry_id) {
+              <tr [class.voided-row]="entry.status === 'voided'">
+                <td data-label="Fecha">{{ dashboard.formatDate(entry.occurred_on) }}</td>
+                <td data-label="Tipo">
+                  <strong>{{ dashboard.financeKindLabel(entry.entry_kind) }}</strong>
+                  <span>{{ entry.status === 'voided' ? 'anulado' : 'activo' }}</span>
+                </td>
+                <td data-label="Detalle">
+                  <strong>{{ entry.category_name ?? entry.category_code }}</strong>
+                  <span>{{ entry.description }}</span>
+                  <span>{{ entry.vendor ?? entry.channel ?? 'sin proveedor/canal' }}</span>
+                </td>
+                <td data-label="Importe">{{ dashboard.formatOriginalMoney(entry) }}</td>
+                <td data-label="Valor PEN">
+                  {{
+                    entry.amount_pen === null
+                      ? 'sin conversión'
+                      : dashboard.formatMoney(entry.amount_pen)
+                  }}
+                </td>
+                <td data-label="Calidad">
+                  <span class="badge {{ dashboard.statusTone(entry.data_quality) }}">
+                    {{ entry.data_quality }}
+                  </span>
+                </td>
+                <td data-label="Acciones" class="finance-actions">
+                  @if (entry.status === 'active') {
+                    <button
+                      type="button"
+                      class="secondary"
+                      (click)="dashboard.openEditFinanceEntry(entry)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="danger"
+                      (click)="dashboard.requestVoidFinanceEntry(entry)"
+                    >
+                      Anular
+                    </button>
+                  } @else {
+                    <small>{{ entry.void_reason }}</small>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">
+                  <app-view-state
+                    state="empty"
+                    [compact]="true"
+                    title="No hay movimientos para este mes"
+                    message="Registra un costo, recarga o ajuste cuando corresponda."
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      </div>
+    </details>
+  }
+</section>

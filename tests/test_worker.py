@@ -1,0 +1,405 @@
+from __future__ import annotations
+
+import tempfile
+import threading
+import time
+import unittest
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+from appointment_bot.core.models import RunReport, ServiceOrderRuntime, WorkerState
+from appointment_bot.db.worker_state import update_worker_state
+from appointment_bot.reservation_engine import observer
+from appointment_bot.worker.continuous_worker import ContinuousWorker
+from appointment_bot.worker.lease import WorkerLease, WorkerLeaseLost
+from tests.helpers import make_settings
+
+
+class ContinuousWorkerTests(unittest.TestCase):
+    def test_unavailable_observer_rotates_without_sweeping_orders(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            worker = ContinuousWorker(settings)
+            worker._worker_lease.owner_token = "owner"
+            worker._worker_lease._lease_deadline = time.monotonic() + 300
+            order = ServiceOrderRuntime(
+                order_id="order-1",
+                name="Order 1",
+                username="12345678",
+                document_type="dni",
+                password="secret",
+                priority=1,
+                status="ready",
+                created_at="2026-06-20T00:00:00+00:00",
+                updated_at="2026-06-20T00:00:00+00:00",
+            )
+            with (
+                patch(
+                    "appointment_bot.worker.continuous_worker.get_worker_state",
+                    return_value=WorkerState(),
+                ),
+                patch(
+                    "appointment_bot.worker.continuous_worker.order_backoff_seconds",
+                    return_value=0,
+                ),
+                patch(
+                    "appointment_bot.worker.continuous_worker.run_service_order",
+                    return_value=RunReport(
+                        status="unavailable",
+                        message="none",
+                        exit_code=0,
+                    ),
+                ) as run_order,
+                patch("appointment_bot.worker.order_results.update_order_state"),
+                patch.object(worker, "_set_session_state"),
+                patch.object(worker, "_record_check"),
+                patch.object(worker, "_reset_errors"),
+                patch.object(worker, "_run_rapid_queue") as sweep,
+            ):
+                queue_requested = worker._monitor_order(order)
+
+            effective_settings = run_order.call_args.args[0]
+            self.assertEqual(
+                effective_settings.monitor_window_seconds,
+                settings.observer_session_seconds,
+            )
+            self.assertEqual(
+                effective_settings.monitor_max_attempts,
+                settings.observer_site_toggle_attempts,
+            )
+            self.assertEqual(
+                effective_settings.monitor_interval_min_seconds,
+                settings.observer_site_toggle_interval_min_seconds,
+            )
+            self.assertEqual(
+                effective_settings.monitor_interval_max_seconds,
+                settings.observer_site_toggle_interval_max_seconds,
+            )
+            self.assertTrue(effective_settings.monitor_site_toggle_enabled)
+            self.assertEqual(
+                effective_settings.monitor_reload_probe_after_attempt,
+                settings.observer_reload_probe_after_attempt,
+            )
+            self.assertTrue(run_order.call_args.kwargs["observer_mode"])
+            self.assertFalse(queue_requested)
+            sweep.assert_not_called()
+
+    def test_observer_collects_five_captcha_samples_with_refresh_between_samples(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = replace(
+                make_settings(Path(directory)),
+                observer_captcha_sample_limit=5,
+            )
+            paths = [Path(directory) / f"captcha-{index}.png" for index in range(5)]
+            next_path = iter(paths)
+            captcha_authority = Mock()
+            captcha_authority.enqueue_prediction.return_value = True
+
+            def save_captcha(
+                _page,
+                _settings,
+                _label,
+                *,
+                captcha_audit,
+                alert_sink=None,
+            ):
+                path = next(next_path)
+                captcha_audit["captcha_original_html_path"] = str(path)
+                captcha_audit["captcha_sent_source"] = "original_html"
+                return path
+
+            with (
+                patch(
+                    "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
+                    side_effect=save_captcha,
+                ) as save_captcha_mock,
+                patch(
+                    "appointment_bot.reservation_engine.observer.refresh_reservation_captcha",
+                    return_value=True,
+                ) as refresh_captcha,
+            ):
+                captured_paths, event_ids = observer._collect_observer_captcha_samples(
+                    object(),
+                    settings,
+                    cancel_event=None,
+                    run_id="run-test",
+                    availability_details={"detection_origin": "observer"},
+                    should_continue=None,
+                    captcha_authority=captcha_authority,
+                )
+
+            self.assertEqual(captured_paths, paths)
+            self.assertEqual(
+                event_ids,
+                [f"run-test:observer:captcha-{index}" for index in range(1, 6)],
+            )
+            self.assertEqual(save_captcha_mock.call_count, 5)
+            self.assertEqual(refresh_captcha.call_count, 4)
+            self.assertEqual(captcha_authority.enqueue_prediction.call_count, 5)
+
+    def test_observer_keeps_available_result_when_captcha_capture_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            captcha_authority = Mock()
+
+            with patch(
+                "appointment_bot.reservation_engine.observer.save_reservation_captcha_image",
+                side_effect=RuntimeError("captcha unavailable"),
+            ):
+                captured_paths, event_ids = observer._collect_observer_captcha_samples(
+                    object(),
+                    settings,
+                    cancel_event=None,
+                    run_id="run-test",
+                    availability_details={},
+                    should_continue=None,
+                    captcha_authority=captcha_authority,
+                )
+
+            self.assertEqual(captured_paths, [])
+            self.assertEqual(event_ids, [])
+
+    def test_health_detects_stalled_worker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            old = (datetime.now(UTC) - timedelta(hours=1)).isoformat(timespec="seconds")
+            worker = ContinuousWorker(settings)
+            worker._running = True
+
+            with patch(
+                "appointment_bot.worker.continuous_worker.get_worker_state",
+                return_value=WorkerState(
+                    phase="monitoring_observer_normal",
+                    last_check_at=old,
+                    session_started_at=old,
+                    updated_at=old,
+                ),
+            ):
+                healthy, reason = worker.health()
+
+            self.assertFalse(healthy)
+            self.assertIn("worker_stalled", reason)
+
+    def test_pause_and_resume_updates_are_serialized(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            worker = ContinuousWorker(make_settings(Path(directory)))
+            pause_entered = threading.Event()
+            release_pause = threading.Event()
+            calls: list[str] = []
+
+            def update_state(**values):
+                calls.append(str(values["phase"]))
+                if values["phase"] == "pausing":
+                    pause_entered.set()
+                    release_pause.wait(timeout=3)
+
+            with patch.object(worker, "_update_state", side_effect=update_state):
+                pause_thread = threading.Thread(target=worker.pause)
+                resume_thread = threading.Thread(target=worker.resume)
+                pause_thread.start()
+                self.assertTrue(pause_entered.wait(timeout=2))
+                resume_thread.start()
+                time.sleep(0.05)
+                self.assertEqual(calls, ["pausing"])
+                release_pause.set()
+                pause_thread.join(timeout=2)
+                resume_thread.join(timeout=2)
+
+            self.assertEqual(calls, ["pausing", "starting"])
+
+    def test_resume_refreshes_health_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            worker = ContinuousWorker(make_settings(Path(directory)))
+            captured: dict[str, object] = {}
+
+            def update_state(**values):
+                captured.update(values)
+
+            with patch.object(worker, "_update_state", side_effect=update_state):
+                worker.resume()
+
+            self.assertEqual(captured["phase"], "starting")
+            self.assertIsNotNone(captured["last_check_at"])
+
+    def test_worker_startup_refreshes_health_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            worker = ContinuousWorker(settings)
+            worker.stop()
+
+            with patch(
+                "appointment_bot.worker.continuous_worker.update_worker_state",
+                wraps=update_worker_state,
+            ) as update:
+                worker.run_forever()
+
+            startup_calls = [
+                call.kwargs
+                for call in update.call_args_list
+                if call.kwargs.get("phase") == "starting"
+            ]
+            self.assertTrue(startup_calls)
+            self.assertIsNotNone(startup_calls[0]["last_check_at"])
+
+    def test_global_lease_loss_cancels_and_stops_new_admission(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            worker = ContinuousWorker(make_settings(Path(directory)))
+
+            worker._on_worker_lease_lost()
+
+            self.assertEqual(worker.shutdown_reason, "lease_lost")
+            self.assertTrue(worker._cancel_event.is_set())
+            self.assertTrue(worker._stop_event.is_set())
+
+
+class WorkerLeaseHeartbeatTests(unittest.TestCase):
+    def test_heartbeat_renews_during_a_simulated_six_minute_block(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            enough_renewals = threading.Event()
+
+            def renew(*_args, **_kwargs):
+                clock[0] += 61.0
+                if clock[0] > 5 * 60:
+                    enough_renewals.set()
+                return True
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                lease_seconds=5 * 60,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch(
+                    "appointment_bot.worker.lease.renew_worker_lease",
+                    side_effect=renew,
+                ) as renew_mock,
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(enough_renewals.wait(timeout=2))
+                lease.ensure_owned()
+                lease.release()
+
+            self.assertGreaterEqual(renew_mock.call_count, 5)
+            self.assertFalse(lease.lost)
+
+    def test_transient_database_failure_recovers_before_local_expiry(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            recovered = threading.Event()
+            attempts = 0
+
+            def renew(*_args, **_kwargs):
+                nonlocal attempts
+                attempts += 1
+                clock[0] += 30.0
+                if attempts == 1:
+                    raise ConnectionError("postgres temporarily unavailable")
+                recovered.set()
+                return True
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                lease_seconds=5 * 60,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", side_effect=renew),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(recovered.wait(timeout=2))
+                lease.ensure_owned()
+                lease.release()
+
+            self.assertEqual(attempts, 2)
+            self.assertFalse(lease.lost)
+
+    def test_definitive_lease_loss_notifies_and_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            lost = threading.Event()
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", return_value=False),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(lost.wait(timeout=2))
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lease.lost)
+
+    def test_database_outage_past_local_expiry_marks_lease_lost(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            lost = threading.Event()
+
+            def renew(*_args, **_kwargs):
+                clock[0] = 301.0
+                raise ConnectionError("postgres unavailable past lease expiry")
+
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                lease_seconds=300,
+                renew_interval_seconds=0.001,
+                retry_interval_seconds=0.001,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.renew_worker_lease", side_effect=renew),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                self.assertTrue(lost.wait(timeout=2))
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lease.lost)
+
+    def test_local_expiry_fails_closed_before_the_next_heartbeat(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            clock = [0.0]
+            lost = threading.Event()
+            lease = WorkerLease(
+                make_settings(Path(directory)),
+                on_lost=lost.set,
+                lease_seconds=300,
+                renew_interval_seconds=600,
+                monotonic=lambda: clock[0],
+            )
+            with (
+                patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
+                patch("appointment_bot.worker.lease.release_worker_lease"),
+            ):
+                self.assertTrue(lease.acquire())
+                clock[0] = 300.0
+                with self.assertRaises(WorkerLeaseLost):
+                    lease.ensure_owned()
+                lease.release()
+
+            self.assertTrue(lost.is_set())
+            self.assertTrue(lease.lost)
+
+
+if __name__ == "__main__":
+    unittest.main()

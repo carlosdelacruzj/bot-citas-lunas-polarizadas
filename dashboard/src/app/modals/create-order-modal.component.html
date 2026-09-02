@@ -1,0 +1,213 @@
+@if (view.activeModal() === 'create-order') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-order-title"
+  >
+    <div class="modal wide-modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="create-order-title">Nueva orden</h2>
+          <p>Alta operativa de cliente</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          (click)="view.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div class="form-grid wide">
+        <label>
+          Tipo de documento <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="newDocumentType"
+            required
+            [ngModel]="view.newDocumentType()"
+            (ngModelChange)="view.editField(view.newDocumentType, $event)"
+          >
+            <option value="dni">DNI</option>
+            <option value="foreign_resident_card">Carné de Extranjería</option>
+          </select>
+        </label>
+        <label>
+          Usuario o documento <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newDocumentNumber"
+            type="text"
+            autocomplete="off"
+            required
+            [attr.aria-invalid]="!view.newDocumentNumber().trim() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newDocumentNumber()"
+            (ngModelChange)="view.editField(view.newDocumentNumber, $event)"
+          />
+        </label>
+        <label>
+          Contraseña <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newPassword"
+            type="password"
+            autocomplete="new-password"
+            required
+            [attr.aria-invalid]="!view.newPassword() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newPassword()"
+            (ngModelChange)="view.editField(view.newPassword, $event)"
+          />
+        </label>
+        <label>
+          Persona de contacto <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="newContactName"
+            type="text"
+            required
+            [attr.aria-invalid]="!view.newContactName().trim() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newContactName()"
+            (ngModelChange)="view.editField(view.newContactName, $event)"
+          />
+        </label>
+        <label>
+          Número de WhatsApp (opcional)
+          <input
+            name="newContactWhatsapp"
+            type="text"
+            [ngModel]="view.newContactWhatsapp()"
+            (ngModelChange)="view.editField(view.newContactWhatsapp, $event)"
+          />
+        </label>
+        <label>
+          Usuario de WhatsApp (opcional)
+          <input
+            name="newContactWhatsappUsername"
+            type="text"
+            placeholder="@usuario"
+            [ngModel]="view.newContactWhatsappUsername()"
+            (ngModelChange)="view.editField(view.newContactWhatsappUsername, $event)"
+          />
+          <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
+        </label>
+        <label>
+          Fuente <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="newContactSource"
+            required
+            [attr.aria-invalid]="!view.newContactSource() && view.formDirty()"
+            aria-describedby="create-required-help dashboard-error"
+            [ngModel]="view.newContactSource()"
+            (ngModelChange)="view.editField(view.newContactSource, $event)"
+          >
+            <option value="">Selecciona una fuente</option>
+            <option value="tiktok">TikTok</option>
+            <option value="facebook">Facebook</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
+        </label>
+      </div>
+      <p id="create-required-help" class="required-help">
+        Los campos marcados con * son obligatorios.
+      </p>
+      <p class="required-help">
+        Al crearla, la orden quedara pausada mientras el sistema comprueba el acceso, obtiene el
+        nombre real y confirma los programas pendientes. Solo entonces entrara a la cola.
+      </p>
+
+      <fieldset class="restriction-fields">
+        <legend>Servicio y precio</legend>
+        <div class="form-grid wide">
+          <label>
+            Tipo de servicio <span class="required-marker" aria-hidden="true">*</span>
+            <select
+              name="newServicePackage"
+              required
+              [ngModel]="view.newServicePackage()"
+              (ngModelChange)="view.editField(view.newServicePackage, $event)"
+            >
+              @for (servicePackage of view.servicePackages(); track servicePackage.key) {
+                <option [ngValue]="servicePackage.key">
+                  {{ view.servicePackageOptionLabel(servicePackage) }}
+                </option>
+              }
+            </select>
+          </label>
+          @if (view.newServicePackageDefinition()?.fixed_price === false) {
+            <label>
+              Precio acordado (S/) <span class="required-marker" aria-hidden="true">*</span>
+              <input
+                name="newCustomReservationPrice"
+                type="number"
+                min="0.01"
+                max="99999.99"
+                step="0.01"
+                required
+                [ngModel]="view.newCustomReservationPrice()"
+                (ngModelChange)="view.editField(view.newCustomReservationPrice, $event)"
+              />
+            </label>
+          }
+        </div>
+        @if (view.newServicePackageDefinition()?.requires_restrictions) {
+          <p class="required-help">
+            Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
+            disponibilidad acordada. El precio queda fijado en
+            {{ view.formatMoney(+(view.newServicePackageDefinition()?.total_amount || 0)) }}.
+          </p>
+        }
+        @if (view.newServicePackage() === 'integral' && view.newServicePackageDefinition(); as servicePackage) {
+          <p class="required-help">
+            Al crear la orden confirmas que recibiste el primer abono de
+            {{ view.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
+            oficial de {{ view.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
+            registrará ambos movimientos y dejará
+            {{ view.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
+          </p>
+          <dl class="payment-summary">
+            <div><dt>Total</dt><dd>{{ view.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
+            <div><dt>Tasa oficial</dt><dd>{{ view.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
+            <div><dt>Gestión</dt><dd>{{ view.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
+          </dl>
+        }
+      </fieldset>
+
+      <fieldset class="restriction-fields">
+        <legend>Restricción de fechas (opcional)</legend>
+        <p>
+          {{
+            view.newServicePackageDefinition()?.requires_restrictions
+              ? 'Configura obligatoriamente el periodo y las exclusiones acordadas.'
+              : 'Déjalo vacío para buscar cualquier fecha disponible.'
+          }}
+        </p>
+        <app-reservation-rules-editor
+          controlPrefix="new"
+          [minimumDate]="view.newMinimumReservationDate()"
+          [maximumDate]="view.newMaximumReservationDate()"
+          [allowedWeekdays]="view.newAllowedWeekdays()"
+          [excludedDateRanges]="view.newExcludedDateRanges()"
+          [excludedDateStart]="view.newExcludedDateStart()"
+          [excludedDateEnd]="view.newExcludedDateEnd()"
+          (minimumDateChange)="view.editField(view.newMinimumReservationDate, $event)"
+          (maximumDateChange)="view.editField(view.newMaximumReservationDate, $event)"
+          (allowedWeekdaysChange)="view.editField(view.newAllowedWeekdays, $event)"
+          (excludedDateStartChange)="view.editField(view.newExcludedDateStart, $event)"
+          (excludedDateEndChange)="view.editField(view.newExcludedDateEnd, $event)"
+          (addExcludedDateRange)="view.addNewExcludedDateRange()"
+          (removeExcludedDateRange)="view.removeNewExcludedDateRange($event)"
+          (clearExcludedDateRanges)="view.clearNewExcludedDateRanges()"
+        />
+      </fieldset>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
+        <button type="button" class="primary" (click)="view.requestCreateOrder()">
+          Crear orden
+        </button>
+      </div>
+    </div>
+  </section>
+}

@@ -1,0 +1,403 @@
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+from typing import Any
+from zoneinfo import ZoneInfo
+
+from playwright.sync_api import Page
+
+from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AVAILABLE_TEXTS,
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    SITE_SELECTOR,
+    UNAVAILABLE_TEXTS,
+    AppointmentSnapshot,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    has_real_options,
+    is_real_appointment_option,
+    read_appointment_snapshot,
+)
+from appointment_bot.reservation_engine.appointment_fetch_probe import (
+    read_fetch_probe_appointment_snapshot,
+)
+
+logger = logging.getLogger(__name__)
+LIMA_TZ = ZoneInfo("America/Lima")
+
+
+def read_appointment_availability(
+    page: Page,
+    *,
+    include_person: bool = True,
+    timeout: int = 30_000,
+) -> AvailabilityResult:
+    logger.debug("Checking appointment availability")
+    page.wait_for_load_state("domcontentloaded", timeout=timeout)
+
+    snapshot = read_stable_appointment_snapshot(page)
+    result = availability_result_from_snapshot(
+        page,
+        snapshot,
+        include_person=include_person,
+    )
+    if result.status == "partial":
+        logger.info("Partial availability detected; rechecking before notifying")
+        page.wait_for_timeout(1_500)
+        snapshot = read_stable_appointment_snapshot(page)
+        result = availability_result_from_snapshot(
+            page,
+            snapshot,
+            include_person=include_person,
+        )
+
+    result = apply_fetch_probe_if_needed(page, result, include_person=include_person)
+
+    details = snapshot_details(snapshot, include_person=False)
+    details.update(_read_site_refresh_evidence(page))
+    if details:
+        result_details = dict(result.details or {})
+        result_details.update(
+            {
+                key: value
+                for key, value in details.items()
+                if key.startswith("site_refresh_")
+            }
+        )
+        result = AvailabilityResult(result.status, result.message, result_details)
+    logger.info(
+        "Appointment summary: site=%s date=%s hour=%s",
+        (result.details or details).get("sede", "unknown"),
+        (result.details or details).get("fecha", "unknown"),
+        (result.details or details).get("hora", "unknown"),
+    )
+    return result
+
+
+def apply_fetch_probe_if_needed(
+    page: Page,
+    result: AvailabilityResult,
+    *,
+    include_person: bool,
+) -> AvailabilityResult:
+    if result.status == "available":
+        return result
+
+    fetch_snapshot = read_fetch_probe_appointment_snapshot(page)
+    if fetch_snapshot is None:
+        return result
+
+    fetch_result = availability_result_from_snapshot(
+        page,
+        fetch_snapshot,
+        include_person=include_person,
+    )
+    if fetch_result.status not in {"available", "partial"}:
+        return result
+
+    details = dict(fetch_result.details or {})
+    details["fetch_probe"] = True
+    details["modal_must_remain_open"] = True
+    return AvailabilityResult(
+        status=fetch_result.status,
+        message=(
+            f"{fetch_result.message} "
+            "La disponibilidad fue detectada por consulta directa al formulario."
+        ),
+        details=details,
+    )
+
+
+def availability_result_from_snapshot(
+    page: Page,
+    snapshot,
+    *,
+    include_person: bool = True,
+) -> AvailabilityResult:
+    date_options = snapshot.date_options
+    hour_options = snapshot.hour_options
+    details = snapshot_details(snapshot, include_person=include_person)
+    has_date_options = _has_real_options(date_options)
+    has_hour_options = _has_real_options(hour_options)
+
+    if has_date_options and has_hour_options:
+        return AvailabilityResult(
+            status="available",
+            message="Se detectaron opciones seleccionables de fecha y hora.",
+            details=details,
+        )
+
+    if has_date_options and not has_hour_options:
+        if _only_non_actionable_dates(date_options):
+            details["blocked_by_current_day"] = True
+            return AvailabilityResult(
+                status="unavailable",
+                message=(
+                    "El portal solo muestra fechas del dia actual o anteriores "
+                    "sin una hora seleccionable."
+                ),
+                details=details,
+            )
+        return AvailabilityResult(
+            status="partial",
+            message="Se detecto fecha disponible, pero aun no hay hora seleccionable.",
+            details=details,
+        )
+
+    if has_hour_options and not has_date_options:
+        return AvailabilityResult(
+            status="partial",
+            message="Se detecto hora disponible, pero no se detecto fecha seleccionable.",
+            details=details,
+        )
+
+    if _only_no_slots(date_options) and _only_no_slots(hour_options):
+        return AvailabilityResult(
+            status="unavailable",
+            message="La pagina muestra 'Sin Cupos' en fecha y hora.",
+            details=details,
+        )
+
+    content = page.locator("body").inner_text(timeout=15_000).lower()
+
+    if any(text in content for text in AVAILABLE_TEXTS):
+        return AvailabilityResult(
+            status="partial",
+            message=(
+                "Se detecto texto compatible con cupo disponible, "
+                "pero no hay fecha y hora seleccionables."
+            ),
+            details=details,
+        )
+
+    if any(text in content for text in UNAVAILABLE_TEXTS):
+        return AvailabilityResult(
+            status="unavailable",
+            message="Se detecto texto compatible con falta de cupos.",
+            details=details,
+        )
+
+    return AvailabilityResult(
+        status="unknown",
+        message=(
+            "No se pudo determinar la disponibilidad con los textos actuales. "
+            "Ajusta AVAILABLE_TEXTS o UNAVAILABLE_TEXTS en flows/appointments.py."
+        ),
+        details=details,
+    )
+
+
+def read_stable_appointment_snapshot(page: Page) -> object:
+    previous_snapshot = None
+    current_snapshot = None
+    for attempt in range(1, 5):
+        current_snapshot = read_appointment_snapshot(page)
+        logger.debug(
+            "Appointment snapshot %s: %s",
+            attempt,
+            snapshot_details(current_snapshot, include_person=False),
+        )
+        logger.debug("Date options: %s", current_snapshot.date_options)
+        logger.debug("Hour options: %s", current_snapshot.hour_options)
+
+        if (
+            previous_snapshot is not None
+            and current_snapshot.signature() == previous_snapshot.signature()
+        ):
+            return current_snapshot
+
+        previous_snapshot = current_snapshot
+        page.wait_for_timeout(750)
+
+    if current_snapshot is None:
+        raise RuntimeError("Could not read appointment availability controls.")
+    return current_snapshot
+
+
+def read_atomic_appointment_snapshot(page: Page):
+    payload = page.evaluate(
+        """selectors => {
+            const text = value => (value || "").trim();
+            const key = value => text(value).toLowerCase();
+            const selectState = selector => {
+                const element = document.querySelector(selector);
+                if (!element) return { options: [], selected: "" };
+                const selected = element.options[element.selectedIndex];
+                return {
+                    options: Array.from(element.options).map(option => text(option.innerText)),
+                    selected: selected ? text(selected.innerText) : "",
+                };
+            };
+            const readSlots = () => {
+                const directLabel = document.getElementById("MainContent_idUcitas_lblcupos");
+                if (directLabel && text(directLabel.textContent)) {
+                    return text(directLabel.textContent);
+                }
+                const directInput = Array.from(document.querySelectorAll("input")).find(input => {
+                    const inputKey = key(`${input.id} ${input.name}`);
+                    return inputKey.includes("cupo") && text(input.value);
+                });
+                if (directInput) return text(directInput.value);
+                const labels = Array.from(document.querySelectorAll("label, span, th, td, div"));
+                const cuposLabel = labels.find(element => key(element.innerText) === "cupos");
+                if (!cuposLabel) return "";
+                const container = cuposLabel.closest("tr, .row, div, fieldset, table")
+                    || document.body;
+                const nearbyInput = Array.from(container.querySelectorAll("input"))
+                    .find(input => text(input.value));
+                if (nearbyInput) return text(nearbyInput.value);
+                return Array.from(container.querySelectorAll("span, label, div, td"))
+                    .map(element => text(element.textContent))
+                    .find(value => /^\\d+$/.test(value)) || "";
+            };
+            const readPerson = () => {
+                const visibleValue = element => {
+                    const value = text(element.value || element.innerText || element.textContent);
+                    return value && value.length <= 120 ? value : "";
+                };
+                const controls = Array.from(document.querySelectorAll("input, textarea"))
+                    .filter(element => ![
+                        "hidden", "password", "submit", "button", "image"
+                    ].includes(key(element.type)));
+                const fieldKey = element => key([
+                    element.id,
+                    element.name,
+                    element.placeholder,
+                    element.getAttribute("aria-label"),
+                ].join(" "));
+                const findValue = parts => {
+                    const control = controls.find(element => {
+                        const controlKey = fieldKey(element);
+                        return parts.some(part => controlKey.includes(part))
+                            && visibleValue(element);
+                    });
+                    return control ? visibleValue(control) : "";
+                };
+                const names = findValue(["nombres", "nombre"]);
+                const paternal = findValue(["paterno"]);
+                const maternal = findValue(["materno"]);
+                const surname = findValue(["apellidos", "apellido"]);
+                const controlName = [names, paternal || surname, maternal]
+                    .filter(Boolean).join(" ").replace(/\\s+/g, " ").trim();
+                if (controlName) return controlName;
+                const candidates = Array.from(document.querySelectorAll(
+                    "span, label, td, th, div, strong"
+                ));
+                for (const label of candidates) {
+                    const labelText = key(label.textContent);
+                    if (!labelText.includes("nombre") || labelText.length > 80) continue;
+                    const container = label.closest("tr, .row, fieldset, table, div")
+                        || label.parentElement;
+                    if (!container) continue;
+                    const values = Array.from(container.querySelectorAll(
+                        "input, textarea, span, label, td, th, strong"
+                    )).map(visibleValue).filter(Boolean);
+                    const candidate = values.find(value => {
+                        const normalized = key(value);
+                        return normalized !== labelText
+                            && !normalized.startsWith("nombre")
+                            && /[a-záéíóúñ]/i.test(value);
+                    });
+                    if (candidate) return candidate;
+                }
+                return "";
+            };
+            const site = selectState(selectors.site);
+            const date = selectState(selectors.date);
+            const hour = selectState(selectors.hour);
+            return {
+                siteOptions: site.options,
+                dateOptions: date.options,
+                hourOptions: hour.options,
+                site: site.selected,
+                date: date.selected,
+                hour: hour.selected,
+                slots: readSlots(),
+                personName: readPerson(),
+            };
+        }""",
+        {"site": SITE_SELECTOR, "date": DATE_SELECTOR, "hour": HOUR_SELECTOR},
+    )
+    data = dict(payload or {})
+    return AppointmentSnapshot(
+        site_options=[str(value) for value in data.get("siteOptions") or []],
+        date_options=[str(value) for value in data.get("dateOptions") or []],
+        hour_options=[str(value) for value in data.get("hourOptions") or []],
+        site=str(data.get("site") or ""),
+        date=str(data.get("date") or ""),
+        hour=str(data.get("hour") or ""),
+        slots=str(data.get("slots") or ""),
+        person_name=str(data.get("personName") or ""),
+    )
+
+
+def snapshot_details(
+    snapshot,
+    *,
+    include_person: bool = True,
+) -> dict[str, Any]:
+    details = {
+        "sede": _real_or_selected(snapshot.site, snapshot.site_options),
+        "fecha": _real_or_selected(snapshot.date, snapshot.date_options),
+        "hora": _real_or_selected(snapshot.hour, snapshot.hour_options),
+        "cupos": snapshot.slots,
+        "date_options": snapshot.date_options,
+        "hour_options": snapshot.hour_options,
+    }
+    if include_person:
+        details["nombre"] = snapshot.person_name
+    return {key: value for key, value in details.items() if value}
+
+
+def _real_or_selected(selected: str, options: list[str]) -> str:
+    if selected and _has_real_options([selected]):
+        return selected
+    return next((option for option in options if _has_real_options([option])), selected)
+
+
+def _read_site_refresh_evidence(page: Page) -> dict[str, Any]:
+    from playwright.sync_api import Error as PlaywrightError
+
+    try:
+        data = page.evaluate(
+            """() => ({
+                latest: window.__appointmentBotLastSiteRefresh || null,
+                history: window.__appointmentBotSiteRefreshHistory || [],
+            })"""
+        )
+    except PlaywrightError:
+        return {}
+    payload = dict(data or {})
+    latest = dict(payload.get("latest") or {})
+    latest["site_refresh_history"] = list(payload.get("history") or [])
+    latest["site_refresh_event_count"] = len(latest["site_refresh_history"])
+    return latest
+
+
+def _only_no_slots(options: list[str]) -> bool:
+    return bool(options) and all(option.lower() == "sin cupos" for option in options)
+
+
+def _has_real_options(options: list[str]) -> bool:
+    return has_real_options(options)
+
+
+def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
+    return is_real_appointment_option(option)
+
+
+def _only_non_actionable_dates(options: list[str]) -> bool:
+    real_options = [option for option in options if _is_real_appointment_option(option)]
+    if not real_options:
+        return False
+    today = datetime.now(LIMA_TZ).date()
+    parsed_dates = []
+    for option in real_options:
+        try:
+            parsed_dates.append(datetime.strptime(option.strip(), "%d/%m/%Y").date())
+        except ValueError:
+            return False
+    return all(value <= today for value in parsed_dates)

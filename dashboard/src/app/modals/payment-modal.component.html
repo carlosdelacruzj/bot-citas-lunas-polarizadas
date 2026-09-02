@@ -1,0 +1,104 @@
+@if (view.activeModal() === 'payment') {
+  @if (view.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-title"
+    >
+      <div class="modal compact-modal payment-modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="payment-title">Registrar pago</h2>
+            <p>{{ view.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="view.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <dl class="payment-summary">
+          <div>
+            <dt>Monto acordado</dt>
+            <dd>{{ view.formatMoney(+view.paymentAmountAgreed()) }}</dd>
+          </div>
+          <div>
+            <dt>Registrado hasta ahora</dt>
+            <dd>{{ view.formatMoney(+(order.amount_paid || 0)) }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>
+              {{ view.formatDate(order.reservation_date, 'sin fecha') }}
+              {{ view.formatTime(order.reservation_hour) }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (order.service_package === 'integral') {
+          @if (view.servicePackageDefinition(order.service_package); as servicePackage) {
+            <p class="required-help">
+              Paquete integral: {{ view.formatMoney(+servicePackage.official_fee_amount) }} de tasa
+              oficial y {{ view.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
+              gestión. Registra {{ view.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
+              hayas recibido el segundo abono de
+              {{ view.formatMoney(+(servicePackage.balance_amount || 0)) }}.
+            </p>
+          }
+        }
+
+        <label>
+          Total pagado acumulado
+          <input
+            name="quickPaymentAmount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+            [ngModel]="view.paymentAmountPaid()"
+            (ngModelChange)="view.editField(view.paymentAmountPaid, $event)"
+          />
+        </label>
+        <div class="quick-amounts" aria-label="Montos rápidos">
+          <button type="button" class="secondary" (click)="view.setQuickPaymentAmount('40.00')">
+            S/40
+          </button>
+          @if (view.standardPackageAmount(); as standardAmount) {
+            <button
+              type="button"
+              class="secondary"
+              (click)="view.setQuickPaymentAmount(standardAmount)"
+            >
+              {{ view.formatMoney(+standardAmount) }}
+            </button>
+          }
+          @if (view.paymentAmountAgreed()) {
+            <button
+              type="button"
+              class="secondary"
+              (click)="view.setQuickPaymentAmount(view.paymentAmountAgreed())"
+            >
+              Total acordado
+            </button>
+          }
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="!view.paymentAmountPaid() || view.actionBusy()"
+            (click)="view.requestMarkPaid()"
+          >
+            Registrar total S/{{ view.paymentAmountPaid() || '0.00' }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+}

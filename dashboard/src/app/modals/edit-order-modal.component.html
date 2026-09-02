@@ -1,0 +1,271 @@
+@if (view.activeModal() === 'edit-order') {
+  @if (view.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-order-title"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="edit-order-title">Editar orden</h2>
+            <p>{{ view.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="view.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+          <div>
+            <span>Estado</span>
+            <strong>{{ view.statusLabel(order.status) }}</strong>
+            <small>{{ view.statusLabel(order.reservation_status, 'Sin reserva') }}</small>
+          </div>
+          <div>
+            <span>Contacto actual</span>
+            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+            <small
+              >{{ order.contact_whatsapp_masked ?? order.contact_whatsapp_username_masked ?? 'sin WhatsApp' }} |
+              {{ order.contact_source ?? 'sin fuente' }}</small
+            >
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>{{ view.paymentLabel(order) }}</strong>
+            <small>{{
+              order.charge_required
+                ? (order.amount_paid ?? '0.00') +
+                  ' / ' +
+                  (order.amount_agreed ?? 'sin acordado')
+                : 'no requiere pago'
+            }}</small>
+          </div>
+        </section>
+
+        <div class="modal-grid">
+          @if (view.editOrderSection() === 'program-resolution') {
+            <app-program-resolution-panel [order]="order" />
+          }
+
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'contact') {
+            <section class="admin-block action-card">
+              <h3>Contacto</h3>
+              @if (view.orderDetailLoading()) {
+                <p class="muted">Cargando detalle protegido...</p>
+              }
+              <div class="form-grid">
+                <label>
+                  Nombre
+                  <input
+                    name="modalContactName"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactName()"
+                    (ngModelChange)="view.editField(view.contactName, $event)"
+                  />
+                </label>
+                <label>
+                  WhatsApp
+                  <input
+                    name="modalContactWhatsapp"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [placeholder]="view.selectedOrderWhatsappPlaceholder()"
+                    [ngModel]="view.contactWhatsapp()"
+                    (ngModelChange)="view.editField(view.contactWhatsapp, $event)"
+                  />
+                </label>
+                <label>
+                  Usuario de WhatsApp
+                  <input
+                    name="modalContactWhatsappUsername"
+                    type="text"
+                    placeholder="@usuario"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactWhatsappUsername()"
+                    (ngModelChange)="view.editField(view.contactWhatsappUsername, $event)"
+                  />
+                  <small>El numero tiene prioridad cuando ambos estan registrados.</small>
+                </label>
+                <label>
+                  Fuente
+                  <input
+                    name="modalContactSource"
+                    type="text"
+                    [disabled]="view.orderDetailLoading()"
+                    [ngModel]="view.contactSource()"
+                    (ngModelChange)="view.editField(view.contactSource, $event)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.orderDetailLoading()"
+                (click)="view.requestContactUpdate()"
+              >
+                Guardar contacto
+              </button>
+            </section>
+          }
+
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'credentials') {
+            <section class="admin-block action-card credential-card">
+              <div class="credential-card-heading">
+                <div>
+                  <h3>Acceso al portal</h3>
+                  <p class="muted">Corrige el usuario o reemplaza la contraseña.</p>
+                </div>
+                <span class="badge {{ view.statusTone(order.preflight_status) }}">
+                  {{ view.statusLabel(order.preflight_status) }}
+                </span>
+              </div>
+              @if (view.orderDetailLoading()) {
+                <p class="muted">Cargando acceso protegido...</p>
+              }
+              <div class="form-grid credential-form">
+                <label>
+                  Tipo de documento
+                  <select
+                    name="modalOrderDocumentType"
+                    [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                    [ngModel]="view.orderDocumentType()"
+                    (ngModelChange)="view.editField(view.orderDocumentType, $event)"
+                  >
+                    <option value="dni">DNI</option>
+                    <option value="foreign_resident_card">Carné de Extranjería</option>
+                  </select>
+                </label>
+                <label>
+                  Usuario o documento
+                  <input
+                    name="modalOrderDocumentNumber"
+                    type="text"
+                    autocomplete="off"
+                    required
+                    [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                    [ngModel]="view.orderDocumentNumber()"
+                    (ngModelChange)="view.editField(view.orderDocumentNumber, $event)"
+                    aria-describedby="credentials-help dashboard-error"
+                  />
+                </label>
+                <label class="credential-password-field">
+                  Nueva contraseña
+                  <span class="credential-password-control">
+                    <input
+                      name="modalOrderPassword"
+                      [type]="view.orderPasswordVisible() ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      required
+                      [disabled]="view.orderDetailLoading() || view.isClosedOrder(order)"
+                      [ngModel]="view.orderPassword()"
+                      (ngModelChange)="view.editField(view.orderPassword, $event)"
+                      aria-describedby="credentials-help dashboard-error"
+                    />
+                    <button
+                      type="button"
+                      class="secondary credential-password-toggle"
+                      [disabled]="!view.orderPassword()"
+                      (click)="view.toggleOrderPasswordVisibility()"
+                    >
+                      {{ view.orderPasswordVisible() ? 'Ocultar' : 'Mostrar' }}
+                    </button>
+                  </span>
+                </label>
+              </div>
+              <p id="credentials-help" class="credential-help">
+                La contraseña actual nunca se muestra. Después de guardar, la cuenta permanecerá
+                pausada hasta que el portal valide el nuevo acceso.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="
+                  view.orderDetailLoading() ||
+                  view.isClosedOrder(order) ||
+                  !view.orderDocumentNumber().trim() ||
+                  !view.orderPassword()
+                "
+                (click)="view.requestCredentialsUpdate()"
+              >
+                Guardar y validar acceso
+              </button>
+            </section>
+          }
+
+          @if (view.editOrderSection() === 'all' || view.editOrderSection() === 'restrictions') {
+            <section class="admin-block action-card">
+              <h3>Reglas de reserva</h3>
+              <app-reservation-rules-editor
+                controlPrefix="modal"
+                [disabled]="view.isClosedOrder(order)"
+                [minimumDate]="view.orderMinimumReservationDate()"
+                [maximumDate]="view.orderMaximumReservationDate()"
+                [allowedWeekdays]="view.orderAllowedWeekdays()"
+                [excludedDateRanges]="view.orderExcludedDateRanges()"
+                [excludedDateStart]="view.orderExcludedDateStart()"
+                [excludedDateEnd]="view.orderExcludedDateEnd()"
+                (minimumDateChange)="view.editField(view.orderMinimumReservationDate, $event)"
+                (maximumDateChange)="view.editField(view.orderMaximumReservationDate, $event)"
+                (allowedWeekdaysChange)="view.editField(view.orderAllowedWeekdays, $event)"
+                (excludedDateStartChange)="view.editField(view.orderExcludedDateStart, $event)"
+                (excludedDateEndChange)="view.editField(view.orderExcludedDateEnd, $event)"
+                (addExcludedDateRange)="view.addOrderExcludedDateRange()"
+                (removeExcludedDateRange)="view.removeOrderExcludedDateRange($event)"
+                (clearExcludedDateRanges)="view.clearOrderExcludedDateRanges()"
+              />
+              <p class="muted">
+                Deja un campo vacío para quitar esa regla. Los cambios se aplican en la
+                siguiente selección de la cola.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.isClosedOrder(order)"
+                (click)="view.requestReservationRestrictionsUpdate()"
+              >
+                Continuar para guardar reglas
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Prioridad de búsqueda</h3>
+              <label>
+                Prioridad
+                <input
+                  name="modalOrderPriority"
+                  type="number"
+                  min="0"
+                  step="1"
+                  [disabled]="view.isClosedOrder(order)"
+                  [ngModel]="view.orderPriority()"
+                  (ngModelChange)="view.editField(view.orderPriority, $event)"
+                />
+              </label>
+              <p class="muted">
+                0–99 mantiene la cola normal. 100–199 activa el enfoque prioritario.
+                200 activa el enfoque exclusivo: solo se revisará esa orden y cualquier
+                exclusivo anterior volverá a prioridad 100.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="view.isClosedOrder(order) || view.orderPriority() === order.priority"
+                (click)="view.requestPriorityUpdate()"
+              >
+                Continuar para guardar prioridad
+              </button>
+            </section>
+          }
+        </div>
+      </div>
+    </section>
+  }
+}

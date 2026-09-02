@@ -1,0 +1,793 @@
+from __future__ import annotations
+
+import re
+from dataclasses import asdict
+from decimal import Decimal, InvalidOperation
+from http import HTTPStatus
+from typing import Any
+from urllib.parse import unquote
+
+from appointment_bot.core.contacts import ContactValidationError
+from appointment_bot.db.orders import (
+    ProgramResolutionConflict,
+    ProgramResolutionNotFound,
+    add_or_update_service_order_contact,
+    close_service_order,
+    get_service_order_runtime,
+    has_active_child_service_orders,
+    list_service_order_summaries,
+    mark_order_done,
+    mark_service_order_no_charge,
+    resolve_service_order_programs,
+    set_order_paused,
+    split_service_order_programs,
+    update_service_order_credentials,
+    update_service_order_priority,
+    update_service_order_reservation_constraints,
+)
+from appointment_bot.services.api.http import error_payload
+from appointment_bot.services.application.create_service_order import create_service_order
+from appointment_bot.services.application.register_payment import (
+    mark_payment_paid,
+    record_partial_payment,
+)
+from appointment_bot.services.order_preflight import schedule_order_preflight
+
+PUBLIC_SERVICE_ORDER_FIELDS = (
+    "order_id",
+    "applicant_id",
+    "applicant_name",
+    "document_number_masked",
+    "document_type",
+    "contact_name",
+    "contact_whatsapp_masked",
+    "contact_whatsapp_username_masked",
+    "contact_source",
+    "priority",
+    "charge_required",
+    "service_type",
+    "reservation_price",
+    "service_package",
+    "official_fee_amount",
+    "initial_payment_amount",
+    "status",
+    "reservation_status",
+    "reservation_site",
+    "reservation_date",
+    "reservation_hour",
+    "payment_status",
+    "amount_agreed",
+    "amount_paid",
+    "whatsapp_message_status",
+    "whatsapp_message_sent_at",
+    "whatsapp_message_action_state",
+    "whatsapp_followup_status",
+    "whatsapp_followup_sent_at",
+    "whatsapp_followup_action_state",
+    "parent_order_id",
+    "program_expediente",
+    "program_plate",
+    "closure_reason",
+    "closure_note",
+    "closed_at",
+    "minimum_reservation_hour",
+    "minimum_reservation_date",
+    "maximum_reservation_date",
+    "allowed_weekdays",
+    "excluded_date_ranges",
+    "preflight_status",
+    "preflight_message",
+    "preflight_started_at",
+    "preflight_validated_at",
+    "preflight_details",
+    "preflight_cycle",
+    "registration_notice_type",
+    "registration_notice_status",
+    "registration_notice_updated_at",
+    "registration_notice_error",
+    "created_at",
+    "updated_at",
+)
+
+PUBLIC_SERVICE_ORDER_DETAIL_FIELDS = PUBLIC_SERVICE_ORDER_FIELDS + (
+    "document_number",
+    "contact_whatsapp",
+    "contact_whatsapp_username",
+)
+
+DASHBOARD_SERVICE_ORDER_FIELDS = tuple(
+    field
+    for field in PUBLIC_SERVICE_ORDER_FIELDS
+    if field
+    not in {
+        "whatsapp_followup_sent_at",
+        "minimum_reservation_hour",
+        "preflight_started_at",
+        "preflight_validated_at",
+        "preflight_details",
+        "preflight_cycle",
+        "registration_notice_updated_at",
+    }
+)
+
+
+def list_service_orders_payload(*, projection: str = "full") -> dict[str, Any]:
+    fields = (
+        DASHBOARD_SERVICE_ORDER_FIELDS
+        if projection == "dashboard"
+        else PUBLIC_SERVICE_ORDER_FIELDS
+    )
+    orders = list_service_order_summaries()
+    service_orders = [
+        _public_service_order(order, fields=fields)
+        for order in orders
+    ]
+    if projection == "dashboard":
+        for item, order in zip(service_orders, orders, strict=True):
+            details = order.preflight_details or {}
+            item["preflight_error_type"] = details.get("error_type")
+    return {"service_orders": service_orders}
+
+
+def search_service_orders_payload(query: str) -> dict[str, Any]:
+    normalized = " ".join(query.lower().split())
+    if len(normalized) < 2:
+        return {"service_orders": []}
+    matches: list[dict[str, Any]] = []
+    for order in list_service_order_summaries():
+        payload = asdict(order)
+        searchable = " ".join(
+            str(payload.get(field) or "").lower()
+            for field in (
+                "order_id",
+                "applicant_name",
+                "document_number",
+                "contact_name",
+                "contact_whatsapp",
+                "contact_whatsapp_username",
+            )
+        )
+        if normalized not in searchable:
+            continue
+        matches.append({
+            field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
+        })
+        if len(matches) >= 10:
+            break
+    return {"service_orders": matches}
+
+
+def get_service_order_payload(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
+    order_id = service_order_detail_path(path)
+    if order_id is None:
+        return None
+    order = next(
+        (item for item in list_service_order_summaries() if item.order_id == order_id),
+        None,
+    )
+    if order is None:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    payload = asdict(order)
+    response = {
+        field: payload.get(field) for field in PUBLIC_SERVICE_ORDER_DETAIL_FIELDS
+    }
+    response["preflight_error_type"] = (order.preflight_details or {}).get("error_type")
+    return HTTPStatus.OK, response
+
+
+def get_service_order_credentials_payload(
+    path: str,
+) -> tuple[HTTPStatus, dict[str, Any]] | None:
+    order_id = service_order_credentials_path(path)
+    if order_id is None:
+        return None
+    order = get_service_order_runtime(order_id)
+    if order is None:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    return HTTPStatus.OK, {
+        "order_id": order.order_id,
+        "document_type": order.document_type,
+        "username": order.username,
+        "password": order.password,
+    }
+
+
+def create_service_order_payload(
+    payload: dict[str, Any],
+    *,
+    requested_by: str = "system",
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    required = (
+        "document_number",
+        "document_type",
+        "password",
+        "contact_name",
+        "contact_source",
+    )
+    missing = [
+        field for field in required if payload.get(field) is None or not str(payload[field]).strip()
+    ]
+    if missing:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            f"Missing fields: {', '.join(missing)}",
+            field_errors={field: "Este campo es obligatorio." for field in missing},
+        )
+    if payload.get("minimum_reservation_hour") is not None and payload.get(
+        "minimum_reservation_hour"
+    ) != "":
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Las restricciones horarias ya no se aceptan.",
+            field_errors={
+                "minimum_reservation_hour": "Autoriza cualquier horario disponible."
+            },
+        )
+    try:
+        reservation_price = _optional_reservation_price(payload.get("reservation_price"))
+        result = create_service_order(
+            document_number=str(payload["document_number"]).strip(),
+            document_type=str(payload["document_type"]).strip(),
+            password=str(payload["password"]),
+            priority=int(payload.get("priority", 0) or 0),
+            contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
+            contact_whatsapp_username=_optional_text(
+                payload, "contact_whatsapp_username"
+            ),
+            contact_name=_optional_text(payload, "contact_name"),
+            contact_source=_optional_text(payload, "contact_source"),
+            applicant_name=_optional_text(payload, "applicant_name"),
+            charge_required=_optional_bool(payload, "charge_required", default=True),
+            service_type=str(payload.get("service_type") or "standard"),
+            service_package=_optional_text(payload, "service_package"),
+            reservation_price=reservation_price,
+            minimum_reservation_hour=None,
+            minimum_reservation_date=_optional_text(payload, "minimum_reservation_date"),
+            maximum_reservation_date=_optional_text(payload, "maximum_reservation_date"),
+            allowed_weekdays=_optional_weekdays(payload.get("allowed_weekdays")),
+            excluded_date_ranges=_optional_excluded_date_ranges(
+                payload.get("excluded_date_ranges")
+            ),
+            parent_order_id=_optional_text(payload, "parent_order_id"),
+            program_expediente=_optional_text(payload, "program_expediente"),
+            program_plate=_optional_text(payload, "program_plate"),
+            actor=requested_by,
+        )
+    except ContactValidationError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            str(exc),
+            field_errors={exc.field: str(exc)},
+        )
+    except (TypeError, ValueError) as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    scheduled = schedule_order_preflight(result.order_id)
+    return HTTPStatus.CREATED, {
+        "status": "validation_pending",
+        "validation_scheduled": scheduled,
+        **asdict(result),
+    }
+
+
+def _optional_reservation_price(value: Any) -> Decimal | None:
+    if value in {None, ""}:
+        return None
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("reservation_price must be a valid amount.") from exc
+    if not amount.is_finite() or amount <= 0 or amount > Decimal("99999.99"):
+        raise ValueError("reservation_price must be greater than zero and below 100000.")
+    if amount.as_tuple().exponent < -2:
+        raise ValueError("reservation_price accepts at most two decimals.")
+    return amount.quantize(Decimal("0.01"))
+
+
+def revalidate_service_order_payload(order_id: str) -> tuple[HTTPStatus, dict[str, Any]]:
+    if not any(order.order_id == order_id for order in list_service_order_summaries()):
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
+    scheduled = schedule_order_preflight(order_id)
+    return HTTPStatus.ACCEPTED, {
+        "status": "validation_pending" if scheduled else "validation_running",
+        "order_id": order_id,
+    }
+
+
+def update_service_order_credentials_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    required = ("document_number", "document_type", "password")
+    missing = [
+        field for field in required if payload.get(field) is None or not str(payload[field]).strip()
+    ]
+    if missing:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            f"Missing fields: {', '.join(missing)}",
+            field_errors={field: "Este campo es obligatorio." for field in missing},
+        )
+    try:
+        affected_order_ids = update_service_order_credentials(
+            order_id,
+            document_number=str(payload["document_number"]),
+            document_type=str(payload["document_type"]),
+            password=str(payload["password"]),
+        )
+    except RuntimeError as exc:
+        return HTTPStatus.CONFLICT, error_payload("conflict", str(exc))
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    scheduled_order_ids = [
+        affected_order_id
+        for affected_order_id in affected_order_ids
+        if schedule_order_preflight(affected_order_id)
+    ]
+    return HTTPStatus.ACCEPTED, {
+        "status": "validation_pending",
+        "order_id": order_id,
+        "affected_order_ids": list(affected_order_ids),
+        "scheduled_order_ids": scheduled_order_ids,
+    }
+
+
+def update_service_order_contact_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if (
+        payload.get("contact_whatsapp") in {None, ""}
+        and payload.get("contact_whatsapp_username") in {None, ""}
+        and payload.get("contact_name") in {None, ""}
+    ):
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Missing WhatsApp recipient or contact_name.",
+            field_errors={
+                "contact_name": "Ingresa nombre o WhatsApp.",
+                "contact_whatsapp": "Ingresa nombre o WhatsApp.",
+                "contact_whatsapp_username": "Ingresa nombre o WhatsApp.",
+            },
+        )
+    try:
+        add_or_update_service_order_contact(
+            order_id,
+            contact_whatsapp=_optional_text(payload, "contact_whatsapp"),
+            contact_whatsapp_username=_optional_text(
+                payload, "contact_whatsapp_username"
+            ),
+            contact_name=_optional_text(payload, "contact_name"),
+            contact_source=_optional_text(payload, "contact_source"),
+        )
+    except ContactValidationError as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            str(exc),
+            field_errors={exc.field: str(exc)},
+        )
+    except ValueError as exc:
+        return HTTPStatus.NOT_FOUND, error_payload("not_found", str(exc))
+    return HTTPStatus.OK, {"status": "ok"}
+
+
+def update_service_order_priority_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("priority") in {None, ""}:
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Missing priority.",
+            field_errors={"priority": "Ingresa una prioridad."},
+        )
+    try:
+        priority = int(payload["priority"])
+        update_service_order_priority(order_id, priority)
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        extra = {"field_errors": {"priority": message}} if status == HTTPStatus.BAD_REQUEST else {}
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request", message, **extra
+        )
+    return HTTPStatus.OK, {"status": "ok", "order_id": order_id, "priority": priority}
+
+
+def update_service_order_restrictions_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("minimum_reservation_hour") is not None and payload.get(
+        "minimum_reservation_hour"
+    ) != "":
+        return HTTPStatus.BAD_REQUEST, error_payload(
+            "bad_request",
+            "Las restricciones horarias ya no se aceptan.",
+            field_errors={
+                "minimum_reservation_hour": "Autoriza cualquier horario disponible."
+            },
+        )
+    try:
+        minimum_hour = None
+        minimum_date = _optional_text(payload, "minimum_reservation_date")
+        maximum_date = _optional_text(payload, "maximum_reservation_date")
+        allowed_weekdays = _optional_weekdays(payload.get("allowed_weekdays"))
+        excluded_date_ranges = _optional_excluded_date_ranges(
+            payload.get("excluded_date_ranges")
+        )
+        update_service_order_reservation_constraints(
+            order_id,
+            minimum_reservation_hour=minimum_hour,
+            minimum_reservation_date=minimum_date,
+            maximum_reservation_date=maximum_date,
+            allowed_weekdays=allowed_weekdays,
+            excluded_date_ranges=excluded_date_ranges,
+        )
+    except (TypeError, ValueError) as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "order_id": order_id,
+        "minimum_reservation_hour": minimum_hour,
+        "minimum_reservation_date": minimum_date,
+        "maximum_reservation_date": maximum_date,
+        "allowed_weekdays": allowed_weekdays,
+        "excluded_date_ranges": excluded_date_ranges,
+    }
+
+
+def apply_service_order_action(path: str) -> tuple[HTTPStatus, dict[str, Any]] | None:
+    action = service_order_action(path)
+    if action is None:
+        return None
+    order_id, action_name = action
+    try:
+        if action_name == "pause":
+            set_order_paused(order_id, True)
+        elif action_name == "activate":
+            if has_active_child_service_orders(order_id):
+                return HTTPStatus.CONFLICT, error_payload(
+                    "conflict",
+                    "Cannot activate a parent order while it has active child orders.",
+                )
+            set_order_paused(order_id, False)
+        elif action_name == "done":
+            mark_order_done(order_id, status="completed")
+        elif action_name == "no-charge":
+            mark_service_order_no_charge(order_id)
+        else:
+            raise ValueError(f"Unsupported service order action: {action_name}")
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {"status": "ok"}
+
+
+def close_service_order_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    closure_reason = _optional_text(payload, "closure_reason")
+    if not closure_reason:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing closure_reason.")
+    try:
+        close_service_order(
+            order_id,
+            closure_reason=closure_reason,
+            closure_note=_optional_text(payload, "closure_note"),
+        )
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "not found" in message.lower() else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.OK, {"status": "ok"}
+
+
+def mark_payment_paid_payload(
+    order_id: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None = None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("amount_paid") in {None, ""}:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing amount_paid.")
+    try:
+        audit_id = mark_payment_paid(
+            order_id,
+            amount_paid=payload["amount_paid"],
+            amount_agreed=payload.get("amount_agreed"),
+            actor=requested_by or "system",
+            allow_difference=_optional_bool(payload, "allow_difference", default=False),
+            difference_reason=_optional_text(payload, "difference_reason"),
+            expected_payment_status=_optional_text(payload, "expected_payment_status"),
+            expected_amount_agreed=payload.get("expected_amount_agreed"),
+            expected_amount_paid=payload.get("expected_amount_paid"),
+        )
+    except ValueError as exc:
+        return _payment_error_payload(exc)
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "payment_status": "paid",
+        "post_payment_queued": True,
+        "audit_id": audit_id,
+    }
+
+
+def record_partial_payment_payload(
+    order_id: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None = None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    if payload.get("amount_paid") in {None, ""}:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing amount_paid.")
+    try:
+        audit_id = record_partial_payment(
+            order_id,
+            amount_paid=payload["amount_paid"],
+            amount_agreed=payload.get("amount_agreed"),
+            actor=requested_by or "system",
+            expected_payment_status=_optional_text(payload, "expected_payment_status"),
+            expected_amount_agreed=payload.get("expected_amount_agreed"),
+            expected_amount_paid=payload.get("expected_amount_paid"),
+        )
+    except ValueError as exc:
+        return _payment_error_payload(exc)
+    return HTTPStatus.OK, {
+        "status": "ok",
+        "payment_status": "pending",
+        "post_payment_queued": False,
+        "audit_id": audit_id,
+    }
+
+
+def _payment_error_payload(exc: ValueError) -> tuple[HTTPStatus, dict[str, Any]]:
+    message = str(exc)
+    conflict_markers = (
+        "changed since it was reviewed",
+        "no longer pending",
+    )
+    if any(marker in message for marker in conflict_markers):
+        return HTTPStatus.CONFLICT, error_payload("conflict", message)
+    return HTTPStatus.BAD_REQUEST, error_payload("bad_request", message)
+
+
+def split_service_order_programs_payload(
+    order_id: str,
+    payload: dict[str, Any],
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    archive_parent = not _optional_bool(payload, "keep_parent_active", default=False)
+    try:
+        created = split_service_order_programs(order_id, archive_parent=archive_parent)
+    except ProgramResolutionNotFound as exc:
+        return HTTPStatus.NOT_FOUND, error_payload(exc.code, str(exc))
+    except ProgramResolutionConflict as exc:
+        return HTTPStatus.CONFLICT, error_payload(exc.code, str(exc))
+    except ValueError as exc:
+        message = str(exc)
+        status = HTTPStatus.NOT_FOUND if "No existe la orden" in message else HTTPStatus.BAD_REQUEST
+        return status, error_payload(
+            "not_found" if status == HTTPStatus.NOT_FOUND else "bad_request",
+            message,
+        )
+    return HTTPStatus.CREATED, {
+        "status": "created",
+        "parent_order_id": order_id,
+        "parent_archived": archive_parent,
+        "service_orders": [asdict(item) for item in created],
+    }
+
+
+def resolve_service_order_programs_payload(
+    order_id: str,
+    payload: dict[str, Any],
+    *,
+    requested_by: str | None,
+) -> tuple[HTTPStatus, dict[str, Any]]:
+    actor = _normalize_program_resolution_actor(requested_by)
+    try:
+        result = resolve_service_order_programs(
+            order_id,
+            resolution=str(payload.get("resolution") or ""),
+            listing_signature=str(payload.get("listing_signature") or ""),
+            communication_decision=str(payload.get("communication_decision") or ""),
+            actor=actor,
+            program_expediente=_optional_text(payload, "program_expediente"),
+            program_plate=_optional_text(payload, "program_plate"),
+            children=payload.get("children"),
+            confirm_same_commercial_terms=_optional_bool(
+                payload,
+                "confirm_same_commercial_terms",
+                default=False,
+            ),
+        )
+    except ProgramResolutionNotFound as exc:
+        return HTTPStatus.NOT_FOUND, error_payload(exc.code, str(exc))
+    except ProgramResolutionConflict as exc:
+        return HTTPStatus.CONFLICT, error_payload(exc.code, str(exc))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        return HTTPStatus.BAD_REQUEST, error_payload("bad_request", str(exc))
+    if result.get("preflight_scheduled"):
+        result["preflight_scheduled"] = schedule_order_preflight(order_id)
+    return HTTPStatus.OK, result
+
+
+def _normalize_program_resolution_actor(value: str | None) -> str:
+    normalized = (value or "").strip()
+    if not normalized:
+        return "admin_api"
+    if len(normalized) > 64 or re.fullmatch(r"[A-Za-z0-9:_-]+", normalized) is None:
+        return "admin_api"
+    return normalized
+
+
+def service_order_contact_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/contact"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_credentials_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/credentials"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+    return order_id if order_id and "/" not in order_id else None
+
+
+def service_order_priority_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/priority"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_restrictions_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/restrictions"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_revalidate_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/validate"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_detail_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    if not path.startswith(prefix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).strip("/"))
+    if not order_id or "/" in order_id:
+        return None
+    return order_id
+
+
+def service_order_action(path: str) -> tuple[str, str] | None:
+    prefix = "/api/v1/service-orders/"
+    if not path.startswith(prefix):
+        return None
+    parts = [unquote(part) for part in path.removeprefix(prefix).split("/") if part]
+    if len(parts) != 2:
+        return None
+    order_id, action = parts
+    if action not in {"pause", "activate", "done", "no-charge"}:
+        return None
+    return order_id, action
+
+
+def payment_paid_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/payment/paid"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def payment_partial_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/payment/partial"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_close_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/close"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_split_programs_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/split-programs"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    return unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+
+
+def service_order_program_resolution_path(path: str) -> str | None:
+    prefix = "/api/v1/service-orders/"
+    suffix = "/program-resolution"
+    if not path.startswith(prefix) or not path.endswith(suffix):
+        return None
+    order_id = unquote(path.removeprefix(prefix).removesuffix(suffix).strip("/"))
+    return order_id if order_id and "/" not in order_id else None
+
+
+def _optional_text(payload: dict[str, Any], name: str) -> str | None:
+    if name not in payload or payload[name] in {None, ""}:
+        return None
+    return str(payload[name]).strip()
+
+
+def _optional_weekdays(value: Any) -> list[int] | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, list):
+        return [int(item) for item in value]
+    return [int(item.strip()) for item in str(value).split(",") if item.strip()]
+
+
+def _optional_excluded_date_ranges(value: Any) -> list[dict[str, object]]:
+    if value is None or value == "":
+        return []
+    if not isinstance(value, list):
+        raise ValueError("excluded_date_ranges must be a list.")
+    ranges: list[dict[str, object]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            raise ValueError(f"excluded_date_ranges[{index}] must be an object.")
+        ranges.append(item)
+    return ranges
+
+
+def _optional_bool(payload: dict[str, Any], name: str, *, default: bool) -> bool:
+    value = payload.get(name, default)
+    if isinstance(value, bool):
+        return value
+    if value in {None, ""}:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    raise ValueError(f"Invalid boolean value for {name}: {value!r}")
+
+
+def _public_service_order(
+    order: Any,
+    *,
+    fields: tuple[str, ...] = PUBLIC_SERVICE_ORDER_FIELDS,
+) -> dict[str, Any]:
+    payload = asdict(order)
+    return {field: payload.get(field) for field in fields}

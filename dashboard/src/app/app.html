@@ -1,0 +1,314 @@
+<main class="app-frame" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <aside
+    id="dashboard-navigation"
+    class="app-sidebar"
+    [class.mobile-open]="mobileMenuOpen()"
+    aria-label="Navegación principal"
+  >
+    <div class="sidebar-brand">
+      <span class="brand-mark" aria-hidden="true">LP</span>
+      <div class="sidebar-brand-copy">
+        <strong>Lunas polarizadas</strong>
+        <small>Panel administrativo</small>
+      </div>
+      <button
+        type="button"
+        class="sidebar-mobile-close"
+        aria-label="Cerrar menú"
+        (click)="mobileMenuOpen.set(false)"
+      >
+        ×
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Secciones del dashboard">
+      <section class="sidebar-group">
+        <p>Operación</p>
+        <a
+          class="sidebar-link"
+          routerLink="/pendientes"
+          [class.active]="activeView() === 'inbox'"
+          [attr.aria-current]="activeView() === 'inbox' ? 'page' : null"
+          title="Pendientes"
+        >
+          <span class="nav-icon" aria-hidden="true">!</span>
+          <span class="nav-label">Pendientes</span>
+          @if (inboxPendingTotal() > 0) {
+            <span class="nav-alert" [attr.aria-label]="inboxPendingTotal() + ' pendientes'">
+              {{ inboxPendingTotal() > 99 ? '99+' : inboxPendingTotal() }}
+            </span>
+          }
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/resumen"
+          [queryParams]="{ month: selectedMonth() }"
+          [class.active]="activeView() === 'summary'"
+          [attr.aria-current]="activeView() === 'summary' ? 'page' : null"
+          title="Resumen"
+        >
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          <span class="nav-label">Resumen</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/ordenes"
+          [class.active]="activeView() === 'orders'"
+          [attr.aria-current]="activeView() === 'orders' ? 'page' : null"
+          title="Órdenes"
+        >
+          <span class="nav-icon" aria-hidden="true">≡</span>
+          <span class="nav-label">Órdenes</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/actividad"
+          [class.active]="activeView() === 'runs'"
+          [attr.aria-current]="activeView() === 'runs' ? 'page' : null"
+          title="Runs"
+        >
+          <span class="nav-icon" aria-hidden="true">↻</span>
+          <span class="nav-label">Actividad</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/seguimiento"
+          [class.active]="activeView() === 'followups'"
+          [attr.aria-current]="activeView() === 'followups' ? 'page' : null"
+          title="Citas y recordatorios"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">SC</span>
+          <span class="nav-label">Citas y recordatorios</span>
+        </a>
+      </section>
+
+      <section class="sidebar-group">
+        <p>Administración</p>
+        <a
+          class="sidebar-link"
+          routerLink="/finanzas"
+          [queryParams]="{ month: selectedMonth() }"
+          [class.active]="activeView() === 'finance'"
+          [attr.aria-current]="activeView() === 'finance' ? 'page' : null"
+          title="Finanzas"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">S/</span>
+          <span class="nav-label">Finanzas</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/mensajes"
+          [class.active]="activeView() === 'messageTemplates'"
+          [attr.aria-current]="activeView() === 'messageTemplates' ? 'page' : null"
+          title="Mensajes de WhatsApp"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">WA</span>
+          <span class="nav-label">Mensajes</span>
+        </a>
+      </section>
+
+      @if (captchaShadowEnabled()) {
+      <section class="sidebar-group">
+        <p>Automatización</p>
+        <a
+          class="sidebar-link"
+          routerLink="/captchas"
+          [queryParams]="{ mode: captchaWorkspaceMode() }"
+          [class.active]="activeView() === 'captchas'"
+          [attr.aria-current]="activeView() === 'captchas' ? 'page' : null"
+          title="CAPTCHA"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">A9</span>
+          <span class="nav-label">CAPTCHA</span>
+        </a>
+      </section>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-health">
+        <span class="health-dot" [class.online]="health()?.status === 'ok'"></span>
+        <div>
+          <strong>{{ health()?.status === 'ok' ? 'Sistema conectado' : 'Sin conexión' }}</strong>
+          <small>{{ worker()?.worker_running ? 'Worker activo' : 'Worker sin confirmar' }}</small>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="sidebar-collapse"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+        [attr.title]="sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+        (click)="toggleSidebar()"
+      >
+        <span aria-hidden="true">{{ sidebarCollapsed() ? '»' : '«' }}</span>
+        <span class="nav-label">Contraer menú</span>
+      </button>
+    </div>
+  </aside>
+
+  @if (mobileMenuOpen()) {
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="Cerrar menú"
+      (click)="mobileMenuOpen.set(false)"
+    ></button>
+  }
+
+  <section class="workspace">
+    <header class="topbar" aria-label="Control principal">
+      <button
+        type="button"
+        class="mobile-menu-button"
+        aria-controls="dashboard-navigation"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        (click)="mobileMenuOpen.set(true)"
+      >
+        <span aria-hidden="true">☰</span>
+        Menú
+      </button>
+
+      <div class="brand-block">
+        <p class="eyebrow">{{ activeViewGroup() }}</p>
+        <h1>{{ activeViewLabel() }}</h1>
+        <p class="subhead">
+          {{ health()?.message ?? 'Cargando datos administrativos desde el admin API local.' }}
+        </p>
+      </div>
+
+      <div class="refresh-panel" aria-live="polite">
+        <span>Actualización</span>
+        <strong>{{
+          refreshingViewState() === activeView()
+            ? 'actualizando…'
+            : pageHidden()
+              ? 'pausada: pestaña oculta'
+              : autoRefreshPaused()
+                ? 'pausada'
+                : 'automática'
+        }}</strong>
+        <small>{{
+          lastUpdatedAt() ? 'Última: ' + lastUpdatedAt() : (health()?.status ?? 'sin datos')
+        }}</small>
+        <button type="button" class="primary" (click)="refreshNow()">Actualizar</button>
+      </div>
+    </header>
+
+    @if (errorMessage()) {
+      <section id="dashboard-error" class="notice bad" role="alert" aria-live="assertive">
+        {{ errorMessage() }}
+      </section>
+    }
+
+    @if (formDirty()) {
+      <section class="notice warn" role="status">
+        Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y
+        recargar.
+      </section>
+    }
+
+    @if (manualSessions().length) {
+      <section class="panel manual-sessions-panel" aria-label="Sesiones manuales abiertas">
+        <div class="panel-header">
+          <div>
+            <h2>Sesiones manuales</h2>
+            <p>{{ manualSessions().length }} abiertas</p>
+          </div>
+          <button type="button" class="secondary" (click)="refreshNow()">Actualizar</button>
+        </div>
+
+        <div class="manual-session-list">
+          @for (session of manualSessions(); track session.session_id) {
+            <article class="manual-session-row">
+              <div>
+                <strong>{{ manualSessionOrderLabel(session) }}</strong>
+                <span>
+                  {{ manualSessionTypeLabel(session) }} · {{ statusLabel(session.order_status) }}
+                </span>
+                <small>{{ session.session_id }}</small>
+                @if (session.status_message) {
+                  <small>{{ session.status_message }}</small>
+                }
+                @if (session.mode === 'diagnostic') {
+                  <small class="diagnostic-trace-status">
+                    {{ session.diagnostic_event_count }} eventos protegidos
+                    @if (session.diagnostic_submission_seen) {
+                      · POST de reserva observado
+                    }
+                    @if (session.diagnostic_honeypot_blocked) {
+                      · envio bloqueado por honeypot
+                    }
+                  </small>
+                  @if (session.diagnostic_report_path) {
+                    <small>{{ session.diagnostic_report_path }}</small>
+                  }
+                }
+              </div>
+              <span class="badge {{ statusTone(session.status) }}">{{
+                statusLabel(session.status)
+              }}</span>
+              <small>{{ formatDateTime(session.started_at, 'sin hora') }}</small>
+              <button
+                type="button"
+                class="danger"
+                [disabled]="isManualSessionClosing(session.session_id) || session.close_requested"
+                (click)="closeManualSession(session)"
+              >
+                {{ isManualSessionClosing(session.session_id) ? 'Cerrando…' : 'Cerrar' }}
+              </button>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (activeViewState(); as state) {
+      <app-view-state
+        [state]="state"
+        [compact]="state === 'stale'"
+        [title]="
+          state === 'loading'
+            ? 'Preparando ' + activeViewLabel().toLowerCase()
+            : state === 'stale'
+              ? 'Los datos visibles pueden estar desactualizados'
+              : 'No se pudo cargar ' + activeViewLabel().toLowerCase()
+        "
+        [message]="
+          state === 'stale'
+            ? viewLoadError() || 'Se conservaron los últimos datos disponibles.'
+            : state === 'error'
+              ? viewLoadError() || 'Comprueba que la API local esté disponible.'
+              : 'Esto solo tomará un momento.'
+        "
+        (retry)="refreshNow()"
+      />
+    }
+
+    <div [hidden]="activeViewState() === 'loading' || activeViewState() === 'error'">
+      <router-outlet />
+    </div>
+
+
+    @defer (when activeModal() === 'whatsapp') {
+      <app-whatsapp-modal />
+    }
+    @defer (when activeModal() === 'payment') {
+      <app-payment-modal />
+    }
+    @defer (when activeModal() === 'edit-order') {
+      <app-edit-order-modal />
+    }
+    @defer (when activeModal() === 'order-actions') {
+      <app-order-actions-modal />
+    }
+    @defer (when activeModal() === 'create-order') {
+      <app-create-order-modal />
+    }
+    @defer (when activeModal() === 'finance-entry') {
+      <app-finance-entry-modal />
+    }
+    @defer (when activeModal() === 'worker-restart') {
+      <app-worker-restart-modal />
+    }
+  </section>
+</main>

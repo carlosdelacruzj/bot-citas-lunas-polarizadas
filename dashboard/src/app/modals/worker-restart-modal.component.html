@@ -1,0 +1,66 @@
+@if (view.activeModal() === 'worker-restart') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="worker-restart-title"
+  >
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="worker-restart-title">Reiniciar worker</h2>
+          <p>{{ view.phaseLabel(view.worker()?.phase ?? view.health()?.reason) }}</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          (click)="view.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+      <dl class="summary-list">
+        <div>
+          <dt>Worker</dt>
+          <dd>
+            {{
+              view.worker()?.worker_running || view.health()?.worker_running ? 'activo' : 'sin confirmar'
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Actividad actual</dt>
+          <dd>{{ view.currentWorkLabel() }}</dd>
+        </div>
+      </dl>
+      <section class="restart-backoff-option">
+        <label class="check-row">
+          <input
+            name="releaseSafeBackoffsOnRestart"
+            type="checkbox"
+            [ngModel]="view.releaseSafeBackoffsOnRestart()"
+            (ngModelChange)="view.releaseSafeBackoffsOnRestart.set($event)"
+          />
+          <span>
+            <strong>Quitar backoff de errores técnicos seguros</strong>
+            <small>
+              Solo libera órdenes que no intentaron enviar una reserva. Estados ambiguos,
+              defensas del portal y submissions pendientes permanecen protegidos.
+            </small>
+          </span>
+        </label>
+      </section>
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
+        <button type="button" class="danger" (click)="view.requestRestartWorker()">
+          {{
+            view.releaseSafeBackoffsOnRestart()
+              ? 'Reiniciar y reintentar'
+              : 'Reiniciar worker'
+          }}
+        </button>
+      </div>
+    </div>
+  </section>
+}

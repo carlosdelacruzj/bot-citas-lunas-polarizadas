@@ -1,0 +1,135 @@
+@if (view.activeModal() === 'order-actions') {
+  @if (view.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="order-actions-title"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="order-actions-title">Acciones de orden</h2>
+            <p>{{ view.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="view.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <dl class="summary-list">
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ view.statusLabel(order.status) }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>{{ view.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+          </div>
+          <div>
+            <dt>Cierre</dt>
+            <dd>{{ view.closureDisplay(order) }}</dd>
+          </div>
+          <div>
+            <dt>Tramite</dt>
+            <dd>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</dd>
+          </div>
+          <div>
+            <dt>Padre</dt>
+            <dd>{{ order.parent_order_id ?? 'sin padre' }}</dd>
+          </div>
+        </dl>
+
+        <div class="modal-actions-grid">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="order.status !== 'ready'"
+            (click)="view.requestOrderAction('pause', 'Pausar orden')"
+          >
+            Pausar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="order.status !== 'paused' || view.hasActiveChildOrders(order)"
+            title="No se puede activar una orden padre con subordenes activas"
+            (click)="view.requestOrderAction('activate', 'Activar orden')"
+          >
+            Activar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="!order.charge_required || view.isClosedOrder(order)"
+            (click)="view.requestOrderAction('no-charge', 'Marcar sin cobro')"
+          >
+            Sin cobro
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="view.actionBusy()"
+            (click)="view.requestManualSession()"
+          >
+            {{ view.manualSessionActionLabel(order) }}
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="view.actionBusy()"
+            title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+            (click)="view.requestDiagnosticSession()"
+          >
+            Medir flujo manual
+          </button>
+        </div>
+
+        <section class="admin-block action-card">
+          <h3>Cerrar orden</h3>
+          <div class="form-grid">
+            <label>
+              Resultado
+              <select
+                name="modalClosureReason"
+                [ngModel]="view.closureReason()"
+                (ngModelChange)="view.setClosureReason($event)"
+              >
+                <option value="client_withdrew">Cliente retirado</option>
+                <option value="external_slot">Cupo por tercero</option>
+                <option value="family_no_charge">Familiar sin cobro</option>
+                <option value="duplicate">Duplicado</option>
+                <option value="not_serviceable">No gestionable</option>
+                <option value="uncollectible">Incobrable</option>
+                <option value="completed_by_us">Realizado por nosotros</option>
+              </select>
+            </label>
+            <label>
+              Nota
+              <input
+                name="modalClosureNote"
+                type="text"
+                placeholder="Ej. duplicado de order-xxxxx"
+                [ngModel]="view.closureNote()"
+                (ngModelChange)="view.editField(view.closureNote, $event)"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            class="danger"
+            [disabled]="view.isClosedOrder(order)"
+            (click)="view.requestCloseOrder()"
+          >
+            Cerrar con resultado
+          </button>
+        </section>
+      </div>
+    </section>
+  }
+}
