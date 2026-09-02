@@ -120,7 +120,10 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
             self.assertEqual(saved["appointment_hour"], "09:00")
             self.assertEqual(saved["program_expediente"], "EXP-OLD")
             self.assertEqual(saved["program_plate"], "ABC123")
-            self.assertEqual(saved["evidence_path"], "C:\\evidence\\confirmed.png")
+            self.assertEqual(
+                Path(saved["evidence_path"]),
+                Path("C:/evidence/confirmed.png"),
+            )
             self.assertNotIn("captcha_solution_sent", saved["details"])
             payment = repository.calls[2][2]
             self.assertEqual(payment["amount_agreed"], Decimal("70.00"))
