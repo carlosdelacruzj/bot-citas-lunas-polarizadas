@@ -13,10 +13,12 @@ from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from appointment_bot.config import Settings
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
+)
+from appointment_bot.reservation_engine.appointment_selection import (
     validate_selected_appointment,
 )
 from appointment_bot.reservation_engine.ports import (

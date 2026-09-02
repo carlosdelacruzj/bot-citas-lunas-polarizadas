@@ -12,7 +12,9 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
-from appointment_bot.reservation_engine.appointments import APPOINTMENT_PANEL_SCREENSHOT_SELECTORS
+from appointment_bot.reservation_engine.appointment_contracts import (
+    APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+)
 from appointment_bot.reservation_engine.ports import AlertSink
 from appointment_bot.reservation_engine.reservation_captcha_math import (
     read_reservation_math_captcha,

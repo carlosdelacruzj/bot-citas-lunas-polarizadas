@@ -2,16 +2,5 @@
   "inverse_dependencies": [
     ["appointment_bot.services.api.worker_routes", "appointment_bot.worker.recovery"]
   ],
-  "cycles": [
-    [
-      "appointment_bot.reservation_engine.appointment_fetch_probe",
-      "appointment_bot.reservation_engine.appointment_reader",
-      "appointment_bot.reservation_engine.appointment_selection",
-      "appointment_bot.reservation_engine.appointments"
-    ],
-    [
-      "appointment_bot.services.unique_slot_watermark",
-      "appointment_bot.utils.screenshots"
-    ]
-  ]
+  "cycles": []
 }

@@ -9,7 +9,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     RESERVE_APPOINTMENT_SELECTOR,
     AppointmentWorkflowUnavailable,
 )

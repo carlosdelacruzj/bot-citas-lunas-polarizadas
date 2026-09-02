@@ -14,15 +14,21 @@ from playwright.sync_api import Error as PlaywrightError
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
-    has_available_date_options,
-    open_appointment_panel,
+)
+from appointment_bot.reservation_engine.appointment_reader import (
     read_appointment_availability,
+)
+from appointment_bot.reservation_engine.appointment_selection import (
+    has_available_date_options,
     select_available_appointment,
+)
+from appointment_bot.reservation_engine.appointments import (
+    open_appointment_panel,
     select_available_site,
 )
 from appointment_bot.reservation_engine.ports import OpportunityControl, ReservationEnginePorts

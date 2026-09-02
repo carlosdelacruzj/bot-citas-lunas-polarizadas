@@ -10,11 +10,13 @@ from pathlib import Path
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.statuses import redact_captcha_answers
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
+)
+from appointment_bot.reservation_engine.appointment_selection import (
     validate_selected_appointment,
 )
 from appointment_bot.reservation_engine.ports import AlertSink, CaptchaAuthority

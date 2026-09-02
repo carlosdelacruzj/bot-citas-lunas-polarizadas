@@ -229,10 +229,10 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
-- dos ciclos y un import inverso quedan baselinados; CI impide que crezcan.
+- no quedan ciclos; un import inverso conocido sigue baselinado y CI impide deuda nueva.
 
-La prioridad y criterios de cierre estan solo en
-[`roadmap/README.md`](roadmap/README.md).
+La prioridad y criterios de cierre estan en [`roadmap/README.md`](roadmap/README.md).
+
 ## Validacion base
 
 ```powershell

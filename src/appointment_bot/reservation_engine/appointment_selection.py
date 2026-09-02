@@ -13,11 +13,29 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.rules import parse_appointment_date, parse_appointment_time
+from appointment_bot.reservation_engine.appointment_contracts import (
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    SITE_SELECTOR,
+    AppointmentWorkflowUnavailable,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    options_signature,
+    read_person_name,
+    read_slots_value,
+    real_options,
+    same_option,
+    select_appointment_option,
+    select_options,
+    selected_option_text,
+)
 from appointment_bot.reservation_engine.appointment_reader import (
     read_atomic_appointment_snapshot,
     read_stable_appointment_snapshot,
     snapshot_details,
 )
+from appointment_bot.reservation_engine.appointments import _wait_for_options_after_selection
+from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
 
@@ -215,8 +233,6 @@ def _wait_for_selected_appointment_stability(
 
 
 def _name_tokens(value: str) -> tuple[str, ...]:
-    from appointment_bot.utils.sanitization import normalize_option
-
     return tuple(part for part in normalize_option(value).split() if part)
 
 
@@ -236,8 +252,6 @@ def _same_person_name(actual: str, expected: str) -> bool:
 
 
 def _same_selection_option(actual: str, expected: str) -> bool:
-    from appointment_bot.utils.sanitization import normalize_option
-
     return normalize_option(actual) == normalize_option(expected)
 
 
@@ -270,19 +284,6 @@ def select_available_appointment(
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
     timeout: int = 15_000,
 ) -> AvailabilityResult:
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        AppointmentWorkflowUnavailable,
-        _options_signature,
-        _real_options,
-        _same_option,
-        _select_appointment_option,
-        _select_options,
-        _selected_option_text,
-        _wait_for_options_after_selection,
-    )
-
     observation_started = time.monotonic()
     observation: dict[str, Any] = {
         "observed_at": datetime.now(UTC).isoformat(timespec="milliseconds"),
@@ -298,7 +299,7 @@ def select_available_appointment(
     logger.info("Selecting available appointment date and hour")
     options_started = time.monotonic()
     date_options = sorted(
-        _real_options(_select_options(page, DATE_SELECTOR)),
+        real_options(select_options(page, DATE_SELECTOR)),
         key=_date_option_sort_key,
     )
     observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
@@ -311,12 +312,12 @@ def select_available_appointment(
 
     blocked_evidence_candidate: dict[str, str] | None = None
     for date_option in date_options:
-        previous_date = _selected_option_text(page, DATE_SELECTOR)
-        previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
+        previous_date = selected_option_text(page, DATE_SELECTOR)
+        previous_hour_signature = options_signature(select_options(page, HOUR_SELECTOR))
         date_select = page.locator(DATE_SELECTOR)
         logger.info("Selecting appointment date: %s", date_option["text"])
         postback_started = time.monotonic()
-        _select_appointment_option(
+        select_appointment_option(
             date_select,
             date_option["value"],
             allow_hidden=allow_hidden,
@@ -325,11 +326,11 @@ def select_available_appointment(
             page,
             HOUR_SELECTOR,
             previous_signature=previous_hour_signature,
-            require_change=not _same_option(previous_date, date_option["text"]),
+            require_change=not same_option(previous_date, date_option["text"]),
             timeout=timeout,
         )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
-        real_hour_options = _real_options(hour_options)
+        real_hour_options = real_options(hour_options)
         for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
             _remember_observed_appointment(
                 observation,
@@ -364,7 +365,7 @@ def select_available_appointment(
             logger.info("Selecting appointment hour: %s", hour_option["text"])
             probe_token = _start_selection_stability_probe(page)
             try:
-                _select_appointment_option(
+                select_appointment_option(
                     hour_select,
                     hour_option["value"],
                     allow_hidden=allow_hidden,
@@ -395,7 +396,7 @@ def select_available_appointment(
             observation["hour_atomic_snapshot_counts"].append(
                 stability.get("atomic_snapshots")
             )
-            if _same_option(snapshot.date, date_option["text"]) and _same_option(
+            if same_option(snapshot.date, date_option["text"]) and same_option(
                 snapshot.hour, hour_option["text"]
             ):
                 return _with_selection_observation(
@@ -459,18 +460,6 @@ def _select_blocked_appointment_for_evidence(
     timeout: int,
     observation: dict[str, Any],
 ) -> AvailabilityResult:
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        _options_signature,
-        _real_options,
-        _same_option,
-        _select_appointment_option,
-        _select_options,
-        _selected_option_text,
-        _wait_for_options_after_selection,
-    )
-
     date_text = candidate["date_text"]
     hour_text = candidate["hour_text"]
     message = (
@@ -481,8 +470,8 @@ def _select_blocked_appointment_for_evidence(
         matching_date = next(
             (
                 option
-                for option in _real_options(_select_options(page, DATE_SELECTOR))
-                if _same_option(str(option["text"]), date_text)
+                for option in real_options(select_options(page, DATE_SELECTOR))
+                if same_option(str(option["text"]), date_text)
             ),
             None,
         )
@@ -495,15 +484,15 @@ def _select_blocked_appointment_for_evidence(
                 reason="La fecha bloqueada dejo de estar disponible al preparar la evidencia.",
                 include_person=include_person,
             )
-        previous_date = _selected_option_text(page, DATE_SELECTOR)
-        previous_hour_signature = _options_signature(_select_options(page, HOUR_SELECTOR))
+        previous_date = selected_option_text(page, DATE_SELECTOR)
+        previous_hour_signature = options_signature(select_options(page, HOUR_SELECTOR))
         logger.info(
             "Reselecting blocked appointment for evidence: %s %s",
             date_text,
             hour_text,
         )
         postback_started = time.monotonic()
-        _select_appointment_option(
+        select_appointment_option(
             page.locator(DATE_SELECTOR),
             str(matching_date["value"]),
             allow_hidden=allow_hidden,
@@ -512,7 +501,7 @@ def _select_blocked_appointment_for_evidence(
             page,
             HOUR_SELECTOR,
             previous_signature=previous_hour_signature,
-            require_change=not _same_option(previous_date, date_text),
+            require_change=not same_option(previous_date, date_text),
             timeout=timeout,
         )
         observation["date_postback_seconds"].append(
@@ -521,8 +510,8 @@ def _select_blocked_appointment_for_evidence(
         matching_hour = next(
             (
                 option
-                for option in _real_options(hour_options)
-                if _same_option(str(option["text"]), hour_text)
+                for option in real_options(hour_options)
+                if same_option(str(option["text"]), hour_text)
             ),
             None,
         )
@@ -538,7 +527,7 @@ def _select_blocked_appointment_for_evidence(
 
         probe_token = _start_selection_stability_probe(page)
         try:
-            _select_appointment_option(
+            select_appointment_option(
                 page.locator(HOUR_SELECTOR),
                 str(matching_hour["value"]),
                 allow_hidden=allow_hidden,
@@ -566,8 +555,8 @@ def _select_blocked_appointment_for_evidence(
             stability.get("atomic_snapshots")
         )
         if not (
-            _same_option(snapshot.date, date_text)
-            and _same_option(snapshot.hour, hour_text)
+            same_option(snapshot.date, date_text)
+            and same_option(snapshot.hour, hour_text)
         ):
             return _blocked_evidence_unavailable_result(
                 page,
@@ -663,13 +652,7 @@ def _hour_option_sort_key(option: dict[str, Any]) -> tuple[bool, tuple[int, int]
 
 
 def has_available_date_options(page: Page) -> bool:
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        _real_options,
-        _select_options,
-    )
-
-    return bool(_real_options(_select_options(page, DATE_SELECTOR)))
+    return bool(real_options(select_options(page, DATE_SELECTOR)))
 
 
 def validate_selected_appointment(
@@ -678,18 +661,6 @@ def validate_selected_appointment(
     *,
     expected_person_name: str | None = None,
 ) -> dict[str, Any]:
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        SITE_SELECTOR,
-        AppointmentWorkflowUnavailable,
-        _read_person_name,
-        _read_slots_value,
-        _same_option,
-        _selected_option_text,
-    )
-    from appointment_bot.utils.sanitization import normalize_option
-
     expected_details = expected_details or {}
     expected_site = str(expected_details.get("sede") or "")
     expected_date = str(expected_details.get("fecha") or "")
@@ -715,15 +686,15 @@ def validate_selected_appointment(
             "Atomic appointment validation fell back to legacy reads: %s",
             fallback_reason,
         )
-        actual_site = _selected_option_text(page, SITE_SELECTOR)
-        actual_date = _selected_option_text(page, DATE_SELECTOR)
-        actual_hour = _selected_option_text(page, HOUR_SELECTOR)
-        actual_slots = _read_slots_value(page)
+        actual_site = selected_option_text(page, SITE_SELECTOR)
+        actual_date = selected_option_text(page, DATE_SELECTOR)
+        actual_hour = selected_option_text(page, HOUR_SELECTOR)
+        actual_slots = read_slots_value(page)
         mode = "legacy_fallback"
     if (
-        (expected_site and not _same_option(actual_site, expected_site))
-        or (expected_date and not _same_option(actual_date, expected_date))
-        or (expected_hour and not _same_option(actual_hour, expected_hour))
+        (expected_site and not same_option(actual_site, expected_site))
+        or (expected_date and not same_option(actual_date, expected_date))
+        or (expected_hour and not same_option(actual_hour, expected_hour))
     ):
         raise AppointmentWorkflowUnavailable(
             "La sede, fecha u hora seleccionadas cambiaron antes de enviar la reserva."
@@ -740,7 +711,7 @@ def validate_selected_appointment(
     if expected_person_name:
         actual_person_name = _read_stable_person_name(
             page,
-            _read_person_name,
+            read_person_name,
             expected_person_name=expected_person_name,
         )
         if not actual_person_name:

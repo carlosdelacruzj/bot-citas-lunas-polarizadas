@@ -6,7 +6,7 @@ from pathlib import Path
 
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
 )
 from appointment_bot.utils.screenshots import (

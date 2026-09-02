@@ -209,17 +209,6 @@ def _archive_unique_slot_candidate(
         return None
 
     logger.info("Archived unique slot screenshot: %s", destination)
-    try:
-        from appointment_bot.services.unique_slot_watermark import (
-            queue_unique_slot_watermark,
-        )
-
-        queue_unique_slot_watermark(settings, destination)
-    except Exception:
-        logger.exception(
-            "Could not queue the branded copy for unique slot screenshot: %s",
-            destination,
-        )
     return destination
 
 

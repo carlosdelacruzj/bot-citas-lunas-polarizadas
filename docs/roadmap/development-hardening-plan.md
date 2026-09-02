@@ -773,13 +773,17 @@ mantiene esas barreras en `worker/order_execution.py`.
 
 Objetivo: hacer explicita la direccion de dependencias.
 
-- [ ] Ampliar el ciclo documentado a `appointments`, `appointment_reader`,
+- [x] Ampliar el ciclo documentado a `appointments`, `appointment_reader`,
   `appointment_fetch_probe` y `appointment_selection`.
-- [ ] Extraer selectores, excepciones, DTO y lectura DOM a modulos neutros.
-- [ ] Romper `utils.screenshots <-> services.unique_slot_watermark` mediante
+- [x] Extraer selectores, excepciones, DTO y lectura DOM a modulos neutros.
+- [x] Romper `utils.screenshots <-> services.unique_slot_watermark` mediante
   evento, callback o infraestructura compartida.
-- [ ] Eliminar imports locales usados solamente para esconder ciclos.
-- [ ] Activar el chequeo de ciclos como obligatorio.
+- [x] Eliminar imports locales usados solamente para esconder ciclos.
+- [x] Activar el chequeo de ciclos como obligatorio.
+
+`appointment_contracts.py` y `appointment_dom.py` separan los contratos y la
+lectura del portal de su orquestacion. El archivado de cupos emite el trabajo de
+marca desde reportes y la baseline obligatoria de CI queda en cero ciclos.
 
 ### 5.4 Retirar mutaciones globales de `queue_runtime.py`
 

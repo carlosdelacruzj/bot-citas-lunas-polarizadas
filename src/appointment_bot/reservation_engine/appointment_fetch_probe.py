@@ -5,18 +5,18 @@ import logging
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
+from appointment_bot.reservation_engine.appointment_contracts import (
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    SITE_SELECTOR,
+    SLOTS_LABEL_ID,
+    AppointmentSnapshot,
+)
+
 logger = logging.getLogger(__name__)
 
 
 def read_fetch_probe_appointment_snapshot(page: Page):
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        SITE_SELECTOR,
-        SLOTS_LABEL_ID,
-        AppointmentSnapshot,
-    )
-
     try:
         data = page.evaluate(
             """async ({ siteSelector, dateSelector, hourSelector, slotsLabelId }) => {
@@ -153,7 +153,5 @@ def read_fetch_probe_appointment_snapshot(page: Page):
         slots=str(data.get("slots") or ""),
         person_name=str(data.get("personName") or ""),
     )
-    from appointment_bot.reservation_engine.appointment_reader import snapshot_details
-
-    logger.debug("Fetch appointment probe: %s", snapshot_details(snapshot, include_person=False))
+    logger.debug("Fetch appointment probe signature: %s", snapshot.signature())
     return snapshot

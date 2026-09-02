@@ -28,7 +28,9 @@ from appointment_bot.db.post_appointment import (
     record_post_appointment_review,
 )
 from appointment_bot.reports.run_reporting import settings_for_order
-from appointment_bot.reservation_engine.appointments import AppointmentWorkflowUnavailable
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AppointmentWorkflowUnavailable,
+)
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
 from appointment_bot.reservation_engine.programs import open_program_detail_for_review
 from appointment_bot.reservation_engine.stages import ProcessStage, read_process_stages

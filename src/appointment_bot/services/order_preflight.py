@@ -20,7 +20,7 @@ from appointment_bot.db.orders import (
     record_order_program_listing,
 )
 from appointment_bot.reports.run_reporting import settings_for_order
-from appointment_bot.reservation_engine.appointments import read_person_name
+from appointment_bot.reservation_engine.appointment_dom import read_person_name
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
 from appointment_bot.reservation_engine.programs import read_program_action_rows
 from appointment_bot.services.notifier import send_telegram_message

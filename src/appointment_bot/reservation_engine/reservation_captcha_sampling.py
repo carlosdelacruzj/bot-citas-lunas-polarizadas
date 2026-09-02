@@ -11,7 +11,9 @@ from typing import Any
 from playwright.sync_api import Page
 
 from appointment_bot.config import Settings
-from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AppointmentWorkflowCancelled,
+)
 from appointment_bot.reservation_engine.ports import AlertSink, CaptchaAuthority
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     captcha_submission_image_path,

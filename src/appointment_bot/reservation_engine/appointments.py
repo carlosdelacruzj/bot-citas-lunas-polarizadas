@@ -8,191 +8,34 @@ from urllib.parse import urlsplit, urlunsplit
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from appointment_bot.reservation_engine.appointment_contracts import (
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    RESERVE_APPOINTMENT_POSTBACK_TARGET,
+    RESERVE_APPOINTMENT_SELECTOR,
+    SITE_SELECTOR,
+    AppointmentOptionsNotRefreshed,
+    AppointmentWorkflowUnavailable,
+    SiteRefreshEvidence,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    has_real_options as _has_real_options,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    options_signature as _options_signature,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    select_appointment_option as _select_appointment_option,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    select_options as _select_options,
+)
 from appointment_bot.reservation_engine.appointment_modal_styles import (
     ensure_appointment_modal_styles,
-)
-from appointment_bot.reservation_engine.appointment_reader import read_appointment_availability
-from appointment_bot.reservation_engine.appointment_selection import (
-    has_available_date_options,
-    select_available_appointment,
-    validate_selected_appointment,
 )
 from appointment_bot.utils.sanitization import normalize_option
 
 logger = logging.getLogger(__name__)
-
-__all__ = [
-    "APPOINTMENT_PANEL_SCREENSHOT_SELECTORS",
-    "AppointmentOptionsNotRefreshed",
-    "AppointmentWorkflowCancelled",
-    "AppointmentWorkflowUnavailable",
-    "ReservationDeferredForPriority",
-    "ReservationSubmissionUncertain",
-    "has_available_date_options",
-    "open_appointment_panel",
-    "open_hidden_appointment_panel_for_observer",
-    "read_appointment_availability",
-    "select_available_appointment",
-    "select_available_site",
-    "select_available_site_for_observer",
-    "validate_selected_appointment",
-]
-
-RESERVE_APPOINTMENT_SELECTOR = "input#MainContent_btnCita"
-RESERVE_APPOINTMENT_POSTBACK_TARGET = "ctl00$MainContent$btnCita"
-SITE_SELECTOR = "#MainContent_idUcitas_cbosede"
-DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
-HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
-SLOTS_LABEL_ID = "MainContent_idUcitas_lblcupos"
-APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
-    (
-        "xpath=//*[@id='MainContent_idUcitas_cbosede']"
-        "/ancestor::*[.//*[@id='MainContent_idUcitas_btgSiguiente']][1]"
-    ),
-    ".modal:has(#MainContent_idUcitas_cbosede)",
-    ".ui-dialog:has(#MainContent_idUcitas_cbosede)",
-    "[role='dialog']:has(#MainContent_idUcitas_cbosede)",
-    "#MainContent_idUcitas",
-    "fieldset:has(#MainContent_idUcitas_cbosede)",
-    "table:has(#MainContent_idUcitas_cbosede)",
-]
-AVAILABLE_TEXTS = [
-    "cupo disponible",
-    "citas disponibles",
-    "horarios disponibles",
-    "seleccione una cita",
-    "seleccionar horario",
-]
-
-UNAVAILABLE_TEXTS = [
-    "no hay cupos",
-    "no hay citas",
-    "no existen citas",
-    "sin cupos",
-    "sin disponibilidad",
-    "no se encontraron horarios",
-]
-
-
-class AppointmentWorkflowUnavailable(RuntimeError):
-    pass
-
-
-class AppointmentWorkflowCancelled(RuntimeError):
-    pass
-
-
-class ReservationDeferredForPriority(RuntimeError):
-    def __init__(self, message: str, captcha_audit: dict[str, Any] | None = None) -> None:
-        super().__init__(message)
-        self.captcha_audit = captcha_audit or {}
-
-
-class ReservationSubmissionUncertain(RuntimeError):
-    pass
-
-
-class AppointmentOptionsNotRefreshed(RuntimeError):
-    pass
-
-
-@dataclass(frozen=True)
-class AppointmentSnapshot:
-    site_options: list[str]
-    date_options: list[str]
-    hour_options: list[str]
-    site: str
-    date: str
-    hour: str
-    slots: str
-    person_name: str
-
-    def signature(self) -> tuple[str, ...]:
-        return (
-            "|".join(self.site_options),
-            "|".join(self.date_options),
-            "|".join(self.hour_options),
-            self.site,
-            self.date,
-            self.hour,
-            self.slots,
-            self.person_name,
-        )
-
-
-@dataclass(frozen=True)
-class SiteRefreshEvidence:
-    event_id: str
-    attempt: int | None
-    phase: str
-    selected_site: str
-    confirmed: bool
-    changed: bool
-    marker_cleared: bool
-    async_completed: bool
-    elapsed_ms: int
-    date_signature_before: str
-    date_signature_after: str
-    hour_signature_before: str
-    hour_signature_after: str
-    post_detected: bool
-    post_count: int
-    post_url: str | None
-    post_status: int | None
-    post_elapsed_ms: int | None
-    post_content_length: int | None
-    post_resource_type: str | None
-    post_failure: str | None
-
-    def details(self) -> dict[str, Any]:
-        return {
-            "site_refresh_selected_site": self.selected_site,
-            "site_refresh_attempt": self.attempt,
-            "site_refresh_phase": self.phase,
-            "site_refresh_confirmed": self.confirmed,
-            "site_refresh_changed": self.changed,
-            "site_refresh_marker_cleared": self.marker_cleared,
-            "site_refresh_async_completed": self.async_completed,
-            "site_refresh_elapsed_ms": self.elapsed_ms,
-            "site_refresh_date_signature_before": self.date_signature_before,
-            "site_refresh_date_signature_after": self.date_signature_after,
-            "site_refresh_hour_signature_before": self.hour_signature_before,
-            "site_refresh_hour_signature_after": self.hour_signature_after,
-            "site_refresh_post_detected": self.post_detected,
-            "site_refresh_post_count": self.post_count,
-            "site_refresh_post_url": self.post_url,
-            "site_refresh_post_status": self.post_status,
-            "site_refresh_post_elapsed_ms": self.post_elapsed_ms,
-            "site_refresh_post_content_length": self.post_content_length,
-            "site_refresh_post_resource_type": self.post_resource_type,
-            "site_refresh_post_failure": self.post_failure,
-        }
-
-    def history_item(self) -> dict[str, Any]:
-        return {
-            "event_id": self.event_id,
-            "attempt": self.attempt,
-            "phase": self.phase,
-            "selected_site": self.selected_site,
-            "post_detected": self.post_detected,
-            "post_count": self.post_count,
-            "post_url": self.post_url,
-            "http_status": self.post_status,
-            "post_elapsed_ms": self.post_elapsed_ms,
-            "post_content_length": self.post_content_length,
-            "post_resource_type": self.post_resource_type,
-            "post_failure": self.post_failure,
-            "refresh_confirmed": self.confirmed,
-            "async_completed": self.async_completed,
-            "marker_cleared": self.marker_cleared,
-            "options_changed": self.changed,
-            "refresh_elapsed_ms": self.elapsed_ms,
-            "date_before": self.date_signature_before,
-            "date_after": self.date_signature_after,
-            "hour_before": self.hour_signature_before,
-            "hour_after": self.hour_signature_after,
-        }
-
 
 @dataclass
 class _PostbackCapture:
@@ -548,49 +391,6 @@ def _reset_site_selection(
     )
 
 
-def _select_options_text(page: Page, selector: str) -> list[str]:
-    return [option["text"] for option in _select_options(page, selector) if option["text"]]
-
-
-def _select_options(page: Page, selector: str) -> list[dict[str, Any]]:
-    select = page.locator(selector)
-    if select.count() == 0:
-        return []
-
-    return select.locator("option").evaluate_all(
-        """options => options.map(option => ({
-            text: option.innerText.trim(),
-            value: option.value,
-            disabled: option.disabled,
-            hidden: option.hidden
-        }))"""
-    )
-
-
-def _select_appointment_option(locator, value: str, *, allow_hidden: bool) -> None:
-    if not allow_hidden:
-        locator.select_option(value=value, timeout=15_000)
-        return
-
-    # Solo el observador usa esta rama para consultar selects ocultos.
-    # El evento change puede cargar datos, pero no ejecuta captcha ni reserva.
-    locator.evaluate(
-        """(element, optionValue) => {
-            element.value = optionValue;
-            element.dispatchEvent(new Event("change", { bubbles: true }));
-        }""",
-        value,
-    )
-
-
-def _real_options(options: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [option for option in options if _is_real_appointment_option(option)]
-
-
-def _options_signature(options: list[dict[str, Any]]) -> tuple[tuple[str, str], ...]:
-    return tuple((option["value"], option["text"]) for option in options)
-
-
 def _format_options_signature(signature: tuple[tuple[str, str], ...]) -> str:
     return "|".join(f"{value}:{text}" for value, text in signature)
 
@@ -648,136 +448,6 @@ def _store_site_refresh_evidence(page: Page, evidence: SiteRefreshEvidence) -> N
             "historyItem": evidence.history_item(),
         },
     )
-
-
-def _selected_option_text(page: Page, selector: str) -> str:
-    select = page.locator(selector)
-    if select.count() == 0:
-        return ""
-
-    return select.evaluate(
-        """element => {
-            const selected = element.options[element.selectedIndex];
-            return selected ? selected.innerText.trim() : "";
-        }"""
-    )
-
-
-def _read_slots_value(page: Page) -> str:
-    return page.evaluate(
-        """() => {
-            const normalize = value => (value || "").trim().toLowerCase();
-            const directLabel = document.getElementById("MainContent_idUcitas_lblcupos");
-            if (directLabel && directLabel.textContent.trim()) {
-                return directLabel.textContent.trim();
-            }
-
-            const directInput = Array.from(document.querySelectorAll("input")).find(input => {
-                const id = normalize(input.id);
-                const name = normalize(input.name);
-                return id.includes("cupo") || name.includes("cupo");
-            });
-            if (directInput && directInput.value.trim()) {
-                return directInput.value.trim();
-            }
-
-            const labels = Array.from(document.querySelectorAll("label, span, th, td, div"));
-            const cuposLabel = labels.find(element => normalize(element.innerText) === "cupos");
-            if (!cuposLabel) {
-                return "";
-            }
-
-            const container = cuposLabel.closest("tr, .row, div, fieldset, table") || document.body;
-            const nearbyInput = Array.from(container.querySelectorAll("input")).find(
-                input => input.value.trim()
-            );
-            if (nearbyInput) {
-                return nearbyInput.value.trim();
-            }
-
-            const numericText = Array.from(container.querySelectorAll("span, label, div, td"))
-                .map(element => (element.textContent || "").trim())
-                .find(text => /^\\d+$/.test(text));
-            return numericText || "";
-        }"""
-    )
-
-
-def _read_person_name(page: Page) -> str:
-    return page.evaluate(
-        """() => {
-            const normalize = value => (value || "").trim();
-            const normalizeKey = value => normalize(value).toLowerCase();
-            const visibleValue = element => {
-                const value = normalize(element.value || element.innerText || element.textContent);
-                if (!value || value.length > 120) return "";
-                return value;
-            };
-            const fieldKey = element => normalizeKey([
-                element.id,
-                element.name,
-                element.placeholder,
-                element.getAttribute("aria-label")
-            ].join(" "));
-            const controls = Array.from(document.querySelectorAll("input, textarea"))
-                .filter(element => {
-                    const type = normalizeKey(element.type);
-                    return !["hidden", "password", "submit", "button", "image"].includes(type);
-                });
-
-            const findControlValue = parts => {
-                const control = controls.find(element => {
-                    const key = fieldKey(element);
-                    return parts.some(part => key.includes(part)) && visibleValue(element);
-                });
-                return control ? visibleValue(control) : "";
-            };
-
-            const names = findControlValue(["nombres", "nombre"]);
-            const paternal = findControlValue(["paterno"]);
-            const maternal = findControlValue(["materno"]);
-            const surname = findControlValue(["apellidos", "apellido"]);
-            const controlName = [names, paternal || surname, maternal]
-                .filter(Boolean)
-                .join(" ")
-                .replace(/\\s+/g, " ")
-                .trim();
-            if (controlName) return controlName;
-
-            const bodyText = normalize(document.body ? document.body.innerText : "");
-            const lines = bodyText.split("\\n").map(line => normalize(line)).filter(Boolean);
-            const valueAfterLabel = labels => {
-                for (const label of labels) {
-                    const normalizedLabel = label.toLowerCase();
-                    for (let index = 0; index < lines.length; index += 1) {
-                        const line = lines[index];
-                        const lowerLine = line.toLowerCase();
-                        if (lowerLine === normalizedLabel && lines[index + 1]) {
-                            return lines[index + 1];
-                        }
-                        if (lowerLine.startsWith(`${normalizedLabel}:`)) {
-                            return normalize(line.slice(label.length + 1));
-                        }
-                    }
-                }
-                return "";
-            };
-
-            const textNames = valueAfterLabel(["Nombres", "Nombre"]);
-            const textPaternal = valueAfterLabel(["Apellido Paterno", "Paterno"]);
-            const textMaternal = valueAfterLabel(["Apellido Materno", "Materno"]);
-            const textSurname = valueAfterLabel(["Apellidos", "Apellido"]);
-            return [textNames, textPaternal || textSurname, textMaternal]
-                .filter(Boolean)
-                .join(" ")
-                .replace(/\\s+/g, " ")
-                .trim();
-        }"""
-    )
-
-
-def read_person_name(page: Page) -> str:
-    return _read_person_name(page)
 
 
 def _is_real_site_option(option: dict[str, Any]) -> bool:
@@ -954,32 +624,6 @@ def _wait_for_options_after_selection(
     return current_options if changed or not require_change else []
 
 
-def _has_real_options(options: list[str]) -> bool:
-    return any(_is_real_appointment_option(option) for option in options)
-
-
-def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
-    if isinstance(option, str):
-        text = option
-        value_present = True
-        disabled = False
-        hidden = False
-    else:
-        text = str(option.get("text") or "")
-        value_present = bool(option.get("value"))
-        disabled = bool(option.get("disabled"))
-        hidden = bool(option.get("hidden"))
-    normalized = text.strip().lower()
-    return (
-        value_present
-        and not disabled
-        and not hidden
-        and bool(normalized)
-        and normalized != "sin cupos"
-        and not normalized.startswith("seleccione")
-    )
-
-
 def _mark_select_for_refresh(page: Page, selector: str) -> str:
     token = uuid.uuid4().hex
     page.locator(selector).evaluate(
@@ -1022,7 +666,3 @@ def _aspnet_async_refresh_completed(page: Page, token: str) -> bool:
             token,
         )
     )
-
-
-def _same_option(actual: str, expected: str) -> bool:
-    return normalize_option(actual) == normalize_option(expected)

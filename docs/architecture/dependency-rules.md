@@ -2,8 +2,7 @@
 
 Vigente desde: `2026-09-02`.
 
-Este contrato evita que crezcan dependencias inversas y ciclos mientras la
-fase 5 retira la deuda existente. El control obligatorio vive en
+Este contrato evita dependencias inversas y ciclos nuevos. El control obligatorio vive en
 `scripts/check-architecture.py`; su baseline versionada enumera excepciones
 exactas, no permisos generales.
 
@@ -21,13 +20,17 @@ Las carpetas de infraestructura auxiliares no alteran estas reglas. El grafo
 de ciclos si incluye todos los modulos de `appointment_bot`, para detectar un
 ciclo que atraviese `utils`, `browser` u otra superficie neutral.
 
-## Baseline temporal
+## Baseline vigente
 
-La baseline conserva un import inverso y dos componentes circulares ya
-existentes. El check falla si aparece deuda nueva y tambien si una excepcion
-desaparece sin retirar su entrada: cada mejora debe reducir la baseline en el
-mismo commit. La fase 5.3 la lleva a cero; no se esconden ciclos nuevos mediante
-imports locales.
+La baseline conserva un unico import inverso conocido y ningun ciclo. El check
+falla si aparece deuda nueva y tambien si una excepcion desaparece sin retirar
+su entrada. CI ejecuta el control como paso obligatorio; los imports locales no
+se usan para esconder relaciones entre modulos.
+
+Los contratos, DTO y selectores de citas viven en `appointment_contracts.py`;
+las lecturas DOM neutrales viven en `appointment_dom.py`. El marcado visual de
+cupos se solicita desde `reports/run_reporting.py` despues de que `utils`
+archiva la captura, sin dependencia inversa desde infraestructura compartida.
 
 Ejecutar desde la raiz:
 

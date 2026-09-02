@@ -9,7 +9,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from zoneinfo import ZoneInfo
 
-from appointment_bot.reservation_engine.appointments import AppointmentWorkflowCancelled
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AppointmentWorkflowCancelled,
+)
 from appointment_bot.reservation_engine.ports import CaptchaSolveResult
 from appointment_bot.reservation_engine.reservation_captcha_capture import (
     save_reservation_captcha_image,

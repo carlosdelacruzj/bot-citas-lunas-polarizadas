@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 from PIL import Image
 
 from appointment_bot.core.models import AvailabilityResult
-from appointment_bot.reports.run_reporting import report_from_result
+from appointment_bot.reports.run_reporting import record_run_history, report_from_result
 from appointment_bot.reservation_engine import monitor
 from appointment_bot.reservation_engine.ports import ReservationEnginePorts
 from appointment_bot.reservation_engine.reservation_flow import (
@@ -47,24 +47,47 @@ def _engine_ports() -> ReservationEnginePorts:
 
 
 class SlotEvidenceTests(unittest.TestCase):
-    def test_archive_uses_slot_index_and_queues_watermark_once(self) -> None:
+    def test_archive_uses_slot_index_idempotently(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             source = Path(directory) / "selected.png"
             source.write_bytes(b"slot")
             details = {"fecha": "01/09/2026", "hora": "10:30"}
 
-            with patch(
-                "appointment_bot.services.unique_slot_watermark.queue_unique_slot_watermark"
-            ) as queue_watermark:
-                archived = archive_unique_slot_capture(settings, details, source)
-                repeated = archive_unique_slot_capture(settings, details, source)
+            archived = archive_unique_slot_capture(settings, details, source)
+            repeated = archive_unique_slot_capture(settings, details, source)
 
             self.assertIsNotNone(archived)
             self.assertEqual(archived, repeated)
             self.assertEqual(archived.name, "01-09-2026_10-30.png")
             self.assertEqual(archived.parent.name, "cupos-unicos")
             self.assertEqual(archived.read_bytes(), b"slot")
+
+    def test_run_history_queues_watermark_after_archiving(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings = make_settings(Path(directory))
+            archived = Path(directory) / "cupos-unicos" / "01-09-2026_10-30.png"
+            report = replace(
+                report_from_result(_available_result()),
+                run_id="run-1",
+                started_at="2026-09-02T10:00:00+00:00",
+                finished_at="2026-09-02T10:00:01+00:00",
+                duration_seconds=1.0,
+            )
+
+            with (
+                patch(
+                    "appointment_bot.reports.run_reporting."
+                    "archive_unique_slot_screenshots",
+                    return_value=[archived],
+                ),
+                patch(
+                    "appointment_bot.reports.run_reporting.queue_unique_slot_watermark"
+                ) as queue_watermark,
+                patch("appointment_bot.reports.run_reporting.record_run_outcome"),
+            ):
+                record_run_history(settings, report)
+
             queue_watermark.assert_called_once_with(settings, archived)
 
     def test_archived_slot_produces_a_verified_watermarked_copy(self) -> None:
@@ -73,14 +96,11 @@ class SlotEvidenceTests(unittest.TestCase):
             source = Path(directory) / "selected.png"
             Image.new("RGB", (900, 600), "white").save(source)
 
-            with patch(
-                "appointment_bot.services.unique_slot_watermark.queue_unique_slot_watermark"
-            ):
-                archived = archive_unique_slot_capture(
-                    settings,
-                    {"fecha": "01/09/2026", "hora": "10:30"},
-                    source,
-                )
+            archived = archive_unique_slot_capture(
+                settings,
+                {"fecha": "01/09/2026", "hora": "10:30"},
+                source,
+            )
 
             branded = ensure_unique_slot_watermark(
                 settings,

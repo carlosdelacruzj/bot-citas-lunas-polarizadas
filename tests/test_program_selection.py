@@ -3,7 +3,9 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from appointment_bot.reservation_engine.appointments import AppointmentWorkflowUnavailable
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AppointmentWorkflowUnavailable,
+)
 from appointment_bot.reservation_engine.programs import click_program_action
 
 

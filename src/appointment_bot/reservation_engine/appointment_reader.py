@@ -8,6 +8,19 @@ from zoneinfo import ZoneInfo
 from playwright.sync_api import Page
 
 from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.reservation_engine.appointment_contracts import (
+    AVAILABLE_TEXTS,
+    DATE_SELECTOR,
+    HOUR_SELECTOR,
+    SITE_SELECTOR,
+    UNAVAILABLE_TEXTS,
+    AppointmentSnapshot,
+)
+from appointment_bot.reservation_engine.appointment_dom import (
+    has_real_options,
+    is_real_appointment_option,
+    read_appointment_snapshot,
+)
 from appointment_bot.reservation_engine.appointment_fetch_probe import (
     read_fetch_probe_appointment_snapshot,
 )
@@ -104,8 +117,6 @@ def availability_result_from_snapshot(
     *,
     include_person: bool = True,
 ) -> AvailabilityResult:
-    from appointment_bot.reservation_engine.appointments import AVAILABLE_TEXTS, UNAVAILABLE_TEXTS
-
     date_options = snapshot.date_options
     hour_options = snapshot.hour_options
     details = snapshot_details(snapshot, include_person=include_person)
@@ -210,41 +221,7 @@ def read_stable_appointment_snapshot(
     return current_snapshot
 
 
-def read_appointment_snapshot(page: Page):
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        SITE_SELECTOR,
-        AppointmentSnapshot,
-        _read_person_name,
-        _read_slots_value,
-        _select_options_text,
-        _selected_option_text,
-    )
-
-    site_options = _select_options_text(page, SITE_SELECTOR)
-    date_options = _select_options_text(page, DATE_SELECTOR)
-    hour_options = _select_options_text(page, HOUR_SELECTOR)
-    return AppointmentSnapshot(
-        site_options=site_options,
-        date_options=date_options,
-        hour_options=hour_options,
-        site=_selected_option_text(page, SITE_SELECTOR),
-        date=_selected_option_text(page, DATE_SELECTOR),
-        hour=_selected_option_text(page, HOUR_SELECTOR),
-        slots=_read_slots_value(page),
-        person_name=_read_person_name(page),
-    )
-
-
 def read_atomic_appointment_snapshot(page: Page):
-    from appointment_bot.reservation_engine.appointments import (
-        DATE_SELECTOR,
-        HOUR_SELECTOR,
-        SITE_SELECTOR,
-        AppointmentSnapshot,
-    )
-
     payload = page.evaluate(
         """selectors => {
             const text = value => (value || "").trim();
@@ -409,29 +386,11 @@ def _only_no_slots(options: list[str]) -> bool:
 
 
 def _has_real_options(options: list[str]) -> bool:
-    return any(_is_real_appointment_option(option) for option in options)
+    return has_real_options(options)
 
 
 def _is_real_appointment_option(option: dict[str, Any] | str) -> bool:
-    if isinstance(option, str):
-        text = option
-        value_present = True
-        disabled = False
-        hidden = False
-    else:
-        text = str(option.get("text") or "")
-        value_present = bool(option.get("value"))
-        disabled = bool(option.get("disabled"))
-        hidden = bool(option.get("hidden"))
-    normalized = text.strip().lower()
-    return (
-        value_present
-        and not disabled
-        and not hidden
-        and bool(normalized)
-        and normalized != "sin cupos"
-        and not normalized.startswith("seleccione")
-    )
+    return is_real_appointment_option(option)
 
 
 def _only_non_actionable_dates(options: list[str]) -> bool:

@@ -15,6 +15,7 @@ from appointment_bot.reports.optimization import (
     append_partial_availability_case,
 )
 from appointment_bot.services.application.confirm_reservation import record_run_outcome
+from appointment_bot.services.unique_slot_watermark import queue_unique_slot_watermark
 from appointment_bot.utils.sanitization import sanitize_text
 from appointment_bot.utils.screenshots import (
     archive_unique_slot_screenshots,
@@ -117,7 +118,15 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
     screenshot_paths = report.screenshot_paths or []
     if report.screenshot_path and report.screenshot_path not in screenshot_paths:
         screenshot_paths = [report.screenshot_path, *screenshot_paths]
-    archive_unique_slot_screenshots(settings, report)
+    archived_slots = archive_unique_slot_screenshots(settings, report)
+    for archived_slot in archived_slots:
+        try:
+            queue_unique_slot_watermark(settings, archived_slot)
+        except Exception:
+            logger.exception(
+                "Could not queue the branded copy for unique slot screenshot: %s",
+                archived_slot,
+            )
     try:
         person_name = str((report.details or {}).get("nombre") or "").strip() or None
         record_run_outcome(

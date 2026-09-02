@@ -12,13 +12,19 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunReport
-from appointment_bot.reservation_engine.appointments import (
+from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
-    has_available_date_options,
-    open_hidden_appointment_panel_for_observer,
+)
+from appointment_bot.reservation_engine.appointment_reader import (
     read_appointment_availability,
+)
+from appointment_bot.reservation_engine.appointment_selection import (
+    has_available_date_options,
     select_available_appointment,
+)
+from appointment_bot.reservation_engine.appointments import (
+    open_hidden_appointment_panel_for_observer,
     select_available_site_for_observer,
 )
 from appointment_bot.reservation_engine.login import login
