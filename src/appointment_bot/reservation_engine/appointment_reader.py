@@ -38,7 +38,7 @@ def read_appointment_availability(
     logger.debug("Checking appointment availability")
     page.wait_for_load_state("domcontentloaded", timeout=timeout)
 
-    snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+    snapshot = read_stable_appointment_snapshot(page)
     result = availability_result_from_snapshot(
         page,
         snapshot,
@@ -47,7 +47,7 @@ def read_appointment_availability(
     if result.status == "partial":
         logger.info("Partial availability detected; rechecking before notifying")
         page.wait_for_timeout(1_500)
-        snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+        snapshot = read_stable_appointment_snapshot(page)
         result = availability_result_from_snapshot(
             page,
             snapshot,
@@ -190,11 +190,7 @@ def availability_result_from_snapshot(
     )
 
 
-def read_stable_appointment_snapshot(
-    page: Page,
-    *,
-    log_person: bool,
-) -> object:
+def read_stable_appointment_snapshot(page: Page) -> object:
     previous_snapshot = None
     current_snapshot = None
     for attempt in range(1, 5):

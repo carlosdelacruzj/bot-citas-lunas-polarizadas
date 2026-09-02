@@ -221,7 +221,7 @@ def _wait_for_selected_appointment_stability(
     remaining_legacy_wait_ms = max(0, round(500 - elapsed_ms))
     if remaining_legacy_wait_ms:
         page.wait_for_timeout(remaining_legacy_wait_ms)
-    snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+    snapshot = read_stable_appointment_snapshot(page)
     return snapshot, {
         "mode": "legacy_fallback" if event_driven else "legacy",
         "signal_seconds": round(max(fallback_started - started, 0.0), 3),
@@ -428,7 +428,7 @@ def select_available_appointment(
             blocked_evidence_result, observation, observation_started
         )
 
-    snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+    snapshot = read_stable_appointment_snapshot(page)
     details = snapshot_details(snapshot, include_person=include_person)
     if is_allowed_appointment is not None:
         details["blocked_by_order_rule"] = True
@@ -608,7 +608,7 @@ def _blocked_evidence_unavailable_result(
         "blocked_evidence_error": reason,
     }
     try:
-        snapshot = read_stable_appointment_snapshot(page, log_person=include_person)
+        snapshot = read_stable_appointment_snapshot(page)
     except Exception as exc:
         logger.warning("Could not read fallback blocked appointment snapshot: %s", exc)
     else:

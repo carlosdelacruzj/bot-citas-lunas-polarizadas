@@ -31,6 +31,9 @@ Los contratos, DTO y selectores de citas viven en `appointment_contracts.py`;
 las lecturas DOM neutrales viven en `appointment_dom.py`. El marcado visual de
 cupos se solicita desde `reports/run_reporting.py` despues de que `utils`
 archiva la captura, sin dependencia inversa desde infraestructura compartida.
+La cola y la ejecucion de ordenes exponen bundles inmutables de dependencias;
+produccion usa sus defaults y las pruebas reemplazan funciones mediante fakes
+explicitos, sin reasignar globals ni una fachada dinamica.
 
 Ejecutar desde la raiz:
 

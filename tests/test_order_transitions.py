@@ -50,6 +50,10 @@ class OrderTransitionTests(unittest.TestCase):
             resolve_reservation_attempt(attempt_id, "unknown", settings=settings)
         return attempt_id
 
+    def test_invalid_attempt_resolution_status_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Invalid reservation attempt status"):
+            resolve_reservation_attempt("attempt-1", "retryable")
+
     def test_paused_order_cannot_submit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))

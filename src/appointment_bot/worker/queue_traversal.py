@@ -5,6 +5,8 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
+from dataclasses import dataclass
+from typing import Any
 from uuid import uuid4
 
 from appointment_bot.config import Settings
@@ -41,7 +43,30 @@ from appointment_bot.worker.queue_policy import (
 logger = logging.getLogger(__name__)
 
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
-SERVICE_ORDER_LEASE_RENEW_INTERVAL_SECONDS = 60
+
+
+@dataclass(frozen=True)
+class QueueTraversalDependencies:
+    list_active_orders: Callable[..., list]
+    claim_service_order: Callable[..., bool]
+    release_service_order_claim: Callable[..., bool]
+    update_order_state: Callable[..., Any]
+    mark_order_done: Callable[..., Any]
+    run_service_order: Callable[..., RunReport]
+    update_state_from_report: Callable[..., Any]
+    delay_between_orders: Callable[..., Any]
+
+
+DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES = QueueTraversalDependencies(
+    list_active_orders=list_active_orders,
+    claim_service_order=claim_service_order,
+    release_service_order_claim=release_service_order_claim,
+    update_order_state=update_order_state,
+    mark_order_done=mark_order_done,
+    run_service_order=run_service_order,
+    update_state_from_report=_update_state_from_report,
+    delay_between_orders=_delay_between_orders,
+)
 
 
 def run_rapid_queue_with_settings(
@@ -58,6 +83,7 @@ def run_rapid_queue_with_settings(
     target_order_ids: tuple[str, ...] | None = None,
     inter_order_delay_enabled: bool = True,
     stop_on_available_without_reserve: bool = True,
+    dependencies: QueueTraversalDependencies = DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES,
 ) -> RunReport:
     initial_order_ids = set(initial_confirmed_order_ids or set())
     checked_orders = 0
@@ -83,9 +109,9 @@ def run_rapid_queue_with_settings(
         orders = [
             order
             for order in (
-                list_active_orders(settings, order_ids=target_order_ids)
+                dependencies.list_active_orders(settings, order_ids=target_order_ids)
                 if target_order_ids is not None
-                else list_active_orders(settings, include_constrained=False)
+                else dependencies.list_active_orders(settings, include_constrained=False)
             )
             if order.order_id not in skipped_orders
         ]
@@ -101,7 +127,9 @@ def run_rapid_queue_with_settings(
             )
             orders = orders[: settings.opportunity_handoff_max_candidates]
         queued_order_ids = {order.order_id for order in orders}
-        for order in list_active_orders(settings, order_ids=follow_up_order_ids or set()):
+        for order in dependencies.list_active_orders(
+            settings, order_ids=follow_up_order_ids or set()
+        ):
             if order.order_id in skipped_orders or order.order_id in queued_order_ids:
                 continue
             orders.append(order)
@@ -173,7 +201,7 @@ def run_rapid_queue_with_settings(
                 )
                 break
 
-            if not claim_service_order(
+            if not dependencies.claim_service_order(
                 order.order_id,
                 owner_token=lease_owner,
                 lease_seconds=SERVICE_ORDER_LEASE_SECONDS,
@@ -185,7 +213,7 @@ def run_rapid_queue_with_settings(
                 )
                 continue
             claims.callback(
-                release_service_order_claim,
+                dependencies.release_service_order_claim,
                 order.order_id,
                 owner_token=lease_owner,
                 settings=settings,
@@ -194,7 +222,7 @@ def run_rapid_queue_with_settings(
                 checked_orders += 1
                 if on_order_start is not None:
                     on_order_start(order)
-                report = run_service_order(
+                report = dependencies.run_service_order(
                     settings,
                     order,
                     lease_owner=lease_owner,
@@ -216,7 +244,7 @@ def run_rapid_queue_with_settings(
             )
             if report.status in {"available", "partial", "registered", "reservation_unconfirmed"}:
                 deferred_reports.append(report)
-            _update_state_from_report(settings, order, report)
+            dependencies.update_state_from_report(settings, order, report)
             outcome = classify_order_report(report)
             if outcome is OrderReportOutcome.BLOCKED:
                 logger.info(
@@ -225,12 +253,12 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
             if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
                 cooldown = settings.captcha_rejection_cooldown_seconds
                 failed_orders += 1
-                update_order_state(
+                dependencies.update_order_state(
                     order.order_id,
                     status=report.status,
                     message=report.message,
@@ -245,7 +273,7 @@ def run_rapid_queue_with_settings(
                     cooldown,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
             if report.exit_code != 0 or report.status == "error":
                 failed_orders += 1
@@ -256,26 +284,26 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
             if outcome is OrderReportOutcome.TERMINAL_STAGE:
                 # Estados terminales de la etapa y registered excluyen al
                 # orden de ejecuciones futuras.
-                mark_order_done(
+                dependencies.mark_order_done(
                     order.order_id,
                     status=order_done_status_from_report(report),
                     settings=settings,
                 )
                 logger.info("Order marked as done: %s", order.order_id)
                 if has_more_orders and inter_order_delay_enabled:
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
             if outcome is OrderReportOutcome.REGISTERED:
                 confirmed_reservations += 1
                 confirmed_order_ids.append(order.order_id)
-                mark_order_done(order.order_id, settings=settings)
+                dependencies.mark_order_done(order.order_id, settings=settings)
                 logger.info("Reservation confirmed for order: %s", order.order_id)
                 if (
                     has_more_orders
@@ -285,13 +313,13 @@ def run_rapid_queue_with_settings(
                         confirmed_reservations,
                     )
                 ):
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
             if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
                 completion_reason = "reservation_unconfirmed"
                 uncertain_reservations += 1
-                update_order_state(
+                dependencies.update_order_state(
                     order.order_id,
                     status=report.status,
                     message=report.message,
@@ -311,7 +339,7 @@ def run_rapid_queue_with_settings(
                 # saltar la orden prioritaria ni repetir el problema en otras cuentas.
                 if report.status == "unknown":
                     failed_orders += 1
-                    update_order_state(
+                    dependencies.update_order_state(
                         order.order_id,
                         status=report.status,
                         message=report.message,
@@ -356,7 +384,7 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    _delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
                 continue
 
     queue_has_errors = bool(failed_orders or uncertain_reservations)

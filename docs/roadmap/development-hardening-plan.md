@@ -790,11 +790,16 @@ marca desde reportes y la baseline obligatoria de CI queda en cero ciclos.
 Objetivo: sustituir monkey patching por dependencias inyectables y pruebas que
 usen fakes explicitos.
 
-- [ ] Inventariar todos los imports productivos y de tests de la fachada.
-- [ ] Parametrizar repositorios y ejecutores en cola y ejecucion.
-- [ ] Migrar tests sin reasignar globals de otros modulos.
-- [ ] Migrar consumidores productivos.
-- [ ] Eliminar la fachada solo cuando tenga cero consumidores.
+- [x] Inventariar todos los imports productivos y de tests de la fachada.
+- [x] Parametrizar repositorios y ejecutores en cola y ejecucion.
+- [x] Migrar tests sin reasignar globals de otros modulos.
+- [x] Migrar consumidores productivos.
+- [x] Eliminar la fachada solo cuando tenga cero consumidores.
+
+`OrderExecutionDependencies` y `QueueTraversalDependencies` conservan defaults
+productivos inmutables y permiten fakes explicitos. `continuous_worker`, `host`
+y las pruebas importan los modulos propietarios; `queue_runtime.py` fue retirado
+despues de verificar cero consumidores.
 
 ### 5.5 Dividir modulos grandes
 

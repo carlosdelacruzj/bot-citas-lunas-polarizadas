@@ -51,15 +51,15 @@ from appointment_bot.worker.observer_results import (
     notify_confirmed_observer_availability,
 )
 from appointment_bot.worker.opportunity_burst import OpportunityBurstCoordinator
+from appointment_bot.worker.order_execution import (
+    SERVICE_ORDER_LEASE_SECONDS,
+    run_service_order,
+)
 from appointment_bot.worker.order_results import handle_observer_order_report
 from appointment_bot.worker.post_reservation_review import (
     review_confirmed_orders_after_queue,
 )
-from appointment_bot.worker.queue_runtime import (
-    SERVICE_ORDER_LEASE_SECONDS,
-    run_rapid_queue_with_settings,
-    run_service_order,
-)
+from appointment_bot.worker.queue_traversal import run_rapid_queue_with_settings
 from appointment_bot.worker.recovery import (
     portal_defense_signal,
     recovery_wait_seconds,

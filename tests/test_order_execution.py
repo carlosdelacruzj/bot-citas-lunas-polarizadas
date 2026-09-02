@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock
 from zoneinfo import ZoneInfo
 
 from appointment_bot.core.models import RunReport, ServiceOrderRuntime
-from appointment_bot.worker.queue_runtime import (
+from appointment_bot.worker.order_execution import (
+    DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
     _appointment_filter_for_order,
+)
+from appointment_bot.worker.queue_traversal import (
+    DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES,
     run_rapid_queue_with_settings,
 )
 from tests.helpers import make_settings
@@ -35,11 +40,15 @@ class OrderExecutionTests(unittest.TestCase):
         minimum_date = today + timedelta(days=2)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            with patch(
-                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(minimum_date, None, None, ()),
-            ):
-                allowed = _appointment_filter_for_order("order-1", settings)
+            dependencies = replace(
+                DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
+                get_reservation_constraints=Mock(
+                    return_value=(minimum_date, None, None, ())
+                ),
+            )
+            allowed = _appointment_filter_for_order(
+                "order-1", settings, dependencies=dependencies
+            )
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
@@ -56,11 +65,15 @@ class OrderExecutionTests(unittest.TestCase):
         minimum_date = today + timedelta(days=2)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            with patch(
-                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(minimum_date, None, None, ()),
-            ):
-                allowed = _appointment_filter_for_order("order-1", settings)
+            dependencies = replace(
+                DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
+                get_reservation_constraints=Mock(
+                    return_value=(minimum_date, None, None, ())
+                ),
+            )
+            allowed = _appointment_filter_for_order(
+                "order-1", settings, dependencies=dependencies
+            )
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
@@ -73,11 +86,15 @@ class OrderExecutionTests(unittest.TestCase):
         blocked_date = allowed_date + timedelta(days=1)
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            with patch(
-                "appointment_bot.worker.queue_runtime.get_reservation_constraints_for_order",
-                return_value=(None, None, (allowed_date.isoweekday(),), ()),
-            ):
-                allowed = _appointment_filter_for_order("order-1", settings)
+            dependencies = replace(
+                DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
+                get_reservation_constraints=Mock(
+                    return_value=(None, None, (allowed_date.isoweekday(),), ())
+                ),
+            )
+            allowed = _appointment_filter_for_order(
+                "order-1", settings, dependencies=dependencies
+            )
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
@@ -93,27 +110,19 @@ class OrderExecutionTests(unittest.TestCase):
                 RunReport(status="partial", message="partial", exit_code=0),
                 RunReport(status="completed", message="checked", exit_code=0),
             ]
-            with (
-                patch(
-                    "appointment_bot.worker.queue_runtime.list_active_orders",
-                    return_value=orders,
-                ),
-                patch(
-                    "appointment_bot.worker.queue_runtime.claim_service_order",
-                    return_value=True,
-                ),
-                patch(
-                    "appointment_bot.worker.queue_runtime.release_service_order_claim",
-                    return_value=True,
-                ),
-                patch(
-                    "appointment_bot.worker.queue_runtime.run_service_order",
-                    side_effect=reports,
-                ) as run_order,
-                patch("appointment_bot.worker.queue_runtime._update_state_from_report"),
-                patch("appointment_bot.worker.queue_runtime._delay_between_orders"),
-            ):
-                report = run_rapid_queue_with_settings(settings)
+            run_order = Mock(side_effect=reports)
+            dependencies = replace(
+                DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES,
+                list_active_orders=Mock(return_value=orders),
+                claim_service_order=Mock(return_value=True),
+                release_service_order_claim=Mock(return_value=True),
+                update_order_state=Mock(),
+                mark_order_done=Mock(),
+                run_service_order=run_order,
+                update_state_from_report=Mock(),
+                delay_between_orders=Mock(),
+            )
+            report = run_rapid_queue_with_settings(settings, dependencies=dependencies)
 
             self.assertEqual(run_order.call_count, 3)
             self.assertEqual(report.status, "completed")
@@ -124,31 +133,27 @@ class OrderExecutionTests(unittest.TestCase):
             with self.subTest(status=unsafe_status), tempfile.TemporaryDirectory() as directory:
                 settings = make_settings(Path(directory))
                 orders = [_order(1), _order(2)]
-                with (
-                    patch(
-                        "appointment_bot.worker.queue_runtime.list_active_orders",
-                        return_value=orders,
-                    ),
-                    patch(
-                        "appointment_bot.worker.queue_runtime.claim_service_order",
-                        return_value=True,
-                    ),
-                    patch(
-                        "appointment_bot.worker.queue_runtime.release_service_order_claim",
-                        return_value=True,
-                    ),
-                    patch(
-                        "appointment_bot.worker.queue_runtime.run_service_order",
-                        return_value=RunReport(
-                            status=unsafe_status,
-                            message="unsafe",
-                            exit_code=1,
-                        ),
-                    ) as run_order,
-                    patch("appointment_bot.worker.queue_runtime._update_state_from_report"),
-                    patch("appointment_bot.worker.queue_runtime.update_order_state"),
-                ):
-                    report = run_rapid_queue_with_settings(settings)
+                run_order = Mock(
+                    return_value=RunReport(
+                        status=unsafe_status,
+                        message="unsafe",
+                        exit_code=1,
+                    )
+                )
+                dependencies = replace(
+                    DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES,
+                    list_active_orders=Mock(return_value=orders),
+                    claim_service_order=Mock(return_value=True),
+                    release_service_order_claim=Mock(return_value=True),
+                    update_order_state=Mock(),
+                    mark_order_done=Mock(),
+                    run_service_order=run_order,
+                    update_state_from_report=Mock(),
+                    delay_between_orders=Mock(),
+                )
+                report = run_rapid_queue_with_settings(
+                    settings, dependencies=dependencies
+                )
 
                 self.assertEqual(run_order.call_count, 1)
                 self.assertEqual(report.status, "error")

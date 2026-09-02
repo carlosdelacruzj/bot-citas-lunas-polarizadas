@@ -4,7 +4,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from uuid import uuid4
 
 from appointment_bot.config import Settings
@@ -45,6 +45,16 @@ logger = logging.getLogger(__name__)
 
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
 SERVICE_ORDER_LEASE_RENEW_INTERVAL_SECONDS = 60
+
+
+@dataclass(frozen=True)
+class OrderExecutionDependencies:
+    get_reservation_constraints: Callable[..., tuple]
+
+
+DEFAULT_ORDER_EXECUTION_DEPENDENCIES = OrderExecutionDependencies(
+    get_reservation_constraints=get_reservation_constraints_for_order,
+)
 
 
 class _CombinedEvent:
@@ -109,8 +119,10 @@ class _ServiceOrderLeaseHeartbeat:
 def _appointment_filter_for_order(
     order_id: str,
     settings: Settings,
+    *,
+    dependencies: OrderExecutionDependencies = DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
 ) -> Callable[[str, str], bool] | None:
-    values = get_reservation_constraints_for_order(order_id, settings=settings)
+    values = dependencies.get_reservation_constraints(order_id, settings=settings)
     minimum_date, maximum_date, allowed_weekdays, excluded_date_ranges = values
     return appointment_filter_from_constraints(
         ReservationConstraints(
@@ -133,6 +145,7 @@ def run_service_order(
     cancel_event: threading.Event | None = None,
     on_check: Callable[..., None] | None = None,
     opportunity_context: dict[str, str] | None = None,
+    dependencies: OrderExecutionDependencies = DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
 ) -> RunReport:
     logger.info("Starting queued appointment check for order %s", order.order_id)
     try:
@@ -346,6 +359,7 @@ def run_service_order(
                 is_allowed_appointment=_appointment_filter_for_order(
                     order.order_id,
                     settings,
+                    dependencies=dependencies,
                 ),
                 on_submission_intent=on_submission_intent,
                 on_submission_started=on_submission_started,

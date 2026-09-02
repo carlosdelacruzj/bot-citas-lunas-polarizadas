@@ -18,7 +18,7 @@ from appointment_bot.worker.continuous_worker import (
     LEASE_UNAVAILABLE_REASON,
     ContinuousWorker,
 )
-from appointment_bot.worker.queue_runtime import run_rapid_queue_with_settings
+from appointment_bot.worker.queue_traversal import run_rapid_queue_with_settings
 
 logger = logging.getLogger(__name__)
 RESTART_EXIT_CODE = 75

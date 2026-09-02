@@ -203,8 +203,8 @@ Tablas con cero filas que **no deben declararse huerfanas solo por el conteo**:
 
 ## Elementos que no se deben borrar por falso positivo
 
-- `worker/queue_traversal.py`: se configura dinamicamente desde
-  `queue_runtime.py`.
+- `worker/queue_traversal.py`: es propietario de la cola y recibe dependencias
+  explicitas; la fachada dinamica `queue_runtime.py` ya fue retirada.
 - `mark_burst_execution_started` y `mark_burst_execution_finished`: se invocan
   mediante `getattr`.
 - entrypoints de `pyproject.toml`: son puntos de ejecucion aunque no tengan
