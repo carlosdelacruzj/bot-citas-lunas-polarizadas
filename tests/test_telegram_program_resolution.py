@@ -4,6 +4,7 @@ from threading import Lock
 from unittest.mock import Mock
 
 from appointment_bot.services import telegram_control, telegram_program_resolution
+from appointment_bot.services.telegram.admin_api_client import AdminApiClient
 
 
 class FakeTelegram:
@@ -193,7 +194,7 @@ def test_execute_resolution_displays_preview_without_sending() -> None:
 
 
 def test_program_resolution_client_uses_actor_header_boundary() -> None:
-    client = telegram_control.AdminApiClient("http://127.0.0.1:8766", "token")
+    client = AdminApiClient("http://127.0.0.1:8766", "token")
     client._request = Mock(return_value={"status": "applied"})
     payload = {"resolution": "pause", "listing_signature": "signature"}
 

@@ -117,8 +117,8 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Continuar en 5.5.1 del plan integral: separar Telegram Control, una
-responsabilidad por commit. Las fases 0 a 4 y 5.1 a 5.4 estan cerradas
+Continuar en 5.5.1 del plan integral: caracterizar y extraer `TelegramBotApi`,
+una responsabilidad por commit. Las fases 0 a 4 y 5.1 a 5.4 estan cerradas
 tecnicamente; las aceptaciones naturales de P0 siguen pendientes. Despues siguen
 router API, migraciones, configuracion y WhatsApp; las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas

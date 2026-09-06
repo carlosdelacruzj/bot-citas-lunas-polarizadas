@@ -834,7 +834,7 @@ API sigue siendo la unica frontera administrativa.
 
 - [ ] Caracterizar polling, offset, autorizacion, rate limit, callbacks y
   expiracion de conversaciones.
-- [ ] Extraer `AdminApiClient` sin cambiar rutas, payloads ni autenticacion.
+- [x] Extraer `AdminApiClient` sin cambiar rutas, payloads ni autenticacion.
 - [ ] Extraer `TelegramBotApi` sin cambiar confirmacion de callbacks ni manejo
   de errores.
 - [ ] Extraer router y estado de actualizaciones, conservando deduplicacion y
@@ -843,6 +843,14 @@ API sigue siendo la unica frontera administrativa.
   controles operativos.
 - [ ] Extraer presentacion y dejar `telegram_control.py` como composicion y
   entrypoint hasta migrar el ultimo consumidor.
+
+`services/telegram/admin_api_client.py` contiene el cliente administrativo;
+`errors.py` y `transport.py` comparten la excepcion y la lectura JSON acotada.
+La extraccion conserva el AST de las definiciones, rutas, HMAC, timeouts y
+errores; la prueba existente del cliente consume su nuevo propietario.
+`telegram_control.py` conserva los imports compatibles y el entrypoint. No se
+retira la fachada ni se da por caracterizado el polling o las conversaciones.
+Siguiente bloque: caracterizar y extraer `TelegramBotApi` antes de mover estado.
 
 #### 5.5.2 Declarar el router de Admin API
 

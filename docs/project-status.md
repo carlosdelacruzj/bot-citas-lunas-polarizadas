@@ -47,6 +47,7 @@ cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exacta
 
 ### Admin API
 
+El cliente administrativo de Telegram vive en `services/telegram/admin_api_client.py`; Telegram Control conserva el entrypoint y los imports compatibles.
 Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp;
@@ -230,6 +231,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
 - quedan validaciones visuales y de accesibilidad en anchos representativos;
 - no quedan ciclos; un import inverso conocido sigue baselinado y CI impide deuda nueva.
+- `pip check` del Python compartido detecta `torch 2.12.1+cu130` incompatible con `setuptools 84`; torch no pertenece al lock del proyecto. Las pruebas del proyecto pasan, pero ese entorno compartido no esta conciliado.
 
 La prioridad y criterios de cierre estan en [`roadmap/README.md`](roadmap/README.md).
 
@@ -244,7 +246,3 @@ git diff --check
 
 Para dashboard: `npm ci`, `npm run test:unit`, `npm run test:e2e`, `npm run typecheck`
 y `npm run build` desde `dashboard/`; el smoke usa API simulada y no ejecuta mutaciones reales.
-
-## Regla de mantenimiento
-
-Reemplazar el estado anterior, dejar lo futuro en roadmap, mantener menos de 250 lineas y verificar enlaces y `git diff --check`.
