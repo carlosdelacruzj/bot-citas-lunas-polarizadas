@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-09-01`.
+Ultima priorizacion: `2026-09-06`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -47,6 +47,7 @@ Observar, sin crear envios de prueba:
 
 - proximo album de reserva/cobro procesado por el dispatcher;
 - proxima rafaga natural de tres sesiones comparada con el baseline de dos;
+- primera reserva natural con CAPTCHA previo verificado y sin CAPTCHA final, con aviso temprano, POST medido y video retenido;
 - proximo postpago con documentos y texto separados;
 - variantes pendientes del aviso de registro;
 - proximo recordatorio con plantilla versionada;
@@ -69,8 +70,9 @@ Cierre: cada tarea muestra quien, desde cuando y que debe hacer.
 
 ### Salud y controles
 
-Agregar salud compuesta, pausa, drenaje y readiness. Rechazar con `409` acciones
-incompatibles y exponer frescura de cada fuente.
+Agregar salud compuesta, drenaje y readiness. La pausa y reanudacion del worker
+ya son operables desde Resumen con transicion pendiente visible. Rechazar con
+`409` acciones incompatibles y exponer frescura de cada fuente.
 
 Cierre: dashboard y Telegram distinguen proceso vivo, servicio funcional,
 fuente stale y accion bloqueada.
@@ -115,10 +117,12 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-No iniciar antes de cerrar las fases 0 a 4 del plan integral. Las fases 5 a 8
-gobiernan fronteras backend, ciclos, globals, modulos grandes, dashboard por
-dominio, errores HTTP, contratos, consultas y estandar permanente. Ejecutar una
-frontera por vez y no combinar refactor con cambios funcionales ajenos.
+Continuar en 5.5.1 del plan integral: separar Telegram Control, una
+responsabilidad por commit. Las fases 0 a 4 y 5.1 a 5.4 estan cerradas
+tecnicamente; las aceptaciones naturales de P0 siguen pendientes. Despues siguen
+router API, migraciones, configuracion y WhatsApp; las fases 6 a 8 cubren
+dashboard por dominio, contratos, consultas y cierre. No combinar estas
+extracciones con cambios funcionales del portal.
 
 ## Fuera de alcance o sin autorizacion
 

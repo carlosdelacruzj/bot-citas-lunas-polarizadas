@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-02`.
+Estado verificado documentalmente: `2026-09-06`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -28,8 +28,10 @@ Estado general:
   orden;
 - reservas, pagos, comunicaciones y seguimiento post-cita persistidos;
 - dashboard con bandeja comercial canonica y pantallas operativas separadas;
-- CAPTCHA grafico de aprendizaje en almacenamiento frio; el CAPTCHA HTML
-  matematico se resuelve localmente con reglas estrictas;
+- CAPTCHA grafico de aprendizaje en almacenamiento frio; el CAPTCHA HTML se
+  resuelve localmente antes de sede o reserva con contrato estricto, y una
+  variacion no reconocida pausa globalmente el worker;
+- apertura y reapertura, incluido el observador, esperan el panel visible antes del CAPTCHA;
 - WhatsApp conserva `sent`, `uncertain`, confirmacion tecnica y conciliacion
   manual como hechos distintos.
 
@@ -72,11 +74,10 @@ estable; el snapshot bajo `docs/` conserva solo el mes activo.
    o Telegram, sin WhatsApp automatico.
 4. El worker monitorea dentro de los limites configurados.
 5. Cada cupo se contrasta con las reglas exactas de la orden.
-6. La seleccion usa estabilizacion por eventos y validacion DOM atomica; si la
-   lectura no es concluyente vuelve automaticamente al camino conservador.
-7. Una seleccion valida conserva y archiva su screenshot canonico antes de
-   CAPTCHA o submit, incluso si queda bloqueada por regla o procede de una
-   reobservacion; si falla esa evidencia, no inicia el intento.
+6. La seleccion usa validacion DOM atomica; fecha/hora reproducidas y captura canonica disparan el aviso antes del CAPTCHA o del boton de reserva.
+7. Una seleccion valida archiva su screenshot canonico; antes de resolver o
+   enviar exige formulario, tokens, honeypot y firma estructural conocidos. Si
+   falla la evidencia o el contrato, pausa sin iniciar el intento.
 8. La reserva solo se confirma con evidencia suficiente del portal.
 9. Pago y comunicaciones siguen estados independientes.
 10. Citas y recordatorios alimentan el seguimiento previo y posterior.
@@ -126,7 +127,7 @@ cobro falla cerrado hasta disponer de una correccion contable auditada.
 **Pendientes** consume `GET /api/v1/operator-inbox`. El total excluye CAPTCHA y
 reune acceso, pausas, contacto, cobro, postpago y comunicaciones. Incluye
 busqueda, filtros, severidad y siguiente accion. El dato temporal disponible
-sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea.
+sigue siendo el ultimo cambio de la orden, no el nacimiento real de la tarea. **Resumen** permite pausar y reanudar mediante comandos durables; la pausa espera una frontera segura, conserva historial y backoffs, y solo suspende nuevas revisiones y mediciones del portal. Con reserva automatica desactivada, un cupo seleccionable conserva su foto y pausa antes de cualquier clic de reserva.
 
 **Citas y recordatorios** separa proximas citas, casos que requieren revision e
 historial. Permite anticipacion de `1..3` dias y mantiene el seguimiento post-cita
@@ -211,7 +212,7 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
   WhatsApp activos;
 - una orden especial solo queda activa tras releer preflight validado y `ready`;
 - preservar screenshots de cupos unicos antes de CAPTCHA o submit;
-- videos de reserva son evidencia local sensible y se graban sin mascaras;
+- videos locales cubren fallos, resultados desconocidos e interacciones de reserva; diagnosticos quedan protegidos de purga y enlazados al run;
 - no publicar dumps, credenciales, placas, expedientes ni respuestas CAPTCHA;
 - respuestas CAPTCHA no entran en reportes, runs, reservas, CSV ni Markdown;
 - auditoria usa dashboard local, Telegram hasheado o huella SHA-256 del bearer;
@@ -221,8 +222,8 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 
 - Pendientes no posee aun `actionable_since`, vencimiento ni responsable
   persistidos por tarea;
-- la rafaga de tres sesiones esta implementada, pero aun requiere comparacion
-  natural contra el baseline de dos sesiones;
+- el envio con CAPTCHA previo verificado y sin CAPTCHA final esta validado localmente; falta aceptacion natural;
+- la rafaga de tres sesiones requiere comparacion natural contra el baseline de dos sesiones;
 - faltan observaciones naturales de algunos flujos WhatsApp, post-cita y cierre;
 - el primer tramite integral natural posterior a `v74` debe validar abono, tasa, saldo, mensaje y resumen sin crear un caso de prueba;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
