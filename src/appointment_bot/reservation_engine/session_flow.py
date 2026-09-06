@@ -88,7 +88,7 @@ def execute_session_flow(
         logger.info("Finished appointment check: %s", stage_result.status)
         return SessionFlowResult(stage_result, screenshot_path, [])
 
-    page = open_appointment_panel(page)
+    page = open_appointment_panel(page, cancel_event=cancel_event)
     result, screenshot_path, screenshot_paths = monitor_appointment_availability(
         page,
         settings,

@@ -39,6 +39,12 @@ class _Locator:
     def wait_for(self, **kwargs):
         return None
 
+    def count(self):
+        return 1
+
+    def input_value(self):
+        return ""
+
     def fill(self, value, **kwargs):
         return None
 
@@ -188,6 +194,10 @@ class ReservationCaptchaTests(unittest.TestCase):
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit."
+                    "_record_and_validate_form_audit",
+                ),
             ):
                 solve_reservation_captcha_and_click_reserve(
                     _Page(),
@@ -236,6 +246,10 @@ class ReservationCaptchaTests(unittest.TestCase):
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
                 ),
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit."
+                    "_record_and_validate_form_audit",
+                ),
             ):
                 with self.assertRaises(AppointmentWorkflowCancelled):
                     solve_reservation_captcha_and_click_reserve(
@@ -280,6 +294,10 @@ class ReservationCaptchaTests(unittest.TestCase):
                 ),
                 patch(
                     "appointment_bot.reservation_engine.reservation_submit.validate_selected_appointment",
+                ),
+                patch(
+                    "appointment_bot.reservation_engine.reservation_submit."
+                    "_record_and_validate_form_audit",
                 ),
             ):
                 solve_reservation_captcha_and_click_reserve(

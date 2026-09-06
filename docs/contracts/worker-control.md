@@ -110,5 +110,9 @@ Runbook: [`../operations/opportunity-bursts.md`](../operations/opportunity-burst
 - no matar una sesion durante submit;
 - no liberar backoff como efecto lateral de un comando;
 - no marcar un comando aplicado antes del punto seguro;
+- una variacion marcada del contrato de seguridad del portal aplica pausa
+  persistente, conserva el error y alerta antes de admitir mas trabajo;
+- una deteccion `available` con `AUTO_RESERVE=false` aplica pausa persistente y
+  avisa que la orden ya puede abrirse con medicion para continuar manualmente;
 - no ejecutar controles por SQL, Telegram o PowerShell fuera de Admin API;
 - no asumir salud funcional por PID o HTTP aislado.

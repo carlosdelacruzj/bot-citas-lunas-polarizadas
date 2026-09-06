@@ -531,6 +531,7 @@ def format_immediate_availability_message(result: AvailabilityResult) -> str:
     sent_at = datetime.now(TELEGRAM_TIMEZONE).strftime("%H:%M:%S")
     lines = [
         "CUPO DETECTADO",
+        "Fecha y hora detectadas; reserva aun no confirmada.",
         f"Enviado: {sent_at} Lima",
         f"Sede: {_format_availability_field(details.get('sede'))}",
         f"Fechas: {_format_availability_field(date or date_options)}",

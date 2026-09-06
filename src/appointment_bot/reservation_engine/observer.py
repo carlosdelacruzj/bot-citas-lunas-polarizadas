@@ -5,6 +5,7 @@ import random
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -15,6 +16,7 @@ from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
     AppointmentOptionsNotRefreshed,
+    PortalContractChanged,
 )
 from appointment_bot.reservation_engine.appointment_reader import (
     read_appointment_availability,
@@ -71,12 +73,24 @@ def run_observer_with_report(
     screenshot_paths: list[Path] = []
     error_screenshot_path = None
 
+    recorder = ports.runs.create_video(
+        settings, order_id=run_id, client_name="observer", started_at=started_at_dt,
+    )
     try:
-        with open_page(settings) as page:
+        with open_page(
+            settings,
+            video_dir=recorder.record_video_dir if recorder is not None else None,
+            video_width=settings.client_video_width,
+            video_height=settings.client_video_height,
+            video_path_callback=recorder.capture_source_path if recorder is not None else None,
+        ) as page:
             try:
                 login(page, settings)
                 page = click_program_action(page, observer_read_only=True)
-                page = open_hidden_appointment_panel_for_observer(page)
+                page = open_hidden_appointment_panel_for_observer(
+                    page,
+                    cancel_event=cancel_event,
+                )
                 result, result_screenshot = _monitor_observer(
                     page,
                     settings,
@@ -94,21 +108,12 @@ def run_observer_with_report(
                 details = dict(result.details or {})
                 details["mode"] = "observer"
                 result = AvailabilityResult(result.status, result.message, details)
-                report = ports.runs.finalize_report(
-                    RunReport(
-                        status=result.status,
-                        message=result.message,
-                        exit_code=0,
-                        run_id=run_id,
-                        started_at=started_at,
-                        details=details,
-                        screenshot_path=(str(screenshot_paths[0]) if screenshot_paths else None),
-                        screenshot_paths=[str(path) for path in screenshot_paths] or None,
-                    ),
-                    settings,
-                    started_at_dt=started_at_dt,
+                report = RunReport(
+                    status=result.status, message=result.message, exit_code=0,
+                    run_id=run_id, started_at=started_at, details=details,
+                    screenshot_path=str(screenshot_paths[0]) if screenshot_paths else None,
+                    screenshot_paths=[str(path) for path in screenshot_paths] or None,
                 )
-                return report
             except Exception:
                 if settings.screenshot_on_error:
                     error_screenshot_path = _save_sanitized_observer_screenshot(
@@ -119,19 +124,23 @@ def run_observer_with_report(
                 raise
     except Exception as exc:
         logger.exception("Observer availability check failed")
-        return ports.runs.finalize_report(
-            RunReport(
-                status="error",
-                message=str(exc),
-                exit_code=1,
-                run_id=run_id,
-                started_at=started_at,
-                details={"mode": "observer"},
-                screenshot_path=(str(error_screenshot_path) if error_screenshot_path else None),
-            ),
-            settings,
-            started_at_dt=started_at_dt,
+        report = RunReport(
+            status="error", message=str(exc), exit_code=1,
+            run_id=run_id, started_at=started_at,
+            details={
+                "mode": "observer", "error_type": type(exc).__name__,
+                "worker_pause_required": isinstance(exc, PortalContractChanged),
+            },
+            screenshot_path=str(error_screenshot_path) if error_screenshot_path else None,
         )
+    if recorder is not None:
+        video_path = recorder.finalize(report)
+        if video_path is not None:
+            report = replace(
+                report, details={**(report.details or {}), "video_path": str(video_path)},
+            )
+            logger.info("Observer session video saved: %s", video_path)
+    return ports.runs.finalize_report(report, settings, started_at_dt=started_at_dt)
 
 
 def _monitor_observer(
@@ -177,7 +186,11 @@ def _monitor_observer(
             timeout=settings.read_timeout_seconds * 1_000,
         )
         if result.status == "unavailable":
-            reload_result = _reload_and_recheck_observer_availability(page, settings)
+            reload_result = _reload_and_recheck_observer_availability(
+                page,
+                settings,
+                cancel_event=cancel_event,
+            )
             if reload_result is not None:
                 result = reload_result
         if result.status == "unknown":
@@ -270,6 +283,8 @@ def _monitor_observer(
 def _reload_and_recheck_observer_availability(
     page,
     settings: Settings,
+    *,
+    cancel_event: threading.Event | None = None,
 ) -> AvailabilityResult | None:
     logger.info("No slots detected by observer; reloading before confirming unavailable result")
     try:
@@ -278,7 +293,10 @@ def _reload_and_recheck_observer_availability(
             timeout=settings.postback_timeout_seconds * 1_000,
         )
         page = click_program_action(page, observer_read_only=True)
-        page = open_hidden_appointment_panel_for_observer(page)
+        page = open_hidden_appointment_panel_for_observer(
+            page,
+            cancel_event=cancel_event,
+        )
         page = select_available_site_for_observer(
             page,
             required_site=settings.observer_required_site,
@@ -289,6 +307,8 @@ def _reload_and_recheck_observer_availability(
             include_person=False,
             timeout=settings.read_timeout_seconds * 1_000,
         )
+    except PortalContractChanged:
+        raise
     except Exception:
         logger.exception("Observer reload probe failed; keeping the previous unavailable result")
         return None

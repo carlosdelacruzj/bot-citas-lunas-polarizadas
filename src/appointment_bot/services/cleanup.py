@@ -48,7 +48,10 @@ def cleanup_old_files(settings: Settings) -> None:
         cutoff=cutoff,
         preserve=lambda path: _preserve_screenshot(path, settings.screenshots_dir),
     )
-    _cleanup_directory(settings.client_videos_dir, cutoff=cutoff)
+    _cleanup_directory(
+        settings.client_videos_dir, cutoff=cutoff,
+        preserve=lambda path: "diagnostics" in path.relative_to(settings.client_videos_dir).parts,
+    )
     removed_rows = cleanup_database_history(settings)
     if any(removed_rows.values()):
         logger.info("Removed old database rows: %s", removed_rows)

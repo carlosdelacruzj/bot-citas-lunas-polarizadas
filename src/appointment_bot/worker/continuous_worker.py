@@ -428,6 +428,7 @@ class ContinuousWorker:
         if self._maybe_recovery_backoff(report):
             return False
         decision = handle_observer_order_report(self.settings, order, report)
+        self._maybe_pause_after_detection(report)
         if decision.reset_errors:
             self._reset_errors()
         if decision.confirmed_reservations:
@@ -572,6 +573,7 @@ class ContinuousWorker:
             )
             if signature is not None:
                 self._update_state(availability_signature=signature)
+            self._maybe_pause_after_detection(decision.notify_confirmed_report)
         if decision.reset_errors:
             self._reset_errors()
             return
@@ -608,6 +610,8 @@ class ContinuousWorker:
         self._error_policy.handle_observer_error(report)
 
     def _handle_rapid_queue_error(self, report: RunReport) -> None:
+        if self._maybe_pause_for_portal_change(report):
+            return
         self._error_policy.handle_rapid_queue_error(report)
 
     def _handle_unexpected_error(self, error: Exception) -> None:
@@ -865,6 +869,8 @@ class ContinuousWorker:
             )
 
     def _maybe_recovery_backoff(self, report: RunReport) -> bool:
+        if self._maybe_pause_for_portal_change(report):
+            return True
         defense_signal = portal_defense_signal(report.message)
         if defense_signal is not None:
             wait_seconds = recovery_wait_seconds(self.settings)
@@ -896,6 +902,39 @@ class ContinuousWorker:
             self._reset_errors()
             return True
         return False
+
+    def _maybe_pause_for_portal_change(self, report: RunReport) -> bool:
+        if (report.details or {}).get("worker_pause_required") is not True:
+            return False
+        message = sanitize_text(report.message)
+        logger.critical("Pausing worker after portal contract change: %s", message)
+        self.pause()
+        self._update_state(last_error=message)
+        send_telegram_message(
+            self.settings,
+            "CAMBIO EN LA SEGURIDAD DEL PORTAL\n\n"
+            "El worker se pauso automaticamente antes de continuar.\n\n"
+            f"Detalle: {message}\n\n"
+            "Revisa una sesion con medicion antes de reactivarlo.",
+        )
+        self._state_callbacks.reset_unavailable_streak()
+        return True
+
+    def _maybe_pause_after_detection(self, report: RunReport) -> bool:
+        if self.settings.auto_reserve or report.status != "available":
+            return False
+        logger.warning(
+            "Pausing worker after availability detection with AUTO_RESERVE=false"
+        )
+        self.pause()
+        send_telegram_message(
+            self.settings,
+            "CUPO DETECTADO - WORKER EN PAUSA\n\n"
+            "La reserva automatica esta desactivada y el worker se pauso "
+            "antes del CAPTCHA final y de Reservar.\n\n"
+            "Ya puedes abrir la orden con medicion y completar el proceso manualmente.",
+        )
+        return True
 
     def _record_window_metric(self, report: RunReport, *, source: str) -> None:
         details = report.details or {}

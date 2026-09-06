@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import time
 from collections.abc import Iterable
@@ -9,11 +10,19 @@ from urllib.parse import parse_qsl, urlsplit
 
 from playwright.sync_api import Page, Request, Response
 
+from appointment_bot.reservation_engine.appointment_contracts import (
+    PortalContractChanged,
+)
+
 logger = logging.getLogger(__name__)
 
 RESERVATION_BUTTON_NAME = "ctl00$MainContent$idUcitas$btgSiguiente"
 HONEYPOT_NAME = "ctl00$MainContent$idUcitas$txtHoneypot"
+CURRENT_HONEYPOT_NAME = "website_url"
+HONEYPOT_NAMES = {HONEYPOT_NAME, CURRENT_HONEYPOT_NAME}
 CAPTCHA_NAME = "ctl00$MainContent$idUcitas$txtimg"
+PRE_ACCESS_TOKEN_NAME = "ctl00$MainContent$idUcitas$hfRecaptchaToken"
+PRE_ACCESS_VERIFIED_NAME = "ctl00$MainContent$idUcitas$hfRecaptchaVerificado"
 SAFE_VALUE_NAMES = {
     "ctl00$MainContent$idUcitas$cbosede",
     "ctl00$MainContent$idUcitas$cboFecha",
@@ -51,7 +60,10 @@ MANUAL_RESERVATION_FIELDS = {
     "ctl00$MainContent$TabContainer1$TabPanel2$txtRuc",
     "ctl00$MainContent$TabContainer1$TabPanel2$txtRazonSocial",
     HONEYPOT_NAME,
+    CURRENT_HONEYPOT_NAME,
     CAPTCHA_NAME,
+    PRE_ACCESS_TOKEN_NAME,
+    PRE_ACCESS_VERIFIED_NAME,
     "ctl00$MainContent$idUcitas$xzl",
     "ctl00$MainContent$idUcitas$txtCodigo",
     "ctl00$MainContent$txtObservacionCancel",
@@ -68,7 +80,7 @@ MANUAL_RESERVATION_FIELDS = {
 }
 
 PROTECTED_EMPTY_FIELDS = {
-    HONEYPOT_NAME,
+    *HONEYPOT_NAMES,
     "ctl00$MainContent$idUcitas$xzl",
     "ctl00$MainContent$idUcitas$txtCodigo",
     "ctl00$MainContent$txtRespuestaI",
@@ -89,55 +101,228 @@ REQUIRED_NONEMPTY_FIELDS = {
     "ctl00$MainContent$idUcitas$cboHora",
     CAPTCHA_NAME,
     RESERVATION_BUTTON_NAME,
+    *TOKEN_FIELDS,
 }
 
 ASP_NET_SUBMIT_RUNTIME_FIELDS = {"ctl00$ScriptManager1", "__ASYNCPOST"}
 
 
 def inspect_reservation_form(page: Page) -> dict[str, Any]:
-    raw_fields = page.locator("#MainContent_idUcitas_btgSiguiente").first.evaluate(
+    raw = page.locator("#MainContent_idUcitas_btgSiguiente").first.evaluate(
         """button => {
             const form = button.form;
             if (!form) throw new Error("Reservation button has no form");
             const data = new FormData(form);
             if (button.name) data.append(button.name, button.value || "");
-            return Array.from(data.entries()).map(([name, value]) => ({
-                name: String(name),
-                value: typeof value === "string" ? value : `[file:${value.size}]`,
-            }));
+            const controls = Array.from(form.elements);
+            const countByName = name => controls.filter(item => item.name === name).length;
+            const valuesByName = name => controls
+                .filter(item => item.name === name)
+                .map(item => item.value || "");
+            const honeypots = controls.filter(item => item.matches(
+                "#hfHoneypot, #MainContent_idUcitas_txtHoneypot"
+            ));
+            const action = new URL(form.getAttribute("action") || location.href, location.href);
+            const question = document.querySelector(
+                "#MainContent_idUcitas_lblCaptchaOperacion"
+            );
+            const questionRect = question?.getBoundingClientRect();
+            const questionStyle = question ? window.getComputedStyle(question) : null;
+            return {
+                fields: Array.from(data.entries()).map(([name, value]) => ({
+                    name: String(name),
+                    value: typeof value === "string" ? value : `[file:${value.size}]`,
+                })),
+                contract: {
+                    formCount: document.forms.length,
+                    formId: form.id || "",
+                    fieldNames: controls
+                        .map(item => item.name || "")
+                        .filter(Boolean)
+                        .sort(),
+                    method: (form.method || "").toLowerCase(),
+                    actionPath: action.pathname,
+                    sameOrigin: action.origin === location.origin,
+                    target: form.target || "",
+                    reservationButtonIdCount: document.querySelectorAll(
+                        "#MainContent_idUcitas_btgSiguiente"
+                    ).length,
+                    reservationButtonNameCount: countByName(
+                        "ctl00$MainContent$idUcitas$btgSiguiente"
+                    ),
+                    reservationButtonValue: button.value || "",
+                    reservationButtonType: button.type || "",
+                    reservationButtonOnclick: button.getAttribute("onclick") || "",
+                    siteCount: countByName("ctl00$MainContent$idUcitas$cbosede"),
+                    dateCount: countByName("ctl00$MainContent$idUcitas$cboFecha"),
+                    hourCount: countByName("ctl00$MainContent$idUcitas$cboHora"),
+                    captchaInputCount: countByName(
+                        "ctl00$MainContent$idUcitas$txtimg"
+                    ),
+                    honeypotCount: honeypots.length,
+                    honeypotKnownName: honeypots.length === 1 && [
+                        "website_url",
+                        "ctl00$MainContent$idUcitas$txtHoneypot"
+                    ].includes(honeypots[0].name),
+                    viewstateCount: countByName("__VIEWSTATE"),
+                    viewstateGeneratorCount: countByName("__VIEWSTATEGENERATOR"),
+                    eventValidationCount: countByName("__EVENTVALIDATION"),
+                    preAccessTokenCount: countByName(
+                        "ctl00$MainContent$idUcitas$hfRecaptchaToken"
+                    ),
+                    preAccessTokenNonempty: valuesByName(
+                        "ctl00$MainContent$idUcitas$hfRecaptchaToken"
+                    ).every(value => Boolean(value)),
+                    preAccessVerifiedCount: countByName(
+                        "ctl00$MainContent$idUcitas$hfRecaptchaVerificado"
+                    ),
+                    preAccessVerified: valuesByName(
+                        "ctl00$MainContent$idUcitas$hfRecaptchaVerificado"
+                    ).every(value => value === "1"),
+                    mathQuestionCount: document.querySelectorAll(
+                        "#MainContent_idUcitas_lblCaptchaOperacion"
+                    ).length,
+                    mathQuestionVisible: Boolean(
+                        question
+                        && questionRect
+                        && questionRect.width >= 40
+                        && questionRect.height >= 20
+                        && questionStyle
+                        && questionStyle.display !== "none"
+                        && questionStyle.visibility !== "hidden"
+                        && (question.textContent || "").trim()
+                    )
+                }
+            };
         }"""
     )
     fields = [
         (str(item.get("name") or ""), str(item.get("value") or ""))
-        for item in raw_fields
+        for item in raw.get("fields") or []
         if isinstance(item, dict) and item.get("name")
     ]
-    return summarize_reservation_fields(fields, source="dom_pre_submit")
+    audit = summarize_reservation_fields(fields, source="dom_pre_submit")
+    contract = dict(raw.get("contract") or {})
+    audit["form_contract"] = contract
+    audit["form_contract_sha256"] = hashlib.sha256(
+        json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return audit
 
 
-def validate_reservation_form_audit(audit: dict[str, Any]) -> None:
+def validate_reservation_form_audit(
+    audit: dict[str, Any],
+    *,
+    require_captcha_answer: bool = True,
+    require_math_question: bool = True,
+    pre_access_only: bool = False,
+) -> None:
+    if pre_access_only and (require_captcha_answer or require_math_question):
+        raise ValueError("Pre-access-only submission cannot require a final CAPTCHA.")
     protected_nonempty = list(audit.get("protected_nonempty_fields") or [])
-    unexpected_nonempty = list(audit.get("unexpected_nonempty_fields") or [])
+    unexpected_fields = list(audit.get("unexpected_fields") or [])
     missing_required = list(audit.get("missing_required_fields") or [])
     empty_required = list(audit.get("empty_required_fields") or [])
     if protected_nonempty:
-        raise RuntimeError(
-            "Reservation submit blocked because protected fields are not empty: "
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: hay campos protegidos con contenido: "
             + ", ".join(protected_nonempty)
         )
-    if unexpected_nonempty:
-        raise RuntimeError(
-            "Reservation submit blocked because unexpected fields contain data: "
-            + ", ".join(unexpected_nonempty)
+    if unexpected_fields:
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: aparecieron campos no reconocidos: "
+            + ", ".join(unexpected_fields)
         )
+    if audit.get("honeypot_present") is not True or audit.get("honeypot_empty") is not True:
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: el honeypot final falta o no esta vacio."
+        )
+
+    contract = dict(audit.get("form_contract") or {})
+    expected_counts = {
+        "formCount": 1,
+        "reservationButtonIdCount": 1,
+        "reservationButtonNameCount": 1,
+        "siteCount": 1,
+        "dateCount": 1,
+        "hourCount": 1,
+        "captchaInputCount": 0 if pre_access_only else 1,
+        "honeypotCount": 1,
+        "viewstateCount": 1,
+        "viewstateGeneratorCount": 1,
+        "eventValidationCount": 1,
+        "preAccessTokenCount": 1,
+        "preAccessVerifiedCount": 1,
+    }
+    if require_math_question:
+        expected_counts["mathQuestionCount"] = 1
+    elif pre_access_only:
+        expected_counts["mathQuestionCount"] = 0
+    count_mismatches = [
+        f"{name}={contract.get(name)!r}"
+        for name, expected in expected_counts.items()
+        if contract.get(name) != expected
+    ]
+    contract_mismatches = list(count_mismatches)
+    if pre_access_only:
+        if contract.get("reservationButtonType") != "submit":
+            contract_mismatches.append("reservationButtonType changed")
+        handler = "".join(str(contract.get("reservationButtonOnclick") or "").split())
+        if handler != "if(this.disabled){returnfalse;};":
+            contract_mismatches.append("reservationButtonOnclick changed")
+    if contract.get("formId") != "form1":
+        contract_mismatches.append(f"formId={contract.get('formId')!r}")
+    if contract.get("method") != "post":
+        contract_mismatches.append(f"method={contract.get('method')!r}")
+    if contract.get("sameOrigin") is not True:
+        contract_mismatches.append("sameOrigin=false")
+    if contract.get("honeypotKnownName") is not True:
+        contract_mismatches.append("honeypotKnownName=false")
+    if contract.get("preAccessTokenNonempty") is not True:
+        contract_mismatches.append("preAccessTokenNonempty=false")
+    if contract.get("preAccessVerified") is not True:
+        contract_mismatches.append("preAccessVerified=false")
+    if not str(contract.get("actionPath") or "").lower().endswith(
+        "/seguimiento.aspx"
+    ):
+        contract_mismatches.append(f"actionPath={contract.get('actionPath')!r}")
+    if str(contract.get("target") or "").lower() not in {"", "_self"}:
+        contract_mismatches.append(f"target={contract.get('target')!r}")
+    if (
+        str(contract.get("reservationButtonValue") or "").strip().lower()
+        != "reservar cita"
+    ):
+        contract_mismatches.append(
+            f"reservationButtonValue={contract.get('reservationButtonValue')!r}"
+        )
+    if require_math_question and contract.get("mathQuestionVisible") is not True:
+        contract_mismatches.append("mathQuestionVisible=false")
+    if contract_mismatches:
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: la estructura final no coincide con "
+            "el contrato conocido: "
+            + ", ".join(contract_mismatches)
+        )
+
     if missing_required or empty_required:
+        if not require_captcha_answer:
+            missing_required = [name for name in missing_required if name != CAPTCHA_NAME]
+            empty_required = [name for name in empty_required if name != CAPTCHA_NAME]
         problems = [
             *(f"missing:{name}" for name in missing_required),
             *(f"empty:{name}" for name in empty_required),
         ]
-        raise RuntimeError(
-            "Reservation submit blocked because required fields are invalid: "
-            + ", ".join(problems)
+        if problems:
+            raise PortalContractChanged(
+                "Cambio de seguridad del portal: hay campos obligatorios invalidos: "
+                + ", ".join(problems)
+            )
+    if (
+        not require_captcha_answer and not pre_access_only
+        and audit.get("captcha_empty") is not True
+    ):
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: el campo CAPTCHA final ya contiene un valor."
         )
 
 
@@ -150,6 +335,7 @@ def summarize_reservation_fields(
     descriptors = [_field_descriptor(name, value) for name, value in pairs]
     actual_names = [name for name, _value in pairs]
     actual_name_set = set(actual_names)
+    name_counts = {name: actual_names.count(name) for name in actual_name_set}
     values_by_name = {name: value for name, value in pairs}
     unexpected_fields = sorted(actual_name_set - MANUAL_RESERVATION_FIELDS)
     unexpected_nonempty_fields = sorted(
@@ -171,7 +357,14 @@ def summarize_reservation_fields(
         for name in MANUAL_RESERVATION_FIELDS & actual_name_set
         if (values_by_name[name] == "") != (name in MANUAL_EMPTY_FIELDS)
     )
-    honeypot_value = values_by_name.get(HONEYPOT_NAME)
+    honeypot_values = [
+        value for name, value in pairs if name in HONEYPOT_NAMES
+    ]
+    honeypot_value = honeypot_values[0] if len(honeypot_values) == 1 else None
+    captcha_value = values_by_name.get(CAPTCHA_NAME)
+    manual_core_fields = (
+        MANUAL_RESERVATION_FIELDS - ASP_NET_SUBMIT_RUNTIME_FIELDS - HONEYPOT_NAMES
+    )
     return {
         "schema_version": 1,
         "source": source,
@@ -183,22 +376,28 @@ def summarize_reservation_fields(
             and actual_name_set == MANUAL_RESERVATION_FIELDS
         ),
         "manual_core_field_names_match": (
-            actual_name_set - ASP_NET_SUBMIT_RUNTIME_FIELDS
-            == MANUAL_RESERVATION_FIELDS - ASP_NET_SUBMIT_RUNTIME_FIELDS
+            actual_name_set - ASP_NET_SUBMIT_RUNTIME_FIELDS - HONEYPOT_NAMES
+            == manual_core_fields
         ),
         "manual_empty_state_match": not manual_empty_state_mismatches,
         "manual_empty_state_mismatches": manual_empty_state_mismatches,
         "unexpected_fields": unexpected_fields,
         "unexpected_nonempty_fields": unexpected_nonempty_fields,
         "missing_manual_fields": sorted(MANUAL_RESERVATION_FIELDS - actual_name_set),
+        "missing_manual_core_fields": sorted(manual_core_fields - actual_name_set),
+        "duplicate_field_names": sorted(
+            name for name, count in name_counts.items() if count != 1
+        ),
         "protected_nonempty_fields": protected_nonempty_fields,
         "missing_required_fields": missing_required_fields,
         "empty_required_fields": empty_required_fields,
-        "honeypot_present": honeypot_value is not None,
-        "honeypot_empty": honeypot_value == "" if honeypot_value is not None else None,
+        "honeypot_present": len(honeypot_values) == 1,
+        "honeypot_empty": honeypot_value == "" if len(honeypot_values) == 1 else None,
         "honeypot_value_length": (
             len(honeypot_value) if honeypot_value is not None else None
         ),
+        "captcha_present": captcha_value is not None,
+        "captcha_empty": captcha_value == "" if captcha_value is not None else None,
         "privacy": {
             "raw_body_saved": False,
             "captcha_answer_saved": False,
@@ -275,7 +474,7 @@ def _field_descriptor(name: str, value: str) -> dict[str, Any]:
     if name in TOKEN_FIELDS:
         descriptor["value_sha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
         descriptor["classification"] = "aspnet_token"
-    elif name == HONEYPOT_NAME:
+    elif name in HONEYPOT_NAMES:
         descriptor["classification"] = "honeypot"
     elif name == CAPTCHA_NAME:
         descriptor["classification"] = "captcha_answer_redacted"

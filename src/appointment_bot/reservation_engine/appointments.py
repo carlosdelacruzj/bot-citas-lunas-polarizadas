@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 import uuid
 from dataclasses import dataclass
@@ -32,6 +33,14 @@ from appointment_bot.reservation_engine.appointment_dom import (
 )
 from appointment_bot.reservation_engine.appointment_modal_styles import (
     ensure_appointment_modal_styles,
+)
+from appointment_bot.reservation_engine.pre_access_captcha import (
+    resolve_pre_access_captcha,
+)
+from appointment_bot.reservation_engine.reservation_controls import (
+    PRE_ACCESS_CAPTCHA_BUTTON_SELECTOR,
+    PRE_ACCESS_CAPTCHA_INPUT_SELECTOR,
+    PRE_ACCESS_CAPTCHA_QUESTION_SELECTOR,
 )
 from appointment_bot.utils.sanitization import normalize_option
 
@@ -82,15 +91,28 @@ class _PostbackCapture:
         self.post_failure = str(request.failure or "request_failed")
 
 
-def open_appointment_panel(page: Page) -> Page:
-    return _open_appointment_panel(page, allow_hidden=False)
+def open_appointment_panel(
+    page: Page,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> Page:
+    return _open_appointment_panel(page, allow_hidden=False, cancel_event=cancel_event)
 
 
-def open_hidden_appointment_panel_for_observer(page: Page) -> Page:
-    return _open_appointment_panel(page, allow_hidden=True)
+def open_hidden_appointment_panel_for_observer(
+    page: Page,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> Page:
+    return _open_appointment_panel(page, allow_hidden=True, cancel_event=cancel_event)
 
 
-def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
+def _open_appointment_panel(
+    page: Page,
+    *,
+    allow_hidden: bool,
+    cancel_event: threading.Event | None,
+) -> Page:
     logger.info("Opening appointment availability panel")
     ensure_appointment_modal_styles(page)
     button = page.locator(RESERVE_APPOINTMENT_SELECTOR)
@@ -108,8 +130,7 @@ def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
         )
 
     if allow_hidden:
-        # El observador activa solo el postback de consulta: no muestra el
-        # modal, resuelve captcha ni pulsa el boton final de reserva.
+        # The observer opens the query panel and its pre-access CAPTCHA only.
         button.evaluate("element => element.click()")
         try:
             page.wait_for_load_state("domcontentloaded", timeout=10_000)
@@ -117,10 +138,12 @@ def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
             logger.debug("Hidden appointment button did not trigger a page load")
         try:
             _wait_for_reservation_controls_attached(page, timeout=15_000)
+            _wait_for_reservation_panel_visible(page, timeout=15_000)
         except PlaywrightTimeoutError as exc:
             raise AppointmentWorkflowUnavailable(
-                "El postback oculto no entrego los controles de sede, fecha y hora."
+                "El postback oculto no abrio el panel de citas con sus controles."
             ) from exc
+        resolve_pre_access_captcha(page, cancel_event=cancel_event)
         ensure_appointment_modal_styles(page)
         return page
 
@@ -134,15 +157,22 @@ def _open_appointment_panel(page: Page, *, allow_hidden: bool) -> Page:
             "Es posible que la etapa de cita no este pendiente."
         ) from exc
 
-    _wait_for_reservation_panel(page)
+    _wait_for_reservation_panel(page, cancel_event=cancel_event)
     ensure_appointment_modal_styles(page)
 
     logger.info("Current page after opening appointment panel: %s", page.url)
     return page
 
 
-def _wait_for_reservation_panel(page: Page) -> None:
+def _wait_for_reservation_panel(
+    page: Page,
+    *,
+    cancel_event: threading.Event | None,
+) -> None:
     try:
+        _wait_for_reservation_controls_attached(page, timeout=5_000)
+        _wait_for_reservation_panel_visible(page, timeout=5_000)
+        resolve_pre_access_captcha(page, cancel_event=cancel_event)
         _wait_for_reservation_controls(page, timeout=5_000)
         return
     except PlaywrightTimeoutError:
@@ -150,12 +180,30 @@ def _wait_for_reservation_panel(page: Page) -> None:
 
     _trigger_reserve_appointment_postback(page)
     try:
+        _wait_for_reservation_controls_attached(page, timeout=15_000)
+        _wait_for_reservation_panel_visible(page, timeout=15_000)
+        resolve_pre_access_captcha(page, cancel_event=cancel_event)
         _wait_for_reservation_controls(page, timeout=15_000)
     except PlaywrightTimeoutError as exc:
         raise AppointmentWorkflowUnavailable(
             "No se encontraron controles de sede, fecha y hora. "
             "Es posible que la cita ya este reservada o que ya no exista un flujo pendiente."
         ) from exc
+
+
+def _wait_for_reservation_panel_visible(page: Page, *, timeout: int) -> None:
+    # ASP.NET can attach hidden controls before the opening postback completes.
+    selectors = ", ".join(
+        (
+            SITE_SELECTOR,
+            PRE_ACCESS_CAPTCHA_INPUT_SELECTOR,
+            PRE_ACCESS_CAPTCHA_BUTTON_SELECTOR,
+            PRE_ACCESS_CAPTCHA_QUESTION_SELECTOR,
+        )
+    )
+    page.locator(f":is({selectors}):visible").first.wait_for(
+        state="visible", timeout=timeout
+    )
 
 
 def _wait_for_reservation_controls(page: Page, *, timeout: int) -> None:

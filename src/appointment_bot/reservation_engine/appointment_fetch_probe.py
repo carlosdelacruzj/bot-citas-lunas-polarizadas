@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
+from typing import Any
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
@@ -16,7 +18,13 @@ from appointment_bot.reservation_engine.appointment_contracts import (
 logger = logging.getLogger(__name__)
 
 
-def read_fetch_probe_appointment_snapshot(page: Page):
+@dataclass(frozen=True)
+class FetchProbeResult:
+    snapshot: AppointmentSnapshot
+    telemetry: list[dict[str, Any]]
+
+
+def read_fetch_probe_appointment_snapshot(page: Page) -> FetchProbeResult | None:
     try:
         data = page.evaluate(
             """async ({ siteSelector, dateSelector, hourSelector, slotsLabelId }) => {
@@ -61,13 +69,23 @@ def read_fetch_probe_appointment_snapshot(page: Page):
                     });
                     setFormValue(targetForm, "__EVENTTARGET", eventTarget);
                     setFormValue(targetForm, "__EVENTARGUMENT", "");
+                    const startedAt = performance.now();
                     const response = await fetch(url, {
                         method: "POST",
                         body: new FormData(targetForm),
                         credentials: "include"
                     });
                     const html = await response.text();
-                    return new DOMParser().parseFromString(html, "text/html");
+                    return {
+                        doc: new DOMParser().parseFromString(html, "text/html"),
+                        telemetry: {
+                            eventTarget,
+                            status: response.status,
+                            ok: response.ok,
+                            durationMs: Math.round(performance.now() - startedAt),
+                            responseBytes: new TextEncoder().encode(html).length
+                        }
+                    };
                 };
                 const options = (doc, id) => {
                     const element = doc.getElementById(id);
@@ -100,21 +118,30 @@ def read_fetch_probe_appointment_snapshot(page: Page):
                 const siteText = siteEl.options[siteEl.selectedIndex]
                     ? siteEl.options[siteEl.selectedIndex].text.trim()
                     : siteValue;
-                const docDates = await postForm(document, names.site, {
+                const datePost = await postForm(document, names.site, {
                     [names.site]: siteValue
                 });
+                const docDates = datePost.doc;
                 const dateOptions = options(docDates, ids.date);
                 const realDates = dateOptions.filter(isReal);
+                datePost.telemetry.optionCount = dateOptions.length;
+                datePost.telemetry.realOptionCount = realDates.length;
                 let hourOptions = [];
                 let slots = "";
-                if (realDates.length > 0) {
+                const requests = [datePost.telemetry];
+                if (datePost.telemetry.ok && realDates.length > 0) {
                     const firstDate = realDates[0];
-                    const docHours = await postForm(docDates, names.date, {
+                    const hourPost = await postForm(docDates, names.date, {
                         [names.site]: siteValue,
                         [names.date]: firstDate.value
                     });
+                    const docHours = hourPost.doc;
                     hourOptions = options(docHours, ids.hour);
                     slots = textById(docHours, ids.slots);
+                    const realHours = hourOptions.filter(isReal);
+                    hourPost.telemetry.optionCount = hourOptions.length;
+                    hourPost.telemetry.realOptionCount = realHours.length;
+                    requests.push(hourPost.telemetry);
                 }
                 return {
                     siteOptions: options(document, ids.site)
@@ -126,7 +153,8 @@ def read_fetch_probe_appointment_snapshot(page: Page):
                     date: realDates[0] ? realDates[0].text : selectedText(dateOptions),
                     hour: selectedText(hourOptions),
                     slots,
-                    personName: ""
+                    personName: "",
+                    requests
                 };
             }""",
             {
@@ -153,5 +181,10 @@ def read_fetch_probe_appointment_snapshot(page: Page):
         slots=str(data.get("slots") or ""),
         person_name=str(data.get("personName") or ""),
     )
-    logger.debug("Fetch appointment probe signature: %s", snapshot.signature())
-    return snapshot
+    telemetry = [dict(item) for item in (data.get("requests") or [])]
+    logger.debug(
+        "Fetch appointment probe signature=%s requests=%s",
+        snapshot.signature(),
+        telemetry,
+    )
+    return FetchProbeResult(snapshot=snapshot, telemetry=telemetry)

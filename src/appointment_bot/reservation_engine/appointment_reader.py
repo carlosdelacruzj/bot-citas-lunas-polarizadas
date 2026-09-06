@@ -85,14 +85,24 @@ def apply_fetch_probe_if_needed(
 ) -> AvailabilityResult:
     if result.status == "available":
         return result
+    if (result.details or {}).get("cascade_stage") == "site_selected_no_dates":
+        return result
 
-    fetch_snapshot = read_fetch_probe_appointment_snapshot(page)
-    if fetch_snapshot is None:
+    fetch_probe = read_fetch_probe_appointment_snapshot(page)
+    if fetch_probe is None:
+        return result
+    if not fetch_probe.telemetry or any(
+        request.get("ok") is not True for request in fetch_probe.telemetry
+    ):
+        logger.warning(
+            "Fetch appointment probe returned a non-success response: %s",
+            fetch_probe.telemetry,
+        )
         return result
 
     fetch_result = availability_result_from_snapshot(
         page,
-        fetch_snapshot,
+        fetch_probe.snapshot,
         include_person=include_person,
     )
     if fetch_result.status not in {"available", "partial"}:
@@ -100,6 +110,10 @@ def apply_fetch_probe_if_needed(
 
     details = dict(fetch_result.details or {})
     details["fetch_probe"] = True
+    details["fetch_probe_candidate_date"] = details.get("fecha")
+    details["fetch_probe_candidate_hour"] = details.get("hora")
+    details["fetch_probe_requests"] = fetch_probe.telemetry
+    details["fetch_probe_materialized"] = False
     details["modal_must_remain_open"] = True
     return AvailabilityResult(
         status=fetch_result.status,
@@ -154,6 +168,17 @@ def availability_result_from_snapshot(
             details=details,
         )
 
+    if is_real_appointment_option(snapshot.site) and not has_date_options:
+        details["cascade_stage"] = "site_selected_no_dates"
+        return AvailabilityResult(
+            status="unavailable",
+            message=(
+                "Se selecciono la sede, pero no cargo ninguna fecha seleccionable. "
+                "No hay cupos por el momento."
+            ),
+            details=details,
+        )
+
     if _only_no_slots(date_options) and _only_no_slots(hour_options):
         return AvailabilityResult(
             status="unavailable",
@@ -180,11 +205,13 @@ def availability_result_from_snapshot(
             details=details,
         )
 
+    details["worker_pause_required"] = True
+    details["portal_contract_change"] = "availability_texts_unrecognized"
     return AvailabilityResult(
         status="unknown",
         message=(
-            "No se pudo determinar la disponibilidad con los textos actuales. "
-            "Ajusta AVAILABLE_TEXTS o UNAVAILABLE_TEXTS en flows/appointments.py."
+            "Cambio de seguridad del portal: no se pudo determinar la disponibilidad "
+            "con los textos actuales."
         ),
         details=details,
     )

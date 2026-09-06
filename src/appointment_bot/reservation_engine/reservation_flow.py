@@ -13,6 +13,7 @@ from appointment_bot.core.statuses import redact_captcha_answers
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
+    PortalContractChanged,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
 )
@@ -171,6 +172,10 @@ def complete_available_reservation(
         return _collect_screenshots(additional_screenshot_paths, screenshot_path, *paths)
 
     def reservation_details() -> dict:
+        for key, kind in (
+            ("entry_screenshot_path", "screenshots"), ("entry_html_path", "dom_snapshots"),
+        ):
+            _add_diagnostic_artifact(diagnostic_artifacts, kind, latest_captcha_audit.get(key))
         return _build_reservation_details(
             result,
             timing,
@@ -249,8 +254,9 @@ def complete_available_reservation(
                     screenshot_candidates[0] if screenshot_candidates else screenshot_path,
                     screenshot_candidates,
                 )
-            latest_captcha_audit.clear()
-            latest_captcha_audit.update(captcha_audit)
+            finally:
+                latest_captcha_audit.clear()
+                latest_captcha_audit.update(captcha_audit)
             _add_diagnostic_artifact(
                 diagnostic_artifacts,
                 "captcha_images",
@@ -482,7 +488,7 @@ def complete_available_reservation(
             "pero no se confirmo la etapa Programado."
             if confirmation_text_detected
             else (
-                "Se resolvio el captcha y se hizo click en Reservar, "
+                "Se hizo click en Reservar, "
                 "pero no se confirmo la etapa Programado."
             )
         )
@@ -563,6 +569,8 @@ def capture_blocked_captcha_evidence(
             screenshot_path,
             [screenshot_path] if screenshot_path is not None else [],
         )
+    except PortalContractChanged:
+        raise
     except Exception as exc:
         capture_error = str(exc)
         logger.warning(

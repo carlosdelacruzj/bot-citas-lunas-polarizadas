@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 RESERVATION_BUTTON_SUFFIX = "btgSiguiente"
 HONEYPOT_SUFFIX = "txtHoneypot"
+CURRENT_HONEYPOT_NAME = "website_url"
 CAPTCHA_FIELD_SUFFIX = "txtimg"
 SAFE_VALUE_SUFFIXES = ("cbosede", "cboFecha", "cboHora", RESERVATION_BUTTON_SUFFIX)
 TOKEN_FIELDS = {"__VIEWSTATE", "__VIEWSTATEGENERATOR", "__EVENTVALIDATION"}
@@ -64,7 +65,8 @@ _DIAGNOSTIC_SCRIPT = r"""
   const isHoneypotControl = (element) => {
     if (!(element instanceof Element)) return false;
     const name = String(element.getAttribute("name") || element.id || "").toLowerCase();
-    return name.endsWith("txthoneypot");
+    return name.endsWith("txthoneypot") || name === "website_url"
+      || String(element.id || "").toLowerCase() === "hfhoneypot";
   };
   const valueShape = (value) => {
     const normalized = String(value ?? "");
@@ -130,7 +132,9 @@ _DIAGNOSTIC_SCRIPT = r"""
     };
   };
   installHoneypotWriteObservers();
-  const honeypot = () => document.querySelector("#MainContent_idUcitas_txtHoneypot");
+  const honeypot = () => document.querySelector(
+    "#hfHoneypot, #MainContent_idUcitas_txtHoneypot"
+  );
   const reserveTarget = (element) => {
     const name = String(element?.name || element?.id || "").toLowerCase();
     return name.endsWith("btgsiguiente");
@@ -278,7 +282,7 @@ class ManualDiagnosticRecorder:
             (
                 field
                 for field in fields
-                if str(field.get("name") or "").endswith(HONEYPOT_SUFFIX)
+                if _is_honeypot_name(str(field.get("name") or ""))
             ),
             None,
         )
@@ -368,7 +372,7 @@ def _sanitize_post_fields(body: str) -> list[dict[str, object]]:
         if name in TOKEN_FIELDS:
             descriptor["value_sha256"] = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
             descriptor["classification"] = "aspnet_token"
-        elif name.endswith(HONEYPOT_SUFFIX):
+        elif _is_honeypot_name(name):
             descriptor["classification"] = "honeypot"
         elif name.endswith(CAPTCHA_FIELD_SUFFIX):
             descriptor["classification"] = "captcha_answer_redacted"
@@ -387,6 +391,10 @@ def _request_is_reservation_submit(request: Request) -> bool:
         name.endswith(RESERVATION_BUTTON_SUFFIX)
         for name, _value in parse_qsl(body, keep_blank_values=True)
     )
+
+
+def _is_honeypot_name(name: str) -> bool:
+    return name == CURRENT_HONEYPOT_NAME or name.endswith(HONEYPOT_SUFFIX)
 
 
 def _safe_path(url: str) -> str:

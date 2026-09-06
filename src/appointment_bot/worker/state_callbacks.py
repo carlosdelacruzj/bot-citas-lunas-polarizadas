@@ -113,6 +113,11 @@ class WorkerStateCallbacks:
     def _notify_immediate_availability_once(self, result: AvailabilityResult) -> None:
         if result.status not in {"available", "partial"}:
             return
+        details = result.details or {}
+        if details.get("orden") and not details.get("canonical_slot_capture"):
+            return
+        if details.get("fetch_probe") and not details.get("selected_slot_verified"):
+            return
         signature = _availability_result_signature(result)
         if signature in self._availability_alert_signatures:
             return
@@ -125,7 +130,7 @@ def _availability_result_signature(result: AvailabilityResult) -> str:
     details = result.details or {}
     relevant = {
         key: details.get(key)
-        for key in ("orden", "sede", "fecha", "hora", "date_options", "hour_options")
+        for key in ("sede", "fecha", "hora")
         if details.get(key) is not None
     }
     payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)

@@ -19,6 +19,7 @@ from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentOptionsNotRefreshed,
     AppointmentWorkflowCancelled,
     AppointmentWorkflowUnavailable,
+    PortalContractChanged,
 )
 from appointment_bot.reservation_engine.appointment_reader import (
     read_appointment_availability,
@@ -158,6 +159,7 @@ def monitor_appointment_availability(
                 program_expediente=program_expediente,
                 program_plate=program_plate,
                 telemetry_attempt=attempt,
+                cancel_event=cancel_event,
             )
             if reload_result is None:
                 if settings.monitor_site_toggle_enabled:
@@ -199,10 +201,13 @@ def monitor_appointment_availability(
         result_screenshot_path = save_relevant_result_snapshot(page, settings, result.status)
         screenshot_path = result_screenshot_path or process_stages_screenshot_path
 
-        fetch_probe_only = bool((result.details or {}).get("fetch_probe"))
-        can_attempt_reservation = not fetch_probe_only and (
+        fetch_probe_candidate = bool((result.details or {}).get("fetch_probe"))
+        can_attempt_reservation = (
             result.status == "available"
-            or (result.status == "partial" and has_available_date_options(page))
+            or (
+                result.status == "partial"
+                and (fetch_probe_candidate or has_available_date_options(page))
+            )
         )
         if can_attempt_reservation:
             reservation_outcome = _try_reservation_from_availability(
@@ -309,13 +314,51 @@ def _try_reservation_from_availability(
     ports: ReservationEnginePorts,
 ):
     timing = reservation_timing or ReservationTiming()
+    probe_details = dict(result.details or {})
+    fetch_probe_candidate = bool(probe_details.get("fetch_probe"))
     timing.mark("selection_started")
     selected_result = select_available_appointment(
         page,
         is_allowed_appointment=is_allowed_appointment,
+        preferred_date=(
+            str(probe_details.get("fetch_probe_candidate_date") or "") or None
+            if fetch_probe_candidate
+            else None
+        ),
+        preferred_hour=(
+            str(probe_details.get("fetch_probe_candidate_hour") or "") or None
+            if fetch_probe_candidate
+            else None
+        ),
         timeout=settings.postback_timeout_seconds * 1_000,
     )
     timing.mark("selection_finished")
+    if fetch_probe_candidate:
+        selected_details = dict(selected_result.details or {})
+        selected_slot_materialized = selected_result.status == "available" or bool(
+            selected_details.get("blocked_selected_for_evidence")
+        )
+        selected_details.update(
+            {
+                key: value
+                for key, value in probe_details.items()
+                if key.startswith("fetch_probe") or key == "modal_must_remain_open"
+            }
+        )
+        selected_details["fetch_probe_materialized"] = selected_slot_materialized
+        selected_details["fetch_probe_materialization_outcome"] = (
+            "visible_date_hour_selected"
+            if selected_slot_materialized
+            else selected_details.get(
+                "fetch_probe_materialization_outcome",
+                "candidate_not_reproduced",
+            )
+        )
+        selected_result = AvailabilityResult(
+            status=selected_result.status,
+            message=selected_result.message,
+            details=selected_details,
+        )
     selected_result = with_monitor_diagnostics(
         selected_result,
         settings=settings,
@@ -350,6 +393,12 @@ def _try_reservation_from_availability(
             )
         screenshot_path = selected_screenshot_path
         screenshot_paths = _unique_paths([selected_screenshot_path], screenshot_paths)
+        selected_result = replace(
+            selected_result,
+            details={**(selected_result.details or {}), "selected_slot_verified": True},
+        )
+        if on_check is not None:
+            on_check(selected_result, attempt, None)
     if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
         if on_check is not None:
             on_check(selected_result, attempt, None)
@@ -545,7 +594,7 @@ def _reobserve_after_slot_lost(
     )
     if not _appointment_panel_is_visible(page):
         try:
-            page = open_appointment_panel(page)
+            page = open_appointment_panel(page, cancel_event=cancel_event)
         except AppointmentWorkflowUnavailable as exc:
             observations.append(
                 {
@@ -597,6 +646,7 @@ def _reobserve_after_slot_lost(
                 program_expediente=program_expediente,
                 program_plate=program_plate,
                 telemetry_attempt=reobservation_attempt,
+                cancel_event=cancel_event,
             )
             if result is None:
                 observations.append(
@@ -1114,6 +1164,7 @@ def reload_and_recheck_appointment_availability(
     program_expediente: str | None = None,
     program_plate: str | None = None,
     telemetry_attempt: int | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> AvailabilityResult | None:
     logger.info("No slots detected; reloading page before confirming unavailable result")
     try:
@@ -1126,7 +1177,7 @@ def reload_and_recheck_appointment_availability(
             program_expediente=program_expediente,
             program_plate=program_plate,
         )
-        page = open_appointment_panel(page)
+        page = open_appointment_panel(page, cancel_event=cancel_event)
         page = select_available_site(
             page,
             required_site=settings.observer_required_site,
@@ -1138,6 +1189,8 @@ def reload_and_recheck_appointment_availability(
             page,
             timeout=settings.read_timeout_seconds * 1_000,
         )
+    except PortalContractChanged:
+        raise
     except Exception:
         logger.exception("Reload probe failed; keeping the previous unavailable result")
         return None

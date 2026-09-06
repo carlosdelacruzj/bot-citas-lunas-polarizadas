@@ -10,6 +10,7 @@ DATE_SELECTOR = "#MainContent_idUcitas_cboFecha"
 HOUR_SELECTOR = "#MainContent_idUcitas_cboHora"
 SLOTS_LABEL_ID = "MainContent_idUcitas_lblcupos"
 APPOINTMENT_PANEL_SCREENSHOT_SELECTORS = [
+    "#MainContent_PanelCitas.modal-panel:has(#MainContent_idUcitas_cbosede)",
     (
         "xpath=//*[@id='MainContent_idUcitas_cbosede']"
         "/ancestor::*[.//*[@id='MainContent_idUcitas_btgSiguiente']][1]"
@@ -43,6 +44,10 @@ class AppointmentWorkflowUnavailable(RuntimeError):
 
 
 class AppointmentWorkflowCancelled(RuntimeError):
+    pass
+
+
+class PortalContractChanged(RuntimeError):
     pass
 
 

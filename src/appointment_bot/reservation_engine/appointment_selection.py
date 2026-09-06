@@ -282,6 +282,8 @@ def select_available_appointment(
     allow_hidden: bool = False,
     include_person: bool = True,
     is_allowed_appointment: Callable[[str, str], bool] | None = None,
+    preferred_date: str | None = None,
+    preferred_hour: str | None = None,
     timeout: int = 15_000,
 ) -> AvailabilityResult:
     observation_started = time.monotonic()
@@ -298,14 +300,39 @@ def select_available_appointment(
     }
     logger.info("Selecting available appointment date and hour")
     options_started = time.monotonic()
-    date_options = sorted(
+    all_date_options = sorted(
         real_options(select_options(page, DATE_SELECTOR)),
         key=_date_option_sort_key,
     )
+    date_options = [
+        option
+        for option in all_date_options
+        if preferred_date is None
+        or same_option(str(option["text"]), preferred_date)
+    ]
     observation["date_options_read_seconds"] = round(time.monotonic() - options_started, 3)
-    observation["date_candidate_count"] = len(date_options)
-    observation["visible_dates"] = [str(option["text"]) for option in date_options]
+    observation["date_candidate_count"] = len(all_date_options)
+    observation["visible_dates"] = [str(option["text"]) for option in all_date_options]
+    observation["preferred_date"] = preferred_date
+    observation["preferred_hour"] = preferred_hour
     if not date_options:
+        if preferred_date is not None:
+            snapshot = read_stable_appointment_snapshot(page)
+            details = snapshot_details(snapshot, include_person=include_person)
+            details["fetch_probe_materialized"] = False
+            details["fetch_probe_materialization_outcome"] = "candidate_date_not_visible"
+            return _with_selection_observation(
+                AvailabilityResult(
+                    status="unavailable",
+                    message=(
+                        "La fecha detectada por consulta directa no pudo reproducirse "
+                        "en el formulario visible."
+                    ),
+                    details=details,
+                ),
+                observation,
+                observation_started,
+            )
         raise AppointmentWorkflowUnavailable(
             "Se detecto disponibilidad, pero no se encontro una fecha seleccionable."
         )
@@ -330,7 +357,13 @@ def select_available_appointment(
             timeout=timeout,
         )
         observation["date_postback_seconds"].append(round(time.monotonic() - postback_started, 3))
-        real_hour_options = real_options(hour_options)
+        all_real_hour_options = real_options(hour_options)
+        real_hour_options = [
+            option
+            for option in all_real_hour_options
+            if preferred_hour is None
+            or same_option(str(option["text"]), preferred_hour)
+        ]
         for hour_option in sorted(real_hour_options, key=_hour_option_sort_key):
             _remember_observed_appointment(
                 observation,
@@ -338,7 +371,7 @@ def select_available_appointment(
                 hour_text=str(hour_option["text"]),
             )
         observation["hour_candidate_count"] = observation.get("hour_candidate_count", 0) + len(
-            real_hour_options
+            all_real_hour_options
         )
         if not real_hour_options:
             logger.info("No selectable hours found for date %s", date_option["text"])
@@ -430,19 +463,13 @@ def select_available_appointment(
 
     snapshot = read_stable_appointment_snapshot(page)
     details = snapshot_details(snapshot, include_person=include_person)
-    if is_allowed_appointment is not None:
-        details["blocked_by_order_rule"] = True
+    details["cascade_stage"] = "dates_selected_no_hours"
     return _with_selection_observation(
         AvailabilityResult(
-            status="partial",
+            status="unavailable",
             message=(
-                "Se encontraron fechas y horas disponibles, pero ninguna cumple "
-                "la regla de reserva de la orden."
-                if is_allowed_appointment is not None
-                else (
-                    "Se encontraron fechas disponibles, pero ninguna tiene una hora "
-                    "seleccionable y estable por ahora."
-                )
+                "Se seleccionaron una por una las fechas disponibles, pero ninguna "
+                "cargo una hora seleccionable. No hay cupos por el momento."
             ),
             details=details,
         ),

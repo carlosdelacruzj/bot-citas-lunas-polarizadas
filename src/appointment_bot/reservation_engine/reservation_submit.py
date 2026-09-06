@@ -15,6 +15,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from appointment_bot.config import Settings
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
+    PortalContractChanged,
     ReservationDeferredForPriority,
     ReservationSubmissionUncertain,
 )
@@ -40,6 +41,10 @@ from appointment_bot.reservation_engine.reservation_captcha_sampling import (
 from appointment_bot.reservation_engine.reservation_controls import (
     RESERVATION_BUTTON_SELECTOR,
     RESERVATION_FIELD_SELECTOR,
+)
+from appointment_bot.reservation_engine.reservation_entry import click_preverified_reservation
+from appointment_bot.reservation_engine.reservation_portal import (
+    wait_for_reservation_submission_outcome,
 )
 from appointment_bot.reservation_engine.reservation_post_audit import (
     ReservationPostCollector,
@@ -129,12 +134,18 @@ def _compact_form_audit(audit: dict[str, Any]) -> dict[str, Any]:
             "unexpected_fields",
             "unexpected_nonempty_fields",
             "missing_manual_fields",
+            "missing_manual_core_fields",
+            "duplicate_field_names",
             "protected_nonempty_fields",
             "missing_required_fields",
             "empty_required_fields",
             "honeypot_present",
             "honeypot_empty",
             "honeypot_value_length",
+            "captcha_present",
+            "captcha_empty",
+            "form_contract",
+            "form_contract_sha256",
             "privacy",
         )
     }
@@ -145,12 +156,37 @@ def _record_and_validate_form_audit(
     captcha_audit: dict[str, Any],
     *,
     phase: str,
+    require_captcha_answer: bool = True,
+    require_math_question: bool = True,
 ) -> dict[str, Any]:
-    form_audit = inspect_reservation_form(page)
+    try:
+        form_audit = inspect_reservation_form(page)
+    except PortalContractChanged:
+        raise
+    except Exception as exc:
+        raise PortalContractChanged(
+            "Cambio de seguridad del portal: no se pudo inspeccionar de forma "
+            "unica el formulario final de reserva."
+        ) from exc
     form_audit["phase"] = phase
     captcha_audit.setdefault("pre_submit_form_audits", []).append(form_audit)
     try:
-        validate_reservation_form_audit(form_audit)
+        validate_reservation_form_audit(
+            form_audit,
+            require_captcha_answer=require_captcha_answer,
+            require_math_question=require_math_question,
+        )
+        baseline_signature = captcha_audit.get("reservation_form_contract_sha256")
+        current_signature = form_audit.get("form_contract_sha256")
+        if baseline_signature and current_signature != baseline_signature:
+            raise PortalContractChanged(
+                "Cambio de seguridad del portal: la estructura del formulario final "
+                "cambio durante la preparacion de la reserva."
+            )
+        captcha_audit.setdefault(
+            "reservation_form_contract_sha256",
+            current_signature,
+        )
     except RuntimeError:
         form_audit["validation"] = "blocked"
         raise
@@ -179,6 +215,31 @@ def solve_reservation_captcha_and_click_reserve(
     alert_sink: AlertSink | None = None,
 ) -> Page:
     effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
+    if page.locator(RESERVATION_FIELD_SELECTOR).count() == 0:
+        if (
+            (expected_details or {}).get("blocked_by_order_rule")
+            or (can_solve_captcha is not None and not can_solve_captcha())
+        ):
+            raise ReservationDeferredForPriority(
+                "Se conserva la deteccion sin pulsar Reservar por regla o prioridad.",
+                dict(effective_captcha_audit),
+            )
+        click_preverified_reservation(
+            page, settings, expected_details=expected_details,
+            expected_person_name=expected_person_name, cancel_event=cancel_event,
+            can_submit=can_submit, on_submission_intent=on_submission_intent,
+            on_submission_started=on_submission_started, audit=effective_captcha_audit,
+            timing=timing,
+        )
+        field = page.locator(RESERVATION_FIELD_SELECTOR)
+        post = effective_captcha_audit.get("reservation_post_audit") or {}
+        if wait_for_reservation_submission_outcome(page, timeout=500) != "unknown":
+            return page
+        if not (post.get("response_status") == 200 and field.count() == 1 and field.is_visible()):
+            return page
+        # A visible known final challenge continues the same durable attempt.
+        on_submission_intent = None
+        effective_captcha_audit["final_captcha_after_entry"] = True
     if can_submit is not None and not can_submit():
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
     _validate_reservation_selection(
@@ -241,6 +302,13 @@ def solve_reservation_captcha_and_click_reserve(
     shadow_event_id: str | None = None
     shadow_metadata: dict[str, Any] = {}
     captcha_kind = str(effective_captcha_audit.get("captcha_kind") or "image")
+    _record_and_validate_form_audit(
+        page,
+        effective_captcha_audit,
+        phase="before_captcha_resolution",
+        require_captcha_answer=False,
+        require_math_question=captcha_kind == "html_math",
+    )
     if run_id and captcha_kind != "html_math":
         event_namespace = (
             f"{run_id}:{order_id or 'observer'}"
@@ -420,20 +488,19 @@ def solve_reservation_captcha_and_click_reserve(
         timing_prefix="pre_click_validation",
         captcha_audit=effective_captcha_audit,
     )
+    _record_and_validate_form_audit(
+        page,
+        effective_captcha_audit,
+        phase="after_captcha_fill",
+        require_math_question=captcha_kind == "html_math",
+    )
     if captcha_kind == "html_math":
-        _record_and_validate_form_audit(
-            page,
-            effective_captcha_audit,
-            phase="before_delay",
-        )
         validate_reservation_math_captcha(
             page,
             expected_signature=str(
                 effective_captcha_audit["captcha_math_expression_sha256"]
             ),
         )
-    else:
-        ensure_reservation_honeypot_empty(page)
 
     after_delay_form_audit: dict[str, Any] | None = None
     if captcha_kind == "html_math":
@@ -510,12 +577,13 @@ def solve_reservation_captcha_and_click_reserve(
                 timing.mark("submission_intent_finished")
     post_collector: ReservationPostCollector | None = None
     reservation_post_audit: dict[str, Any] | None = None
+    _record_and_validate_form_audit(
+        page,
+        effective_captcha_audit,
+        phase="immediate_pre_click",
+        require_math_question=captcha_kind == "html_math",
+    )
     if captcha_kind == "html_math":
-        _record_and_validate_form_audit(
-            page,
-            effective_captcha_audit,
-            phase="immediate_pre_click",
-        )
         validate_reservation_math_captcha(
             page,
             expected_signature=str(
@@ -526,8 +594,6 @@ def solve_reservation_captcha_and_click_reserve(
         effective_captcha_audit["reservation_post_audit"] = reservation_post_audit
         post_collector = ReservationPostCollector(reservation_post_audit)
         post_collector.attach(page)
-    else:
-        ensure_reservation_honeypot_empty(page)
     if cancel_event is not None and cancel_event.is_set():
         raise AppointmentWorkflowCancelled(
             "La ejecucion fue cancelada despues de registrar la intencion y antes del submit."

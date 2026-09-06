@@ -2,7 +2,7 @@
 
 Estado: vigente.
 
-Ultima verificacion: `2026-09-02`.
+Ultima verificacion: `2026-09-04`.
 
 Responsable: dominios `reservation_engine/`, `worker/`, caso transaccional
 `services/application/confirm_reservation.py`, puertos inyectados desde
@@ -18,6 +18,18 @@ worker y dashboard.
 - No enviar dos reservas para la misma orden.
 - No repetir automaticamente si la confirmacion queda incierta.
 - No considerar una reserva segura sin evidencia suficiente del portal.
+- Una variacion no reconocida del contrato de seguridad previo a sede pausa el
+  worker antes de seleccionar fecha, CAPTCHA final o reservar.
+- Con `AUTO_RESERVE=false`, una disponibilidad seleccionable conserva su
+  evidencia del cupo seleccionado y pausa globalmente el worker antes de
+  resolverlo o reservar.
+- La deteccion visible sigue la cascada sede, fechas y horas. Una sede sin fechas
+  o fechas que no cargan horas equivale a `unavailable`; solo fecha y hora
+  seleccionables producen la alerta de cupo.
+- Una consulta directa al formulario solo produce un candidato. Para declararlo
+  disponible debe volver a seleccionar esa fecha y hora exactas en el DOM vivo,
+  guardar la captura canonica y avisar antes del CAPTCHA o del submit. Si el cupo
+  no se reproduce, queda como no accionable y nunca inicia CAPTCHA ni submit.
 
 ## Claim de orden
 
@@ -54,12 +66,27 @@ submit. La captura tecnica de un CAPTCHA para evidencia, sin resolverlo ni pulsa
 `reservation_attempted=false` y no deben crear una fila en
 `reservation_attempts`.
 
+La preparacion final falla cerrada si el formulario deja de coincidir con su
+contrato semantico: formulario y destino, controles criticos, tokens ASP.NET,
+honeypot unico y vacio, campos protegidos y firma estructural estable. Esta
+barrera se ejecuta antes de resolver el CAPTCHA y se repite antes del clic.
+
 Esta captura canonica debe contener fecha y hora exactas del modal ya
 estabilizado y conservarse antes de continuar en los tres caminos: seleccion
 inicial, seleccion bloqueada por regla y reobservacion recuperada tras
 `slot_lost`. Si no puede guardarse o archivarse, el flujo debe detenerse antes
 de crear la intencion de reserva. La captura CAPTCHA es evidencia secundaria y
 no puede sustituir a la captura canonica del cupo.
+
+Cuando el candidato procede de una consulta directa, la evidencia conserva la
+telemetria no sensible de cada POST: estado HTTP, duracion, tamano de respuesta
+y cantidad de opciones. Con `AUTO_RESERVE=false`, el flujo termina despues de
+la captura, sin resolver el CAPTCHA ni crear un intento.
+
+La variante con CAPTCHA previo verificado y sin CAPTCHA final usa el mismo
+intento durable y las mismas barreras de identidad, reglas y lease. El boton
+Reservar Cita puede confirmar directamente; no se presume que solo abre un modal.
+Un resultado ambiguo conserva pending/unknown sin repetir el clic.
 
 ## Confirmacion
 

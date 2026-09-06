@@ -8,6 +8,7 @@ from uuid import uuid4
 from appointment_bot.browser.session import open_page
 from appointment_bot.config import Settings
 from appointment_bot.core.models import AvailabilityResult, RunReport
+from appointment_bot.reservation_engine.appointment_contracts import PortalContractChanged
 from appointment_bot.reservation_engine.ports import ReservationEnginePorts, SessionVideo
 from appointment_bot.reservation_engine.results import cleanup_unconfirmed_session_screenshots
 from appointment_bot.reservation_engine.session_flow import execute_session_flow
@@ -48,11 +49,15 @@ def run_with_report(
     try:
         video_recorder = ports.runs.create_video(
             settings,
-            order_id=order_id,
-            client_name=client_name,
+            order_id=order_id or run_id,
+            client_name=client_name or "observer",
             started_at=started_at_dt,
         )
         logger.info("Starting appointment check for %s", settings.target_url)
+        logger.info(
+            "Reservation policy: auto_reserve=%s record_client_sessions=%s",
+            settings.auto_reserve, settings.record_client_sessions,
+        )
         logger.info("Using login username %s", settings.safe_username)
 
         if cancel_event is not None and cancel_event.is_set():
@@ -165,6 +170,9 @@ def _finalize_successful_run(
         video_path = video_recorder.finalize(report)
         if video_path is not None:
             logger.info("Client session video saved: %s", video_path)
+            report = replace(
+                report, details={**(report.details or {}), "video_path": str(video_path)},
+            )
     finalized_report = ports.runs.finalize_report(
         report,
         settings,
@@ -190,7 +198,6 @@ def _finalize_failed_run(
     ports: ReservationEnginePorts,
 ) -> RunReport:
     logger.exception("Appointment check failed")
-    ports.alerts.notify_error(error, settings, screenshot_path)
     error_report = RunReport(
         status="error",
         message=str(error),
@@ -198,17 +205,27 @@ def _finalize_failed_run(
         run_id=run_id,
         order_id=order_id,
         started_at=started_at,
-        details={"error_type": type(error).__name__},
+        details={
+            "error_type": type(error).__name__,
+            "worker_pause_required": isinstance(error, PortalContractChanged),
+        },
         screenshot_path=str(screenshot_path) if screenshot_path is not None else None,
         screenshot_paths=[str(path) for path in screenshot_paths] or None,
     )
     if video_recorder is not None:
-        video_recorder.finalize(error_report)
+        video_path = video_recorder.finalize(error_report)
+        if video_path is not None:
+            logger.info("Diagnostic session video saved: %s", video_path)
+            error_report = replace(
+                error_report,
+                details={**(error_report.details or {}), "video_path": str(video_path)},
+            )
     finalized_report = ports.runs.finalize_report(
         error_report,
         settings,
         started_at_dt=started_at_dt,
     )
+    ports.alerts.notify_error(error, settings, screenshot_path)
     if notify_mode == "full":
         cleanup_unconfirmed_session_screenshots(finalized_report)
     return finalized_report

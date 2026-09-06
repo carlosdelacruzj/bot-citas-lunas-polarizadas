@@ -201,8 +201,6 @@ def run_service_order(
         order.order_id,
         settings=settings,
     )
-    if pending_submission:
-        order_settings = replace(order_settings, auto_reserve=False)
     if rapid_mode:
         order_settings = replace(
             order_settings,
@@ -254,6 +252,9 @@ def run_service_order(
             monitor_site_toggle_enabled=site_toggle_enabled,
             monitor_reload_probe_after_attempt=settings.observer_reload_probe_after_attempt,
         )
+
+    if pending_submission:
+        order_settings = replace(order_settings, auto_reserve=False)
 
     active_attempt_id: str | None = None
     execution_context = opportunity_context if opportunity_context is not None else {}
