@@ -53,17 +53,33 @@
         }
 
         <label>
-          Total pagado acumulado
+          Total recibido hasta hoy
           <input
             name="quickPaymentAmount"
             type="number"
             min="0.01"
             step="0.01"
             inputmode="decimal"
+            aria-describedby="payment-amount-help"
             [ngModel]="view.paymentAmountPaid()"
             (ngModelChange)="view.editField(view.paymentAmountPaid, $event)"
           />
         </label>
+        <p id="payment-amount-help" class="required-help">
+          Incluye los abonos anteriores. Por ejemplo, si recibiste S/40 y luego S/10,
+          escribe 50.
+        </p>
+        @if (+view.paymentAmountPaid() > 0 && +view.paymentAmountAgreed() > 0) {
+          <p class="required-help" aria-live="polite">
+            @if (+view.paymentAmountPaid() < +view.paymentAmountAgreed()) {
+              Quedarán pendientes
+              <strong>{{ view.formatMoney(+view.paymentAmountAgreed() - +view.paymentAmountPaid()) }}</strong>.
+              No se enviará el postpago todavía.
+            } @else {
+              El pago quedará completo y se encolará el envío de postpago.
+            }
+          </p>
+        }
         <div class="quick-amounts" aria-label="Montos rápidos">
           <button type="button" class="secondary" (click)="view.setQuickPaymentAmount('40.00')">
             S/40
@@ -95,7 +111,11 @@
             [disabled]="!view.paymentAmountPaid() || view.actionBusy()"
             (click)="view.requestMarkPaid()"
           >
-            Registrar total S/{{ view.paymentAmountPaid() || '0.00' }}
+            @if (+view.paymentAmountPaid() > 0 && +view.paymentAmountAgreed() > 0) {
+              {{ +view.paymentAmountPaid() < +view.paymentAmountAgreed() ? 'Registrar abono' : 'Completar pago' }}
+            } @else {
+              Registrar pago
+            }
           </button>
         </div>
       </div>

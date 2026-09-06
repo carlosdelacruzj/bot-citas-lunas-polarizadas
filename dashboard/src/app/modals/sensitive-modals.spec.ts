@@ -99,8 +99,7 @@ describe('sensitive dashboard modals', () => {
     view['standardPackageAmount'] = vi.fn(() => '50.00');
     view['requestMarkPaid'] = vi.fn();
     const fixture = await render(PaymentModalComponent, view);
-    const submit = [...fixture.nativeElement.querySelectorAll('button')]
-      .find((button: HTMLButtonElement) => button.textContent?.includes('Registrar total')) as HTMLButtonElement;
+    const submit = fixture.nativeElement.querySelector('.modal-actions .primary') as HTMLButtonElement;
 
     expect(submit.disabled).toBe(true);
     (view['paymentAmountPaid'] as WritableSignal<string>).set('50.00');
