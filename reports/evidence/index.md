@@ -1,6 +1,6 @@
 # Indice mensual de evidencia
 
-- Generado: `2026-09-06T09:18:10-05:00`.
+- Generado: `2026-09-06T09:21:45-05:00`.
 - Los CSV mensuales son la historia compacta canonica.
 - `docs/evidence-index.csv` conserva solo el mes activo.
 - Los agregados diarios no sustituyen los eventos ni PostgreSQL.

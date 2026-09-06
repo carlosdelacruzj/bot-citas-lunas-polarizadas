@@ -3,7 +3,7 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-09-06 09:18:10 America/Lima`.
+- Generado: `2026-09-06 09:21:45 America/Lima`.
 - Ventana solicitada: mes activo 2026-09 (America/Lima).
 - Rango real de eventos indexados: `2026-09-01 09:04:52` a `2026-09-05 18:00:09` (America/Lima).
 - Cobertura temporal verificable: 355/355 eventos con hora de cierre.
