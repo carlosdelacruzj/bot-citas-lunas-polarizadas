@@ -587,6 +587,14 @@ export class App implements OnDestroy {
   public readonly runDetailState = signal<LoadState>('idle');
   public readonly runDetailError = signal<string | null>(null);
   public readonly workerCommands = signal<WorkerCommand[]>([]);
+  public readonly pendingWorkerControl = computed(
+    () =>
+      this.workerCommands().find(
+        (command) =>
+          (command.command === 'pause' || command.command === 'resume') &&
+          (command.status === 'pending' || command.status === 'processing'),
+      ) ?? null,
+  );
   public readonly releaseSafeBackoffsOnRestart = signal(false);
   public readonly manualSessions = signal<ManualSession[]>([]);
   public readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
@@ -1427,6 +1435,7 @@ export class App implements OnDestroy {
         opportunityControl,
         opportunityBursts,
         appointmentReminderStatus,
+        workerCommands,
       ] = await Promise.all([
         this.api.getServiceOrders(scope),
         this.api.getRuns(scope),
@@ -1436,6 +1445,7 @@ export class App implements OnDestroy {
         this.api.getOpportunityControl(scope),
         this.api.getOpportunityBursts(scope),
         this.api.getAppointmentReminders(scope),
+        this.api.getWorkerCommands(scope),
       ]);
       this.applyOrders(orders);
       this.runs.set(runs);
@@ -1445,6 +1455,7 @@ export class App implements OnDestroy {
       this.opportunityControl.set(opportunityControl);
       this.opportunityBursts.set(opportunityBursts.bursts);
       this.appointmentReminderStatus.set(appointmentReminderStatus);
+      this.workerCommands.set(workerCommands);
       return;
     }
     if (view === 'finance') {
@@ -4140,6 +4151,20 @@ export class App implements OnDestroy {
         return `Reinicio solicitado: ${released} backoff(s) liberado(s), ${protectedCount} protegido(s)`;
       },
       onSuccess: () => this.activeModal.set(null),
+    });
+  }
+
+  public requestWorkerPauseToggle(): void {
+    const paused = this.worker()?.paused === true;
+    this.setPendingAction({
+      title: paused ? 'Reactivar búsquedas' : 'Detener búsquedas',
+      message: paused
+        ? 'El worker volverá a admitir revisiones y reservas. Los backoffs y estados protegidos se conservan.'
+        : 'El worker dejará de admitir trabajo nuevo cuando llegue a un punto seguro. No corta una reserva en curso ni borra mediciones.',
+      execute: () => (paused ? this.api.resumeWorker() : this.api.pauseWorker()),
+      successMessage: paused
+        ? 'Reactivación solicitada; el worker la confirmará al aplicarla'
+        : 'Pausa solicitada; el worker se detendrá en un punto seguro',
     });
   }
 

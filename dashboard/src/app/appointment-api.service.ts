@@ -1707,6 +1707,14 @@ export class AppointmentApiService {
     });
   }
 
+  async pauseWorker(): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/worker/pause', {});
+  }
+
+  async resumeWorker(): Promise<ApiActionResponse> {
+    return this.post<ApiActionResponse>('/api/v1/worker/resume', {});
+  }
+
   async openManualSession(
     orderId: string,
     mode: ManualSessionMode = 'appointment',

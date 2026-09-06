@@ -744,7 +744,32 @@
     } @else {
       <p class="empty">No hay una orden activa o todavia no se cargaron las ordenes.</p>
     }
-    <div class="panel-actions">
+    <p class="opportunity-hint">
+      Pausar conserva el historial y el resto del sistema. Mientras esté pausado no habrá nuevas
+      revisiones del portal ni crecerán las métricas de detección.
+    </p>
+    <div class="panel-actions button-row">
+      <button
+        type="button"
+        [class]="dashboard.worker()?.paused ? 'primary' : 'danger'"
+        [disabled]="
+          (dashboard.worker()?.worker_running ?? dashboard.health()?.worker_running) !== true ||
+          dashboard.actionBusy() ||
+          dashboard.pendingWorkerControl() !== null
+        "
+        [attr.title]="
+          (dashboard.worker()?.worker_running ?? dashboard.health()?.worker_running) !== true
+            ? 'El worker debe estar activo para aplicar este control'
+            : null
+        "
+        (click)="dashboard.requestWorkerPauseToggle()"
+      >
+        @if (dashboard.pendingWorkerControl(); as command) {
+          {{ command.command === 'pause' ? 'Pausa solicitada' : 'Reactivación solicitada' }}
+        } @else {
+          {{ dashboard.worker()?.paused ? 'Reactivar búsquedas' : 'Detener búsquedas' }}
+        }
+      </button>
       <button type="button" class="danger" (click)="dashboard.openWorkerRestart()">
         Reiniciar worker
       </button>
