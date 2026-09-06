@@ -493,31 +493,30 @@ def _centered_modal_clip(
     bounds: dict[str, float],
     viewport: dict[str, int],
 ) -> dict[str, float]:
-    aspect_ratio = 2160 / 1800
+    margin = 24.0
     viewport_width = float(viewport["width"])
     viewport_height = float(viewport["height"])
-    modal_width = max(float(bounds["width"]), 1)
-    modal_height = max(float(bounds["height"]), 1)
+    left = float(bounds["x"])
+    top = float(bounds["y"])
+    right = left + float(bounds["width"])
+    bottom = top + float(bounds["height"])
+    if (
+        left < 0
+        or top < 0
+        or right > viewport_width
+        or bottom > viewport_height
+        or right <= left
+        or bottom <= top
+    ):
+        raise PlaywrightError("The complete appointment modal does not fit in the viewport")
 
-    target_width = max(1080.0, modal_width + 96.0, (modal_height + 96.0) * aspect_ratio)
-    target_height = target_width / aspect_ratio
-    if target_width > viewport_width:
-        target_width = viewport_width
-        target_height = target_width / aspect_ratio
-    if target_height > viewport_height:
-        target_height = viewport_height
-        target_width = target_height * aspect_ratio
-
-    center_x = float(bounds["x"]) + modal_width / 2
-    center_y = float(bounds["y"]) + modal_height / 2
-    x = max(0.0, min(center_x - target_width / 2, viewport_width - target_width))
-    y = max(0.0, min(center_y - target_height / 2, viewport_height - target_height))
-
+    x = max(0.0, left - margin)
+    y = max(0.0, top - margin)
     return {
-        "x": round(x, 3),
-        "y": round(y, 3),
-        "width": round(target_width, 3),
-        "height": round(target_height, 3),
+        "x": x,
+        "y": y,
+        "width": min(viewport_width, right + margin) - x,
+        "height": min(viewport_height, bottom + margin) - y,
     }
 
 

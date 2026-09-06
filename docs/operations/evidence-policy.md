@@ -33,6 +33,13 @@ copiar el mismo artefacto pesado entre ambos.
   clave de fecha/hora y encola su copia con watermark antes de cualquier
   captura CAPTCHA, submit o reobservacion recuperada. El CAPTCHA permanece como
   evidencia secundaria.
+- Las capturas de disponibilidad se ajustan al modal completo con un margen
+  de 24 pixeles CSS, sin relacion de aspecto fija. Incluyen el CAPTCHA si aparece;
+  si el modal no cabe completo en el viewport, conservan la captura de pagina
+  completa. Las capturas de errores y los videos mantienen su encuadre.
+- Las copias marcadas adaptan escala y posiciones al formato compacto: canal
+  en el encabezado, firma en el pie y logo central tenue. La version del diseno
+  invalida copias anteriores al regenerarlas; nunca modifica el original.
 - La limpieza configurada recorre subcarpetas de logs, screenshots y videos.
   Nunca entra en `screenshots/whatsapp/`, `screenshots/whatsapp-outgoing/` ni
   `screenshots/preflight/`. Los seguimientos post-pago referencian directamente
@@ -42,6 +49,12 @@ copiar el mismo artefacto pesado entre ambos.
   rechazos, `reservation_unconfirmed`, `slot_lost` y CAPTCHA `original-html`.
   La retencion automatica elimina solamente artefactos antiguos que no entren
   en esas categorias.
+
+Las sesiones del motor y del observador conservan video ante error, resultado
+unknown, reserva no confirmada o interaccion de reserva, aunque no haya exito.
+`videos/reservations/diagnostics/` y sus metadatos JSON quedan fuera de la purga
+rutinaria; el run registra `video_path`. Las reservas confirmadas conservan MP4
+con fallback WebM. Un fallo anterior a crear el navegador no puede tener video.
 
 ## Datos compartibles
 

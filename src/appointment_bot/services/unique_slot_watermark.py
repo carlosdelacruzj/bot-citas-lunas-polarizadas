@@ -18,7 +18,7 @@ from appointment_bot.utils.screenshots import screenshot_artifact_dir_for_date
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path(".runtime/whatsapp-daily-summary/config.json")
-LAYOUT_VERSION = "provided-assets-v8-channel-pattern-1"
+LAYOUT_VERSION = "provided-assets-v9-adaptive-width"
 ORIGINAL_DIRECTORY_NAME = "cupos-unicos"
 WATERMARKED_DIRECTORY_NAME = "cupos-unicos-marcados"
 BRAND_ASSETS_DIRECTORY = Path(__file__).resolve().parents[1] / "assets" / "brand"
@@ -88,8 +88,7 @@ def prepare_daily_unique_slot_watermarks(
 
     if failures:
         raise RuntimeError(
-            "No se pudo preparar el resumen sin exponer imagenes originales: "
-            + "; ".join(failures)
+            "No se pudo preparar el resumen sin exponer imagenes originales: " + "; ".join(failures)
         )
     return rendered
 
@@ -121,9 +120,7 @@ def ensure_unique_slot_watermark(
         return destination
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_name(
-        f".{destination.stem}.{uuid4().hex}.tmp{destination.suffix}"
-    )
+    temporary = destination.with_name(f".{destination.stem}.{uuid4().hex}.tmp{destination.suffix}")
     try:
         _render_watermark(source, temporary, fingerprint)
         _verify_rendered_image(source, temporary, fingerprint)
@@ -136,9 +133,7 @@ def ensure_unique_slot_watermark(
 
 def watermarked_slot_path(source: Path) -> Path:
     if source.parent.name != ORIGINAL_DIRECTORY_NAME:
-        raise ValueError(
-            f"La captura no pertenece a {ORIGINAL_DIRECTORY_NAME}: {source}"
-        )
+        raise ValueError(f"La captura no pertenece a {ORIGINAL_DIRECTORY_NAME}: {source}")
     return source.parent.parent / WATERMARKED_DIRECTORY_NAME / source.name
 
 
@@ -313,39 +308,52 @@ def _get_brand_asset(path: Path) -> Image.Image:
 
 def _paste_center_watermark(canvas: Image.Image, watermark: Image.Image) -> None:
     width, height = canvas.size
+    compact = height < width * 0.65
     maximum_width = max(1, round(width * 0.44))
-    maximum_height = max(1, round(height * 0.405))
+    maximum_height = (
+        max(1, round(min(width * 0.32, height * 0.60)))
+        if compact
+        else max(1, round(height * 0.405))
+    )
     watermark.thumbnail((maximum_width, maximum_height), Image.Resampling.LANCZOS)
-    opacity = watermark.getchannel("A").point(lambda value: round(value * 0.20))
+    opacity = watermark.getchannel("A").point(
+        lambda value: round(value * (0.12 if compact else 0.20))
+    )
     watermark.putalpha(opacity)
     x = (width - watermark.width) // 2
-    y = max(0, round(height * 0.51 - watermark.height / 2))
+    y = max(0, round(height * (0.48 if compact else 0.51) - watermark.height / 2))
     canvas.alpha_composite(watermark, (x, y))
 
 
 def _paste_bottom_signature(canvas: Image.Image, signature: Image.Image) -> None:
     width, height = canvas.size
-    maximum_width = max(1, round(width * 0.52))
-    maximum_height = max(1, round(height * 0.102))
+    compact = height < width * 0.65
+    maximum_width = max(1, round(width * (0.34 if compact else 0.52)))
+    maximum_height = max(1, round(min(width * 0.075, height * 0.17) if compact else height * 0.102))
     signature.thumbnail((maximum_width, maximum_height), Image.Resampling.LANCZOS)
-    x = round(width * 0.025)
+    x = round(width * (0.055 if compact else 0.025))
     footer_top = round(height * 0.756)
     footer_bottom = round(height * 0.857)
     y = footer_top + (footer_bottom - footer_top - signature.height) // 2
+    if compact:
+        y = round(height - width * 0.063 - signature.height / 2)
     canvas.alpha_composite(signature, (x, max(0, y)))
 
 
 def _paste_channel_signature(canvas: Image.Image, signature: Image.Image) -> None:
     width, height = canvas.size
-    maximum_width = max(1, round(width * 0.20))
-    maximum_height = max(1, round(height * 0.058))
+    compact = height < width * 0.65
+    maximum_width = max(1, round(width * (0.22 if compact else 0.20)))
+    maximum_height = max(1, round(min(width * 0.048, height * 0.11) if compact else height * 0.058))
     signature.thumbnail((maximum_width, maximum_height), Image.Resampling.LANCZOS)
     opacity = signature.getchannel("A").point(lambda value: round(value * 0.82))
     signature.putalpha(opacity)
-    x = width - signature.width - round(width * 0.025)
+    x = width - signature.width - round(width * (0.055 if compact else 0.025))
     header_top = round(height * 0.14)
     header_bottom = round(height * 0.224)
     y = header_top + (header_bottom - header_top - signature.height) // 2
+    if compact:
+        y = round(width * 0.0575 - signature.height / 2)
     canvas.alpha_composite(signature, (max(0, x), max(0, y)))
 
 
@@ -356,7 +364,7 @@ def _paste_horizontal_channel_names(
     width, height = canvas.size
     channel_name = _channel_name_from_signature(channel_signature)
     maximum_width = max(1, round(width * 0.19))
-    maximum_height = max(1, round(height * 0.025))
+    maximum_height = max(1, round(min(width * 0.025 / 1.2, height * 0.05)))
     channel_name.thumbnail((maximum_width, maximum_height), Image.Resampling.LANCZOS)
     opacity = channel_name.getchannel("A").point(lambda value: round(value * 0.15))
     channel_name.putalpha(opacity)
@@ -381,9 +389,7 @@ def _channel_name_from_signature(signature: Image.Image) -> Image.Image:
     white_mask = Image.new("L", username_region.size)
     white_mask.putdata(
         [
-            source_alpha
-            if min(red_value, green_value, blue_value) >= 175
-            else 0
+            source_alpha if min(red_value, green_value, blue_value) >= 175 else 0
             for red_value, green_value, blue_value, source_alpha in zip(
                 red.get_flattened_data(),
                 green.get_flattened_data(),
