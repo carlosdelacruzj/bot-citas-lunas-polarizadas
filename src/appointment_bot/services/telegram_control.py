@@ -110,6 +110,9 @@ from appointment_bot.services.telegram.models import (
 from appointment_bot.services.telegram.models import RulesConversation as RulesConversation
 from appointment_bot.services.telegram.models import SearchConversation as SearchConversation
 from appointment_bot.services.telegram.models import TelegramControlConfig as TelegramControlConfig
+from appointment_bot.services.telegram.order_queries import (
+    _wait_for_order_preflight as _wait_for_order_preflight,
+)
 from appointment_bot.services.telegram.transport import (
     MAX_TELEGRAM_RESPONSE_BYTES as MAX_TELEGRAM_RESPONSE_BYTES,
 )
@@ -4827,23 +4830,6 @@ def _send_client_creation_message_safe(
         logger.warning("Could not send Telegram client creation status: %s", exc)
         return False
     return True
-
-
-def _wait_for_order_preflight(
-    admin_api: AdminApiClient, order_id: str
-) -> dict[str, Any]:
-    deadline = time.monotonic() + WORKER_COMMAND_TIMEOUT_SECONDS
-    last_order: dict[str, Any] = {}
-    while time.monotonic() < deadline:
-        last_order = admin_api.get_service_order(order_id)
-        if str(last_order.get("preflight_status") or "") not in {
-            "",
-            "pending",
-            "running",
-        }:
-            return last_order
-        time.sleep(2)
-    return last_order
 
 
 def _order_change_matches(change: PendingOrderChange, order: dict[str, Any]) -> bool:
