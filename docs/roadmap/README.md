@@ -27,36 +27,34 @@ primera aceptacion natural antes de otro crecimiento funcional.
 
 ### Ventana de retiro de compatibilidad actual
 
-Observar del `2026-08-31` al `2026-09-06` conforme a
+La ventana `2026-08-31` a `2026-09-06` no acredita cero consumidores.
+Migrar primero `AdminApiClient.get_service_orders()` y los demas accesos sin
+proyeccion; luego medir siete dias completos conforme a
 [`../operations/current-only-observation.md`](../operations/current-only-observation.md).
-El monitor n8n ya esta inactivo; no apagar aun `8765` ni retirar respuestas API
-historicas sin demostrar cero consumidores.
 
-- retirar el resumen mensual v1 desde `2026-09-04` si no registra accesos;
+- comprobar cero accesos al resumen mensual v1 y conservar trazabilidad;
 - confirmar cero sondeos naturales a `8765` y salud continua por Admin API;
 - medir llamadas sin `projection` a ordenes y sin query a post-cita;
-- cerrar la ventana solo con Telegram, dashboard, finanzas, worker y paquetes
-  postpago funcionando con los contratos actuales.
+- cerrar la nueva ventana con Telegram, dashboard, finanzas, worker y postpago
+  funcionando con contratos actuales antes de retirar respuestas o puertos.
 
 Cierre: siete dias sin consumidores antiguos, sin alertas perdidas y con
 rollback conservado; entonces retirar codigo, puerto y documentacion remanente.
 
 ### Flujos naturales pendientes
 
-Observar, sin crear envios de prueba:
+Observar o conciliar sin crear envios de prueba:
 
-- proximo album de reserva/cobro procesado por el dispatcher;
-- proxima rafaga natural de tres sesiones comparada con el baseline de dos;
-- primera reserva natural con CAPTCHA previo verificado y sin CAPTCHA final, con aviso temprano, POST medido y video retenido;
-- proximo postpago con documentos y texto separados;
-- variantes pendientes del aviso de registro;
-- proximo recordatorio con plantilla versionada;
-- primer lote post-cita natural de las `20:00`;
-- primer cierre diario natural con adjuntos marcados;
-- proximo reinicio de Windows y recuperacion de Telegram/runtime.
+- primer integral nuevo posterior a `v74`: abono, tasa, saldo, mensaje y resumen;
+- variante de registro `no_pending_request`;
+- primer cierre diario completo: investigar la falta de confirmacion de la
+  publicacion final y conciliar componentes de los seis casos `uncertain`;
+- album ambiguo pendiente: revisar componentes antes de cualquier recuperacion.
 
 Cierre: revisiones congeladas, evidencia tecnica suficiente y ningun reintento
-de resultados `uncertain`.
+automatico de resultados `uncertain`. El
+[informe de aceptacion](../../reports/acceptance/natural-acceptance-2026-09-07.md)
+delimita la muestra observada y los pendientes; no sustituye monitoreo futuro.
 
 ## P1 - Operacion y datos accionables
 

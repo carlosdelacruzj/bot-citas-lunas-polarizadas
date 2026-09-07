@@ -444,8 +444,13 @@ necesitan.
 - [x] Elevar a `v72` los limites persistidos de sesiones configuradas y activas.
 - [x] Aplicar `v72` sin tocar el intento ambiguo existente; el worker permanecio
   detenido y no se forzo ningun reinicio.
-- [ ] Validar en una ventana natural que tres sesiones no aumentan defensa,
+- [x] Validar en una ventana natural que tres sesiones no aumentan defensa,
   errores tecnicos, CAPTCHA ni resultados inciertos frente al baseline de dos.
+
+Aceptacion observacional: 30 rafagas de dos sesiones frente a 36 que alcanzaron
+tres; sin deterioro registrado en las barreras anteriores. La conversion fue
+menor y no se atribuye causalidad a la concurrencia. Alcance y limites en el
+[informe del 7 de septiembre](../../reports/acceptance/natural-acceptance-2026-09-07.md).
 
 Criterio de cierre: una orden amplia nunca crea un traspaso secuencial despues
 de reservar; una incompatibilidad puede ceder el cupo a candidatos exactos; y

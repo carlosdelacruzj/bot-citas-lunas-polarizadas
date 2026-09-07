@@ -223,9 +223,9 @@ contrato: [`resumen-del-negocio.md`](resumen-del-negocio.md), [`contracts/financ
 
 - Pendientes no posee aun `actionable_since`, vencimiento ni responsable
   persistidos por tarea;
-- el envio con CAPTCHA previo verificado y sin CAPTCHA final esta validado localmente; falta aceptacion natural;
-- la rafaga de tres sesiones requiere comparacion natural contra el baseline de dos sesiones;
-- faltan observaciones naturales de algunos flujos WhatsApp, post-cita y cierre;
+- la aceptacion natural ya cubre la rama sin CAPTCHA final, rafagas, album, postpago, recordatorios, post-cita y recuperacion; su [muestra y limites](../reports/acceptance/natural-acceptance-2026-09-07.md) no garantizan resultados futuros;
+- la comparacion de rafagas no prueba mayor eficacia y es anterior al cambio de CAPTCHA del portal;
+- falta el aviso sin solicitud pendiente y el cierre diario completo; hay seis cierres y un album ambiguos sin conciliacion al corte;
 - el primer tramite integral natural posterior a `v74` debe validar abono, tasa, saldo, mensaje y resumen sin crear un caso de prueba;
 - salud compuesta, backup externo, retencion y restore necesitan cierre;
 - mensajes y algunos detalles del dashboard aun pueden reducir su transporte;
