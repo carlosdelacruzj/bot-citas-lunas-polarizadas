@@ -5,7 +5,6 @@ import hashlib
 import json
 import logging
 import mimetypes
-import os
 import re
 import secrets
 import signal
@@ -20,10 +19,9 @@ from pathlib import Path
 from threading import Event, Lock, Timer
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.config import load_settings
 from appointment_bot.core.contacts import (
     ContactValidationError,
     normalize_contact_whatsapp,
@@ -53,6 +51,11 @@ from appointment_bot.services.telegram.audit import _record_audit_safe as _recor
 from appointment_bot.services.telegram.audit import _telegram_actor as _telegram_actor
 from appointment_bot.services.telegram.bot_api import TelegramBotApi as TelegramBotApi
 from appointment_bot.services.telegram.bot_api import _multipart_form_data as _multipart_form_data
+from appointment_bot.services.telegram.config import _positive_int as _positive_int
+from appointment_bot.services.telegram.config import (
+    _validated_admin_api_url as _validated_admin_api_url,
+)
+from appointment_bot.services.telegram.config import load_control_config as load_control_config
 from appointment_bot.services.telegram.constants import (
     CAPTCHA_REVIEW_TTL_SECONDS as CAPTCHA_REVIEW_TTL_SECONDS,
 )
@@ -233,67 +236,6 @@ class WorkerHealthMonitor:
         self.consecutive_failures = 0
         self.alert_sent = False
         self.last_failure_kind = None
-
-
-def load_control_config(settings: Settings) -> TelegramControlConfig:
-    if not settings.telegram_enabled:
-        raise TelegramControlError("Telegram is disabled.")
-    chat_ids_text = os.getenv("TELEGRAM_CONTROL_CHAT_IDS", "").strip()
-    chat_ids = {
-        item.strip()
-        for item in (chat_ids_text.split(",") if chat_ids_text else [settings.telegram_chat_id])
-        if item.strip()
-    }
-    if not chat_ids:
-        raise TelegramControlError("No authorized Telegram chat_id is configured.")
-    user_ids = frozenset(
-        item.strip()
-        for item in os.getenv("TELEGRAM_CONTROL_USER_IDS", "").split(",")
-        if item.strip()
-    )
-    admin_api_token = os.getenv("APPOINTMENT_BOT_API_TOKEN", "").strip()
-    if not admin_api_token:
-        raise TelegramControlError("APPOINTMENT_BOT_API_TOKEN is required.")
-    workdir = Path(os.getenv("APPOINTMENT_BOT_WORKDIR", "").strip() or Path.cwd())
-    offset_text = os.getenv("TELEGRAM_CONTROL_OFFSET_PATH", "").strip()
-    offset_path = (
-        Path(offset_text) if offset_text else workdir / ".runtime/telegram-control-offset.json"
-    )
-    poll_timeout = _positive_int(
-        os.getenv("TELEGRAM_CONTROL_POLL_TIMEOUT_SECONDS"),
-        default=DEFAULT_POLL_TIMEOUT_SECONDS,
-    )
-    return TelegramControlConfig(
-        bot_token=settings.telegram_bot_token,
-        authorized_chat_ids=frozenset(chat_ids),
-        authorized_user_ids=user_ids,
-        admin_api_url=_validated_admin_api_url(
-            os.getenv("TELEGRAM_CONTROL_ADMIN_API_URL", DEFAULT_ADMIN_API_URL)
-        ),
-        admin_api_token=admin_api_token,
-        offset_path=offset_path,
-        poll_timeout_seconds=poll_timeout,
-        worker_monitor_enabled=os.getenv(
-            "TELEGRAM_WORKER_MONITOR_ENABLED",
-            "false",
-        ).strip().lower()
-        in {"1", "true", "yes", "on"},
-    )
-
-
-def _validated_admin_api_url(value: str) -> str:
-    normalized = value.strip().rstrip("/")
-    parsed = urlparse(normalized)
-    if parsed.username or parsed.password or not parsed.hostname:
-        raise TelegramControlError("TELEGRAM_CONTROL_ADMIN_API_URL is invalid.")
-    loopback = parsed.hostname.lower() in {"127.0.0.1", "localhost", "::1"}
-    if parsed.scheme == "http" and loopback:
-        return normalized
-    if parsed.scheme == "https":
-        return normalized
-    raise TelegramControlError(
-        "TELEGRAM_CONTROL_ADMIN_API_URL must use loopback HTTP or HTTPS."
-    )
 
 
 def run_control(*, check_only: bool = False) -> int:
@@ -5151,18 +5093,6 @@ def _store_next_offset(path: Path, next_offset: int) -> None:
     temporary = path.with_suffix(f"{path.suffix}.tmp")
     temporary.write_text(json.dumps({"next_offset": next_offset}) + "\n", encoding="utf-8")
     temporary.replace(path)
-
-
-def _positive_int(value: str | None, *, default: int) -> int:
-    if value is None or not value.strip():
-        return default
-    try:
-        parsed = int(value)
-    except ValueError as exc:
-        raise TelegramControlError(f"Invalid positive integer: {value!r}") from exc
-    if parsed < 1:
-        raise TelegramControlError(f"Integer must be positive: {value!r}")
-    return parsed
 
 
 def _install_signal_handlers(stop_event: Event) -> None:
