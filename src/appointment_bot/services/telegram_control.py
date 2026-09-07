@@ -42,6 +42,12 @@ from appointment_bot.core.service_packages import (
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.logger import setup_logging
+from appointment_bot.services.telegram.access import TelegramRateLimiter as TelegramRateLimiter
+from appointment_bot.services.telegram.access import _callback_is_mutation as _callback_is_mutation
+from appointment_bot.services.telegram.access import _command_parts as _command_parts
+from appointment_bot.services.telegram.access import (
+    _mutation_user_authorized as _mutation_user_authorized,
+)
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient as AdminApiClient
 from appointment_bot.services.telegram.bot_api import TelegramBotApi as TelegramBotApi
 from appointment_bot.services.telegram.bot_api import _multipart_form_data as _multipart_form_data
@@ -225,56 +231,6 @@ class WorkerHealthMonitor:
         self.consecutive_failures = 0
         self.alert_sent = False
         self.last_failure_kind = None
-
-
-class TelegramRateLimiter:
-    def __init__(self) -> None:
-        self._events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
-
-    def allow(self, chat_id: str, *, mutation: bool, now: float | None = None) -> bool:
-        current = time.monotonic() if now is None else now
-        bucket_name = "mutation" if mutation else "general"
-        limit = MUTATION_RATE_LIMIT if mutation else GENERAL_RATE_LIMIT
-        events = self._events[(chat_id, bucket_name)]
-        cutoff = current - RATE_LIMIT_WINDOW_SECONDS
-        while events and events[0] <= cutoff:
-            events.popleft()
-        if len(events) >= limit:
-            return False
-        events.append(current)
-        return True
-
-
-def _callback_is_mutation(data: str) -> bool:
-    if data.startswith(
-        ("wc:", "oc:", "nc:", "pq:", "py:", "wk:", "op:", "cp:", "nf:", "rf:", "pr:")
-    ):
-        return True
-    if data.startswith(("ui:manual:", "ui:captcha:", "ui:cancel:")):
-        return True
-    if data.startswith("om:"):
-        return data.rsplit(":", maxsplit=1)[-1] in {
-            "access",
-            "validate",
-            "editrules",
-        }
-    return False
-
-
-def _mutation_user_authorized(
-    config: TelegramControlConfig,
-    chat: dict[str, Any],
-    sender: Any,
-) -> bool:
-    if str(chat.get("type") or "") != "private" or not isinstance(sender, dict):
-        return False
-    chat_id = str(chat.get("id") or "")
-    user_id = str(sender.get("id") or "")
-    if not chat_id or not user_id:
-        return False
-    if config.authorized_user_ids:
-        return user_id in config.authorized_user_ids
-    return user_id == chat_id and chat_id in config.authorized_chat_ids
 
 
 def load_control_config(settings: Settings) -> TelegramControlConfig:
@@ -5193,15 +5149,6 @@ def format_worker_status(payload: dict[str, Any]) -> str:
     if payload.get("last_error"):
         lines.append("Ultimo error: disponible en el dashboard.")
     return "\n".join(lines)
-
-
-def _command_parts(text: str) -> tuple[str | None, str]:
-    stripped = text.strip()
-    first, separator, arguments = stripped.partition(" ")
-    if not first.startswith("/"):
-        return None, ""
-    command = first[1:].split("@", maxsplit=1)[0].strip().lower() or None
-    return command, arguments.strip() if separator else ""
 
 
 def _format_lima_datetime(value: Any) -> str | None:
