@@ -39,7 +39,6 @@ from appointment_bot.core.service_packages import (
     service_package_definition,
     service_package_label,
 )
-from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.telegram.access import TelegramRateLimiter as TelegramRateLimiter
@@ -49,6 +48,9 @@ from appointment_bot.services.telegram.access import (
     _mutation_user_authorized as _mutation_user_authorized,
 )
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient as AdminApiClient
+from appointment_bot.services.telegram.audit import _audit_target as _audit_target
+from appointment_bot.services.telegram.audit import _record_audit_safe as _record_audit_safe
+from appointment_bot.services.telegram.audit import _telegram_actor as _telegram_actor
 from appointment_bot.services.telegram.bot_api import TelegramBotApi as TelegramBotApi
 from appointment_bot.services.telegram.bot_api import _multipart_form_data as _multipart_form_data
 from appointment_bot.services.telegram.constants import (
@@ -4900,42 +4902,6 @@ def _worker_command_label(command: str) -> str:
         "resume": "reanudar el worker",
         "restart": "reiniciar el worker",
     }[command]
-
-
-def _telegram_actor(chat_id: str, user_id: str | None = None) -> str:
-    effective_user_id = user_id or chat_id
-    identity = f"chat:{chat_id}|user:{effective_user_id}"
-    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
-    return f"telegram:{digest}"
-
-
-def _audit_target(arguments: str) -> str | None:
-    candidate = arguments.strip().split(maxsplit=1)[0] if arguments.strip() else ""
-    return candidate if _valid_order_id(candidate) else None
-
-
-def _record_audit_safe(
-    *,
-    actor: str,
-    action: str,
-    status: str,
-    target_type: str | None = None,
-    target_id: str | None = None,
-    operation_id: str | None = None,
-    detail: str | None = None,
-) -> None:
-    try:
-        record_remote_control_audit(
-            actor=actor,
-            action=action,
-            status=status,
-            target_type=target_type,
-            target_id=target_id,
-            operation_id=operation_id,
-            detail=detail,
-        )
-    except Exception:
-        logger.warning("Could not persist remote-control audit action=%s", action)
 
 
 def _cancel_chat_confirmations(
