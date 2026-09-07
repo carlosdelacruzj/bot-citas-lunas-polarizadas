@@ -45,6 +45,58 @@ from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient as AdminApiClient
 from appointment_bot.services.telegram.bot_api import TelegramBotApi as TelegramBotApi
 from appointment_bot.services.telegram.bot_api import _multipart_form_data as _multipart_form_data
+from appointment_bot.services.telegram.constants import (
+    CAPTCHA_REVIEW_TTL_SECONDS as CAPTCHA_REVIEW_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import CLIENTS_PAGE_SIZE as CLIENTS_PAGE_SIZE
+from appointment_bot.services.telegram.constants import (
+    CONFIRMATION_TTL_SECONDS as CONFIRMATION_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    CONVERSATION_TTL_SECONDS as CONVERSATION_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    DEFAULT_ADMIN_API_URL as DEFAULT_ADMIN_API_URL,
+)
+from appointment_bot.services.telegram.constants import (
+    DEFAULT_POLL_TIMEOUT_SECONDS as DEFAULT_POLL_TIMEOUT_SECONDS,
+)
+from appointment_bot.services.telegram.constants import GENERAL_RATE_LIMIT as GENERAL_RATE_LIMIT
+from appointment_bot.services.telegram.constants import HELP_TEXT as HELP_TEXT
+from appointment_bot.services.telegram.constants import LIMA_TIMEZONE as LIMA_TIMEZONE
+from appointment_bot.services.telegram.constants import MUTATING_COMMANDS as MUTATING_COMMANDS
+from appointment_bot.services.telegram.constants import MUTATION_RATE_LIMIT as MUTATION_RATE_LIMIT
+from appointment_bot.services.telegram.constants import (
+    NEW_CLIENT_CONFIRMATION_TTL_SECONDS as NEW_CLIENT_CONFIRMATION_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    NEW_CLIENT_CONVERSATION_TTL_SECONDS as NEW_CLIENT_CONVERSATION_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    ORDER_TARGET_COMMANDS as ORDER_TARGET_COMMANDS,
+)
+from appointment_bot.services.telegram.constants import (
+    RATE_LIMIT_WINDOW_SECONDS as RATE_LIMIT_WINDOW_SECONDS,
+)
+from appointment_bot.services.telegram.constants import RETRY_DELAY_SECONDS as RETRY_DELAY_SECONDS
+from appointment_bot.services.telegram.constants import (
+    SENSITIVE_MESSAGE_TTL_SECONDS as SENSITIVE_MESSAGE_TTL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    WORKER_COMMAND_TIMEOUT_SECONDS as WORKER_COMMAND_TIMEOUT_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    WORKER_MONITOR_END_MINUTE as WORKER_MONITOR_END_MINUTE,
+)
+from appointment_bot.services.telegram.constants import (
+    WORKER_MONITOR_FAILURE_THRESHOLD as WORKER_MONITOR_FAILURE_THRESHOLD,
+)
+from appointment_bot.services.telegram.constants import (
+    WORKER_MONITOR_INTERVAL_SECONDS as WORKER_MONITOR_INTERVAL_SECONDS,
+)
+from appointment_bot.services.telegram.constants import (
+    WORKER_MONITOR_START_MINUTE as WORKER_MONITOR_START_MINUTE,
+)
 from appointment_bot.services.telegram.errors import TelegramControlError as TelegramControlError
 from appointment_bot.services.telegram.transport import (
     MAX_TELEGRAM_RESPONSE_BYTES as MAX_TELEGRAM_RESPONSE_BYTES,
@@ -55,101 +107,6 @@ from appointment_bot.services.telegram.transport import (
 from appointment_bot.utils.sanitization import sanitize_text
 
 logger = logging.getLogger("appointment_bot.services.telegram_control")
-
-
-LIMA_TIMEZONE = ZoneInfo("America/Lima")
-
-
-DEFAULT_ADMIN_API_URL = "http://127.0.0.1:8766"
-
-
-DEFAULT_POLL_TIMEOUT_SECONDS = 30
-
-
-RETRY_DELAY_SECONDS = 5
-
-
-WORKER_MONITOR_INTERVAL_SECONDS = 300
-
-
-WORKER_MONITOR_FAILURE_THRESHOLD = 3
-
-
-WORKER_MONITOR_START_MINUTE = 7 * 60 + 30
-
-
-WORKER_MONITOR_END_MINUTE = 18 * 60
-
-
-CONFIRMATION_TTL_SECONDS = 120
-
-
-CONVERSATION_TTL_SECONDS = 300
-
-
-CAPTCHA_REVIEW_TTL_SECONDS = 600
-
-
-NEW_CLIENT_CONVERSATION_TTL_SECONDS = 180
-
-
-NEW_CLIENT_CONFIRMATION_TTL_SECONDS = 120
-
-
-SENSITIVE_MESSAGE_TTL_SECONDS = 120
-
-
-WORKER_COMMAND_TIMEOUT_SECONDS = 90
-
-
-CLIENTS_PAGE_SIZE = 8
-
-
-GENERAL_RATE_LIMIT = 30
-
-
-MUTATION_RATE_LIMIT = 15
-
-
-RATE_LIMIT_WINDOW_SECONDS = 60
-
-
-MUTATING_COMMANDS = {
-    "captchas",
-    "cliente_nuevo",
-    "pausar",
-    "prioridad",
-    "reanudar",
-    "reglas_editar",
-    "reiniciar",
-    "oportunidad",
-    "pago",
-}
-
-
-ORDER_TARGET_COMMANDS = {
-    "cliente",
-    "prioridad",
-    "pago",
-    "reglas",
-    "reglas_editar",
-}
-
-
-HELP_TEXT = """Control remoto disponible:
-
-/pendientes [pagina] - Bandeja de usuarios que requieren seguimiento
-/cola [pagina] - Usuarios que estan buscando cupo
-/cobros [pagina] - Pagos pendientes
-/buscar TEXTO - Buscar cliente u orden
-/cliente_nuevo - Registrar manualmente un cliente
-/estado - Estado y controles del sistema
-/cancelar - Cancelar la operacion guiada actual
-/menu - Abrir el menu principal con botones
-/ayuda - Mostrar esta ayuda
-
-Historial, errores, CAPTCHA y controles avanzados estan en Herramientas dentro de /menu.
-"""
 
 
 @dataclass(frozen=True)
