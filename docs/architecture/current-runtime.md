@@ -55,6 +55,9 @@ de la reserva, submit y confirmacion.
 Cliente operativo de Admin API. No conoce credenciales de PostgreSQL, no ejecuta
 SQL y no inicia PowerShell directamente. Su receptor incluye un monitor
 autenticado del lease del worker, sin reinicios automaticos.
+Los adaptadores, polling, estado, router, conversaciones y presentacion tienen
+propietarios separados en `services/telegram/`. `telegram_control.py` conserva
+el comando de inicio y reexports compatibles; el paquete no importa esa fachada.
 
 ### CAPTCHA sombra
 

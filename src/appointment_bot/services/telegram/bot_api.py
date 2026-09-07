@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import secrets
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -12,8 +11,6 @@ from appointment_bot.services.telegram.errors import TelegramControlError
 from appointment_bot.services.telegram.transport import (
     _read_json_response,
 )
-
-logger = logging.getLogger("appointment_bot.services.telegram_control")
 
 
 class TelegramBotApi:

@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import logging
 from zoneinfo import ZoneInfo
-
-logger = logging.getLogger("appointment_bot.services.telegram_control")
-
 
 LIMA_TIMEZONE = ZoneInfo("America/Lima")
 

@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-06`.
+Estado verificado documentalmente: `2026-09-07`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -47,7 +47,7 @@ cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exacta
 
 ### Admin API
 
-El cliente administrativo de Telegram vive en `services/telegram/admin_api_client.py`; Telegram Control conserva el entrypoint y los imports compatibles.
+Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva el entrypoint y los imports compatibles.
 Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp;

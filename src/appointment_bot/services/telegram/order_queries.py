@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import logging
 import time
 from typing import Any
 
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient
 from appointment_bot.services.telegram.constants import WORKER_COMMAND_TIMEOUT_SECONDS
-
-logger = logging.getLogger("appointment_bot.services.telegram_control")
 
 
 def _wait_for_order_preflight(

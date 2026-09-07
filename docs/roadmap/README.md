@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Ultima priorizacion: `2026-09-06`.
+Ultima priorizacion: `2026-09-07`.
 
 Esta es la unica cola futura. El estado construido vive en
 [`../project-status.md`](../project-status.md); cierres, incidentes y resultados
@@ -117,10 +117,10 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Continuar en 5.5.1 del plan integral: caracterizar y extraer `TelegramBotApi`,
-una responsabilidad por commit. Las fases 0 a 4 y 5.1 a 5.4 estan cerradas
-tecnicamente; las aceptaciones naturales de P0 siguen pendientes. Despues siguen
-router API, migraciones, configuracion y WhatsApp; las fases 6 a 8 cubren
+Continuar en 5.5.2 del plan integral: caracterizar y declarar el router de Admin
+API, una responsabilidad por commit. Las fases 0 a 4, 5.1 a 5.4 y 5.5.1 estan
+cerradas tecnicamente; las aceptaciones naturales de P0 siguen pendientes.
+Despues siguen migraciones, configuracion y WhatsApp; las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.
 

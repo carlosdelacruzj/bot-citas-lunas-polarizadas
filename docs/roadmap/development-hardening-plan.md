@@ -832,25 +832,26 @@ trasladen el acoplamiento.
 Ownership destino: adaptadores Telegram dentro de `services/telegram/`; Admin
 API sigue siendo la unica frontera administrativa.
 
-- [ ] Caracterizar polling, offset, autorizacion, rate limit, callbacks y
+- [x] Caracterizar polling, offset, autorizacion, rate limit, callbacks y
   expiracion de conversaciones.
 - [x] Extraer `AdminApiClient` sin cambiar rutas, payloads ni autenticacion.
-- [ ] Extraer `TelegramBotApi` sin cambiar confirmacion de callbacks ni manejo
+- [x] Extraer `TelegramBotApi` sin cambiar confirmacion de callbacks ni manejo
   de errores.
-- [ ] Extraer router y estado de actualizaciones, conservando deduplicacion y
+- [x] Extraer router y estado de actualizaciones, conservando deduplicacion y
   avance seguro del offset.
-- [ ] Extraer por separado conversaciones de alta, pagos/reglas, CAPTCHA y
+- [x] Extraer por separado conversaciones de alta, pagos/reglas, CAPTCHA y
   controles operativos.
-- [ ] Extraer presentacion y dejar `telegram_control.py` como composicion y
+- [x] Extraer presentacion y dejar `telegram_control.py` como composicion y
   entrypoint hasta migrar el ultimo consumidor.
 
-`services/telegram/admin_api_client.py` contiene el cliente administrativo;
-`errors.py` y `transport.py` comparten la excepcion y la lectura JSON acotada.
-La extraccion conserva el AST de las definiciones, rutas, HMAC, timeouts y
-errores; la prueba existente del cliente consume su nuevo propietario.
-`telegram_control.py` conserva los imports compatibles y el entrypoint. No se
-retira la fachada ni se da por caracterizado el polling o las conversaciones.
-Siguiente bloque: caracterizar y extraer `TelegramBotApi` antes de mover estado.
+`services/telegram/` separa transportes, acceso, modelos, estado, polling,
+router, callbacks, conversaciones y presentacion. Cada extraccion conserva el
+AST de las definiciones y se valido con la suite completa en su propio commit.
+Las pruebas consumen los modulos propietarios; `telegram_control.py` conserva
+solo el entrypoint y reexports explicitos de compatibilidad, sin dependencias
+inversas desde el paquete. Se preservan rutas, mensajes, autenticacion, offsets,
+confirmaciones y tratamiento de errores. La aceptacion natural operativa sigue
+siendo independiente del cierre tecnico de esta fase.
 
 #### 5.5.2 Declarar el router de Admin API
 

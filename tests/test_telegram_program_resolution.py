@@ -3,8 +3,12 @@ from __future__ import annotations
 from threading import Lock
 from unittest.mock import Mock
 
-from appointment_bot.services import telegram_control, telegram_program_resolution
+from appointment_bot.services import telegram_program_resolution
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient
+from appointment_bot.services.telegram.constants import CONFIRMATION_TTL_SECONDS
+from appointment_bot.services.telegram.errors import TelegramControlError
+from appointment_bot.services.telegram.models import PendingOrderChange
+from appointment_bot.services.telegram.presentation import _display_text
 
 
 class FakeTelegram:
@@ -84,7 +88,7 @@ def test_custom_program_resolution_is_sent_to_dashboard() -> None:
 
 def test_all_resolution_requires_communication_decision_before_confirmation() -> None:
     telegram = FakeTelegram()
-    pending: dict[str, telegram_control.PendingOrderChange] = {}
+    pending: dict[str, PendingOrderChange] = {}
 
     telegram_program_resolution.request_resolution(
         "chat-1",
@@ -94,8 +98,8 @@ def test_all_resolution_requires_communication_decision_before_confirmation() ->
         FakeAdminApi(_multiple_pending_order()),
         pending,
         Lock(),
-        telegram_control.PendingOrderChange,
-        confirmation_ttl_seconds=telegram_control.CONFIRMATION_TTL_SECONDS,
+        PendingOrderChange,
+        confirmation_ttl_seconds=CONFIRMATION_TTL_SECONDS,
     )
 
     change = next(iter(pending.values()))
@@ -112,7 +116,7 @@ def test_all_resolution_requires_communication_decision_before_confirmation() ->
 
 def test_one_resolution_uses_canonical_exact_program_fields() -> None:
     telegram = FakeTelegram()
-    pending: dict[str, telegram_control.PendingOrderChange] = {}
+    pending: dict[str, PendingOrderChange] = {}
 
     telegram_program_resolution.request_resolution(
         "chat-1",
@@ -122,8 +126,8 @@ def test_one_resolution_uses_canonical_exact_program_fields() -> None:
         FakeAdminApi(_multiple_pending_order()),
         pending,
         Lock(),
-        telegram_control.PendingOrderChange,
-        confirmation_ttl_seconds=telegram_control.CONFIRMATION_TTL_SECONDS,
+        PendingOrderChange,
+        confirmation_ttl_seconds=CONFIRMATION_TTL_SECONDS,
     )
 
     change = next(iter(pending.values()))
@@ -164,7 +168,7 @@ def test_stale_panel_action_cannot_select_a_new_listing_by_index() -> None:
 def test_execute_resolution_displays_preview_without_sending() -> None:
     telegram = FakeTelegram()
     admin_api = FakeAdminApi()
-    change = telegram_control.PendingOrderChange(
+    change = PendingOrderChange(
         operation_id="abcdef123456",
         chat_id="chat-1",
         action="program_resolution",
@@ -185,7 +189,7 @@ def test_execute_resolution_displays_preview_without_sending() -> None:
         admin_api,
         actor="telegram:chat-1",
         audit=audit,
-        display_text=telegram_control._display_text,
+        display_text=_display_text,
     )
 
     assert len(admin_api.resolutions) == 1
@@ -215,11 +219,11 @@ def test_stale_resolution_requests_refresh_and_does_not_claim_success() -> None:
     telegram = FakeTelegram()
     admin_api = FakeAdminApi()
     admin_api.resolve_service_order_programs = Mock(
-        side_effect=telegram_control.TelegramControlError(
+        side_effect=TelegramControlError(
             "Admin API rejected the action with HTTP 409."
         )
     )
-    change = telegram_control.PendingOrderChange(
+    change = PendingOrderChange(
         operation_id="abcdef123456",
         chat_id="chat-1",
         action="program_resolution",
@@ -240,7 +244,7 @@ def test_stale_resolution_requests_refresh_and_does_not_claim_success() -> None:
         admin_api,
         actor="telegram:chat-1",
         audit=audit,
-        display_text=telegram_control._display_text,
+        display_text=_display_text,
     )
 
     _, text, markup = telegram.messages[-1]
