@@ -235,6 +235,3 @@ from appointment_bot.browser.whatsapp.session import (
 from appointment_bot.browser.whatsapp.session import (
     _whatsapp_session_ready as _whatsapp_session_ready,
 )
-
-
-
