@@ -116,8 +116,8 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Cerrar 5.5.5: cargar el codigo extraido de WhatsApp en Admin API en una frontera
-segura y observar el siguiente caso natural antes de retirar los reexports.
+Cerrar 5.5.5: observar el siguiente caso natural de WhatsApp con la version
+extraida cargada en Admin API antes de retirar los reexports.
 No generar envios para forzar la aceptacion. Las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.

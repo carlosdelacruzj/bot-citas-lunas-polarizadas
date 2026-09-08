@@ -948,7 +948,10 @@ estructuralmente identicas, 48 escenarios DOM aislados y siete payloads publicos
 equivalentes. Los servicios usan la nueva API; cero imports productivos de la
 fachada y un unico manager. Pasan 181 tests, 24 subtests y cobertura critica.
 La fachada conserva reexports hasta la siguiente aceptacion natural posterior
-a la extraccion; este cierre no se sustituye por HTML sintetico.
+a la extraccion; este cierre no se sustituye por HTML sintetico. Admin API ya
+carga la version extraida tras comprobar una frontera sin trabajo activo; la
+[revision operativa](../../reports/architecture/whatsapp-acceptance-review-2026-09-08.json)
+conserva el corte y el pendiente natural.
 Ver [ownership](../architecture/whatsapp-browser.md) y
 [evidencia fechada](../../reports/architecture/whatsapp-extraction-2026-09-08.json).
 

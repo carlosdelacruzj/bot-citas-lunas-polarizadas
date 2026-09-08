@@ -9,7 +9,7 @@ una nueva aceptacion operativa.
 Se contrastaron las casillas del plan, codigo propietario, escenarios de
 prueba existentes, workflow CI y evidencia fechada explicitamente referenciada.
 La proteccion de `main` se consulto mediante la API de GitHub. Esta revision
-no ejecuto reservas, cobros, mensajes, migraciones ni reinicios, y no modifico
+no ejecuto reservas, cobros, mensajes ni migraciones, y no modifico
 `.env`. La validacion final aprobo 181 pruebas y 24 subpruebas, cobertura critica y
 la guarda de arquitectura (318 modulos, una excepcion conocida, cero ciclos).
 No sustituye la aceptacion natural exigida por contrato.
@@ -65,10 +65,12 @@ sin solicitud pendiente y el retiro de compatibilidad. Ya estaban contemplados
 en el roadmap y no constituyen aceptacion de refactors posteriores.
 
 La [revision de WhatsApp posterior a la extraccion](whatsapp-acceptance-review-2026-09-08.json)
-no encontro un caso suficiente: el propietario observado arranco antes del
-refactor. Primero debe cargar la implementacion extraida mediante un reinicio
-coordinado seguro y despues observarse el trabajo natural aplicable. No se
-generaron envios para forzar ese cierre.
+no encontro un caso suficiente. Se recargo solo Admin API mediante su supervisor
+tras confirmar cero trabajo activo en las barreras revisadas; el worker siguio
+monitoreando. Se verificaron seis rutas de lectura con HTTP 200. Falta observar
+el trabajo natural aplicable con esa implementacion; no se generaron envios.
+La consulta operativa de integrales conserva un unico registro del 29 de agosto,
+por lo que tampoco acredita la aceptacion pendiente de 2.6.
 
 El acceso directo detectado en Telegram se corrigio con un endpoint
 autenticado de auditoria. Se retiraron sus reexports sin consumidores y la

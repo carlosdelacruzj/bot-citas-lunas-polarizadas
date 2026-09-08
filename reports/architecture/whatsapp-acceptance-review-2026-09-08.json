@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-09-08T11:53:48.015758+00:00",
-  "scope": "read-only natural acceptance following WhatsApp extraction; no messages or runtime mutations",
+  "generated_at": "2026-09-08T12:49:38.800813+00:00",
+  "scope": "Read-only acceptance audit and idle Admin API process reload; no messages, retries or changes to .env",
   "extraction_commit": "2216bf5",
   "extraction_committed_at": "2026-09-08T02:22:17-05:00",
   "admin_api": {
     "port": 8766,
-    "pid": 20772,
-    "started_at": "2026-09-07T06:28:24-05:00",
+    "started_at": "2026-09-08T12:46:47.5600960Z",
+    "pid": 33040,
     "health_http_status": 200,
     "loads_browser_at_startup": true,
-    "provenance_reason": "local_api imports GET_ROUTES; get_routes imports handlers.whatsapp and whatsapp_routes; whatsapp_routes imports browser functions eagerly. Process predates extraction."
+    "source_commit": "a27d422"
   },
   "post_extraction_job_groups": [],
   "active_job_status_counts": {},
   "production_facade_imports": 0,
   "acceptance_sufficient": false,
-  "missing_requirement": "Admin API must first load extracted browser implementation through a safely coordinated restart; then observe applicable natural job with frozen template, per-component technical evidence and persisted result. Existing old-process results do not establish acceptance of extracted code.",
+  "missing_requirement": "Observe the next applicable natural WhatsApp job with the extracted implementation now loaded; verify frozen template, per-component technical evidence and persisted result before retiring reexports.",
   "actions_performed": {
     "get_health": true,
     "read_only_database_aggregates": true,
-    "restart": false,
+    "restart": true,
     "send": false,
     "retry": false,
     "env_edit": false
@@ -77,5 +77,73 @@
       "restart_delay_seconds_default": 30,
       "graceful_admin_restart_endpoint": false
     }
+  },
+  "runtime_refresh": {
+    "checked_at": "2026-09-08T12:47:57.493817+00:00",
+    "source_commit": "a27d422",
+    "previous_pid": 20772,
+    "current_pid": 33040,
+    "started_after_extraction": true,
+    "read_only_routes": {
+      "/health": 200,
+      "/api/v1/worker": 200,
+      "/api/v1/manual-sessions": 200,
+      "/api/v1/appointment-reminders": 200,
+      "/api/v1/post-appointment-followups": 200,
+      "/api/v1/whatsapp-message-templates": 200
+    },
+    "worker_restarted": false,
+    "admin_api_restarted": true,
+    "natural_job_after_reload": "Pending; no synthetic messages sent",
+    "current_process": {
+      "started_at": "2026-09-08T12:46:47.5600960Z",
+      "pid": 33040
+    },
+    "post_restart_idle_checks": {
+      "checked_at": "2026-09-08T12:47:10.128756+00:00",
+      "checks": {
+        "manual_sessions": 0,
+        "attempts": 0,
+        "submission_state": 0,
+        "order_leases": 0,
+        "preflights": 0,
+        "bursts": 0,
+        "burst_executions": 0,
+        "post_appointment": 0,
+        "post_appointment_auto": 0,
+        "whatsapp_jobs": 0,
+        "worker_commands": 0
+      },
+      "worker_phase": "monitoring_observer",
+      "safe_api_idle_boundary": true
+    },
+    "pre_restart_idle_checks": {
+      "checked_at": "2026-09-08T12:46:17.253237+00:00",
+      "checks": {
+        "manual_sessions": 0,
+        "attempts": 0,
+        "submission_state": 0,
+        "order_leases": 0,
+        "preflights": 0,
+        "bursts": 0,
+        "burst_executions": 0,
+        "post_appointment": 0,
+        "post_appointment_auto": 0,
+        "whatsapp_jobs": 0,
+        "worker_commands": 0
+      },
+      "worker_phase": "monitoring_observer",
+      "safe_api_idle_boundary": true
+    },
+    "natural_jobs_after_reload": 0,
+    "restart_method": "Only idle Admin API Python process stopped; existing supervisor relaunched it. No graceful restart endpoint; worker was not restarted."
+  },
+  "pre_restart_admin_api": {
+    "port": 8766,
+    "pid": 20772,
+    "started_at": "2026-09-07T06:28:24-05:00",
+    "health_http_status": 200,
+    "loads_browser_at_startup": true,
+    "provenance_reason": "local_api imports GET_ROUTES; get_routes imports handlers.whatsapp and whatsapp_routes; whatsapp_routes imports browser functions eagerly. Process predates extraction."
   }
 }
