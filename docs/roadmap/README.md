@@ -115,9 +115,9 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Continuar en 5.5.4 del plan integral: agrupar configuracion por dominio,
-conservando defaults, limites, aliases y nombres de entorno. Extraer parsers
-antes de migrar consumidores; despues sigue WhatsApp. Las fases 6 a 8 cubren
+Continuar con la extraccion 5.5.5 de WhatsApp Web. En 5.5.4 queda retirar
+la fachada Settings cuando los consumidores de composicion y copias por cliente
+usen grupos propios sin perder el contrato de carga. Las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.
 

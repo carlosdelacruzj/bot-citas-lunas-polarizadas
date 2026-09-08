@@ -910,13 +910,21 @@ Ver [contrato de migraciones](../architecture/database-migrations.md) y
 Ownership destino: parsers compartidos y settings de runtime, reservas,
 WhatsApp, CAPTCHA y evidencia; `Settings` permanece como fachada temporal.
 
-- [ ] Caracterizar defaults, limites, aliases y fallos por variable invalida o
+- [x] Caracterizar defaults, limites, aliases y fallos por variable invalida o
   ausente.
-- [ ] Extraer parsers puros antes de dividir grupos de settings.
-- [ ] Crear grupos por dominio sin cambiar nombres de entorno ni `.env`.
-- [ ] Migrar consumidores dominio por dominio y evitar un nuevo objeto global
+- [x] Extraer parsers puros antes de dividir grupos de settings.
+- [x] Crear grupos por dominio sin cambiar nombres de entorno ni `.env`.
+- [x] Migrar consumidores dominio por dominio y evitar un nuevo objeto global
   que reproduzca el mismo acoplamiento.
 - [ ] Retirar la fachada solo cuando el ultimo consumidor use el grupo dueño.
+
+Extraccion validada: seis grupos inmutables, 288 accesos migrados en 48 modulos
+y logging recibe solo RuntimeSettings. Coinciden 1744 escenarios de entorno
+sintetico; pasan 181 tests y 24 subtests. `Settings` conserva la carga ordenada,
+el constructor plano y `dataclasses.replace` para composicion por cliente;
+su retiro queda pendiente mientras existan esos consumidores. No hay objeto
+global nuevo ni cambios de variables o `.env`.
+Ver [evidencia fechada](../../reports/architecture/configuration-domains-2026-09-08.json).
 
 #### 5.5.5 Separar WhatsApp Web
 

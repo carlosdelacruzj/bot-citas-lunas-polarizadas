@@ -37,6 +37,8 @@ Estado general:
 
 ## Arquitectura vigente
 
+Configuracion en seis grupos inmutables bajo `configuration/`; `Settings` conserva la carga y las copias por cliente.
+
 ### Worker
 
 El worker inyecta al motor puertos de runs, alertas, CAPTCHA y oportunidad; el
@@ -44,7 +46,6 @@ motor conserva Playwright, reglas y resultados sin importar DB ni servicios.
 Claims, leases e intentos protegen cada submit. La cuenta observadora generica abre
 el primer expediente disponible sin filtrar su estado porque solo consulta; las
 cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exactamente.
-
 ### Admin API
 
 Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva el entrypoint y los imports compatibles.
@@ -58,7 +59,6 @@ Telegram Control revisa cada cinco minutos el lease real del worker mediante
 Admin API entre `07:30` y `18:00`; alerta tras tres fallos y nunca reinicia por
 su cuenta. El monitor n8n anterior esta inactivo; su export previo permanece
 como rollback local durante la observacion de siete dias.
-
 ### Persistencia
 
 PostgreSQL es la fuente de verdad para ordenes, credenciales cifradas, pagos,
