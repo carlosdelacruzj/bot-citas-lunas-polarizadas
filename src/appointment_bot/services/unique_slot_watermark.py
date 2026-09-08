@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from PIL import Image, PngImagePlugin
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.utils.screenshots import screenshot_artifact_dir_for_date
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ CHANNEL_SIGNATURE_PATH = BRAND_ASSETS_DIRECTORY / "Nombre canal.png"
 BRAND_NAME = "Citas Lunas Polarizadas"
 BOTTOM_SIGNATURE_PHONE = "925 761 698"
 
-_watermark_queue: Queue[tuple[Settings, Path]] = Queue()
+_watermark_queue: Queue[tuple[EvidenceSettings, Path]] = Queue()
 _watermark_lock = threading.Lock()
 _watermark_pending: set[str] = set()
 _watermark_thread: threading.Thread | None = None
@@ -36,7 +36,7 @@ _asset_lock = threading.Lock()
 _asset_cache: dict[Path, Image.Image] = {}
 
 
-def queue_unique_slot_watermark(settings: Settings, source: Path) -> None:
+def queue_unique_slot_watermark(source: Path, *, evidence_settings: EvidenceSettings) -> None:
     """Queue best-effort rendering without delaying CAPTCHA or reservation work."""
     source = source.resolve()
     destination = watermarked_slot_path(source)
@@ -49,20 +49,15 @@ def queue_unique_slot_watermark(settings: Settings, source: Path) -> None:
             return
         _watermark_pending.add(source_key)
         _ensure_watermark_worker_locked()
-    _watermark_queue.put((settings, source))
+    _watermark_queue.put((evidence_settings, source))
 
 
 def prepare_daily_unique_slot_watermarks(
-    settings: Settings,
-    report_date: date,
-    *,
-    public_whatsapp: str,
+    report_date: date, *, public_whatsapp: str, evidence_settings: EvidenceSettings
 ) -> list[Path]:
     """Synchronously reconcile every branded derivative before daily enqueue."""
     source_directory = screenshot_artifact_dir_for_date(
-        settings,
-        report_date,
-        ORIGINAL_DIRECTORY_NAME,
+        report_date, ORIGINAL_DIRECTORY_NAME, evidence_settings=evidence_settings
     )
     if not source_directory.is_dir():
         return []
@@ -77,9 +72,7 @@ def prepare_daily_unique_slot_watermarks(
         try:
             rendered.append(
                 ensure_unique_slot_watermark(
-                    settings,
-                    source,
-                    public_whatsapp=public_whatsapp,
+                    source, public_whatsapp=public_whatsapp, evidence_settings=evidence_settings
                 )
             )
         except Exception as exc:
@@ -94,12 +87,9 @@ def prepare_daily_unique_slot_watermarks(
 
 
 def ensure_unique_slot_watermark(
-    settings: Settings,
-    source: Path,
-    *,
-    public_whatsapp: str,
+    source: Path, *, public_whatsapp: str, evidence_settings: EvidenceSettings
 ) -> Path:
-    del settings  # Reserved for future project-local layout configuration.
+    del evidence_settings  # Reserved for future project-local layout configuration.
     source = source.resolve()
     if not source.is_file():
         raise FileNotFoundError(f"No existe la captura original: {source}")
@@ -138,14 +128,10 @@ def watermarked_slot_path(source: Path) -> Path:
 
 
 def validate_daily_watermarked_attachment_paths(
-    settings: Settings,
-    report_date: date,
-    attachment_paths: list[str],
+    report_date: date, attachment_paths: list[str], *, evidence_settings: EvidenceSettings
 ) -> list[str]:
     expected_directory = screenshot_artifact_dir_for_date(
-        settings,
-        report_date,
-        WATERMARKED_DIRECTORY_NAME,
+        report_date, WATERMARKED_DIRECTORY_NAME, evidence_settings=evidence_settings
     ).resolve()
     validated: list[str] = []
     for raw_path in attachment_paths:
@@ -178,7 +164,7 @@ def _ensure_watermark_worker_locked() -> None:
 
 def _watermark_worker() -> None:
     while True:
-        settings, source = _watermark_queue.get()
+        evidence_settings, source = _watermark_queue.get()
         source_key = str(source).casefold()
         try:
             public_whatsapp = _configured_public_whatsapp()
@@ -188,9 +174,7 @@ def _watermark_worker() -> None:
                 )
                 continue
             ensure_unique_slot_watermark(
-                settings,
-                source,
-                public_whatsapp=public_whatsapp,
+                source, public_whatsapp=public_whatsapp, evidence_settings=evidence_settings
             )
         except Exception:
             logger.exception("Could not prepare unique slot watermark: %s", source)

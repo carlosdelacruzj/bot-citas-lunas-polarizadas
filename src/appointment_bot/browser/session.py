@@ -4,15 +4,17 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 
 BLOCKED_RESOURCE_TYPES = {"media"}
 
 
 @contextmanager
 def open_page(
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    evidence_settings: EvidenceSettings,
     headless: bool | None = None,
     block_heavy_assets: bool | None = None,
     init_script: str | None = None,
@@ -21,24 +23,24 @@ def open_page(
     video_height: int | None = None,
     video_path_callback: Callable[[Path | None], None] | None = None,
 ) -> Iterator[Page]:
-    settings.runtime.logs_dir.mkdir(parents=True, exist_ok=True)
-    settings.evidence.screenshots_dir.mkdir(parents=True, exist_ok=True)
+    runtime_settings.logs_dir.mkdir(parents=True, exist_ok=True)
+    evidence_settings.screenshots_dir.mkdir(parents=True, exist_ok=True)
     if video_dir is not None:
         video_dir.mkdir(parents=True, exist_ok=True)
 
-    effective_headless = settings.runtime.headless if headless is None else headless
+    effective_headless = runtime_settings.headless if headless is None else headless
     effective_block_heavy_assets = (
-        settings.runtime.block_heavy_assets if block_heavy_assets is None else block_heavy_assets
+        runtime_settings.block_heavy_assets if block_heavy_assets is None else block_heavy_assets
     )
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=effective_headless)
         context_options = {
-            "device_scale_factor": settings.evidence.screenshot_device_scale_factor,
+            "device_scale_factor": evidence_settings.screenshot_device_scale_factor,
         }
         if video_dir is not None:
-            width = video_width or settings.evidence.client_video_width
-            height = video_height or settings.evidence.client_video_height
+            width = video_width or evidence_settings.client_video_width
+            height = video_height or evidence_settings.client_video_height
             context_options.update(
                 {
                     "record_video_dir": str(video_dir),

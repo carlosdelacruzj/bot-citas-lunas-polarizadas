@@ -25,7 +25,7 @@ class NotifierTests(unittest.TestCase):
             )
 
             with patch("appointment_bot.services.notifier.send_telegram_message") as send:
-                delivered = notify_result(result, settings)
+                delivered = notify_result(result, telegram_settings=settings.telegram)
 
             send.assert_not_called()
             self.assertFalse(delivered)
@@ -48,10 +48,10 @@ class NotifierTests(unittest.TestCase):
                 "appointment_bot.services.notifier.send_telegram_message",
                 return_value=True,
             ) as send:
-                delivered = notify_result(result, settings)
+                delivered = notify_result(result, telegram_settings=settings.telegram)
 
             send.assert_called_once()
-            message = send.call_args.args[1]
+            message = send.call_args.args[0]
             self.assertIn("CUPO DETECTADO", message)
             self.assertIn("Fechas: 04/07/2026", message)
             self.assertIn("Horas: 10:00", message)
@@ -80,10 +80,12 @@ class NotifierTests(unittest.TestCase):
                 "appointment_bot.services.notifier.send_telegram_message",
                 return_value=True,
             ) as send:
-                delivered = notify_immediate_availability(result, settings)
+                delivered = notify_immediate_availability(
+                    result, telegram_settings=settings.telegram
+                )
 
             self.assertTrue(delivered)
-            message = send.call_args.args[1]
+            message = send.call_args.args[0]
             self.assertIn("CUPO DETECTADO", message)
             self.assertIn("Enviado:", message)
             self.assertIn("Lima", message)
@@ -122,10 +124,12 @@ class NotifierTests(unittest.TestCase):
                 "appointment_bot.services.notifier.send_telegram_message",
                 return_value=True,
             ) as send:
-                delivered = notify_immediate_availability(result, settings)
+                delivered = notify_immediate_availability(
+                    result, telegram_settings=settings.telegram
+                )
 
             self.assertTrue(delivered)
-            message = send.call_args.args[1]
+            message = send.call_args.args[0]
             self.assertIn("CUPO DETECTADO", message)
             self.assertIn("Fechas: 16/07/2026, 20/07/2026", message)
             self.assertIn("Horas: 08:00, 10:00", message)
@@ -170,9 +174,7 @@ class NotifierTests(unittest.TestCase):
                 ) as send_photo,
             ):
                 delivered = notify_deferred_queue_summary(
-                    queue_report,
-                    settings,
-                    [deferred],
+                    queue_report, [deferred], telegram_settings=settings.telegram
                 )
 
             self.assertFalse(delivered)

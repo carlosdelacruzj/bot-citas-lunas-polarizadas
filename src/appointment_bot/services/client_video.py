@@ -12,16 +12,17 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.core.models import RunReport
 from appointment_bot.core.run_reports import reservation_confirmed
 
 logger = logging.getLogger(__name__)
 FFMPEG_TIMEOUT_SECONDS = 120
 
+
 @dataclass
 class ClientSessionVideoRecorder:
-    settings: Settings
+    evidence_settings: EvidenceSettings
     order_id: str
     client_name: str
     started_at: datetime
@@ -31,20 +32,20 @@ class ClientSessionVideoRecorder:
     @classmethod
     def create(
         cls,
-        settings: Settings,
         *,
         order_id: str | None,
         client_name: str | None,
         started_at: datetime,
+        evidence_settings: EvidenceSettings,
     ) -> ClientSessionVideoRecorder | None:
-        if not settings.evidence.record_client_sessions or order_id is None:
+        if not evidence_settings.record_client_sessions or order_id is None:
             return None
         return cls(
-            settings=settings,
             order_id=order_id or "observer",
             client_name=client_name or order_id or "observer",
             started_at=started_at,
             temp_directory=tempfile.TemporaryDirectory(prefix="appointment-bot-client-video-"),
+            evidence_settings=evidence_settings,
         )
 
     @property
@@ -60,7 +61,7 @@ class ClientSessionVideoRecorder:
                 return None
 
             if _retain_diagnostic_video(report):
-                diagnostic_dir = self.settings.evidence.client_videos_dir / "diagnostics"
+                diagnostic_dir = self.evidence_settings.client_videos_dir / "diagnostics"
                 diagnostic_dir.mkdir(parents=True, exist_ok=True)
                 target_path = self._target_path(
                     f"-{report.run_id or 'session'}-{report.status}-diagnostic.webm",
@@ -68,14 +69,18 @@ class ClientSessionVideoRecorder:
                 )
                 self.source_path.replace(target_path)
                 target_path.with_suffix(".json").write_text(
-                    json.dumps({
-                        "run_id": report.run_id,
-                        "status": report.status,
-                        "message": report.message,
-                        "screenshot_path": report.screenshot_path,
-                        "reservation_attempted": report.reservation_attempted,
-                        "video_path": str(target_path),
-                    }, ensure_ascii=False, indent=2),
+                    json.dumps(
+                        {
+                            "run_id": report.run_id,
+                            "status": report.status,
+                            "message": report.message,
+                            "screenshot_path": report.screenshot_path,
+                            "reservation_attempted": report.reservation_attempted,
+                            "video_path": str(target_path),
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    ),
                     encoding="utf-8",
                 )
                 return target_path
@@ -84,15 +89,17 @@ class ClientSessionVideoRecorder:
                 _remove_file(self.source_path)
                 return None
 
-            self.settings.evidence.client_videos_dir.mkdir(parents=True, exist_ok=True)
+            self.evidence_settings.client_videos_dir.mkdir(parents=True, exist_ok=True)
             target_path = self._target_path(
-                ".mp4" if self.settings.evidence.record_client_video_final_mp4 else ".webm"
+                ".mp4" if self.evidence_settings.record_client_video_final_mp4 else ".webm"
             )
-            if not self.settings.evidence.record_client_video_final_mp4:
+            if not self.evidence_settings.record_client_video_final_mp4:
                 self.source_path.replace(target_path)
                 return target_path
 
-            exported_path = _export_mp4(self.settings, self.source_path, target_path)
+            exported_path = _export_mp4(
+                self.source_path, target_path, evidence_settings=self.evidence_settings
+            )
             if exported_path is None:
                 fallback_path = self._target_path(".webm")
                 self.source_path.replace(fallback_path)
@@ -108,7 +115,7 @@ class ClientSessionVideoRecorder:
     def _target_path(self, suffix: str, *, directory: Path | None = None) -> Path:
         stamp = self.started_at.strftime("%Y%m%d-%H%M%S")
         client_name = _safe_filename(self.client_name)
-        target_dir = directory or self.settings.evidence.client_videos_dir
+        target_dir = directory or self.evidence_settings.client_videos_dir
         path = target_dir / f"{stamp}-{client_name}{suffix}"
         if not path.exists():
             return path
@@ -132,14 +139,16 @@ def _retain_diagnostic_video(report: RunReport) -> bool:
     )
 
 
-def _export_mp4(settings: Settings, source_path: Path, target_path: Path) -> Path | None:
+def _export_mp4(
+    source_path: Path, target_path: Path, *, evidence_settings: EvidenceSettings
+) -> Path | None:
     try:
         ffmpeg = _find_executable("ffmpeg")
     except FileNotFoundError as exc:
         logger.warning("Could not export client session video: %s", exc)
         return None
 
-    if settings.evidence.client_video_width < settings.evidence.client_video_height:
+    if evidence_settings.client_video_width < evidence_settings.client_video_height:
         video_filter = "crop=900:1600:90:0,scale=1080:1920,fps=30,format=yuv420p"
     else:
         video_filter = "fps=30,format=yuv420p"

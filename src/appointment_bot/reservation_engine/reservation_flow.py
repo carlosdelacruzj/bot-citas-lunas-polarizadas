@@ -7,7 +7,10 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.core.statuses import redact_captcha_answers
 from appointment_bot.reservation_engine.appointment_contracts import (
@@ -66,17 +69,13 @@ def _enqueue_shadow_portal_result(
         portal_outcome=submission_outcome,
     )
     captcha_audit["captcha_shadow_portal_accepted"] = portal_accepted
-    captcha_audit["captcha_shadow_result_enqueued"] = (
-        captcha_authority.enqueue_external_result(
+    captcha_audit["captcha_shadow_result_enqueued"] = captcha_authority.enqueue_external_result(
         event_id=str(event_id),
         external_answer=str(external_answer),
         portal_accepted=portal_accepted,
-        external_solve_ms=_optional_float(
-            captcha_audit.get("captcha_solver_duration_ms")
-        ),
+        external_solve_ms=_optional_float(captcha_audit.get("captcha_solver_duration_ms")),
         final_result=True,
-            answer_source=str(captcha_audit.get("captcha_solver_source") or "2captcha"),
-        )
+        answer_source=str(captcha_audit.get("captcha_solver_source") or "2captcha"),
     )
 
 
@@ -138,7 +137,6 @@ def _build_reservation_details(
 
 def complete_available_reservation(
     page,
-    settings: Settings,
     result: AvailabilityResult,
     screenshot_path: Path | None,
     timing: ReservationTiming | None = None,
@@ -149,6 +147,10 @@ def complete_available_reservation(
     on_submission_started: Callable[[dict | None], None] | None = None,
     expected_person_name: str | None = None,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     run_id: str | None = None,
     order_id: str | None = None,
     captcha_event_context: str | None = None,
@@ -166,14 +168,15 @@ def complete_available_reservation(
     }
     portal_response: dict[str, object] = {}
     additional_screenshot_paths: list[Path] = []
-    max_captcha_attempts = settings.captcha.reservation_captcha_max_attempts
+    max_captcha_attempts = captcha_settings.reservation_captcha_max_attempts
 
     def collected_screenshots(*paths: Path | None) -> list[Path]:
         return _collect_screenshots(additional_screenshot_paths, screenshot_path, *paths)
 
     def reservation_details() -> dict:
         for key, kind in (
-            ("entry_screenshot_path", "screenshots"), ("entry_html_path", "dom_snapshots"),
+            ("entry_screenshot_path", "screenshots"),
+            ("entry_html_path", "dom_snapshots"),
         ):
             _add_diagnostic_artifact(diagnostic_artifacts, kind, latest_captcha_audit.get(key))
         return _build_reservation_details(
@@ -203,7 +206,6 @@ def complete_available_reservation(
             try:
                 page = solve_reservation_captcha_and_click_reserve(
                     page,
-                    settings,
                     cancel_event=cancel_event,
                     can_submit=can_submit,
                     can_solve_captcha=can_solve_captcha,
@@ -219,6 +221,10 @@ def complete_available_reservation(
                     captcha_event_context=captcha_event_context,
                     captcha_authority=captcha_authority,
                     alert_sink=alert_sink,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
                 )
             except ReservationDeferredForPriority as exc:
                 if timing is not None:
@@ -291,8 +297,8 @@ def complete_available_reservation(
             captcha_audit["portal_text"] = portal_text
             reservation_confirmation_screenshot_path = save_screenshot(
                 page,
-                settings,
                 f"06-reserva-respuesta-portal-intento-{captcha_attempt}",
+                evidence_settings=evidence_settings,
             )
             if reservation_confirmation_screenshot_path is not None:
                 captcha_audit["post_submit_screenshot_path"] = str(
@@ -306,8 +312,8 @@ def complete_available_reservation(
                 additional_screenshot_paths.append(reservation_confirmation_screenshot_path)
             post_submit_html_path = save_sanitized_page_html(
                 page,
-                settings,
                 f"06-reserva-respuesta-portal-html-intento-{captcha_attempt}",
+                evidence_settings=evidence_settings,
             )
             if post_submit_html_path is not None:
                 captcha_audit["post_submit_html_path"] = str(post_submit_html_path)
@@ -342,7 +348,9 @@ def complete_available_reservation(
 
             if submission_outcome == "captcha_invalid" and captcha_attempt < max_captcha_attempts:
                 dismiss_reservation_confirmation(page)
-                refreshed = refresh_reservation_captcha(page, settings)
+                refreshed = refresh_reservation_captcha(
+                    page, reservation_settings=reservation_settings
+                )
                 captcha_audit["captcha_refreshed_for_retry"] = refreshed
                 try:
                     validate_selected_appointment(
@@ -392,8 +400,7 @@ def complete_available_reservation(
                 details["submission_outcome"] = submission_outcome
                 messages = {
                     "captcha_invalid": (
-                        "El portal rechazo el captcha de la reserva despues "
-                        "de reintentarlo."
+                        "El portal rechazo el captcha de la reserva despues de reintentarlo."
                     ),
                     "slot_lost": "El cupo dejo de estar disponible antes de completar la reserva.",
                     "rejected": "El portal rechazo explicitamente la solicitud de reserva.",
@@ -416,8 +423,8 @@ def complete_available_reservation(
         )
         updated_process_stages_screenshot_path = _save_process_stages_snapshot(
             page,
-            settings,
             label="07-detalle-tramite-etapa-programado-confirmada",
+            evidence_settings=evidence_settings,
         )
         _add_diagnostic_artifact(
             diagnostic_artifacts,
@@ -487,10 +494,7 @@ def complete_available_reservation(
             "El portal mostro mensaje de exito despues de hacer click en Reservar, "
             "pero no se confirmo la etapa Programado."
             if confirmation_text_detected
-            else (
-                "Se hizo click en Reservar, "
-                "pero no se confirmo la etapa Programado."
-            )
+            else ("Se hizo click en Reservar, pero no se confirmo la etapa Programado.")
         )
         return (
             AvailabilityResult(
@@ -519,7 +523,6 @@ def complete_available_reservation(
 
 def capture_blocked_captcha_evidence(
     page,
-    settings: Settings,
     result: AvailabilityResult,
     screenshot_path: Path | None,
     timing: ReservationTiming | None = None,
@@ -528,6 +531,10 @@ def capture_blocked_captcha_evidence(
     can_solve_captcha: Callable[[], bool] | None = None,
     expected_person_name: str | None = None,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     run_id: str | None = None,
     order_id: str | None = None,
     captcha_authority: CaptchaAuthority | None = None,
@@ -535,13 +542,10 @@ def capture_blocked_captcha_evidence(
 ) -> tuple[AvailabilityResult, Path | None, list[Path]]:
     captcha_audit: dict[str, object] = {}
     capture_error: str | None = None
-    deferred_to_higher_priority = (
-        can_solve_captcha is not None and not can_solve_captcha()
-    )
+    deferred_to_higher_priority = can_solve_captcha is not None and not can_solve_captcha()
     try:
         solve_reservation_captcha_and_click_reserve(
             page,
-            settings,
             cancel_event=cancel_event,
             can_submit=can_submit,
             can_solve_captcha=lambda: False,
@@ -554,6 +558,10 @@ def capture_blocked_captcha_evidence(
             order_id=order_id,
             captcha_authority=captcha_authority,
             alert_sink=alert_sink,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
+            evidence_settings=evidence_settings,
         )
     except ReservationDeferredForPriority as exc:
         captcha_audit.update(exc.captcha_audit)
@@ -586,11 +594,7 @@ def capture_blocked_captcha_evidence(
         if captcha_audit.get("captcha_image_path")
         else None
     )
-    if (
-        run_id
-        and captcha_path is not None
-        and captcha_audit.get("captcha_kind") != "html_math"
-    ):
+    if run_id and captcha_path is not None and captcha_audit.get("captcha_kind") != "html_math":
         shadow_event_id = f"{run_id}:{order_id or 'observer'}:captcha-1"
         if captcha_authority is None:
             raise RuntimeError("CaptchaAuthority is required for CAPTCHA evidence.")
@@ -610,9 +614,7 @@ def capture_blocked_captcha_evidence(
         )
         captcha_audit["captcha_shadow_event_id"] = shadow_event_id
         captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_enqueued
-    screenshot_paths = [
-        path for path in [screenshot_path, captcha_path] if path is not None
-    ]
+    screenshot_paths = [path for path in [screenshot_path, captcha_path] if path is not None]
     details = add_reservation_timing_details(result.details, timing)
     details.update(captcha_audit)
     if captcha_audit:
@@ -666,9 +668,6 @@ def _confirm_programmed_stage_after_submission(
 
 
 def _save_process_stages_snapshot(
-    page,
-    settings: Settings,
-    *,
-    label: str,
+    page, *, evidence_settings: EvidenceSettings, label: str
 ) -> Path | None:
-    return save_screenshot(page, settings, label=label)
+    return save_screenshot(page, label=label, evidence_settings=evidence_settings)

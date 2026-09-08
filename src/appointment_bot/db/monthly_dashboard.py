@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -19,7 +19,7 @@ def monthly_dashboard_summary(
     next_month_start: date,
     previous_month_start: date,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)

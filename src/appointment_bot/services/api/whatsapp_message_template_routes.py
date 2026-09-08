@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from http import HTTPStatus
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
 from appointment_bot.core.whatsapp_message_templates import (
     WHATSAPP_TEMPLATE_DEFINITIONS,
     normalize_template,
@@ -62,7 +62,7 @@ def whatsapp_message_template_action_path(path: str, action: str | None = None) 
 
 def whatsapp_message_templates_payload() -> tuple[HTTPStatus, dict[str, object]]:
     try:
-        settings = load_settings(require_login=False)
+        settings = load_runtime_settings(require_login=False)
         rows = {
             item.template_key: item for item in list_whatsapp_message_templates(settings)
         }
@@ -155,7 +155,7 @@ def update_whatsapp_message_template_payload(
         payload = error_payload("bad_request", "Revisa el contenido de la plantilla.")
         payload["field_errors"] = errors
         return HTTPStatus.BAD_REQUEST, payload
-    settings = load_settings(require_login=False)
+    settings = load_runtime_settings(require_login=False)
     try:
         updated = update_whatsapp_message_template(
             template_key=definition.key,

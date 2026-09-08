@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 from appointment_bot.db.remote_control_audit import record_remote_control_audit
 from appointment_bot.utils.sanitization import sanitize_text
@@ -29,7 +29,7 @@ class AppointmentReminderControl:
 
 
 def get_appointment_reminder_control(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> AppointmentReminderControl:
     resolved = _settings(settings)
     init_database(resolved)
@@ -52,7 +52,7 @@ def update_appointment_reminder_control(
     lead_days: int,
     expected_revision: int,
     updated_by: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> AppointmentReminderControl:
     normalized_mode = mode.strip().lower()
     if normalized_mode not in REMINDER_MODES:

@@ -106,10 +106,7 @@ class _IsolatedCaptchaMedia:
         return {"width": 210, "height": 90}
 
     def evaluate(self, script):
-        data_uri = (
-            "data:image/jpeg;base64,"
-            + base64.b64encode(_ONE_PIXEL_PNG).decode("ascii")
-        )
+        data_uri = "data:image/jpeg;base64," + base64.b64encode(_ONE_PIXEL_PNG).decode("ascii")
         if "return element.currentSrc || element.getAttribute" in script:
             return data_uri
         return {
@@ -201,17 +198,30 @@ class ReservationCaptchaTests(unittest.TestCase):
             ):
                 solve_reservation_captcha_and_click_reserve(
                     _Page(),
-                    settings,
                     can_submit=lambda: True,
                     on_submission_intent=lambda details: events.append("intent"),
                     on_submission_started=lambda: events.append("started"),
                     captcha_audit=captcha_audit,
                     captcha_authority=captcha_authority,
+                    runtime_settings=settings.runtime,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertTrue(captcha.exists())
             captcha_authority.solve.assert_called_once()
-            self.assertEqual(captcha_authority.solve.call_args.args, (captcha, settings))
+            self.assertEqual(captcha_authority.solve.call_args.args, (captcha,))
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["runtime_settings"], settings.runtime
+            )
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["reservation_settings"],
+                settings.reservation,
+            )
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["captcha_settings"], settings.captcha
+            )
             self.assertEqual(captcha_audit["captcha_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "screenshot")
@@ -254,12 +264,15 @@ class ReservationCaptchaTests(unittest.TestCase):
                 with self.assertRaises(AppointmentWorkflowCancelled):
                     solve_reservation_captcha_and_click_reserve(
                         _Page(),
-                        settings,
                         cancel_event=cancel_event,
                         can_submit=lambda: not cancel_event.is_set(),
                         on_submission_intent=record_intent,
                         on_submission_started=lambda: events.append("started"),
                         captcha_authority=captcha_authority,
+                        runtime_settings=settings.runtime,
+                        reservation_settings=settings.reservation,
+                        captcha_settings=settings.captcha,
+                        evidence_settings=settings.evidence,
                     )
 
             self.assertEqual(events, ["intent"])
@@ -302,14 +315,27 @@ class ReservationCaptchaTests(unittest.TestCase):
             ):
                 solve_reservation_captcha_and_click_reserve(
                     _Page(),
-                    settings,
                     can_submit=lambda: True,
                     captcha_audit=captcha_audit,
                     captcha_authority=captcha_authority,
+                    runtime_settings=settings.runtime,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             captcha_authority.solve.assert_called_once()
-            self.assertEqual(captcha_authority.solve.call_args.args, (original, settings))
+            self.assertEqual(captcha_authority.solve.call_args.args, (original,))
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["runtime_settings"], settings.runtime
+            )
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["reservation_settings"],
+                settings.reservation,
+            )
+            self.assertIs(
+                captcha_authority.solve.call_args.kwargs["captcha_settings"], settings.captcha
+            )
             self.assertEqual(captcha_audit["captcha_image_path"], str(original))
             self.assertEqual(captcha_audit["captcha_screenshot_image_path"], str(captcha))
             self.assertEqual(captcha_audit["captcha_sent_source"], "original_html")
@@ -327,9 +353,11 @@ class ReservationCaptchaTests(unittest.TestCase):
             ):
                 path = save_reservation_captcha_image(
                     page,
-                    settings,
                     "captcha-test",
                     captcha_audit=captcha_audit,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertFalse(path.exists())

@@ -3,7 +3,8 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.cleanup import cleanup_database_history
 
 logger = logging.getLogger(__name__)
@@ -40,22 +41,24 @@ SCREENSHOT_PROTECTED_NAME_MARKERS = (
 )
 
 
-def cleanup_old_files(settings: Settings) -> None:
-    cutoff = datetime.now() - timedelta(days=settings.evidence.cleanup_retention_days)
-    _cleanup_directory(settings.runtime.logs_dir, cutoff=cutoff)
+def cleanup_old_files(
+    *, runtime_settings: RuntimeSettings, evidence_settings: EvidenceSettings
+) -> None:
+    cutoff = datetime.now() - timedelta(days=evidence_settings.cleanup_retention_days)
+    _cleanup_directory(runtime_settings.logs_dir, cutoff=cutoff)
     _cleanup_directory(
-        settings.evidence.screenshots_dir,
+        evidence_settings.screenshots_dir,
         cutoff=cutoff,
-        preserve=lambda path: _preserve_screenshot(path, settings.evidence.screenshots_dir),
+        preserve=lambda path: _preserve_screenshot(path, evidence_settings.screenshots_dir),
     )
     _cleanup_directory(
-        settings.evidence.client_videos_dir,
+        evidence_settings.client_videos_dir,
         cutoff=cutoff,
         preserve=lambda path: (
-            "diagnostics" in path.relative_to(settings.evidence.client_videos_dir).parts
+            "diagnostics" in path.relative_to(evidence_settings.client_videos_dir).parts
         ),
     )
-    removed_rows = cleanup_database_history(settings)
+    removed_rows = cleanup_database_history(settings=runtime_settings, evidence=evidence_settings)
     if any(removed_rows.values()):
         logger.info("Removed old database rows: %s", removed_rows)
 

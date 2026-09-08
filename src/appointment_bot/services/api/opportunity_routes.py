@@ -5,7 +5,7 @@ from datetime import date, datetime
 from http import HTTPStatus
 from typing import Any
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
 from appointment_bot.db.opportunity_bursts import (
     get_active_opportunity_burst,
     get_opportunity_burst_detail,
@@ -122,12 +122,12 @@ def opportunity_burst_id(path: str) -> str | None:
 
 
 def _control_payload(control: OpportunityRuntimeControl) -> dict[str, Any]:
-    settings = load_settings(require_login=False)
+    settings = load_runtime_settings(require_login=False)
     active_burst = get_active_opportunity_burst(settings)
     return {
         "revision": control.revision,
         "source": "database",
-        "max_sessions": settings.runtime.opportunity_burst_max_sessions,
+        "max_sessions": settings.opportunity_burst_max_sessions,
         "obs006": _mode_payload(control, "obs006", control.burst_mode),
         "obs007": _mode_payload(control, "obs007", control.obs007_mode),
         "breaker": {

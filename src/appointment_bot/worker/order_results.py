@@ -3,12 +3,10 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from appointment_bot.config import Settings
-from appointment_bot.core.models import (
-    RunReport,
-    ServiceOrderCandidate,
-    ServiceOrderRuntime,
-)
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.db.orders import (
     list_compatible_orders_for_opportunities,
     mark_order_done,
@@ -37,14 +35,16 @@ class ObserverOrderDecision:
 
 
 def handle_observer_order_report(
-    settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     report: RunReport,
+    *,
+    runtime_settings: RuntimeSettings,
+    captcha_settings: CaptchaSettings,
+    telegram_settings: TelegramSettings,
 ) -> ObserverOrderDecision:
     if bool((report.details or {}).get("credential_error")):
-        _notify_credential_rejection(settings, order, report)
+        _notify_credential_rejection(order, report, telegram_settings=telegram_settings)
         return ObserverOrderDecision(reset_errors=True)
-
     outcome = classify_order_report(report)
     if outcome is OrderReportOutcome.PAUSED:
         return ObserverOrderDecision()
@@ -55,16 +55,13 @@ def handle_observer_order_report(
             message=report.message,
             exit_code=report.exit_code,
             backoff_seconds=None,
-            settings=settings,
+            settings=runtime_settings,
         )
         logger.info(
-            "Order %s remains eligible after a slot was blocked by its rules",
-            order.order_id,
+            "Order %s remains eligible after a slot was blocked by its rules", order.order_id
         )
         compatible_order_ids = compatible_handoff_order_ids(
-            settings,
-            order,
-            report,
+            order, report, runtime_settings=runtime_settings
         )
         return ObserverOrderDecision(
             compatible_handoff_order_ids=compatible_order_ids,
@@ -73,13 +70,11 @@ def handle_observer_order_report(
         )
     if outcome is OrderReportOutcome.TERMINAL_STAGE:
         mark_order_done(
-            order.order_id,
-            status=order_done_status_from_report(report),
-            settings=settings,
+            order.order_id, status=order_done_status_from_report(report), settings=runtime_settings
         )
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.REGISTERED:
-        mark_order_done(order.order_id, settings=settings)
+        mark_order_done(order.order_id, settings=runtime_settings)
         return ObserverOrderDecision(
             queue_requested=True,
             rapid_queue_initial_confirmed=1,
@@ -93,32 +88,42 @@ def handle_observer_order_report(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.runtime.error_backoff_seconds,
-            settings=settings,
+            backoff_seconds=runtime_settings.error_backoff_seconds,
+            settings=runtime_settings,
         )
         send_telegram_message(
-            settings,
-            f"La orden {order.order_id} envio una reserva pero no se pudo "
-            "confirmar automaticamente como Programado. Se pausa solo esa orden "
-            "temporalmente para revision; el worker continuara con las demas "
-            "ordenes elegibles.",
+            (
+                "La orden "
+                f"{order.order_id}"
+                " envio una reserva pero no se pudo confirmar aut"
+                "omaticamente como Programado. Se pausa solo esa "
+                "orden temporalmente para revision; el worker con"
+                "tinuara con las demas ordenes elegibles."
+            ),
+            telegram_settings=telegram_settings,
         )
         return ObserverOrderDecision(reset_errors=True)
     if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-        cooldown = settings.captcha.captcha_rejection_cooldown_seconds
+        cooldown = captcha_settings.captcha_rejection_cooldown_seconds
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
             backoff_seconds=cooldown,
-            settings=settings,
+            settings=runtime_settings,
         )
         send_telegram_message(
-            settings,
-            f"La orden {order.order_id} tuvo dos rechazos explicitos de CAPTCHA. "
-            f"Se reintentara esa orden en {cooldown} segundos; el worker "
-            "continuara de inmediato con los demas clientes elegibles.",
+            (
+                "La orden "
+                f"{order.order_id}"
+                " tuvo dos rechazos explicitos de CAPTCHA. Se rei"
+                "ntentara esa orden en "
+                f"{cooldown}"
+                " segundos; el worker continuara de inmediato con"
+                " los demas clientes elegibles."
+            ),
+            telegram_settings=telegram_settings,
         )
         return ObserverOrderDecision(reset_errors=True)
     if report.status == "available":
@@ -127,11 +132,14 @@ def handle_observer_order_report(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            settings=settings,
+            settings=runtime_settings,
         )
         logger.info(
-            "Observer %s detected availability without a confirmed reservation; "
-            "the priority queue will not start",
+            (
+                "Observer %s detected availability without a conf"
+                "irmed reservation; the priority queue will not s"
+                "tart"
+            ),
             order.order_id,
         )
         return ObserverOrderDecision(reset_errors=True)
@@ -141,16 +149,17 @@ def handle_observer_order_report(
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            settings=settings,
+            settings=runtime_settings,
         )
         return ObserverOrderDecision(reset_errors=True)
     return ObserverOrderDecision(requires_error_handling=True)
 
 
 def compatible_handoff_order_ids(
-    settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     report: RunReport,
+    *,
+    runtime_settings: RuntimeSettings,
 ) -> tuple[str, ...]:
     details = report.details or {}
     opportunities = observed_opportunities(details)
@@ -160,8 +169,8 @@ def compatible_handoff_order_ids(
         compatible_orders = list_compatible_orders_for_opportunities(
             opportunities,
             exclude_order_ids={order.order_id},
-            limit=settings.runtime.opportunity_handoff_max_candidates,
-            settings=settings,
+            limit=runtime_settings.opportunity_handoff_max_candidates,
+            settings=runtime_settings,
         )
     except Exception:
         logger.exception(
@@ -172,15 +181,13 @@ def compatible_handoff_order_ids(
     order_ids = tuple(candidate.order_id for candidate in compatible_orders)
     if order_ids:
         logger.info(
-            "%s observed opportunities will be handed off immediately to compatible "
-            "orders: %s",
+            "%s observed opportunities will be handed off immediately to compatible orders: %s",
             len(opportunities),
             ", ".join(order_ids),
         )
     else:
         logger.info(
-            "%s observed opportunities have no compatible active orders",
-            len(opportunities),
+            "%s observed opportunities have no compatible active orders", len(opportunities)
         )
     return order_ids
 
@@ -188,9 +195,7 @@ def compatible_handoff_order_ids(
 def observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str], ...]:
     observation = details.get("selection_observation")
     raw_appointments = (
-        observation.get("observed_appointments")
-        if isinstance(observation, dict)
-        else None
+        observation.get("observed_appointments") if isinstance(observation, dict) else None
     )
     opportunities: list[tuple[str, str]] = []
     observed_dates: set[str] = set()
@@ -203,14 +208,12 @@ def observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str],
             if date_text:
                 opportunities.append((date_text, hour_text))
                 observed_dates.add(date_text)
-
     visible_dates = observation.get("visible_dates") if isinstance(observation, dict) else None
     if isinstance(visible_dates, list):
         for value in visible_dates:
             date_text = str(value or "").strip()
             if date_text and date_text not in observed_dates:
                 opportunities.append((date_text, ""))
-
     fallback_date = str(
         details.get("fecha")
         or details.get("appointment_date")
@@ -229,25 +232,29 @@ def observed_opportunities(details: dict[str, object]) -> tuple[tuple[str, str],
 
 
 def _notify_credential_rejection(
-    settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     report: RunReport,
+    *,
+    telegram_settings: TelegramSettings,
 ) -> None:
     failures = int((report.details or {}).get("credential_failure_count") or 0)
     paused = bool((report.details or {}).get("credential_paused"))
     send_telegram_message(
-        settings,
         (
-            f"La orden {order.order_id} fue pausada despues de dos rechazos "
-            "de contrasena. Actualiza la clave y reactiva la orden."
-            if paused
-            else f"La orden {order.order_id} tuvo su primer rechazo de contrasena; "
-            "se intentara una vez mas en la siguiente rotacion."
+            "La orden "
+            f"{order.order_id}"
+            " fue pausada despues de dos rechazos de contrase"
+            "na. Actualiza la clave y reactiva la orden."
+        )
+        if paused
+        else (
+            "La orden "
+            f"{order.order_id}"
+            " tuvo su primer rechazo de contrasena; se intent"
+            "ara una vez mas en la siguiente rotacion."
         ),
+        telegram_settings=telegram_settings,
     )
     logger.warning(
-        "Credential rejection %s/2 for order %s; paused=%s",
-        failures,
-        order.order_id,
-        paused,
+        "Credential rejection %s/2 for order %s; paused=%s", failures, order.order_id, paused
     )

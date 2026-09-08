@@ -3,7 +3,7 @@ import logging
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.core.documents import PORTAL_DOCUMENT_TYPE_VALUES, normalize_document_type
 
 logger = logging.getLogger(__name__)
@@ -32,23 +32,23 @@ class InvalidPortalCredentials(RuntimeError):
     pass
 
 
-def login(page: Page, settings: Settings) -> None:
-    timeout = settings.reservation.login_timeout_seconds * 1_000
+def login(page: Page, *, reservation_settings: ReservationSettings) -> None:
+    timeout = reservation_settings.login_timeout_seconds * 1_000
     logger.info("Opening target URL")
-    page.goto(settings.reservation.target_url, wait_until="domcontentloaded", timeout=timeout)
+    page.goto(reservation_settings.target_url, wait_until="domcontentloaded", timeout=timeout)
 
     logger.info("Filling login form")
     try:
-        document_type = normalize_document_type(settings.reservation.login_document_type)
+        document_type = normalize_document_type(reservation_settings.login_document_type)
         page.locator(DOCUMENT_TYPE_SELECTOR).select_option(
             PORTAL_DOCUMENT_TYPE_VALUES[document_type],
             timeout=timeout,
         )
         page.locator(USERNAME_SELECTOR).first.fill(
-            settings.reservation.login_username, timeout=timeout
+            reservation_settings.login_username, timeout=timeout
         )
         page.locator(PASSWORD_SELECTOR).first.fill(
-            settings.reservation.login_password, timeout=timeout
+            reservation_settings.login_password, timeout=timeout
         )
         page.locator(SUBMIT_SELECTOR).first.click(timeout=timeout)
         outcome = page.wait_for_function(

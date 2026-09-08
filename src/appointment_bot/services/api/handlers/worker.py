@@ -82,14 +82,14 @@ def post_worker_restart(request: ApiRequest) -> None:
         handler._send_json(status, payload)
         return
     controller.prepare_restart()
-    controller_settings = getattr(controller, "settings", None)
+    controller_settings = getattr(controller, "runtime_settings", None)
     if controller_settings is not None:
         record_worker_control_audit(
             command="restart",
             requested_by=handler._authenticated_actor(),
             status="accepted",
             detail="control_path=embedded_api",
-            settings=controller_settings,
+            runtime_settings=controller_settings,
         )
     handler._send_json(
         HTTPStatus.ACCEPTED,
@@ -113,13 +113,13 @@ def post_worker_control(request: ApiRequest) -> None:
         return
     command = "pause" if path.endswith("/pause") else "resume"
     payload = controller.pause() if command == "pause" else controller.resume()
-    controller_settings = getattr(controller, "settings", None)
+    controller_settings = getattr(controller, "runtime_settings", None)
     if controller_settings is not None:
         record_worker_control_audit(
             command=command,
             requested_by=handler._authenticated_actor(),
             status="applied",
             detail="control_path=embedded_api",
-            settings=controller_settings,
+            runtime_settings=controller_settings,
         )
     handler._send_json(HTTPStatus.OK, payload)

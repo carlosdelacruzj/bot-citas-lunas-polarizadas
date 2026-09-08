@@ -11,10 +11,11 @@ from playwright.sync_api import Error as PlaywrightError
 
 from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import ServiceOrderRuntime
 from appointment_bot.manual_session.diagnostics import ManualDiagnosticRecorder
-from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.appointments import (
     open_appointment_panel,
     select_available_site,
@@ -69,29 +70,28 @@ MANUAL_SESSION_CLOSE_GRACE_SECONDS = 8
 
 
 def open_manual_session_for_order(
-    settings: Settings,
     order: ServiceOrderRuntime,
     *,
     mode: str = "appointment",
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> str:
     session_id = f"manual-session-{uuid4().hex[:12]}"
-    session_settings = settings_for_order(
-        settings,
+    session_reservation_settings = settings_for_order(
         username=order.username,
         password=order.password,
         document_type=order.document_type,
+        reservation_settings=reservation_settings,
     )
     browser_lease = BrowserOwnershipLease.acquire(
-        settings,
-        order.order_id,
-        owner_token=session_id,
-        purpose="manual",
+        runtime_settings, order.order_id, owner_token=session_id, purpose="manual"
     )
     now = datetime.now(UTC).isoformat(timespec="seconds")
     handle = ManualSessionHandle(
         session_id=session_id,
         order_id=order.order_id,
-        username=session_settings.reservation.safe_username,
+        username=session_reservation_settings.safe_username,
         mode=mode,
         order_status=order.status,
         status="opening",
@@ -123,7 +123,12 @@ def open_manual_session_for_order(
     thread = threading.Thread(
         target=_run_manual_session,
         name=session_id,
-        args=(settings, order, handle),
+        args=(order, handle),
+        kwargs={
+            "runtime_settings": runtime_settings,
+            "reservation_settings": reservation_settings,
+            "evidence_settings": evidence_settings,
+        },
         daemon=True,
     )
     handle.thread = thread
@@ -176,55 +181,59 @@ def blocking_manual_sessions() -> list[dict[str, Any]]:
 
 
 def _run_manual_session(
-    settings: Settings,
     order: ServiceOrderRuntime,
     handle: ManualSessionHandle,
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> None:
     session_id = handle.session_id
     diagnostic = (
-        ManualDiagnosticRecorder(settings, session_id, order.order_id)
+        ManualDiagnosticRecorder(session_id, order.order_id, evidence_settings=evidence_settings)
         if handle.mode == "diagnostic"
         else None
     )
     if diagnostic is not None:
         _sync_diagnostic_status(session_id, diagnostic)
-    session_settings = replace(
+    session_reservation_settings = replace(
         settings_for_order(
-            settings,
             username=order.username,
             password=order.password,
             document_type=order.document_type,
+            reservation_settings=reservation_settings,
         ),
-        headless=False,
         auto_reserve=False,
         monitor_window_seconds=0,
-        telegram_notify_unavailable=False,
-        artifact_prefix=session_id,
     )
+    session_runtime_settings = replace(runtime_settings, headless=False)
+    session_evidence_settings = replace(evidence_settings, artifact_prefix=session_id)
     started_at = datetime.now(UTC).isoformat(timespec="seconds")
     logger.info(
         "Manual session opening: session_id=%s order_id=%s username=%s started_at=%s",
         session_id,
         order.order_id,
-        session_settings.reservation.safe_username,
+        session_reservation_settings.safe_username,
         started_at,
     )
     diagnostic_error: str | None = None
     try:
         with open_page(
-            session_settings,
             headless=False,
             block_heavy_assets=False,
+            runtime_settings=session_runtime_settings,
+            evidence_settings=session_evidence_settings,
         ) as page:
             if diagnostic is not None:
                 diagnostic.attach(page)
             try:
                 _prepare_manual_session(
                     page,
-                    session_settings,
                     order,
                     session_id,
                     mode=handle.mode,
+                    runtime_settings=session_runtime_settings,
+                    reservation_settings=session_reservation_settings,
                 )
                 if diagnostic is not None:
                     diagnostic.record("portal_ready", path="/lunasoscurecidas/Seguimiento.aspx")
@@ -315,13 +324,14 @@ def _wait_until_manual_session_closed(
 
 def _prepare_manual_session(
     page,
-    settings: Settings,
     order: ServiceOrderRuntime,
     session_id: str,
     *,
     mode: str,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
 ) -> None:
-    login(page, settings)
+    login(page, reservation_settings=reservation_settings)
     if mode in {"portal", "diagnostic"}:
         _set_session_status(
             session_id,
@@ -345,7 +355,7 @@ def _prepare_manual_session(
         program_plate=order.program_plate,
     )
     open_appointment_panel(page)
-    select_available_site(page, required_site=settings.runtime.observer_required_site)
+    select_available_site(page, required_site=runtime_settings.observer_required_site)
     _set_session_status(
         session_id,
         "active",
@@ -355,7 +365,7 @@ def _prepare_manual_session(
         "Manual session ready at appointment panel: session_id=%s order_id=%s site=%s",
         session_id,
         order.order_id,
-        settings.runtime.observer_required_site,
+        runtime_settings.observer_required_site,
     )
 
 

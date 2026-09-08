@@ -69,7 +69,8 @@ def test_polling_advances_offset_only_after_completed_dispatch(tmp_path):
     stop.is_set.side_effect = [False, True]
     runtime = _owner(run_control)
     with (
-        patch.object(runtime, "load_settings"),
+        patch.object(runtime, "load_runtime_settings"),
+        patch.object(runtime, "load_telegram_settings"),
         patch.object(runtime, "setup_logging"),
         patch.object(runtime, "load_control_config", return_value=config),
         patch.object(runtime, "TelegramBotApi", return_value=telegram),

@@ -6,7 +6,8 @@ from dataclasses import asdict
 from http import HTTPStatus
 from typing import Any
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.loading import load_captcha_settings, load_runtime_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.order_state import (
     list_pending_order_backoffs,
     release_order_backoffs,
@@ -41,7 +42,7 @@ PUBLIC_WORKER_FIELDS = {
 
 
 def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]:
-    settings = load_settings(require_login=False)
+    captcha_settings = load_captcha_settings(require_login=False)
     if worker_controller is None:
         healthy, reason = True, "api_only"
         worker_running = False
@@ -57,17 +58,17 @@ def health_payload(worker_controller: Any | None) -> tuple[bool, dict[str, Any]]
         ),
         "worker_running": worker_running,
         "reason": reason,
-        "captcha_shadow_enabled": settings.captcha.captcha_shadow_enabled,
+        "captcha_shadow_enabled": captcha_settings.captcha_shadow_enabled,
     }
 
 
 def worker_payload(worker_controller: Any | None) -> dict[str, Any]:
     if worker_controller is not None:
         return public_worker_payload(worker_controller.status())
-    settings = load_settings(require_login=False)
+    settings = load_runtime_settings(require_login=False)
     payload = asdict(get_worker_state(settings))
     payload["worker_running"] = is_worker_lease_active(settings)
-    payload["continuous_worker_enabled"] = settings.runtime.continuous_worker_enabled
+    payload["continuous_worker_enabled"] = settings.continuous_worker_enabled
     return public_worker_payload(payload)
 
 
@@ -113,7 +114,7 @@ def enqueue_restart_with_safe_backoff_release_payload(
     if status != HTTPStatus.ACCEPTED:
         return status, payload
 
-    settings = load_settings(require_login=False)
+    settings = load_runtime_settings(require_login=False)
     command_id = str(payload.get("command_id") or "")
     try:
         pending = list_pending_order_backoffs(settings=settings)
@@ -194,7 +195,7 @@ def record_worker_control_audit(
     status: str,
     operation_id: str | None = None,
     detail: str | None = None,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
 ) -> None:
     try:
         record_remote_control_audit(
@@ -205,7 +206,7 @@ def record_worker_control_audit(
             target_id="continuous_worker",
             operation_id=operation_id,
             detail=detail,
-            settings=settings,
+            settings=runtime_settings,
         )
     except Exception:
         logger.exception("Could not persist worker control audit for %s", command)

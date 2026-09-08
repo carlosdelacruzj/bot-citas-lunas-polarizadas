@@ -6,7 +6,8 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.whatsapp_automation import enqueue_daily_slot_summary_job
 from appointment_bot.services.tiktok_description import generate_tiktok_publication
 from appointment_bot.services.unique_slot_watermark import (
@@ -34,10 +35,11 @@ MONTH_NAMES = (
 
 
 def enqueue_daily_slot_summary(
-    settings: Settings,
     *,
     report_date: date | None = None,
     retry_sequence: int | None = None,
+    runtime_settings: RuntimeSettings,
+    evidence_settings: EvidenceSettings,
 ) -> bool:
     effective_date = report_date or datetime.now(LIMA_TIMEZONE).date()
     recipient_phone = _configured_recipient_phone()
@@ -47,9 +49,7 @@ def enqueue_daily_slot_summary(
 
     public_whatsapp = _configured_public_whatsapp()
     attachment_paths = prepare_daily_unique_slot_watermarks(
-        settings,
-        effective_date,
-        public_whatsapp=public_whatsapp,
+        effective_date, public_whatsapp=public_whatsapp, evidence_settings=evidence_settings
     )
     message_text = _daily_summary_message(effective_date)
     publication_text = generate_tiktok_publication(
@@ -63,7 +63,7 @@ def enqueue_daily_slot_summary(
         publication_text=publication_text,
         attachment_paths=attachment_paths,
         retry_sequence=retry_sequence,
-        settings=settings,
+        settings=runtime_settings,
     )
     if created:
         logger.info(
@@ -85,9 +85,7 @@ def _configured_recipient_phone() -> str | None:
         return None
     recipient_phone = str(payload.get("recipient_phone") or "").strip()
     if not recipient_phone:
-        raise ValueError(
-            "La configuracion del resumen diario no contiene recipient_phone."
-        )
+        raise ValueError("La configuracion del resumen diario no contiene recipient_phone.")
     return recipient_phone
 
 
@@ -97,9 +95,7 @@ def _configured_public_whatsapp() -> str:
         raise ValueError("El resumen diario de WhatsApp no esta configurado.")
     public_whatsapp = str(payload.get("public_whatsapp") or "").strip()
     if not public_whatsapp:
-        raise ValueError(
-            "La configuracion del resumen diario no contiene public_whatsapp."
-        )
+        raise ValueError("La configuracion del resumen diario no contiene public_whatsapp.")
     return public_whatsapp
 
 
@@ -113,9 +109,7 @@ def _daily_summary_config() -> dict[str, object] | None:
             "No se pudo leer la configuracion del resumen diario de WhatsApp."
         ) from exc
     if not isinstance(payload, dict):
-        raise ValueError(
-            "La configuracion del resumen diario debe contener un objeto JSON."
-        )
+        raise ValueError("La configuracion del resumen diario debe contener un objeto JSON.")
     if payload.get("enabled") is False:
         return None
     return payload

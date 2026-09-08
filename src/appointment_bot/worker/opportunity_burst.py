@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from appointment_bot.config import OPPORTUNITY_BURST_SESSION_LIMIT, Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import OPPORTUNITY_BURST_SESSION_LIMIT, RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import (
     AvailabilityResult,
     RunReport,
@@ -29,10 +33,7 @@ from appointment_bot.services.order_runtime import (
     classify_order_report,
     order_done_status_from_report,
 )
-from appointment_bot.worker.order_execution import (
-    SERVICE_ORDER_LEASE_SECONDS,
-    run_service_order,
-)
+from appointment_bot.worker.order_execution import SERVICE_ORDER_LEASE_SECONDS, run_service_order
 from appointment_bot.worker.order_results import observed_opportunities
 from appointment_bot.worker.queue_policy import update_state_from_report
 from appointment_bot.worker.recovery import portal_defense_signal
@@ -69,10 +70,14 @@ class OpportunityBurstResult:
         return RunReport(
             status="error" if failed else "completed",
             message=(
-                "Rafaga de oportunidades finalizada. "
-                f"Auxiliares ejecutados: {len(self.executions)}. "
-                f"Reservas auxiliares confirmadas: {len(self.confirmed_order_ids)}. "
-                f"Cierre: {self.completion_reason}."
+                "Rafaga de oportunidades finalizada. Auxiliares e"
+                "jecutados: "
+                f"{len(self.executions)}"
+                ". Reservas auxiliares confirmadas: "
+                f"{len(self.confirmed_order_ids)}"
+                ". Cierre: "
+                f"{self.completion_reason}"
+                "."
             ),
             exit_code=1 if failed else 0,
             details={
@@ -101,13 +106,21 @@ class OpportunityBurstResult:
 class OpportunityBurstCoordinator:
     def __init__(
         self,
-        settings: Settings,
         detector_order: ServiceOrderCandidate | ServiceOrderRuntime,
         *,
         cancel_event: threading.Event | None = None,
         preferred_order_ids: tuple[str, ...] = (),
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
+        captcha_settings: CaptchaSettings,
+        evidence_settings: EvidenceSettings,
+        telegram_settings: TelegramSettings,
     ) -> None:
-        self.settings = settings
+        self.runtime_settings = runtime_settings
+        self.reservation_settings = reservation_settings
+        self.captcha_settings = captcha_settings
+        self.evidence_settings = evidence_settings
+        self.telegram_settings = telegram_settings
         self.detector_order = detector_order
         self.cancel_event = cancel_event
         self.preferred_order_ids = preferred_order_ids
@@ -140,7 +153,7 @@ class OpportunityBurstCoordinator:
             return self._started
 
     def maybe_start(self, result: AvailabilityResult) -> bool:
-        if not self.settings.reservation.auto_reserve:
+        if not self.reservation_settings.auto_reserve:
             return False
         if self.cancel_event is not None and self.cancel_event.is_set():
             return False
@@ -151,38 +164,33 @@ class OpportunityBurstCoordinator:
         opportunities = observed_opportunities(details)
         if not opportunities:
             return False
-        if not _admission_allowed("obs006", self.settings):
+        if not _admission_allowed("obs006", runtime_settings=self.runtime_settings):
             return False
-
         with self._lock:
             if self._started:
                 return True
-
         candidate_limit = (
             None
-            if self.settings.runtime.opportunity_burst_max_clients == 0
-            else max(self.settings.runtime.opportunity_burst_max_clients - 1, 0)
+            if self.runtime_settings.opportunity_burst_max_clients == 0
+            else max(self.runtime_settings.opportunity_burst_max_clients - 1, 0)
         )
         candidates = list_compatible_orders_for_opportunities(
             opportunities,
             exclude_order_ids={self.detector_order.order_id},
             limit=candidate_limit,
-            settings=self.settings,
+            settings=self.runtime_settings,
         )
         candidates = self._distinct_account_candidates(candidates)
         if not candidates:
             return False
-
         candidate_snapshot = [
             {
                 "queue_position": position,
                 "order_id": candidate.order_id,
                 "priority_snapshot": candidate.priority,
-                "selection_source": (
-                    "preferred"
-                    if candidate.order_id in self.preferred_order_ids
-                    else "ranked"
-                ),
+                "selection_source": "preferred"
+                if candidate.order_id in self.preferred_order_ids
+                else "ranked",
             }
             for position, candidate in enumerate(candidates, start=1)
         ]
@@ -192,23 +200,23 @@ class OpportunityBurstCoordinator:
                 detector_order_id=self.detector_order.order_id,
                 candidates=candidate_snapshot,
                 opportunities=[
-                    {"date": date_text, "hour": hour_text}
-                    for date_text, hour_text in opportunities
+                    {"date": date_text, "hour": hour_text} for date_text, hour_text in opportunities
                 ],
                 trigger_kind=trigger_kind,
-                settings=self.settings,
+                runtime_settings=self.runtime_settings,
             )
         except Exception:
             logger.exception("Could not persist opportunity burst %s", self.burst_id)
-            _trip_breaker("persistence_failed", self.burst_id, self.settings)
+            _trip_breaker(
+                "persistence_failed", self.burst_id, runtime_settings=self.runtime_settings
+            )
             return False
-
         with self._lock:
             if self._started:
                 return True
             self._started = True
             self._started_at = time.monotonic()
-            self._deadline = self._started_at + self.settings.runtime.opportunity_burst_max_seconds
+            self._deadline = self._started_at + self.runtime_settings.opportunity_burst_max_seconds
             self._candidates.extend(candidates)
             self._candidate_count = len(candidates)
             self.detector_context.update(
@@ -221,14 +229,14 @@ class OpportunityBurstCoordinator:
             self._last_admitted_execution_id = self.detector_execution_id
             self._executor = ThreadPoolExecutor(
                 max_workers=min(
-                    self.settings.runtime.opportunity_burst_max_sessions,
+                    self.runtime_settings.opportunity_burst_max_sessions,
                     OPPORTUNITY_BURST_SESSION_LIMIT,
                 ),
                 thread_name_prefix="opportunity-burst",
             )
             initial_slots = (
                 min(
-                    self.settings.runtime.opportunity_burst_max_sessions,
+                    self.runtime_settings.opportunity_burst_max_sessions,
                     OPPORTUNITY_BURST_SESSION_LIMIT,
                 )
                 - self._active_sessions_locked()
@@ -245,10 +253,7 @@ class OpportunityBurstCoordinator:
             return True
 
     def finish_detector(
-        self,
-        detector_report: RunReport,
-        *,
-        on_wait: Callable[[], None] | None = None,
+        self, detector_report: RunReport, *, on_wait: Callable[[], None] | None = None
     ) -> OpportunityBurstResult:
         with self._lock:
             if not self._started:
@@ -262,23 +267,26 @@ class OpportunityBurstCoordinator:
                     result_details=dict(detector_report.details or {}),
                     exit_code=detector_report.exit_code,
                     exit_reason=_report_exit_reason(detector_report),
-                    settings=self.settings,
+                    runtime_settings=self.runtime_settings,
                 )
             except Exception:
                 logger.exception("Could not persist detector burst execution")
                 self._stop_refills = True
                 self._completion_reason = "persistence_failed"
-                _trip_breaker("persistence_failed", self.burst_id, self.settings)
+                _trip_breaker(
+                    "persistence_failed", self.burst_id, runtime_settings=self.runtime_settings
+                )
             refill, stop_reason = _detector_decision(detector_report)
             if stop_reason is not None:
                 self._stop_refills = True
                 self._completion_reason = stop_reason
                 if _is_breaker_reason(stop_reason):
-                    _trip_breaker(stop_reason, self.burst_id, self.settings)
+                    _trip_breaker(
+                        stop_reason, self.burst_id, runtime_settings=self.runtime_settings
+                    )
             elif refill:
                 self._submit_next_locked()
             self._condition.notify_all()
-
         while True:
             with self._condition:
                 if not self._futures:
@@ -286,32 +294,29 @@ class OpportunityBurstCoordinator:
                 self._condition.wait(timeout=1)
             if on_wait is not None:
                 on_wait()
-
         executor = self._executor
         if executor is not None:
             executor.shutdown(wait=True)
         duration = (
-            round(time.monotonic() - self._started_at, 3)
-            if self._started_at is not None
-            else 0.0
+            round(time.monotonic() - self._started_at, 3) if self._started_at is not None else 0.0
         )
         completion_reason = self._completion_reason
         if completion_reason is None:
             completion_reason = (
-                "client_limit"
-                if self._client_limit_reached_locked()
-                else "sessions_finished"
+                "client_limit" if self._client_limit_reached_locked() else "sessions_finished"
             )
         try:
             _finish_burst(
                 burst_id=self.burst_id,
                 completion_reason=completion_reason,
                 max_active_sessions=self._max_active_sessions,
-                settings=self.settings,
+                runtime_settings=self.runtime_settings,
             )
         except Exception:
             logger.exception("Could not finalize opportunity burst %s", self.burst_id)
-            _trip_breaker("persistence_failed", self.burst_id, self.settings)
+            _trip_breaker(
+                "persistence_failed", self.burst_id, runtime_settings=self.runtime_settings
+            )
         return OpportunityBurstResult(
             started=True,
             burst_id=self.burst_id,
@@ -325,8 +330,7 @@ class OpportunityBurstCoordinator:
         )
 
     def _distinct_account_candidates(
-        self,
-        candidates: list[ServiceOrderCandidate],
+        self, candidates: list[ServiceOrderCandidate]
     ) -> list[ServiceOrderCandidate]:
         usernames = {self.detector_order.username.strip().casefold()}
         distinct: list[ServiceOrderCandidate] = []
@@ -342,13 +346,11 @@ class OpportunityBurstCoordinator:
         return len(self._futures) + int(self._detector_active)
 
     def _client_limit_reached_locked(self) -> bool:
-        max_clients = self.settings.runtime.opportunity_burst_max_clients
+        max_clients = self.runtime_settings.opportunity_burst_max_clients
         return max_clients > 0 and self._scheduled_clients >= max_clients
 
     def _submit_next_locked(self) -> bool:
-        if self._stop_refills or (
-            self.cancel_event is not None and self.cancel_event.is_set()
-        ):
+        if self._stop_refills or (self.cancel_event is not None and self.cancel_event.is_set()):
             return False
         if self._deadline is not None and time.monotonic() >= self._deadline:
             self._completion_reason = "burst_window_expired"
@@ -356,8 +358,7 @@ class OpportunityBurstCoordinator:
         if self._client_limit_reached_locked():
             return False
         if self._active_sessions_locked() >= min(
-            self.settings.runtime.opportunity_burst_max_sessions,
-            OPPORTUNITY_BURST_SESSION_LIMIT,
+            self.runtime_settings.opportunity_burst_max_sessions, OPPORTUNITY_BURST_SESSION_LIMIT
         ):
             return False
         if not self._candidates:
@@ -366,11 +367,10 @@ class OpportunityBurstCoordinator:
             return False
         if self._executor is None:
             return False
-        if not _admission_allowed("obs006", self.settings):
+        if not _admission_allowed("obs006", runtime_settings=self.runtime_settings):
             self._stop_refills = True
             self._completion_reason = "admission_closed"
             return False
-
         order = self._candidates.popleft()
         position = self._scheduled_clients + 1
         try:
@@ -382,27 +382,29 @@ class OpportunityBurstCoordinator:
                 candidate_id=self._candidate_ids[order.order_id],
                 previous_candidate_id=self._last_admitted_candidate_id,
                 previous_execution_id=self._last_admitted_execution_id,
-                settings=self.settings,
+                runtime_settings=self.runtime_settings,
             )
         except Exception:
             logger.exception("Could not persist auxiliary burst admission")
             self._stop_refills = True
             self._completion_reason = "persistence_failed"
-            _trip_breaker("persistence_failed", self.burst_id, self.settings)
+            _trip_breaker(
+                "persistence_failed", self.burst_id, runtime_settings=self.runtime_settings
+            )
             return False
         self._last_admitted_candidate_id = self._candidate_ids[order.order_id]
         self._last_admitted_execution_id = execution_id
         self._scheduled_clients += 1
         future = self._executor.submit(self._run_candidate, order, execution_id)
         self._futures[future] = (order, execution_id)
-        self._max_active_sessions = max(
-            self._max_active_sessions,
-            self._active_sessions_locked(),
-        )
+        self._max_active_sessions = max(self._max_active_sessions, self._active_sessions_locked())
         future.add_done_callback(self._future_done)
         logger.info(
-            "Opportunity burst %s launched auxiliary order %s "
-            "(%s clients scheduled, %s candidate(s) remaining)",
+            (
+                "Opportunity burst %s launched auxiliary order %s"
+                " (%s clients scheduled, %s candidate(s) remainin"
+                "g)"
+            ),
             self.burst_id,
             order.order_id,
             self._scheduled_clients,
@@ -410,17 +412,15 @@ class OpportunityBurstCoordinator:
         )
         return True
 
-    def _run_candidate(
-        self,
-        order: ServiceOrderCandidate,
-        execution_id: str,
-    ) -> BurstExecution:
+    def _run_candidate(self, order: ServiceOrderCandidate, execution_id: str) -> BurstExecution:
         owner_token = f"{self.burst_id}-{uuid4().hex}"
         try:
-            _start_execution(execution_id, self.settings)
+            _start_execution(execution_id, runtime_settings=self.runtime_settings)
         except Exception:
             logger.exception("Could not mark burst execution as started")
-            _trip_breaker("persistence_failed", self.burst_id, self.settings)
+            _trip_breaker(
+                "persistence_failed", self.burst_id, runtime_settings=self.runtime_settings
+            )
             return BurstExecution(
                 order=order,
                 report=RunReport(
@@ -437,9 +437,11 @@ class OpportunityBurstCoordinator:
                 order.order_id,
                 owner_token=owner_token,
                 lease_seconds=SERVICE_ORDER_LEASE_SECONDS,
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
-            _start_execution(execution_id, self.settings, claim_acquired=claimed)
+            _start_execution(
+                execution_id, claim_acquired=claimed, runtime_settings=self.runtime_settings
+            )
         except Exception as exc:
             logger.exception("Opportunity burst could not claim order %s", order.order_id)
             return BurstExecution(
@@ -465,7 +467,6 @@ class OpportunityBurstCoordinator:
                 claim_acquired=False,
                 execution_id=execution_id,
             )
-
         try:
             first_check_recorded = False
 
@@ -474,10 +475,9 @@ class OpportunityBurstCoordinator:
                 if first_check_recorded:
                     return
                 first_check_recorded = True
-                _mark_first_check(execution_id, self.settings)
+                _mark_first_check(execution_id, runtime_settings=self.runtime_settings)
 
             report = run_service_order(
-                self.settings,
                 order,
                 lease_owner=owner_token,
                 burst_mode=True,
@@ -488,25 +488,22 @@ class OpportunityBurstCoordinator:
                     "execution_id": execution_id,
                     "burst_role": "auxiliary",
                 },
+                runtime_settings=self.runtime_settings,
+                reservation_settings=self.reservation_settings,
+                captcha_settings=self.captcha_settings,
+                evidence_settings=self.evidence_settings,
+                telegram_settings=self.telegram_settings,
             )
             return BurstExecution(
-                order=order,
-                report=report,
-                claim_acquired=True,
-                execution_id=execution_id,
+                order=order, report=report, claim_acquired=True, execution_id=execution_id
             )
         finally:
             try:
                 released = release_service_order_claim(
-                    order.order_id,
-                    owner_token=owner_token,
-                    settings=self.settings,
+                    order.order_id, owner_token=owner_token, settings=self.runtime_settings
                 )
             except Exception:
-                logger.exception(
-                    "Opportunity burst could not release claim for %s",
-                    order.order_id,
-                )
+                logger.exception("Opportunity burst could not release claim for %s", order.order_id)
             else:
                 if not released:
                     logger.warning(
@@ -535,18 +532,19 @@ class OpportunityBurstCoordinator:
                 claim_acquired=False,
                 execution_id=execution_id,
             )
-
         refill = False
         stop_reason = None
         try:
-            refill, stop_reason = _apply_auxiliary_result(self.settings, execution)
+            refill, stop_reason = _apply_auxiliary_result(
+                execution,
+                runtime_settings=self.runtime_settings,
+                captcha_settings=self.captcha_settings,
+            )
         except Exception:
             logger.exception(
-                "Could not apply opportunity burst result for %s",
-                execution.order.order_id,
+                "Could not apply opportunity burst result for %s", execution.order.order_id
             )
             stop_reason = "result_transition_failed"
-
         try:
             if execution.execution_id is not None:
                 _finish_execution(
@@ -556,12 +554,11 @@ class OpportunityBurstCoordinator:
                     result_details=dict(execution.report.details or {}),
                     exit_code=execution.report.exit_code,
                     exit_reason=stop_reason or _report_exit_reason(execution.report),
-                    settings=self.settings,
+                    runtime_settings=self.runtime_settings,
                 )
         except Exception:
             logger.exception("Could not persist completed burst execution")
             stop_reason = "persistence_failed"
-
         with self._condition:
             self._futures.pop(future, None)
             self._executions.append(execution)
@@ -571,7 +568,9 @@ class OpportunityBurstCoordinator:
                 self._stop_refills = True
                 self._completion_reason = stop_reason
                 if _is_breaker_reason(stop_reason):
-                    _trip_breaker(stop_reason, self.burst_id, self.settings)
+                    _trip_breaker(
+                        stop_reason, self.burst_id, runtime_settings=self.runtime_settings
+                    )
             elif refill:
                 self._submit_next_locked()
             elif not execution.claim_acquired:
@@ -580,28 +579,22 @@ class OpportunityBurstCoordinator:
             self._condition.notify_all()
 
 
-def _admission_allowed(control_name: str, settings: Settings) -> bool:
+def _admission_allowed(control_name: str, *, runtime_settings: RuntimeSettings) -> bool:
     try:
-        from appointment_bot.db.opportunity_controls import (
-            is_opportunity_admission_allowed,
-        )
+        from appointment_bot.db.opportunity_controls import is_opportunity_admission_allowed
 
-        return bool(is_opportunity_admission_allowed(control_name, settings=settings))
+        return bool(is_opportunity_admission_allowed(control_name, settings=runtime_settings))
     except Exception:
         logger.exception("Could not read %s opportunity admission control", control_name)
         return False
 
 
-def _trip_breaker(reason: str, burst_id: str | None, settings: Settings) -> None:
+def _trip_breaker(reason: str, burst_id: str | None, *, runtime_settings: RuntimeSettings) -> None:
     try:
-        from appointment_bot.db.opportunity_controls import (
-            trip_opportunity_circuit_breaker,
-        )
+        from appointment_bot.db.opportunity_controls import trip_opportunity_circuit_breaker
 
         trip_opportunity_circuit_breaker(
-            reason=reason,
-            burst_id=burst_id,
-            settings=settings,
+            reason=reason, burst_id=burst_id, settings=runtime_settings
         )
     except Exception:
         logger.exception("Could not trip opportunity circuit breaker: %s", reason)
@@ -614,7 +607,7 @@ def _create_burst(
     candidates: list[dict],
     opportunities: list[dict],
     trigger_kind: str,
-    settings: Settings,
+    runtime_settings: RuntimeSettings,
 ) -> tuple[str, dict[str, str]]:
     from appointment_bot.db.opportunity_bursts import (
         create_burst_execution,
@@ -626,28 +619,25 @@ def _create_burst(
     persisted_id = create_opportunity_burst(
         detector_order_id=detector_order_id,
         started_at=started_at,
-        admission_deadline_at=(
-            started_at + timedelta(seconds=settings.runtime.opportunity_burst_max_seconds)
-        ),
+        admission_deadline_at=started_at
+        + timedelta(seconds=runtime_settings.opportunity_burst_max_seconds),
         opportunities=opportunities,
         configured_max_sessions=min(
-            settings.runtime.opportunity_burst_max_sessions,
-            OPPORTUNITY_BURST_SESSION_LIMIT,
+            runtime_settings.opportunity_burst_max_sessions, OPPORTUNITY_BURST_SESSION_LIMIT
         ),
-        configured_max_clients=settings.runtime.opportunity_burst_max_clients,
+        configured_max_clients=runtime_settings.opportunity_burst_max_clients,
         config={
             "max_sessions": min(
-                settings.runtime.opportunity_burst_max_sessions,
-                OPPORTUNITY_BURST_SESSION_LIMIT,
+                runtime_settings.opportunity_burst_max_sessions, OPPORTUNITY_BURST_SESSION_LIMIT
             ),
-            "max_clients": settings.runtime.opportunity_burst_max_clients,
-            "max_seconds": settings.runtime.opportunity_burst_max_seconds,
-            "session_seconds": settings.runtime.opportunity_burst_session_seconds,
-            "attempts": settings.runtime.opportunity_burst_attempts,
+            "max_clients": runtime_settings.opportunity_burst_max_clients,
+            "max_seconds": runtime_settings.opportunity_burst_max_seconds,
+            "session_seconds": runtime_settings.opportunity_burst_session_seconds,
+            "attempts": runtime_settings.opportunity_burst_attempts,
             "trigger_kind": trigger_kind,
         },
         burst_id=burst_id,
-        settings=settings,
+        settings=runtime_settings,
     )
     prepared_candidates = [
         {
@@ -657,20 +647,23 @@ def _create_burst(
         }
         for index, candidate in enumerate(candidates, start=1)
     ]
-    record_burst_candidates(persisted_id, prepared_candidates, settings=settings)
+    record_burst_candidates(persisted_id, prepared_candidates, settings=runtime_settings)
     execution_id = create_burst_execution(
         burst_id=persisted_id,
         role="detector",
         execution_position=0,
         order_id=detector_order_id,
-        settings=settings,
+        settings=runtime_settings,
     )
-    _start_execution(execution_id, settings, claim_acquired=True)
-    _mark_first_check(execution_id, settings)
-    return execution_id, {
-        str(candidate["order_id"]): str(candidate["candidate_id"])
-        for candidate in prepared_candidates
-    }
+    _start_execution(execution_id, claim_acquired=True, runtime_settings=runtime_settings)
+    _mark_first_check(execution_id, runtime_settings=runtime_settings)
+    return (
+        execution_id,
+        {
+            str(candidate["order_id"]): str(candidate["candidate_id"])
+            for candidate in prepared_candidates
+        },
+    )
 
 
 def _create_execution(
@@ -682,7 +675,7 @@ def _create_execution(
     candidate_id: str,
     previous_candidate_id: str | None,
     previous_execution_id: str | None,
-    settings: Settings,
+    runtime_settings: RuntimeSettings,
 ) -> str:
     from appointment_bot.db.opportunity_bursts import create_burst_execution
 
@@ -694,15 +687,12 @@ def _create_execution(
         candidate_id=candidate_id,
         previous_candidate_id=previous_candidate_id,
         previous_execution_id=previous_execution_id,
-        settings=settings,
+        settings=runtime_settings,
     )
 
 
 def _start_execution(
-    execution_id: str,
-    settings: Settings,
-    *,
-    claim_acquired: bool | None = None,
+    execution_id: str, *, claim_acquired: bool | None = None, runtime_settings: RuntimeSettings
 ) -> None:
     from appointment_bot.db.opportunity_bursts import mark_burst_execution_started
 
@@ -710,18 +700,16 @@ def _start_execution(
         execution_id,
         claim_acquired=claim_acquired,
         started_at=datetime.now(UTC),
-        settings=settings,
+        settings=runtime_settings,
     )
 
 
-def _mark_first_check(execution_id: str, settings: Settings) -> None:
+def _mark_first_check(execution_id: str, *, runtime_settings: RuntimeSettings) -> None:
     try:
         from appointment_bot.db.opportunity_bursts import update_burst_execution
 
         update_burst_execution(
-            execution_id,
-            first_read_at=datetime.now(UTC),
-            settings=settings,
+            execution_id, first_read_at=datetime.now(UTC), settings=runtime_settings
         )
     except Exception:
         logger.exception("Could not persist first check for burst execution %s", execution_id)
@@ -735,7 +723,7 @@ def _finish_execution(
     result_details: dict,
     exit_code: int,
     exit_reason: str | None,
-    settings: Settings,
+    runtime_settings: RuntimeSettings,
 ) -> None:
     from appointment_bot.db.opportunity_bursts import mark_burst_execution_finished
 
@@ -748,7 +736,7 @@ def _finish_execution(
         lease_lost=bool(result_details.get("lease_lost")),
         reservation_timing=result_details.get("reservation_timing"),
         finished_at=datetime.now(UTC),
-        settings=settings,
+        settings=runtime_settings,
     )
 
 
@@ -757,7 +745,7 @@ def _finish_burst(
     burst_id: str,
     completion_reason: str,
     max_active_sessions: int,
-    settings: Settings,
+    runtime_settings: RuntimeSettings,
 ) -> None:
     from appointment_bot.db.opportunity_bursts import finish_opportunity_burst
 
@@ -768,7 +756,7 @@ def _finish_burst(
         status="closed",
         circuit_reason=completion_reason if _is_breaker_reason(completion_reason) else None,
         finished_at=datetime.now(UTC),
-        settings=settings,
+        settings=runtime_settings,
     )
 
 
@@ -796,29 +784,26 @@ def _is_breaker_reason(reason: str) -> bool:
 
 def _detector_decision(report: RunReport) -> tuple[bool, str | None]:
     if bool((report.details or {}).get("lease_lost")):
-        return False, "lease_lost"
+        return (False, "lease_lost")
     defense = portal_defense_signal(report.message)
     if defense is not None:
-        return False, f"portal_defense:{defense}"
+        return (False, f"portal_defense:{defense}")
     outcome = classify_order_report(report)
     if outcome is OrderReportOutcome.REGISTERED:
-        return True, None
+        return (True, None)
     if outcome is OrderReportOutcome.BLOCKED:
-        return True, None
+        return (True, None)
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
-        return False, "detector_reservation_unconfirmed"
+        return (False, "detector_reservation_unconfirmed")
     if outcome is OrderReportOutcome.FAILURE:
-        return False, "detector_technical_error"
-    return False, None
+        return (False, "detector_technical_error")
+    return (False, None)
 
 
-def _burst_trigger_kind(
-    result: AvailabilityResult,
-    details: dict[str, object],
-) -> str | None:
+def _burst_trigger_kind(result: AvailabilityResult, details: dict[str, object]) -> str | None:
     if details.get("fetch_probe"):
         return None
-    if result.status == "available" and not details.get("blocked_by_order_rule"):
+    if result.status == "available" and (not details.get("blocked_by_order_rule")):
         return "compatible_availability"
     if result.status != "partial" or not details.get("blocked_by_order_rule"):
         return None
@@ -852,18 +837,19 @@ def _burst_trigger_kind(
 
 
 def _apply_auxiliary_result(
-    settings: Settings,
     execution: BurstExecution,
+    *,
+    runtime_settings: RuntimeSettings,
+    captcha_settings: CaptchaSettings,
 ) -> tuple[bool, str | None]:
     order = execution.order
     report = execution.report
     if bool((report.details or {}).get("lease_lost")):
-        return False, "lease_lost"
+        return (False, "lease_lost")
     if not execution.claim_acquired:
         if report.status == "error":
-            return False, "claim_failed"
-        return False, None
-
+            return (False, "claim_failed")
+        return (False, None)
     defense = portal_defense_signal(report.message)
     if defense is not None:
         update_order_state(
@@ -872,42 +858,39 @@ def _apply_auxiliary_result(
             message=report.message,
             exit_code=report.exit_code,
             backoff_seconds=None,
-            settings=settings,
+            settings=runtime_settings,
         )
-        return False, f"portal_defense:{defense}"
-
-    update_state_from_report(settings, order, report)
+        return (False, f"portal_defense:{defense}")
+    update_state_from_report(order, report, runtime_settings=runtime_settings)
     outcome = classify_order_report(report)
     if outcome is OrderReportOutcome.REGISTERED:
-        mark_order_done(order.order_id, settings=settings)
-        return True, None
+        mark_order_done(order.order_id, settings=runtime_settings)
+        return (True, None)
     if outcome is OrderReportOutcome.TERMINAL_STAGE:
         mark_order_done(
-            order.order_id,
-            status=order_done_status_from_report(report),
-            settings=settings,
+            order.order_id, status=order_done_status_from_report(report), settings=runtime_settings
         )
-        return False, None
+        return (False, None)
     if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.captcha.captcha_rejection_cooldown_seconds,
-            settings=settings,
+            backoff_seconds=captcha_settings.captcha_rejection_cooldown_seconds,
+            settings=runtime_settings,
         )
-        return False, None
+        return (False, None)
     if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
         update_order_state(
             order.order_id,
             status=report.status,
             message=report.message,
             exit_code=report.exit_code,
-            backoff_seconds=settings.runtime.error_backoff_seconds,
-            settings=settings,
+            backoff_seconds=runtime_settings.error_backoff_seconds,
+            settings=runtime_settings,
         )
-        return False, "auxiliary_reservation_unconfirmed"
+        return (False, "auxiliary_reservation_unconfirmed")
     if outcome is OrderReportOutcome.FAILURE:
-        return False, "auxiliary_technical_error"
-    return False, None
+        return (False, "auxiliary_technical_error")
+    return (False, None)

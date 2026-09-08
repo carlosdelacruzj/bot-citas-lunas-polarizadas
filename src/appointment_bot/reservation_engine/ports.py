@@ -5,7 +5,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 
 
@@ -45,15 +49,16 @@ class RunSink(Protocol):
     def finalize_report(
         self,
         report: RunReport,
-        settings: Settings,
         *,
+        runtime_settings: RuntimeSettings,
+        evidence_settings: EvidenceSettings,
         started_at_dt: datetime,
     ) -> RunReport: ...
 
     def create_video(
         self,
-        settings: Settings,
         *,
+        evidence_settings: EvidenceSettings,
         order_id: str | None,
         client_name: str | None,
         started_at: datetime,
@@ -64,25 +69,24 @@ class AlertSink(Protocol):
     def notify_result(
         self,
         result: AvailabilityResult,
-        settings: Settings,
         screenshot_path: Path | None,
         *,
+        telegram_settings: TelegramSettings,
         screenshot_paths: list[Path] | None = None,
     ) -> None: ...
 
     def notify_error(
-        self,
-        error: Exception,
-        settings: Settings,
-        screenshot_path: Path | None,
+        self, error: Exception, screenshot_path: Path | None, *, telegram_settings: TelegramSettings
     ) -> None: ...
 
     def notify_programs(
         self,
-        settings: Settings,
         order_id: str | None,
         client_name: str | None,
         details: dict[str, Any],
+        *,
+        runtime_settings: RuntimeSettings,
+        telegram_settings: TelegramSettings,
     ) -> None: ...
 
     def graphic_captcha_returned(self) -> None: ...
@@ -92,7 +96,10 @@ class CaptchaAuthority(Protocol):
     def solve(
         self,
         image_path: Path,
-        settings: Settings,
+        *,
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
+        captcha_settings: CaptchaSettings,
         **kwargs: Any,
     ) -> CaptchaSolveResult: ...
 
@@ -102,19 +109,18 @@ class CaptchaAuthority(Protocol):
 
     def resolve_portal_outcome(self, event_id: str, *, portal_outcome: str) -> None: ...
 
-    def sample_limit(self, settings: Settings) -> int: ...
+    def sample_limit(
+        self, *, runtime_settings: RuntimeSettings, captcha_settings: CaptchaSettings
+    ) -> int: ...
 
 
 class OpportunityControl(Protocol):
-    def admission_allowed(self, feature: str, settings: Settings) -> bool: ...
+    def admission_allowed(self, feature: str, *, runtime_settings: RuntimeSettings) -> bool: ...
 
-    def record_event(self, **kwargs: Any) -> None: ...
+    def record_event(self, *, runtime_settings: RuntimeSettings, **kwargs: Any) -> None: ...
 
     def trip_breaker(
-        self,
-        reason: str,
-        burst_id: str | None,
-        settings: Settings,
+        self, reason: str, burst_id: str | None, *, runtime_settings: RuntimeSettings
     ) -> None: ...
 
 

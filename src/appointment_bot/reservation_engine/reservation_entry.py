@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 
 from playwright.sync_api import Error as PlaywrightError
 
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     PortalContractChanged,
@@ -25,11 +27,21 @@ logger = logging.getLogger(__name__)
 
 
 def click_preverified_reservation(
-    page, settings, *, expected_details, expected_person_name, cancel_event,
-    can_submit, on_submission_intent, on_submission_started, audit, timing,
+    page,
+    *,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
+    expected_details,
+    expected_person_name,
+    cancel_event,
+    can_submit,
+    on_submission_intent,
+    on_submission_started,
+    audit,
+    timing,
 ) -> None:
     """Send the known pre-access-only form once, under the durable submit guards."""
-    if not settings.reservation.auto_reserve:
+    if not reservation_settings.auto_reserve:
         raise AppointmentWorkflowCancelled("La reserva automatica esta desactivada.")
     if not (expected_details or {}).get("canonical_slot_capture"):
         raise PortalContractChanged("Falta la captura canonica antes del boton de reserva.")
@@ -44,7 +56,10 @@ def click_preverified_reservation(
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     baseline = inspect_reservation_form(page)
     validate_reservation_form_audit(
-        baseline, require_captcha_answer=False, require_math_question=False, pre_access_only=True,
+        baseline,
+        require_captcha_answer=False,
+        require_math_question=False,
+        pre_access_only=True,
     )
     audit["captcha_kind"] = "pre_access_verified"
     audit["reservation_button_interaction"] = {
@@ -60,14 +75,21 @@ def click_preverified_reservation(
     if not button.is_enabled():
         raise PortalContractChanged("El boton de reserva sigue deshabilitado.")
     if on_submission_intent is not None:
-        on_submission_intent({**expected_details, "pre_submit_validation": "passed",
-                              "reservation_button_interaction": dict(interaction)})
+        on_submission_intent(
+            {
+                **expected_details,
+                "pre_submit_validation": "passed",
+                "reservation_button_interaction": dict(interaction),
+            }
+        )
     ensure_owned()
     validate_selected_appointment(page, expected_details, expected_person_name=expected_person_name)
     final_audit = inspect_reservation_form(page)
     validate_reservation_form_audit(
-        final_audit, require_captcha_answer=False,
-        require_math_question=False, pre_access_only=True,
+        final_audit,
+        require_captcha_answer=False,
+        require_math_question=False,
+        pre_access_only=True,
     )
     if baseline["form_contract_sha256"] != final_audit["form_contract_sha256"]:
         raise PortalContractChanged("El formulario cambio antes del clic de reserva.")
@@ -102,7 +124,7 @@ def click_preverified_reservation(
             ("entry_html_path", save_sanitized_page_html, "reserva-respuesta-primer-boton"),
         ):
             try:
-                path = save(page, settings, label)
+                path = save(page, label, evidence_settings=evidence_settings)
                 if path is not None:
                     audit[key] = str(path)
             except Exception:

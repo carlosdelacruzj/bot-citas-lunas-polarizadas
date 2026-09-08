@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 import unicodedata
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 
 
 def portal_defense_signal(message: str) -> str | None:
@@ -44,10 +44,9 @@ def is_network_error(message: str) -> bool:
     return any(signal in normalized for signal in signals)
 
 
-def recovery_wait_seconds(settings: Settings) -> int:
+def recovery_wait_seconds(*, runtime_settings: RuntimeSettings) -> int:
     return random.randint(
-        settings.runtime.recovery_backoff_min_seconds,
-        settings.runtime.recovery_backoff_max_seconds,
+        runtime_settings.recovery_backoff_min_seconds, runtime_settings.recovery_backoff_max_seconds
     )
 
 

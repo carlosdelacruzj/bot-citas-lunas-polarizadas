@@ -7,7 +7,7 @@ from decimal import Decimal
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import ServiceOrderCreateResult
 from appointment_bot.core.service_packages import SERVICE_PACKAGE_INTEGRAL
 from appointment_bot.db.common import (
@@ -52,7 +52,7 @@ class ServiceOrderPersistenceRequest:
 def persist_service_order(
     request: ServiceOrderPersistenceRequest,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override: Connection | None = None,
 ) -> ServiceOrderCreateResult:
     settings = _settings(settings)

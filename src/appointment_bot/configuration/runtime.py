@@ -49,3 +49,13 @@ class RuntimeSettings:
     database_url: str
     logs_dir: Path
     credential_encryption_keys: tuple[str, ...]
+
+
+OPPORTUNITY_BURST_SESSION_LIMIT = 3
+
+DEFAULT_OBSERVER_HOT_WINDOWS = (
+    (datetime_time(hour=8, minute=15), datetime_time(hour=8, minute=50)),
+    (datetime_time(hour=9, minute=30), datetime_time(hour=10, minute=0)),
+    (datetime_time(hour=11, minute=40), datetime_time(hour=12, minute=40)),
+    (datetime_time(hour=15, minute=55), datetime_time(hour=16, minute=30)),
+)

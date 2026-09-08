@@ -6,7 +6,7 @@ from typing import Any
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _now, _settings, init_database
 
 LIMA_TZ = ZoneInfo("America/Lima")
@@ -23,7 +23,7 @@ TECHNICAL_AUTOMATION_ERROR_CODES = frozenset(
 def get_post_appointment_target(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)
@@ -56,7 +56,7 @@ def record_post_appointment_review(
     finished_at: datetime,
     error_code: str | None = None,
     error_message: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     settings = _settings(settings)
     init_database(settings)
@@ -129,7 +129,7 @@ def list_post_appointment_followups(
     limit: int = 10,
     offset: int = 0,
     include_upcoming: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -472,7 +472,7 @@ def list_post_appointment_followups(
 def get_post_appointment_followup(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     payload = list_post_appointment_followups(
         filter_name="active",
@@ -496,7 +496,7 @@ def claim_next_post_appointment_automatic_review(
     *,
     service_date: date,
     daily_limit: int = POST_APPOINTMENT_AUTOMATION_DAILY_LIMIT,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)
@@ -614,7 +614,7 @@ def finish_post_appointment_automatic_review(
     review_id: str | None = None,
     error_code: str | None = None,
     error_message: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if status not in {"completed", "failed", "skipped"}:
         raise ValueError("Automatic post-appointment status must be terminal.")
@@ -646,7 +646,7 @@ def finish_post_appointment_automatic_review(
 def fail_stale_post_appointment_automatic_reviews(
     *,
     service_date: date,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     settings = _settings(settings)
     init_database(settings)
@@ -670,7 +670,7 @@ def fail_stale_post_appointment_automatic_reviews(
 def post_appointment_automation_status(
     *,
     service_date: date,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)

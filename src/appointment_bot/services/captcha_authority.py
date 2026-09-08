@@ -4,14 +4,15 @@ import json
 import logging
 import re
 import time
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.captcha_authority import (
     count_consecutive_captcha_authority_failures,
     get_captcha_authority_control,
@@ -19,6 +20,17 @@ from appointment_bot.db.captcha_authority import (
     trip_captcha_authority_circuit,
 )
 from appointment_bot.services.captcha import solve_normal_captcha
+
+
+class CaptchaFallbackSolver(Protocol):
+    def __call__(
+        self,
+        image_path: Path,
+        *,
+        reservation_settings: ReservationSettings,
+        captcha_settings: CaptchaSettings,
+    ) -> str: ...
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,30 +68,32 @@ class CaptchaAuthorityResult:
 
 def solve_reservation_captcha(
     image_path: Path,
-    settings: Settings,
     *,
     event_id: str | None,
     run_id: str | None,
     order_id: str | None,
     attempt_number: int,
     metadata: dict[str, Any] | None,
-    fallback_solver: Callable[[Path, Settings], str] = solve_normal_captcha,
+    fallback_solver: CaptchaFallbackSolver = solve_normal_captcha,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
 ) -> CaptchaAuthorityResult:
-    control = get_captcha_authority_control(settings)
+    control = get_captcha_authority_control(settings=runtime_settings)
     if control.mode != "canary" or event_id is None:
         return CaptchaAuthorityResult(
-            answer=fallback_solver(image_path, settings),
+            answer=fallback_solver(
+                image_path,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
+            ),
             source="2captcha",
             decision_id=None,
             fallback_reason="mode_2captcha" if control.mode != "canary" else "missing_event_id",
         )
 
     if not control.local_admission_open:
-        reason = (
-            "circuit_open"
-            if control.circuit_state == "open"
-            else "canary_limit_reached"
-        )
+        reason = "circuit_open" if control.circuit_state == "open" else "canary_limit_reached"
         decision = record_captcha_authority_decision(
             event_id=event_id,
             run_id=run_id,
@@ -92,23 +106,24 @@ def solve_reservation_captcha(
             inference_ms=None,
             request_ms=None,
             fallback_reason=reason,
-            settings=settings,
+            settings=runtime_settings,
         )
         return _solve_with_fallback(
             image_path,
-            settings,
             decision_id=decision.decision_id,
             fallback_reason=decision.fallback_reason,
             fallback_solver=fallback_solver,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
         )
 
     try:
         prediction = _predict_v6(
             image_path,
-            settings,
             event_id=event_id,
             metadata=metadata or {},
             timeout_ms=control.timeout_ms,
+            captcha_settings=captcha_settings,
         )
     except (HTTPError, URLError, TimeoutError, ValueError, OSError) as exc:
         reason = _local_failure_reason(exc)
@@ -130,13 +145,11 @@ def solve_reservation_captcha(
             inference_ms=None,
             request_ms=None,
             fallback_reason=reason,
-            settings=settings,
+            settings=runtime_settings,
         )
         if reason in TRANSIENT_LOCAL_FAILURES:
             consecutive_failures = count_consecutive_captcha_authority_failures(
-                TRANSIENT_LOCAL_FAILURES,
-                limit=TRANSIENT_FAILURE_LIMIT,
-                settings=settings,
+                TRANSIENT_LOCAL_FAILURES, limit=TRANSIENT_FAILURE_LIMIT, settings=runtime_settings
             )
             logger.warning(
                 "captcha_authority_transient_failure event_id=%s consecutive=%s limit=%s",
@@ -146,17 +159,17 @@ def solve_reservation_captcha(
             )
             if consecutive_failures >= TRANSIENT_FAILURE_LIMIT:
                 trip_captcha_authority_circuit(
-                    f"{reason}_x{TRANSIENT_FAILURE_LIMIT}",
-                    settings=settings,
+                    f"{reason}_x{TRANSIENT_FAILURE_LIMIT}", settings=runtime_settings
                 )
         else:
-            trip_captcha_authority_circuit(reason, settings=settings)
+            trip_captcha_authority_circuit(reason, settings=runtime_settings)
         return _solve_with_fallback(
             image_path,
-            settings,
             decision_id=decision.decision_id,
             fallback_reason=decision.fallback_reason,
             fallback_solver=fallback_solver,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
         )
 
     decision = record_captcha_authority_decision(
@@ -171,16 +184,17 @@ def solve_reservation_captcha(
         inference_ms=prediction.local_inference_ms,
         request_ms=prediction.local_request_ms,
         fallback_reason=None,
-        settings=settings,
+        settings=runtime_settings,
     )
     if decision.source != "v6":
         return _solve_with_fallback(
             image_path,
-            settings,
             decision_id=decision.decision_id,
             fallback_reason=decision.fallback_reason,
             prediction=prediction,
             fallback_solver=fallback_solver,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
         )
     logger.info(
         "captcha_authority_v6_selected event_id=%s decision_id=%s request_ms=%.3f",
@@ -209,15 +223,18 @@ def solve_reservation_captcha(
 
 def _solve_with_fallback(
     image_path: Path,
-    settings: Settings,
     *,
     decision_id: str,
     fallback_reason: str | None,
     prediction: CaptchaAuthorityResult | None = None,
-    fallback_solver: Callable[[Path, Settings], str] = solve_normal_captcha,
+    fallback_solver: CaptchaFallbackSolver = solve_normal_captcha,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
 ) -> CaptchaAuthorityResult:
     return CaptchaAuthorityResult(
-        answer=fallback_solver(image_path, settings),
+        answer=fallback_solver(
+            image_path, reservation_settings=reservation_settings, captcha_settings=captcha_settings
+        ),
         source="2captcha",
         decision_id=decision_id,
         fallback_reason=fallback_reason,
@@ -225,15 +242,11 @@ def _solve_with_fallback(
         local_inference_ms=prediction.local_inference_ms if prediction else None,
         mean_confidence=prediction.mean_confidence if prediction else None,
         min_char_confidence=prediction.min_char_confidence if prediction else None,
-        sequence_confidence_product=(
-            prediction.sequence_confidence_product if prediction else None
-        ),
+        sequence_confidence_product=prediction.sequence_confidence_product if prediction else None,
         local_queue_wait_ms=prediction.local_queue_wait_ms if prediction else None,
         local_preprocess_ms=prediction.local_preprocess_ms if prediction else None,
         local_persist_ms=prediction.local_persist_ms if prediction else None,
-        local_service_total_ms=(
-            prediction.local_service_total_ms if prediction else None
-        ),
+        local_service_total_ms=prediction.local_service_total_ms if prediction else None,
         local_cached=prediction.local_cached if prediction else None,
         local_coalesced=prediction.local_coalesced if prediction else None,
     )
@@ -241,11 +254,11 @@ def _solve_with_fallback(
 
 def _predict_v6(
     image_path: Path,
-    settings: Settings,
     *,
     event_id: str,
     metadata: dict[str, Any],
     timeout_ms: int,
+    captcha_settings: CaptchaSettings,
 ) -> CaptchaAuthorityResult:
     payload = json.dumps(
         {
@@ -255,7 +268,7 @@ def _predict_v6(
         }
     ).encode("utf-8")
     request = Request(
-        f"{settings.captcha.captcha_shadow_url.rstrip('/')}/v1/predict/authority",
+        f"{captcha_settings.captcha_shadow_url.rstrip('/')}/v1/predict/authority",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -295,9 +308,7 @@ def _predict_v6(
         local_inference_ms=_required_float(selected, "inference_ms"),
         mean_confidence=_required_confidence(selected, "mean_confidence"),
         min_char_confidence=_required_confidence(selected, "min_char_confidence"),
-        sequence_confidence_product=_required_confidence(
-            selected, "sequence_confidence_product"
-        ),
+        sequence_confidence_product=_required_confidence(selected, "sequence_confidence_product"),
         local_queue_wait_ms=_optional_float(telemetry, "queue_wait_ms"),
         local_preprocess_ms=_optional_float(telemetry, "preprocess_ms"),
         local_persist_ms=_optional_float(telemetry, "persist_ms"),

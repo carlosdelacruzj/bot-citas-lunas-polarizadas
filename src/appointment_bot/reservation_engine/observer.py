@@ -11,7 +11,10 @@ from pathlib import Path
 from uuid import uuid4
 
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
@@ -56,16 +59,15 @@ logger = logging.getLogger(__name__)
 
 
 def run_observer_with_report(
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     cancel_event: threading.Event | None = None,
     capture_captcha_samples: bool = True,
     should_continue_captcha_sampling: Callable[[], bool] | None = None,
-    on_check: Callable[
-        [AvailabilityResult, Path | None, int, int | None],
-        None,
-    ]
-    | None = None,
+    on_check: Callable[[AvailabilityResult, Path | None, int, int | None], None] | None = None,
     ports: ReservationEnginePorts,
 ) -> RunReport:
     run_id = f"observer-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
@@ -75,21 +77,22 @@ def run_observer_with_report(
     error_screenshot_path = None
 
     recorder = ports.runs.create_video(
-        settings,
         order_id=run_id,
         client_name="observer",
         started_at=started_at_dt,
+        evidence_settings=evidence_settings,
     )
     try:
         with open_page(
-            settings,
             video_dir=recorder.record_video_dir if recorder is not None else None,
-            video_width=settings.evidence.client_video_width,
-            video_height=settings.evidence.client_video_height,
+            video_width=evidence_settings.client_video_width,
+            video_height=evidence_settings.client_video_height,
             video_path_callback=recorder.capture_source_path if recorder is not None else None,
+            runtime_settings=runtime_settings,
+            evidence_settings=evidence_settings,
         ) as page:
             try:
-                login(page, settings)
+                login(page, reservation_settings=reservation_settings)
                 page = click_program_action(page, observer_read_only=True)
                 page = open_hidden_appointment_panel_for_observer(
                     page,
@@ -97,7 +100,6 @@ def run_observer_with_report(
                 )
                 result, result_screenshot = _monitor_observer(
                     page,
-                    settings,
                     cancel_event,
                     on_check,
                     run_id=run_id,
@@ -105,6 +107,10 @@ def run_observer_with_report(
                     should_continue_captcha_sampling=should_continue_captcha_sampling,
                     captcha_authority=ports.captcha,
                     alert_sink=ports.alerts,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
                 )
                 if result_screenshot is not None:
                     screenshot_paths.insert(0, result_screenshot)
@@ -123,11 +129,9 @@ def run_observer_with_report(
                     screenshot_paths=[str(path) for path in screenshot_paths] or None,
                 )
             except Exception:
-                if settings.evidence.screenshot_on_error:
+                if evidence_settings.screenshot_on_error:
                     error_screenshot_path = _save_sanitized_observer_screenshot(
-                        page,
-                        settings,
-                        "observer-error-panel-citas",
+                        page, "observer-error-panel-citas", evidence_settings=evidence_settings
                     )
                 raise
     except Exception as exc:
@@ -153,26 +157,30 @@ def run_observer_with_report(
                 details={**(report.details or {}), "video_path": str(video_path)},
             )
             logger.info("Observer session video saved: %s", video_path)
-    return ports.runs.finalize_report(report, settings, started_at_dt=started_at_dt)
+    return ports.runs.finalize_report(
+        report,
+        started_at_dt=started_at_dt,
+        runtime_settings=runtime_settings,
+        evidence_settings=evidence_settings,
+    )
 
 
 def _monitor_observer(
     page,
-    settings: Settings,
     cancel_event: threading.Event | None = None,
-    on_check: Callable[
-        [AvailabilityResult, Path | None, int, int | None],
-        None,
-    ]
-    | None = None,
+    on_check: Callable[[AvailabilityResult, Path | None, int, int | None], None] | None = None,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     run_id: str,
     capture_captcha_samples: bool,
     should_continue_captcha_sampling: Callable[[], bool] | None,
     captcha_authority: CaptchaAuthority,
     alert_sink: AlertSink,
 ) -> tuple[AvailabilityResult, Path | None]:
-    deadline = time.monotonic() + settings.reservation.monitor_window_seconds
+    deadline = time.monotonic() + reservation_settings.monitor_window_seconds
     attempt = 1
     screenshot_path = None
 
@@ -188,21 +196,22 @@ def _monitor_observer(
         try:
             page = select_available_site_for_observer(
                 page,
-                required_site=settings.runtime.observer_required_site,
-                timeout=settings.reservation.postback_timeout_seconds * 1_000,
+                required_site=runtime_settings.observer_required_site,
+                timeout=reservation_settings.postback_timeout_seconds * 1_000,
             )
         except AppointmentOptionsNotRefreshed as exc:
             return AvailabilityResult(status="unknown", message=str(exc)), screenshot_path
         result = read_appointment_availability(
             page,
             include_person=False,
-            timeout=settings.reservation.read_timeout_seconds * 1_000,
+            timeout=reservation_settings.read_timeout_seconds * 1_000,
         )
         if result.status == "unavailable":
             reload_result = _reload_and_recheck_observer_availability(
                 page,
-                settings,
                 cancel_event=cancel_event,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
             )
             if reload_result is not None:
                 result = reload_result
@@ -218,18 +227,20 @@ def _monitor_observer(
                 page,
                 allow_hidden=True,
                 include_person=False,
-                timeout=settings.reservation.postback_timeout_seconds * 1_000,
+                timeout=reservation_settings.postback_timeout_seconds * 1_000,
             )
             if result.status == "available" and capture_captcha_samples:
                 captcha_paths, shadow_event_ids = _collect_observer_captcha_samples(
                     page,
-                    settings,
                     cancel_event,
                     run_id=run_id,
                     availability_details=dict(result.details or {}),
                     should_continue=should_continue_captcha_sampling,
                     captcha_authority=captcha_authority,
                     alert_sink=alert_sink,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
                 )
                 if captcha_paths:
                     details = dict(result.details or {})
@@ -241,12 +252,12 @@ def _monitor_observer(
                         message=result.message,
                         details=details,
                     )
-                screenshot_path = _save_available_observer_screenshot(page, settings)
+                screenshot_path = _save_available_observer_screenshot(
+                    page, evidence_settings=evidence_settings
+                )
                 if screenshot_path is not None:
                     archived_path = archive_unique_slot_capture(
-                        settings,
-                        result.details or {},
-                        screenshot_path,
+                        result.details or {}, screenshot_path, evidence_settings=evidence_settings
                     )
                     if archived_path is None:
                         logger.warning("Could not archive observer slot screenshot immediately")
@@ -257,8 +268,8 @@ def _monitor_observer(
         if result.status not in {"unavailable", "partial"}:
             return result, screenshot_path
         if (
-            settings.reservation.monitor_window_seconds <= 0
-            or attempt >= settings.reservation.monitor_max_attempts
+            reservation_settings.monitor_window_seconds <= 0
+            or attempt >= reservation_settings.monitor_max_attempts
         ):
             if on_check is not None:
                 on_check(result, screenshot_path, attempt, None)
@@ -269,8 +280,8 @@ def _monitor_observer(
             return result, screenshot_path
         wait_seconds = min(
             random.randint(
-                settings.reservation.monitor_interval_min_seconds,
-                settings.reservation.monitor_interval_max_seconds,
+                reservation_settings.monitor_interval_min_seconds,
+                reservation_settings.monitor_interval_max_seconds,
             ),
             max(1, int(remaining)),
         )
@@ -294,15 +305,16 @@ def _monitor_observer(
 
 def _reload_and_recheck_observer_availability(
     page,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
     cancel_event: threading.Event | None = None,
 ) -> AvailabilityResult | None:
     logger.info("No slots detected by observer; reloading before confirming unavailable result")
     try:
         page.reload(
             wait_until="domcontentloaded",
-            timeout=settings.reservation.postback_timeout_seconds * 1_000,
+            timeout=reservation_settings.postback_timeout_seconds * 1_000,
         )
         page = click_program_action(page, observer_read_only=True)
         page = open_hidden_appointment_panel_for_observer(
@@ -311,13 +323,13 @@ def _reload_and_recheck_observer_availability(
         )
         page = select_available_site_for_observer(
             page,
-            required_site=settings.runtime.observer_required_site,
-            timeout=settings.reservation.postback_timeout_seconds * 1_000,
+            required_site=runtime_settings.observer_required_site,
+            timeout=reservation_settings.postback_timeout_seconds * 1_000,
         )
         result = read_appointment_availability(
             page,
             include_person=False,
-            timeout=settings.reservation.read_timeout_seconds * 1_000,
+            timeout=reservation_settings.read_timeout_seconds * 1_000,
         )
     except PortalContractChanged:
         raise
@@ -344,41 +356,35 @@ def _reload_and_recheck_observer_availability(
 
 
 def _save_sanitized_observer_screenshot(
-    page,
-    settings: Settings,
-    label: str,
-    *,
-    selectors: list[str] | None = None,
+    page, label: str, *, evidence_settings: EvidenceSettings, selectors: list[str] | None = None
 ) -> Path | None:
     if selectors:
         return save_result_screenshot(
-            page,
-            settings,
-            label,
-            selectors=selectors,
+            page, label, selectors=selectors, evidence_settings=evidence_settings
         )
-    return save_screenshot(page, settings, label)
+    return save_screenshot(page, label, evidence_settings=evidence_settings)
 
 
-def _save_available_observer_screenshot(page, settings: Settings) -> Path | None:
+def _save_available_observer_screenshot(
+    page, *, evidence_settings: EvidenceSettings
+) -> Path | None:
     label = "observer-cupo-disponible"
     path = save_revealed_centered_modal_screenshot(
-        page,
-        settings,
-        label,
-        APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+        page, label, APPOINTMENT_PANEL_SCREENSHOT_SELECTORS, evidence_settings=evidence_settings
     )
     if path is None:
         logger.warning("Falling back to a full-page observer availability screenshot")
-        return save_screenshot(page, settings, label)
+        return save_screenshot(page, label, evidence_settings=evidence_settings)
     return path
 
 
 def _collect_observer_captcha_samples(
     page,
-    settings: Settings,
     cancel_event: threading.Event | None,
     *,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     run_id: str,
     availability_details: dict[str, object],
     should_continue: Callable[[], bool] | None,
@@ -390,7 +396,7 @@ def _collect_observer_captcha_samples(
     if has_reservation_math_captcha(page):
         logger.info("Skipping observer model sampling for HTML math captcha")
         return captcha_paths, shadow_event_ids
-    sample_limit = settings.captcha.observer_captcha_sample_limit
+    sample_limit = captcha_settings.observer_captcha_sample_limit
     for sample_number in range(1, sample_limit + 1):
         if cancel_event is not None and cancel_event.is_set():
             break
@@ -405,10 +411,12 @@ def _collect_observer_captcha_samples(
             captcha_audit: dict[str, object] = {}
             save_reservation_captcha_image(
                 page,
-                settings,
                 f"observer-captcha-sample-{sample_number}",
                 captcha_audit=captcha_audit,
                 alert_sink=alert_sink,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
+                evidence_settings=evidence_settings,
             )
             original_path = captcha_audit.get("captcha_original_html_path")
             if not original_path:
@@ -449,7 +457,7 @@ def _collect_observer_captcha_samples(
             break
         if cancel_event is not None and cancel_event.is_set():
             break
-        if not refresh_reservation_captcha(page, settings):
+        if not refresh_reservation_captcha(page, reservation_settings=reservation_settings):
             logger.warning("Could not refresh observer CAPTCHA after sample %s", sample_number)
             break
 

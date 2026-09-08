@@ -6,7 +6,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import (
     AvailabilityResult,
     RunReport,
@@ -21,14 +22,16 @@ from appointment_bot.worker.execution import continuous_order_settings
 class WorkerStateCallbacks:
     def __init__(
         self,
-        settings: Settings,
         *,
         update_state: Callable[..., None],
         reset_errors: Callable[..., None],
         extend_hot_window_after_availability: Callable[[], None],
         record_window_metric: Callable[[RunReport], None],
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
     ) -> None:
-        self.settings = settings
+        self.runtime_settings = runtime_settings
+        self.reservation_settings = reservation_settings
         self._update_state = update_state
         self._reset_errors = reset_errors
         self._extend_hot_window_after_availability = extend_hot_window_after_availability
@@ -51,10 +54,7 @@ class WorkerStateCallbacks:
             self._extend_hot_window_after_availability()
 
     def on_order_check(
-        self,
-        result: AvailabilityResult,
-        attempt: int,
-        next_check_seconds: int | None,
+        self, result: AvailabilityResult, attempt: int, next_check_seconds: int | None
     ) -> None:
         if result.status not in {"error", "unknown", "reservation_unconfirmed"}:
             self._reset_errors(clear_session=False)
@@ -62,28 +62,26 @@ class WorkerStateCallbacks:
         self._update_state(
             phase=f"monitoring_observer_{monitoring_mode}",
             last_check_at=_now(),
-            next_check_at=(_future(next_check_seconds) if next_check_seconds is not None else None),
+            next_check_at=_future(next_check_seconds) if next_check_seconds is not None else None,
         )
         self._notify_immediate_availability_once(result)
 
-    def on_rapid_order_start(
-        self,
-        order: ServiceOrderCandidate | ServiceOrderRuntime,
-    ) -> None:
-        order_settings = continuous_order_settings(self.settings, order)
+    def on_rapid_order_start(self, order: ServiceOrderCandidate | ServiceOrderRuntime) -> None:
+        order_settings = continuous_order_settings(
+            order,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=self.reservation_settings,
+        )
         self._update_state(
             phase="rapid_queue",
             current_order_id=order.order_id,
-            masked_account=order_settings.reservation.safe_username,
+            masked_account=order_settings.safe_username,
             session_started_at=_now(),
             next_check_at=_now(),
         )
 
     def on_rapid_order_check(
-        self,
-        result: AvailabilityResult,
-        attempt: int,
-        next_check_seconds: int | None,
+        self, result: AvailabilityResult, attempt: int, next_check_seconds: int | None
     ) -> None:
         self.on_order_check(result, attempt, next_check_seconds)
 
@@ -98,7 +96,7 @@ class WorkerStateCallbacks:
             self._reset_errors(clear_session=False)
         self._update_state(
             last_check_at=_now(),
-            next_check_at=(_future(next_check_seconds) if next_check_seconds is not None else None),
+            next_check_at=_future(next_check_seconds) if next_check_seconds is not None else None,
         )
         if result.status != "available":
             if result.status == "unavailable":
@@ -114,9 +112,9 @@ class WorkerStateCallbacks:
         if result.status not in {"available", "partial"}:
             return
         details = result.details or {}
-        if details.get("orden") and not details.get("canonical_slot_capture"):
+        if details.get("orden") and (not details.get("canonical_slot_capture")):
             return
-        if details.get("fetch_probe") and not details.get("selected_slot_verified"):
+        if details.get("fetch_probe") and (not details.get("selected_slot_verified")):
             return
         signature = _availability_result_signature(result)
         if signature in self._availability_alert_signatures:
@@ -129,9 +127,7 @@ class WorkerStateCallbacks:
 def _availability_result_signature(result: AvailabilityResult) -> str:
     details = result.details or {}
     relevant = {
-        key: details.get(key)
-        for key in ("sede", "fecha", "hora")
-        if details.get(key) is not None
+        key: details.get(key) for key in ("sede", "fecha", "hora") if details.get(key) is not None
     }
     payload = json.dumps(_normalize_signature_value(relevant), ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()

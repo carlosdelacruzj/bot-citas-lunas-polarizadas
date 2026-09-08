@@ -7,7 +7,7 @@ from typing import Any
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.order_priority import (
     EXCLUSIVE_PRIORITY_THRESHOLD,
     FOCUSED_PRIORITY_THRESHOLD,
@@ -34,7 +34,7 @@ from appointment_bot.db.order_contacts import _service_order_identity
 from appointment_bot.utils.sanitization import sanitize_text
 
 
-def cleanup_expired_service_order_claims(settings: Settings | None = None) -> int:
+def cleanup_expired_service_order_claims(settings: RuntimeSettings | None = None) -> int:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -55,7 +55,7 @@ def update_service_order_priority(
     order_id: str,
     priority: int,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if priority < 0:
         raise ValueError("priority must be zero or greater.")
@@ -107,7 +107,7 @@ def update_service_order_reservation_constraints(
     maximum_reservation_date: str | date | None,
     allowed_weekdays: Iterable[int] | None,
     excluded_date_ranges: Iterable[dict[str, object] | Iterable[object]] | None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if minimum_reservation_hour is not None:
         raise ValueError("Las restricciones horarias ya no se aceptan.")
@@ -158,7 +158,7 @@ def claim_service_order(
     *,
     owner_token: str,
     lease_seconds: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     """Atomically claim an eligible order for one worker."""
     if not owner_token.strip():
@@ -183,7 +183,7 @@ def release_service_order_claim(
     order_id: str,
     *,
     owner_token: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     """Release a lease only when it is still owned by the caller."""
     if not owner_token.strip():
@@ -210,7 +210,7 @@ def renew_service_order_claim(
     *,
     owner_token: str,
     lease_seconds: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -233,7 +233,7 @@ def service_order_claim_owned(
     order_id: str,
     *,
     owner_token: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -256,7 +256,7 @@ def _update_applicant_name_for_order(
     order_id: str,
     full_name: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override: Connection | None = None,
 ) -> bool:
     full_name = " ".join(full_name.split())
@@ -285,7 +285,7 @@ def _update_applicant_name_for_order(
         return bool(cursor.rowcount)
 
 
-def order_backoff_seconds(order_id: str, *, settings: Settings | None = None) -> int:
+def order_backoff_seconds(order_id: str, *, settings: RuntimeSettings | None = None) -> int:
     row = _order_state_row(order_id, settings=settings)
     if row is None or not row["next_allowed_at"]:
         return 0
@@ -298,7 +298,7 @@ def order_backoff_seconds(order_id: str, *, settings: Settings | None = None) ->
 
 def list_pending_order_backoffs(
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[dict[str, Any]]:
     settings = _settings(settings)
     init_database(settings)
@@ -336,7 +336,7 @@ def list_pending_order_backoffs(
 def release_order_backoffs(
     order_ids: Iterable[str],
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> tuple[str, ...]:
     normalized_order_ids = tuple(dict.fromkeys(str(order_id).strip() for order_id in order_ids))
     normalized_order_ids = tuple(order_id for order_id in normalized_order_ids if order_id)
@@ -371,7 +371,7 @@ def release_order_backoffs(
     return tuple(order_id for order_id in normalized_order_ids if order_id in released)
 
 
-def order_reservation_pending(order_id: str, *, settings: Settings | None = None) -> bool:
+def order_reservation_pending(order_id: str, *, settings: RuntimeSettings | None = None) -> bool:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -395,7 +395,7 @@ def order_reservation_pending(order_id: str, *, settings: Settings | None = None
 def mark_order_submission_pending(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     _set_order_submission_state(
         order_id,
@@ -408,7 +408,7 @@ def mark_order_submission_pending(
 def mark_order_submission_intent(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     _set_order_submission_state(
         order_id,
@@ -421,7 +421,7 @@ def mark_order_submission_intent(
 def clear_order_submission_state(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -439,7 +439,7 @@ def clear_order_submission_state(
 def order_submission_age_seconds(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int | None:
     row = _order_state_row(order_id, settings=settings)
     if row is None or row["last_status"] not in {
@@ -455,7 +455,9 @@ def order_submission_age_seconds(
     return max(0, int((datetime.now(UTC) - started_at).total_seconds()))
 
 
-def set_order_paused(order_id: str, paused: bool, *, settings: Settings | None = None) -> None:
+def set_order_paused(
+    order_id: str, paused: bool, *, settings: RuntimeSettings | None = None,
+) -> None:
     settings = _settings(settings)
     init_database(settings)
     now = _now()
@@ -498,7 +500,7 @@ def set_order_paused(order_id: str, paused: bool, *, settings: Settings | None =
 def has_active_child_service_orders(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -519,7 +521,7 @@ def has_active_child_service_orders(
 def record_invalid_credential_failure(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> tuple[int, bool]:
     settings = _settings(settings)
     init_database(settings)
@@ -563,7 +565,7 @@ def mark_order_done(
     order_id: str,
     *,
     status: str = "registered",
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -645,7 +647,7 @@ def update_order_state(
     message: str,
     exit_code: int,
     backoff_seconds: int | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -696,7 +698,7 @@ def update_order_state(
         )
 
 
-def _order_state_row(order_id: str, *, settings: Settings | None) -> dict[str, Any] | None:
+def _order_state_row(order_id: str, *, settings: RuntimeSettings | None) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -715,7 +717,7 @@ def _set_order_submission_state(
     status: OrderStateStatus,
     message: str,
     *,
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)

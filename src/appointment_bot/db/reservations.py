@@ -5,7 +5,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
     _connection,
@@ -22,7 +22,7 @@ def replace_confirmed_reservation_evidence(
     order_id: str,
     screenshot_path: Path,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> Path:
     settings = _settings(settings)
     init_database(settings)
@@ -56,7 +56,7 @@ def create_reservation_attempt(
     order_id: str,
     *,
     details: dict[str, Any] | None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -90,7 +90,7 @@ def create_reservation_attempt(
 def mark_reservation_attempt_pending(
     attempt_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -112,7 +112,7 @@ def resolve_reservation_attempt(
     *,
     run_id: str | None = None,
     evidence_path: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if status not in {"confirmed", "rejected", "unknown"}:
         raise ValueError(f"Invalid reservation attempt status: {status}")
@@ -137,7 +137,7 @@ def resolve_reservation_attempt(
 def get_active_reservation_attempt(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from http import HTTPStatus
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_runtime_settings, load_whatsapp_settings
 from appointment_bot.db.appointment_reminder_control import (
     REMINDER_LEAD_DAYS,
     REMINDER_MODES,
@@ -23,8 +23,11 @@ logger = logging.getLogger(__name__)
 
 def appointment_reminders_payload() -> tuple[HTTPStatus, dict[str, object]]:
     try:
-        settings = load_settings(require_login=False)
-        return HTTPStatus.OK, appointment_reminder_status_payload(settings)
+        runtime_settings = load_runtime_settings(require_login=False)
+        whatsapp_settings = load_whatsapp_settings(require_login=False)
+        return HTTPStatus.OK, appointment_reminder_status_payload(
+            runtime_settings=runtime_settings, whatsapp_settings=whatsapp_settings
+        )
     except (RuntimeError, ValueError) as exc:
         logger.exception("Could not build appointment reminder status")
         return HTTPStatus.BAD_REQUEST, error_payload(
@@ -38,7 +41,8 @@ def update_appointment_reminders_payload(
     *,
     requested_by: str | None,
 ) -> tuple[HTTPStatus, dict[str, object]]:
-    settings = load_settings(require_login=False)
+    runtime_settings = load_runtime_settings(require_login=False)
+    whatsapp_settings = load_whatsapp_settings(require_login=False)
     mode = str(body.get("mode") or "").strip().lower()
     lead_days = body.get("lead_days")
     expected_revision = body.get("expected_revision")
@@ -58,7 +62,9 @@ def update_appointment_reminders_payload(
         and not isinstance(lead_days, bool)
         and lead_days > 1
         and reminder_template_mentions_tomorrow(
-            get_current_appointment_reminder_template(settings).message_template
+            get_current_appointment_reminder_template(
+                runtime_settings=runtime_settings
+            ).message_template
         )
     ):
         errors["lead_days"] = (
@@ -75,13 +81,17 @@ def update_appointment_reminders_payload(
             lead_days=int(lead_days),
             expected_revision=int(expected_revision),
             updated_by=requested_by or "system",
-            settings=settings,
+            settings=runtime_settings,
         )
     except AppointmentReminderControlConflict as exc:
         payload = error_payload("stale", str(exc))
-        payload["current"] = appointment_reminder_status_payload(settings)
+        payload["current"] = appointment_reminder_status_payload(
+            runtime_settings=runtime_settings, whatsapp_settings=whatsapp_settings
+        )
         return HTTPStatus.CONFLICT, payload
-    return HTTPStatus.OK, appointment_reminder_status_payload(settings)
+    return HTTPStatus.OK, appointment_reminder_status_payload(
+        runtime_settings=runtime_settings, whatsapp_settings=whatsapp_settings
+    )
 
 
 __all__ = ["appointment_reminders_payload", "update_appointment_reminders_payload"]

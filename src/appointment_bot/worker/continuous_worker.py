@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import logging
 import threading
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import UTC, date, datetime, timedelta
 
-from appointment_bot.config import Settings
-from appointment_bot.core.models import (
-    RunReport,
-    ServiceOrderCandidate,
-    ServiceOrderRuntime,
-)
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.db.opportunity_bursts import reconcile_stale_opportunity_bursts
 from appointment_bot.db.orders import (
     claim_service_order,
@@ -21,14 +21,8 @@ from appointment_bot.db.orders import (
     release_service_order_claim,
 )
 from appointment_bot.db.runs import record_observer_window_metric
-from appointment_bot.db.worker_commands import (
-    claim_next_worker_command,
-    complete_worker_command,
-)
-from appointment_bot.db.worker_state import (
-    get_worker_state,
-    update_worker_state,
-)
+from appointment_bot.db.worker_commands import claim_next_worker_command, complete_worker_command
+from appointment_bot.db.worker_state import get_worker_state, update_worker_state
 from appointment_bot.reservation_engine.observer import run_observer_with_report
 from appointment_bot.services.cleanup import cleanup_old_files
 from appointment_bot.services.notifier import send_telegram_message
@@ -40,30 +34,18 @@ from appointment_bot.worker.execution import (
     continuous_settings,
     observer_confirmation_settings,
 )
-from appointment_bot.worker.lease import (
-    LEASE_LOST_REASON,
-    LEASE_UNAVAILABLE_REASON,
-    WorkerLease,
-)
+from appointment_bot.worker.lease import LEASE_LOST_REASON, LEASE_UNAVAILABLE_REASON, WorkerLease
 from appointment_bot.worker.observer_results import (
     decide_observer_confirmation,
     decide_observer_report,
     notify_confirmed_observer_availability,
 )
 from appointment_bot.worker.opportunity_burst import OpportunityBurstCoordinator
-from appointment_bot.worker.order_execution import (
-    SERVICE_ORDER_LEASE_SECONDS,
-    run_service_order,
-)
+from appointment_bot.worker.order_execution import SERVICE_ORDER_LEASE_SECONDS, run_service_order
 from appointment_bot.worker.order_results import handle_observer_order_report
-from appointment_bot.worker.post_reservation_review import (
-    review_confirmed_orders_after_queue,
-)
+from appointment_bot.worker.post_reservation_review import review_confirmed_orders_after_queue
 from appointment_bot.worker.queue_traversal import run_rapid_queue_with_settings
-from appointment_bot.worker.recovery import (
-    portal_defense_signal,
-    recovery_wait_seconds,
-)
+from appointment_bot.worker.recovery import portal_defense_signal, recovery_wait_seconds
 from appointment_bot.worker.reservation_engine_ports import build_reservation_engine_ports
 from appointment_bot.worker.state_callbacks import WorkerStateCallbacks
 from appointment_bot.worker.windows_runtime import (
@@ -79,16 +61,30 @@ logger = logging.getLogger(__name__)
 
 
 class ContinuousWorker:
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
+    def __init__(
+        self,
+        *,
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
+        captcha_settings: CaptchaSettings,
+        evidence_settings: EvidenceSettings,
+        telegram_settings: TelegramSettings,
+    ) -> None:
+        self.runtime_settings = runtime_settings
+        self.reservation_settings = reservation_settings
+        self.captcha_settings = captcha_settings
+        self.evidence_settings = evidence_settings
+        self.telegram_settings = telegram_settings
         self._stop_event = threading.Event()
         self._cancel_event = threading.Event()
-        self._paused = get_worker_state(settings).paused
+        self._paused = get_worker_state(runtime_settings).paused
         self._running = False
         self._starting = False
         self._guard = threading.RLock()
         self._ready_event = threading.Event()
-        self._worker_lease = WorkerLease(settings, on_lost=self._on_worker_lease_lost)
+        self._worker_lease = WorkerLease(
+            on_lost=self._on_worker_lease_lost, runtime_settings=runtime_settings
+        )
         self._last_cleanup_date: date | None = None
         self._shutdown_reason: str | None = None
         self._hot_window_extended_until: datetime | None = None
@@ -98,26 +94,30 @@ class ContinuousWorker:
         self._compatible_handoff_order_ids: tuple[str, ...] = ()
         self._opportunity_burst_started = False
         self._opportunity_burst_recovery_report: RunReport | None = None
-        self._deferred_order_reports = DeferredOrderReports(settings)
+        self._deferred_order_reports = DeferredOrderReports(
+            runtime_settings=runtime_settings, telegram_settings=telegram_settings
+        )
         self._reservation_engine_ports = build_reservation_engine_ports()
         self._state_callbacks = WorkerStateCallbacks(
-            settings,
             update_state=self._update_state,
             reset_errors=self._reset_errors,
             extend_hot_window_after_availability=self._extend_hot_window_after_availability,
             record_window_metric=lambda report: self._record_window_metric(
-                report,
-                source="observer",
+                report, source="observer"
             ),
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
         )
         self._error_policy = WorkerErrorPolicy(
-            settings,
             increase_errors=self._increase_errors,
             reset_errors=self._reset_errors,
             wait_retry=self._wait_retry,
             wait_retry_phase=lambda seconds, phase: self._wait_retry(seconds, phase=phase),
             wait_for_backoff=self._wait_for_backoff,
             stop_event=self._stop_event,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            telegram_settings=telegram_settings,
         )
 
     @property
@@ -134,27 +134,22 @@ class ContinuousWorker:
         return self._ready_event.wait(timeout)
 
     def status(self) -> dict[str, object]:
-        state = asdict(get_worker_state(self.settings))
+        state = asdict(get_worker_state(self.runtime_settings))
         state["worker_running"] = self.is_running
         state["worker_starting"] = self._starting
-        state["continuous_worker_enabled"] = self.settings.runtime.continuous_worker_enabled
+        state["continuous_worker_enabled"] = self.runtime_settings.continuous_worker_enabled
         return state
 
     def pause(self) -> dict[str, object]:
         with self._guard:
             self._paused = True
             self._cancel_event.set()
-            self._update_state(
-                phase="pausing",
-                paused=True,
-                next_check_at=None,
-            )
+            self._update_state(phase="pausing", paused=True, next_check_at=None)
         return self.status()
 
     def resume(self) -> dict[str, object]:
         with self._guard:
             self._paused = False
-            # El evento se limpia cuando el ciclo pausado devolvio el control.
             self._update_state(
                 phase="starting",
                 paused=False,
@@ -179,7 +174,6 @@ class ContinuousWorker:
                 raise RuntimeError("Continuous worker is already running.")
             self._starting = True
             self._shutdown_reason = None
-
         try:
             if not self._start_worker_loop():
                 return
@@ -199,12 +193,11 @@ class ContinuousWorker:
                 self._shutdown_reason = LEASE_UNAVAILABLE_REASON
             logger.warning("Another host owns the continuous worker lease.")
             return False
-        cleaned_claims = cleanup_expired_service_order_claims(self.settings)
+        cleaned_claims = cleanup_expired_service_order_claims(self.runtime_settings)
         if cleaned_claims:
             logger.info("Released %s expired service order claim(s)", cleaned_claims)
         reconciled_bursts = reconcile_stale_opportunity_bursts(
-            datetime.now(UTC),
-            settings=self.settings,
+            datetime.now(UTC), settings=self.runtime_settings
         )
         if reconciled_bursts:
             logger.warning(
@@ -246,19 +239,18 @@ class ContinuousWorker:
         return False
 
     def _run_available_work(self) -> None:
-        orders = list_observer_orders(self.settings)
+        orders = list_observer_orders(self.runtime_settings)
         if orders:
             self._run_observer_order_block(orders)
             return
-        if list_active_orders(self.settings, include_constrained=False):
+        if list_active_orders(self.runtime_settings, include_constrained=False):
             self._wait_for_order_backoff_gap()
             return
         self._monitor_observer()
 
     def _run_observer_order_block(self, orders: list[ServiceOrderCandidate]) -> None:
         order = next(
-            (candidate for candidate in orders if self._claim_order(candidate.order_id)),
-            None,
+            (candidate for candidate in orders if self._claim_order(candidate.order_id)), None
         )
         if order is None:
             logger.info("All active service orders are currently leased")
@@ -288,12 +280,12 @@ class ContinuousWorker:
                 return
         if self._opportunity_burst_started:
             logger.info("Sequential opportunity handoff skipped after guarded burst")
-            if self._rapid_queue_follow_up_order_ids and self.settings.reservation.auto_reserve:
+            if self._rapid_queue_follow_up_order_ids and self.reservation_settings.auto_reserve:
                 self._run_rapid_queue(
                     target_order_ids=tuple(self._rapid_queue_follow_up_order_ids),
                     inter_order_delay_enabled=False,
                 )
-        elif self._compatible_handoff_order_ids and self.settings.reservation.auto_reserve:
+        elif self._compatible_handoff_order_ids and self.reservation_settings.auto_reserve:
             self._run_rapid_queue(
                 target_order_ids=self._compatible_handoff_order_ids,
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
@@ -301,7 +293,7 @@ class ContinuousWorker:
                 follow_up_order_ids=self._rapid_queue_follow_up_order_ids,
                 inter_order_delay_enabled=False,
             )
-        elif queue_requested and self.settings.reservation.auto_reserve:
+        elif queue_requested and self.reservation_settings.auto_reserve:
             self._run_rapid_queue(
                 initial_confirmed_reservations=self._rapid_queue_initial_confirmed,
                 initial_confirmed_order_ids=self._rapid_queue_initial_confirmed_order_ids,
@@ -325,7 +317,7 @@ class ContinuousWorker:
             try:
                 if not self._worker_lease.lost:
                     update_worker_state(
-                        self.settings,
+                        self.runtime_settings,
                         expected_owner_token=owner_token,
                         phase="stopped",
                         current_order_id=None,
@@ -346,18 +338,22 @@ class ContinuousWorker:
         *,
         preferred_burst_order_ids: tuple[str, ...] = (),
     ) -> bool:
-        previous_state = get_worker_state(self.settings)
-        order_settings = continuous_order_settings(self.settings, order)
+        previous_state = get_worker_state(self.runtime_settings)
+        order_settings = continuous_order_settings(
+            order,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=self.reservation_settings,
+        )
         if (
             previous_state.current_order_id not in {None, order.order_id}
             or previous_state.phase == "monitoring_observer"
             or (
                 previous_state.masked_account is not None
-                and previous_state.masked_account != order_settings.reservation.safe_username
+                and previous_state.masked_account != order_settings.safe_username
             )
         ):
             self._reset_errors()
-        backoff = order_backoff_seconds(order.order_id, settings=self.settings)
+        backoff = order_backoff_seconds(order.order_id, settings=self.runtime_settings)
         if backoff > 0:
             logger.info(
                 "Skipping observer order %s because it is in backoff for %s seconds",
@@ -365,17 +361,18 @@ class ContinuousWorker:
                 backoff,
             )
             return False
-
         self._set_session_state(
-            "monitoring_observer_normal",
-            order.order_id,
-            order_settings.reservation.safe_username,
+            "monitoring_observer_normal", order.order_id, order_settings.safe_username
         )
         burst = OpportunityBurstCoordinator(
-            self.settings,
             order,
             cancel_event=self._cancel_event,
             preferred_order_ids=preferred_burst_order_ids,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=self.reservation_settings,
+            captcha_settings=self.captcha_settings,
+            evidence_settings=self.evidence_settings,
+            telegram_settings=self.telegram_settings,
         )
 
         def on_order_check(result, attempt, next_check_seconds) -> None:
@@ -389,31 +386,31 @@ class ContinuousWorker:
                     )
             except Exception:
                 logger.exception(
-                    "Could not start opportunity burst for detector %s; "
-                    "the detector will continue normally",
+                    (
+                        "Could not start opportunity burst for detector %"
+                        "s; the detector will continue normally"
+                    ),
                     order.order_id,
                 )
 
         report = run_service_order(
-            order_settings,
             order,
             lease_owner=self._worker_lease.required_owner_token(),
             observer_mode=True,
             cancel_event=self._cancel_event,
             on_check=on_order_check,
             opportunity_context=burst.detector_context,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=order_settings,
+            captcha_settings=self.captcha_settings,
+            evidence_settings=self.evidence_settings,
+            telegram_settings=replace(self.telegram_settings, telegram_notify_unavailable=False),
         )
-        burst_result = burst.finish_detector(
-            report,
-            on_wait=self._worker_lease.ensure_owned,
-        )
+        burst_result = burst.finish_detector(report, on_wait=self._worker_lease.ensure_owned)
         self._opportunity_burst_started = burst_result.started
         for execution in burst_result.executions:
             self._defer_order_report_if_needed(execution.report)
-            self._record_window_metric(
-                execution.report,
-                source="opportunity_burst_order",
-            )
+            self._record_window_metric(execution.report, source="opportunity_burst_order")
         if burst_result.started:
             burst_summary = burst_result.summary_report()
             self._record_window_metric(burst_summary, source="opportunity_burst")
@@ -423,7 +420,13 @@ class ContinuousWorker:
         self._record_check(report)
         if self._maybe_recovery_backoff(report):
             return False
-        decision = handle_observer_order_report(self.settings, order, report)
+        decision = handle_observer_order_report(
+            order,
+            report,
+            runtime_settings=self.runtime_settings,
+            captcha_settings=self.captcha_settings,
+            telegram_settings=self.telegram_settings,
+        )
         self._maybe_pause_after_detection(report)
         if decision.reset_errors:
             self._reset_errors()
@@ -448,9 +451,11 @@ class ContinuousWorker:
                 session_started_at=None,
             )
             review_results = review_confirmed_orders_after_queue(
-                self.settings,
                 list(confirmed_order_ids),
                 cancel_event=self._cancel_event,
+                runtime_settings=self.runtime_settings,
+                reservation_settings=self.reservation_settings,
+                evidence_settings=self.evidence_settings,
             )
             self._deferred_order_reports.replace_reviewed_evidence(review_results)
         if decision.requires_error_handling:
@@ -469,7 +474,7 @@ class ContinuousWorker:
             order_id,
             owner_token=self._worker_lease.required_owner_token(),
             lease_seconds=SERVICE_ORDER_LEASE_SECONDS,
-            settings=self.settings,
+            settings=self.runtime_settings,
         )
 
     def _release_order(self, order_id: str) -> None:
@@ -477,14 +482,9 @@ class ContinuousWorker:
         if owner_token is None:
             return
         if not release_service_order_claim(
-            order_id,
-            owner_token=owner_token,
-            settings=self.settings,
+            order_id, owner_token=owner_token, settings=self.runtime_settings
         ):
-            logger.warning(
-                "Service order lease was no longer owned during release: %s",
-                order_id,
-            )
+            logger.warning("Service order lease was no longer owned during release: %s", order_id)
 
     def _run_rapid_queue(
         self,
@@ -497,13 +497,9 @@ class ContinuousWorker:
         inter_order_delay_enabled: bool = True,
     ) -> None:
         self._update_state(
-            phase="rapid_queue",
-            current_order_id=None,
-            masked_account=None,
-            session_started_at=None,
+            phase="rapid_queue", current_order_id=None, masked_account=None, session_started_at=None
         )
         report = run_rapid_queue_with_settings(
-            self.settings,
             initial_confirmed_reservations=initial_confirmed_reservations,
             initial_confirmed_order_ids=initial_confirmed_order_ids,
             cancel_event=self._cancel_event,
@@ -519,6 +515,11 @@ class ContinuousWorker:
             follow_up_order_ids=follow_up_order_ids,
             target_order_ids=target_order_ids,
             inter_order_delay_enabled=inter_order_delay_enabled,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=self.reservation_settings,
+            captcha_settings=self.captcha_settings,
+            evidence_settings=self.evidence_settings,
+            telegram_settings=self.telegram_settings,
         )
         confirmed = int((report.details or {}).get("confirmed_reservations", 0))
         review_results = (report.details or {}).get("post_reservation_reviews")
@@ -533,22 +534,25 @@ class ContinuousWorker:
             self._handle_rapid_queue_error(report)
 
     def _monitor_observer(self) -> None:
-        previous_state = get_worker_state(self.settings)
-        cycle_settings = continuous_settings(self.settings)
+        previous_state = get_worker_state(self.runtime_settings)
+        cycle_settings = continuous_settings(
+            runtime_settings=self.runtime_settings, reservation_settings=self.reservation_settings
+        )
         if previous_state.current_order_id is not None or (
             previous_state.masked_account is not None
-            and previous_state.masked_account != cycle_settings.reservation.safe_username
+            and previous_state.masked_account != cycle_settings.safe_username
         ):
             self._reset_errors()
-        self._set_session_state(
-            "monitoring_observer", None, cycle_settings.reservation.safe_username
-        )
+        self._set_session_state("monitoring_observer", None, cycle_settings.safe_username)
         report = run_observer_with_report(
-            cycle_settings,
             cancel_event=self._cancel_event,
             should_continue_captcha_sampling=self._observer_captcha_sampling_allowed,
             on_check=self._state_callbacks.on_observer_check,
             ports=self._reservation_engine_ports,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=cycle_settings,
+            captcha_settings=self.captcha_settings,
+            evidence_settings=self.evidence_settings,
         )
         self._record_check(report)
         if self._maybe_recovery_backoff(report):
@@ -564,8 +568,9 @@ class ContinuousWorker:
             self._update_state(availability_signature=None)
         if decision.notify_confirmed_report is not None:
             signature = notify_confirmed_observer_availability(
-                self.settings,
                 decision.notify_confirmed_report,
+                runtime_settings=self.runtime_settings,
+                telegram_settings=self.telegram_settings,
             )
             if signature is not None:
                 self._update_state(availability_signature=signature)
@@ -579,15 +584,21 @@ class ContinuousWorker:
 
     def _confirm_observer_availability(self) -> RunReport:
         return run_observer_with_report(
-            observer_confirmation_settings(self.settings),
             cancel_event=self._cancel_event,
             capture_captcha_samples=False,
             ports=self._reservation_engine_ports,
+            runtime_settings=self.runtime_settings,
+            reservation_settings=observer_confirmation_settings(
+                runtime_settings=self.runtime_settings,
+                reservation_settings=self.reservation_settings,
+            ),
+            captcha_settings=self.captcha_settings,
+            evidence_settings=self.evidence_settings,
         )
 
     def _observer_captcha_sampling_allowed(self) -> bool:
         try:
-            return not list_active_orders(self.settings, include_constrained=False)
+            return not list_active_orders(self.runtime_settings, include_constrained=False)
         except Exception as exc:
             logger.warning(
                 "Stopping observer CAPTCHA sampling because active orders could not be checked: %s",
@@ -596,9 +607,7 @@ class ContinuousWorker:
             return False
 
     def _handle_order_error(
-        self,
-        order: ServiceOrderCandidate | ServiceOrderRuntime,
-        report: RunReport,
+        self, order: ServiceOrderCandidate | ServiceOrderRuntime, report: RunReport
     ) -> None:
         self._error_policy.handle_order_error(order, report)
 
@@ -615,18 +624,12 @@ class ContinuousWorker:
 
     def _wait_for_backoff(self, order: ServiceOrderRuntime, seconds: int) -> None:
         self._update_state(
-            phase="backoff",
-            current_order_id=order.order_id,
-            next_check_at=_future(seconds),
+            phase="backoff", current_order_id=order.order_id, next_check_at=_future(seconds)
         )
         self._interruptible_wait(seconds)
 
     def _wait_retry(self, seconds: int, *, phase: str = "retry_wait") -> None:
-        self._update_state(
-            phase=phase,
-            session_started_at=None,
-            next_check_at=_future(seconds),
-        )
+        self._update_state(phase=phase, session_started_at=None, next_check_at=_future(seconds))
         self._interruptible_wait(seconds)
 
     def _wait_while_paused(self) -> bool:
@@ -644,10 +647,7 @@ class ContinuousWorker:
                 self._cancel_event.clear()
                 return False
             self._update_state(
-                phase="paused",
-                paused=True,
-                session_started_at=None,
-                next_check_at=None,
+                phase="paused", paused=True, session_started_at=None, next_check_at=None
             )
             self._worker_lease.ensure_owned()
             self._stop_event.wait(1)
@@ -655,7 +655,7 @@ class ContinuousWorker:
 
     def _interruptible_wait(self, seconds: int) -> None:
         deadline = datetime.now() + timedelta(seconds=max(0, seconds))
-        while datetime.now() < deadline and not self._stop_event.is_set():
+        while datetime.now() < deadline and (not self._stop_event.is_set()):
             if self._daily_cutoff_reached():
                 return
             self._worker_lease.ensure_owned()
@@ -670,7 +670,7 @@ class ContinuousWorker:
         owner_token = self._worker_lease.owner_token
         if owner_token is None:
             return False
-        command = claim_next_worker_command(owner_token=owner_token, settings=self.settings)
+        command = claim_next_worker_command(owner_token=owner_token, settings=self.runtime_settings)
         if command is None:
             return False
         try:
@@ -680,10 +680,12 @@ class ContinuousWorker:
                 command.command_id,
                 status="failed",
                 error_message=str(exc),
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
             raise
-        complete_worker_command(command.command_id, status="applied", settings=self.settings)
+        complete_worker_command(
+            command.command_id, status="applied", settings=self.runtime_settings
+        )
         logger.info("Applied persisted worker command: %s", command.command)
         return should_stop
 
@@ -702,23 +704,12 @@ class ContinuousWorker:
 
     def _prepare_restart_state(self) -> None:
         self._shutdown_reason = "restart_requested"
-        # El reinicio cancela y detiene el ciclo actual, pero no debe convertirse
-        # en una pausa persistida que herede el proceso nuevo.
         self._paused = False
         self._cancel_event.set()
         self._stop_event.set()
-        self._update_state(
-            phase="restarting",
-            paused=False,
-            next_check_at=None,
-        )
+        self._update_state(phase="restarting", paused=False, next_check_at=None)
 
-    def _set_session_state(
-        self,
-        phase: str,
-        order_id: str | None,
-        masked_account: str,
-    ) -> None:
+    def _set_session_state(self, phase: str, order_id: str | None, masked_account: str) -> None:
         self._update_state(
             phase=phase,
             paused=False,
@@ -730,8 +721,8 @@ class ContinuousWorker:
 
     def health(self) -> tuple[bool, str]:
         if not self.is_running:
-            return False, "worker_stopped"
-        state = get_worker_state(self.settings)
+            return (False, "worker_stopped")
+        state = get_worker_state(self.runtime_settings)
         if state.paused or state.phase in {
             "paused",
             "backoff",
@@ -740,37 +731,35 @@ class ContinuousWorker:
             "recovery_backoff",
             "outside_hot_window",
         }:
-            return True, state.phase
+            return (True, state.phase)
         timestamps = [
             timestamp
             for timestamp in (state.last_check_at, state.session_started_at, state.updated_at)
             if timestamp
         ]
         if not timestamps:
-            return False, "worker_has_no_progress_timestamp"
+            return (False, "worker_has_no_progress_timestamp")
         try:
             latest_progress = max(datetime.fromisoformat(timestamp) for timestamp in timestamps)
             age_seconds = (datetime.now(UTC) - latest_progress).total_seconds()
         except (TypeError, ValueError):
-            return False, "worker_progress_timestamp_invalid"
+            return (False, "worker_progress_timestamp_invalid")
         stale_after = max(
             180,
-            self.settings.runtime.worker_progress_grace_seconds
-            + self.settings.reservation.login_timeout_seconds
-            + self.settings.reservation.postback_timeout_seconds
-            + self.settings.reservation.read_timeout_seconds
-            + self.settings.reservation.reservation_timeout_seconds
+            self.runtime_settings.worker_progress_grace_seconds
+            + self.reservation_settings.login_timeout_seconds
+            + self.reservation_settings.postback_timeout_seconds
+            + self.reservation_settings.read_timeout_seconds
+            + self.reservation_settings.reservation_timeout_seconds
             + 60,
         )
         if age_seconds > stale_after:
-            return False, f"worker_stalled_for_{int(age_seconds)}_seconds"
-        return True, "ok"
+            return (False, f"worker_stalled_for_{int(age_seconds)}_seconds")
+        return (True, "ok")
 
     def _update_state(self, **changes: object) -> None:
         update_worker_state(
-            self.settings,
-            expected_owner_token=self._worker_lease.owner_token,
-            **changes,
+            self.runtime_settings, expected_owner_token=self._worker_lease.owner_token, **changes
         )
 
     def _record_check(self, report: RunReport) -> None:
@@ -778,29 +767,20 @@ class ContinuousWorker:
 
     def _increase_errors(self, message: str) -> int:
         message = sanitize_text(message)
-        state = get_worker_state(self.settings)
+        state = get_worker_state(self.runtime_settings)
         failures = state.consecutive_errors + 1
-        self._update_state(
-            consecutive_errors=failures,
-            last_error=message,
-            session_started_at=None,
-        )
+        self._update_state(consecutive_errors=failures, last_error=message, session_started_at=None)
         return failures
 
     def _reset_errors(self, *, clear_session: bool = True) -> None:
-        changes: dict[str, object] = {
-            "consecutive_errors": 0,
-            "last_error": None,
-        }
+        changes: dict[str, object] = {"consecutive_errors": 0, "last_error": None}
         if clear_session:
             changes["session_started_at"] = None
         self._update_state(**changes)
 
     def _increment_confirmed(self, amount: int = 1) -> None:
-        state = get_worker_state(self.settings)
-        self._update_state(
-            confirmed_reservations=state.confirmed_reservations + amount,
-        )
+        state = get_worker_state(self.runtime_settings)
+        self._update_state(confirmed_reservations=state.confirmed_reservations + amount)
 
     def _on_worker_lease_lost(self) -> None:
         with self._guard:
@@ -813,16 +793,17 @@ class ContinuousWorker:
         today = date.today()
         if self._last_cleanup_date == today:
             return
-        cleanup_old_files(self.settings)
+        cleanup_old_files(
+            runtime_settings=self.runtime_settings, evidence_settings=self.evidence_settings
+        )
         self._last_cleanup_date = today
 
     def _daily_cutoff_reached(self) -> bool:
-        return daily_cutoff_reached(self.settings.runtime.worker_daily_cutoff_time)
+        return daily_cutoff_reached(self.runtime_settings.worker_daily_cutoff_time)
 
     def _wait_for_hot_window_if_needed(self) -> bool:
         decision = hot_window_wait_decision(
-            self.settings,
-            extended_until=self._hot_window_extended_until,
+            extended_until=self._hot_window_extended_until, runtime_settings=self.runtime_settings
         )
         if not decision.should_wait:
             if decision.extended_until is not None:
@@ -837,8 +818,7 @@ class ContinuousWorker:
         wait_seconds = decision.wait_seconds or 1
         next_check_at = _future(wait_seconds)
         logger.info(
-            "Outside observer hot windows; waiting %s seconds before the next check",
-            wait_seconds,
+            "Outside observer hot windows; waiting %s seconds before the next check", wait_seconds
         )
         self._update_state(
             phase="outside_hot_window",
@@ -851,7 +831,7 @@ class ContinuousWorker:
         return True
 
     def _extend_hot_window_after_availability(self) -> None:
-        extended_until = extended_hot_window_until(self.settings)
+        extended_until = extended_hot_window_until(runtime_settings=self.runtime_settings)
         if extended_until is None:
             return
         if (
@@ -869,29 +849,37 @@ class ContinuousWorker:
             return True
         defense_signal = portal_defense_signal(report.message)
         if defense_signal is not None:
-            wait_seconds = recovery_wait_seconds(self.settings)
+            wait_seconds = recovery_wait_seconds(runtime_settings=self.runtime_settings)
             send_telegram_message(
-                self.settings,
-                "El portal mostro una posible defensa "
-                f"({defense_signal}). El worker esperara {wait_seconds} segundos.",
+                (
+                    "El portal mostro una posible defensa ("
+                    f"{defense_signal}"
+                    "). El worker esperara "
+                    f"{wait_seconds}"
+                    " segundos."
+                ),
+                telegram_settings=self.telegram_settings,
             )
             self._wait_retry(wait_seconds, phase="recovery_backoff")
             self._state_callbacks.reset_unavailable_streak()
             self._reset_errors()
             return True
-
-        limit = self.settings.runtime.unavailable_streak_limit
+        limit = self.runtime_settings.unavailable_streak_limit
         if limit > 0 and self._state_callbacks.unavailable_streak >= limit:
-            wait_seconds = recovery_wait_seconds(self.settings)
+            wait_seconds = recovery_wait_seconds(runtime_settings=self.runtime_settings)
             logger.warning(
                 "Reached %s consecutive unavailable checks; waiting %s seconds",
                 self._state_callbacks.unavailable_streak,
                 wait_seconds,
             )
             send_telegram_message(
-                self.settings,
-                "El worker acumulo muchas respuestas seguidas de Sin Cupos. "
-                f"Se pausara {wait_seconds} segundos para bajar la huella.",
+                (
+                    "El worker acumulo muchas respuestas seguidas de "
+                    "Sin Cupos. Se pausara "
+                    f"{wait_seconds}"
+                    " segundos para bajar la huella."
+                ),
+                telegram_settings=self.telegram_settings,
             )
             self._wait_retry(wait_seconds, phase="recovery_backoff")
             self._state_callbacks.reset_unavailable_streak()
@@ -907,36 +895,43 @@ class ContinuousWorker:
         self.pause()
         self._update_state(last_error=message)
         send_telegram_message(
-            self.settings,
-            "CAMBIO EN LA SEGURIDAD DEL PORTAL\n\n"
-            "El worker se pauso automaticamente antes de continuar.\n\n"
-            f"Detalle: {message}\n\n"
-            "Revisa una sesion con medicion antes de reactivarlo.",
+            (
+                "CAMBIO EN LA SEGURIDAD DEL PORTAL\n\nEl worker se "
+                "pauso automaticamente antes de continuar.\n\nDetal"
+                "le: "
+                f"{message}"
+                "\n\nRevisa una sesion con medicion antes de reacti"
+                "varlo."
+            ),
+            telegram_settings=self.telegram_settings,
         )
         self._state_callbacks.reset_unavailable_streak()
         return True
 
     def _maybe_pause_after_detection(self, report: RunReport) -> bool:
-        if self.settings.reservation.auto_reserve or report.status != "available":
+        if self.reservation_settings.auto_reserve or report.status != "available":
             return False
         logger.warning("Pausing worker after availability detection with AUTO_RESERVE=false")
         self.pause()
         send_telegram_message(
-            self.settings,
-            "CUPO DETECTADO - WORKER EN PAUSA\n\n"
-            "La reserva automatica esta desactivada y el worker se pauso "
-            "antes del CAPTCHA final y de Reservar.\n\n"
-            "Ya puedes abrir la orden con medicion y completar el proceso manualmente.",
+            (
+                "CUPO DETECTADO - WORKER EN PAUSA\n\nLa reserva aut"
+                "omatica esta desactivada y el worker se pauso an"
+                "tes del CAPTCHA final y de Reservar.\n\nYa puedes "
+                "abrir la orden con medicion y completar el proce"
+                "so manualmente."
+            ),
+            telegram_settings=self.telegram_settings,
         )
         return True
 
     def _record_window_metric(self, report: RunReport, *, source: str) -> None:
         details = report.details or {}
         now = datetime.now(WORKER_TIMEZONE)
-        window_label = current_window_label(now.time(), self.settings.runtime.observer_hot_windows)
+        window_label = current_window_label(now.time(), self.runtime_settings.observer_hot_windows)
         try:
             record_observer_window_metric(
-                self.settings,
+                self.runtime_settings,
                 metric_date=now.date(),
                 window_label=window_label or "outside",
                 source=source,

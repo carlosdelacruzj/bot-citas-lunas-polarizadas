@@ -6,11 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import RunReport
 from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.db.reservations import replace_confirmed_reservation_evidence
-from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.login import login
 from appointment_bot.reservation_engine.programs import open_program_detail_for_review
 from appointment_bot.reservation_engine.stages import read_process_stages
@@ -23,10 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 def review_confirmed_orders_after_queue(
-    settings: Settings,
     order_ids: list[str],
     *,
     cancel_event: threading.Event | None = None,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
     for order_id in dict.fromkeys(order_ids):
@@ -39,13 +42,19 @@ def review_confirmed_orders_after_queue(
                 }
             )
             break
-        results.append(_review_confirmed_order(settings, order_id))
+        results.append(
+            _review_confirmed_order(
+                order_id,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+                evidence_settings=evidence_settings,
+            )
+        )
     return results
 
 
 def replace_reports_with_reviewed_evidence(
-    reports: list[RunReport],
-    review_results: list[dict[str, str]],
+    reports: list[RunReport], review_results: list[dict[str, str]]
 ) -> list[RunReport]:
     reviewed_paths = {
         result["order_id"]: result["screenshot_path"]
@@ -67,35 +76,36 @@ def replace_reports_with_reviewed_evidence(
     ]
 
 
-def _review_confirmed_order(settings: Settings, order_id: str) -> dict[str, str]:
-    order = get_service_order_runtime(order_id, settings=settings)
+def _review_confirmed_order(
+    order_id: str,
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
+) -> dict[str, str]:
+    order = get_service_order_runtime(order_id, settings=runtime_settings)
     if order is None:
-        return {
-            "order_id": order_id,
-            "status": "error",
-            "message": "La orden ya no existe.",
-        }
-    review_settings = replace(
+        return {"order_id": order_id, "status": "error", "message": "La orden ya no existe."}
+    review_runtime_settings = replace(runtime_settings, headless=True, block_heavy_assets=False)
+    review_reservation_settings = replace(
         settings_for_order(
-            settings,
             username=order.username,
             password=order.password,
             document_type=order.document_type,
+            reservation_settings=reservation_settings,
         ),
-        headless=True,
-        block_heavy_assets=False,
         monitor_window_seconds=0,
-        telegram_notify_unavailable=False,
-        artifact_prefix=f"postreview-{order_id}",
     )
+    review_evidence_settings = replace(evidence_settings, artifact_prefix=f"postreview-{order_id}")
     try:
         with open_page(
-            review_settings,
             headless=True,
             block_heavy_assets=False,
+            runtime_settings=review_runtime_settings,
+            evidence_settings=review_evidence_settings,
         ) as page:
             try:
-                login(page, review_settings)
+                login(page, reservation_settings=review_reservation_settings)
                 page = open_program_detail_for_review(
                     page,
                     program_expediente=order.program_expediente,
@@ -115,15 +125,13 @@ def _review_confirmed_order(settings: Settings, order_id: str) -> dict[str, str]
                     raise RuntimeError(
                         "La revision no encontro Separa Cita Peritaje en Programado."
                     )
-                screenshot = save_programmed_review_screenshot(page, review_settings)
+                screenshot = save_programmed_review_screenshot(
+                    page, evidence_settings=review_evidence_settings
+                )
                 if screenshot is None:
-                    raise RuntimeError(
-                        "No se pudo capturar la region nitida de nombres y etapas."
-                    )
+                    raise RuntimeError("No se pudo capturar la region nitida de nombres y etapas.")
                 stable = replace_confirmed_reservation_evidence(
-                    order_id,
-                    screenshot,
-                    settings=review_settings,
+                    order_id, screenshot, settings=review_runtime_settings
                 )
                 logger.info(
                     "Post-queue reservation review completed: order_id=%s evidence=%s",
@@ -138,18 +146,15 @@ def _review_confirmed_order(settings: Settings, order_id: str) -> dict[str, str]
                     "evidence_path": str(stable),
                 }
             except Exception:
-                save_error_screenshot(page, review_settings, label="post-queue-review-error")
+                save_error_screenshot(
+                    page,
+                    label="post-queue-review-error",
+                    evidence_settings=review_evidence_settings,
+                )
                 raise
     except Exception as exc:
         logger.exception("Post-queue reservation review failed: order_id=%s", order_id)
-        return {
-            "order_id": order_id,
-            "status": "error",
-            "message": str(exc),
-        }
+        return {"order_id": order_id, "status": "error", "message": str(exc)}
 
 
-__all__ = [
-    "replace_reports_with_reviewed_evidence",
-    "review_confirmed_orders_after_queue",
-]
+__all__ = ["replace_reports_with_reviewed_evidence", "review_confirmed_orders_after_queue"]

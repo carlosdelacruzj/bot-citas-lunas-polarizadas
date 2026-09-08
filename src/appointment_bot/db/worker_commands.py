@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import WorkerCommand
 from appointment_bot.db.common import (
     _connection,
@@ -20,7 +20,7 @@ def enqueue_worker_command(
     command: str,
     *,
     requested_by: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> WorkerCommand:
     command = command.strip().lower()
     if command not in VALID_WORKER_COMMANDS:
@@ -46,7 +46,7 @@ def enqueue_worker_command(
 def claim_next_worker_command(
     *,
     owner_token: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> WorkerCommand | None:
     settings = _settings(settings)
     init_database(settings)
@@ -78,7 +78,7 @@ def complete_worker_command(
     *,
     status: str,
     error_message: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if status not in {"applied", "failed"}:
         raise ValueError(f"Unsupported worker command completion status: {status}")
@@ -100,7 +100,7 @@ def complete_worker_command(
 def list_worker_commands(
     *,
     limit: int = 20,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[WorkerCommand]:
     if limit < 1:
         limit = 1

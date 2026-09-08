@@ -4,7 +4,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -18,7 +18,7 @@ def mark_order_preflight_pending(
     order_id: str,
     *,
     new_cycle: bool = True,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     return _set_preflight(
         order_id,
@@ -32,7 +32,7 @@ def mark_order_preflight_pending(
 def mark_order_preflight_running(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     return _set_preflight(
         order_id,
@@ -48,7 +48,7 @@ def mark_order_preflight_validated(
     *,
     applicant_name: str,
     details: dict[str, Any],
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -102,7 +102,7 @@ def mark_order_preflight_failed(
     message: str,
     *,
     details: dict[str, Any] | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     return _set_preflight(
         order_id,
@@ -121,7 +121,7 @@ def _set_preflight(
     details: dict[str, Any] | None = None,
     started: bool = False,
     cycle_increment: int = 0,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     settings = _settings(settings)
     init_database(settings)

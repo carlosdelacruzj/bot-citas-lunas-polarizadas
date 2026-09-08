@@ -19,19 +19,19 @@ class ClientSessionVideoTests(unittest.TestCase):
 
         self.assertIsNone(
             ClientSessionVideoRecorder.create(
-                settings,
                 order_id="client-1",
                 client_name="Client One",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
+                evidence_settings=settings.evidence,
             )
         )
         enabled = replace(settings, record_client_sessions=True)
         self.assertIsNone(
             ClientSessionVideoRecorder.create(
-                enabled,
                 order_id=None,
                 client_name=None,
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
+                evidence_settings=enabled.evidence,
             )
         )
 
@@ -42,10 +42,10 @@ class ClientSessionVideoTests(unittest.TestCase):
             source = root / "temp.webm"
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
-                settings,
                 order_id="client-1",
                 client_name="Client One",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
+                evidence_settings=settings.evidence,
             )
             assert recorder is not None
             recorder.capture_source_path(source)
@@ -68,10 +68,10 @@ class ClientSessionVideoTests(unittest.TestCase):
             source = root / "temp.webm"
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
-                settings,
                 order_id="client-1",
                 client_name="Maria Perez",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
+                evidence_settings=settings.evidence,
             )
             assert recorder is not None
             recorder.capture_source_path(source)
@@ -93,15 +93,15 @@ class ClientSessionVideoTests(unittest.TestCase):
             source = root / "temp.webm"
             source.write_bytes(b"video")
             recorder = ClientSessionVideoRecorder.create(
-                settings,
                 order_id="client-1",
                 client_name="Maria Perez",
                 started_at=datetime(2026, 6, 16, 18, 0, 0),
+                evidence_settings=settings.evidence,
             )
             assert recorder is not None
             recorder.capture_source_path(source)
 
-            def fake_export(_settings, _source_path, target_path):
+            def fake_export(_source_path, target_path, *, evidence_settings):
                 target_path.write_bytes(b"mp4")
                 return target_path
 

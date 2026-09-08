@@ -9,7 +9,11 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
 from appointment_bot.db.orders import (
     claim_service_order,
@@ -30,9 +34,7 @@ from appointment_bot.worker.post_reservation_review import (
     replace_reports_with_reviewed_evidence,
     review_confirmed_orders_after_queue,
 )
-from appointment_bot.worker.queue_policy import (
-    delay_between_orders as _delay_between_orders,
-)
+from appointment_bot.worker.queue_policy import delay_between_orders as _delay_between_orders
 from appointment_bot.worker.queue_policy import (
     reservation_limit_reached as _reservation_limit_reached,
 )
@@ -41,7 +43,6 @@ from appointment_bot.worker.queue_policy import (
 )
 
 logger = logging.getLogger(__name__)
-
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
 
 
@@ -70,7 +71,6 @@ DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES = QueueTraversalDependencies(
 
 
 def run_rapid_queue_with_settings(
-    settings: Settings,
     *,
     initial_confirmed_reservations: int = 0,
     initial_confirmed_order_ids: set[str] | None = None,
@@ -84,6 +84,11 @@ def run_rapid_queue_with_settings(
     inter_order_delay_enabled: bool = True,
     stop_on_available_without_reserve: bool = True,
     dependencies: QueueTraversalDependencies = DEFAULT_QUEUE_TRAVERSAL_DEPENDENCIES,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
 ) -> RunReport:
     initial_order_ids = set(initial_confirmed_order_ids or set())
     checked_orders = 0
@@ -97,38 +102,31 @@ def run_rapid_queue_with_settings(
     opportunity_queue = target_order_ids is not None
     opportunity_started = time.monotonic()
     opportunity_deadline = (
-        time.monotonic() + settings.runtime.opportunity_handoff_max_seconds
+        time.monotonic() + runtime_settings.opportunity_handoff_max_seconds
         if opportunity_queue
         else None
     )
     lease_owner = f"queue-{uuid4().hex}"
     with ExitStack() as claims:
-        # La consulta ya excluye ordenes terminadas; por eso la cola
-        # empieza siempre en la orden pendiente de mayor prioridad.
         skipped_orders = skip_order_ids or set()
         orders = [
             order
             for order in (
-                dependencies.list_active_orders(settings, order_ids=target_order_ids)
+                dependencies.list_active_orders(runtime_settings, order_ids=target_order_ids)
                 if target_order_ids is not None
-                else dependencies.list_active_orders(settings, include_constrained=False)
+                else dependencies.list_active_orders(runtime_settings, include_constrained=False)
             )
             if order.order_id not in skipped_orders
         ]
         if target_order_ids is not None:
-            order_positions = {
-                order_id: index for index, order_id in enumerate(target_order_ids)
-            }
+            order_positions = {order_id: index for index, order_id in enumerate(target_order_ids)}
             orders.sort(
-                key=lambda candidate: order_positions.get(
-                    candidate.order_id,
-                    len(order_positions),
-                )
+                key=lambda candidate: order_positions.get(candidate.order_id, len(order_positions))
             )
-            orders = orders[: settings.runtime.opportunity_handoff_max_candidates]
+            orders = orders[: runtime_settings.opportunity_handoff_max_candidates]
         queued_order_ids = {order.order_id for order in orders}
         for order in dependencies.list_active_orders(
-            settings, order_ids=follow_up_order_ids or set()
+            runtime_settings, order_ids=follow_up_order_ids or set()
         ):
             if order.order_id in skipped_orders or order.order_id in queued_order_ids:
                 continue
@@ -143,18 +141,17 @@ def run_rapid_queue_with_settings(
                 "results": [],
                 "completion_reason": completion_reason,
                 "opportunity_queue": opportunity_queue,
-                "opportunity_elapsed_seconds": round(
-                    time.monotonic() - opportunity_started,
-                    3,
-                ),
+                "opportunity_elapsed_seconds": round(time.monotonic() - opportunity_started, 3),
             }
             if confirmed_order_ids:
                 if on_post_review_start is not None:
                     on_post_review_start()
                 details["post_reservation_reviews"] = review_confirmed_orders_after_queue(
-                    settings,
                     confirmed_order_ids,
                     cancel_event=cancel_event,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    evidence_settings=evidence_settings,
                 )
             return RunReport(
                 status="completed",
@@ -162,7 +159,6 @@ def run_rapid_queue_with_settings(
                 exit_code=0,
                 details=details,
             )
-
         logger.info("Starting order queue with %s active orders", len(orders))
         for index, order in enumerate(orders):
             has_more_orders = index < len(orders) - 1
@@ -173,66 +169,62 @@ def run_rapid_queue_with_settings(
                     exit_code=0,
                     details={
                         "checked_orders": checked_orders,
-                        "confirmed_reservations": (
-                            confirmed_reservations - initial_confirmed_reservations
-                        ),
+                        "confirmed_reservations": confirmed_reservations
+                        - initial_confirmed_reservations,
                         "uncertain_reservations": uncertain_reservations,
                         "failed_orders": failed_orders,
                         "results": results,
                     },
                 )
-            if (
-                opportunity_deadline is not None
-                and time.monotonic() >= opportunity_deadline
-            ):
+            if opportunity_deadline is not None and time.monotonic() >= opportunity_deadline:
                 completion_reason = "opportunity_window_expired"
                 logger.info(
                     "Stopping opportunity queue after %s seconds",
-                    settings.runtime.opportunity_handoff_max_seconds,
+                    runtime_settings.opportunity_handoff_max_seconds,
                 )
                 break
-            # El valor 0 significa todos los pendientes; un valor positivo
-            # conserva un limite opcional de reservas confirmadas por ejecucion.
-            if _reservation_limit_reached(settings, confirmed_reservations):
+            if _reservation_limit_reached(
+                confirmed_reservations, runtime_settings=runtime_settings
+            ):
                 completion_reason = "reservation_limit"
                 logger.info(
                     "Queue reservation limit reached: %s",
-                    settings.runtime.queue_max_reservations_per_run,
+                    runtime_settings.queue_max_reservations_per_run,
                 )
                 break
-
             if not dependencies.claim_service_order(
                 order.order_id,
                 owner_token=lease_owner,
                 lease_seconds=SERVICE_ORDER_LEASE_SECONDS,
-                settings=settings,
+                settings=runtime_settings,
             ):
                 logger.info(
-                    "Skipping order %s because another worker owns its lease",
-                    order.order_id,
+                    "Skipping order %s because another worker owns its lease", order.order_id
                 )
                 continue
             claims.callback(
                 dependencies.release_service_order_claim,
                 order.order_id,
                 owner_token=lease_owner,
-                settings=settings,
+                settings=runtime_settings,
             )
             try:
                 checked_orders += 1
                 if on_order_start is not None:
                     on_order_start(order)
                 report = dependencies.run_service_order(
-                    settings,
                     order,
                     lease_owner=lease_owner,
                     rapid_mode=True,
                     cancel_event=cancel_event,
                     on_check=on_check,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
+                    telegram_settings=telegram_settings,
                 )
             finally:
-                # Execute and discard the current claim callback before moving
-                # to the next order. ExitStack remains the exception fallback.
                 claims.pop_all().close()
             results.append(
                 {
@@ -244,19 +236,23 @@ def run_rapid_queue_with_settings(
             )
             if report.status in {"available", "partial", "registered", "reservation_unconfirmed"}:
                 deferred_reports.append(report)
-            dependencies.update_state_from_report(settings, order, report)
+            dependencies.update_state_from_report(order, report, runtime_settings=runtime_settings)
             outcome = classify_order_report(report)
             if outcome is OrderReportOutcome.BLOCKED:
                 logger.info(
-                    "Skipping order %s temporarily because the available appointment "
-                    "does not match order rules.",
+                    (
+                        "Skipping order %s temporarily because the availa"
+                        "ble appointment does not match order rules."
+                    ),
                     order.order_id,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
             if outcome is OrderReportOutcome.CAPTCHA_REJECTED:
-                cooldown = settings.captcha.captcha_rejection_cooldown_seconds
+                cooldown = captcha_settings.captcha_rejection_cooldown_seconds
                 failed_orders += 1
                 dependencies.update_order_state(
                     order.order_id,
@@ -264,58 +260,64 @@ def run_rapid_queue_with_settings(
                     message=report.message,
                     exit_code=report.exit_code,
                     backoff_seconds=cooldown,
-                    settings=settings,
+                    settings=runtime_settings,
                 )
                 logger.warning(
-                    "Order %s had an explicit CAPTCHA rejection; applying a %s-second "
-                    "order cooldown and continuing the queue",
+                    (
+                        "Order %s had an explicit CAPTCHA rejection; appl"
+                        "ying a %s-second order cooldown and continuing t"
+                        "he queue"
+                    ),
                     order.order_id,
                     cooldown,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
             if report.exit_code != 0 or report.status == "error":
                 failed_orders += 1
-
             if bool((report.details or {}).get("credential_error")):
                 logger.error(
                     "Order %s was paused because its credential could not be decrypted",
                     order.order_id,
                 )
                 if has_more_orders and inter_order_delay_enabled:
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
-
             if outcome is OrderReportOutcome.TERMINAL_STAGE:
-                # Estados terminales de la etapa y registered excluyen al
-                # orden de ejecuciones futuras.
                 dependencies.mark_order_done(
                     order.order_id,
                     status=order_done_status_from_report(report),
-                    settings=settings,
+                    settings=runtime_settings,
                 )
                 logger.info("Order marked as done: %s", order.order_id)
                 if has_more_orders and inter_order_delay_enabled:
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
-
             if outcome is OrderReportOutcome.REGISTERED:
                 confirmed_reservations += 1
                 confirmed_order_ids.append(order.order_id)
-                dependencies.mark_order_done(order.order_id, settings=settings)
+                dependencies.mark_order_done(order.order_id, settings=runtime_settings)
                 logger.info("Reservation confirmed for order: %s", order.order_id)
                 if (
                     has_more_orders
                     and inter_order_delay_enabled
-                    and not _reservation_limit_reached(
-                        settings,
-                        confirmed_reservations,
+                    and (
+                        not _reservation_limit_reached(
+                            confirmed_reservations, runtime_settings=runtime_settings
+                        )
                     )
                 ):
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
-
             if outcome is OrderReportOutcome.RESERVATION_UNCONFIRMED:
                 completion_reason = "reservation_unconfirmed"
                 uncertain_reservations += 1
@@ -324,19 +326,15 @@ def run_rapid_queue_with_settings(
                     status=report.status,
                     message=report.message,
                     exit_code=report.exit_code,
-                    backoff_seconds=settings.runtime.error_backoff_seconds,
-                    settings=settings,
+                    backoff_seconds=runtime_settings.error_backoff_seconds,
+                    settings=runtime_settings,
                 )
                 logger.warning(
-                    "Stopping queue after an unconfirmed reservation attempt: %s",
-                    order.order_id,
+                    "Stopping queue after an unconfirmed reservation attempt: %s", order.order_id
                 )
                 break
-
             if report.status in {"error", "unknown"} or report.exit_code != 0:
                 completion_reason = "technical_error"
-                # Un fallo tecnico o ambiguo detiene la cola para no
-                # saltar la orden prioritaria ni repetir el problema en otras cuentas.
                 if report.status == "unknown":
                     failed_orders += 1
                     dependencies.update_order_state(
@@ -344,8 +342,8 @@ def run_rapid_queue_with_settings(
                         status=report.status,
                         message=report.message,
                         exit_code=1,
-                        backoff_seconds=(None),
-                        settings=settings,
+                        backoff_seconds=None,
+                        settings=runtime_settings,
                     )
                 logger.warning(
                     "Stopping queue after terminal order result %s: %s",
@@ -353,14 +351,12 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                 )
                 break
-
             if report.status == "skipped":
                 logger.info("Skipping order %s because it is in backoff", order.order_id)
                 continue
-
             if (
                 report.status == "available"
-                and not settings.reservation.auto_reserve
+                and (not reservation_settings.auto_reserve)
                 and stop_on_available_without_reserve
             ):
                 completion_reason = "availability_without_auto_reserve"
@@ -369,37 +365,47 @@ def run_rapid_queue_with_settings(
                     order.order_id,
                 )
                 break
-
             if report.status in {"unavailable", "partial", "available", "completed"}:
                 if opportunity_queue and report.status == "unavailable":
                     completion_reason = "opportunity_disappeared"
                     logger.info(
-                        "Stopping opportunity queue because order %s confirmed no "
-                        "remaining availability",
+                        (
+                            "Stopping opportunity queue because order %s conf"
+                            "irmed no remaining availability"
+                        ),
                         order.order_id,
                     )
                     break
-                logger.info(
-                    "Continuing queue after routine result for order %s",
-                    order.order_id,
-                )
+                logger.info("Continuing queue after routine result for order %s", order.order_id)
                 if has_more_orders and inter_order_delay_enabled:
-                    dependencies.delay_between_orders(settings, cancel_event=cancel_event)
+                    dependencies.delay_between_orders(
+                        cancel_event=cancel_event, runtime_settings=runtime_settings
+                    )
                 continue
-
     queue_has_errors = bool(failed_orders or uncertain_reservations)
     queue_status = "error" if queue_has_errors else "completed"
     exit_code = 1 if queue_has_errors else 0
     run_confirmed_reservations = confirmed_reservations - initial_confirmed_reservations
     message = (
-        f"Cola finalizada con {failed_orders} orden(es) con error y "
-        f"{uncertain_reservations} reserva(s) sin confirmar. "
-        f"Reservas confirmadas: {run_confirmed_reservations}. "
-        f"Ordenes revisadas: {checked_orders}."
+        (
+            "Cola finalizada con "
+            f"{failed_orders}"
+            " orden(es) con error y "
+            f"{uncertain_reservations}"
+            " reserva(s) sin confirmar. Reservas confirmadas:"
+            " "
+            f"{run_confirmed_reservations}"
+            ". Ordenes revisadas: "
+            f"{checked_orders}"
+            "."
+        )
         if queue_has_errors
         else (
-            f"Cola finalizada. Reservas confirmadas: {run_confirmed_reservations}. "
-            f"Ordenes revisadas: {checked_orders}."
+            "Cola finalizada. Reservas confirmadas: "
+            f"{run_confirmed_reservations}"
+            ". Ordenes revisadas: "
+            f"{checked_orders}"
+            "."
         )
     )
     report = RunReport(
@@ -414,54 +420,38 @@ def run_rapid_queue_with_settings(
             "results": results,
             "completion_reason": completion_reason,
             "opportunity_queue": opportunity_queue,
-            "opportunity_candidate_limit": (
-                settings.runtime.opportunity_handoff_max_candidates
-                if opportunity_queue
-                else None
-            ),
-            "opportunity_window_seconds": (
-                settings.runtime.opportunity_handoff_max_seconds if opportunity_queue else None
-            ),
-            "opportunity_elapsed_seconds": round(
-                time.monotonic() - opportunity_started,
-                3,
-            ),
+            "opportunity_candidate_limit": runtime_settings.opportunity_handoff_max_candidates
+            if opportunity_queue
+            else None,
+            "opportunity_window_seconds": runtime_settings.opportunity_handoff_max_seconds
+            if opportunity_queue
+            else None,
+            "opportunity_elapsed_seconds": round(time.monotonic() - opportunity_started, 3),
         },
     )
     review_results: list[dict[str, str]] = []
     if (
         report.status == "completed"
         and completion_reason
-        in {
-            "orders_exhausted",
-            "opportunity_disappeared",
-            "opportunity_window_expired",
-        }
+        in {"orders_exhausted", "opportunity_disappeared", "opportunity_window_expired"}
         and confirmed_order_ids
     ):
         if on_post_review_start is not None:
             on_post_review_start()
         review_results = review_confirmed_orders_after_queue(
-            settings,
             confirmed_order_ids,
             cancel_event=cancel_event,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
         )
         report.details["post_reservation_reviews"] = review_results
-        deferred_reports = replace_reports_with_reviewed_evidence(
-            deferred_reports,
-            review_results,
-        )
-    notify_deferred_queue_summary(report, settings, deferred_reports)
+        deferred_reports = replace_reports_with_reviewed_evidence(deferred_reports, review_results)
+    notify_deferred_queue_summary(report, deferred_reports, telegram_settings=telegram_settings)
     for review in review_results:
         order_id = review.get("order_id")
-        if (
-            review.get("status") == "completed"
-            and order_id
-            and order_id not in initial_order_ids
-        ):
+        if review.get("status") == "completed" and order_id and (order_id not in initial_order_ids):
             enqueue_whatsapp_automation_job(
-                order_id,
-                "reservation_album",
-                settings=settings,
+                order_id, "reservation_album", settings=runtime_settings
             )
     return report

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.service_packages import (
     DEFAULT_RESERVATION_PRICE_TEXT,
     SERVICE_PACKAGE_STANDARD,
@@ -33,7 +33,6 @@ def enqueue_registration_notice(
     recipient_phone: str | None,
     recipient_username: str | None,
     display_name: str | None,
-    settings: Settings,
     service_type: str = "standard",
     service_package: str = SERVICE_PACKAGE_STANDARD,
     reservation_price: str = DEFAULT_RESERVATION_PRICE_TEXT,
@@ -41,24 +40,25 @@ def enqueue_registration_notice(
     maximum_reservation_date: str | None = None,
     allowed_weekdays: tuple[int, ...] | None = None,
     excluded_date_ranges: tuple[dict[str, str], ...] = (),
+    runtime_settings: RuntimeSettings,
 ) -> bool:
     if not recipient_phone and not recipient_username:
         return False
     template_key = REGISTRATION_NOTICE_TEMPLATE_KEYS[notice_type]
-    template = get_whatsapp_message_template(template_key, settings)
+    template = get_whatsapp_message_template(template_key, settings=runtime_settings)
     definition = whatsapp_template_definition(template_key)
     if template is None or definition is None or not template.enabled:
         raise RuntimeError("La plantilla del aviso de registro no está disponible.")
     context = (
         _monitoring_started_context(
-                display_name=display_name,
-                service_type=service_type,
-                service_package=service_package,
-                reservation_price=reservation_price,
-                minimum_reservation_date=minimum_reservation_date,
-                maximum_reservation_date=maximum_reservation_date,
-                allowed_weekdays=allowed_weekdays,
-                excluded_date_ranges=excluded_date_ranges,
+            display_name=display_name,
+            service_type=service_type,
+            service_package=service_package,
+            reservation_price=reservation_price,
+            minimum_reservation_date=minimum_reservation_date,
+            maximum_reservation_date=maximum_reservation_date,
+            allowed_weekdays=allowed_weekdays,
+            excluded_date_ranges=excluded_date_ranges,
         )
         if notice_type == "monitoring_started"
         else _registration_name_context(display_name)
@@ -77,7 +77,7 @@ def enqueue_registration_notice(
         message_text=message_text,
         template_key=template.template_key,
         template_revision=template.revision,
-        settings=settings,
+        settings=runtime_settings,
     )
 
 

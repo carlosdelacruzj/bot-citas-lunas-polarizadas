@@ -54,8 +54,12 @@ class SlotEvidenceTests(unittest.TestCase):
             source.write_bytes(b"slot")
             details = {"fecha": "01/09/2026", "hora": "10:30"}
 
-            archived = archive_unique_slot_capture(settings, details, source)
-            repeated = archive_unique_slot_capture(settings, details, source)
+            archived = archive_unique_slot_capture(
+                details, source, evidence_settings=settings.evidence
+            )
+            repeated = archive_unique_slot_capture(
+                details, source, evidence_settings=settings.evidence
+            )
 
             self.assertIsNotNone(archived)
             self.assertEqual(archived, repeated)
@@ -77,8 +81,7 @@ class SlotEvidenceTests(unittest.TestCase):
 
             with (
                 patch(
-                    "appointment_bot.reports.run_reporting."
-                    "archive_unique_slot_screenshots",
+                    "appointment_bot.reports.run_reporting.archive_unique_slot_screenshots",
                     return_value=[archived],
                 ),
                 patch(
@@ -86,9 +89,11 @@ class SlotEvidenceTests(unittest.TestCase):
                 ) as queue_watermark,
                 patch("appointment_bot.reports.run_reporting.record_run_outcome"),
             ):
-                record_run_history(settings, report)
+                record_run_history(
+                    report, runtime_settings=settings.runtime, evidence_settings=settings.evidence
+                )
 
-            queue_watermark.assert_called_once_with(settings, archived)
+            queue_watermark.assert_called_once_with(archived, evidence_settings=settings.evidence)
 
     def test_archived_slot_produces_a_verified_watermarked_copy(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -97,15 +102,13 @@ class SlotEvidenceTests(unittest.TestCase):
             Image.new("RGB", (900, 600), "white").save(source)
 
             archived = archive_unique_slot_capture(
-                settings,
                 {"fecha": "01/09/2026", "hora": "10:30"},
                 source,
+                evidence_settings=settings.evidence,
             )
 
             branded = ensure_unique_slot_watermark(
-                settings,
-                archived,
-                public_whatsapp="925761698",
+                archived, public_whatsapp="925761698", evidence_settings=settings.evidence
             )
 
             self.assertEqual(branded.name, archived.name)
@@ -128,19 +131,22 @@ class SlotEvidenceTests(unittest.TestCase):
                 patch(
                     "appointment_bot.reservation_engine.slot_evidence."
                     "save_available_appointment_snapshot",
-                    side_effect=lambda *_args: calls.append("capture") or source,
+                    side_effect=lambda _page, *, evidence_settings: (
+                        calls.append("capture") or source
+                    ),
                 ),
                 patch(
-                    "appointment_bot.reservation_engine.slot_evidence."
-                    "archive_unique_slot_capture",
-                    side_effect=lambda *_args: calls.append("archive") or archived,
+                    "appointment_bot.reservation_engine.slot_evidence.archive_unique_slot_capture",
+                    side_effect=lambda _details, _source, *, evidence_settings: (
+                        calls.append("archive") or archived
+                    ),
                 ),
             ):
                 result, source_path, archived_path = capture_canonical_selected_slot(
                     object(),
-                    settings,
                     _available_result(),
                     phase="initial_selection",
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertEqual(calls, ["capture", "archive"])
@@ -162,13 +168,11 @@ class SlotEvidenceTests(unittest.TestCase):
         ):
             capture_canonical_selected_slot(
                 object(),
-                settings,
                 AvailabilityResult(
-                    status="available",
-                    message="Sin hora.",
-                    details={"fecha": "01/09/2026"},
+                    status="available", message="Sin hora.", details={"fecha": "01/09/2026"}
                 ),
                 phase="initial_selection",
+                evidence_settings=settings.evidence,
             )
         save.assert_not_called()
 
@@ -182,8 +186,7 @@ class SlotEvidenceTests(unittest.TestCase):
                 return_value=_available_result(),
             ),
             patch(
-                "appointment_bot.reservation_engine.monitor."
-                "capture_canonical_selected_slot",
+                "appointment_bot.reservation_engine.monitor.capture_canonical_selected_slot",
                 side_effect=CanonicalSlotCaptureError("disk unavailable"),
             ),
             patch(
@@ -192,7 +195,6 @@ class SlotEvidenceTests(unittest.TestCase):
         ):
             outcome = monitor._try_reservation_from_availability(
                 object(),
-                settings,
                 _available_result(),
                 1,
                 time.monotonic(),
@@ -214,12 +216,14 @@ class SlotEvidenceTests(unittest.TestCase):
                 "run-test",
                 "order-test",
                 _engine_ports(),
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
             )
 
         self.assertEqual(outcome.completed_result[0].status, "error")
-        self.assertTrue(
-            outcome.completed_result[0].details["canonical_slot_capture_failed"]
-        )
+        self.assertTrue(outcome.completed_result[0].details["canonical_slot_capture_failed"])
         complete.assert_not_called()
         submit_intent.assert_not_called()
         submit_started.assert_not_called()
@@ -263,7 +267,6 @@ class SlotEvidenceTests(unittest.TestCase):
         ):
             outcome = monitor._try_reservation_from_availability(
                 page=object(),
-                settings=settings,
                 result=_available_result(),
                 attempt=1,
                 session_started=time.monotonic(),
@@ -285,15 +288,15 @@ class SlotEvidenceTests(unittest.TestCase):
                 run_id="run-test",
                 order_id="order-test",
                 ports=_engine_ports(),
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
             )
 
         self.assertEqual(outcome.completed_result[0].status, "partial")
-        self.assertFalse(
-            report_from_result(outcome.completed_result[0]).reservation_attempted
-        )
-        self.assertEqual(
-            capture_slot.call_args.kwargs["phase"], "blocked_by_order_rule"
-        )
+        self.assertFalse(report_from_result(outcome.completed_result[0]).reservation_attempted)
+        self.assertEqual(capture_slot.call_args.kwargs["phase"], "blocked_by_order_rule")
         capture_captcha.assert_called_once()
         complete.assert_not_called()
         submit_intent.assert_not_called()
@@ -326,7 +329,13 @@ class SlotEvidenceTests(unittest.TestCase):
                 side_effect=capture_only,
             ):
                 captured, primary, paths = capture_blocked_captcha_evidence(
-                    object(), settings, result, slot
+                    object(),
+                    result,
+                    slot,
+                    runtime_settings=settings.runtime,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             report = report_from_result(captured, screenshot_path=primary, screenshot_paths=paths)
@@ -359,15 +368,15 @@ class SlotEvidenceTests(unittest.TestCase):
             ) as send_photo:
                 delivered = notify_result(
                     result,
-                    settings,
                     screenshot_path=slot,
                     screenshot_paths=[slot, captcha],
+                    telegram_settings=settings.telegram,
                 )
 
             self.assertTrue(delivered)
             self.assertEqual(send_photo.call_count, 2)
-            self.assertEqual(send_photo.call_args_list[0].args[1], slot)
-            self.assertEqual(send_photo.call_args_list[1].args[1], captcha)
+            self.assertEqual(send_photo.call_args_list[0].args[0], slot)
+            self.assertEqual(send_photo.call_args_list[1].args[0], captcha)
 
     def test_reobservation_archives_recovered_slot_before_second_attempt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -418,9 +427,7 @@ class SlotEvidenceTests(unittest.TestCase):
                     "read_appointment_availability",
                     return_value=_available_result(),
                 ),
-                patch.object(
-                    monitor, "select_available_appointment", return_value=recovered
-                ),
+                patch.object(monitor, "select_available_appointment", return_value=recovered),
                 patch.object(
                     monitor,
                     "capture_canonical_selected_slot",
@@ -442,7 +449,6 @@ class SlotEvidenceTests(unittest.TestCase):
             ):
                 result = monitor._reobserve_after_slot_lost(
                     object(),
-                    settings,
                     original,
                     original_attempt=1,
                     session_started=time.monotonic(),
@@ -459,13 +465,15 @@ class SlotEvidenceTests(unittest.TestCase):
                     run_id="run-test",
                     order_id="order-test",
                     ports=_engine_ports(),
+                    runtime_settings=settings.runtime,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertEqual(calls, ["archive", "submit"])
             self.assertEqual(result[0].status, "registered")
-            self.assertEqual(
-                capture.call_args.kwargs["phase"], "slot_lost_reobservation"
-            )
+            self.assertEqual(capture.call_args.kwargs["phase"], "slot_lost_reobservation")
 
 
 if __name__ == "__main__":

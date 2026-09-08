@@ -42,22 +42,26 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             dependencies = replace(
                 DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
-                get_reservation_constraints=Mock(
-                    return_value=(minimum_date, None, None, ())
-                ),
+                get_reservation_constraints=Mock(return_value=(minimum_date, None, None, ())),
             )
             allowed = _appointment_filter_for_order(
-                "order-1", settings, dependencies=dependencies
+                "order-1", dependencies=dependencies, runtime_settings=settings.runtime
             )
 
             self.assertIsNotNone(allowed)
             assert allowed is not None
             self.assertFalse(
-                allowed((minimum_date - timedelta(days=1)).strftime("%d/%m/%Y"), "12:00")
+                allowed(
+                    (minimum_date - timedelta(days=1)).strftime("%d/%m/%Y"),
+                    "12:00",
+                )
             )
             self.assertTrue(allowed(minimum_date.strftime("%d/%m/%Y"), "09:00"))
             self.assertTrue(
-                allowed((minimum_date + timedelta(days=1)).strftime("%d/%m/%Y"), "09:00")
+                allowed(
+                    (minimum_date + timedelta(days=1)).strftime("%d/%m/%Y"),
+                    "09:00",
+                )
             )
 
     def test_appointment_filter_accepts_any_hour_for_an_allowed_date(self) -> None:
@@ -67,12 +71,10 @@ class OrderExecutionTests(unittest.TestCase):
             settings = make_settings(Path(directory))
             dependencies = replace(
                 DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
-                get_reservation_constraints=Mock(
-                    return_value=(minimum_date, None, None, ())
-                ),
+                get_reservation_constraints=Mock(return_value=(minimum_date, None, None, ())),
             )
             allowed = _appointment_filter_for_order(
-                "order-1", settings, dependencies=dependencies
+                "order-1", dependencies=dependencies, runtime_settings=settings.runtime
             )
 
             self.assertIsNotNone(allowed)
@@ -93,7 +95,7 @@ class OrderExecutionTests(unittest.TestCase):
                 ),
             )
             allowed = _appointment_filter_for_order(
-                "order-1", settings, dependencies=dependencies
+                "order-1", dependencies=dependencies, runtime_settings=settings.runtime
             )
 
             self.assertIsNotNone(allowed)
@@ -122,7 +124,14 @@ class OrderExecutionTests(unittest.TestCase):
                 update_state_from_report=Mock(),
                 delay_between_orders=Mock(),
             )
-            report = run_rapid_queue_with_settings(settings, dependencies=dependencies)
+            report = run_rapid_queue_with_settings(
+                dependencies=dependencies,
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
+                telegram_settings=settings.telegram,
+            )
 
             self.assertEqual(run_order.call_count, 3)
             self.assertEqual(report.status, "completed")
@@ -152,7 +161,12 @@ class OrderExecutionTests(unittest.TestCase):
                     delay_between_orders=Mock(),
                 )
                 report = run_rapid_queue_with_settings(
-                    settings, dependencies=dependencies
+                    dependencies=dependencies,
+                    runtime_settings=settings.runtime,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
+                    telegram_settings=settings.telegram,
                 )
 
                 self.assertEqual(run_order.call_count, 1)

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.core.service_packages import DEFAULT_RESERVATION_PRICE_TEXT
 from appointment_bot.core.whatsapp_message_templates import (
@@ -32,7 +32,7 @@ FOLLOWUP_CONFIG_PATH = Path(".runtime/whatsapp-followup/followup-details.json")
 def prepare_test_post_payment_whatsapp_message(
     recipient_phone: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     phone = _international_phone(recipient_phone)
     message_id = f"followup-test-{uuid4().hex}"
@@ -70,7 +70,7 @@ def prepare_post_payment_whatsapp_message(
     *,
     allow_resend: bool = False,
     automatic: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -181,7 +181,7 @@ def prepare_post_payment_whatsapp_message(
 def mark_followup_message_sent(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -210,7 +210,7 @@ def mark_followup_message_sent(
 def get_followup_message(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -270,7 +270,7 @@ def get_followup_attachment(
     step_index: int,
     attachment_index: int,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> Path:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -297,7 +297,7 @@ def get_followup_attachment(
 def get_followup_web_draft(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -346,7 +346,7 @@ def prepare_followup_attachment_path(
     step_index: int,
     attachment_index: int,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     return (
         f"/api/v1/whatsapp-followup-messages/{message_id}/attachments/"
@@ -361,7 +361,7 @@ def _render_post_payment_template(
     appointment_date: object,
     appointment_hour: object,
     amount_paid: str,
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
 ) -> tuple[str, int]:
     template = get_whatsapp_message_template(POST_PAYMENT_TEMPLATE_KEY, settings)
     definition = whatsapp_template_definition(POST_PAYMENT_TEMPLATE_KEY)
@@ -533,7 +533,7 @@ def _insert_followup_message(
     template_key: str,
     template_revision: int,
     test_mode: bool,
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)

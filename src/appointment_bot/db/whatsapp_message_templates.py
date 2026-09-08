@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.whatsapp_message_templates import (
     normalize_template,
     validate_whatsapp_template,
@@ -29,7 +29,7 @@ class WhatsAppMessageTemplate:
 
 
 def list_whatsapp_message_templates(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[WhatsAppMessageTemplate]:
     resolved = _settings(settings)
     init_database(resolved)
@@ -47,7 +47,7 @@ def list_whatsapp_message_templates(
 
 def get_whatsapp_message_template(
     template_key: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> WhatsAppMessageTemplate | None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -70,7 +70,7 @@ def update_whatsapp_message_template(
     message_template: str,
     expected_revision: int,
     updated_by: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> WhatsAppMessageTemplate:
     definition = whatsapp_template_definition(template_key)
     if definition is None:

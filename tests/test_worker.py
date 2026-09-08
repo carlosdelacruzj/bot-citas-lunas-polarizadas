@@ -21,7 +21,13 @@ class ContinuousWorkerTests(unittest.TestCase):
     def test_unavailable_observer_rotates_without_sweeping_orders(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            worker = ContinuousWorker(settings)
+            worker = ContinuousWorker(
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
+                telegram_settings=settings.telegram,
+            )
             worker._worker_lease.owner_token = "owner"
             worker._worker_lease._lease_deadline = time.monotonic() + 300
             order = ServiceOrderRuntime(
@@ -60,7 +66,7 @@ class ContinuousWorkerTests(unittest.TestCase):
             ):
                 queue_requested = worker._monitor_order(order)
 
-            effective_settings = run_order.call_args.args[0]
+            effective_settings = run_order.call_args.kwargs["reservation_settings"]
             self.assertEqual(
                 effective_settings.monitor_window_seconds,
                 settings.observer_session_seconds,
@@ -99,9 +105,11 @@ class ContinuousWorkerTests(unittest.TestCase):
 
             def save_captcha(
                 _page,
-                _settings,
                 _label,
                 *,
+                reservation_settings,
+                captcha_settings,
+                evidence_settings,
                 captcha_audit,
                 alert_sink=None,
             ):
@@ -122,12 +130,14 @@ class ContinuousWorkerTests(unittest.TestCase):
             ):
                 captured_paths, event_ids = observer._collect_observer_captcha_samples(
                     object(),
-                    settings,
                     cancel_event=None,
                     run_id="run-test",
                     availability_details={"detection_origin": "observer"},
                     should_continue=None,
                     captcha_authority=captcha_authority,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertEqual(captured_paths, paths)
@@ -150,12 +160,14 @@ class ContinuousWorkerTests(unittest.TestCase):
             ):
                 captured_paths, event_ids = observer._collect_observer_captcha_samples(
                     object(),
-                    settings,
                     cancel_event=None,
                     run_id="run-test",
                     availability_details={},
                     should_continue=None,
                     captcha_authority=captcha_authority,
+                    reservation_settings=settings.reservation,
+                    captcha_settings=settings.captcha,
+                    evidence_settings=settings.evidence,
                 )
 
             self.assertEqual(captured_paths, [])
@@ -165,7 +177,13 @@ class ContinuousWorkerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             old = (datetime.now(UTC) - timedelta(hours=1)).isoformat(timespec="seconds")
-            worker = ContinuousWorker(settings)
+            worker = ContinuousWorker(
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
+                telegram_settings=settings.telegram,
+            )
             worker._running = True
 
             with patch(
@@ -184,7 +202,13 @@ class ContinuousWorkerTests(unittest.TestCase):
 
     def test_pause_and_resume_updates_are_serialized(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            worker = ContinuousWorker(make_settings(Path(directory)))
+            worker = ContinuousWorker(
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                reservation_settings=_configuration.reservation,
+                captcha_settings=_configuration.captcha,
+                evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
+            )
             pause_entered = threading.Event()
             release_pause = threading.Event()
             calls: list[str] = []
@@ -211,7 +235,13 @@ class ContinuousWorkerTests(unittest.TestCase):
 
     def test_resume_refreshes_health_timestamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            worker = ContinuousWorker(make_settings(Path(directory)))
+            worker = ContinuousWorker(
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                reservation_settings=_configuration.reservation,
+                captcha_settings=_configuration.captcha,
+                evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
+            )
             captured: dict[str, object] = {}
 
             def update_state(**values):
@@ -226,7 +256,13 @@ class ContinuousWorkerTests(unittest.TestCase):
     def test_worker_startup_refreshes_health_timestamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            worker = ContinuousWorker(settings)
+            worker = ContinuousWorker(
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                captcha_settings=settings.captcha,
+                evidence_settings=settings.evidence,
+                telegram_settings=settings.telegram,
+            )
             worker.stop()
 
             with patch(
@@ -245,7 +281,13 @@ class ContinuousWorkerTests(unittest.TestCase):
 
     def test_global_lease_loss_cancels_and_stops_new_admission(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            worker = ContinuousWorker(make_settings(Path(directory)))
+            worker = ContinuousWorker(
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                reservation_settings=_configuration.reservation,
+                captcha_settings=_configuration.captcha,
+                evidence_settings=_configuration.evidence,
+                telegram_settings=_configuration.telegram,
+            )
 
             worker._on_worker_lease_lost()
 
@@ -267,11 +309,11 @@ class WorkerLeaseHeartbeatTests(unittest.TestCase):
                 return True
 
             lease = WorkerLease(
-                make_settings(Path(directory)),
                 lease_seconds=5 * 60,
                 renew_interval_seconds=0.001,
                 retry_interval_seconds=0.001,
                 monotonic=lambda: clock[0],
+                runtime_settings=make_settings(Path(directory)).runtime,
             )
             with (
                 patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
@@ -305,11 +347,11 @@ class WorkerLeaseHeartbeatTests(unittest.TestCase):
                 return True
 
             lease = WorkerLease(
-                make_settings(Path(directory)),
                 lease_seconds=5 * 60,
                 renew_interval_seconds=0.001,
                 retry_interval_seconds=0.001,
                 monotonic=lambda: clock[0],
+                runtime_settings=make_settings(Path(directory)).runtime,
             )
             with (
                 patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
@@ -328,10 +370,10 @@ class WorkerLeaseHeartbeatTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             lost = threading.Event()
             lease = WorkerLease(
-                make_settings(Path(directory)),
                 on_lost=lost.set,
                 renew_interval_seconds=0.001,
                 retry_interval_seconds=0.001,
+                runtime_settings=make_settings(Path(directory)).runtime,
             )
             with (
                 patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
@@ -356,12 +398,12 @@ class WorkerLeaseHeartbeatTests(unittest.TestCase):
                 raise ConnectionError("postgres unavailable past lease expiry")
 
             lease = WorkerLease(
-                make_settings(Path(directory)),
                 on_lost=lost.set,
                 lease_seconds=300,
                 renew_interval_seconds=0.001,
                 retry_interval_seconds=0.001,
                 monotonic=lambda: clock[0],
+                runtime_settings=make_settings(Path(directory)).runtime,
             )
             with (
                 patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),
@@ -381,11 +423,11 @@ class WorkerLeaseHeartbeatTests(unittest.TestCase):
             clock = [0.0]
             lost = threading.Event()
             lease = WorkerLease(
-                make_settings(Path(directory)),
                 on_lost=lost.set,
                 lease_seconds=300,
                 renew_interval_seconds=600,
                 monotonic=lambda: clock[0],
+                runtime_settings=make_settings(Path(directory)).runtime,
             )
             with (
                 patch("appointment_bot.worker.lease.acquire_worker_lease", return_value=True),

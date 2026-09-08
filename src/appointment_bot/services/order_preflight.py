@@ -8,7 +8,16 @@ from uuid import uuid4
 
 from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.loading import (
+    load_evidence_settings,
+    load_reservation_settings,
+    load_runtime_settings,
+    load_telegram_settings,
+)
+from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.db.orders import (
     get_order_program_listing,
     get_service_order_runtime,
@@ -19,7 +28,6 @@ from appointment_bot.db.orders import (
     mark_order_preflight_validated,
     record_order_program_listing,
 )
-from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.appointment_dom import read_person_name
 from appointment_bot.reservation_engine.login import InvalidPortalCredentials, login
 from appointment_bot.reservation_engine.programs import read_program_action_rows
@@ -33,9 +41,18 @@ _ACTIVE_LOCK = threading.Lock()
 _ACTIVE_ORDERS: set[str] = set()
 
 
-def resume_pending_order_preflights(*, settings: Settings | None = None) -> int:
-    settings = settings or load_settings(require_login=False)
-    orders = list_service_order_summaries(settings)
+def resume_pending_order_preflights(
+    *,
+    telegram_settings: TelegramSettings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
+    reservation_settings: ReservationSettings | None = None,
+    evidence_settings: EvidenceSettings | None = None,
+) -> int:
+    runtime_settings = runtime_settings or load_runtime_settings(require_login=False)
+    reservation_settings = reservation_settings or load_reservation_settings(require_login=False)
+    evidence_settings = evidence_settings or load_evidence_settings(require_login=False)
+    telegram_settings = telegram_settings or load_telegram_settings(require_login=False)
+    orders = list_service_order_summaries(settings=runtime_settings)
     for order in orders:
         if order.preflight_status != "running":
             continue
@@ -43,10 +60,18 @@ def resume_pending_order_preflights(*, settings: Settings | None = None) -> int:
             order.order_id,
             "La validacion fue interrumpida por un reinicio. Revalidar manualmente.",
             "validation_interrupted",
-            settings,
+            runtime_settings=runtime_settings,
+            telegram_settings=telegram_settings,
         )
     return sum(
-        schedule_order_preflight(order.order_id, settings=settings, new_cycle=False)
+        schedule_order_preflight(
+            order.order_id,
+            new_cycle=False,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
+            telegram_settings=telegram_settings,
+        )
         for order in orders
         if order.preflight_status == "pending"
     )
@@ -55,10 +80,16 @@ def resume_pending_order_preflights(*, settings: Settings | None = None) -> int:
 def schedule_order_preflight(
     order_id: str,
     *,
-    settings: Settings | None = None,
     new_cycle: bool = True,
+    telegram_settings: TelegramSettings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
+    reservation_settings: ReservationSettings | None = None,
+    evidence_settings: EvidenceSettings | None = None,
 ) -> bool:
-    settings = settings or load_settings(require_login=False)
+    runtime_settings = runtime_settings or load_runtime_settings(require_login=False)
+    reservation_settings = reservation_settings or load_reservation_settings(require_login=False)
+    evidence_settings = evidence_settings or load_evidence_settings(require_login=False)
+    telegram_settings = telegram_settings or load_telegram_settings(require_login=False)
     with _ACTIVE_LOCK:
         if order_id in _ACTIVE_ORDERS:
             return False
@@ -66,19 +97,20 @@ def schedule_order_preflight(
     browser_lease: BrowserOwnershipLease | None = None
     try:
         browser_lease = BrowserOwnershipLease.acquire(
-            settings,
-            order_id,
-            owner_token=f"preflight-{uuid4().hex}",
-            purpose="preflight",
+            runtime_settings, order_id, owner_token=f"preflight-{uuid4().hex}", purpose="preflight"
         )
         preflight_cycle = mark_order_preflight_pending(
-            order_id,
-            new_cycle=new_cycle,
-            settings=settings,
+            order_id, new_cycle=new_cycle, settings=runtime_settings
         )
         thread = threading.Thread(
             target=_run_scheduled_preflight,
-            args=(order_id, preflight_cycle, settings, browser_lease),
+            args=(order_id, preflight_cycle, browser_lease),
+            kwargs={
+                "runtime_settings": runtime_settings,
+                "reservation_settings": reservation_settings,
+                "evidence_settings": evidence_settings,
+                "telegram_settings": telegram_settings,
+            },
             name=f"order-preflight-{order_id}",
             daemon=True,
         )
@@ -96,26 +128,35 @@ def validate_order_preflight(
     order_id: str,
     *,
     preflight_cycle: int | None = None,
-    settings: Settings | None = None,
     _browser_lease: BrowserOwnershipLease | None = None,
+    telegram_settings: TelegramSettings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
+    reservation_settings: ReservationSettings | None = None,
+    evidence_settings: EvidenceSettings | None = None,
 ) -> dict[str, object]:
-    settings = settings or load_settings(require_login=False)
+    runtime_settings = runtime_settings or load_runtime_settings(require_login=False)
+    reservation_settings = reservation_settings or load_reservation_settings(require_login=False)
+    evidence_settings = evidence_settings or load_evidence_settings(require_login=False)
+    telegram_settings = telegram_settings or load_telegram_settings(require_login=False)
     if _browser_lease is not None:
         return _validate_order_preflight_owned(
             order_id,
             preflight_cycle=preflight_cycle,
-            settings=settings,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
+            telegram_settings=telegram_settings,
         )
     with BrowserOwnershipLease.acquire(
-        settings,
-        order_id,
-        owner_token=f"preflight-{uuid4().hex}",
-        purpose="preflight",
+        runtime_settings, order_id, owner_token=f"preflight-{uuid4().hex}", purpose="preflight"
     ):
         return _validate_order_preflight_owned(
             order_id,
             preflight_cycle=preflight_cycle,
-            settings=settings,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
+            telegram_settings=telegram_settings,
         )
 
 
@@ -123,25 +164,32 @@ def _validate_order_preflight_owned(
     order_id: str,
     *,
     preflight_cycle: int | None,
-    settings: Settings,
+    telegram_settings: TelegramSettings,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> dict[str, object]:
-    current_cycle = mark_order_preflight_running(order_id, settings=settings)
+    current_cycle = mark_order_preflight_running(order_id, settings=runtime_settings)
     if preflight_cycle is None:
         preflight_cycle = current_cycle
     elif preflight_cycle != current_cycle:
         raise RuntimeError("El ciclo de validacion cambio antes de iniciar.")
-    order = get_service_order_runtime(order_id, settings=settings)
+    order = get_service_order_runtime(order_id, settings=runtime_settings)
     if order is None:
         raise ValueError(f"Service order not found: {order_id}")
-    order_settings = settings_for_order(
-        settings,
+    order_reservation_settings = settings_for_order(
         username=order.username,
         password=order.password,
         document_type=order.document_type,
+        reservation_settings=reservation_settings,
     )
-    with open_page(order_settings, headless=True) as page:
+    with open_page(
+        headless=True,
+        runtime_settings=runtime_settings,
+        evidence_settings=evidence_settings,
+    ) as page:
         try:
-            login(page, order_settings)
+            login(page, reservation_settings=order_reservation_settings)
             applicant_name = _read_portal_applicant_name(page)
             if not applicant_name or _looks_like_document(applicant_name, order.username):
                 raise RuntimeError("El portal no mostro un nombre completo verificable.")
@@ -157,24 +205,28 @@ def _validate_order_preflight_owned(
                 "rows": rows,
                 "source": "registration_preflight",
             }
-            record_order_program_listing(order_id, listing, settings=settings)
-            stored_listing = get_order_program_listing(order_id, settings=settings) or {}
+            record_order_program_listing(order_id, listing, settings=runtime_settings)
+            stored_listing = get_order_program_listing(order_id, settings=runtime_settings) or {}
             listing_signature = str(stored_listing.get("signature") or "")
             listing_revision = int(stored_listing.get("revision") or 1)
             if not pending_rows:
                 result = _fail_preflight(
                     order_id,
-                    "El acceso funciona, pero no se encontro ningun tramite "
-                    "PENDIENTE para reservar.",
+                    (
+                        "El acceso funciona, pero no se encontro ningun tramite "
+                        "PENDIENTE para reservar."
+                    ),
                     "no_pending_request",
-                    settings,
+                    runtime_settings=runtime_settings,
+                    telegram_settings=telegram_settings,
                 )
                 _queue_notice(
                     order=order,
                     preflight_cycle=preflight_cycle,
                     notice_type="no_pending_request",
                     display_name=applicant_name or order.contact_name or order.name,
-                    settings=settings,
+                    runtime_settings=runtime_settings,
+                    telegram_settings=telegram_settings,
                 )
                 return result
             target = {
@@ -201,7 +253,6 @@ def _validate_order_preflight_owned(
                         order_id,
                         "El tramite objetivo no coincide con un unico tramite PENDIENTE.",
                         "program_target_not_unique",
-                        settings,
                         details={
                             "program_count": len(rows),
                             "pending_count": len(pending_rows),
@@ -210,14 +261,17 @@ def _validate_order_preflight_owned(
                             "listing_signature": listing_signature,
                             "listing_revision": listing_revision,
                         },
+                        runtime_settings=runtime_settings,
+                        telegram_settings=telegram_settings,
                     )
             elif len(pending_rows) > 1:
                 return _fail_preflight(
                     order_id,
-                    "La cuenta tiene varios tramites PENDIENTE. "
-                    "El operador debe confirmar si se atendera uno o todos.",
+                    (
+                        "La cuenta tiene varios tramites PENDIENTE. El operador debe confirmar "
+                        "si se atendera uno o todos."
+                    ),
                     "multiple_pending_resolution_required",
-                    settings,
                     details={
                         "program_count": len(rows),
                         "pending_count": len(pending_rows),
@@ -225,6 +279,8 @@ def _validate_order_preflight_owned(
                         "listing_signature": listing_signature,
                         "listing_revision": listing_revision,
                     },
+                    runtime_settings=runtime_settings,
+                    telegram_settings=telegram_settings,
                 )
             details = {
                 "applicant_name": applicant_name,
@@ -236,17 +292,15 @@ def _validate_order_preflight_owned(
                 "listing_revision": listing_revision,
             }
             mark_order_preflight_validated(
-                order_id,
-                applicant_name=applicant_name,
-                details=details,
-                settings=settings,
+                order_id, applicant_name=applicant_name, details=details, settings=runtime_settings
             )
             _queue_notice(
                 order=order,
                 preflight_cycle=preflight_cycle,
                 notice_type="monitoring_started",
                 display_name=applicant_name,
-                settings=settings,
+                runtime_settings=runtime_settings,
+                telegram_settings=telegram_settings,
             )
             logger.info(
                 "Order preflight validated: order=%s programs=%s pending=%s",
@@ -256,43 +310,64 @@ def _validate_order_preflight_owned(
             )
             return {"status": "validated", **details}
         except InvalidPortalCredentials as exc:
-            _save_failure_screenshot(page, order_id, order_settings.evidence.screenshots_dir)
+            _save_failure_screenshot(page, order_id, evidence_settings.screenshots_dir)
             result = _fail_preflight(
                 order_id,
                 str(exc),
                 "invalid_credentials",
-                settings,
+                runtime_settings=runtime_settings,
+                telegram_settings=telegram_settings,
             )
             _queue_notice(
                 order=order,
                 preflight_cycle=preflight_cycle,
                 notice_type="invalid_credentials",
                 display_name=order.contact_name or order.name,
-                settings=settings,
+                runtime_settings=runtime_settings,
+                telegram_settings=telegram_settings,
             )
             return result
         except Exception as exc:
-            _save_failure_screenshot(page, order_id, order_settings.evidence.screenshots_dir)
-            return _fail_preflight(order_id, str(exc), exc.__class__.__name__, settings)
+            _save_failure_screenshot(page, order_id, evidence_settings.screenshots_dir)
+            return _fail_preflight(
+                order_id,
+                str(exc),
+                exc.__class__.__name__,
+                runtime_settings=runtime_settings,
+                telegram_settings=telegram_settings,
+            )
 
 
 def _run_scheduled_preflight(
     order_id: str,
     preflight_cycle: int,
-    settings: Settings,
     browser_lease: BrowserOwnershipLease,
+    *,
+    telegram_settings: TelegramSettings,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> None:
     try:
         validate_order_preflight(
             order_id,
             preflight_cycle=preflight_cycle,
-            settings=settings,
             _browser_lease=browser_lease,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
+            telegram_settings=telegram_settings,
         )
     except Exception as exc:
         logger.exception("Unexpected order preflight failure for %s", order_id)
         try:
-            _fail_preflight(order_id, str(exc), exc.__class__.__name__, settings)
+            _fail_preflight(
+                order_id,
+                str(exc),
+                exc.__class__.__name__,
+                runtime_settings=runtime_settings,
+                telegram_settings=telegram_settings,
+            )
         except Exception:
             logger.exception("Could not persist unexpected preflight failure for %s", order_id)
     finally:
@@ -339,23 +414,20 @@ def _fail_preflight(
     order_id: str,
     message: str,
     error_type: str,
-    settings: Settings,
     *,
     details: dict[str, object] | None = None,
+    telegram_settings: TelegramSettings,
+    runtime_settings: RuntimeSettings,
 ) -> dict[str, object]:
     safe_message = sanitize_text(message) or "No se pudo validar la cuenta en el portal."
     failure_details = {"error_type": error_type, **(details or {})}
     mark_order_preflight_failed(
-        order_id,
-        safe_message,
-        details=failure_details,
-        settings=settings,
+        order_id, safe_message, details=failure_details, settings=runtime_settings
     )
     logger.warning("Order preflight failed: order=%s error=%s", order_id, safe_message)
     if error_type == "multiple_pending_resolution_required":
         pending_count = failure_details.get("pending_count", "varios")
         send_telegram_message(
-            settings,
             "\n".join(
                 [
                     "Se requiere definir el alcance de tramites PENDIENTE.",
@@ -365,10 +437,10 @@ def _fail_preflight(
                     "No se envio ningun mensaje automatico al cliente.",
                 ]
             ),
+            telegram_settings=telegram_settings,
         )
     elif error_type not in {"invalid_credentials", "no_pending_request"}:
         send_telegram_message(
-            settings,
             "\n".join(
                 [
                     "⚠️ Validación inicial interrumpida por un error técnico.",
@@ -378,6 +450,7 @@ def _fail_preflight(
                     "No se envió ningún mensaje automático al cliente.",
                 ]
             ),
+            telegram_settings=telegram_settings,
         )
     return {"status": "failed", "message": safe_message, **failure_details}
 
@@ -388,7 +461,8 @@ def _queue_notice(
     preflight_cycle: int,
     notice_type: str,
     display_name: str | None,
-    settings: Settings,
+    telegram_settings: TelegramSettings,
+    runtime_settings: RuntimeSettings,
 ) -> None:
     try:
         queued = enqueue_registration_notice(
@@ -398,7 +472,6 @@ def _queue_notice(
             recipient_phone=order.contact_whatsapp,
             recipient_username=order.contact_whatsapp_username,
             display_name=display_name,
-            settings=settings,
             service_type=order.service_type,
             service_package=order.service_package,
             reservation_price=order.reservation_price,
@@ -406,11 +479,11 @@ def _queue_notice(
             maximum_reservation_date=order.maximum_reservation_date,
             allowed_weekdays=order.allowed_weekdays,
             excluded_date_ranges=order.excluded_date_ranges,
+            runtime_settings=runtime_settings,
         )
     except Exception as exc:
         logger.exception("Could not enqueue registration notice for %s", order.order_id)
         send_telegram_message(
-            settings,
             "\n".join(
                 [
                     "⚠️ No se pudo encolar el aviso de registro por WhatsApp.",
@@ -420,6 +493,7 @@ def _queue_notice(
                     "La validación del portal se conservó; revisar manualmente.",
                 ]
             ),
+            telegram_settings=telegram_settings,
         )
         return
     if not queued and not (order.contact_whatsapp or order.contact_whatsapp_username):
@@ -428,7 +502,6 @@ def _queue_notice(
             order.order_id,
         )
         send_telegram_message(
-            settings,
             "\n".join(
                 [
                     "⚠️ El aviso de registro no pudo encolarse: falta WhatsApp.",
@@ -437,6 +510,7 @@ def _queue_notice(
                     "La validación del portal se conservó; contactar manualmente.",
                 ]
             ),
+            telegram_settings=telegram_settings,
         )
 
 

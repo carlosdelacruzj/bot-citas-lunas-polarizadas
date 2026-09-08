@@ -9,7 +9,8 @@ from typing import Protocol
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.service_packages import validate_integral_payment_totals
 from appointment_bot.db.payment_repository import (
     PaymentState,
@@ -22,7 +23,7 @@ from appointment_bot.db.unit_of_work import postgres_unit_of_work
 from appointment_bot.db.whatsapp_automation import enqueue_whatsapp_automation_job
 
 UnitOfWorkFactory = Callable[
-    [Settings, Connection | None],
+    [RuntimeSettings, Connection | None],
     AbstractContextManager[Connection],
 ]
 
@@ -100,7 +101,7 @@ class RegisterPayment:
         self,
         request: RegisterPaymentRequest,
         *,
-        settings: Settings | None = None,
+        runtime_settings: RuntimeSettings | None = None,
         connection_override: Connection | None = None,
     ) -> str:
         paid = _decimal_or_none(request.amount_paid)
@@ -118,7 +119,7 @@ class RegisterPayment:
                     "A lower final payment requires allow_difference=true and difference_reason."
                 )
 
-        resolved_settings = settings or load_settings(require_login=False)
+        resolved_settings = runtime_settings or load_runtime_settings(require_login=False)
         occurred_at = self._clock()
         with self._unit_of_work_factory(resolved_settings, connection_override) as connection:
             current = self._repository.lock_state(connection, request.order_id)
@@ -222,7 +223,7 @@ def mark_payment_paid(
     expected_payment_status: str | None = None,
     expected_amount_agreed: str | float | int | None = None,
     expected_amount_paid: str | float | int | None = None,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
 ) -> str:
     return _DEFAULT_USE_CASE.execute(
         RegisterPaymentRequest(
@@ -237,7 +238,7 @@ def mark_payment_paid(
             expected_amount_agreed=expected_amount_agreed,
             expected_amount_paid=expected_amount_paid,
         ),
-        settings=settings,
+        runtime_settings=runtime_settings,
     )
 
 
@@ -250,7 +251,7 @@ def record_partial_payment(
     expected_payment_status: str | None = None,
     expected_amount_agreed: str | float | int | None = None,
     expected_amount_paid: str | float | int | None = None,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
 ) -> str:
     return _DEFAULT_USE_CASE.execute(
         RegisterPaymentRequest(
@@ -263,7 +264,7 @@ def record_partial_payment(
             expected_amount_agreed=expected_amount_agreed,
             expected_amount_paid=expected_amount_paid,
         ),
-        settings=settings,
+        runtime_settings=runtime_settings,
     )
 
 

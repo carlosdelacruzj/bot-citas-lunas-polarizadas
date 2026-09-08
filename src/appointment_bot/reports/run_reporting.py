@@ -5,7 +5,8 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import AvailabilityResult, RunRecord, RunReport
 from appointment_bot.core.run_reports import reservation_confirmed
 from appointment_bot.core.statuses import ResultStatus, redact_captcha_answers, sanitize_details
@@ -62,10 +63,7 @@ def report_from_result(
         duration_seconds=duration_seconds,
         reservation_attempted=(
             result.status in {ResultStatus.REGISTERED, ResultStatus.RESERVATION_UNCONFIRMED}
-            or (
-                bool(submission_outcome)
-                and submission_outcome not in NON_SUBMISSION_OUTCOMES
-            )
+            or (bool(submission_outcome) and submission_outcome not in NON_SUBMISSION_OUTCOMES)
         ),
         reservation_confirmed=result.status == ResultStatus.REGISTERED,
         details=details or None,
@@ -79,25 +77,11 @@ def report_from_result(
     )
 
 
-def settings_for_order(
-    settings: Settings,
-    *,
-    username: str,
-    password: str,
-    document_type: str = "dni",
-) -> Settings:
-    return replace(
-        settings,
-        login_username=username,
-        login_password=password,
-        login_document_type=document_type,
-    )
-
-
 def finalize_report(
     report: RunReport,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    evidence_settings: EvidenceSettings,
     started_at_dt: datetime,
 ) -> RunReport:
     finished_at_dt = datetime.now(UTC)
@@ -110,18 +94,22 @@ def finalize_report(
         reservation_confirmed=confirmed,
     )
     if finalized.run_id is not None:
-        record_run_history(settings, finalized)
+        record_run_history(
+            finalized, runtime_settings=runtime_settings, evidence_settings=evidence_settings
+        )
     return finalized
 
 
-def record_run_history(settings: Settings, report: RunReport) -> None:
+def record_run_history(
+    report: RunReport, *, runtime_settings: RuntimeSettings, evidence_settings: EvidenceSettings
+) -> None:
     screenshot_paths = report.screenshot_paths or []
     if report.screenshot_path and report.screenshot_path not in screenshot_paths:
         screenshot_paths = [report.screenshot_path, *screenshot_paths]
-    archived_slots = archive_unique_slot_screenshots(settings, report)
+    archived_slots = archive_unique_slot_screenshots(report, evidence_settings=evidence_settings)
     for archived_slot in archived_slots:
         try:
-            queue_unique_slot_watermark(settings, archived_slot)
+            queue_unique_slot_watermark(archived_slot, evidence_settings=evidence_settings)
         except Exception:
             logger.exception(
                 "Could not queue the branded copy for unique slot screenshot: %s",
@@ -130,7 +118,6 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
     try:
         person_name = str((report.details or {}).get("nombre") or "").strip() or None
         record_run_outcome(
-            settings,
             RunRecord(
                 run_id=report.run_id or "",
                 order_id=report.order_id,
@@ -146,6 +133,7 @@ def record_run_history(settings: Settings, report: RunReport) -> None:
                 screenshot_path=report.screenshot_path,
             ),
             screenshot_paths=screenshot_paths,
+            runtime_settings=runtime_settings,
             report=report,
             person_name=person_name,
             include_reservation=_report_should_record_reservation(report),

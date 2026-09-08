@@ -5,7 +5,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.db.captcha_authority import resolve_captcha_authority_decision
 from appointment_bot.db.captcha_sampling_control import get_captcha_sampling_control
@@ -41,25 +45,31 @@ class WorkerRunSink:
     def finalize_report(
         self,
         report: RunReport,
-        settings: Settings,
         *,
+        runtime_settings: RuntimeSettings,
+        evidence_settings: EvidenceSettings,
         started_at_dt: datetime,
     ) -> RunReport:
-        return finalize_report(report, settings, started_at_dt=started_at_dt)
+        return finalize_report(
+            report,
+            started_at_dt=started_at_dt,
+            runtime_settings=runtime_settings,
+            evidence_settings=evidence_settings,
+        )
 
     def create_video(
         self,
-        settings: Settings,
         *,
+        evidence_settings: EvidenceSettings,
         order_id: str | None,
         client_name: str | None,
         started_at: datetime,
     ) -> SessionVideo | None:
         return ClientSessionVideoRecorder.create(
-            settings,
             order_id=order_id,
             client_name=client_name,
             started_at=started_at,
+            evidence_settings=evidence_settings,
         )
 
 
@@ -67,40 +77,37 @@ class WorkerAlertSink:
     def notify_result(
         self,
         result: AvailabilityResult,
-        settings: Settings,
         screenshot_path: Path | None,
         *,
+        telegram_settings: TelegramSettings,
         screenshot_paths: list[Path] | None = None,
     ) -> None:
         notify_result(
             result,
-            settings,
             screenshot_path,
             screenshot_paths=screenshot_paths,
+            telegram_settings=telegram_settings,
         )
 
     def notify_error(
-        self,
-        error: Exception,
-        settings: Settings,
-        screenshot_path: Path | None,
+        self, error: Exception, screenshot_path: Path | None, *, telegram_settings: TelegramSettings
     ) -> None:
-        notify_error(error, settings, screenshot_path)
+        notify_error(error, screenshot_path, telegram_settings=telegram_settings)
 
     def notify_programs(
         self,
-        settings: Settings,
         order_id: str | None,
         client_name: str | None,
         details: dict[str, Any],
+        *,
+        runtime_settings: RuntimeSettings,
+        telegram_settings: TelegramSettings,
     ) -> None:
         should_notify = True
         if order_id is not None:
             try:
                 should_notify = record_order_program_listing(
-                    order_id,
-                    details,
-                    settings=settings,
+                    order_id, details, settings=runtime_settings
                 )
             except Exception:
                 logger.exception("Could not persist program listing for %s", order_id)
@@ -109,8 +116,8 @@ class WorkerAlertSink:
             return
         try:
             send_telegram_message(
-                settings,
                 _program_notification_text(order_id, client_name, details),
+                telegram_settings=telegram_settings,
             )
         except Exception:
             logger.exception("Could not notify program listing")
@@ -120,9 +127,7 @@ class WorkerAlertSink:
             "⚠️ El portal volvió a mostrar un CAPTCHA gráfico. La reserva seguirá "
             "usando 2Captcha; V3/V6 permanecen en reserva fría hasta una "
             "reactivación explícita.",
-            dedupe_key=(
-                f"captcha-graphic-returned:{datetime.now(UTC).strftime('%Y-%m')}"
-            ),
+            dedupe_key=f"captcha-graphic-returned:{datetime.now(UTC).strftime('%Y-%m')}",
         )
 
 
@@ -130,14 +135,19 @@ class WorkerCaptchaAuthority:
     def solve(
         self,
         image_path: Path,
-        settings: Settings,
+        *,
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
+        captcha_settings: CaptchaSettings,
         **kwargs: Any,
     ) -> CaptchaSolveResult:
         result = solve_reservation_captcha(
             image_path,
-            settings,
             fallback_solver=solve_normal_captcha,
             **kwargs,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
         )
         return CaptchaSolveResult(**vars(result))
 
@@ -150,27 +160,26 @@ class WorkerCaptchaAuthority:
     def resolve_portal_outcome(self, event_id: str, *, portal_outcome: str) -> None:
         resolve_captcha_authority_decision(event_id, portal_outcome=portal_outcome)
 
-    def sample_limit(self, settings: Settings) -> int:
-        return get_captcha_sampling_control(settings).effective_sample_limit
+    def sample_limit(
+        self, *, runtime_settings: RuntimeSettings, captcha_settings: CaptchaSettings
+    ) -> int:
+        return get_captcha_sampling_control(
+            runtime_settings, captcha=captcha_settings
+        ).effective_sample_limit
 
 
 class WorkerOpportunityControl:
-    def admission_allowed(self, feature: str, settings: Settings) -> bool:
-        return bool(is_opportunity_admission_allowed(feature, settings=settings))
+    def admission_allowed(self, feature: str, *, runtime_settings: RuntimeSettings) -> bool:
+        return bool(is_opportunity_admission_allowed(feature, settings=runtime_settings))
 
-    def record_event(self, **kwargs: Any) -> None:
-        record_burst_event(**kwargs)
+    def record_event(self, *, runtime_settings: RuntimeSettings, **kwargs: Any) -> None:
+        record_burst_event(settings=runtime_settings, **kwargs)
 
     def trip_breaker(
-        self,
-        reason: str,
-        burst_id: str | None,
-        settings: Settings,
+        self, reason: str, burst_id: str | None, *, runtime_settings: RuntimeSettings
     ) -> None:
         trip_opportunity_circuit_breaker(
-            reason=reason,
-            burst_id=burst_id,
-            settings=settings,
+            reason=reason, burst_id=burst_id, settings=runtime_settings
         )
 
 
@@ -184,9 +193,7 @@ def build_reservation_engine_ports() -> ReservationEnginePorts:
 
 
 def _program_notification_text(
-    order_id: str | None,
-    client_name: str | None,
-    details: dict[str, Any],
+    order_id: str | None, client_name: str | None, details: dict[str, Any]
 ) -> str:
     rows = details.get("rows") if isinstance(details.get("rows"), list) else []
     pending_count = int(details.get("pending_count") or 0)
@@ -201,10 +208,7 @@ def _program_notification_text(
     if client_name:
         lines.append(f"Cliente: {client_name}")
     lines.extend(
-        [
-            f"Tramites: {details.get('program_count')}",
-            f"Pendientes: {details.get('pending_count')}",
-        ]
+        [f"Tramites: {details.get('program_count')}", f"Pendientes: {details.get('pending_count')}"]
     )
     decision_messages = {
         "single_pending_selected": "Accion: se eligio el unico PENDIENTE",

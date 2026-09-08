@@ -13,7 +13,14 @@ from zoneinfo import ZoneInfo
 
 from appointment_bot.browser.ownership import BrowserOwnershipLease
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.loading import (
+    load_evidence_settings,
+    load_reservation_settings,
+    load_runtime_settings,
+)
+from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.browser_ownership import BrowserOwnershipConflict
 from appointment_bot.db.order_credentials import get_service_order_runtime
 from appointment_bot.db.post_appointment import (
@@ -27,7 +34,6 @@ from appointment_bot.db.post_appointment import (
     post_appointment_automation_status,
     record_post_appointment_review,
 )
-from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowUnavailable,
 )
@@ -51,8 +57,16 @@ class PostAppointmentReviewConflict(RuntimeError):
 
 
 class PostAppointmentReviewScheduler:
-    def __init__(self, settings: Settings):
-        self.settings = settings
+    def __init__(
+        self,
+        *,
+        runtime_settings: RuntimeSettings,
+        reservation_settings: ReservationSettings,
+        evidence_settings: EvidenceSettings,
+    ):
+        self.runtime_settings = runtime_settings
+        self.reservation_settings = reservation_settings
+        self.evidence_settings = evidence_settings
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -90,9 +104,11 @@ class PostAppointmentReviewScheduler:
             if now.time() >= POST_APPOINTMENT_AUTOMATION_TIME:
                 try:
                     reconcile_post_appointment_reviews(
-                        self.settings,
                         now=now,
                         stop_event=self._stop_event,
+                        runtime_settings=self.runtime_settings,
+                        reservation_settings=self.reservation_settings,
+                        evidence_settings=self.evidence_settings,
                     )
                 except Exception:
                     logger.exception("Unexpected post-appointment scheduler failure")
@@ -100,16 +116,17 @@ class PostAppointmentReviewScheduler:
 
 
 def reconcile_post_appointment_reviews(
-    settings: Settings,
     *,
     now: datetime | None = None,
     stop_event: threading.Event | None = None,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    evidence_settings: EvidenceSettings,
 ) -> dict[str, Any]:
     now = now or datetime.now(LIMA_TZ)
     service_date = now.astimezone(LIMA_TZ).date()
     stale = fail_stale_post_appointment_automatic_reviews(
-        service_date=service_date,
-        settings=settings,
+        service_date=service_date, settings=runtime_settings
     )
     if stale:
         logger.warning("Closed %s interrupted automatic post-appointment reviews", stale)
@@ -117,15 +134,19 @@ def reconcile_post_appointment_reviews(
     processed = 0
     while stop_event is None or not stop_event.is_set():
         claimed = claim_next_post_appointment_automatic_review(
-            service_date=service_date,
-            settings=settings,
+            service_date=service_date, settings=runtime_settings
         )
         if claimed is None:
             break
         reservation_id = str(claimed["reservation_id"])
         order_id = str(claimed["order_id"])
         try:
-            item = review_post_appointment_order(order_id, settings=settings)
+            item = review_post_appointment_order(
+                order_id,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+                evidence_settings=evidence_settings,
+            )
             error_code = str(item.get("error_code") or "") or None
             technical_failure = error_code in {"portal_error", "workflow_unavailable"}
             finish_post_appointment_automatic_review(
@@ -134,12 +155,10 @@ def reconcile_post_appointment_reviews(
                 status="failed" if technical_failure else "completed",
                 review_id=str(item.get("review_id") or "") or None,
                 error_code=error_code if technical_failure else None,
-                error_message=(
-                    str(item.get("error_message") or "") or None
-                    if technical_failure
-                    else None
-                ),
-                settings=settings,
+                error_message=str(item.get("error_message") or "") or None
+                if technical_failure
+                else None,
+                settings=runtime_settings,
             )
         except PostAppointmentReviewConflict:
             finish_post_appointment_automatic_review(
@@ -148,7 +167,7 @@ def reconcile_post_appointment_reviews(
                 status="skipped",
                 error_code="manual_review_in_progress",
                 error_message="La orden ya tenía una revisión manual activa.",
-                settings=settings,
+                settings=runtime_settings,
             )
         except Exception:
             logger.exception(
@@ -161,7 +180,7 @@ def reconcile_post_appointment_reviews(
                 status="failed",
                 error_code="automatic_review_error",
                 error_message="No se pudo completar la revisión automática de solo lectura.",
-                settings=settings,
+                settings=runtime_settings,
             )
         processed += 1
         pause_seconds = random.uniform(*POST_APPOINTMENT_AUTOMATION_PAUSE_SECONDS)
@@ -172,8 +191,7 @@ def reconcile_post_appointment_reviews(
             threading.Event().wait(pause_seconds)
 
     status = post_appointment_automation_status(
-        service_date=service_date,
-        settings=settings,
+        service_date=service_date, settings=runtime_settings
     )
     status["processed_this_reconciliation"] = processed
     return status
@@ -182,19 +200,23 @@ def reconcile_post_appointment_reviews(
 def review_post_appointment_order(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
+    reservation_settings: ReservationSettings | None = None,
+    evidence_settings: EvidenceSettings | None = None,
 ) -> dict[str, Any]:
-    settings = settings or load_settings(require_login=False)
-    target = get_post_appointment_target(order_id, settings=settings)
+    runtime_settings = runtime_settings or load_runtime_settings(require_login=False)
+    reservation_settings = reservation_settings or load_reservation_settings(require_login=False)
+    evidence_settings = evidence_settings or load_evidence_settings(require_login=False)
+    target = get_post_appointment_target(order_id, settings=runtime_settings)
     if target is None:
         raise ValueError("La orden no tiene una cita confirmada registrada.")
-    order = get_service_order_runtime(order_id, settings=settings)
+    order = get_service_order_runtime(order_id, settings=runtime_settings)
     if order is None:
         raise ValueError("La orden ya no existe.")
 
     try:
         browser_lease = BrowserOwnershipLease.acquire(
-            settings,
+            runtime_settings,
             order_id,
             owner_token=f"post-appointment-{uuid4().hex}",
             purpose="post_appointment",
@@ -219,34 +241,36 @@ def review_post_appointment_order(
     error_code: str | None = None
     error_message: str | None = None
 
-    review_settings = replace(
+    review_reservation_settings = replace(
         settings_for_order(
-            settings,
             username=order.username,
             password=order.password,
             document_type=order.document_type,
+            reservation_settings=reservation_settings,
         ),
-        headless=True,
         auto_reserve=False,
         monitor_window_seconds=0,
-        telegram_notify_unavailable=False,
-        artifact_prefix=f"post-appointment-{order_id}",
+    )
+    review_runtime_settings = replace(runtime_settings, headless=True)
+    review_evidence_settings = replace(
+        evidence_settings, artifact_prefix=f"post-appointment-{order_id}"
     )
     try:
-        with open_page(review_settings, headless=True, block_heavy_assets=True) as page:
-            login(page, review_settings)
+        with open_page(
+            headless=True,
+            block_heavy_assets=True,
+            runtime_settings=review_runtime_settings,
+            evidence_settings=review_evidence_settings,
+        ) as page:
+            login(page, reservation_settings=review_reservation_settings)
             page = open_program_detail_for_review(
                 page,
-                program_expediente=(
-                    target.get("program_expediente") or order.program_expediente
-                ),
+                program_expediente=(target.get("program_expediente") or order.program_expediente),
                 program_plate=target.get("program_plate") or order.program_plate,
             )
             process_stages = read_process_stages(page)
             stages = [_sanitize_stage(stage) for stage in process_stages]
-            observation_count = sum(
-                stage["message_class"] == "observation" for stage in stages
-            )
+            observation_count = sum(stage["message_class"] == "observation" for stage in stages)
             later_progress_observed = _has_post_appointment_progress(stages)
             appointment_stage = next(
                 (stage for stage in stages if stage["stage_key"] == "separa_cita_peritaje"),
@@ -293,14 +317,14 @@ def review_post_appointment_order(
                 error_message=error_message,
                 started_at=started_at,
                 finished_at=finished_at,
-                settings=settings,
+                settings=runtime_settings,
             )
         finally:
             with _ACTIVE_REVIEWS_LOCK:
                 _ACTIVE_REVIEWS.discard(order_id)
             browser_lease.close()
 
-    item = get_post_appointment_followup(order_id, settings=settings)
+    item = get_post_appointment_followup(order_id, settings=runtime_settings)
     if item is None:
         raise RuntimeError("Post-appointment follow-up was not found after review.")
     item["review_id"] = review_id

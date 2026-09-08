@@ -31,7 +31,7 @@ def _create_order(settings, expediente: str):
         password="secret",
         program_expediente=expediente,
         require_preflight=False,
-        settings=settings,
+        runtime_settings=settings.runtime,
     )
 
 
@@ -55,7 +55,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                         owner_token=owner,
                         purpose="manual",
                         lease_seconds=60,
-                        settings=settings,
+                        settings=settings.runtime,
                     )
                 except BrowserOwnershipConflict as exc:
                     return "conflict", exc.code, order_id
@@ -82,9 +82,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
             self.assertEqual(len(conflicts), 1)
             self.assertEqual(conflicts[0][1], "manual_session_exists")
             release_service_order_claim(
-                acquired[0][2],
-                owner_token=acquired[0][1],
-                settings=settings,
+                acquired[0][2], owner_token=acquired[0][1], settings=settings.runtime
             )
 
     def test_manual_owner_blocks_worker_on_another_order_of_same_account(self) -> None:
@@ -97,14 +95,14 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                 owner_token="manual-session-owner",
                 purpose="manual",
                 lease_seconds=60,
-                settings=settings,
+                settings=settings.runtime,
             )
 
             claimed = claim_service_order(
                 second.order_id,
                 owner_token="worker-owner",
                 lease_seconds=60,
-                settings=settings,
+                settings=settings.runtime,
             )
 
             self.assertFalse(claimed)
@@ -119,7 +117,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                 owner_token="preflight-owner",
                 purpose="preflight",
                 lease_seconds=60,
-                settings=settings,
+                settings=settings.runtime,
             )
 
             with self.assertRaises(BrowserOwnershipConflict) as context:
@@ -128,7 +126,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                     owner_token="manual-session-owner",
                     purpose="manual",
                     lease_seconds=60,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
             self.assertEqual(context.exception.code, "browser_job_active")
@@ -142,7 +140,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                     document_number="12345678",
                     password="secret",
                     require_preflight=case == "preflight",
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
                 if case == "worker":
                     self.assertTrue(
@@ -150,16 +148,13 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                             order.order_id,
                             owner_token="worker-owner",
                             lease_seconds=60,
-                            settings=settings,
+                            settings=settings.runtime,
                         )
                     )
                     expected = "service_order_lease_active"
                 elif case == "attempt":
                     create_reservation_attempt(
-                        "attempt-test",
-                        order.order_id,
-                        details=None,
-                        settings=settings,
+                        "attempt-test", order.order_id, details=None, settings=settings.runtime
                     )
                     expected = "active_reservation_attempt"
                 else:
@@ -171,7 +166,7 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                         owner_token="manual-session-owner",
                         purpose="manual",
                         lease_seconds=60,
-                        settings=settings,
+                        settings=settings.runtime,
                     )
 
                 self.assertEqual(context.exception.code, expected)
@@ -200,12 +195,19 @@ class ManualSessionExclusivityTests(unittest.TestCase):
                 self.subTest(code=code),
                 patch.dict("os.environ", {"MANUAL_SESSION_ENABLED": "true"}),
                 patch(
-                    "appointment_bot.services.api.manual_session_routes.load_settings",
+                    "appointment_bot.services.api.manual_session_routes.load_runtime_settings",
                     return_value=Mock(),
                 ),
                 patch(
-                    "appointment_bot.services.api.manual_session_routes."
-                    "get_service_order_runtime",
+                    "appointment_bot.services.api.manual_session_routes.load_reservation_settings",
+                    return_value=Mock(),
+                ),
+                patch(
+                    "appointment_bot.services.api.manual_session_routes.load_evidence_settings",
+                    return_value=Mock(),
+                ),
+                patch(
+                    "appointment_bot.services.api.manual_session_routes.get_service_order_runtime",
                     return_value=order,
                 ),
                 patch(

@@ -9,7 +9,7 @@ from datetime import datetime
 from threading import Event, Lock
 from typing import Any
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_runtime_settings, load_telegram_settings
 from appointment_bot.services.logger import setup_logging
 from appointment_bot.services.telegram.access import TelegramRateLimiter
 from appointment_bot.services.telegram.admin_api_client import AdminApiClient
@@ -43,9 +43,8 @@ logger = logging.getLogger("appointment_bot.services.telegram_control")
 
 
 def run_control(*, check_only: bool = False) -> int:
-    settings = load_settings(require_login=False)
-    setup_logging(settings.runtime)
-    config = load_control_config(settings)
+    setup_logging(load_runtime_settings(require_login=False))
+    config = load_control_config(load_telegram_settings(require_login=False))
     telegram = TelegramBotApi(config.bot_token)
     admin_api = AdminApiClient(config.admin_api_url, config.admin_api_token)
     identity = telegram.get_me().get("result", {})

@@ -94,11 +94,11 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
 
             persisted = use_case.execute(
                 ConfirmReservationRequest(order_id="order-1", report=report),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertTrue(persisted)
-            self.assertEqual(observed["uow"], (settings, None))
+            self.assertEqual(observed["uow"], (settings.runtime, None))
             self.assertEqual(observed["archive"][0], "order-1")
             self.assertEqual(
                 observed["archive"][1],
@@ -154,7 +154,7 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
 
             use_case.execute(
                 ConfirmReservationRequest(order_id="order-1", report=report),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertEqual(
@@ -170,7 +170,7 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
                 document_number="12345678",
                 password="secret",
                 reservation_price=Decimal("50.00"),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             details = {"fecha": "25/09/2026", "hora": "09:00", "sede": "LIMA"}
             record = RunRecord(
@@ -196,12 +196,12 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
             )
 
             record_run_outcome(
-                settings,
                 record,
                 [],
                 report=report,
                 person_name="Cliente",
                 include_reservation=True,
+                runtime_settings=settings.runtime,
             )
 
             with database_connection(settings) as connection:
@@ -232,9 +232,7 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             report = SimpleNamespace(
                 run_id=None,
@@ -248,7 +246,7 @@ class ConfirmReservationUseCaseTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "forced failure"):
                 use_case.execute(
                     ConfirmReservationRequest(order_id=result.order_id, report=report),
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
 
             with database_connection(settings) as connection:

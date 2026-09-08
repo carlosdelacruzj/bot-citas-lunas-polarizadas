@@ -11,7 +11,9 @@ from typing import Any
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
 )
@@ -33,16 +35,18 @@ logger = logging.getLogger(__name__)
 
 def save_reservation_captcha_image(
     page: Page,
-    settings: Settings,
     label: str,
     *,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     captcha_audit: dict[str, Any] | None = None,
     alert_sink: AlertSink | None = None,
 ) -> Path:
     logger.info("Saving isolated reservation captcha image")
-    captcha_dir = screenshot_artifact_dir(settings, "captchas")
+    captcha_dir = screenshot_artifact_dir("captchas", evidence_settings=evidence_settings)
     captcha_dir.mkdir(parents=True, exist_ok=True)
-    captcha_path = captcha_dir / artifact_filename(settings, label)
+    captcha_path = captcha_dir / artifact_filename(label, evidence_settings=evidence_settings)
 
     for selector in APPOINTMENT_PANEL_SCREENSHOT_SELECTORS:
         panel = page.locator(selector).first
@@ -53,13 +57,9 @@ def save_reservation_captcha_image(
             with _revealed_panel(panel):
                 math_challenge = read_reservation_math_captcha(panel)
                 if math_challenge is not None:
-                    math_captcha = panel.locator(
-                        RESERVATION_MATH_CAPTCHA_CONTAINER_SELECTOR
-                    ).first
+                    math_captcha = panel.locator(RESERVATION_MATH_CAPTCHA_CONTAINER_SELECTOR).first
                     if math_captcha.count() != 1:
-                        raise RuntimeError(
-                            "The reservation math captcha container is missing."
-                        )
+                        raise RuntimeError("The reservation math captcha container is missing.")
                     math_captcha.scroll_into_view_if_needed(timeout=5_000)
                     math_captcha.screenshot(path=str(captcha_path), timeout=10_000)
                     _record_png_dimensions(
@@ -74,9 +74,7 @@ def save_reservation_captcha_image(
                             {
                                 "captcha_kind": "html_math",
                                 "captcha_sent_source": "html_math_screenshot",
-                                "captcha_math_expression_sha256": (
-                                    math_challenge.signature
-                                ),
+                                "captcha_math_expression_sha256": (math_challenge.signature),
                                 "captcha_media_tag": "DIV",
                             }
                         )
@@ -96,7 +94,7 @@ def save_reservation_captcha_image(
 
                 if not ensure_reservation_captcha_loaded(
                     panel,
-                    timeout=settings.reservation.read_timeout_seconds * 1_000,
+                    timeout=reservation_settings.read_timeout_seconds * 1_000,
                 ):
                     logger.warning(
                         "Reservation panel captcha was not loaded using selector %s",
@@ -107,7 +105,7 @@ def save_reservation_captcha_image(
                 if captcha_media is None:
                     logger.warning("No captcha image was found using selector %s", selector)
                     continue
-                if not settings.captcha.captcha_shadow_enabled and alert_sink is not None:
+                if not captcha_settings.captcha_shadow_enabled and alert_sink is not None:
                     alert_sink.graphic_captcha_returned()
                 captcha_media.scroll_into_view_if_needed(timeout=5_000)
                 _record_captcha_render_metrics(captcha_media, captcha_audit)
@@ -255,9 +253,7 @@ def _save_original_captcha_data_uri(
         "gif": ".gif",
         "webp": ".webp",
     }.get(detected_format, ".bin")
-    original_path = screenshot_path.with_name(
-        f"{screenshot_path.stem}-original{extension}"
-    )
+    original_path = screenshot_path.with_name(f"{screenshot_path.stem}-original{extension}")
     try:
         original_path.write_bytes(image_bytes)
     except OSError as exc:

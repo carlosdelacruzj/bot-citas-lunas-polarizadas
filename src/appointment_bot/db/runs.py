@@ -7,7 +7,7 @@ from typing import Any
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import RunDetail, RunRecord, RunSummary
 from appointment_bot.core.statuses import sanitize_details
 from appointment_bot.db.common import (
@@ -24,7 +24,7 @@ from appointment_bot.utils.sanitization import public_filename, sanitize_text
 
 
 def create_run_record(
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
     record: RunRecord,
     screenshot_paths: Iterable[str],
     *,
@@ -89,7 +89,7 @@ def list_runs(
     offset: int = 0,
     order_id: str | None = None,
     status: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[RunSummary]:
     settings = _settings(settings)
     init_database(settings)
@@ -120,7 +120,7 @@ def list_run_details_between(
     *,
     started_at: datetime,
     finished_at: datetime,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[RunDetail]:
     settings = _settings(settings)
     init_database(settings)
@@ -149,7 +149,7 @@ def record_order_check(
     order_id: str,
     *,
     status: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -164,7 +164,7 @@ def record_order_check(
 
 
 def record_observer_window_metric(
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
     *,
     metric_date: date,
     window_label: str,
@@ -222,7 +222,7 @@ def summarize_order_checks(
     *,
     started_at: datetime,
     finished_at: datetime,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> tuple[int, datetime | None, datetime | None, str | None, datetime | None]:
     if finished_at <= started_at:
         return 0, None, None, None, None
@@ -275,7 +275,7 @@ def _metric_duration_seconds(report: Any, details: dict[str, Any]) -> float:
 def get_run(
     run_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> RunDetail | None:
     settings = _settings(settings)
     init_database(settings)

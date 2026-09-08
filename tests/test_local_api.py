@@ -57,9 +57,7 @@ def _running_server(
         "APPOINTMENT_BOT_API_HOST": "127.0.0.1",
         "APPOINTMENT_BOT_API_PORT": "0",
         "APPOINTMENT_BOT_API_TOKEN": "secret",
-        "APPOINTMENT_CREDENTIAL_KEYS": (
-            "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
-        ),
+        "APPOINTMENT_CREDENTIAL_KEYS": ("MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="),
     }
     if extra_environment:
         environment_values.update(extra_environment)
@@ -113,7 +111,7 @@ class LocalApiTests(unittest.TestCase):
                 password="secret",
                 applicant_name="Test",
                 priority=1,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
@@ -162,8 +160,7 @@ class LocalApiTests(unittest.TestCase):
                     "allowed_weekdays": [1, 6],
                 }
                 with patch(
-                    "appointment_bot.services.api.service_order_routes."
-                    "schedule_order_preflight",
+                    "appointment_bot.services.api.service_order_routes.schedule_order_preflight",
                     return_value=True,
                 ):
                     response = _json_request(
@@ -179,7 +176,7 @@ class LocalApiTests(unittest.TestCase):
                     order_id,
                     applicant_name="Client Two",
                     details={"source": "api_test"},
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
                 invalid_payload = {**create_payload, "document_number": "11112222"}
@@ -258,7 +255,7 @@ class LocalApiTests(unittest.TestCase):
                     password="secret",
                     service_package="integral",
                     reservation_price=Decimal("160.00"),
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
                 for action in ("no-charge", "done"):
                     with self.subTest(action=action), self.assertRaises(HTTPError) as context:
@@ -279,7 +276,7 @@ class LocalApiTests(unittest.TestCase):
                 password="secret",
                 applicant_name="Client Two",
                 priority=5,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             with _running_server({"APPOINTMENT_DATABASE_URL": settings.database_url}) as base_url:
                 close_response = _json_request(
@@ -311,7 +308,7 @@ class LocalApiTests(unittest.TestCase):
             from appointment_bot.db.runs import create_run_record
 
             create_run_record(
-                settings,
+                settings.runtime,
                 RunRecord(
                     run_id="run-api-1",
                     order_id=None,

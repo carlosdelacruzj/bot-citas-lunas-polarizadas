@@ -6,7 +6,12 @@ import threading
 from dataclasses import replace
 from pathlib import Path
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.loading import load_settings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.services.captcha_shadow import configure_captcha_shadow
 from appointment_bot.services.daily_slot_summary import enqueue_daily_slot_summary
 from appointment_bot.services.local_api import create_local_api_server
@@ -27,24 +32,39 @@ LEASE_UNAVAILABLE_EXIT_CODE = 76
 
 def run_host(external_stop_event: threading.Event | None = None) -> int:
     _set_working_directory()
-    settings = load_settings(require_login=True)
-    setup_logging(settings.runtime)
-    if not settings.runtime.continuous_worker_enabled:
+    (
+        runtime_settings,
+        reservation_settings,
+        captcha_settings,
+        evidence_settings,
+        telegram_settings,
+        whatsapp_settings,
+    ) = load_settings(require_login=True)
+    setup_logging(runtime_settings)
+    if not runtime_settings.continuous_worker_enabled:
         raise RuntimeError("CONTINUOUS_WORKER_ENABLED must be true to run the continuous worker.")
-
     stop_event = external_stop_event or threading.Event()
     restart_event = threading.Event()
-    worker = ContinuousWorker(settings)
+    worker = ContinuousWorker(
+        runtime_settings=runtime_settings,
+        reservation_settings=reservation_settings,
+        captcha_settings=captcha_settings,
+        evidence_settings=evidence_settings,
+        telegram_settings=telegram_settings,
+    )
     server = None
     server_thread = None
-    if settings.runtime.worker_embedded_api_enabled:
+    if runtime_settings.worker_embedded_api_enabled:
         server = create_local_api_server(
-            worker_controller=worker,
-            restart_callback=restart_event.set,
+            worker_controller=worker, restart_callback=restart_event.set
         )
-    captcha_shadow_dispatcher = configure_captcha_shadow(settings)
+    captcha_shadow_dispatcher = configure_captcha_shadow(
+        runtime_settings=runtime_settings, captcha_settings=captcha_settings
+    )
     captcha_shadow_dispatcher.start()
-    telegram_alert_dispatcher = configure_telegram_alerts(settings)
+    telegram_alert_dispatcher = configure_telegram_alerts(
+        runtime_settings=runtime_settings, telegram_settings=telegram_settings
+    )
     telegram_alert_dispatcher.start()
     worker_failure: list[BaseException] = []
     health_failure = False
@@ -59,16 +79,10 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
         finally:
             stop_event.set()
 
-    worker_thread = threading.Thread(
-        target=run_worker,
-        name="appointment-bot-worker",
-        daemon=True,
-    )
+    worker_thread = threading.Thread(target=run_worker, name="appointment-bot-worker", daemon=True)
     if server is not None:
         server_thread = threading.Thread(
-            target=server.serve_forever,
-            name="appointment-bot-local-api",
-            daemon=True,
+            target=server.serve_forever, name="appointment-bot-local-api", daemon=True
         )
         host, port = server.server_address[:2]
         logger.info("Continuous worker API listening on http://%s:%s", host, port)
@@ -108,8 +122,14 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
             if worker_status.get("phase") == DAILY_CUTOFF_REASON:
                 if not daily_cutoff_review_completed:
                     try:
-                        if settings.runtime.final_ready_review_enabled:
-                            _run_final_ready_review(settings)
+                        if runtime_settings.final_ready_review_enabled:
+                            _run_final_ready_review(
+                                runtime_settings=runtime_settings,
+                                reservation_settings=reservation_settings,
+                                captcha_settings=captcha_settings,
+                                evidence_settings=evidence_settings,
+                                telegram_settings=telegram_settings,
+                            )
                         else:
                             logger.info("Final ready-order review skipped by configuration.")
                     except Exception:
@@ -127,25 +147,31 @@ def run_host(external_stop_event: threading.Event | None = None) -> int:
     finally:
         worker.stop()
         worker_thread.join(
-            timeout=(
-                settings.reservation.reservation_timeout_seconds
-                + settings.reservation.login_timeout_seconds
-                + settings.reservation.postback_timeout_seconds
-                + settings.reservation.read_timeout_seconds
-                + 30
-            )
+            timeout=reservation_settings.reservation_timeout_seconds
+            + reservation_settings.login_timeout_seconds
+            + reservation_settings.postback_timeout_seconds
+            + reservation_settings.read_timeout_seconds
+            + 30
         )
         if worker.shutdown_reason == DAILY_CUTOFF_REASON:
             try:
                 if not daily_cutoff_review_completed:
-                    if settings.runtime.final_ready_review_enabled:
-                        _run_final_ready_review(settings)
+                    if runtime_settings.final_ready_review_enabled:
+                        _run_final_ready_review(
+                            runtime_settings=runtime_settings,
+                            reservation_settings=reservation_settings,
+                            captcha_settings=captcha_settings,
+                            evidence_settings=evidence_settings,
+                            telegram_settings=telegram_settings,
+                        )
                     else:
                         logger.info("Final ready-order review skipped by configuration.")
             except Exception:
                 logger.exception("Could not run the final ready-order review")
             try:
-                enqueue_daily_slot_summary(settings)
+                enqueue_daily_slot_summary(
+                    runtime_settings=runtime_settings, evidence_settings=evidence_settings
+                )
             except Exception:
                 logger.exception("Could not queue the daily WhatsApp slot summary")
         if server is not None:
@@ -177,19 +203,28 @@ def _set_working_directory() -> None:
     os.chdir(workdir)
 
 
-def _run_final_ready_review(settings) -> None:
-    review_settings = replace(
-        settings,
-        auto_reserve=False,
-        monitor_window_seconds=0,
-        monitor_max_attempts=1,
-        queue_delay_min_seconds=0,
-        queue_delay_max_seconds=0,
-        telegram_notify_unavailable=False,
+def _run_final_ready_review(
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
+) -> None:
+    review_runtime_settings = replace(
+        runtime_settings, queue_delay_min_seconds=0, queue_delay_max_seconds=0
     )
+    review_reservation_settings = replace(
+        reservation_settings, auto_reserve=False, monitor_window_seconds=0, monitor_max_attempts=1
+    )
+    review_telegram_settings = replace(telegram_settings, telegram_notify_unavailable=False)
     report = run_rapid_queue_with_settings(
-        review_settings,
         stop_on_available_without_reserve=False,
+        runtime_settings=review_runtime_settings,
+        reservation_settings=review_reservation_settings,
+        captcha_settings=captcha_settings,
+        evidence_settings=evidence_settings,
+        telegram_settings=review_telegram_settings,
     )
     logger.info("Final ready-order review completed: %s", report.message)
 

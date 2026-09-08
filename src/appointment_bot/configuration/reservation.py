@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -27,3 +27,18 @@ class ReservationSettings:
         if len(self.login_username) <= 3:
             return "***"
         return f"{self.login_username[:2]}***{self.login_username[-1]}"
+
+
+def settings_for_order(
+    *,
+    reservation_settings: ReservationSettings,
+    username: str,
+    password: str,
+    document_type: str = "dni",
+) -> ReservationSettings:
+    return replace(
+        reservation_settings,
+        login_username=username,
+        login_password=password,
+        login_document_type=document_type,
+    )

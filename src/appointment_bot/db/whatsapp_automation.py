@@ -7,7 +7,7 @@ from typing import Literal, TypedDict
 from psycopg.errors import UniqueViolation
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.contacts import (
     normalize_contact_whatsapp,
     resolve_whatsapp_recipient,
@@ -66,7 +66,7 @@ def enqueue_whatsapp_automation_job(
     order_id: str,
     job_kind: WhatsAppAutomationKind,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override=None,
 ) -> bool:
     effective_settings = _settings(settings)
@@ -97,7 +97,7 @@ def enqueue_daily_slot_summary_job(
     publication_text: str,
     attachment_paths: list[Path],
     retry_sequence: int | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override=None,
 ) -> bool:
     effective_settings = _settings(settings)
@@ -151,7 +151,7 @@ def enqueue_appointment_reminder_job(
     message_text: str,
     template_key: str,
     template_revision: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override=None,
 ) -> bool:
     if not template_key.strip() or template_revision < 1:
@@ -209,7 +209,7 @@ def enqueue_registration_notice_job(
     message_text: str,
     template_key: str | None = None,
     template_revision: int | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     _connection_override=None,
 ) -> bool:
     if preflight_cycle < 1:
@@ -261,7 +261,7 @@ def enqueue_registration_notice_job(
 
 def next_waiting_whatsapp_automation_job(
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> WhatsAppAutomationJob | None:
     init_database(settings)
     now = datetime.now(UTC)
@@ -316,7 +316,7 @@ def claim_whatsapp_automation_job(
     job_key: str,
     owner_token: str,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> WhatsAppAutomationJob | None:
     init_database(settings)
     now = datetime.now(UTC)
@@ -383,7 +383,7 @@ def block_whatsapp_automation_preflight(
     job_key: str,
     *,
     error_message: str,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     now = datetime.now(UTC)
@@ -427,7 +427,7 @@ def return_running_whatsapp_job_to_blocked(
     *,
     owner_token: str,
     error_message: str,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     now = datetime.now(UTC)
@@ -462,7 +462,7 @@ def return_running_whatsapp_job_to_blocked(
 
 def recover_expired_whatsapp_automation_jobs(
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> list[WhatsAppAutomationJob]:
     init_database(settings)
     now = datetime.now(UTC)
@@ -499,7 +499,7 @@ def finish_whatsapp_automation_job(
     status: WhatsAppAutomationStatus,
     message_id: str | None = None,
     error_message: str | None = None,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     now = _now()
@@ -539,7 +539,7 @@ def refresh_running_appointment_reminder_snapshot(
     message_text: str,
     template_key: str,
     template_revision: int,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> WhatsAppAutomationJob | None:
     if not template_key.strip() or template_revision < 1:
         raise ValueError("Appointment reminder template trace is invalid.")
@@ -586,7 +586,7 @@ def order_has_sent_whatsapp_message(
     order_id: str,
     job_kind: WhatsAppAutomationKind,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     table = (
@@ -611,7 +611,7 @@ def whatsapp_automation_in_progress(
     order_id: str,
     job_kind: WhatsAppAutomationKind,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -633,7 +633,7 @@ def get_order_whatsapp_review(
     order_id: str,
     job_kind: WhatsAppAutomationKind,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     if job_kind not in {"reservation_album", "post_payment_followup"}:
         raise ValueError("Unsupported WhatsApp review kind.")
@@ -714,7 +714,7 @@ def resolve_whatsapp_automation_review(
     resolution: str,
     note: str | None,
     reviewed_by: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     normalized_resolution = resolution.strip().casefold()
     if normalized_resolution not in WHATSAPP_REVIEW_RESOLUTIONS:

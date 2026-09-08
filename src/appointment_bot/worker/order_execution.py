@@ -7,13 +7,14 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings, settings_for_order
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.credential_cipher import CredentialDecryptionError
 from appointment_bot.core.models import RunReport, ServiceOrderCandidate, ServiceOrderRuntime
-from appointment_bot.core.rules import (
-    ReservationConstraints,
-    appointment_filter_from_constraints,
-)
+from appointment_bot.core.rules import ReservationConstraints, appointment_filter_from_constraints
 from appointment_bot.db.orders import (
     clear_order_submission_state,
     get_claimed_service_order_runtime,
@@ -33,7 +34,6 @@ from appointment_bot.db.reservations import (
     resolve_reservation_attempt,
 )
 from appointment_bot.db.runs import record_order_check
-from appointment_bot.reports.run_reporting import settings_for_order
 from appointment_bot.reservation_engine.runner import run_with_report
 from appointment_bot.services.order_transitions import (
     order_can_submit,
@@ -42,7 +42,6 @@ from appointment_bot.services.order_transitions import (
 from appointment_bot.worker.reservation_engine_ports import build_reservation_engine_ports
 
 logger = logging.getLogger(__name__)
-
 SERVICE_ORDER_LEASE_SECONDS = 15 * 60
 SERVICE_ORDER_LEASE_RENEW_INTERVAL_SECONDS = 60
 
@@ -53,7 +52,7 @@ class OrderExecutionDependencies:
 
 
 DEFAULT_ORDER_EXECUTION_DEPENDENCIES = OrderExecutionDependencies(
-    get_reservation_constraints=get_reservation_constraints_for_order,
+    get_reservation_constraints=get_reservation_constraints_for_order
 )
 
 
@@ -75,16 +74,16 @@ class _CombinedEvent:
 
 
 class _ServiceOrderLeaseHeartbeat:
-    def __init__(self, order_id: str, owner_token: str, settings: Settings) -> None:
+    def __init__(
+        self, order_id: str, owner_token: str, *, runtime_settings: RuntimeSettings
+    ) -> None:
         self.order_id = order_id
         self.owner_token = owner_token
-        self.settings = settings
+        self.runtime_settings = runtime_settings
         self.lost_event = threading.Event()
         self._stop_event = threading.Event()
         self._thread = threading.Thread(
-            target=self._run,
-            name=f"lease-heartbeat-{order_id}",
-            daemon=True,
+            target=self._run, name=f"lease-heartbeat-{order_id}", daemon=True
         )
 
     def __enter__(self):
@@ -106,7 +105,7 @@ class _ServiceOrderLeaseHeartbeat:
                     self.order_id,
                     owner_token=self.owner_token,
                     lease_seconds=SERVICE_ORDER_LEASE_SECONDS,
-                    settings=self.settings,
+                    settings=self.runtime_settings,
                 )
             except Exception:
                 logger.exception("Service order lease heartbeat failed: %s", self.order_id)
@@ -118,11 +117,11 @@ class _ServiceOrderLeaseHeartbeat:
 
 def _appointment_filter_for_order(
     order_id: str,
-    settings: Settings,
     *,
     dependencies: OrderExecutionDependencies = DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
+    runtime_settings: RuntimeSettings,
 ) -> Callable[[str, str], bool] | None:
-    values = dependencies.get_reservation_constraints(order_id, settings=settings)
+    values = dependencies.get_reservation_constraints(order_id, settings=runtime_settings)
     minimum_date, maximum_date, allowed_weekdays, excluded_date_ranges = values
     return appointment_filter_from_constraints(
         ReservationConstraints(
@@ -135,7 +134,6 @@ def _appointment_filter_for_order(
 
 
 def run_service_order(
-    settings: Settings,
     order: ServiceOrderCandidate | ServiceOrderRuntime,
     *,
     lease_owner: str,
@@ -146,23 +144,26 @@ def run_service_order(
     on_check: Callable[..., None] | None = None,
     opportunity_context: dict[str, str] | None = None,
     dependencies: OrderExecutionDependencies = DEFAULT_ORDER_EXECUTION_DEPENDENCIES,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
 ) -> RunReport:
     logger.info("Starting queued appointment check for order %s", order.order_id)
     try:
         current_order = get_claimed_service_order_runtime(
-            order.order_id,
-            owner_token=lease_owner,
-            settings=settings,
+            order.order_id, owner_token=lease_owner, settings=runtime_settings
         )
     except CredentialDecryptionError:
         logger.exception("Could not decrypt credentials for order %s", order.order_id)
-        set_order_paused(order.order_id, True, settings=settings)
+        set_order_paused(order.order_id, True, settings=runtime_settings)
         update_order_state(
             order.order_id,
             status="error",
             message="Las credenciales cifradas de la orden no se pudieron leer.",
             exit_code=1,
-            settings=settings,
+            settings=runtime_settings,
         )
         return RunReport(
             status="error",
@@ -178,84 +179,69 @@ def run_service_order(
             exit_code=0,
             order_id=order.order_id,
         )
-
-    backoff_seconds = order_backoff_seconds(order.order_id, settings=settings)
+    backoff_seconds = order_backoff_seconds(order.order_id, settings=runtime_settings)
     if backoff_seconds > 0:
         return RunReport(
             status="skipped",
-            message=(
-                f"Revision omitida por backoff de la orden. Faltan {backoff_seconds} segundos."
-            ),
+            message=f"Revision omitida por backoff de la orden. Faltan {backoff_seconds} segundos.",
             exit_code=0,
             order_id=order.order_id,
         )
-
     order = current_order
     order_settings = settings_for_order(
-        settings,
         username=order.username,
         password=order.password,
         document_type=order.document_type,
+        reservation_settings=reservation_settings,
     )
-    pending_submission = order_reservation_pending(
-        order.order_id,
-        settings=settings,
-    )
+    order_reservation_settings = order_settings
+    order_captcha_settings = captcha_settings
+    pending_submission = order_reservation_pending(order.order_id, settings=runtime_settings)
     if rapid_mode:
-        order_settings = replace(
-            order_settings,
-            monitor_window_seconds=0,
-            monitor_max_attempts=1,
+        order_reservation_settings = replace(
+            order_settings, monitor_window_seconds=0, monitor_max_attempts=1
+        )
+        order_captcha_settings = replace(
+            captcha_settings,
             reservation_captcha_sample_limit=1,
             reservation_captcha_runtime_control_enabled=False,
         )
     elif burst_mode:
-        order_settings = replace(
-            order_settings,
-            auto_reserve=settings.reservation.auto_reserve,
-            monitor_window_seconds=settings.runtime.opportunity_burst_session_seconds,
-            monitor_max_attempts=settings.runtime.opportunity_burst_attempts,
-            monitor_interval_min_seconds=(
-                settings.runtime.observer_site_toggle_interval_min_seconds
-            ),
-            monitor_interval_max_seconds=(
-                settings.runtime.observer_site_toggle_interval_max_seconds
-            ),
+        order_reservation_settings = replace(
+            order_reservation_settings,
+            auto_reserve=reservation_settings.auto_reserve,
+            monitor_window_seconds=runtime_settings.opportunity_burst_session_seconds,
+            monitor_max_attempts=runtime_settings.opportunity_burst_attempts,
+            monitor_interval_min_seconds=runtime_settings.observer_site_toggle_interval_min_seconds,
+            monitor_interval_max_seconds=runtime_settings.observer_site_toggle_interval_max_seconds,
             monitor_site_toggle_enabled=True,
-            monitor_reload_probe_after_attempt=(
-                settings.runtime.opportunity_burst_reload_probe_after_attempt
-            ),
+            monitor_reload_probe_after_attempt=runtime_settings.opportunity_burst_reload_probe_after_attempt,
+        )
+        order_captcha_settings = replace(
+            order_captcha_settings,
             reservation_captcha_sample_limit=1,
             reservation_captcha_runtime_control_enabled=False,
         )
     elif observer_mode:
-        site_toggle_enabled = settings.runtime.observer_site_toggle_enabled
-        order_settings = replace(
-            order_settings,
-            auto_reserve=settings.reservation.auto_reserve,
-            monitor_window_seconds=settings.runtime.observer_session_seconds,
-            monitor_max_attempts=(
-                settings.runtime.observer_site_toggle_attempts
-                if site_toggle_enabled
-                else settings.runtime.observer_max_attempts
-            ),
-            monitor_interval_min_seconds=(
-                settings.runtime.observer_site_toggle_interval_min_seconds
-                if site_toggle_enabled
-                else settings.runtime.observer_interval_min_seconds
-            ),
-            monitor_interval_max_seconds=(
-                settings.runtime.observer_site_toggle_interval_max_seconds
-                if site_toggle_enabled
-                else settings.runtime.observer_interval_max_seconds
-            ),
+        site_toggle_enabled = runtime_settings.observer_site_toggle_enabled
+        order_reservation_settings = replace(
+            order_reservation_settings,
+            auto_reserve=reservation_settings.auto_reserve,
+            monitor_window_seconds=runtime_settings.observer_session_seconds,
+            monitor_max_attempts=runtime_settings.observer_site_toggle_attempts
+            if site_toggle_enabled
+            else runtime_settings.observer_max_attempts,
+            monitor_interval_min_seconds=runtime_settings.observer_site_toggle_interval_min_seconds
+            if site_toggle_enabled
+            else runtime_settings.observer_interval_min_seconds,
+            monitor_interval_max_seconds=runtime_settings.observer_site_toggle_interval_max_seconds
+            if site_toggle_enabled
+            else runtime_settings.observer_interval_max_seconds,
             monitor_site_toggle_enabled=site_toggle_enabled,
-            monitor_reload_probe_after_attempt=settings.runtime.observer_reload_probe_after_attempt,
+            monitor_reload_probe_after_attempt=runtime_settings.observer_reload_probe_after_attempt,
         )
-
     if pending_submission:
-        order_settings = replace(order_settings, auto_reserve=False)
-
+        order_reservation_settings = replace(order_reservation_settings, auto_reserve=False)
     active_attempt_id: str | None = None
     execution_context = opportunity_context if opportunity_context is not None else {}
 
@@ -264,15 +250,13 @@ def run_service_order(
         details.setdefault("orden", order.order_id)
         details.setdefault("cliente", order.notification_name)
         details.setdefault("nombre", order.name)
-        details.setdefault("cuenta", order_settings.reservation.safe_username)
+        details.setdefault("cuenta", order_reservation_settings.safe_username)
         if order.contact_name:
             details.setdefault("contact_name", order.contact_name)
         if order.contact_whatsapp:
             details.setdefault("contact_whatsapp", order.contact_whatsapp)
         elif order.contact_whatsapp_username:
-            details.setdefault(
-                "contact_whatsapp_username", order.contact_whatsapp_username
-            )
+            details.setdefault("contact_whatsapp_username", order.contact_whatsapp_username)
         if order.contact_source:
             details.setdefault("contact_source", order.contact_source)
         if order.program_expediente:
@@ -285,11 +269,7 @@ def run_service_order(
 
     def handle_check(result, *args) -> None:
         heartbeat.ensure_owned()
-        record_order_check(
-            order.order_id,
-            status=str(result.status),
-            settings=settings,
-        )
+        record_order_check(order.order_id, status=str(result.status), settings=runtime_settings)
         if on_check is not None:
             on_check(with_order_details(result), *args)
 
@@ -302,23 +282,18 @@ def run_service_order(
             else:
                 execution_context["second_attempt_id"] = active_attempt_id
         create_reservation_attempt(
-            active_attempt_id,
-            order.order_id,
-            details=details,
-            settings=settings,
+            active_attempt_id, order.order_id, details=details, settings=runtime_settings
         )
-        mark_order_submission_intent(order.order_id, settings=settings)
+        mark_order_submission_intent(order.order_id, settings=runtime_settings)
 
     def on_submission_started(_details) -> None:
         if active_attempt_id is None:
             raise RuntimeError("Reservation submission started without a durable intent.")
-        mark_reservation_attempt_pending(active_attempt_id, settings=settings)
-        mark_order_submission_pending(order.order_id, settings=settings)
+        mark_reservation_attempt_pending(active_attempt_id, settings=runtime_settings)
+        mark_order_submission_pending(order.order_id, settings=runtime_settings)
 
     def on_submission_resolved(
-        outcome: str,
-        resolved_run_id: str | None,
-        evidence_path: str | None,
+        outcome: str, resolved_run_id: str | None, evidence_path: str | None
     ) -> None:
         nonlocal active_attempt_id
         if outcome != "slot_lost":
@@ -330,9 +305,9 @@ def run_service_order(
             "rejected",
             run_id=resolved_run_id,
             evidence_path=evidence_path,
-            settings=settings,
+            settings=runtime_settings,
         )
-        clear_order_submission_state(order.order_id, settings=settings)
+        clear_order_submission_state(order.order_id, settings=runtime_settings)
         active_attempt_id = None
 
     from appointment_bot.reservation_engine.monitor import (
@@ -342,10 +317,11 @@ def run_service_order(
 
     context_token = set_opportunity_execution_context(execution_context)
     try:
-        with _ServiceOrderLeaseHeartbeat(order.order_id, lease_owner, settings) as heartbeat:
+        with _ServiceOrderLeaseHeartbeat(
+            order.order_id, lease_owner, runtime_settings=runtime_settings
+        ) as heartbeat:
             effective_cancel_event = _CombinedEvent(cancel_event, heartbeat.lost_event)
             report = run_with_report(
-                order_settings,
                 order_id=order.order_id,
                 client_name=order.notification_name,
                 expected_person_name=order.name,
@@ -355,20 +331,23 @@ def run_service_order(
                 on_check=handle_check,
                 can_submit=lambda: (
                     not effective_cancel_event.is_set()
-                    and order_can_submit(order.order_id, lease_owner, settings)
+                    and order_can_submit(
+                        order.order_id, lease_owner, runtime_settings=runtime_settings
+                    )
                 ),
                 is_allowed_appointment=_appointment_filter_for_order(
-                    order.order_id,
-                    settings,
-                    dependencies=dependencies,
+                    order.order_id, dependencies=dependencies, runtime_settings=runtime_settings
                 ),
                 on_submission_intent=on_submission_intent,
                 on_submission_started=on_submission_started,
                 on_submission_resolved=on_submission_resolved,
-                notify_mode=(
-                    "deferred" if rapid_mode or observer_mode or burst_mode else "full"
-                ),
+                notify_mode="deferred" if rapid_mode or observer_mode or burst_mode else "full",
                 ports=build_reservation_engine_ports(),
+                runtime_settings=runtime_settings,
+                reservation_settings=order_reservation_settings,
+                captcha_settings=order_captcha_settings,
+                evidence_settings=evidence_settings,
+                telegram_settings=telegram_settings,
             )
             lease_lost = heartbeat.lost_event.is_set()
     finally:
@@ -376,8 +355,7 @@ def run_service_order(
     report = with_order_details(report)
     if str((report.details or {}).get("error_type") or "") == "InvalidPortalCredentials":
         failures, paused = record_invalid_credential_failure(
-            order.order_id,
-            settings=settings,
+            order.order_id, settings=runtime_settings
         )
         details = dict(report.details or {})
         details.update(
@@ -389,11 +367,9 @@ def run_service_order(
         )
         report = replace(
             report,
-            message=(
-                "El portal rechazo la clave por segunda vez; la orden fue pausada."
-                if paused
-                else "El portal rechazo la clave; queda un intento antes de pausar la orden."
-            ),
+            message="El portal rechazo la clave por segunda vez; la orden fue pausada."
+            if paused
+            else "El portal rechazo la clave; queda un intento antes de pausar la orden.",
             details=details,
         )
     if lease_lost and report.status != "registered":
@@ -419,19 +395,19 @@ def run_service_order(
             attempt_status,
             run_id=report.run_id,
             evidence_path=report.screenshot_path,
-            settings=settings,
+            settings=runtime_settings,
         )
         if attempt_status in {"confirmed", "rejected"}:
-            clear_order_submission_state(order.order_id, settings=settings)
+            clear_order_submission_state(order.order_id, settings=runtime_settings)
     if pending_submission:
-        if reconcile_pending_submission(order.order_id, report, settings):
+        if reconcile_pending_submission(order.order_id, report, runtime_settings=runtime_settings):
             return report
         return replace(
             report,
             status="reservation_unconfirmed",
             message=(
-                "Existe un envio de reserva pendiente. Se verifico el portal sin "
-                "intentar una nueva reserva."
+                "Existe un envio de reserva pendiente. Se verific"
+                "o el portal sin intentar una nueva reserva."
             ),
             exit_code=1,
         )

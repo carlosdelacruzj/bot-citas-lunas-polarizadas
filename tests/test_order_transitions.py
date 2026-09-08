@@ -40,14 +40,14 @@ class OrderTransitionTests(unittest.TestCase):
             attempt_id,
             order_id,
             details={"fecha": "15/09/2026", "hora": "10:30", "sede": "Lima"},
-            settings=settings,
+            settings=settings.runtime,
         )
-        mark_order_submission_intent(order_id, settings=settings)
+        mark_order_submission_intent(order_id, settings=settings.runtime)
         if status in {"pending", "unknown"}:
-            mark_reservation_attempt_pending(attempt_id, settings=settings)
-            mark_order_submission_pending(order_id, settings=settings)
+            mark_reservation_attempt_pending(attempt_id, settings=settings.runtime)
+            mark_order_submission_pending(order_id, settings=settings.runtime)
         if status == "unknown":
-            resolve_reservation_attempt(attempt_id, "unknown", settings=settings)
+            resolve_reservation_attempt(attempt_id, "unknown", settings=settings.runtime)
         return attempt_id
 
     def test_invalid_attempt_resolution_status_is_rejected(self) -> None:
@@ -63,23 +63,24 @@ class OrderTransitionTests(unittest.TestCase):
                 applicant_name="Test",
                 priority=1,
                 require_preflight=False,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             owner = "test-worker"
             self.assertTrue(
                 claim_service_order(
-                    result.order_id,
-                    owner_token=owner,
-                    lease_seconds=60,
-                    settings=settings,
+                    result.order_id, owner_token=owner, lease_seconds=60, settings=settings.runtime
                 )
             )
 
-            self.assertTrue(order_can_submit(result.order_id, owner, settings))
+            self.assertTrue(
+                order_can_submit(result.order_id, owner, runtime_settings=settings.runtime)
+            )
 
-            set_order_paused(result.order_id, True, settings=settings)
+            set_order_paused(result.order_id, True, settings=settings.runtime)
 
-            self.assertFalse(order_can_submit(result.order_id, owner, settings))
+            self.assertFalse(
+                order_can_submit(result.order_id, owner, runtime_settings=settings.runtime)
+            )
 
     def test_old_pending_submission_remains_blocked_without_authoritative_confirmation(
         self,
@@ -91,9 +92,9 @@ class OrderTransitionTests(unittest.TestCase):
                 password="password",
                 applicant_name="Test",
                 priority=1,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
-            mark_order_submission_pending(result.order_id, settings=settings)
+            mark_order_submission_pending(result.order_id, settings=settings.runtime)
             old = (datetime.now() - timedelta(minutes=2)).isoformat(timespec="seconds")
             with database_connection(settings) as connection:
                 connection.execute(
@@ -104,11 +105,11 @@ class OrderTransitionTests(unittest.TestCase):
             reconciled = reconcile_pending_submission(
                 result.order_id,
                 RunReport(status="unavailable", message="No slots", exit_code=0),
-                settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertFalse(reconciled)
-            self.assertTrue(order_reservation_pending(result.order_id, settings=settings))
+            self.assertTrue(order_reservation_pending(result.order_id, settings=settings.runtime))
 
     def test_recent_pending_submission_remains_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -118,18 +119,18 @@ class OrderTransitionTests(unittest.TestCase):
                 password="password",
                 applicant_name="Test",
                 priority=1,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
-            mark_order_submission_pending(result.order_id, settings=settings)
+            mark_order_submission_pending(result.order_id, settings=settings.runtime)
 
             reconciled = reconcile_pending_submission(
                 result.order_id,
                 RunReport(status="unavailable", message="No slots", exit_code=0),
-                settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertFalse(reconciled)
-            self.assertTrue(order_reservation_pending(result.order_id, settings=settings))
+            self.assertTrue(order_reservation_pending(result.order_id, settings=settings.runtime))
 
     def test_exact_programmed_stage_confirms_pending_attempt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -139,7 +140,7 @@ class OrderTransitionTests(unittest.TestCase):
                 password="password",
                 applicant_name="Test",
                 priority=1,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             attempt_id = self._create_active_attempt(settings, result.order_id)
 
@@ -150,17 +151,13 @@ class OrderTransitionTests(unittest.TestCase):
                     message="Programado",
                     exit_code=0,
                     run_id="run-programmed",
-                    details={
-                        "estado": "Programado",
-                        "fecha": "15/09/2026",
-                        "hora": "10:30",
-                    },
+                    details={"estado": "Programado", "fecha": "15/09/2026", "hora": "10:30"},
                 ),
-                settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertTrue(reconciled)
-            self.assertFalse(order_reservation_pending(result.order_id, settings=settings))
+            self.assertFalse(order_reservation_pending(result.order_id, settings=settings.runtime))
             with database_connection(settings) as connection:
                 attempt = connection.execute(
                     "SELECT status, run_id, resolved_at FROM reservation_attempts "
@@ -179,7 +176,7 @@ class OrderTransitionTests(unittest.TestCase):
                 password="password",
                 applicant_name="Test",
                 priority=1,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             attempt_id = self._create_active_attempt(settings, result.order_id)
 
@@ -189,17 +186,13 @@ class OrderTransitionTests(unittest.TestCase):
                     status="completed",
                     message="Programado en otro horario",
                     exit_code=0,
-                    details={
-                        "estado": "Programado",
-                        "fecha": "15/09/2026",
-                        "hora": "11:00",
-                    },
+                    details={"estado": "Programado", "fecha": "15/09/2026", "hora": "11:00"},
                 ),
-                settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertFalse(reconciled)
-            self.assertTrue(order_reservation_pending(result.order_id, settings=settings))
+            self.assertTrue(order_reservation_pending(result.order_id, settings=settings.runtime))
             with database_connection(settings) as connection:
                 attempt = connection.execute(
                     "SELECT status, resolved_at FROM reservation_attempts WHERE attempt_id = %s",
@@ -220,7 +213,7 @@ class OrderTransitionTests(unittest.TestCase):
                     password="password",
                     applicant_name="Test",
                     priority=1,
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
                 attempt_id = self._create_active_attempt(
                     settings,
@@ -231,11 +224,13 @@ class OrderTransitionTests(unittest.TestCase):
                 reconciled = reconcile_pending_submission(
                     result.order_id,
                     RunReport(status="unavailable", message="No slots", exit_code=0),
-                    settings,
+                    runtime_settings=settings.runtime,
                 )
 
                 self.assertTrue(reconciled)
-                self.assertFalse(order_reservation_pending(result.order_id, settings=settings))
+                self.assertFalse(
+                    order_reservation_pending(result.order_id, settings=settings.runtime)
+                )
                 with database_connection(settings) as connection:
                     attempt = connection.execute(
                         "SELECT status, resolved_at FROM reservation_attempts "

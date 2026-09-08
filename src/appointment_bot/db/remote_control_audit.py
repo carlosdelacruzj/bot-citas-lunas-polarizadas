@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -33,7 +33,7 @@ def record_remote_control_audit(
     target_id: str | None = None,
     operation_id: str | None = None,
     detail: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     settings = _settings(settings)
     init_database(settings)

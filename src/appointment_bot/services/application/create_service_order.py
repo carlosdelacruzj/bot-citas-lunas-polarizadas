@@ -8,7 +8,8 @@ from decimal import Decimal
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.credential_cipher import CredentialCipher
 from appointment_bot.core.documents import normalize_document_type
 from appointment_bot.core.models import ServiceOrderCreateResult
@@ -32,7 +33,7 @@ from appointment_bot.db.unit_of_work import postgres_unit_of_work
 
 ServiceOrderRepository = Callable[..., ServiceOrderCreateResult]
 UnitOfWorkFactory = Callable[
-    [Settings, Connection | None],
+    [RuntimeSettings, Connection | None],
     AbstractContextManager[Connection],
 ]
 
@@ -78,11 +79,13 @@ class CreateServiceOrder:
         self,
         request: CreateServiceOrderRequest,
         *,
-        settings: Settings | None = None,
+        runtime_settings: RuntimeSettings | None = None,
         connection_override: Connection | None = None,
     ) -> ServiceOrderCreateResult:
-        resolved_settings = settings or load_settings(require_login=False)
-        persistence_request = _prepare_persistence_request(request, resolved_settings)
+        resolved_settings = runtime_settings or load_runtime_settings(require_login=False)
+        persistence_request = _prepare_persistence_request(
+            request, runtime_settings=resolved_settings
+        )
         with self._unit_of_work_factory(resolved_settings, connection_override) as connection:
             return self._repository(
                 persistence_request,
@@ -119,7 +122,7 @@ def create_service_order(
     program_plate: str | None = None,
     actor: str = "system",
     require_preflight: bool = True,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
     _connection_override: Connection | None = None,
 ) -> ServiceOrderCreateResult:
     request = CreateServiceOrderRequest(
@@ -149,14 +152,15 @@ def create_service_order(
     )
     return _DEFAULT_USE_CASE.execute(
         request,
-        settings=settings,
+        runtime_settings=runtime_settings,
         connection_override=_connection_override,
     )
 
 
 def _prepare_persistence_request(
     request: CreateServiceOrderRequest,
-    settings: Settings,
+    *,
+    runtime_settings: RuntimeSettings,
 ) -> ServiceOrderPersistenceRequest:
     document_number = request.document_number.strip()
     if not document_number:
@@ -199,7 +203,7 @@ def _prepare_persistence_request(
 
     return ServiceOrderPersistenceRequest(
         document_number=document_number,
-        encrypted_password=CredentialCipher(settings.runtime.credential_encryption_keys).encrypt(
+        encrypted_password=CredentialCipher(runtime_settings.credential_encryption_keys).encrypt(
             request.password
         ),
         document_type=normalize_document_type(request.document_type),

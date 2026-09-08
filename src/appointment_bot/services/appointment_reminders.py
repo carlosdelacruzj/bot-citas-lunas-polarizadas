@@ -7,7 +7,9 @@ import unicodedata
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.configuration.whatsapp import WhatsappSettings
 from appointment_bot.core.contacts import resolve_whatsapp_recipient
 from appointment_bot.core.whatsapp_message_templates import (
     render_whatsapp_template,
@@ -64,8 +66,16 @@ def reminder_template_mentions_tomorrow(message_template: str) -> bool:
 
 
 class AppointmentReminderScheduler:
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
+    def __init__(
+        self,
+        *,
+        telegram_settings: TelegramSettings,
+        runtime_settings: RuntimeSettings,
+        whatsapp_settings: WhatsappSettings,
+    ) -> None:
+        self.runtime_settings = runtime_settings
+        self.whatsapp_settings = whatsapp_settings
+        self.telegram_settings = telegram_settings
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -81,7 +91,7 @@ class AppointmentReminderScheduler:
         self._thread.start()
         logger.info(
             "Appointment reminder scheduler started: runtime_control=database time=%s",
-            self.settings.whatsapp.appointment_reminders_time.isoformat(timespec="minutes"),
+            self.whatsapp_settings.appointment_reminders_time.isoformat(timespec="minutes"),
         )
 
     def stop(self, *, timeout: float = 2.0) -> None:
@@ -98,18 +108,25 @@ class AppointmentReminderScheduler:
     def _run(self) -> None:
         while not self._stop_event.is_set():
             now = datetime.now(LIMA_TIMEZONE)
-            if now.time() >= self.settings.whatsapp.appointment_reminders_time:
+            if now.time() >= self.whatsapp_settings.appointment_reminders_time:
                 try:
-                    reconcile_appointment_reminders(self.settings, now=now)
+                    reconcile_appointment_reminders(
+                        now=now,
+                        runtime_settings=self.runtime_settings,
+                        whatsapp_settings=self.whatsapp_settings,
+                        telegram_settings=self.telegram_settings,
+                    )
                 except Exception:
                     logger.exception("Could not reconcile appointment reminders")
-            self._stop_event.wait(self.settings.whatsapp.appointment_reminders_reconcile_seconds)
+            self._stop_event.wait(self.whatsapp_settings.appointment_reminders_reconcile_seconds)
 
 
 def reconcile_appointment_reminders(
-    settings: Settings,
     *,
     now: datetime | None = None,
+    telegram_settings: TelegramSettings,
+    runtime_settings: RuntimeSettings,
+    whatsapp_settings: WhatsappSettings,
 ) -> dict[str, object]:
     effective_now = now or datetime.now(LIMA_TIMEZONE)
     if effective_now.tzinfo is None:
@@ -118,26 +135,19 @@ def reconcile_appointment_reminders(
         effective_now = effective_now.astimezone(LIMA_TIMEZONE)
     service_date = effective_now.date()
     normalized_count, _invalid_backfill_count = backfill_missing_appointment_days(
-        settings=settings
+        settings=runtime_settings
     )
     if normalized_count:
         logger.info("Normalized %s stored appointment dates", normalized_count)
-    control = get_appointment_reminder_control(settings)
+    control = get_appointment_reminder_control(settings=runtime_settings)
     appointment_day = ensure_appointment_reminder_batch_day(
-        service_date,
-        control.lead_days,
-        settings=settings,
+        service_date, control.lead_days, settings=runtime_settings
     )
-    template = get_current_appointment_reminder_template(settings)
-    candidates = list_appointment_reminder_candidates(
-        appointment_day,
-        settings=settings,
-    )
-    invalid_date_count = count_invalid_current_appointment_dates(settings=settings)
-    summary_status = daily_summary_barrier_status(service_date, settings=settings)
-    valid_candidates: list[
-        tuple[AppointmentReminderCandidate, str | None, str | None, str]
-    ] = []
+    template = get_current_appointment_reminder_template(runtime_settings=runtime_settings)
+    candidates = list_appointment_reminder_candidates(appointment_day, settings=runtime_settings)
+    invalid_date_count = count_invalid_current_appointment_dates(settings=runtime_settings)
+    summary_status = daily_summary_barrier_status(service_date, settings=runtime_settings)
+    valid_candidates: list[tuple[AppointmentReminderCandidate, str | None, str | None, str]] = []
     missing_contact_count = 0
     for candidate in candidates:
         try:
@@ -162,9 +172,7 @@ def reconcile_appointment_reminders(
     created_count = 0
     existing_count = 0
     if control.mode != "disabled":
-        if control.lead_days > 1 and reminder_template_mentions_tomorrow(
-            template.message_template
-        ):
+        if control.lead_days > 1 and reminder_template_mentions_tomorrow(template.message_template):
             status = "blocked"
             error = (
                 "La plantilla vigente dice manana y no es compatible con una "
@@ -172,11 +180,11 @@ def reconcile_appointment_reminders(
             )
         elif control.mode == "dry_run":
             status = "dry_run"
-        elif len(valid_candidates) > settings.whatsapp.appointment_reminders_daily_limit:
+        elif len(valid_candidates) > whatsapp_settings.appointment_reminders_daily_limit:
             status = "blocked"
             error = (
                 "El total de recordatorios supera el limite diario configurado: "
-                f"{len(valid_candidates)}/{settings.whatsapp.appointment_reminders_daily_limit}."
+                f"{len(valid_candidates)}/{whatsapp_settings.appointment_reminders_daily_limit}."
             )
         else:
             for candidate, phone, username, message_text in valid_candidates:
@@ -190,7 +198,7 @@ def reconcile_appointment_reminders(
                     message_text=message_text,
                     template_key=template.template_key,
                     template_revision=template.revision,
-                    settings=settings,
+                    settings=runtime_settings,
                 )
                 if created:
                     created_count += 1
@@ -206,13 +214,10 @@ def reconcile_appointment_reminders(
                 status = "ready"
 
             job_counts = appointment_reminder_job_counts(
-                service_date,
-                appointment_day,
-                settings=settings,
+                service_date, appointment_day, settings=runtime_settings
             )
             active_jobs = sum(
-                job_counts.get(job_status, 0)
-                for job_status in ("queued", "blocked", "running")
+                job_counts.get(job_status, 0) for job_status in ("queued", "blocked", "running")
             )
             terminal_jobs = sum(
                 job_counts.get(job_status, 0)
@@ -236,12 +241,13 @@ def reconcile_appointment_reminders(
         missing_contact_count=missing_contact_count,
         invalid_date_count=invalid_date_count,
         last_error=error,
-        settings=settings,
+        settings=runtime_settings,
     )
-    if status == "waiting_summary" and _summary_grace_expired(settings, effective_now):
-        if mark_daily_summary_missing_alerted(service_date, settings=settings):
+    if status == "waiting_summary" and _summary_grace_expired(
+        effective_now, whatsapp_settings=whatsapp_settings
+    ):
+        if mark_daily_summary_missing_alerted(service_date, settings=runtime_settings):
             send_telegram_message(
-                settings,
                 "\n".join(
                     [
                         "⚠️ Recordatorios de cita bloqueados.",
@@ -250,6 +256,7 @@ def reconcile_appointment_reminders(
                         "No se enviara ningun recordatorio hasta que exista ese trabajo.",
                     ]
                 ),
+                telegram_settings=telegram_settings,
             )
     logger.info(
         "Appointment reminders reconciled: date=%s appointment_day=%s status=%s "
@@ -263,11 +270,7 @@ def reconcile_appointment_reminders(
         missing_contact_count,
         summary_status,
     )
-    return appointment_reminder_status(
-        service_date,
-        control.lead_days,
-        settings=settings,
-    )
+    return appointment_reminder_status(service_date, control.lead_days, settings=runtime_settings)
 
 
 def appointment_reminder_message(
@@ -292,9 +295,11 @@ def appointment_reminder_message(
 
 
 def get_current_appointment_reminder_template(
-    settings: Settings,
+    *, runtime_settings: RuntimeSettings
 ) -> WhatsAppMessageTemplate:
-    template = get_whatsapp_message_template(APPOINTMENT_REMINDER_TEMPLATE_KEY, settings)
+    template = get_whatsapp_message_template(
+        APPOINTMENT_REMINDER_TEMPLATE_KEY, settings=runtime_settings
+    )
     if template is None or not template.enabled:
         raise RuntimeError("La plantilla vigente de recordatorio no está disponible.")
     return template
@@ -302,28 +307,22 @@ def get_current_appointment_reminder_template(
 
 def _appointment_day_text(appointment_day: date) -> str:
     return (
-        f"{appointment_day.day} de {MONTH_NAMES[appointment_day.month]} "
-        f"de {appointment_day.year}"
+        f"{appointment_day.day} de {MONTH_NAMES[appointment_day.month]} de {appointment_day.year}"
     )
 
 
-def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]:
+def appointment_reminder_status_payload(
+    *, runtime_settings: RuntimeSettings, whatsapp_settings: WhatsappSettings
+) -> dict[str, object]:
     now = datetime.now(LIMA_TIMEZONE)
-    control = get_appointment_reminder_control(settings)
-    template = get_current_appointment_reminder_template(settings)
+    control = get_appointment_reminder_control(settings=runtime_settings)
+    template = get_current_appointment_reminder_template(runtime_settings=runtime_settings)
     definition = whatsapp_template_definition(APPOINTMENT_REMINDER_TEMPLATE_KEY)
     if definition is None:
         raise RuntimeError("La definición del recordatorio no está disponible.")
-    payload = appointment_reminder_status(
-        now.date(),
-        control.lead_days,
-        settings=settings,
-    )
+    payload = appointment_reminder_status(now.date(), control.lead_days, settings=runtime_settings)
     target_day = date.fromisoformat(str(payload["appointment_day"]))
-    candidates = list_appointment_reminder_candidates(
-        target_day,
-        settings=settings,
-    )
+    candidates = list_appointment_reminder_candidates(target_day, settings=runtime_settings)
     job_status_by_order = {
         str(job["order_id"]): str(job["status"])
         for job in payload["jobs"]
@@ -336,11 +335,11 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     payload["configuration"] = {
         "enabled": control.mode == "live",
         "dry_run": control.mode == "dry_run",
-        "time": settings.whatsapp.appointment_reminders_time.isoformat(timespec="minutes"),
-        "summary_grace_minutes": settings.whatsapp.appointment_reminders_summary_grace_minutes,
-        "reconcile_seconds": settings.whatsapp.appointment_reminders_reconcile_seconds,
-        "send_interval_seconds": settings.whatsapp.appointment_reminders_send_interval_seconds,
-        "daily_limit": settings.whatsapp.appointment_reminders_daily_limit,
+        "time": whatsapp_settings.appointment_reminders_time.isoformat(timespec="minutes"),
+        "summary_grace_minutes": whatsapp_settings.appointment_reminders_summary_grace_minutes,
+        "reconcile_seconds": whatsapp_settings.appointment_reminders_reconcile_seconds,
+        "send_interval_seconds": whatsapp_settings.appointment_reminders_send_interval_seconds,
+        "daily_limit": whatsapp_settings.appointment_reminders_daily_limit,
         "timezone": "America/Lima",
     }
     payload["control"] = {
@@ -357,9 +356,7 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     effective_lead_days = (target_day - now.date()).days
     payload["configuration"]["effective_lead_days"] = effective_lead_days
     payload["control"]["lead_days_applies_from"] = (
-        "current_service_date"
-        if effective_lead_days == control.lead_days
-        else "next_service_date"
+        "current_service_date" if effective_lead_days == control.lead_days else "next_service_date"
     )
     applies_from = now.date()
     if effective_lead_days != control.lead_days:
@@ -367,18 +364,16 @@ def appointment_reminder_status_payload(settings: Settings) -> dict[str, object]
     payload["control"]["applies_from"] = applies_from.isoformat()
     payload["allowed_variables"] = list(definition.allowed_variables)
     payload["current_time"] = now.isoformat()
-    payload["scheduler_window_open"] = now.time() >= settings.whatsapp.appointment_reminders_time
+    payload["scheduler_window_open"] = now.time() >= whatsapp_settings.appointment_reminders_time
     return payload
 
 
-def _summary_grace_expired(settings: Settings, now: datetime) -> bool:
+def _summary_grace_expired(now: datetime, *, whatsapp_settings: WhatsappSettings) -> bool:
     cutoff = datetime.combine(
-        now.date(),
-        settings.whatsapp.appointment_reminders_time,
-        tzinfo=LIMA_TIMEZONE,
+        now.date(), whatsapp_settings.appointment_reminders_time, tzinfo=LIMA_TIMEZONE
     )
     return now >= cutoff + timedelta(
-        minutes=settings.whatsapp.appointment_reminders_summary_grace_minutes
+        minutes=whatsapp_settings.appointment_reminders_summary_grace_minutes
     )
 
 
@@ -413,9 +408,7 @@ def _appointment_reminder_candidates_payload(
                 "order_id": candidate["order_id"],
                 "applicant_name": candidate["applicant_name"],
                 "appointment_day": candidate["appointment_day"].isoformat(),
-                "appointment_date_label": _appointment_day_text(
-                    candidate["appointment_day"]
-                ),
+                "appointment_date_label": _appointment_day_text(candidate["appointment_day"]),
                 "appointment_hour": candidate["appointment_hour"],
                 "site": candidate["site"],
                 "recipient": recipient,

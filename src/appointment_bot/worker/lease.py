@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.worker_state import (
     acquire_worker_lease,
     release_worker_lease,
@@ -14,7 +14,6 @@ from appointment_bot.db.worker_state import (
 )
 
 logger = logging.getLogger(__name__)
-
 WORKER_LEASE_SECONDS = 5 * 60
 WORKER_LEASE_RENEW_INTERVAL_SECONDS = 60
 WORKER_LEASE_RETRY_INTERVAL_SECONDS = 5
@@ -29,15 +28,15 @@ class WorkerLeaseLost(RuntimeError):
 class WorkerLease:
     def __init__(
         self,
-        settings: Settings,
         *,
         on_lost: Callable[[], None] | None = None,
         lease_seconds: float = WORKER_LEASE_SECONDS,
         renew_interval_seconds: float = WORKER_LEASE_RENEW_INTERVAL_SECONDS,
         retry_interval_seconds: float = WORKER_LEASE_RETRY_INTERVAL_SECONDS,
         monotonic: Callable[[], float] = time.monotonic,
+        runtime_settings: RuntimeSettings,
     ) -> None:
-        self.settings = settings
+        self.runtime_settings = runtime_settings
         self.owner_token: str | None = None
         self.acquired = False
         self.lost_event = threading.Event()
@@ -61,9 +60,7 @@ class WorkerLease:
         owner_token = uuid4().hex
         acquisition_started_at = self._monotonic()
         if not acquire_worker_lease(
-            owner_token,
-            lease_seconds=self._lease_seconds,
-            settings=self.settings,
+            owner_token, lease_seconds=self._lease_seconds, settings=self.runtime_settings
         ):
             return False
         self.owner_token = owner_token
@@ -72,9 +69,7 @@ class WorkerLease:
         self._stop_event.clear()
         self._lease_deadline = acquisition_started_at + self._lease_seconds
         self._thread = threading.Thread(
-            target=self._heartbeat_loop,
-            name="continuous-worker-lease-heartbeat",
-            daemon=True,
+            target=self._heartbeat_loop, name="continuous-worker-lease-heartbeat", daemon=True
         )
         self._thread.start()
         return True
@@ -85,7 +80,7 @@ class WorkerLease:
             self.owner_token is None
             or self.lost
             or deadline is None
-            or self._monotonic() >= deadline
+            or (self._monotonic() >= deadline)
         ):
             self._mark_lost()
             raise WorkerLeaseLost("The continuous worker lease was lost.")
@@ -100,7 +95,7 @@ class WorkerLease:
         owner_token = self.owner_token
         if owner_token is not None:
             try:
-                release_worker_lease(owner_token, settings=self.settings)
+                release_worker_lease(owner_token, settings=self.runtime_settings)
             except Exception:
                 logger.exception("Could not release the continuous worker lease cleanly")
         self.acquired = False
@@ -119,11 +114,7 @@ class WorkerLease:
             renewed = self._renew_once()
             if self.lost:
                 return
-            wait_seconds = (
-                self._renew_interval_seconds
-                if renewed
-                else self._retry_interval_seconds
-            )
+            wait_seconds = self._renew_interval_seconds if renewed else self._retry_interval_seconds
 
     def _renew_once(self) -> bool:
         with self._renew_lock:
@@ -136,9 +127,7 @@ class WorkerLease:
             renewal_started_at = self._monotonic()
             try:
                 renewed = renew_worker_lease(
-                    owner_token,
-                    lease_seconds=self._lease_seconds,
-                    settings=self.settings,
+                    owner_token, lease_seconds=self._lease_seconds, settings=self.runtime_settings
                 )
             except Exception:
                 logger.exception("Continuous worker lease heartbeat failed")
@@ -167,9 +156,4 @@ class WorkerLease:
                 logger.exception("Worker lease loss callback failed")
 
 
-__all__ = [
-    "LEASE_LOST_REASON",
-    "LEASE_UNAVAILABLE_REASON",
-    "WorkerLease",
-    "WorkerLeaseLost",
-]
+__all__ = ["LEASE_LOST_REASON", "LEASE_UNAVAILABLE_REASON", "WorkerLease", "WorkerLeaseLost"]

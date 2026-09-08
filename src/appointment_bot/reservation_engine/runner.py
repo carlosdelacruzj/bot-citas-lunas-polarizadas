@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from appointment_bot.browser.session import open_page
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.reservation_engine.appointment_contracts import PortalContractChanged
 from appointment_bot.reservation_engine.ports import ReservationEnginePorts, SessionVideo
@@ -18,8 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def run_with_report(
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
     order_id: str | None = None,
     client_name: str | None = None,
     cancel_event: threading.Event | None = None,
@@ -37,8 +45,8 @@ def run_with_report(
     ports: ReservationEnginePorts,
 ) -> RunReport:
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:8]}"
-    settings = replace(
-        settings,
+    evidence_settings = replace(
+        evidence_settings,
         artifact_prefix="-".join(part for part in (run_id, order_id or "observer") if part),
     )
     started_at_dt = datetime.now(UTC)
@@ -48,17 +56,18 @@ def run_with_report(
     video_recorder: SessionVideo | None = None
     try:
         video_recorder = ports.runs.create_video(
-            settings,
             order_id=order_id or run_id,
             client_name=client_name or "observer",
             started_at=started_at_dt,
+            evidence_settings=evidence_settings,
         )
-        logger.info("Starting appointment check for %s", settings.reservation.target_url)
+        logger.info("Starting appointment check for %s", reservation_settings.target_url)
         logger.info(
             "Reservation policy: auto_reserve=%s record_client_sessions=%s",
-            settings.reservation.auto_reserve, settings.evidence.record_client_sessions,
+            reservation_settings.auto_reserve,
+            evidence_settings.record_client_sessions,
         )
-        logger.info("Using login username %s", settings.reservation.safe_username)
+        logger.info("Using login username %s", reservation_settings.safe_username)
 
         if cancel_event is not None and cancel_event.is_set():
             if video_recorder is not None:
@@ -72,25 +81,26 @@ def run_with_report(
                     order_id=order_id,
                     started_at=started_at,
                 ),
-                settings,
                 started_at_dt=started_at_dt,
+                runtime_settings=runtime_settings,
+                evidence_settings=evidence_settings,
             )
 
         with (
             open_page(
-                settings,
                 video_dir=(video_recorder.record_video_dir if video_recorder is not None else None),
-                video_width=settings.evidence.client_video_width,
-                video_height=settings.evidence.client_video_height,
+                video_width=evidence_settings.client_video_width,
+                video_height=evidence_settings.client_video_height,
                 video_path_callback=(
                     video_recorder.capture_source_path if video_recorder is not None else None
                 ),
+                runtime_settings=runtime_settings,
+                evidence_settings=evidence_settings,
             ) as page,
         ):
             try:
                 flow_result = execute_session_flow(
                     page,
-                    settings,
                     run_id=run_id,
                     order_id=order_id,
                     client_name=client_name,
@@ -107,17 +117,23 @@ def run_with_report(
                     program_plate=program_plate,
                     notify_mode=notify_mode,
                     ports=ports,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
+                    telegram_settings=telegram_settings,
                 )
                 final_result = flow_result.final_result
                 screenshot_path = flow_result.screenshot_path
                 screenshot_paths = flow_result.screenshot_paths
             except Exception:
-                screenshot_path = save_error_screenshot(page, settings, "error-flujo-principal")
+                screenshot_path = save_error_screenshot(
+                    page, "error-flujo-principal", evidence_settings=evidence_settings
+                )
                 raise
 
         return _finalize_successful_run(
             final_result,
-            settings,
             run_id=run_id,
             order_id=order_id,
             started_at=started_at,
@@ -127,11 +143,12 @@ def run_with_report(
             video_recorder=video_recorder,
             notify_mode=notify_mode,
             ports=ports,
+            runtime_settings=runtime_settings,
+            evidence_settings=evidence_settings,
         )
     except Exception as exc:
         return _finalize_failed_run(
             exc,
-            settings,
             run_id=run_id,
             order_id=order_id,
             started_at=started_at,
@@ -141,13 +158,17 @@ def run_with_report(
             video_recorder=video_recorder,
             notify_mode=notify_mode,
             ports=ports,
+            runtime_settings=runtime_settings,
+            evidence_settings=evidence_settings,
+            telegram_settings=telegram_settings,
         )
 
 
 def _finalize_successful_run(
     final_result: AvailabilityResult,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    evidence_settings: EvidenceSettings,
     run_id: str,
     order_id: str | None,
     started_at: str,
@@ -171,12 +192,14 @@ def _finalize_successful_run(
         if video_path is not None:
             logger.info("Client session video saved: %s", video_path)
             report = replace(
-                report, details={**(report.details or {}), "video_path": str(video_path)},
+                report,
+                details={**(report.details or {}), "video_path": str(video_path)},
             )
     finalized_report = ports.runs.finalize_report(
         report,
-        settings,
         started_at_dt=started_at_dt,
+        runtime_settings=runtime_settings,
+        evidence_settings=evidence_settings,
     )
     if notify_mode == "full":
         cleanup_unconfirmed_session_screenshots(finalized_report)
@@ -185,8 +208,10 @@ def _finalize_successful_run(
 
 def _finalize_failed_run(
     error: Exception,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
     run_id: str,
     order_id: str | None,
     started_at: str,
@@ -222,10 +247,11 @@ def _finalize_failed_run(
             )
     finalized_report = ports.runs.finalize_report(
         error_report,
-        settings,
         started_at_dt=started_at_dt,
+        runtime_settings=runtime_settings,
+        evidence_settings=evidence_settings,
     )
-    ports.alerts.notify_error(error, settings, screenshot_path)
+    ports.alerts.notify_error(error, screenshot_path, telegram_settings=telegram_settings)
     if notify_mode == "full":
         cleanup_unconfirmed_session_screenshots(finalized_report)
     return finalized_report

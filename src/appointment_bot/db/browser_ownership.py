@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -28,7 +28,7 @@ def acquire_browser_ownership(
     purpose: str,
     lease_seconds: int,
     require_ready: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     if not owner_token.strip():
         raise ValueError("owner_token is required for browser ownership.")
@@ -158,7 +158,7 @@ def acquire_browser_ownership(
 def browser_ownership_summary(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)

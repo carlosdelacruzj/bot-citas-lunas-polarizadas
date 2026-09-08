@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.core.models import RunReport
 
 logger = logging.getLogger(__name__)
@@ -33,33 +33,33 @@ ARTIFACT_LABEL_ALIASES = {
 }
 
 
-def screenshot_artifact_dir(settings: Settings, *parts: str) -> Path:
+def screenshot_artifact_dir(*parts: str, evidence_settings: EvidenceSettings) -> Path:
     return screenshot_artifact_dir_for_date(
-        settings,
-        datetime.now(ARTIFACT_TIMEZONE),
-        *parts,
+        datetime.now(ARTIFACT_TIMEZONE), *parts, evidence_settings=evidence_settings
     )
 
 
 def screenshot_artifact_dir_for_date(
-    settings: Settings,
-    artifact_date: date | datetime,
-    *parts: str,
+    artifact_date: date | datetime, *parts: str, evidence_settings: EvidenceSettings
 ) -> Path:
     month = artifact_date.strftime("%Y-%m")
     day = artifact_date.strftime("%d-%m-%Y")
-    return settings.evidence.screenshots_dir.joinpath(month, day, *parts)
+    return evidence_settings.screenshots_dir.joinpath(month, day, *parts)
 
 
-def _artifact_path(settings: Settings, label: str) -> Path:
-    return screenshot_artifact_dir(settings) / artifact_filename(settings, label)
+def _artifact_path(label: str, *, evidence_settings: EvidenceSettings) -> Path:
+    return screenshot_artifact_dir(evidence_settings=evidence_settings) / artifact_filename(
+        label, evidence_settings=evidence_settings
+    )
 
 
-def artifact_filename(settings: Settings, label: str, extension: str = ".png") -> str:
+def artifact_filename(
+    label: str, extension: str = ".png", *, evidence_settings: EvidenceSettings
+) -> str:
     suffix = extension if extension.startswith(".") else f".{extension}"
     parts = [
         _short_artifact_label(label),
-        *_short_artifact_prefix(settings.evidence.artifact_prefix),
+        *_short_artifact_prefix(evidence_settings.artifact_prefix),
         uuid4().hex[:6],
     ]
     return f"{'-'.join(part for part in parts if part)}{suffix}"
@@ -127,21 +127,18 @@ def report_screenshot_paths(report: RunReport) -> list[Path]:
 
 
 def archive_unique_slot_capture(
-    settings: Settings,
-    details: dict,
-    source: Path,
+    details: dict, source: Path, *, evidence_settings: EvidenceSettings
 ) -> Path | None:
     if not source.is_file():
         return None
     slot_key = _unique_slot_key(details)
     if slot_key is None:
         return None
-    return _archive_unique_slot_candidate(settings, slot_key, source)
+    return _archive_unique_slot_candidate(slot_key, source, evidence_settings=evidence_settings)
 
 
 def archive_unique_slot_screenshots(
-    settings: Settings,
-    report: RunReport,
+    report: RunReport, *, evidence_settings: EvidenceSettings
 ) -> list[Path]:
     candidates: list[tuple[dict, Path]] = []
     for evidence in report.unique_slot_evidence or []:
@@ -168,18 +165,21 @@ def archive_unique_slot_screenshots(
         if slot_key is None or slot_key in seen_keys:
             continue
         seen_keys.add(slot_key)
-        destination = archive_unique_slot_capture(settings, details, source)
+        destination = archive_unique_slot_capture(
+            details, source, evidence_settings=evidence_settings
+        )
         if destination is not None:
             archived.append(destination)
     return archived
 
 
 def _archive_unique_slot_candidate(
-    settings: Settings,
-    slot_key: str,
-    source: Path,
+    slot_key: str, source: Path, *, evidence_settings: EvidenceSettings
 ) -> Path | None:
-    destination = screenshot_artifact_dir(settings, "cupos-unicos") / f"{slot_key}.png"
+    destination = (
+        screenshot_artifact_dir("cupos-unicos", evidence_settings=evidence_settings)
+        / f"{slot_key}.png"
+    )
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         logger.info(
@@ -229,11 +229,7 @@ def _unique_slot_key(details: dict) -> str | None:
 
     hour_match = re.match(r"^(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?", hour_text)
     hour = hour_match.group("hour") if hour_match is not None else date_match.group("hour")
-    minute = (
-        hour_match.group("minute")
-        if hour_match is not None
-        else date_match.group("minute")
-    )
+    minute = hour_match.group("minute") if hour_match is not None else date_match.group("minute")
     if hour is None:
         return None
 
@@ -249,10 +245,7 @@ def _unique_slot_key(details: dict) -> str | None:
     if not 0 <= hour_number <= 23 or not 0 <= minute_number <= 59:
         return None
 
-    return (
-        f"{day:02d}-{month:02d}-{year:04d}_"
-        f"{hour_number:02d}-{minute_number:02d}"
-    )
+    return f"{day:02d}-{month:02d}-{year:04d}_{hour_number:02d}-{minute_number:02d}"
 
 
 def remove_screenshot_paths(paths: list[Path]) -> None:
@@ -333,8 +326,8 @@ def mask_sensitive_page(page: Page) -> Iterator[None]:
         )
 
 
-def save_screenshot(page: Page, settings: Settings, label: str) -> Path | None:
-    path = _artifact_path(settings, label)
+def save_screenshot(page: Page, label: str, *, evidence_settings: EvidenceSettings) -> Path | None:
+    path = _artifact_path(label, evidence_settings=evidence_settings)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with mask_sensitive_page(page):
@@ -346,8 +339,10 @@ def save_screenshot(page: Page, settings: Settings, label: str) -> Path | None:
         return None
 
 
-def save_programmed_review_screenshot(page: Page, settings: Settings) -> Path | None:
-    path = _artifact_path(settings, "post-queue-programado-review")
+def save_programmed_review_screenshot(
+    page: Page, *, evidence_settings: EvidenceSettings
+) -> Path | None:
+    path = _artifact_path("post-queue-programado-review", evidence_settings=evidence_settings)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         viewport = page.viewport_size
@@ -422,12 +417,9 @@ def save_programmed_review_screenshot(page: Page, settings: Settings) -> Path | 
 
 
 def save_element_screenshot(
-    page: Page,
-    settings: Settings,
-    label: str,
-    selectors: list[str],
+    page: Page, label: str, selectors: list[str], *, evidence_settings: EvidenceSettings
 ) -> Path | None:
-    path = _artifact_path(settings, label)
+    path = _artifact_path(label, evidence_settings=evidence_settings)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in selectors:
@@ -453,12 +445,9 @@ def save_element_screenshot(
 
 
 def save_centered_modal_screenshot(
-    page: Page,
-    settings: Settings,
-    label: str,
-    selectors: list[str],
+    page: Page, label: str, selectors: list[str], *, evidence_settings: EvidenceSettings
 ) -> Path | None:
-    path = _artifact_path(settings, label)
+    path = _artifact_path(label, evidence_settings=evidence_settings)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in selectors:
@@ -522,13 +511,13 @@ def _centered_modal_clip(
 
 def save_revealed_centered_modal_screenshot(
     page: Page,
-    settings: Settings,
     label: str,
     selectors: list[str],
     *,
+    evidence_settings: EvidenceSettings,
     ready_check: Callable[[object], bool] | None = None,
 ) -> Path | None:
-    path = _artifact_path(settings, label)
+    path = _artifact_path(label, evidence_settings=evidence_settings)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     for selector in selectors:
@@ -599,28 +588,31 @@ def save_revealed_centered_modal_screenshot(
     return None
 
 
-def save_error_screenshot(page: Page, settings: Settings, label: str = "error") -> Path | None:
-    if not settings.evidence.screenshot_on_error:
+def save_error_screenshot(
+    page: Page, label: str = "error", *, evidence_settings: EvidenceSettings
+) -> Path | None:
+    if not evidence_settings.screenshot_on_error:
         return None
 
-    return save_screenshot(page, settings, label)
+    return save_screenshot(page, label, evidence_settings=evidence_settings)
 
 
 def save_result_screenshot(
     page: Page,
-    settings: Settings,
     label: str,
     selectors: list[str] | None = None,
+    *,
+    evidence_settings: EvidenceSettings,
 ) -> Path | None:
-    if not settings.evidence.screenshot_on_relevant_result:
+    if not evidence_settings.screenshot_on_relevant_result:
         return None
 
     if selectors:
-        path = save_element_screenshot(page, settings, label, selectors)
+        path = save_element_screenshot(page, label, selectors, evidence_settings=evidence_settings)
         if path is not None:
             return path
 
     if selectors:
         logger.warning("Could not find result element; saving full-page screenshot instead")
 
-    return save_screenshot(page, settings, label)
+    return save_screenshot(page, label, evidence_settings=evidence_settings)

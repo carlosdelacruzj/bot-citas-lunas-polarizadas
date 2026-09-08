@@ -5,7 +5,7 @@ import random
 import threading
 import time
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import RunReport, ServiceOrderRuntime
 from appointment_bot.db.order_state import update_order_state
 from appointment_bot.services.order_runtime import OrderReportOutcome, classify_order_report
@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def update_state_from_report(
-    settings: Settings,
-    order: ServiceOrderRuntime,
-    report: RunReport,
+    order: ServiceOrderRuntime, report: RunReport, *, runtime_settings: RuntimeSettings
 ) -> None:
     if report.status in {"skipped", "unknown", "reservation_unconfirmed"}:
         return
@@ -29,30 +27,27 @@ def update_state_from_report(
         message=report.message,
         exit_code=report.exit_code,
         backoff_seconds=None,
-        settings=settings,
+        settings=runtime_settings,
     )
 
 
-def reservation_limit_reached(settings: Settings, confirmed_reservations: int) -> bool:
-    limit = settings.runtime.queue_max_reservations_per_run
+def reservation_limit_reached(
+    confirmed_reservations: int, *, runtime_settings: RuntimeSettings
+) -> bool:
+    limit = runtime_settings.queue_max_reservations_per_run
     return limit > 0 and confirmed_reservations >= limit
 
 
 def delay_between_orders(
-    settings: Settings,
-    *,
-    cancel_event: threading.Event | None = None,
+    *, cancel_event: threading.Event | None = None, runtime_settings: RuntimeSettings
 ) -> None:
-    if settings.runtime.queue_delay_max_seconds <= 0:
+    if runtime_settings.queue_delay_max_seconds <= 0:
         return
-
     delay = random.randint(
-        settings.runtime.queue_delay_min_seconds,
-        settings.runtime.queue_delay_max_seconds,
+        runtime_settings.queue_delay_min_seconds, runtime_settings.queue_delay_max_seconds
     )
     if delay <= 0:
         return
-
     logger.info("Waiting %s seconds before the next queued order", delay)
     if cancel_event is not None:
         cancel_event.wait(delay)

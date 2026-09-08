@@ -4,7 +4,11 @@ import os
 from http import HTTPStatus
 from typing import Any
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import (
+    load_evidence_settings,
+    load_reservation_settings,
+    load_runtime_settings,
+)
 from appointment_bot.db.browser_ownership import BrowserOwnershipConflict
 from appointment_bot.db.orders import get_service_order_runtime
 from appointment_bot.manual_session.session import (
@@ -42,8 +46,10 @@ def open_manual_session_payload(
     if not order_id:
         return HTTPStatus.BAD_REQUEST, error_payload("bad_request", "Missing order_id.")
 
-    settings = load_settings(require_login=False)
-    order = get_service_order_runtime(order_id, settings=settings)
+    runtime_settings = load_runtime_settings(require_login=False)
+    reservation_settings = load_reservation_settings(require_login=False)
+    evidence_settings = load_evidence_settings(require_login=False)
+    order = get_service_order_runtime(order_id, settings=runtime_settings)
     if order is None:
         return HTTPStatus.NOT_FOUND, error_payload("not_found", "Service order not found.")
     requested_mode = str(payload.get("mode") or "auto").strip().casefold()
@@ -61,7 +67,13 @@ def open_manual_session_payload(
             "Appointment mode is available only for ready orders. Use portal mode instead.",
         )
     try:
-        session_id = open_manual_session_for_order(settings, order, mode=mode)
+        session_id = open_manual_session_for_order(
+            order,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
+            mode=mode,
+        )
     except BrowserOwnershipConflict as exc:
         return HTTPStatus.CONFLICT, error_payload(exc.code, exc.message)
     return HTTPStatus.ACCEPTED, {

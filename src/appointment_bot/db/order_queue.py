@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from datetime import date
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import (
     ServiceOrderCandidate,
 )
@@ -26,7 +26,7 @@ from appointment_bot.db.common import (
 
 def get_reservation_constraints_for_order(
     order_id: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> tuple[
     date | None,
     date | None,
@@ -59,7 +59,7 @@ def get_reservation_constraints_for_order(
 
 
 def list_active_orders(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     *,
     include_constrained: bool = True,
     order_ids: Iterable[str] | None = None,
@@ -105,7 +105,7 @@ def list_active_orders(
     return [_candidate_from_row(row) for row in rows]
 
 
-def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderCandidate]:
+def list_observer_orders(settings: RuntimeSettings | None = None) -> list[ServiceOrderCandidate]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -172,7 +172,7 @@ def list_observer_orders(settings: Settings | None = None) -> list[ServiceOrderC
             """,
             (
                 EXCLUSIVE_PRIORITY_THRESHOLD,
-                settings.runtime.observer_active_order_limit,
+                settings.observer_active_order_limit,
             ),
         ).fetchall()
     return [_candidate_from_row(row) for row in rows]
@@ -183,7 +183,7 @@ def list_compatible_orders_for_opportunities(
     *,
     exclude_order_ids: Iterable[str] = (),
     limit: int | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[ServiceOrderCandidate]:
     if limit is not None and limit <= 0:
         return []

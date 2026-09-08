@@ -6,7 +6,7 @@ from typing import Any
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
 from appointment_bot.db.payment_receipt_reporting import payment_receipt_period_metrics
@@ -14,7 +14,7 @@ from appointment_bot.db.payment_receipt_reporting import payment_receipt_period_
 LIMA_TZ = ZoneInfo("America/Lima")
 
 
-def list_finance_categories(*, settings: Settings | None = None) -> list[dict[str, Any]]:
+def list_finance_categories(*, settings: RuntimeSettings | None = None) -> list[dict[str, Any]]:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -33,7 +33,7 @@ def list_finance_entries(
     next_month_start: date,
     *,
     include_voided: bool = True,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[dict[str, Any]]:
     settings = _settings(settings)
     init_database(settings)
@@ -54,7 +54,7 @@ def list_finance_entries(
 
 
 def create_finance_entry(
-    values: dict[str, Any], *, settings: Settings | None = None
+    values: dict[str, Any], *, settings: RuntimeSettings | None = None
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -105,7 +105,7 @@ def update_finance_entry(
     entry_id: str,
     values: dict[str, Any],
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -153,7 +153,7 @@ def void_finance_entry(
     entry_id: str,
     reason: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -177,7 +177,7 @@ def finance_month_summary(
     month_start: date,
     next_month_start: date,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -266,7 +266,7 @@ def finance_data_quality(
     month_start: date,
     next_month_start: date,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -383,7 +383,7 @@ def reconcile_payment_amount(
     resolution_type: str,
     reason: str,
     reconciled_by: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -425,7 +425,7 @@ def finance_month_closure(
     month_start: date,
     next_month_start: date,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -443,7 +443,7 @@ def upsert_finance_month_closure(
     next_month_start: date,
     values: dict[str, Any],
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import WorkerState
 from appointment_bot.db.common import (
     _connection,
@@ -14,7 +14,7 @@ from appointment_bot.db.common import (
 )
 
 
-def get_worker_state(settings: Settings | None = None) -> WorkerState:
+def get_worker_state(settings: RuntimeSettings | None = None) -> WorkerState:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -47,7 +47,7 @@ def get_worker_state(settings: Settings | None = None) -> WorkerState:
     )
 
 
-def is_worker_lease_active(settings: Settings | None = None) -> bool:
+def is_worker_lease_active(settings: RuntimeSettings | None = None) -> bool:
     settings = _settings(settings)
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -67,7 +67,7 @@ def acquire_worker_lease(
     owner_token: str,
     *,
     lease_seconds: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -95,7 +95,7 @@ def renew_worker_lease(
     owner_token: str,
     *,
     lease_seconds: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -117,7 +117,7 @@ def renew_worker_lease(
 def release_worker_lease(
     owner_token: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -135,7 +135,7 @@ def release_worker_lease(
 
 
 def update_worker_state(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     *,
     expected_owner_token: str | None = None,
     **changes: Any,

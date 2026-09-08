@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -56,7 +56,7 @@ class OpportunityRuntimeControl:
 
 
 def get_opportunity_control(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> OpportunityRuntimeControl:
     resolved = _settings(settings)
     init_database(resolved)
@@ -82,7 +82,7 @@ def update_opportunity_control(
     expected_revision: int,
     updated_by: str,
     reason: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> OpportunityRuntimeControl:
     normalized = action.strip().lower()
     normalized = _ACTION_ALIASES.get(normalized, normalized)
@@ -168,7 +168,7 @@ def mark_opportunity_control_applied(
     revision: int,
     *,
     applied_by_worker: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> OpportunityRuntimeControl:
     if revision < 0:
         raise ValueError("revision must be non-negative.")
@@ -209,7 +209,7 @@ def mark_opportunity_control_applied(
 
 def is_opportunity_admission_allowed(
     control_name: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     resolved = _settings(settings)
     control = get_opportunity_control(resolved)
@@ -225,7 +225,7 @@ def is_opportunity_admission_allowed(
 
 def admissions_allowed(
     kind: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     return is_opportunity_admission_allowed(kind, settings)
 
@@ -233,7 +233,7 @@ def admissions_allowed(
 def trip_opportunity_circuit_breaker(
     reason: str,
     burst_id: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> OpportunityRuntimeControl:
     safe_reason = sanitize_text(reason.strip())[:240]
     if not safe_reason:
@@ -288,7 +288,7 @@ def reset_opportunity_circuit_breaker(
     expected_revision: int,
     reset_by: str,
     reason: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> OpportunityRuntimeControl:
     actor = _safe_actor(reset_by)
     resolved = _settings(settings)

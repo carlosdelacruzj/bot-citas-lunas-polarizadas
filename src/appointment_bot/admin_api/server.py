@@ -9,7 +9,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_settings
 from appointment_bot.services.appointment_reminders import AppointmentReminderScheduler
 from appointment_bot.services.local_api import DEFAULT_HOST, LocalApiHandler
 from appointment_bot.services.logger import setup_logging
@@ -72,8 +72,7 @@ class AdminApiHandler(LocalApiHandler):
         session_token = getattr(self.server, "dashboard_session_token", "")
         self.send_header(
             "Set-Cookie",
-            "appointment_bot_dashboard="
-            f"{session_token}; Path=/; HttpOnly; SameSite=Strict",
+            f"appointment_bot_dashboard={session_token}; Path=/; HttpOnly; SameSite=Strict",
         )
         self.send_header("Cache-Control", "no-cache, must-revalidate")
         self.end_headers()
@@ -115,15 +114,39 @@ def _dashboard_root() -> Path:
 
 def run_admin_api() -> int:
     _set_working_directory()
-    settings = load_settings(require_login=False)
-    setup_logging(settings.runtime)
-    resumed_preflights = resume_pending_order_preflights(settings=settings)
+    (
+        runtime_settings,
+        reservation_settings,
+        _,
+        evidence_settings,
+        telegram_settings,
+        whatsapp_settings,
+    ) = load_settings(require_login=False)
+    setup_logging(runtime_settings)
+    resumed_preflights = resume_pending_order_preflights(
+        runtime_settings=runtime_settings,
+        reservation_settings=reservation_settings,
+        evidence_settings=evidence_settings,
+        telegram_settings=telegram_settings,
+    )
     if resumed_preflights:
         logger.info("Resumed %s pending order validations", resumed_preflights)
     server = create_admin_api_server()
-    whatsapp_dispatcher = WhatsAppAutomationDispatcher(settings)
-    appointment_reminder_scheduler = AppointmentReminderScheduler(settings)
-    post_appointment_scheduler = PostAppointmentReviewScheduler(settings)
+    whatsapp_dispatcher = WhatsAppAutomationDispatcher(
+        runtime_settings=runtime_settings,
+        evidence_settings=evidence_settings,
+        whatsapp_settings=whatsapp_settings,
+    )
+    appointment_reminder_scheduler = AppointmentReminderScheduler(
+        runtime_settings=runtime_settings,
+        telegram_settings=telegram_settings,
+        whatsapp_settings=whatsapp_settings,
+    )
+    post_appointment_scheduler = PostAppointmentReviewScheduler(
+        runtime_settings=runtime_settings,
+        reservation_settings=reservation_settings,
+        evidence_settings=evidence_settings,
+    )
     whatsapp_dispatcher.start()
     appointment_reminder_scheduler.start()
     post_appointment_scheduler.start()

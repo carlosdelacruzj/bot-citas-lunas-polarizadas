@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any, TypedDict
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.rules import parse_appointment_date
 from appointment_bot.db.common import _connection, _database_url, _now, init_database
 
@@ -29,7 +29,7 @@ class AppointmentReminderCandidate(TypedDict):
     appointment_hour: str | None
 
 
-def backfill_missing_appointment_days(*, settings: Settings) -> tuple[int, int]:
+def backfill_missing_appointment_days(*, settings: RuntimeSettings) -> tuple[int, int]:
     init_database(settings)
     updated = 0
     invalid = 0
@@ -61,7 +61,7 @@ def backfill_missing_appointment_days(*, settings: Settings) -> tuple[int, int]:
 def list_appointment_reminder_candidates(
     appointment_day: date,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> list[AppointmentReminderCandidate]:
     init_database(settings)
     closure_placeholders = ", ".join(["%s"] * len(EXCLUDED_CLOSURE_REASONS))
@@ -108,7 +108,7 @@ def get_current_appointment_reminder_candidate(
     reservation_id: str,
     appointment_day: date,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> AppointmentReminderCandidate | None:
     init_database(settings)
     closure_placeholders = ", ".join(["%s"] * len(EXCLUDED_CLOSURE_REASONS))
@@ -151,7 +151,7 @@ def get_current_appointment_reminder_candidate(
     return _candidate_from_row(row) if row is not None else None
 
 
-def count_invalid_current_appointment_dates(*, settings: Settings) -> int:
+def count_invalid_current_appointment_dates(*, settings: RuntimeSettings) -> int:
     init_database(settings)
     closure_placeholders = ", ".join(["%s"] * len(EXCLUDED_CLOSURE_REASONS))
     with _connection(_database_url(settings)) as connection:
@@ -182,7 +182,7 @@ def count_invalid_current_appointment_dates(*, settings: Settings) -> int:
 def daily_summary_barrier_status(
     service_date: date,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> str:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -207,7 +207,7 @@ def appointment_reminder_job_counts(
     service_date: date,
     appointment_day: date,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> dict[str, int]:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -229,7 +229,7 @@ def ensure_appointment_reminder_batch_day(
     service_date: date,
     configured_lead_days: int,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> date:
     init_database(settings)
     appointment_day = service_date + timedelta(days=configured_lead_days)
@@ -265,7 +265,7 @@ def record_appointment_reminder_day(
     missing_contact_count: int,
     invalid_date_count: int,
     last_error: str | None,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     now = _now()
@@ -321,7 +321,7 @@ def record_appointment_reminder_day(
 def mark_daily_summary_missing_alerted(
     service_date: date,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> bool:
     init_database(settings)
     now = _now()
@@ -342,7 +342,7 @@ def appointment_reminder_status(
     service_date: date,
     lead_days: int,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> dict[str, Any]:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:

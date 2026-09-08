@@ -10,7 +10,8 @@ from typing import Any
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.credential_cipher import CredentialCipher
 from appointment_bot.db.migrations import migrate_database
 from appointment_bot.db.pool import pooled_connection
@@ -18,7 +19,7 @@ from appointment_bot.db.pool import pooled_connection
 _INITIALIZED_URLS: set[str] = set()
 _INITIALIZATION_LOCK = threading.Lock()
 
-def init_database(settings: Settings | None = None) -> None:
+def init_database(settings: RuntimeSettings | None = None) -> None:
     settings = _settings(settings)
     database_url = _database_url(settings)
     if database_url in _INITIALIZED_URLS:
@@ -32,18 +33,18 @@ def init_database(settings: Settings | None = None) -> None:
         _INITIALIZED_URLS.add(database_url)
 
 
-def _settings(settings: Settings | None) -> Settings:
-    return settings or load_settings(require_login=False)
+def _settings(settings: RuntimeSettings | None) -> RuntimeSettings:
+    return settings or load_runtime_settings(require_login=False)
 
 
-def _database_url(settings: Settings) -> str:
-    if not settings.runtime.database_url:
+def _database_url(settings: RuntimeSettings) -> str:
+    if not settings.database_url:
         raise ValueError("APPOINTMENT_DATABASE_URL is required for PostgreSQL.")
-    return settings.runtime.database_url
+    return settings.database_url
 
 
-def _credential_cipher(settings: Settings) -> CredentialCipher:
-    return CredentialCipher(settings.runtime.credential_encryption_keys)
+def _credential_cipher(settings: RuntimeSettings) -> CredentialCipher:
+    return CredentialCipher(settings.credential_encryption_keys)
 
 
 @contextmanager
@@ -54,7 +55,7 @@ def _connection(database_url: str) -> Iterator[Connection]:
 
 @contextmanager
 def _operation_connection(
-    settings: Settings,
+    settings: RuntimeSettings,
     connection: Connection | None,
 ) -> Iterator[Connection]:
     if connection is not None:

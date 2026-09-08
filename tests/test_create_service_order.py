@@ -47,13 +47,13 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
                 contact_source="whatsapp",
             )
 
-            result = use_case.execute(request, settings=settings)
+            result = use_case.execute(request, runtime_settings=settings.runtime)
 
             self.assertEqual(result.order_id, "order-12345678")
-            self.assertEqual(observed["uow"], (settings, None))
+            self.assertEqual(observed["uow"], (settings.runtime, None))
             persisted = observed["repository_request"]
             options = observed["repository_options"]
-            self.assertIs(options["settings"], settings)
+            self.assertIs(options["settings"], settings.runtime)
             self.assertIs(options["_connection_override"], connection)
             self.assertEqual(persisted.document_number, "12345678")
             self.assertNotEqual(persisted.encrypted_password, "secret")
@@ -79,7 +79,7 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(RuntimeError, "forced failure"):
-                use_case.execute(request, settings=settings)
+                use_case.execute(request, runtime_settings=settings.runtime)
 
             with database_connection(settings) as connection:
                 counts = {
@@ -110,7 +110,7 @@ class CreateServiceOrderUseCaseTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "greater than zero"):
-                use_case.execute(request, settings=settings)
+                use_case.execute(request, runtime_settings=settings.runtime)
 
     def test_request_representation_never_exposes_password(self) -> None:
         request = CreateServiceOrderRequest(document_number="12345678", password="secret")

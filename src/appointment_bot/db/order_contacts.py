@@ -5,7 +5,7 @@ from typing import Any
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.contacts import (
     ContactValidationError,
     normalize_contact_name,
@@ -52,7 +52,7 @@ NO_CHARGE_CLOSURE_REASONS = {
 
 
 def list_service_order_summaries(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[ServiceOrderSummary]:
     settings = _settings(settings)
     init_database(settings)
@@ -186,7 +186,7 @@ def add_or_update_service_order_contact(
     contact_whatsapp_username: str | None = None,
     contact_name: str | None = None,
     contact_source: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -227,7 +227,7 @@ def add_or_update_service_order_contact(
 def mark_service_order_no_charge(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -282,7 +282,7 @@ def close_service_order(
     *,
     closure_reason: str,
     closure_note: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     closure_reason = closure_reason.strip().casefold().replace("-", "_")
     if closure_reason not in ORDER_CLOSURE_REASONS:

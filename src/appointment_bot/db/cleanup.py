@@ -3,7 +3,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.loading import load_evidence_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -15,11 +17,16 @@ CAPTCHA_SHADOW_RETENTION_DAYS: Final = 14
 WORKER_COMMAND_RETENTION_DAYS: Final = 90
 
 
-def cleanup_database_history(settings: Settings | None = None) -> dict[str, int]:
+def cleanup_database_history(
+    settings: RuntimeSettings | None = None,
+    *,
+    evidence: EvidenceSettings | None = None,
+) -> dict[str, int]:
     settings = _settings(settings)
+    evidence = evidence or load_evidence_settings(require_login=False)
     init_database(settings)
     now = datetime.now(UTC)
-    history_cutoff = now - timedelta(days=settings.evidence.cleanup_retention_days)
+    history_cutoff = now - timedelta(days=evidence.cleanup_retention_days)
     captcha_shadow_cutoff = now - timedelta(days=CAPTCHA_SHADOW_RETENTION_DAYS)
     worker_command_cutoff = now - timedelta(days=WORKER_COMMAND_RETENTION_DAYS)
     removed: dict[str, int] = {}

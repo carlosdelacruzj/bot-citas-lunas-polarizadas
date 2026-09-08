@@ -5,7 +5,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, init_database
 
 
@@ -13,7 +13,7 @@ def enqueue_telegram_alert(
     *,
     dedupe_key: str,
     payload: dict[str, Any],
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -27,7 +27,7 @@ def enqueue_telegram_alert(
         )
 
 
-def next_pending_telegram_alert(*, settings: Settings) -> dict[str, Any] | None:
+def next_pending_telegram_alert(*, settings: RuntimeSettings) -> dict[str, Any] | None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
@@ -46,7 +46,7 @@ def next_pending_telegram_alert(*, settings: Settings) -> dict[str, Any] | None:
 def mark_telegram_alert_sent(
     dedupe_key: str,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -67,7 +67,7 @@ def record_telegram_alert_failure(
     attempt_count: int,
     max_attempts: int,
     error: str,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> tuple[bool, int]:
     next_attempt_count = attempt_count + 1
     exhausted = next_attempt_count >= max_attempts
@@ -96,7 +96,7 @@ def record_telegram_alert_failure(
     return exhausted, delay_seconds
 
 
-def telegram_alert_outbox_status(*, settings: Settings) -> dict[str, int]:
+def telegram_alert_outbox_status(*, settings: RuntimeSettings) -> dict[str, int]:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(

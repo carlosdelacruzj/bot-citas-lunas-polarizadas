@@ -50,7 +50,9 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
     def test_browser_exception_after_interaction_is_persisted_as_uncertain(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             dispatcher = WhatsAppAutomationDispatcher(
-                make_settings(Path(directory))
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                evidence_settings=_configuration.evidence,
+                whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
             dispatcher._notify_failure = Mock()
@@ -70,20 +72,20 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
     def test_persistence_exception_after_send_is_persisted_as_uncertain(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             dispatcher = WhatsAppAutomationDispatcher(
-                make_settings(Path(directory))
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                evidence_settings=_configuration.evidence,
+                whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
             dispatcher._notify_failure = Mock()
 
             with (
                 patch(
-                    "appointment_bot.services.whatsapp_automation."
-                    "order_has_sent_whatsapp_message",
+                    "appointment_bot.services.whatsapp_automation.order_has_sent_whatsapp_message",
                     return_value=False,
                 ),
                 patch(
-                    "appointment_bot.services.whatsapp_automation."
-                    "prepare_order_whatsapp_message",
+                    "appointment_bot.services.whatsapp_automation.prepare_order_whatsapp_message",
                     return_value={"message_id": "message-1"},
                 ),
                 patch(
@@ -117,7 +119,9 @@ class WhatsAppDeliverySafetyTests(unittest.TestCase):
     def test_callback_exception_after_confirmation_stays_uncertain(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             dispatcher = WhatsAppAutomationDispatcher(
-                make_settings(Path(directory))
+                runtime_settings=(_configuration := make_settings(Path(directory))).runtime,
+                evidence_settings=_configuration.evidence,
+                whatsapp_settings=_configuration.whatsapp,
             )
             dispatcher._finish = Mock(return_value=True)
             dispatcher._notify_failure = Mock()

@@ -4,7 +4,8 @@ import atexit
 import os
 import uuid
 from contextlib import contextmanager
-from dataclasses import replace
+from dataclasses import fields, make_dataclass, replace
+from functools import cached_property
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -12,8 +13,45 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from dotenv import load_dotenv
 from psycopg import sql
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.loading import load_settings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.configuration.whatsapp import WhatsappSettings
 from appointment_bot.db.common import _connection
+
+_GROUP_TYPES = {
+    "runtime": RuntimeSettings,
+    "reservation": ReservationSettings,
+    "captcha": CaptchaSettings,
+    "evidence": EvidenceSettings,
+    "telegram": TelegramSettings,
+    "whatsapp": WhatsappSettings,
+}
+
+
+def _group_property(group_type):
+    return cached_property(
+        lambda configuration: group_type(
+            **{field.name: getattr(configuration, field.name) for field in fields(group_type)}
+        )
+    )
+
+
+# A flat fixture keeps existing replace scenarios independent of production composition.
+TestConfiguration = make_dataclass(
+    "TestConfiguration",
+    [
+        (field.name, field.type)
+        for group_type in _GROUP_TYPES.values()
+        for field in fields(group_type)
+    ],
+    frozen=True,
+    repr=False,
+    namespace={name: _group_property(group_type) for name, group_type in _GROUP_TYPES.items()},
+)
 
 _CREATED_SCHEMAS: list[tuple[str, str]] = []
 
@@ -34,7 +72,7 @@ def _schema_url(database_url: str, schema: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, query, parts.fragment))
 
 
-def make_settings(root: Path) -> Settings:
+def make_settings(root: Path) -> TestConfiguration:
     database_url = _test_database_url()
     schema = f"test_{uuid.uuid4().hex}"
     with _connection(database_url) as connection:
@@ -44,10 +82,11 @@ def make_settings(root: Path) -> Settings:
         "os.environ",
         {
             "TARGET_URL": "https://example.invalid",
+            "LOGIN_USERNAME": "test-only-user",
+            "LOGIN_PASSWORD": "test-only-password",
+            "APIKEY_2CAPTCHA": "test-only-captcha-key",
             "APPOINTMENT_DATABASE_URL": _schema_url(database_url, schema),
-            "APPOINTMENT_CREDENTIAL_KEYS": (
-                "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
-            ),
+            "APPOINTMENT_CREDENTIAL_KEYS": ("MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="),
             "TELEGRAM_BOT_TOKEN": "test-only-token",
             "TELEGRAM_CHAT_ID": "123456789",
             "TELEGRAM_ENABLED": "true",
@@ -60,7 +99,14 @@ def make_settings(root: Path) -> Settings:
         },
         clear=False,
     ):
-        settings = load_settings(require_login=False)
+        groups = load_settings(require_login=False)
+        settings = TestConfiguration(
+            **{
+                field.name: getattr(group, field.name)
+                for group in groups
+                for field in fields(group)
+            }
+        )
     return replace(
         settings,
         logs_dir=root / "logs",
@@ -71,7 +117,7 @@ def make_settings(root: Path) -> Settings:
 
 
 @contextmanager
-def database_connection(settings: Settings):
+def database_connection(settings: TestConfiguration):
     with _connection(settings.database_url) as connection:
         yield connection
 

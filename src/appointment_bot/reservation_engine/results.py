@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.core.run_reports import reservation_confirmed
 from appointment_bot.utils.screenshots import remove_screenshot_paths, report_screenshot_paths
@@ -30,9 +30,9 @@ def cleanup_unconfirmed_session_screenshots(report: RunReport) -> None:
 def with_client_context(
     result: AvailabilityResult,
     *,
+    reservation_settings: ReservationSettings,
     order_id: str | None,
     client_name: str | None,
-    settings: Settings,
     program_expediente: str | None = None,
     program_plate: str | None = None,
 ) -> AvailabilityResult:
@@ -41,7 +41,7 @@ def with_client_context(
 
     details = dict(result.details or {})
     details.setdefault("orden", order_id)
-    details.setdefault("cuenta", settings.reservation.safe_username)
+    details.setdefault("cuenta", reservation_settings.safe_username)
     if program_expediente:
         details.setdefault("program_expediente", program_expediente)
     if program_plate:

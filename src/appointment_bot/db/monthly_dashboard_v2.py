@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 from appointment_bot.db.payment_receipt_quality import payment_receipt_date_quality
 from appointment_bot.db.payment_receipt_reporting import payment_receipt_period_metrics
@@ -18,7 +18,7 @@ def monthly_dashboard_summary_v2(
     next_month_start: date,
     previous_month_start: date,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)

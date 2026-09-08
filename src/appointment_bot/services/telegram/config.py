@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.services.telegram.constants import (
     DEFAULT_ADMIN_API_URL,
     DEFAULT_POLL_TIMEOUT_SECONDS,
@@ -13,14 +13,14 @@ from appointment_bot.services.telegram.errors import TelegramControlError
 from appointment_bot.services.telegram.models import TelegramControlConfig
 
 
-def load_control_config(settings: Settings) -> TelegramControlConfig:
-    if not settings.telegram.telegram_enabled:
+def load_control_config(telegram_settings: TelegramSettings) -> TelegramControlConfig:
+    if not telegram_settings.telegram_enabled:
         raise TelegramControlError("Telegram is disabled.")
     chat_ids_text = os.getenv("TELEGRAM_CONTROL_CHAT_IDS", "").strip()
     chat_ids = {
         item.strip()
         for item in (
-            chat_ids_text.split(",") if chat_ids_text else [settings.telegram.telegram_chat_id]
+            chat_ids_text.split(",") if chat_ids_text else [telegram_settings.telegram_chat_id]
         )
         if item.strip()
     }
@@ -44,7 +44,7 @@ def load_control_config(settings: Settings) -> TelegramControlConfig:
         default=DEFAULT_POLL_TIMEOUT_SECONDS,
     )
     return TelegramControlConfig(
-        bot_token=settings.telegram.telegram_bot_token,
+        bot_token=telegram_settings.telegram_bot_token,
         authorized_chat_ids=frozenset(chat_ids),
         authorized_user_ids=user_ids,
         admin_api_url=_validated_admin_api_url(

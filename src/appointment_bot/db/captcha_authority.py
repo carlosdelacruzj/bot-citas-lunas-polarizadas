@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 
 
@@ -49,7 +49,7 @@ class CaptchaAuthorityDecision:
 
 
 def get_captcha_authority_control(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> CaptchaAuthorityControl:
     resolved = _settings(settings)
     init_database(resolved)
@@ -72,7 +72,7 @@ def update_captcha_authority_control(
     updated_by: str,
     reset_circuit: bool = False,
     reset_counters: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> CaptchaAuthorityControl:
     if mode not in {"2captcha", "canary"}:
         raise ValueError("mode must be 2captcha or canary")
@@ -147,7 +147,7 @@ def record_captcha_authority_decision(
     inference_ms: float | None,
     request_ms: float | None,
     fallback_reason: str | None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> CaptchaAuthorityDecision:
     resolved = _settings(settings)
     init_database(resolved)
@@ -231,7 +231,7 @@ def resolve_captcha_authority_decision(
     event_id: str,
     *,
     portal_outcome: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -286,7 +286,7 @@ def resolve_captcha_authority_decision(
 def trip_captcha_authority_circuit(
     reason: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
     connection=None,
 ) -> None:
     resolved = _settings(settings)
@@ -317,7 +317,7 @@ def count_consecutive_captcha_authority_failures(
     reasons: set[str],
     *,
     limit: int,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> int:
     if limit < 1:
         raise ValueError("limit must be positive")

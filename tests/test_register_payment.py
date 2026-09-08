@@ -74,16 +74,13 @@ class RegisterPaymentUseCaseTests(unittest.TestCase):
 
             audit_id = use_case.execute(
                 RegisterPaymentRequest(
-                    order_id="order-1",
-                    amount_paid=20,
-                    complete=False,
-                    actor="operator-1",
+                    order_id="order-1", amount_paid=20, complete=False, actor="operator-1"
                 ),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
             self.assertEqual(audit_id, "audit-partial")
-            self.assertEqual(observed["uow"], (settings, None))
+            self.assertEqual(observed["uow"], (settings.runtime, None))
             self.assertFalse(observed["enqueued"])
             self.assertEqual(
                 [call[0] for call in repository.calls],
@@ -104,9 +101,7 @@ class RegisterPaymentUseCaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -127,7 +122,7 @@ class RegisterPaymentUseCaseTests(unittest.TestCase):
                         amount_agreed=50,
                         actor="operator-1",
                     ),
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
 
             with database_connection(settings) as connection:

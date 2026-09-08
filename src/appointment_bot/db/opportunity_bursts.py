@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import OPPORTUNITY_BURST_SESSION_LIMIT, Settings
+from appointment_bot.configuration.runtime import OPPORTUNITY_BURST_SESSION_LIMIT, RuntimeSettings
 from appointment_bot.db.common import (
     _connection,
     _database_url,
@@ -75,7 +75,7 @@ def create_opportunity_burst(
     config: Mapping[str, Any] | None = None,
     detector_run_id: str | None = None,
     burst_id: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     if not 1 <= configured_max_sessions <= OPPORTUNITY_BURST_SESSION_LIMIT:
         raise ValueError(
@@ -120,7 +120,7 @@ def record_burst_candidates(
     burst_id: str,
     candidates: Iterable[Mapping[str, Any]],
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[str]:
     prepared: list[tuple[Any, ...]] = []
     candidate_ids: list[str] = []
@@ -173,7 +173,7 @@ def create_burst_execution(
     next_candidate_id: str | None = None,
     previous_execution_id: str | None = None,
     execution_id: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     normalized_role = role.strip().lower()
     if normalized_role not in _EXECUTION_ROLES:
@@ -227,7 +227,7 @@ def mark_burst_execution_started(
     *,
     claim_acquired: bool | None = None,
     started_at: datetime | str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -265,7 +265,7 @@ def update_burst_execution(
     confirmed_at: datetime | str | None = None,
     next_candidate_id: str | None = None,
     max_active_sessions: int | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -322,7 +322,7 @@ def mark_burst_execution_finished(
     lease_lost: bool = False,
     reservation_timing: Mapping[str, Any] | None = None,
     finished_at: datetime | str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     safe_timing = _allowlisted_mapping(reservation_timing or {}, _TIMING_KEYS)
     timing_marks = safe_timing.get("marks_lima")
@@ -397,7 +397,7 @@ def finish_opportunity_burst(
     finished_at: datetime | str | None = None,
     scheduled_clients: int | None = None,
     duration_seconds: float | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     normalized_status = status.strip().lower()
     if normalized_status not in _BURST_STATUSES:
@@ -454,7 +454,7 @@ def record_burst_event(
     duration_ms: int | None = None,
     details: Mapping[str, Any] | None = None,
     event_key: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> str:
     normalized_type = event_type.strip().lower()
     if normalized_type not in _EVENT_TYPES:
@@ -510,7 +510,7 @@ def list_opportunity_bursts(
     *,
     limit: int = 20,
     status: str | None = None,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[dict[str, Any]]:
     bounded_limit = min(max(int(limit), 1), 100)
     resolved = _settings(settings)
@@ -544,7 +544,7 @@ def list_opportunity_bursts(
 
 
 def get_active_opportunity_burst(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -567,7 +567,7 @@ def get_active_opportunity_burst(
 def get_opportunity_burst_detail(
     burst_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     resolved = _settings(settings)
     init_database(resolved)
@@ -618,7 +618,7 @@ def reconcile_stale_opportunity_bursts(
     stale_before: datetime | str,
     *,
     reason: str = "worker_restart_reconciliation",
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[str]:
     safe_reason = sanitize_text(reason.strip())[:240]
     resolved = _settings(settings)

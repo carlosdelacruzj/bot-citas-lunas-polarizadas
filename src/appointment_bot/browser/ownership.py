@@ -4,7 +4,7 @@ import logging
 import threading
 from dataclasses import dataclass, field
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.browser_ownership import acquire_browser_ownership
 from appointment_bot.db.order_state import (
     release_service_order_claim,
@@ -19,7 +19,7 @@ BROWSER_OWNERSHIP_HEARTBEAT_SECONDS = 30
 
 @dataclass
 class BrowserOwnershipLease:
-    settings: Settings
+    settings: RuntimeSettings
     order_id: str
     owner_token: str
     purpose: str
@@ -30,7 +30,7 @@ class BrowserOwnershipLease:
     @classmethod
     def acquire(
         cls,
-        settings: Settings,
+        settings: RuntimeSettings,
         order_id: str,
         *,
         owner_token: str,

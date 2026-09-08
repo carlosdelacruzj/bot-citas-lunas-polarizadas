@@ -7,7 +7,7 @@ from typing import Any
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import ServiceOrderCreateResult
 from appointment_bot.core.service_packages import (
     SERVICE_PACKAGE_INTEGRAL,
@@ -72,7 +72,7 @@ def record_order_program_listing(
     order_id: str,
     details: dict[str, Any],
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> bool:
     settings = _settings(settings)
     init_database(settings)
@@ -136,7 +136,7 @@ def _canonical_program_listing_snapshot(details: dict[str, Any]) -> dict[str, An
 def get_order_program_listing(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any] | None:
     settings = _settings(settings)
     init_database(settings)
@@ -160,7 +160,7 @@ def resolve_service_order_programs(
     program_plate: str | None = None,
     children: list[dict[str, Any]] | None = None,
     confirm_same_commercial_terms: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, Any]:
     settings = _settings(settings)
     init_database(settings)
@@ -573,7 +573,7 @@ def _create_program_children_in_connection(
     pending_rows: list[dict[str, Any]],
     commercial_specs: dict[str, dict[str, Any]],
     listing: dict[str, Any],
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> list[ServiceOrderCreateResult]:
     created: list[ServiceOrderCreateResult] = []
     for row in pending_rows:
@@ -685,7 +685,7 @@ def split_service_order_programs(
     order_id: str,
     *,
     archive_parent: bool = True,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> list[ServiceOrderCreateResult]:
     raise ProgramResolutionConflict(
         "explicit_program_resolution_required",

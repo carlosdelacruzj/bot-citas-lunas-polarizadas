@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from playwright.sync_api import sync_playwright
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.contacts import (
     normalize_contact_whatsapp,
     resolve_whatsapp_recipient,
@@ -40,7 +40,7 @@ SAFE_EVIDENCE_LABELS = ("programado", "etapas", "confirmacion")
 def prepare_test_whatsapp_message(
     recipient_phone: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     phone = _international_phone(recipient_phone)
     message_id = f"whatsapp-{uuid4().hex}"
@@ -91,7 +91,7 @@ def prepare_order_whatsapp_message(
     *,
     allow_resend: bool = False,
     automatic: bool = False,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -233,7 +233,7 @@ def prepare_order_whatsapp_message(
 def mark_whatsapp_message_sent(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -262,7 +262,7 @@ def mark_whatsapp_message_sent(
 def get_whatsapp_attachment(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> Path:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -283,7 +283,7 @@ def get_whatsapp_attachment(
 def get_whatsapp_payment_attachment(
     message_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> Path:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -305,7 +305,7 @@ def get_whatsapp_web_draft(
     message_id: str,
     *,
     draft_kind: str = "confirmation",
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> dict[str, object]:
     if draft_kind not in {"confirmation", "payment"}:
         raise ValueError("Tipo de borrador de WhatsApp no soportado.")
@@ -394,7 +394,7 @@ def _insert_message(
     payment_template_key: str,
     payment_template_revision: int,
     test_mode: bool,
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
 ) -> dict[str, object]:
     effective_settings = _settings(settings)
     init_database(effective_settings)
@@ -522,7 +522,7 @@ def _render_current_template(
     template_key: str,
     context: dict[str, object],
     *,
-    settings: Settings | None,
+    settings: RuntimeSettings | None,
 ) -> tuple[str, int]:
     template = get_whatsapp_message_template(template_key, settings)
     definition = whatsapp_template_definition(template_key)

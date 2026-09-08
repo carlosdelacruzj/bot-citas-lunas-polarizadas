@@ -12,7 +12,10 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
     PortalContractChanged,
@@ -58,7 +61,6 @@ logger = logging.getLogger(__name__)
 
 def _validate_reservation_selection(
     page: Page,
-    settings: Settings,
     *,
     expected_details: dict[str, Any] | None,
     expected_person_name: str | None,
@@ -83,21 +85,21 @@ def _validate_reservation_selection(
 
 
 def _wait_for_math_pre_submit_delay(
-    settings: Settings,
     *,
+    captcha_settings: CaptchaSettings,
     cancel_event: threading.Event | None,
     captcha_audit: dict[str, Any],
     timing: ReservationTiming | None,
 ) -> None:
     delay_seconds = random.uniform(
-        settings.captcha.reservation_math_pre_submit_delay_min_seconds,
-        settings.captcha.reservation_math_pre_submit_delay_max_seconds,
+        captcha_settings.reservation_math_pre_submit_delay_min_seconds,
+        captcha_settings.reservation_math_pre_submit_delay_max_seconds,
     )
     delay_seconds = round(max(delay_seconds, 0.0), 3)
     captcha_audit["math_pre_submit_delay_seconds"] = delay_seconds
     captcha_audit["math_pre_submit_delay_range_seconds"] = [
-        settings.captcha.reservation_math_pre_submit_delay_min_seconds,
-        settings.captcha.reservation_math_pre_submit_delay_max_seconds,
+        captcha_settings.reservation_math_pre_submit_delay_min_seconds,
+        captcha_settings.reservation_math_pre_submit_delay_max_seconds,
     ]
     logger.info(
         "Waiting %.3f seconds before the local-math reservation submit",
@@ -196,8 +198,11 @@ def _record_and_validate_form_audit(
 
 def solve_reservation_captcha_and_click_reserve(
     page: Page,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     cancel_event: threading.Event | None = None,
     can_submit: Callable[[], bool] | None = None,
     can_solve_captcha: Callable[[], bool] | None = None,
@@ -216,20 +221,25 @@ def solve_reservation_captcha_and_click_reserve(
 ) -> Page:
     effective_captcha_audit = captcha_audit if captcha_audit is not None else {}
     if page.locator(RESERVATION_FIELD_SELECTOR).count() == 0:
-        if (
-            (expected_details or {}).get("blocked_by_order_rule")
-            or (can_solve_captcha is not None and not can_solve_captcha())
+        if (expected_details or {}).get("blocked_by_order_rule") or (
+            can_solve_captcha is not None and not can_solve_captcha()
         ):
             raise ReservationDeferredForPriority(
                 "Se conserva la deteccion sin pulsar Reservar por regla o prioridad.",
                 dict(effective_captcha_audit),
             )
         click_preverified_reservation(
-            page, settings, expected_details=expected_details,
-            expected_person_name=expected_person_name, cancel_event=cancel_event,
-            can_submit=can_submit, on_submission_intent=on_submission_intent,
-            on_submission_started=on_submission_started, audit=effective_captcha_audit,
+            page,
+            expected_details=expected_details,
+            expected_person_name=expected_person_name,
+            cancel_event=cancel_event,
+            can_submit=can_submit,
+            on_submission_intent=on_submission_intent,
+            on_submission_started=on_submission_started,
+            audit=effective_captcha_audit,
             timing=timing,
+            reservation_settings=reservation_settings,
+            evidence_settings=evidence_settings,
         )
         field = page.locator(RESERVATION_FIELD_SELECTOR)
         post = effective_captcha_audit.get("reservation_post_audit") or {}
@@ -244,7 +254,6 @@ def solve_reservation_captcha_and_click_reserve(
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de resolver el captcha.")
     _validate_reservation_selection(
         page,
-        settings,
         expected_details=expected_details,
         expected_person_name=expected_person_name,
         timing=timing,
@@ -255,7 +264,6 @@ def solve_reservation_captcha_and_click_reserve(
         timing.mark("captcha_image_started")
     collect_reservation_captcha_training_samples(
         page,
-        settings,
         cancel_event=cancel_event,
         can_submit=can_submit,
         validate_selection=lambda: validate_selected_appointment(
@@ -271,13 +279,19 @@ def solve_reservation_captcha_and_click_reserve(
         event_context=captcha_event_context,
         captcha_authority=captcha_authority,
         alert_sink=alert_sink,
+        runtime_settings=runtime_settings,
+        reservation_settings=reservation_settings,
+        captcha_settings=captcha_settings,
+        evidence_settings=evidence_settings,
     )
     captcha_path = save_reservation_captcha_image(
         page,
-        settings,
         "04-reserva-captcha-tecnico-2captcha",
         captcha_audit=effective_captcha_audit,
         alert_sink=alert_sink,
+        reservation_settings=reservation_settings,
+        captcha_settings=captcha_settings,
+        evidence_settings=evidence_settings,
     )
     captcha_path_for_solver = captcha_submission_image_path(
         captcha_path,
@@ -353,12 +367,14 @@ def solve_reservation_captcha_and_click_reserve(
                 raise RuntimeError("CaptchaAuthority is required to solve image CAPTCHA.")
             authority_result = captcha_authority.solve(
                 captcha_path_for_solver,
-                settings,
                 event_id=shadow_event_id,
                 run_id=run_id,
                 order_id=order_id,
                 attempt_number=attempt_number,
                 metadata=shadow_metadata,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
             )
         captcha_solution = authority_result.answer
         captcha_solver_duration_ms = round(
@@ -389,50 +405,26 @@ def solve_reservation_captcha_and_click_reserve(
                 captcha_audit["captcha_solution_sent"] = captcha_solution
             captcha_audit["captcha_solver_duration_ms"] = captcha_solver_duration_ms
             captcha_audit["captcha_solver_source"] = authority_result.source
-            captcha_audit["captcha_authority_decision_id"] = (
-                authority_result.decision_id
-            )
-            captcha_audit["captcha_authority_fallback_reason"] = (
-                authority_result.fallback_reason
-            )
-            captcha_audit["captcha_local_request_ms"] = (
-                authority_result.local_request_ms
-            )
-            captcha_audit["captcha_local_inference_ms"] = (
-                authority_result.local_inference_ms
-            )
-            captcha_audit["captcha_v6_mean_confidence"] = (
-                authority_result.mean_confidence
-            )
-            captcha_audit["captcha_v6_min_char_confidence"] = (
-                authority_result.min_char_confidence
-            )
+            captcha_audit["captcha_authority_decision_id"] = authority_result.decision_id
+            captcha_audit["captcha_authority_fallback_reason"] = authority_result.fallback_reason
+            captcha_audit["captcha_local_request_ms"] = authority_result.local_request_ms
+            captcha_audit["captcha_local_inference_ms"] = authority_result.local_inference_ms
+            captcha_audit["captcha_v6_mean_confidence"] = authority_result.mean_confidence
+            captcha_audit["captcha_v6_min_char_confidence"] = authority_result.min_char_confidence
             captcha_audit["captcha_v6_sequence_confidence_product"] = (
                 authority_result.sequence_confidence_product
             )
-            captcha_audit["captcha_local_queue_wait_ms"] = (
-                authority_result.local_queue_wait_ms
-            )
-            captcha_audit["captcha_local_preprocess_ms"] = (
-                authority_result.local_preprocess_ms
-            )
-            captcha_audit["captcha_local_persist_ms"] = (
-                authority_result.local_persist_ms
-            )
+            captcha_audit["captcha_local_queue_wait_ms"] = authority_result.local_queue_wait_ms
+            captcha_audit["captcha_local_preprocess_ms"] = authority_result.local_preprocess_ms
+            captcha_audit["captcha_local_persist_ms"] = authority_result.local_persist_ms
             captcha_audit["captcha_local_service_total_ms"] = (
                 authority_result.local_service_total_ms
             )
             captcha_audit["captcha_local_cached"] = authority_result.local_cached
-            captcha_audit["captcha_local_coalesced"] = (
-                authority_result.local_coalesced
-            )
+            captcha_audit["captcha_local_coalesced"] = authority_result.local_coalesced
             if shadow_event_id:
-                captcha_audit["captcha_shadow_prediction_enqueued"] = (
-                    shadow_prediction_enqueued
-                )
-                captcha_audit["captcha_shadow_external_enqueued"] = (
-                    shadow_external_enqueued
-                )
+                captcha_audit["captcha_shadow_prediction_enqueued"] = shadow_prediction_enqueued
+                captcha_audit["captcha_shadow_external_enqueued"] = shadow_external_enqueued
         if timing is not None:
             timing.mark("captcha_solver_finished")
     finally:
@@ -445,7 +437,6 @@ def solve_reservation_captcha_and_click_reserve(
         raise AppointmentWorkflowCancelled("La orden fue pausada antes de enviar la reserva.")
     _validate_reservation_selection(
         page,
-        settings,
         expected_details=expected_details,
         expected_person_name=expected_person_name,
         timing=timing,
@@ -455,9 +446,7 @@ def solve_reservation_captcha_and_click_reserve(
     if captcha_kind == "html_math":
         validate_reservation_math_captcha(
             page,
-            expected_signature=str(
-                effective_captcha_audit["captcha_math_expression_sha256"]
-            ),
+            expected_signature=str(effective_captcha_audit["captcha_math_expression_sha256"]),
         )
     else:
         ensure_reservation_honeypot_empty(page)
@@ -481,7 +470,6 @@ def solve_reservation_captcha_and_click_reserve(
     reserve_button.scroll_into_view_if_needed(timeout=15_000)
     final_validation = _validate_reservation_selection(
         page,
-        settings,
         expected_details=expected_details,
         expected_person_name=expected_person_name,
         timing=timing,
@@ -497,18 +485,16 @@ def solve_reservation_captcha_and_click_reserve(
     if captcha_kind == "html_math":
         validate_reservation_math_captcha(
             page,
-            expected_signature=str(
-                effective_captcha_audit["captcha_math_expression_sha256"]
-            ),
+            expected_signature=str(effective_captcha_audit["captcha_math_expression_sha256"]),
         )
 
     after_delay_form_audit: dict[str, Any] | None = None
     if captcha_kind == "html_math":
         _wait_for_math_pre_submit_delay(
-            settings,
             cancel_event=cancel_event,
             captcha_audit=effective_captcha_audit,
             timing=timing,
+            captcha_settings=captcha_settings,
         )
 
         if cancel_event is not None and cancel_event.is_set():
@@ -521,7 +507,6 @@ def solve_reservation_captcha_and_click_reserve(
             )
         final_validation = _validate_reservation_selection(
             page,
-            settings,
             expected_details=expected_details,
             expected_person_name=expected_person_name,
             timing=timing,
@@ -535,9 +520,7 @@ def solve_reservation_captcha_and_click_reserve(
         )
         validate_reservation_math_captcha(
             page,
-            expected_signature=str(
-                effective_captcha_audit["captcha_math_expression_sha256"]
-            ),
+            expected_signature=str(effective_captcha_audit["captcha_math_expression_sha256"]),
         )
 
     if on_submission_intent is not None:
@@ -545,9 +528,7 @@ def solve_reservation_captcha_and_click_reserve(
         submission_details.update(
             {
                 "captcha_field_filled": True,
-                "captcha_solver_source": effective_captcha_audit.get(
-                    "captcha_solver_source"
-                ),
+                "captcha_solver_source": effective_captcha_audit.get("captcha_solver_source"),
                 "captcha_authority_decision_id": effective_captcha_audit.get(
                     "captcha_authority_decision_id"
                 ),
@@ -563,9 +544,7 @@ def solve_reservation_captcha_and_click_reserve(
                     "math_pre_submit_delay_seconds": effective_captcha_audit.get(
                         "math_pre_submit_delay_seconds"
                     ),
-                    "pre_submit_form_audit": _compact_form_audit(
-                        after_delay_form_audit
-                    ),
+                    "pre_submit_form_audit": _compact_form_audit(after_delay_form_audit),
                 }
             )
         if timing is not None:
@@ -586,9 +565,7 @@ def solve_reservation_captcha_and_click_reserve(
     if captcha_kind == "html_math":
         validate_reservation_math_captcha(
             page,
-            expected_signature=str(
-                effective_captcha_audit["captcha_math_expression_sha256"]
-            ),
+            expected_signature=str(effective_captcha_audit["captcha_math_expression_sha256"]),
         )
         reservation_post_audit = {"request_seen": False}
         effective_captcha_audit["reservation_post_audit"] = reservation_post_audit
@@ -634,21 +611,19 @@ def solve_reservation_captcha_and_click_reserve(
     finally:
         if post_collector is not None:
             post_collector.detach(page)
-    if reservation_post_audit is not None and reservation_post_audit.get(
-        "request_seen"
-    ) and (
-        reservation_post_audit.get("unexpected_nonempty_fields")
-        or reservation_post_audit.get("protected_nonempty_fields")
+    if (
+        reservation_post_audit is not None
+        and reservation_post_audit.get("request_seen")
+        and (
+            reservation_post_audit.get("unexpected_nonempty_fields")
+            or reservation_post_audit.get("protected_nonempty_fields")
+        )
     ):
         logger.error(
             "Reservation POST differed from protected manual shape: unexpected=%s protected=%s",
             reservation_post_audit.get("unexpected_nonempty_fields"),
             reservation_post_audit.get("protected_nonempty_fields"),
         )
-    elif reservation_post_audit is not None and not reservation_post_audit.get(
-        "request_seen"
-    ):
-        logger.warning(
-            "The reservation click did not expose a POST request to the audit listener"
-        )
+    elif reservation_post_audit is not None and not reservation_post_audit.get("request_seen"):
+        logger.warning("The reservation click did not expose a POST request to the audit listener")
     return page

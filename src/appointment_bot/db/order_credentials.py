@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.documents import normalize_document_type
 from appointment_bot.core.models import (
     ServiceOrderRuntime,
@@ -24,7 +24,7 @@ def update_service_order_document_type(
     order_id: str,
     document_type: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> None:
     settings = _settings(settings)
     init_database(settings)
@@ -52,7 +52,7 @@ def update_service_order_credentials(
     document_number: str,
     password: str,
     document_type: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> tuple[str, ...]:
     """Replace an account login while preserving the order and its history."""
     settings = _settings(settings)
@@ -185,7 +185,7 @@ def update_service_order_credentials(
 def get_service_order_runtime(
     order_id: str,
     *,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> ServiceOrderRuntime | None:
     settings = _settings(settings)
     init_database(settings)
@@ -219,7 +219,7 @@ def get_claimed_service_order_runtime(
     order_id: str,
     *,
     owner_token: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> ServiceOrderRuntime | None:
     settings = _settings(settings)
     init_database(settings)
@@ -250,7 +250,7 @@ def get_claimed_service_order_runtime(
     return _runtime_from_row(row, settings) if row is not None else None
 
 
-def _runtime_from_row(row: dict[str, Any], settings: Settings) -> ServiceOrderRuntime:
+def _runtime_from_row(row: dict[str, Any], settings: RuntimeSettings) -> ServiceOrderRuntime:
     return ServiceOrderRuntime(
         order_id=str(row["order_id"]),
         name=str(row["name"]),

@@ -5,14 +5,12 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult, RunReport
 from appointment_bot.db.worker_state import get_worker_state
 from appointment_bot.services.notifier import notify_result
-from appointment_bot.utils.screenshots import (
-    remove_screenshot_paths,
-    report_screenshot_paths,
-)
+from appointment_bot.utils.screenshots import remove_screenshot_paths, report_screenshot_paths
 
 
 @dataclass(frozen=True)
@@ -30,48 +28,33 @@ def decide_observer_report(report: RunReport) -> ObserverReportDecision:
     if report.status == "available":
         return ObserverReportDecision(confirmation_required=True)
     if report.status in {"unavailable", "partial"}:
-        return ObserverReportDecision(
-            clear_availability_signature=True,
-            reset_errors=True,
-        )
+        return ObserverReportDecision(clear_availability_signature=True, reset_errors=True)
     return ObserverReportDecision(error_report=report)
 
 
 def decide_observer_confirmation(report: RunReport) -> ObserverReportDecision:
     if report.status == "available":
-        return ObserverReportDecision(
-            notify_confirmed_report=report,
-            reset_errors=True,
-        )
+        return ObserverReportDecision(notify_confirmed_report=report, reset_errors=True)
     if report.status in {"unavailable", "partial"}:
-        return ObserverReportDecision(
-            clear_availability_signature=True,
-            reset_errors=True,
-        )
-    return ObserverReportDecision(
-        clear_availability_signature=True,
-        error_report=report,
-    )
+        return ObserverReportDecision(clear_availability_signature=True, reset_errors=True)
+    return ObserverReportDecision(clear_availability_signature=True, error_report=report)
 
 
 def notify_confirmed_observer_availability(
-    settings: Settings,
-    report: RunReport,
+    report: RunReport, *, runtime_settings: RuntimeSettings, telegram_settings: TelegramSettings
 ) -> str | None:
     signature = availability_signature(report)
-    state = get_worker_state(settings)
+    state = get_worker_state(runtime_settings)
     if signature == state.availability_signature:
         remove_screenshot_paths(report_screenshot_paths(report))
         return None
     result = AvailabilityResult(
-        status=report.status,
-        message=report.message,
-        details=report.details,
+        status=report.status, message=report.message, details=report.details
     )
     screenshot_path = Path(report.screenshot_path) if report.screenshot_path else None
-    delivered = notify_result(result, settings, screenshot_path)
+    delivered = notify_result(result, screenshot_path, telegram_settings=telegram_settings)
     remove_screenshot_paths(report_screenshot_paths(report))
-    if delivered or not settings.telegram.telegram_enabled:
+    if delivered or not telegram_settings.telegram_enabled:
         return signature
     return None
 

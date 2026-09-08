@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.services.detail_helpers import (
     appointment_datetime_details as _appointment_datetime_details,
@@ -29,9 +29,10 @@ TELEGRAM_TIMEZONE = ZoneInfo("America/Lima")
 
 def notify_result(
     result: AvailabilityResult,
-    settings: Settings,
     screenshot_path: Path | None = None,
     screenshot_paths: list[Path] | None = None,
+    *,
+    telegram_settings: TelegramSettings,
 ) -> bool:
     message = f"[{result.status.upper()}] {result.message}"
     logger.info("%s", message)
@@ -47,39 +48,41 @@ def notify_result(
             "registered",
             "reservation_unconfirmed",
         }:
-            return _send_result_notification(result, settings, effective_screenshot_paths)
+            return _send_result_notification(
+                result, effective_screenshot_paths, telegram_settings=telegram_settings
+            )
 
         if result.status == "partial":
             if _should_notify_partial_result(result):
-                return _send_result_notification(result, settings, effective_screenshot_paths)
+                return _send_result_notification(
+                    result, effective_screenshot_paths, telegram_settings=telegram_settings
+                )
             logger.info("Skipping Telegram notification for partial availability without hour.")
-            return not settings.telegram.telegram_enabled
+            return not telegram_settings.telegram_enabled
 
         if result.status == "unavailable":
             if _has_reservation_evidence(result) and effective_screenshot_paths:
                 return _send_result_notification(
-                    result,
-                    settings,
-                    effective_screenshot_paths,
+                    result, effective_screenshot_paths, telegram_settings=telegram_settings
                 )
-            if settings.telegram.telegram_notify_unavailable:
-                return send_telegram_message(settings, _format_result_message(result))
+            if telegram_settings.telegram_notify_unavailable:
+                return send_telegram_message(
+                    _format_result_message(result), telegram_settings=telegram_settings
+                )
 
         if result.status == "completed":
             if _programmed_details(result) is not None:
                 return _send_programmed_sequence(
-                    result,
-                    settings,
-                    effective_screenshot_paths,
+                    result, effective_screenshot_paths, telegram_settings=telegram_settings
                 )
             if effective_screenshot_paths:
                 return _send_telegram_photos(
-                    settings,
                     effective_screenshot_paths,
                     _format_result_message(result),
+                    telegram_settings=telegram_settings,
                 )
             logger.info("Appointment workflow is no longer available: %s", result.message)
-        return not settings.telegram.telegram_enabled
+        return not telegram_settings.telegram_enabled
     except Exception:
         # Una alerta secundaria nunca debe cambiar el resultado real de
         # una reserva que ya fue confirmada por la pagina.
@@ -89,39 +92,38 @@ def notify_result(
 
 def notify_error(
     error: Exception,
-    settings: Settings | None = None,
     screenshot_path: Path | None = None,
+    *,
+    telegram_settings: TelegramSettings | None = None,
 ) -> None:
     message = f"[ERROR] {error}"
     logger.error("%s", message)
 
-    if settings is not None:
+    if telegram_settings is not None:
         try:
             formatted = _format_error_message(error)
             if screenshot_path is not None and send_telegram_photo(
-                settings,
-                screenshot_path,
-                formatted,
+                screenshot_path, formatted, telegram_settings=telegram_settings
             ):
                 return
-            send_telegram_message(settings, formatted)
+            send_telegram_message(formatted, telegram_settings=telegram_settings)
         except Exception:
             logger.exception("Unexpected error while sending error notification")
 
 
 def send_telegram_message(
-    settings: Settings,
     message: str,
     *,
     timeout_seconds: int = TELEGRAM_API_TIMEOUT_SECONDS,
+    telegram_settings: TelegramSettings,
 ) -> bool:
-    if not settings.telegram.telegram_enabled:
+    if not telegram_settings.telegram_enabled:
         return False
 
-    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendMessage"
+    url = f"https://api.telegram.org/bot{telegram_settings.telegram_bot_token}/sendMessage"
     payload = urlencode(
         {
-            "chat_id": settings.telegram.telegram_chat_id,
+            "chat_id": telegram_settings.telegram_chat_id,
             "text": message,
             "disable_web_page_preview": "true",
         }
@@ -149,26 +151,24 @@ def send_telegram_message(
     return True
 
 
-def notify_immediate_availability(result: AvailabilityResult, settings: Settings) -> bool:
+def notify_immediate_availability(
+    result: AvailabilityResult, *, telegram_settings: TelegramSettings
+) -> bool:
     if not should_send_immediate_availability(result):
         return False
     return send_telegram_message(
-        settings,
         format_immediate_availability_message(result),
         timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
+        telegram_settings=telegram_settings,
     )
 
 
 def notify_deferred_queue_summary(
-    report,
-    settings: Settings,
-    deferred_reports: list,
+    report, deferred_reports: list, *, telegram_settings: TelegramSettings
 ) -> bool:
-    deferred_reports = [
-        item for item in deferred_reports if _should_send_deferred_report(item)
-    ]
+    deferred_reports = [item for item in deferred_reports if _should_send_deferred_report(item)]
     if not deferred_reports:
-        return not settings.telegram.telegram_enabled
+        return not telegram_settings.telegram_enabled
 
     if len(deferred_reports) == 1:
         item = deferred_reports[0]
@@ -181,9 +181,7 @@ def notify_deferred_queue_summary(
         if not paths and item.screenshot_path:
             paths = [Path(item.screenshot_path)]
         return _send_deferred_result_notification(
-            result,
-            settings,
-            _primary_evidence_paths(paths),
+            result, _primary_evidence_paths(paths), telegram_settings=telegram_settings
         )
 
     lines = [
@@ -193,7 +191,7 @@ def notify_deferred_queue_summary(
         "",
         f"Resultados con evidencia: {len(deferred_reports)}",
     ]
-    delivered = send_telegram_message(settings, "\n".join(lines))
+    delivered = send_telegram_message("\n".join(lines), telegram_settings=telegram_settings)
     for item in deferred_reports:
         result = AvailabilityResult(
             status=item.status,
@@ -204,30 +202,30 @@ def notify_deferred_queue_summary(
         if not paths and item.screenshot_path:
             paths = [Path(item.screenshot_path)]
         paths = _primary_evidence_paths(paths)
-        delivered = _send_deferred_result_notification(result, settings, paths) or delivered
+        delivered = (
+            _send_deferred_result_notification(result, paths, telegram_settings=telegram_settings)
+            or delivered
+        )
     return delivered
 
 
-def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> bool:
-    if not settings.telegram.telegram_enabled:
+def send_telegram_photo(
+    image_path: Path, caption: str, *, telegram_settings: TelegramSettings
+) -> bool:
+    if not telegram_settings.telegram_enabled:
         return False
 
     if not image_path.exists():
         logger.warning("Telegram photo does not exist: %s", image_path)
         return False
 
-    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendPhoto"
+    url = f"https://api.telegram.org/bot{telegram_settings.telegram_bot_token}/sendPhoto"
     boundary = f"----appointment-bot-{uuid.uuid4().hex}"
     content_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
     body = _multipart_form_data(
         boundary,
-        fields={
-            "chat_id": settings.telegram.telegram_chat_id,
-            "caption": caption,
-        },
-        files={
-            "photo": (image_path.name, content_type, image_path.read_bytes()),
-        },
+        fields={"chat_id": telegram_settings.telegram_chat_id, "caption": caption},
+        files={"photo": (image_path.name, content_type, image_path.read_bytes())},
     )
     request = Request(
         url,
@@ -258,44 +256,44 @@ def send_telegram_photo(settings: Settings, image_path: Path, caption: str) -> b
 
 
 def _send_result_notification(
-    result: AvailabilityResult,
-    settings: Settings,
-    screenshot_paths: list[Path],
+    result: AvailabilityResult, screenshot_paths: list[Path], *, telegram_settings: TelegramSettings
 ) -> bool:
     message = _format_telegram_result_message(result)
     if screenshot_paths:
-        return _send_telegram_photos(settings, screenshot_paths, message)
+        return _send_telegram_photos(screenshot_paths, message, telegram_settings=telegram_settings)
 
-    return send_telegram_message(settings, message)
+    return send_telegram_message(message, telegram_settings=telegram_settings)
 
 
 def _send_deferred_result_notification(
-    result: AvailabilityResult,
-    settings: Settings,
-    screenshot_paths: list[Path],
+    result: AvailabilityResult, screenshot_paths: list[Path], *, telegram_settings: TelegramSettings
 ) -> bool:
     if should_send_immediate_availability(result):
         if screenshot_paths:
             return _send_telegram_photos(
-                settings,
                 screenshot_paths,
                 _format_deferred_evidence_caption(result),
+                telegram_settings=telegram_settings,
             )
-        return not settings.telegram.telegram_enabled
-    delivered = _send_result_notification(result, settings, screenshot_paths)
+        return not telegram_settings.telegram_enabled
+    delivered = _send_result_notification(
+        result, screenshot_paths, telegram_settings=telegram_settings
+    )
     if result.status == "registered":
-        delivered = _send_registered_contact_notification(result, settings) or delivered
+        delivered = (
+            _send_registered_contact_notification(result, telegram_settings=telegram_settings)
+            or delivered
+        )
     return delivered
 
 
 def _send_registered_contact_notification(
-    result: AvailabilityResult,
-    settings: Settings,
+    result: AvailabilityResult, *, telegram_settings: TelegramSettings
 ) -> bool:
     message = _format_registered_contact_message(result)
     if message is None:
         return False
-    return send_telegram_message(settings, message)
+    return send_telegram_message(message, telegram_settings=telegram_settings)
 
 
 def _format_telegram_result_message(result: AvailabilityResult) -> str:
@@ -333,8 +331,7 @@ def _should_notify_partial_result(result: AvailabilityResult) -> bool:
     artifacts = details.get("diagnostic_artifacts")
     return bool(
         details.get("captcha_attempts")
-        or details.get("submission_outcome")
-        in {"blocked_by_order_rule", "priority_deferred"}
+        or details.get("submission_outcome") in {"blocked_by_order_rule", "priority_deferred"}
         or details.get("blocked_selected_for_evidence")
         or (isinstance(artifacts, dict) and artifacts.get("captcha_images"))
     )
@@ -347,9 +344,7 @@ def _should_send_deferred_report(report) -> bool:
         details=report.details,
     )
     if _is_blocked_diagnostic_evidence(result):
-        logger.info(
-            "Skipping deferred Telegram evidence for an appointment blocked by rules."
-        )
+        logger.info("Skipping deferred Telegram evidence for an appointment blocked by rules.")
         return False
     return result.status != "partial" or _should_notify_partial_result(result)
 
@@ -361,8 +356,7 @@ def _is_blocked_diagnostic_evidence(result: AvailabilityResult) -> bool:
     return bool(
         details.get("blocked_by_order_rule")
         or details.get("blocked_selected_for_evidence")
-        or details.get("submission_outcome")
-        in {"blocked_by_order_rule", "priority_deferred"}
+        or details.get("submission_outcome") in {"blocked_by_order_rule", "priority_deferred"}
     )
 
 
@@ -393,16 +387,20 @@ def _primary_evidence_paths(image_paths: list[Path]) -> list[Path]:
     return []
 
 
-def _send_telegram_photos(settings: Settings, image_paths: list[Path], caption: str) -> bool:
+def _send_telegram_photos(
+    image_paths: list[Path], caption: str, *, telegram_settings: TelegramSettings
+) -> bool:
     if not image_paths:
         return False
 
-    primary_delivered = send_telegram_photo(settings, image_paths[0], caption)
+    primary_delivered = send_telegram_photo(
+        image_paths[0], caption, telegram_settings=telegram_settings
+    )
     if not primary_delivered:
-        primary_delivered = send_telegram_message(settings, caption)
+        primary_delivered = send_telegram_message(caption, telegram_settings=telegram_settings)
 
     for image_path in image_paths[1:]:
-        send_telegram_photo(settings, image_path, "Evidencia adicional.")
+        send_telegram_photo(image_path, "Evidencia adicional.", telegram_settings=telegram_settings)
 
     return primary_delivered
 
@@ -434,43 +432,48 @@ def _format_contact_field(value: object) -> str:
 
 
 def _send_programmed_sequence(
-    result: AvailabilityResult,
-    settings: Settings,
-    screenshot_paths: list[Path],
+    result: AvailabilityResult, screenshot_paths: list[Path], *, telegram_settings: TelegramSettings
 ) -> bool:
     details = _programmed_details(result)
     if details is None:
         return False
 
-    first_message = (
-        "TEXTO PARA ENVIAR AL CLIENTE - SALUDO\n\n"
-        + _format_programmed_greeting(details)
+    first_message = "TEXTO PARA ENVIAR AL CLIENTE - SALUDO\n\n" + _format_programmed_greeting(
+        details
     )
     payment_message = (
-        "TEXTO PARA ENVIAR AL CLIENTE - COBRO\n\n"
-        + _format_programmed_payment_message(details)
+        "TEXTO PARA ENVIAR AL CLIENTE - COBRO\n\n" + _format_programmed_payment_message(details)
     )
-    delivered = send_telegram_message(settings, first_message)
+    delivered = send_telegram_message(first_message, telegram_settings=telegram_settings)
 
     if screenshot_paths:
         photo_caption = (
             "TEXTO PARA ENVIAR AL CLIENTE - EVIDENCIA\n\n"
             + _format_programmed_photo_caption(details)
         )
-        delivered = send_telegram_photo(settings, screenshot_paths[0], photo_caption) or delivered
+        delivered = (
+            send_telegram_photo(
+                screenshot_paths[0], photo_caption, telegram_settings=telegram_settings
+            )
+            or delivered
+        )
         for image_path in screenshot_paths[1:]:
-            send_telegram_photo(settings, image_path, "Evidencia adicional.")
+            send_telegram_photo(
+                image_path, "Evidencia adicional.", telegram_settings=telegram_settings
+            )
     else:
         delivered = (
             send_telegram_message(
-                settings,
                 "TEXTO PARA ENVIAR AL CLIENTE - EVIDENCIA\n\n"
                 + _format_programmed_photo_caption(details),
+                telegram_settings=telegram_settings,
             )
             or delivered
         )
 
-    delivered = send_telegram_message(settings, payment_message) or delivered
+    delivered = (
+        send_telegram_message(payment_message, telegram_settings=telegram_settings) or delivered
+    )
     return delivered
 
 
@@ -562,8 +565,7 @@ def _format_registered_message(result: AvailabilityResult) -> str:
         heading = "Reserva registrada por el portal; validacion final pendiente."
         if person_name:
             heading = (
-                f"Reserva registrada por el portal para {person_name}; "
-                "validacion final pendiente."
+                f"Reserva registrada por el portal para {person_name}; validacion final pendiente."
             )
         lines = [
             heading,

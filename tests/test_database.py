@@ -44,7 +44,7 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
 
-            init_database(settings)
+            init_database(settings=settings.runtime)
 
             with database_connection(settings) as connection:
                 version = connection.execute(
@@ -83,23 +83,21 @@ class DatabaseTests(unittest.TestCase):
             self.assertNotIn(("portal_accounts", "provider"), columns)
             self.assertNotIn(("applicants", "document_type"), columns)
             self.assertNotIn("reservation_rules", tables)
-            self.assertIsNone(get_worker_state(settings).owner_token)
+            self.assertIsNone(get_worker_state(settings=settings.runtime).owner_token)
 
     def test_schema_72_migrates_integral_and_receipt_constraints_to_74(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            init_database(settings)
+            init_database(settings=settings.runtime)
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             integral_result = create_service_order(
                 document_number="87654321",
                 password="secret",
                 service_package="integral",
                 reservation_price=Decimal("160.00"),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -108,22 +106,16 @@ class DatabaseTests(unittest.TestCase):
                     (result.order_id,),
                 )
             record_partial_payment(
-                result.order_id,
-                amount_paid=20,
-                amount_agreed=50,
-                settings=settings,
+                result.order_id, amount_paid=20, amount_agreed=50, runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
-                    "DROP TRIGGER trg_payment_receipts_validate_insert "
-                    "ON payment_receipts"
+                    "DROP TRIGGER trg_payment_receipts_validate_insert ON payment_receipts"
                 )
                 connection.execute(
                     "DROP TRIGGER trg_payment_receipts_immutable ON payment_receipts"
                 )
-                connection.execute(
-                    "DROP INDEX idx_payment_receipts_correction_original"
-                )
+                connection.execute("DROP INDEX idx_payment_receipts_correction_original")
                 connection.execute("DROP INDEX idx_payment_receipts_payment_order")
                 connection.execute("DROP INDEX idx_payment_receipts_order_received")
                 connection.execute(
@@ -144,12 +136,9 @@ class DatabaseTests(unittest.TestCase):
                     ADD CONSTRAINT payment_receipts_amount_check CHECK (amount > 0)
                     """
                 )
+                connection.execute("ALTER TABLE payments DROP CONSTRAINT uq_payments_payment_order")
                 connection.execute(
-                    "ALTER TABLE payments DROP CONSTRAINT uq_payments_payment_order"
-                )
-                connection.execute(
-                    "ALTER TABLE service_orders "
-                    "DROP CONSTRAINT ck_service_orders_integral_terms"
+                    "ALTER TABLE service_orders DROP CONSTRAINT ck_service_orders_integral_terms"
                 )
                 connection.execute(
                     """
@@ -162,7 +151,7 @@ class DatabaseTests(unittest.TestCase):
                 connection.execute("UPDATE schema_version SET version = 72 WHERE id = 1")
             _INITIALIZED_URLS.discard(settings.database_url)
 
-            init_database(settings)
+            init_database(settings=settings.runtime)
 
             with database_connection(settings) as connection:
                 version = connection.execute(
@@ -260,14 +249,14 @@ class DatabaseTests(unittest.TestCase):
                 document_number="12345678",
                 password="secret",
                 require_preflight=False,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             self.assertTrue(
                 claim_service_order(
                     result.order_id,
                     owner_token="expired-owner",
                     lease_seconds=60,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
             )
             with database_connection(settings) as connection:
@@ -277,29 +266,29 @@ class DatabaseTests(unittest.TestCase):
                     (result.order_id,),
                 )
 
-            self.assertEqual(cleanup_expired_service_order_claims(settings), 1)
+            self.assertEqual(cleanup_expired_service_order_claims(settings=settings.runtime), 1)
             self.assertTrue(
                 claim_service_order(
                     result.order_id,
                     owner_token="new-owner",
                     lease_seconds=60,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
             )
 
     def test_worker_lease_never_has_two_database_owners(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            init_database(settings)
+            init_database(settings=settings.runtime)
             try:
                 self.assertTrue(
-                    acquire_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                    acquire_worker_lease("owner-one", lease_seconds=300, settings=settings.runtime)
                 )
                 self.assertFalse(
-                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings)
+                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings.runtime)
                 )
                 self.assertTrue(
-                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings.runtime)
                 )
                 with database_connection(settings) as connection:
                     connection.execute(
@@ -307,16 +296,18 @@ class DatabaseTests(unittest.TestCase):
                         "INTERVAL '1 second' WHERE id = 1"
                     )
                 self.assertFalse(
-                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings)
+                    renew_worker_lease("owner-one", lease_seconds=300, settings=settings.runtime)
                 )
                 self.assertTrue(
-                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings)
+                    acquire_worker_lease("owner-two", lease_seconds=300, settings=settings.runtime)
                 )
-                release_worker_lease("owner-one", settings=settings)
-                self.assertEqual(get_worker_state(settings).owner_token, "owner-two")
+                release_worker_lease("owner-one", settings=settings.runtime)
+                self.assertEqual(
+                    get_worker_state(settings=settings.runtime).owner_token, "owner-two"
+                )
             finally:
-                release_worker_lease("owner-one", settings=settings)
-                release_worker_lease("owner-two", settings=settings)
+                release_worker_lease("owner-one", settings=settings.runtime)
+                release_worker_lease("owner-two", settings=settings.runtime)
 
     def test_public_service_order_summary_does_not_expose_password(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -326,10 +317,10 @@ class DatabaseTests(unittest.TestCase):
                 password="secret",
                 priority=10,
                 applicant_name="Test",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
-            summaries = list_service_order_summaries(settings)
+            summaries = list_service_order_summaries(settings=settings.runtime)
 
             self.assertEqual(len(summaries), 1)
             self.assertEqual(summaries[0].document_number, "12345678")
@@ -340,9 +331,7 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -352,29 +341,20 @@ class DatabaseTests(unittest.TestCase):
                 )
 
             record_partial_payment(
-                result.order_id,
-                amount_paid=20,
-                amount_agreed=50,
-                settings=settings,
+                result.order_id, amount_paid=20, amount_agreed=50, runtime_settings=settings.runtime
             )
             record_partial_payment(
-                result.order_id,
-                amount_paid=20,
-                amount_agreed=50,
-                settings=settings,
+                result.order_id, amount_paid=20, amount_agreed=50, runtime_settings=settings.runtime
             )
             with self.assertRaisesRegex(ValueError, "cannot reduce"):
                 record_partial_payment(
                     result.order_id,
                     amount_paid=10,
                     amount_agreed=50,
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
             mark_payment_paid(
-                result.order_id,
-                amount_paid=50,
-                amount_agreed=50,
-                settings=settings,
+                result.order_id, amount_paid=50, amount_agreed=50, runtime_settings=settings.runtime
             )
 
             with database_connection(settings) as connection:
@@ -405,7 +385,7 @@ class DatabaseTests(unittest.TestCase):
                 create_service_order(
                     document_number=document_number,
                     password="secret",
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
                 for document_number in ("12345678", "87654321")
             ]
@@ -420,7 +400,7 @@ class DatabaseTests(unittest.TestCase):
                     order.order_id,
                     amount_paid=amount,
                     amount_agreed=50,
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
 
             with database_connection(settings) as connection:
@@ -523,7 +503,7 @@ class DatabaseTests(unittest.TestCase):
                     service_package="integral",
                     reservation_price=Decimal("160.00"),
                     actor="api:sha256:testactor",
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
 
             with database_connection(settings) as connection:
@@ -586,14 +566,14 @@ class DatabaseTests(unittest.TestCase):
                     charge_required=False,
                     service_package="integral",
                     reservation_price=Decimal("160.00"),
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
             result = create_service_order(
                 document_number="87654321",
                 password="secret",
                 service_package="integral",
                 reservation_price=Decimal("160.00"),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             invalid_updates = (
                 "UPDATE service_orders SET charge_required = false WHERE order_id = %s",
@@ -616,7 +596,7 @@ class DatabaseTests(unittest.TestCase):
                 password="secret",
                 service_package="integral",
                 reservation_price=Decimal("160.00"),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             report = SimpleNamespace(
                 details={},
@@ -626,13 +606,10 @@ class DatabaseTests(unittest.TestCase):
                 screenshot_paths=[],
             )
             record_reservation_for_order(
-                result.order_id,
-                report,
-                confirmed=True,
-                settings=settings,
+                result.order_id, report, confirmed=True, runtime_settings=settings.runtime
             )
 
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
             self.assertEqual(summary.status, "reserved_payment_pending")
             self.assertEqual(summary.amount_agreed, "160.00")
             self.assertEqual(summary.amount_paid, "80.00")
@@ -643,13 +620,13 @@ class DatabaseTests(unittest.TestCase):
                     amount_agreed=160,
                     allow_difference=True,
                     difference_reason="invalid integral discount",
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
             mark_payment_paid(
                 result.order_id,
                 amount_paid=160,
                 amount_agreed=160,
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
 
             with database_connection(settings) as connection:
@@ -681,7 +658,7 @@ class DatabaseTests(unittest.TestCase):
                 password="secret",
                 service_package="integral",
                 reservation_price=Decimal("160.00"),
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             with self.assertRaisesRegex(ValueError, "corrección contable auditada"):
                 create_service_order(
@@ -689,30 +666,26 @@ class DatabaseTests(unittest.TestCase):
                     password="secret",
                     service_package="standard",
                     reservation_price=Decimal("50.00"),
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
             with self.assertRaisesRegex(ValueError, "no puede convertirse en sin cobro"):
-                mark_service_order_no_charge(result.order_id, settings=settings)
+                mark_service_order_no_charge(result.order_id, settings=settings.runtime)
             with self.assertRaisesRegex(ValueError, "no puede cerrarse sin cobro"):
                 close_service_order(
-                    result.order_id,
-                    closure_reason="client_withdrew",
-                    settings=settings,
+                    result.order_id, closure_reason="client_withdrew", settings=settings.runtime
                 )
             with self.assertRaisesRegex(ValueError, "debe acumular S/160.00"):
                 close_service_order(
-                    result.order_id,
-                    closure_reason="completed_by_us",
-                    settings=settings,
+                    result.order_id, closure_reason="completed_by_us", settings=settings.runtime
                 )
             with self.assertRaisesRegex(ValueError, "no puede archivarse"):
-                mark_order_done(result.order_id, status="completed", settings=settings)
+                mark_order_done(result.order_id, status="completed", settings=settings.runtime)
 
             close_service_order(
                 result.order_id,
                 closure_reason="uncollectible",
                 closure_note="Saldo pendiente no recuperable",
-                settings=settings,
+                settings=settings.runtime,
             )
             with database_connection(settings) as connection:
                 row = connection.execute(
@@ -745,7 +718,7 @@ class DatabaseTests(unittest.TestCase):
                 document_number="12345678",
                 password="secret",
                 applicant_name="Test",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -765,9 +738,9 @@ class DatabaseTests(unittest.TestCase):
                     """,
                     (result.order_id,),
                 )
-            mark_service_order_no_charge(result.order_id, settings=settings)
+            mark_service_order_no_charge(result.order_id, settings=settings.runtime)
 
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
             self.assertFalse(summary.charge_required)
             self.assertIsNone(summary.payment_status)
             self.assertIsNone(summary.amount_agreed)
@@ -776,9 +749,7 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -787,19 +758,14 @@ class DatabaseTests(unittest.TestCase):
                     (result.order_id,),
                 )
             record_partial_payment(
-                result.order_id,
-                amount_paid=20,
-                amount_agreed=50,
-                settings=settings,
+                result.order_id, amount_paid=20, amount_agreed=50, runtime_settings=settings.runtime
             )
 
             with self.assertRaisesRegex(ValueError, "recibos de caja inmutables"):
-                mark_service_order_no_charge(result.order_id, settings=settings)
+                mark_service_order_no_charge(result.order_id, settings=settings.runtime)
             with self.assertRaisesRegex(ValueError, "recibos de caja inmutables"):
                 close_service_order(
-                    result.order_id,
-                    closure_reason="client_withdrew",
-                    settings=settings,
+                    result.order_id, closure_reason="client_withdrew", settings=settings.runtime
                 )
 
             with database_connection(settings) as connection:
@@ -829,7 +795,7 @@ class DatabaseTests(unittest.TestCase):
                 document_number="12345678",
                 password="secret",
                 applicant_name="Test",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -853,10 +819,10 @@ class DatabaseTests(unittest.TestCase):
                 result.order_id,
                 closure_reason="external_slot",
                 closure_note="Lo consiguio por tercero",
-                settings=settings,
+                settings=settings.runtime,
             )
 
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
             self.assertEqual(summary.status, "archived")
             self.assertFalse(summary.charge_required)
             self.assertEqual(summary.closure_reason, "external_slot")
@@ -868,7 +834,7 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             create_run_record(
-                settings,
+                settings.runtime,
                 RunRecord(
                     run_id="run-1",
                     order_id=None,
@@ -886,8 +852,8 @@ class DatabaseTests(unittest.TestCase):
                 ["C:/tmp/evidence.png"],
             )
 
-            runs = list_runs(settings=settings)
-            detail = get_run("run-1", settings=settings)
+            runs = list_runs(settings=settings.runtime)
+            detail = get_run("run-1", settings=settings.runtime)
 
             self.assertEqual(len(runs), 1)
             self.assertEqual(runs[0].screenshot_path, "evidence.png")
@@ -899,9 +865,7 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             result = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             details = {
                 "program_count": 3,
@@ -914,12 +878,12 @@ class DatabaseTests(unittest.TestCase):
             }
 
             self.assertTrue(
-                record_order_program_listing(result.order_id, details, settings=settings)
+                record_order_program_listing(result.order_id, details, settings=settings.runtime)
             )
             self.assertFalse(
-                record_order_program_listing(result.order_id, details, settings=settings)
+                record_order_program_listing(result.order_id, details, settings=settings.runtime)
             )
-            stored = get_order_program_listing(result.order_id, settings=settings)
+            stored = get_order_program_listing(result.order_id, settings=settings.runtime)
 
             self.assertIsNotNone(stored)
             self.assertEqual(stored["details"]["pending_count"], 1)

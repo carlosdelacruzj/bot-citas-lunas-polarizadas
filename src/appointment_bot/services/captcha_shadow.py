@@ -12,7 +12,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.captcha_shadow_outbox import (
     captcha_shadow_outbox_status,
     defer_captcha_shadow_event,
@@ -44,15 +45,13 @@ class CaptchaShadowDispatcher:
         base_url: str,
         max_queue_size: int,
         timeout_seconds: int,
-        settings: Settings | None = None,
+        runtime_settings: RuntimeSettings | None = None,
     ) -> None:
         self.enabled = enabled
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
-        self.settings = settings
-        self._events: queue.Queue[CaptchaShadowEvent] = queue.Queue(
-            maxsize=max_queue_size
-        )
+        self.runtime_settings = runtime_settings
+        self._events: queue.Queue[CaptchaShadowEvent] = queue.Queue(maxsize=max_queue_size)
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._counters_lock = threading.Lock()
@@ -66,20 +65,22 @@ class CaptchaShadowDispatcher:
         }
 
     @classmethod
-    def from_settings(cls, settings: Settings) -> CaptchaShadowDispatcher:
-        enabled = settings.captcha.captcha_shadow_enabled
-        if enabled and not _is_local_http_url(settings.captcha.captcha_shadow_url):
+    def from_settings(
+        cls, *, runtime_settings: RuntimeSettings, captcha_settings: CaptchaSettings
+    ) -> CaptchaShadowDispatcher:
+        enabled = captcha_settings.captcha_shadow_enabled
+        if enabled and not _is_local_http_url(captcha_settings.captcha_shadow_url):
             logger.error(
                 "CAPTCHA shadow disabled because URL is not local HTTP: %s",
-                settings.captcha.captcha_shadow_url,
+                captcha_settings.captcha_shadow_url,
             )
             enabled = False
         return cls(
             enabled=enabled,
-            base_url=settings.captcha.captcha_shadow_url,
-            max_queue_size=settings.captcha.captcha_shadow_queue_size,
-            timeout_seconds=settings.captcha.captcha_shadow_timeout_seconds,
-            settings=settings,
+            base_url=captcha_settings.captcha_shadow_url,
+            max_queue_size=captcha_settings.captcha_shadow_queue_size,
+            timeout_seconds=captcha_settings.captcha_shadow_timeout_seconds,
+            runtime_settings=runtime_settings,
         )
 
     def start(self) -> None:
@@ -94,8 +95,8 @@ class CaptchaShadowDispatcher:
         self._thread.start()
         try:
             outbox = (
-                captcha_shadow_outbox_status(settings=self.settings)
-                if self.settings is not None
+                captcha_shadow_outbox_status(settings=self.runtime_settings)
+                if self.runtime_settings is not None
                 else {"pending": 0, "processed": 0, "attempts": 0}
             )
         except Exception:
@@ -159,7 +160,7 @@ class CaptchaShadowDispatcher:
             try:
                 event = self._events.get(timeout=0.2)
             except queue.Empty:
-                if self.settings is None or time.monotonic() < next_outbox_poll:
+                if self.runtime_settings is None or time.monotonic() < next_outbox_poll:
                     continue
                 next_outbox_poll = time.monotonic() + 1.0
                 event = self._next_durable_event()
@@ -191,29 +192,26 @@ class CaptchaShadowDispatcher:
             if (
                 isinstance(exc, HTTPError)
                 and exc.code == 400
-                and self.settings is not None
+                and self.runtime_settings is not None
                 and event.event_key
             ):
                 mark_captcha_shadow_event_discarded(
-                    event.event_key,
-                    error=str(exc),
-                    settings=self.settings,
+                    event.event_key, error=str(exc), settings=self.runtime_settings
                 )
                 self._increment("discarded")
                 logger.warning(
-                    "captcha_shadow_request_discarded endpoint=%s event_id=%s "
-                    "error=%s",
+                    "captcha_shadow_request_discarded endpoint=%s event_id=%s error=%s",
                     event.endpoint,
                     event.payload.get("event_id", "<missing>"),
                     exc,
                 )
                 return
-            if self.settings is not None and event.event_key:
+            if self.runtime_settings is not None and event.event_key:
                 delay = defer_captcha_shadow_event(
                     event.event_key,
                     attempt_count=event.attempt_count,
                     error=str(exc),
-                    settings=self.settings,
+                    settings=self.runtime_settings,
                 )
                 logger.warning(
                     "captcha_shadow_request_deferred endpoint=%s event_id=%s "
@@ -231,11 +229,8 @@ class CaptchaShadowDispatcher:
                 exc,
             )
             return
-        if self.settings is not None and event.event_key:
-            mark_captcha_shadow_event_processed(
-                event.event_key,
-                settings=self.settings,
-            )
+        if self.runtime_settings is not None and event.event_key:
+            mark_captcha_shadow_event_processed(event.event_key, settings=self.runtime_settings)
         self._increment("processed")
         logger.info(
             "captcha_shadow_request_completed endpoint=%s event_id=%s",
@@ -254,7 +249,7 @@ class CaptchaShadowDispatcher:
             response.read()
 
     def _persist(self, event: CaptchaShadowEvent) -> bool:
-        if self.settings is None or not event.event_key:
+        if self.runtime_settings is None or not event.event_key:
             return False
         try:
             persist_captcha_shadow_event(
@@ -263,7 +258,7 @@ class CaptchaShadowDispatcher:
                 sequence=event.sequence,
                 endpoint=event.endpoint,
                 payload=event.payload,
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
         except Exception:
             logger.exception(
@@ -275,10 +270,10 @@ class CaptchaShadowDispatcher:
         return True
 
     def _next_durable_event(self) -> CaptchaShadowEvent | None:
-        if self.settings is None:
+        if self.runtime_settings is None:
             return None
         try:
-            row = next_pending_captcha_shadow_event(settings=self.settings)
+            row = next_pending_captcha_shadow_event(settings=self.runtime_settings)
         except Exception:
             logger.exception("captcha_shadow_outbox_read_failed")
             return None
@@ -320,12 +315,16 @@ _dispatcher = CaptchaShadowDispatcher(
 )
 
 
-def configure_captcha_shadow(settings: Settings) -> CaptchaShadowDispatcher:
+def configure_captcha_shadow(
+    *, runtime_settings: RuntimeSettings, captcha_settings: CaptchaSettings
+) -> CaptchaShadowDispatcher:
     global _dispatcher
     with _dispatcher_lock:
         if _dispatcher.status()["running"]:
             _dispatcher.stop()
-        _dispatcher = CaptchaShadowDispatcher.from_settings(settings)
+        _dispatcher = CaptchaShadowDispatcher.from_settings(
+            runtime_settings=runtime_settings, captcha_settings=captcha_settings
+        )
         return _dispatcher
 
 

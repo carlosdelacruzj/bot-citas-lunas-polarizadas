@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.loading import load_captcha_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, _settings, init_database
 
 MIN_SAMPLE_LIMIT = 2
@@ -33,7 +35,9 @@ class CaptchaSamplingControl:
 
 
 def get_captcha_sampling_control(
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
+    *,
+    captcha: CaptchaSettings | None = None,
 ) -> CaptchaSamplingControl:
     resolved_settings = _settings(settings)
     init_database(resolved_settings)
@@ -46,7 +50,7 @@ def get_captcha_sampling_control(
             """
         ).fetchone()
     if row is None:
-        return _environment_fallback(resolved_settings)
+        return _environment_fallback(captcha or load_captcha_settings(require_login=False))
     return CaptchaSamplingControl(
         enabled=bool(row["enabled"]),
         sample_limit=int(row["sample_limit"]),
@@ -60,7 +64,7 @@ def update_captcha_sampling_control(
     enabled: bool,
     sample_limit: int,
     updated_by: str,
-    settings: Settings | None = None,
+    settings: RuntimeSettings | None = None,
 ) -> CaptchaSamplingControl:
     _validate(enabled, sample_limit)
     resolved_settings = _settings(settings)
@@ -91,8 +95,8 @@ def update_captcha_sampling_control(
     )
 
 
-def _environment_fallback(settings: Settings) -> CaptchaSamplingControl:
-    configured_limit = max(int(settings.captcha.reservation_captcha_sample_limit), 1)
+def _environment_fallback(settings: CaptchaSettings) -> CaptchaSamplingControl:
+    configured_limit = max(int(settings.reservation_captcha_sample_limit), 1)
     enabled = configured_limit > 1
     sample_limit = min(
         max(configured_limit, MIN_SAMPLE_LIMIT),

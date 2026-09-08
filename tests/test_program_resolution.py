@@ -40,7 +40,7 @@ def _row(expediente: str, plate: str, status: str) -> dict[str, object]:
 
 class ProgramPreflightTests(unittest.TestCase):
     def _validate(self, settings, order_id: str, rows: list[dict[str, object]]):
-        mark_order_preflight_pending(order_id, settings=settings)
+        mark_order_preflight_pending(order_id, settings=settings.runtime)
         with (
             patch(
                 "appointment_bot.services.order_preflight.open_page",
@@ -60,21 +60,27 @@ class ProgramPreflightTests(unittest.TestCase):
                 "appointment_bot.services.order_preflight.send_telegram_message"
             ) as internal_signal,
         ):
-            result = validate_order_preflight(order_id, settings=settings)
+            result = validate_order_preflight(
+                order_id,
+                telegram_settings=settings.telegram,
+                runtime_settings=settings.runtime,
+                reservation_settings=settings.reservation,
+                evidence_settings=settings.evidence,
+            )
         return result, notice, internal_signal
 
     def test_cancelled_plus_one_pending_validates_normally(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             order = create_service_order(
-                document_number="45111111", password="secret", settings=settings
+                document_number="45111111", password="secret", runtime_settings=settings.runtime
             )
             result, notice, _ = self._validate(
                 settings,
                 order.order_id,
                 [_row("EXP-C", "ABC111", "CANCELADO"), _row("EXP-P", "ABC111", "PENDIENTE")],
             )
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
 
             self.assertEqual(result["status"], "validated")
             self.assertEqual(result["pending_count"], 1)
@@ -85,14 +91,14 @@ class ProgramPreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             order = create_service_order(
-                document_number="45222222", password="secret", settings=settings
+                document_number="45222222", password="secret", runtime_settings=settings.runtime
             )
             result, notice, internal_signal = self._validate(
                 settings,
                 order.order_id,
                 [_row("EXP-1", "AAA111", "PENDIENTE"), _row("EXP-2", "BBB222", "PENDIENTE")],
             )
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
             with database_connection(settings) as connection:
                 jobs = connection.execute(
                     "SELECT count(*) AS count FROM whatsapp_automation_jobs"
@@ -105,7 +111,7 @@ class ProgramPreflightTests(unittest.TestCase):
             self.assertTrue(summary.preflight_details["listing_signature"])
             notice.assert_not_called()
             internal_signal.assert_called_once()
-            internal_message = internal_signal.call_args.args[1]
+            internal_message = internal_signal.call_args.args[0]
             self.assertIn("elegir uno, todos o mantener la orden pausada", internal_message)
             self.assertIn("Tramites PENDIENTE detectados: 2", internal_message)
             self.assertNotIn("error tecnico", internal_message.casefold())
@@ -118,7 +124,7 @@ class ProgramPreflightTests(unittest.TestCase):
                 document_number="45333333",
                 password="secret",
                 program_plate="DUP111",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             result, notice, _ = self._validate(
                 settings,
@@ -135,7 +141,7 @@ class ProgramPreflightTests(unittest.TestCase):
                 document_number="45333334",
                 password="secret",
                 program_expediente="EXP-2",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             result, notice, _ = self._validate(
                 settings,
@@ -153,7 +159,7 @@ class ProgramPreflightTests(unittest.TestCase):
                 document_number="45333335",
                 password="secret",
                 program_plate="ABC-123",
-                settings=settings,
+                runtime_settings=settings.runtime,
             )
             result, notice, _ = self._validate(
                 settings,
@@ -167,7 +173,7 @@ class ProgramPreflightTests(unittest.TestCase):
 class ProgramResolutionTests(unittest.TestCase):
     def _order_with_listing(self, settings, document: str):
         order = create_service_order(
-            document_number=document, password="secret", settings=settings
+            document_number=document, password="secret", runtime_settings=settings.runtime
         )
         record_order_program_listing(
             order.order_id,
@@ -181,21 +187,21 @@ class ProgramResolutionTests(unittest.TestCase):
                 ],
                 "source": "test",
             },
-            settings=settings,
+            settings=settings.runtime,
         )
         mark_order_preflight_failed(
             order.order_id,
             "La cuenta tiene varios tramites PENDIENTE.",
             details={"error_type": "multiple_pending_resolution_required"},
-            settings=settings,
+            settings=settings.runtime,
         )
-        return order, get_order_program_listing(order.order_id, settings=settings)
+        return order, get_order_program_listing(order.order_id, settings=settings.runtime)
 
     def test_operator_inbox_routes_multiple_pending_to_resolution(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             self._order_with_listing(settings, "45444442")
-            task = _order_task(list_service_order_summaries(settings)[0])
+            task = _order_task(list_service_order_summaries(settings=settings.runtime)[0])
 
             self.assertIsNotNone(task)
             self.assertEqual(task["action"], "resolve_programs")
@@ -214,17 +220,17 @@ class ProgramResolutionTests(unittest.TestCase):
                     "rows": first["details"]["rows"],
                     "source": "another_runtime_source",
                 },
-                settings=settings,
+                settings=settings.runtime,
             )
-            same_rows = get_order_program_listing(order.order_id, settings=settings)
+            same_rows = get_order_program_listing(order.order_id, settings=settings.runtime)
             changed_rows = [dict(row) for row in first["details"]["rows"]]
             changed_rows[0]["status"] = "ATENDIDO"
             row_changed = record_order_program_listing(
                 order.order_id,
                 {"rows": changed_rows, "source": "another_runtime_source"},
-                settings=settings,
+                settings=settings.runtime,
             )
-            final = get_order_program_listing(order.order_id, settings=settings)
+            final = get_order_program_listing(order.order_id, settings=settings.runtime)
 
             self.assertFalse(changed)
             self.assertEqual(same_rows["signature"], first["signature"])
@@ -264,9 +270,9 @@ class ProgramResolutionTests(unittest.TestCase):
                 communication_decision="keep_without_send",
                 actor="api-test",
                 program_expediente="EXP-2",
-                settings=settings,
+                settings=settings.runtime,
             )
-            summary = list_service_order_summaries(settings)[0]
+            summary = list_service_order_summaries(settings=settings.runtime)[0]
             self.assertEqual(result["selected_program"]["expediente"], "EXP-2")
             self.assertEqual(summary.program_expediente, "EXP-2")
             self.assertEqual(summary.status, "paused")
@@ -288,7 +294,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     },
                     requested_by="raw actor<script>",
                 )
-            persisted = get_order_program_listing(order.order_id, settings=settings)
+            persisted = get_order_program_listing(order.order_id, settings=settings.runtime)
 
             self.assertEqual(int(status), 200)
             self.assertEqual(payload["status"], "applied")
@@ -305,7 +311,7 @@ class ProgramResolutionTests(unittest.TestCase):
                 communication_decision="preview_single_confirmation",
                 actor="api-test",
                 confirm_same_commercial_terms=True,
-                settings=settings,
+                settings=settings.runtime,
             )
             second = resolve_service_order_programs(
                 order.order_id,
@@ -314,7 +320,7 @@ class ProgramResolutionTests(unittest.TestCase):
                 communication_decision="preview_single_confirmation",
                 actor="api-test",
                 confirm_same_commercial_terms=True,
-                settings=settings,
+                settings=settings.runtime,
             )
             with database_connection(settings) as connection:
                 children = connection.execute(
@@ -324,7 +330,10 @@ class ProgramResolutionTests(unittest.TestCase):
                 jobs = connection.execute(
                     "SELECT count(*) AS count FROM whatsapp_automation_jobs"
                 ).fetchone()["count"]
-            summaries = {item.order_id: item for item in list_service_order_summaries(settings)}
+            summaries = {
+                item.order_id: item
+                for item in list_service_order_summaries(settings=settings.runtime)
+            }
 
             self.assertEqual(first["status"], "applied")
             self.assertEqual(second["status"], "already_applied")
@@ -346,7 +355,7 @@ class ProgramResolutionTests(unittest.TestCase):
                 communication_decision="keep_without_send",
                 actor="api-test",
                 confirm_same_commercial_terms=True,
-                settings=settings,
+                settings=settings.runtime,
             )
 
             with self.assertRaises(ProgramResolutionConflict) as context:
@@ -356,9 +365,12 @@ class ProgramResolutionTests(unittest.TestCase):
                     listing_signature=listing["signature"],
                     communication_decision="keep_without_send",
                     actor="api-test",
-                    settings=settings,
+                    settings=settings.runtime,
                 )
-            summaries = {item.order_id: item for item in list_service_order_summaries(settings)}
+            summaries = {
+                item.order_id: item
+                for item in list_service_order_summaries(settings=settings.runtime)
+            }
 
             self.assertEqual(context.exception.code, "program_resolution_already_applied")
             self.assertEqual(summaries[order.order_id].status, "archived")
@@ -391,7 +403,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     communication_decision="keep_without_send",
                     actor="api-test",
                     confirm_same_commercial_terms=True,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
             with database_connection(settings) as connection:
                 count = connection.execute(
@@ -422,7 +434,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     communication_decision="keep_without_send",
                     actor="api-test",
                     confirm_same_commercial_terms=True,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
             self.assertEqual(
                 context.exception.code,
@@ -456,7 +468,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     communication_decision="keep_without_send",
                     actor="api-test",
                     children=child_specs,
-                    settings=settings,
+                    settings=settings.runtime,
                 )
             self.assertEqual(context.exception.code, "program_integral_split_unsupported")
 
@@ -464,7 +476,7 @@ class ProgramResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
             order, listing = self._order_with_listing(settings, "45888890")
-            mark_order_preflight_pending(order.order_id, settings=settings)
+            mark_order_preflight_pending(order.order_id, settings=settings.runtime)
 
             with self.assertRaises(ProgramResolutionConflict) as context:
                 resolve_service_order_programs(
@@ -473,7 +485,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     listing_signature=listing["signature"],
                     communication_decision="keep_without_send",
                     actor="api-test",
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
             self.assertEqual(context.exception.code, "program_resolution_preflight_conflict")
@@ -495,7 +507,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     listing_signature=listing["signature"],
                     communication_decision="keep_without_send",
                     actor="api-test",
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
             self.assertEqual(context.exception.code, "program_resolution_invalid_state")
@@ -522,7 +534,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     listing_signature=listing["signature"],
                     communication_decision="keep_without_send",
                     actor="api-test",
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
             self.assertEqual(context.exception.code, "program_resolution_active_lease")
@@ -550,7 +562,7 @@ class ProgramResolutionTests(unittest.TestCase):
                     listing_signature=listing["signature"],
                     communication_decision="keep_without_send",
                     actor="api-test",
-                    settings=settings,
+                    settings=settings.runtime,
                 )
 
             self.assertEqual(context.exception.code, "program_resolution_active_attempt")
@@ -566,7 +578,7 @@ class ProgramResolutionTests(unittest.TestCase):
             self.assertEqual(int(status), 409)
             self.assertEqual(payload["status"], "explicit_program_resolution_required")
             with self.assertRaises(ProgramResolutionConflict) as context:
-                split_service_order_programs("legacy-order", settings=settings)
+                split_service_order_programs("legacy-order", settings=settings.runtime)
             self.assertEqual(
                 context.exception.code,
                 "explicit_program_resolution_required",

@@ -10,7 +10,10 @@ from typing import Any
 
 from playwright.sync_api import Page
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.reservation_engine.appointment_contracts import (
     AppointmentWorkflowCancelled,
 )
@@ -31,8 +34,11 @@ logger = logging.getLogger(__name__)
 
 def collect_reservation_captcha_training_samples(
     page: Page,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
     cancel_event: threading.Event | None,
     can_submit: Callable[[], bool] | None,
     validate_selection: Callable[[], None],
@@ -52,7 +58,9 @@ def collect_reservation_captcha_training_samples(
         logger.info("Skipping five-character CAPTCHA sampling for HTML math captcha")
         return
 
-    sample_limit = _resolve_sample_limit(settings, captcha_authority)
+    sample_limit = _resolve_sample_limit(
+        captcha_authority, runtime_settings=runtime_settings, captcha_settings=captcha_settings
+    )
     extra_sample_count = sample_limit - 1
     if extra_sample_count <= 0:
         return
@@ -75,13 +83,12 @@ def collect_reservation_captcha_training_samples(
         try:
             captured_path = save_reservation_captcha_image(
                 page,
-                settings,
-                (
-                    "04-reserva-captcha-entrenamiento-"
-                    f"{attempt_number}-{sample_number}"
-                ),
+                (f"04-reserva-captcha-entrenamiento-{attempt_number}-{sample_number}"),
                 captcha_audit=sample_audit,
                 alert_sink=alert_sink,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
+                evidence_settings=evidence_settings,
             )
             sample_path = captcha_submission_image_path(captured_path, sample_audit)
         except Exception as exc:
@@ -99,18 +106,12 @@ def collect_reservation_captcha_training_samples(
         sample_paths.append(str(sample_path))
         if run_id:
             event_namespace = (
-                f"{run_id}:{order_id or 'observer'}"
-                f"{f':{event_context}' if event_context else ''}"
+                f"{run_id}:{order_id or 'observer'}{f':{event_context}' if event_context else ''}"
             )
-            event_id = (
-                f"{event_namespace}:captcha-{attempt_number}"
-                f"-training-{sample_number}"
-            )
+            event_id = f"{event_namespace}:captcha-{attempt_number}-training-{sample_number}"
             try:
                 if captcha_authority is None:
-                    raise RuntimeError(
-                        "CaptchaAuthority is required for CAPTCHA training samples."
-                    )
+                    raise RuntimeError("CaptchaAuthority is required for CAPTCHA training samples.")
                 enqueued = captcha_authority.enqueue_prediction(
                     event_id=event_id,
                     image_path=str(Path(sample_path).resolve()),
@@ -121,14 +122,10 @@ def collect_reservation_captcha_training_samples(
                         "attempt": attempt_number,
                         "event_context": event_context,
                         "training_sample": sample_number,
-                        "training_sample_limit": (
-                            sample_limit
-                        ),
+                        "training_sample_limit": (sample_limit),
                         "captured_at_utc": datetime.now(UTC).isoformat(),
                         "source_image_kind": (
-                            "original_html"
-                            if sample_path != captured_path
-                            else "screenshot"
+                            "original_html" if sample_path != captured_path else "screenshot"
                         ),
                         "detection_origin": detection_origin,
                         "portal_stage": "reservation_captcha_training_sample",
@@ -150,7 +147,7 @@ def collect_reservation_captcha_training_samples(
                 )
 
         refresh_started = time.monotonic()
-        refreshed = refresh_reservation_captcha(page, settings)
+        refreshed = refresh_reservation_captcha(page, reservation_settings=reservation_settings)
         refresh_duration_ms = round(
             max(time.monotonic() - refresh_started, 0.0) * 1000,
             3,
@@ -193,21 +190,25 @@ def collect_reservation_captcha_training_samples(
 
 
 def _resolve_sample_limit(
-    settings: Settings,
     captcha_authority: CaptchaAuthority | None,
+    *,
+    runtime_settings: RuntimeSettings,
+    captcha_settings: CaptchaSettings,
 ) -> int:
-    if not settings.captcha.reservation_captcha_runtime_control_enabled:
+    if not captcha_settings.reservation_captcha_runtime_control_enabled:
         return 1
     try:
         if captcha_authority is None:
             raise RuntimeError("CaptchaAuthority is not configured.")
-        return captcha_authority.sample_limit(settings)
+        return captcha_authority.sample_limit(
+            runtime_settings=runtime_settings, captcha_settings=captcha_settings
+        )
     except Exception as exc:
         logger.warning(
             "Could not read runtime CAPTCHA sampling control; using configured fallback: %s",
             exc,
         )
-        return settings.captcha.reservation_captcha_sample_limit
+        return captcha_settings.reservation_captcha_sample_limit
 
 
 def _ensure_reservation_can_continue(

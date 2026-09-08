@@ -8,7 +8,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
-from appointment_bot.config import load_settings
+from appointment_bot.configuration.loading import load_telegram_settings
 from appointment_bot.core.contacts import CONTACT_SOURCES, ContactValidationError
 from appointment_bot.db.common import init_database
 from appointment_bot.db.orders import (
@@ -407,10 +407,10 @@ def run(argv: Sequence[str] | None = None) -> int:
         print(f"Metricas generadas: {result.metrics_path}")
         print(f"Puntero al ultimo reporte: {result.latest_path}")
         if args.notify and result.alerts:
-            settings = load_settings(require_login=False)
+            telegram_settings = load_telegram_settings(require_login=False)
             send_telegram_message(
-                settings,
                 "ALERTA OPERACIONAL\n" + "\n".join(f"- {alert}" for alert in result.alerts),
+                telegram_settings=telegram_settings,
             )
         return 0
 

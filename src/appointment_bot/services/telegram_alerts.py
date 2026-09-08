@@ -9,7 +9,8 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.db.telegram_alert_outbox import (
     enqueue_telegram_alert,
@@ -42,9 +43,12 @@ PAYLOAD_DETAIL_KEYS = (
 
 
 class TelegramAlertDispatcher:
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
-        self.enabled = settings.telegram.telegram_enabled
+    def __init__(
+        self, *, runtime_settings: RuntimeSettings, telegram_settings: TelegramSettings
+    ) -> None:
+        self.runtime_settings = runtime_settings
+        self.telegram_settings = telegram_settings
+        self.enabled = telegram_settings.telegram_enabled
         self._stop_event = threading.Event()
         self._wake_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -60,7 +64,7 @@ class TelegramAlertDispatcher:
         )
         self._thread.start()
         try:
-            outbox = telegram_alert_outbox_status(settings=self.settings)
+            outbox = telegram_alert_outbox_status(settings=self.runtime_settings)
         except Exception:
             logger.exception("telegram_alert_outbox_status_failed")
             outbox = {"pending": -1, "sent": -1, "failed": -1, "attempts": -1}
@@ -86,7 +90,7 @@ class TelegramAlertDispatcher:
             enqueue_telegram_alert(
                 dedupe_key=dedupe_key,
                 payload=_availability_payload(result),
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
         except Exception:
             logger.exception("telegram_alert_outbox_persist_failed")
@@ -120,7 +124,7 @@ class TelegramAlertDispatcher:
                     order_id=order_id,
                     navigation=navigation,
                 ),
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
         except Exception:
             logger.exception("telegram_alert_outbox_persist_failed")
@@ -140,7 +144,7 @@ class TelegramAlertDispatcher:
 
     def _next_pending(self) -> dict[str, Any] | None:
         try:
-            return next_pending_telegram_alert(settings=self.settings)
+            return next_pending_telegram_alert(settings=self.runtime_settings)
         except Exception:
             logger.exception("telegram_alert_outbox_read_failed")
             self._stop_event.wait(1.0)
@@ -152,7 +156,7 @@ class TelegramAlertDispatcher:
         message = payload.get("message")
         if isinstance(message, str) and message.strip():
             delivered = _send_alert_message(
-                self.settings,
+                self.telegram_settings,
                 _format_generic_alert(payload),
                 reply_markup=_navigation_markup(payload),
                 timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
@@ -164,14 +168,14 @@ class TelegramAlertDispatcher:
                 details=dict(payload.get("details") or {}),
             )
             delivered = _send_alert_message(
-                self.settings,
+                self.telegram_settings,
                 format_immediate_availability_message(result),
                 reply_markup=_navigation_markup(payload),
                 timeout_seconds=TELEGRAM_URGENT_TIMEOUT_SECONDS,
             )
         if delivered:
             try:
-                mark_telegram_alert_sent(dedupe_key, settings=self.settings)
+                mark_telegram_alert_sent(dedupe_key, settings=self.runtime_settings)
             except Exception:
                 logger.exception(
                     "telegram_alert_sent_persist_failed dedupe_key=%s",
@@ -187,7 +191,7 @@ class TelegramAlertDispatcher:
                 attempt_count=int(row["attempt_count"]),
                 max_attempts=MAX_DELIVERY_ATTEMPTS,
                 error="telegram_delivery_failed",
-                settings=self.settings,
+                settings=self.runtime_settings,
             )
         except Exception:
             logger.exception(
@@ -286,17 +290,17 @@ def _valid_order_id(value: str) -> bool:
 
 
 def _send_alert_message(
-    settings: Settings,
+    settings: TelegramSettings,
     message: str,
     *,
     reply_markup: dict[str, Any] | None,
     timeout_seconds: int,
 ) -> bool:
-    if not settings.telegram.telegram_enabled:
+    if not settings.telegram_enabled:
         return False
-    url = f"https://api.telegram.org/bot{settings.telegram.telegram_bot_token}/sendMessage"
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
     payload: dict[str, Any] = {
-        "chat_id": settings.telegram.telegram_chat_id,
+        "chat_id": settings.telegram_chat_id,
         "text": message,
         "disable_web_page_preview": True,
     }
@@ -337,12 +341,16 @@ def _safe_payload_value(value: Any) -> Any:
 _dispatcher: TelegramAlertDispatcher | None = None
 
 
-def configure_telegram_alerts(settings: Settings) -> TelegramAlertDispatcher:
+def configure_telegram_alerts(
+    *, runtime_settings: RuntimeSettings, telegram_settings: TelegramSettings
+) -> TelegramAlertDispatcher:
     global _dispatcher
     with _dispatcher_lock:
         if _dispatcher is not None:
             _dispatcher.stop()
-        _dispatcher = TelegramAlertDispatcher(settings)
+        _dispatcher = TelegramAlertDispatcher(
+            runtime_settings=runtime_settings, telegram_settings=telegram_settings
+        )
         return _dispatcher
 
 

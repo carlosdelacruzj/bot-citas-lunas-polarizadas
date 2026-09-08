@@ -8,7 +8,8 @@ from typing import Any, Protocol
 
 from psycopg import Connection
 
-from appointment_bot.config import Settings, load_settings
+from appointment_bot.configuration.loading import load_runtime_settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.core.models import RunRecord
 from appointment_bot.core.rules import parse_appointment_date
 from appointment_bot.core.statuses import sanitize_details
@@ -23,7 +24,7 @@ from appointment_bot.db.whatsapp_messages import archive_whatsapp_evidence
 from appointment_bot.services.detail_helpers import appointment_datetime_details
 
 UnitOfWorkFactory = Callable[
-    [Settings, Connection | None],
+    [RuntimeSettings, Connection | None],
     AbstractContextManager[Connection],
 ]
 
@@ -75,10 +76,10 @@ class ConfirmReservation:
         self,
         request: ConfirmReservationRequest,
         *,
-        settings: Settings | None = None,
+        runtime_settings: RuntimeSettings | None = None,
         connection_override: Connection | None = None,
     ) -> bool:
-        resolved_settings = settings or load_settings(require_login=False)
+        resolved_settings = runtime_settings or load_runtime_settings(require_login=False)
         details = getattr(request.report, "details", None) or {}
         run_id = getattr(request.report, "run_id", None)
         is_confirmed = (
@@ -163,7 +164,7 @@ def record_reservation_for_order(
     report: object,
     *,
     confirmed: bool | None = None,
-    settings: Settings | None = None,
+    runtime_settings: RuntimeSettings | None = None,
     _connection_override: Connection | None = None,
 ) -> None:
     _DEFAULT_USE_CASE.execute(
@@ -172,22 +173,22 @@ def record_reservation_for_order(
             report=report,
             confirmed=confirmed,
         ),
-        settings=settings,
+        runtime_settings=runtime_settings,
         connection_override=_connection_override,
     )
 
 
 def record_run_outcome(
-    settings: Settings | None,
     record: RunRecord,
     screenshot_paths: Iterable[str],
     *,
+    runtime_settings: RuntimeSettings | None = None,
     report: object,
     person_name: str | None,
     include_reservation: bool,
 ) -> None:
     """Persist a run and its domain effects in one transaction."""
-    resolved_settings = settings or load_settings(require_login=False)
+    resolved_settings = runtime_settings or load_runtime_settings(require_login=False)
     with postgres_unit_of_work(resolved_settings) as connection:
         create_run_record(
             resolved_settings,
@@ -207,7 +208,7 @@ def record_run_outcome(
                 record.order_id,
                 report,
                 confirmed=True,
-                settings=resolved_settings,
+                runtime_settings=resolved_settings,
                 _connection_override=connection,
             )
 

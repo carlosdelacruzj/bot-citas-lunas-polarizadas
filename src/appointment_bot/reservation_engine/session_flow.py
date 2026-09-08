@@ -6,7 +6,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
 from appointment_bot.core.models import AvailabilityResult
 from appointment_bot.reservation_engine.appointments import open_appointment_panel
 from appointment_bot.reservation_engine.login import login
@@ -29,8 +33,12 @@ class SessionFlowResult:
 
 def execute_session_flow(
     page,
-    settings: Settings,
     *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    telegram_settings: TelegramSettings,
     run_id: str | None = None,
     order_id: str | None = None,
     client_name: str | None = None,
@@ -58,14 +66,15 @@ def execute_session_flow(
         )
         selected_program_plate = str(row.get("placa") or "").strip() or selected_program_plate
 
-    login(page, settings)
+    login(page, reservation_settings=reservation_settings)
     page = click_program_action(
         page,
         on_multiple_programs=lambda details: ports.alerts.notify_programs(
-            settings,
             order_id,
             client_name,
             details,
+            runtime_settings=runtime_settings,
+            telegram_settings=telegram_settings,
         ),
         on_program_selected=remember_selected_program,
         program_expediente=program_expediente,
@@ -78,20 +87,21 @@ def execute_session_flow(
             stage_result,
             order_id=order_id,
             client_name=client_name,
-            settings=settings,
+            reservation_settings=reservation_settings,
             program_expediente=selected_program_expediente,
             program_plate=selected_program_plate,
         )
-        screenshot_path = save_process_stages_snapshot(page, settings)
+        screenshot_path = save_process_stages_snapshot(page, evidence_settings=evidence_settings)
         if notify_mode == "full":
-            ports.alerts.notify_result(stage_result, settings, screenshot_path)
+            ports.alerts.notify_result(
+                stage_result, screenshot_path, telegram_settings=telegram_settings
+            )
         logger.info("Finished appointment check: %s", stage_result.status)
         return SessionFlowResult(stage_result, screenshot_path, [])
 
     page = open_appointment_panel(page, cancel_event=cancel_event)
     result, screenshot_path, screenshot_paths = monitor_appointment_availability(
         page,
-        settings,
         None,
         cancel_event,
         on_check,
@@ -107,21 +117,25 @@ def execute_session_flow(
         run_id,
         order_id,
         ports=ports,
+        runtime_settings=runtime_settings,
+        reservation_settings=reservation_settings,
+        captcha_settings=captcha_settings,
+        evidence_settings=evidence_settings,
     )
     result = with_client_context(
         result,
         order_id=order_id,
         client_name=client_name,
-        settings=settings,
+        reservation_settings=reservation_settings,
         program_expediente=selected_program_expediente,
         program_plate=selected_program_plate,
     )
     if notify_mode == "full":
         ports.alerts.notify_result(
             result,
-            settings,
             screenshot_path,
             screenshot_paths=screenshot_paths,
+            telegram_settings=telegram_settings,
         )
     logger.info("Finished appointment check: %s", result.status)
     return SessionFlowResult(result, screenshot_path, screenshot_paths)
@@ -129,8 +143,8 @@ def execute_session_flow(
 
 def save_process_stages_snapshot(
     page,
-    settings: Settings,
     *,
+    evidence_settings: EvidenceSettings,
     label: str = "02-detalle-tramite-etapas-reservar-cita",
 ) -> Path | None:
-    return save_screenshot(page, settings, label=label)
+    return save_screenshot(page, label=label, evidence_settings=evidence_settings)

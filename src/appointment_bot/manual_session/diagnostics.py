@@ -10,7 +10,7 @@ from urllib.parse import parse_qsl, urlsplit
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, Request, Response
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.evidence import EvidenceSettings
 
 logger = logging.getLogger(__name__)
 
@@ -197,10 +197,12 @@ _DIAGNOSTIC_SCRIPT = r"""
 
 
 class ManualDiagnosticRecorder:
-    def __init__(self, settings: Settings, session_id: str, order_id: str) -> None:
+    def __init__(
+        self, session_id: str, order_id: str, *, evidence_settings: EvidenceSettings
+    ) -> None:
         day = datetime.now().strftime("%d-%m-%Y")
         self.report_path = (
-            settings.evidence.screenshots_dir
+            evidence_settings.screenshots_dir
             / day
             / "manual-diagnostics"
             / session_id
@@ -279,16 +281,11 @@ class ManualDiagnosticRecorder:
         body = request.post_data or ""
         fields = _sanitize_post_fields(body)
         honeypot_field = next(
-            (
-                field
-                for field in fields
-                if _is_honeypot_name(str(field.get("name") or ""))
-            ),
+            (field for field in fields if _is_honeypot_name(str(field.get("name") or ""))),
             None,
         )
         reserve_post = any(
-            str(field.get("name") or "").endswith(RESERVATION_BUTTON_SUFFIX)
-            for field in fields
+            str(field.get("name") or "").endswith(RESERVATION_BUTTON_SUFFIX) for field in fields
         )
         if reserve_post:
             self.submission_seen = True

@@ -5,7 +5,7 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.runtime import RuntimeSettings
 from appointment_bot.db.common import _connection, _database_url, init_database
 
 
@@ -16,7 +16,7 @@ def persist_captcha_shadow_event(
     sequence: int,
     endpoint: str,
     payload: dict[str, Any],
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -57,7 +57,7 @@ def persist_captcha_shadow_event(
 
 def next_pending_captcha_shadow_event(
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> dict[str, Any] | None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -85,7 +85,7 @@ def next_pending_captcha_shadow_event(
 def mark_captcha_shadow_event_processed(
     event_key: str,
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -104,7 +104,7 @@ def mark_captcha_shadow_event_discarded(
     event_key: str,
     *,
     error: str,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> None:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
@@ -124,7 +124,7 @@ def defer_captcha_shadow_event(
     *,
     attempt_count: int,
     error: str,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> int:
     delay_seconds = min(300, 2 ** min(max(attempt_count, 0), 8))
     next_attempt_at = datetime.now(UTC) + timedelta(seconds=delay_seconds)
@@ -144,7 +144,7 @@ def defer_captcha_shadow_event(
     return delay_seconds
 
 
-def captcha_shadow_outbox_status(*, settings: Settings) -> dict[str, int]:
+def captcha_shadow_outbox_status(*, settings: RuntimeSettings) -> dict[str, int]:
     init_database(settings)
     with _connection(_database_url(settings)) as connection:
         row = connection.execute(
@@ -165,7 +165,7 @@ def captcha_shadow_outbox_status(*, settings: Settings) -> dict[str, int]:
 def captcha_shadow_external_timings(
     event_ids: list[str],
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> dict[str, float]:
     if not event_ids:
         return {}
@@ -193,7 +193,7 @@ def captcha_shadow_external_timings(
 def captcha_shadow_external_timing_stats(
     event_ids: list[str],
     *,
-    settings: Settings,
+    settings: RuntimeSettings,
 ) -> dict[str, float | int | None]:
     if not event_ids:
         return {

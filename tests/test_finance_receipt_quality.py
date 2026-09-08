@@ -19,11 +19,9 @@ class FinanceReceiptQualityTests(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            init_database(settings)
+            init_database(settings=settings.runtime)
             order = create_service_order(
-                document_number="11223344",
-                password="secret",
-                settings=settings,
+                document_number="11223344", password="secret", runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -71,26 +69,16 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                 )
 
             june_finance = finance_month_summary(
-                date(2026, 6, 1),
-                date(2026, 7, 1),
-                settings=settings,
+                date(2026, 6, 1), date(2026, 7, 1), settings=settings.runtime
             )
             june_monthly = monthly_dashboard_summary_v2(
-                date(2026, 6, 1),
-                date(2026, 7, 1),
-                date(2026, 5, 1),
-                settings=settings,
+                date(2026, 6, 1), date(2026, 7, 1), date(2026, 5, 1), settings=settings.runtime
             )
             july_finance = finance_month_summary(
-                date(2026, 7, 1),
-                date(2026, 8, 1),
-                settings=settings,
+                date(2026, 7, 1), date(2026, 8, 1), settings=settings.runtime
             )
             july_monthly = monthly_dashboard_summary_v2(
-                date(2026, 7, 1),
-                date(2026, 8, 1),
-                date(2026, 6, 1),
-                settings=settings,
+                date(2026, 7, 1), date(2026, 8, 1), date(2026, 6, 1), settings=settings.runtime
             )
 
             for finance, monthly, expected_date in (
@@ -117,11 +105,9 @@ class FinanceReceiptQualityTests(unittest.TestCase):
     def test_fresh_database_reports_native_receipt_dates_as_exact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            init_database(settings)
+            init_database(settings=settings.runtime)
             order = create_service_order(
-                document_number="12345678",
-                password="secret",
-                settings=settings,
+                document_number="12345678", password="secret", runtime_settings=settings.runtime
             )
             with database_connection(settings) as connection:
                 connection.execute(
@@ -152,17 +138,14 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                     (order.order_id,),
                 )
 
-            summary = finance_month_summary(date(2026, 8, 1), date(2026, 9, 1), settings=settings)
+            summary = finance_month_summary(
+                date(2026, 8, 1), date(2026, 9, 1), settings=settings.runtime
+            )
             quality = finance_data_quality(
-                date(2026, 8, 1),
-                date(2026, 9, 1),
-                settings=settings,
+                date(2026, 8, 1), date(2026, 9, 1), settings=settings.runtime
             )["receipt_date_quality"]
             monthly = monthly_dashboard_summary_v2(
-                date(2026, 8, 1),
-                date(2026, 9, 1),
-                date(2026, 7, 1),
-                settings=settings,
+                date(2026, 8, 1), date(2026, 9, 1), date(2026, 7, 1), settings=settings.runtime
             )
 
             self.assertEqual(summary["revenue_collected"], 50.0)
@@ -179,12 +162,12 @@ class FinanceReceiptQualityTests(unittest.TestCase):
     def test_isolated_schema_70_restore_backfills_inferred_dates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings = make_settings(Path(directory))
-            init_database(settings)
+            init_database(settings=settings.runtime)
             orders = [
                 create_service_order(
                     document_number=document_number,
                     password="secret",
-                    settings=settings,
+                    runtime_settings=settings.runtime,
                 )
                 for document_number in ("12345678", "87654321")
             ]
@@ -211,9 +194,7 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                     ),
                 )
                 connection.execute("DROP TABLE payment_receipts")
-                connection.execute(
-                    "ALTER TABLE payments DROP CONSTRAINT uq_payments_payment_order"
-                )
+                connection.execute("ALTER TABLE payments DROP CONSTRAINT uq_payments_payment_order")
                 connection.execute(
                     """
                     ALTER TABLE service_orders
@@ -226,7 +207,7 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                 connection.execute("UPDATE schema_version SET version = 70 WHERE id = 1")
             _INITIALIZED_URLS.discard(settings.database_url)
 
-            init_database(settings)
+            init_database(settings=settings.runtime)
 
             with database_connection(settings) as connection:
                 receipts = connection.execute(
@@ -240,9 +221,7 @@ class FinanceReceiptQualityTests(unittest.TestCase):
                     "SELECT version FROM schema_version WHERE id = 1"
                 ).fetchone()["version"]
             quality = finance_data_quality(
-                date(2026, 8, 1),
-                date(2026, 9, 1),
-                settings=settings,
+                date(2026, 8, 1), date(2026, 9, 1), settings=settings.runtime
             )["receipt_date_quality"]
 
             self.assertEqual(version, 74)

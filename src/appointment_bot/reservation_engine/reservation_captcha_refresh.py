@@ -6,7 +6,7 @@ import time
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
 
-from appointment_bot.config import Settings
+from appointment_bot.configuration.reservation import ReservationSettings
 from appointment_bot.reservation_engine.appointment_contracts import (
     APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
 )
@@ -22,7 +22,7 @@ from appointment_bot.reservation_engine.reservation_controls import (
 logger = logging.getLogger(__name__)
 
 
-def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
+def refresh_reservation_captcha(page: Page, *, reservation_settings: ReservationSettings) -> bool:
     logger.info("Refreshing reservation captcha")
     try:
         page.locator(RESERVATION_FIELD_SELECTOR).first.fill("", timeout=5_000)
@@ -45,12 +45,12 @@ def refresh_reservation_captcha(page: Page, settings: Settings) -> bool:
                 logger.info("No captcha image resource was changed using selector %s", selector)
                 return ensure_reservation_captcha_loaded(
                     panel,
-                    timeout=settings.reservation.read_timeout_seconds * 1_000,
+                    timeout=reservation_settings.read_timeout_seconds * 1_000,
                 )
             return wait_for_reservation_captcha_changed(
                 panel,
                 previous_signature=previous_signature,
-                timeout=settings.reservation.read_timeout_seconds * 1_000,
+                timeout=reservation_settings.read_timeout_seconds * 1_000,
             )
         except PlaywrightError as exc:
             logger.info("Could not refresh captcha with selector %s: %s", selector, exc)
