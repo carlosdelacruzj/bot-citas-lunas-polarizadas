@@ -144,8 +144,8 @@ Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups
 
 El [dashboard por dominio](architecture/dashboard-domains.md) conserva `App`
 como shell. Los seis dominios poseen estado, comandos y [clientes HTTP propios](architecture/dashboard-http.md).
-Vistas y modales consumen puertos estrechos; contratos y fixtures tipados conservan
-la separacion entre proyeccion de ordenes, compatibilidad y detalle autorizado.
+Vistas y modales consumen puertos estrechos; listas y detalles autorizados siguen separados.
+Las [cargas parciales](architecture/dashboard-loading.md) muestran error y frescura por bloque y cancelan lecturas obsoletas.
 
 Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
 confirmaciones y la copia diagnostica no muestran esos datos personales.

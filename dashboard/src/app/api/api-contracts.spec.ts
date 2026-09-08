@@ -2,6 +2,8 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { LoadSection } from '../load-section';
+import { RequestCancelledError, RequestScope } from '../request-cancellation';
 
 import { FinanceApiClient } from './finance/finance-api.client';
 import { MessagesApiClient } from './messages/messages-api.client';
@@ -57,6 +59,46 @@ describe('Domain API sensitive contracts', () => {
     const detail = orders.getServiceOrder('order/with space');
     http.expectOne('/api/v1/service-orders/order%2Fwith%20space').flush(orderDetailFixture);
     await expect(detail).resolves.toEqual(orderDetailFixture);
+
+    const parent = new RequestScope();
+    const child = parent.fork();
+    const cancelled = orders.getServiceOrder('cancelled-order', child);
+    const pending = http.expectOne('/api/v1/service-orders/cancelled-order');
+    parent.cancel();
+    expect(pending.cancelled).toBe(true);
+    await expect(cancelled).rejects.toBeInstanceOf(RequestCancelledError);
+
+    const section = new LoadSection('Detalle');
+    const scope = new RequestScope();
+    let rejectOld!: (reason: Error) => void;
+    let finishCurrent!: (value: string) => void;
+    let published = '';
+    const old = section.load(scope, () => new Promise<string>((_resolve, reject) => { rejectOld = reject; }), value => { published = value; });
+    const current = section.load(scope, () => new Promise<string>((resolve) => { finishCurrent = resolve; }), value => { published = value; });
+    rejectOld(new Error('Error anterior'));
+    await old;
+    expect(section.error()).toBeNull();
+    expect(section.loading()).toBe(true);
+    finishCurrent('Actual');
+    await current;
+    expect(published).toBe('Actual');
+    expect(section.loading()).toBe(false);
+    const updatedAt = section.updatedAt();
+    await section.load(scope, () => Promise.reject(new Error('Fallo actual')), value => { published = value; });
+    expect(section.error()).toBe('Fallo actual');
+    expect(section.updatedAt()).toBe(updatedAt);
+    expect(published).toBe('Actual');
+    scope.cancel();
+    const cancelledScope = new RequestScope();
+    let finishCancelled!: (value: string) => void;
+    const late = section.load(cancelledScope,
+      () => new Promise<string>((resolve) => { finishCancelled = resolve; }),
+      value => { published = value; });
+    cancelledScope.cancel();
+    finishCancelled('Respuesta cancelada');
+    await late;
+    expect(published).toBe('Actual');
+    expect(section.updatedAt()).toBe(updatedAt);
   });
 
   it.each([

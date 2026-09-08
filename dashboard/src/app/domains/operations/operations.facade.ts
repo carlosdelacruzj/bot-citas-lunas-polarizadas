@@ -16,6 +16,7 @@ import type {
 } from '../../api/operations/operations.contracts';
 import { OrdersApiClient } from '../../api/orders/orders-api.client';
 import type { ServiceOrder, ServiceOrderDetail } from '../../api/orders/orders.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 
 import {
   DashboardSnapshotHealth,
@@ -43,6 +44,18 @@ import { RequestScope } from '../../request-cancellation';
 
 @Injectable()
 export class OperationsFacade {
+  private runDetailScope: RequestScope | null = null;
+  private inboxTaskScope: RequestScope | null = null;
+  public readonly loads = {
+    health: new LoadSection('Salud API'),
+    worker: new LoadSection('Worker'),
+    inbox: new LoadSection('Pendientes'),
+    runs: new LoadSection('Actividad'),
+    commands: new LoadSection('Comandos worker'),
+    opportunity: new LoadSection('Control de oportunidades'),
+    bursts: new LoadSection('Rafagas'),
+  };
+
   private readonly injector = inject(Injector);
   private readonly ordersApi = inject(OrdersApiClient);
   private readonly operationsApi = inject(OperationsApiClient);
@@ -215,16 +228,33 @@ export class OperationsFacade {
   }
 
   private async loadInboxTaskOrder(orderId: string): Promise<ServiceOrderDetail | null> {
+    this.inboxTaskScope?.cancel();
+    const scope = new RequestScope();
+    this.inboxTaskScope = scope;
     this.ui.actionBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const order = await this.ordersApi.getServiceOrder(orderId);
+      const order = await this.ordersApi.getServiceOrder(orderId, scope);
+      if (scope.isCancelled || this.inboxTaskScope !== scope) return null;
       this.orderList.includeOrder(order);
       return order;
     } catch (error) {
-      this.ui.errorMessage.set(this.presentation.readError(error));
+      if (!scope.isCancelled && this.inboxTaskScope === scope) this.ui.errorMessage.set(this.presentation.readError(error));
       return null;
     } finally {
+      if (this.inboxTaskScope === scope) {
+        this.inboxTaskScope = null;
+        this.ui.actionBusy.set(false);
+      }
+      scope.cancel();
+    }
+  }
+
+  public disposeReadRequests(): void {
+    this.cancelRunDetail();
+    if (this.inboxTaskScope) {
+      this.inboxTaskScope.cancel();
+      this.inboxTaskScope = null;
       this.ui.actionBusy.set(false);
     }
   }
@@ -244,6 +274,9 @@ export class OperationsFacade {
   }
 
   public async selectRun(runId: string, updateRoute = true): Promise<void> {
+    this.cancelRunDetail();
+    const scope = new RequestScope();
+    this.runDetailScope = scope;
     this.selectedRunId.set(runId);
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
@@ -252,22 +285,32 @@ export class OperationsFacade {
       void this.router.navigate(['/actividad', runId]);
     }
     try {
-      const run = await this.operationsApi.getRun(runId);
-      if (this.selectedRunId() !== run.run_id) {
+      const run = await this.operationsApi.getRun(runId, scope);
+      if (scope.isCancelled || this.runDetailScope !== scope || this.selectedRunId() !== run.run_id) {
         return;
       }
       this.selectedRunDetail.set(run);
       this.runDetailState.set('ready');
     } catch (error) {
-      if (this.selectedRunId() !== runId) {
+      if (scope.isCancelled || this.runDetailScope !== scope || this.selectedRunId() !== runId) {
         return;
       }
       this.runDetailState.set('error');
       this.runDetailError.set(this.presentation.readError(error));
+    } finally {
+      if (this.runDetailScope === scope) this.runDetailScope = null;
+      scope.cancel();
     }
   }
 
+  public cancelRunDetail(): void {
+    this.runDetailScope?.cancel();
+    this.runDetailScope = null;
+    if (this.runDetailState() === 'loading') this.runDetailState.set('idle');
+  }
+
   public closeRunDetail(updateRoute = true): void {
+    this.cancelRunDetail();
     this.selectedRunId.set('');
     this.selectedRunDetail.set(null);
     this.runDetailError.set(null);
@@ -674,74 +717,25 @@ export class OperationsFacade {
   }
 
   public async loadInboxView(scope: RequestScope): Promise<void> {
-    const inboxRequest = this.operationsApi.getOperatorInbox(scope);
-    if (!this.captchas.captchaShadowEnabled()) {
-      this.operatorInbox.set(await inboxRequest);
-      this.captchas.captchaReviewTotal.set(0);
-      return;
-    }
-    const [inbox, pendingCaptchas] = await Promise.all([
-      inboxRequest,
-      this.captchas.fetchPendingCaptchaReview(scope),
-    ]);
-    this.operatorInbox.set(inbox);
-    if (pendingCaptchas) {
-      this.captchas.captchaReviewTotal.set(pendingCaptchas.pagination.total);
-    }
-    return;
+    await loadSections(scope, [this.loads.inbox.load(scope, () => this.operationsApi.getOperatorInbox(scope), value => { this.operatorInbox.set(value); })],
+      this.captchas.captchaShadowEnabled() ? [this.captchas.loadPendingReview(scope)] : []);
   }
 
   public async loadSummaryView(scope: RequestScope): Promise<void> {
-    const [
-      orders,
-      runs,
-      monthlySummary,
-      captchaSamplingControl,
-      captchaAuthorityControl,
-      opportunityControl,
-      opportunityBursts,
-      appointmentReminderStatus,
-      workerCommands,
-    ] = await Promise.all([
-      this.orderList.fetchOrders(scope),
-      this.operationsApi.getRuns(scope),
-      this.finance.fetchMonthlySummary(scope),
-      this.captchas.fetchCaptchaSamplingControl(scope),
-      this.captchas.fetchCaptchaAuthorityControl(scope),
-      this.operationsApi.getOpportunityControl(scope),
-      this.operationsApi.getOpportunityBursts(scope),
-      this.followups.fetchReminderStatus(scope),
-      this.operationsApi.getWorkerCommands(scope),
+    await loadSections(scope, [this.finance.loadMonthlySummary(scope)], [
+      this.orders.loadOrderList(scope),
+      this.loads.runs.load(scope, () => this.operationsApi.getRuns(scope), value => { this.runs.set(value); }),
+      this.captchas.loadSamplingControl(scope), this.captchas.loadAuthorityControl(scope),
+      this.loads.opportunity.load(scope, () => this.operationsApi.getOpportunityControl(scope), value => { this.opportunityControl.set(value); }),
+      this.loads.bursts.load(scope, () => this.operationsApi.getOpportunityBursts(scope), value => { this.opportunityBursts.set(value.bursts); }),
+      this.followups.loadReminders(scope),
+      this.loads.commands.load(scope, () => this.operationsApi.getWorkerCommands(scope), value => { this.workerCommands.set(value); }),
     ]);
-    this.orders.applyOrders(orders);
-    this.runs.set(runs);
-    this.finance.monthlySummary.set(monthlySummary);
-    this.captchas.applyCaptchaSamplingControl(captchaSamplingControl);
-    this.captchas.captchaAuthorityControl.set(captchaAuthorityControl);
-    this.opportunityControl.set(opportunityControl);
-    this.opportunityBursts.set(opportunityBursts.bursts);
-    this.followups.appointmentReminderStatus.set(appointmentReminderStatus);
-    this.workerCommands.set(workerCommands);
-    return;
   }
 
   public async loadRunsView(scope: RequestScope): Promise<void> {
-    const [runs, workerCommands] = await Promise.all([
-      this.operationsApi.getRuns(scope),
-      this.operationsApi.getWorkerCommands(scope),
-    ]);
-    this.runs.set(runs);
-    this.workerCommands.set(workerCommands);
-    return;
-  }
-
-  public fetchOperationalHealth(scope: RequestScope) {
-    return Promise.all([this.operationsApi.getHealth(scope), this.operationsApi.getWorker(scope)]);
-  }
-
-  public applyOperationalHealth(health: HealthPayload, worker: WorkerStatus): void {
-    this.health.set(health);
-    this.worker.set(worker);
+    await loadSections(scope, [this.loads.runs.load(scope, () => this.operationsApi.getRuns(scope), value => { this.runs.set(value); })],
+      [this.loads.commands.load(scope, () => this.operationsApi.getWorkerCommands(scope), value => { this.workerCommands.set(value); })]);
   }
 
   private get presentation() { return this.injector.get(DASHBOARD_OPERATIONS_PRESENTATION); }
@@ -759,4 +753,11 @@ export class OperationsFacade {
   private get navigation() { return this.injector.get(DASHBOARD_OPERATIONS_NAVIGATION); }
 
   private get followups() { return this.injector.get(DASHBOARD_OPERATIONS_FOLLOWUPS); }
+
+  public async loadHealth(scope: RequestScope): Promise<void> {
+    await loadSections(scope, [], [
+      this.loads.health.load(scope, () => this.operationsApi.getHealth(scope), value => { this.health.set(value); }),
+      this.loads.worker.load(scope, () => this.operationsApi.getWorker(scope), value => { this.worker.set(value); }),
+    ]);
+  }
 }

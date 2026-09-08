@@ -6,6 +6,7 @@ import type {
   PostAppointmentPayload,
   PostAppointmentQuery,
 } from '../../api/followups/followups.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 
 import {
   POST_APPOINTMENT_PAGE_SIZES,
@@ -20,10 +21,15 @@ import {
   DASHBOARD_FOLLOWUPS_UI,
 } from '../../dashboard-domain.ports';
 import { paginationWindow } from '../../pagination';
-import { RequestScope, isRequestCancelled } from '../../request-cancellation';
+import { RequestScope } from '../../request-cancellation';
 
 @Injectable()
 export class FollowupsFacade {
+  public readonly loads = {
+    appointments: new LoadSection('Seguimiento post-cita'),
+    reminders: new LoadSection('Recordatorios'),
+  };
+
   private readonly injector = inject(Injector);
   private readonly followupsApi = inject(FollowupsApiClient);
 
@@ -196,14 +202,11 @@ export class FollowupsFacade {
     this.ui.errorMessage.set(null);
     try {
       await this.followupsApi.reviewPostAppointment(item.order_id);
-      let payload = await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(false));
-      if (payload.items.length === 0 && this.postAppointmentPage() > 1) {
-        this.postAppointmentPage.update((page) => page - 1);
-        payload = await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(false));
+      await this.reloadPostAppointmentFollowups();
+      if (this.navigation.activeView() === 'followups' && !this.loads.appointments.error()) {
+        this.navigation.lastUpdatedAt.set(this.presentation.formatClock(new Date()));
+        this.ui.showToast('Seguimiento post-cita actualizado');
       }
-      this.setPostAppointmentPayload(payload);
-      this.navigation.lastUpdatedAt.set(this.presentation.formatClock(new Date()));
-      this.ui.showToast('Seguimiento post-cita actualizado');
     } catch (error) {
       this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
@@ -283,6 +286,8 @@ export class FollowupsFacade {
   }
 
   private schedulePostAppointmentReload(delay = 0): void {
+    this.postAppointmentRequestScope?.cancel();
+    this.loads.appointments.reset();
     if (this.postAppointmentSearchTimer !== null) {
       window.clearTimeout(this.postAppointmentSearchTimer);
     }
@@ -293,29 +298,12 @@ export class FollowupsFacade {
   }
 
   private async reloadPostAppointmentFollowups(): Promise<void> {
-    if (this.navigation.activeView() !== 'followups') {
-      return;
-    }
+    if (this.navigation.activeView() !== 'followups') return;
     this.postAppointmentRequestScope?.cancel();
-    const scope = new RequestScope();
-    this.postAppointmentRequestScope = scope;
+    const scope = new RequestScope(); this.postAppointmentRequestScope = scope;
     try {
-      const payload = await this.followupsApi.getPostAppointmentFollowups(
-        this.postAppointmentQuery(false),
-        scope,
-      );
-      if (this.postAppointmentRequestScope === scope) {
-        this.setPostAppointmentPayload(payload);
-      }
-    } catch (error) {
-      if (!isRequestCancelled(error) && this.postAppointmentRequestScope === scope) {
-        this.ui.errorMessage.set(this.presentation.readError(error));
-      }
-    } finally {
-      if (this.postAppointmentRequestScope === scope) {
-        this.postAppointmentRequestScope = null;
-      }
-    }
+      await this.loads.appointments.load(scope, () => this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(false), scope), value => { this.setPostAppointmentPayload(value); });
+    } finally { if (this.postAppointmentRequestScope === scope) this.postAppointmentRequestScope = null; scope.cancel(); }
   }
 
   private setPostAppointmentPayload(payload: PostAppointmentPayload): void {
@@ -335,10 +323,8 @@ export class FollowupsFacade {
   }
 
   public async loadFollowupsView(scope: RequestScope): Promise<void> {
-    this.setPostAppointmentPayload(
-      await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
-    );
-    return;
+    this.postAppointmentRequestScope?.cancel();
+    await loadSections(scope, [this.loads.appointments.load(scope, () => this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope), value => { this.setPostAppointmentPayload(value); })]);
   }
 
   public disposeFollowupRequests(): void {
@@ -346,11 +332,13 @@ export class FollowupsFacade {
     this.postAppointmentRequestScope?.cancel();
   }
 
-  public fetchReminderStatus(scope: RequestScope) { return this.followupsApi.getAppointmentReminders(scope); }
-
   private get ui() { return this.injector.get(DASHBOARD_FOLLOWUPS_UI); }
 
   private get navigation() { return this.injector.get(DASHBOARD_FOLLOWUPS_NAVIGATION); }
 
   private get presentation() { return this.injector.get(DASHBOARD_FOLLOWUPS_PRESENTATION); }
+
+  public loadReminders(scope: RequestScope): Promise<boolean> {
+    return this.loads.reminders.load(scope, () => this.followupsApi.getAppointmentReminders(scope), value => { this.appointmentReminderStatus.set(value); });
+  }
 }

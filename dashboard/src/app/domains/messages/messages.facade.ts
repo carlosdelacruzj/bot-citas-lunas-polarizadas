@@ -9,6 +9,7 @@ import type {
   WhatsAppWebDraftResponse,
 } from '../../api/messages/messages.contracts';
 import type { ServiceOrder, ServiceOrderDetail } from '../../api/orders/orders.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 
 import {
   DASHBOARD_MESSAGES_NAVIGATION,
@@ -20,6 +21,10 @@ import { RequestScope } from '../../request-cancellation';
 
 @Injectable()
 export class MessagesFacade {
+  public readonly loads = {
+    templates: new LoadSection('Plantillas'),
+  };
+
   private readonly injector = inject(Injector);
   private readonly messagesApi = inject(MessagesApiClient);
 
@@ -672,8 +677,7 @@ export class MessagesFacade {
   }
 
   public async loadMessagesView(scope: RequestScope): Promise<void> {
-    this.whatsappMessageTemplates.set(await this.messagesApi.getWhatsAppMessageTemplates(scope));
-    return;
+    await loadSections(scope, [this.loads.templates.load(scope, () => this.messagesApi.getWhatsAppMessageTemplates(scope), value => { this.whatsappMessageTemplates.set(value); })]);
   }
 
   public clearWhatsAppForm(): void {
@@ -696,4 +700,5 @@ export class MessagesFacade {
   private get navigation() { return this.injector.get(DASHBOARD_MESSAGES_NAVIGATION); }
 
   private get orders() { return this.injector.get(DASHBOARD_MESSAGES_ORDERS); }
+
 }

@@ -11,6 +11,7 @@ import type {
   ServiceOrderDetail,
 } from '../../api/orders/orders.contracts';
 import type { DocumentType, ManualSessionMode } from '../../api/states/states.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 import type { ExcludedDateRange } from '../../reservation-rules.model';
 import type {
   ServicePackageCatalog,
@@ -36,12 +37,20 @@ import {
   ProgramResolutionPayload,
   ProgramResolutionResponse,
 } from '../../program-resolution/program-resolution';
-import { RequestScope } from '../../request-cancellation';
+import { RequestScope, isRequestCancelled } from '../../request-cancellation';
 import { formatReservationDateRules } from '../../reservation-rule-labels';
 import { buildCreateOrderPayload } from '../../sensitive-form-payloads';
 
 @Injectable()
 export class OrdersFacade {
+  public readonly loads = {
+    list: new LoadSection('Ordenes'),
+    sessions: new LoadSection('Sesiones manuales'),
+    catalog: new LoadSection('Catalogo de servicios'),
+  };
+
+  private orderDetailScope: RequestScope | null = null;
+
   private readonly injector = inject(Injector);
   private readonly ordersApi = inject(OrdersApiClient);
   private readonly router = inject(Router);
@@ -307,6 +316,7 @@ export class OrdersFacade {
     if (!this.orderPanelOpen()) {
       this.ui.captureFocus();
     }
+    this.cancelOrderDetail();
     this.selectedOrderId.set(orderId);
     this.orderPanelOpen.set(true);
     this.selectedOrderDetail.set(null);
@@ -327,6 +337,7 @@ export class OrdersFacade {
     if (this.ui.activeModal() || this.ui.actionBusy()) {
       return;
     }
+    this.cancelOrderDetail();
     this.orderPanelOpen.set(false);
     this.selectedOrderDetail.set(null);
     this.ui.formDirty.set(false);
@@ -1056,22 +1067,22 @@ export class OrdersFacade {
     return order;
   }
 
-  public async loadSelectedOrderDetail(orderId: string): Promise<void> {
-    this.orderDetailLoading.set(true);
-    this.ui.errorMessage.set(null);
+  public async loadSelectedOrderDetail(orderId: string): Promise<boolean> {
+    this.cancelOrderDetail();
+    const scope = new RequestScope(); this.orderDetailScope = scope;
+    const current = () => this.orderDetailScope === scope && !scope.isCancelled && this.selectedOrderId() === orderId;
+    this.orderDetailLoading.set(true); this.ui.errorMessage.set(null);
     try {
-      const detail = await this.ordersApi.getServiceOrder(orderId);
-      if (this.selectedOrderId() !== detail.order_id) {
-        return;
-      }
-      this.selectedOrderDetail.set(detail);
-      this.hydrateSelectedOrderForms(detail);
+      const detail = await this.ordersApi.getServiceOrder(orderId, scope);
+      if (!current() || detail.order_id !== orderId) return false;
+      this.selectedOrderDetail.set(detail); this.hydrateSelectedOrderForms(detail);
+      return true;
     } catch (error) {
-      this.ui.errorMessage.set(this.presentation.readError(error));
+      if (current() && !isRequestCancelled(error)) this.ui.errorMessage.set(this.presentation.readError(error));
+      return false;
     } finally {
-      if (this.selectedOrderId() === orderId) {
-        this.orderDetailLoading.set(false);
-      }
+      if (this.orderDetailScope === scope) { this.orderDetailScope = null; this.orderDetailLoading.set(false); }
+      scope.cancel();
     }
   }
 
@@ -1080,6 +1091,8 @@ export class OrdersFacade {
     if (selected && orders.some((order) => order.order_id === selected)) {
       return;
     }
+    this.cancelOrderDetail();
+    this.selectedOrderDetail.set(null);
     this.selectedOrderId.set(orders[0]?.order_id ?? '');
   }
 
@@ -1201,21 +1214,7 @@ export class OrdersFacade {
     this.activeManualSessionIds.clear();
   }
 
-  public async loadOrdersView(scope: RequestScope): Promise<void> {
-    this.applyOrders(await this.orderList.fetchOrders(scope));
-    return;
-  }
-
-  public fetchOrderCommonData(scope: RequestScope) {
-    const currentCatalog = this.servicePackageCatalog();
-    const catalogRequest = currentCatalog ? Promise.resolve(currentCatalog) : this.ordersApi.getServicePackages(scope);
-    return Promise.all([this.ordersApi.getManualSessions(scope), catalogRequest]);
-  }
-
-  public applyOrderCommonData(manualSessions: ManualSession[], catalog: ServicePackageCatalog): void {
-    this.manualSessions.set(manualSessions);
-    this.servicePackageCatalog.set(catalog);
-  }
+  public async loadOrdersView(scope: RequestScope): Promise<void> { await loadSections(scope, [this.loadOrderList(scope)]); }
 
   private get messages() { return this.injector.get(DASHBOARD_ORDERS_MESSAGES); }
 
@@ -1226,4 +1225,17 @@ export class OrdersFacade {
   private get navigation() { return this.injector.get(DASHBOARD_ORDERS_NAVIGATION); }
 
   private get finance() { return this.injector.get(DASHBOARD_ORDERS_FINANCE); }
+
+  public loadOrderList(scope: RequestScope): Promise<boolean> { return this.loads.list.load(scope, () => this.orderList.fetchOrders(scope), value => { this.applyOrders(value); }); }
+
+  public async loadCommonData(scope: RequestScope): Promise<void> {
+    await loadSections(scope, [], [
+      this.loads.sessions.load(scope, () => this.ordersApi.getManualSessions(scope), value => { this.manualSessions.set(value); }),
+      this.servicePackageCatalog() ? Promise.resolve(true) : this.loads.catalog.load(scope, () => this.ordersApi.getServicePackages(scope), value => { this.servicePackageCatalog.set(value); }),
+    ]);
+  }
+
+  public cancelOrderDetail(): void {
+    this.orderDetailScope?.cancel(); this.orderDetailScope = null; this.orderDetailLoading.set(false);
+  }
 }

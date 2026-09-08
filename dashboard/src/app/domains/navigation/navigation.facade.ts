@@ -45,6 +45,7 @@ export class DashboardNavigation {
   private currentRefreshScope: RequestScope | null = null;
 
   private refreshGeneration = 0;
+  private routeGeneration = 0;
 
   private routerSubscription: Subscription | null = null;
 
@@ -79,29 +80,29 @@ export class DashboardNavigation {
 
   public readonly hasActiveViewData = computed(() => {
     const view = this.activeView();
-    const state = this.loadState();
     if (view === 'summary') {
-      return this.finance.monthlySummary() !== null;
+      return this.finance.loads.monthly.updatedAt() !== null;
     }
     if (view === 'finance') {
-      return this.finance.financeSummary() !== null;
+      return this.finance.loads.summary.updatedAt() !== null || this.finance.loads.entries.updatedAt() !== null;
     }
     if (view === 'messageTemplates') {
-      return this.messages.whatsappMessageTemplates().length > 0 || state === 'ready';
+      return this.messages.loads.templates.updatedAt() !== null;
     }
     if (view === 'orders') {
-      return this.orderList.orders().length > 0 || state === 'ready';
+      return this.orders.loads.list.updatedAt() !== null;
     }
     if (view === 'runs') {
-      return this.operations.runs().length > 0 || this.operations.workerCommands().length > 0 || state === 'ready';
+      return this.operations.loads.runs.updatedAt() !== null;
     }
     if (view === 'followups') {
-      return this.followups.postAppointmentPayload() !== null;
+      return this.followups.loads.appointments.updatedAt() !== null;
     }
     if (view === 'captchas') {
-      return this.captchas.captchaSummary() !== null;
+      const mode = this.captchas.captchaWorkspaceMode();
+      return this.captchas.loads[mode === 'quality' ? 'quality' : mode === 'review' ? 'review' : 'history'].updatedAt() !== null;
     }
-    return this.orderList.orders().length > 0 || state === 'ready';
+    return this.operations.loads.inbox.updatedAt() !== null;
   });
 
   public readonly activeViewState = computed<ViewStateKind | null>(() => {
@@ -123,6 +124,9 @@ export class DashboardNavigation {
   }
 
   ngOnDestroy(): void {
+    this.routeGeneration++;
+    this.orders.cancelOrderDetail();
+    this.operations.disposeReadRequests();
     this.clearRefreshTimer();
     this.currentRefreshScope?.cancel();
     this.routerSubscription?.unsubscribe();
@@ -136,6 +140,10 @@ export class DashboardNavigation {
     const hidden = document.visibilityState === 'hidden';
     this.pageHidden.set(hidden);
     if (hidden) {
+      this.orders.cancelOrderDetail();
+      this.operations.disposeReadRequests();
+      this.followups.disposeFollowupRequests();
+      this.captchas.disposeCaptchaRequests();
       this.clearRefreshTimer();
       this.currentRefreshScope?.cancel();
       return;
@@ -159,6 +167,7 @@ export class DashboardNavigation {
   }
 
   private async activateRoute(url: string): Promise<void> {
+    const routeGeneration = ++this.routeGeneration;
     const tree = this.router.parseUrl(url);
     const segments = tree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
     const section = segments[0] ?? 'resumen';
@@ -182,7 +191,7 @@ export class DashboardNavigation {
       /^\d{4}-\d{2}$/.test(month ?? '') &&
       month !== this.finance.selectedMonth()
     ) {
-      this.finance.selectedMonth.set(month);
+      this.finance.selectMonth(month);
       queryChanged = true;
     }
     const captchaMode = tree.queryParams['mode'];
@@ -195,6 +204,13 @@ export class DashboardNavigation {
       queryChanged = true;
     }
     this.activeView.set(view);
+    if (previousView !== view) {
+      this.orders.cancelOrderDetail();
+      this.operations.disposeReadRequests();
+      this.followups.disposeFollowupRequests();
+      this.captchas.disposeCaptchaRequests();
+    }
+    if (view === 'orders' && segments[1] !== this.orders.selectedOrderId()) this.orders.cancelOrderDetail();
     this.mobileMenuOpen.set(false);
 
     const needsRefresh = previousView !== view || !this.loadedViews.has(view) || queryChanged;
@@ -206,6 +222,7 @@ export class DashboardNavigation {
       this.scheduleNextRefresh();
     }
 
+    if (routeGeneration !== this.routeGeneration || this.pageHidden()) return;
     if (view === 'orders') {
       const orderId = segments[1];
       if (orderId) {
@@ -245,6 +262,7 @@ export class DashboardNavigation {
     try {
       await refresh;
     } finally {
+      scope.cancel();
       if (this.refreshInFlight === refresh) {
         this.refreshInFlight = null;
         this.refreshingView = null;
@@ -267,20 +285,17 @@ export class DashboardNavigation {
     this.ui.errorMessage.set(null);
     this.viewLoadError.set(null);
     try {
-      if (view === 'inbox' || view === 'captchas') {
-        await this.refreshCommonData(scope);
-        if (view === 'captchas' && !this.captchas.captchaShadowEnabled()) {
-          await this.router.navigate(['/resumen'], { replaceUrl: true });
-          return;
-        }
-        await this.refreshViewData(view, showLoading, scope);
-      } else {
-        await Promise.all([
-          this.refreshCommonData(scope),
-          this.refreshViewData(view, showLoading, scope),
-        ]);
+      const results = await Promise.allSettled([
+        this.refreshCommonData(scope),
+        this.refreshViewData(view, showLoading, scope),
+      ]);
+      if (generation !== this.refreshGeneration || scope.isCancelled) {
+        return;
       }
-      if (generation !== this.refreshGeneration) {
+      if (results[1].status === 'rejected') throw results[1].reason;
+      if (view === 'captchas' && !this.operations.loads.health.error() &&
+        this.operations.loads.health.updatedAt() && !this.captchas.captchaShadowEnabled()) {
+        await this.router.navigate(['/resumen'], { replaceUrl: true });
         return;
       }
       this.loadedViews.add(view);
@@ -288,7 +303,7 @@ export class DashboardNavigation {
       this.lastSuccessfulViewUpdate.set(view, Date.now());
       this.loadState.set('ready');
     } catch (error) {
-      if (isRequestCancelled(error) || generation !== this.refreshGeneration) {
+      if (scope.isCancelled || isRequestCancelled(error) || generation !== this.refreshGeneration) {
         return;
       }
       const message = this.presentation.readError(error);
@@ -303,11 +318,7 @@ export class DashboardNavigation {
   }
 
   private async refreshCommonData(scope: RequestScope): Promise<void> {
-    const [[health, worker], [manualSessions, catalog]] = await Promise.all([
-      this.operations.fetchOperationalHealth(scope), this.orders.fetchOrderCommonData(scope),
-    ]);
-    this.operations.applyOperationalHealth(health, worker);
-    this.orders.applyOrderCommonData(manualSessions, catalog);
+    await Promise.allSettled([this.operations.loadHealth(scope), this.orders.loadCommonData(scope)]);
   }
 
   private async refreshViewData(view: ViewKey, showLoading: boolean, scope: RequestScope): Promise<void> {

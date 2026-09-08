@@ -262,6 +262,15 @@
       </section>
     }
 
+    <details [open]="!!(operations.loads.health.error() || operations.loads.worker.error() || orders.loads.sessions.error() || orders.loads.catalog.error() || captchas.loads.pendingReview.error())">
+      <summary>Estado de servicios</summary>
+      <app-load-status [section]="operations.loads.health" />
+      <app-load-status [section]="operations.loads.worker" />
+      <app-load-status [section]="orders.loads.sessions" />
+      <app-load-status [section]="orders.loads.catalog" />
+      <app-load-status [section]="captchas.loads.pendingReview" />
+
+    </details>
     @if (navigation.activeViewState(); as state) {
       <app-view-state
         [state]="state"
@@ -284,7 +293,7 @@
       />
     }
 
-    <div [hidden]="navigation.activeViewState() === 'loading' || navigation.activeViewState() === 'error'">
+    <div [hidden]="navigation.activeViewState() === 'loading'">
       <router-outlet />
     </div>
 

@@ -15,6 +15,7 @@ import type {
   CaptchaSamplingControl,
   CaptchaSummary,
 } from '../../api/captchas/captchas.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 
 import {
   CAPTCHA_QUALITY_CASE_FILTERS,
@@ -38,6 +39,17 @@ import { RequestScope, isRequestCancelled } from '../../request-cancellation';
 
 @Injectable()
 export class CaptchasFacade {
+  public readonly loads = {
+    summary: new LoadSection('Resumen CAPTCHA'),
+    history: new LoadSection('Historial CAPTCHA'),
+    review: new LoadSection('Revision CAPTCHA'),
+    quality: new LoadSection('Calidad CAPTCHA'),
+    cases: new LoadSection('Casos de calidad'),
+    sampling: new LoadSection('Muestreo CAPTCHA'),
+    authority: new LoadSection('Autoridad CAPTCHA'),
+    pendingReview: new LoadSection('Pendientes CAPTCHA'),
+  };
+
   private readonly injector = inject(Injector);
   private readonly captchasApi = inject(CaptchasApiClient);
   private readonly router = inject(Router);
@@ -207,96 +219,43 @@ export class CaptchasFacade {
   }
 
   public async loadCaptchaData(showLoading = true, scope?: RequestScope): Promise<void> {
-    const ownsScope = !scope;
-    if (ownsScope) {
-      this.captchaLoadScope?.cancel();
-      this.captchaLoadScope = new RequestScope();
-    }
-    const activeScope = scope ?? this.captchaLoadScope!;
-    if (showLoading) {
-      this.captchaState.set('loading');
-    }
+    this.captchaLoadScope?.cancel();
+    const activeScope = scope?.fork() ?? new RequestScope(); this.captchaLoadScope = activeScope;
+    const mode = this.captchaWorkspaceMode();
+    if (showLoading) this.captchaState.set('loading');
     this.captchaError.set(null);
     try {
-      if (this.captchaWorkspaceMode() === 'quality') {
-        const [summary] = await Promise.all([
-          this.captchasApi.getCaptchaSummary(activeScope),
-          this.loadCaptchaQuality(activeScope),
-        ]);
-        this.captchaSummary.set(summary);
-        this.captchaPendingTotal.set(
-          Math.max(0, summary.stats.events - summary.stats.human_labeled),
-        );
-        this.captchaState.set('ready');
-        return;
-      }
-      const [summary, page, reviewPage] = await Promise.all([
-        this.captchasApi.getCaptchaSummary(activeScope),
-        this.captchasApi.getCaptchaEvents(
-          this.captchaPage(),
-          this.captchaPageSize(),
-          this.captchaSearch().trim(),
-          this.captchaAgreement(),
-          this.captchaPortalStatus(),
-          this.captchaSource(),
-          this.captchaReviewStatus(),
-          'newest',
-          'all',
-          activeScope,
-        ),
-        this.captchasApi.getCaptchaEvents(
+      const summary = this.loads.summary.load(activeScope, () => this.captchasApi.getCaptchaSummary(activeScope), value => {
+        this.captchaSummary.set(value); this.captchaPendingTotal.set(Math.max(0, value.stats.events - value.stats.human_labeled));
+      });
+      if (mode === 'quality') {
+        await loadSections(activeScope, [this.loadCaptchaQualitySections(activeScope)], [summary]);
+      } else {
+        const history = this.loads.history.load(activeScope, () => this.captchasApi.getCaptchaEvents(
+          this.captchaPage(), this.captchaPageSize(), this.captchaSearch().trim(), this.captchaAgreement(),
+          this.captchaPortalStatus(), this.captchaSource(), this.captchaReviewStatus(), 'newest', 'all', activeScope,
+        ), value => this.applyCaptchaPage(value));
+        const review = this.loads.review.load(activeScope, () => this.captchasApi.getCaptchaEvents(
           1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', activeScope,
-        ),
-      ]);
-      this.captchaSummary.set(summary);
-      this.captchaPendingTotal.set(
-        Math.max(0, summary.stats.events - summary.stats.human_labeled),
-      );
-      this.applyCaptchaPage(page);
-      this.captchaReviewQueue.set(reviewPage.events);
-      this.captchaReviewTotal.set(reviewPage.pagination.total);
-      if (this.captchaReviewPosition() >= reviewPage.events.length) {
-        this.captchaReviewPosition.set(0);
+        ), value => {
+          this.captchaReviewQueue.set(value.events); this.captchaReviewTotal.set(value.pagination.total);
+          if (this.captchaReviewPosition() >= value.events.length) this.captchaReviewPosition.set(0);
+        });
+        await loadSections(activeScope, [mode === 'review' ? review : history], [summary, mode === 'review' ? history : review]);
       }
-      this.captchaState.set('ready');
+      if (this.captchaLoadScope === activeScope && !activeScope.isCancelled) this.captchaState.set('ready');
     } catch (error) {
-      if (isRequestCancelled(error)) {
-        return;
+      if (this.captchaLoadScope === activeScope && !activeScope.isCancelled && !isRequestCancelled(error)) {
+        this.captchaState.set('error'); this.captchaError.set(this.presentation.readError(error));
       }
-      this.captchaState.set('error');
-      this.captchaError.set(this.presentation.readError(error));
     } finally {
-      if (ownsScope && this.captchaLoadScope === activeScope) {
-        this.captchaLoadScope = null;
-      }
+      if (this.captchaLoadScope === activeScope) this.captchaLoadScope = null;
+      activeScope.cancel();
     }
   }
 
   public async loadCaptchaQuality(scope?: RequestScope): Promise<void> {
-    if (!this.captchaQuality()) {
-      this.captchaQualityState.set('loading');
-    }
-    this.captchaQualityError.set(null);
-    try {
-      const [quality, cases] = await Promise.all([
-        this.captchasApi.getCaptchaQuality(scope),
-        this.captchasApi.getCaptchaQualityCases(
-          this.captchaQualityCaseType(),
-          this.captchaQualityCasePage(),
-          this.captchaQualityCasePageSize(),
-          scope,
-        ),
-      ]);
-      this.captchaQuality.set(quality);
-      this.applyCaptchaQualityCases(cases);
-      this.captchaQualityState.set('ready');
-    } catch (error) {
-      if (isRequestCancelled(error)) {
-        return;
-      }
-      this.captchaQualityState.set('error');
-      this.captchaQualityError.set(this.presentation.readError(error));
-    }
+    await this.loadCaptchaData(false, scope);
   }
 
   public async changeCaptchaQualityCaseType(value: CaptchaQualityCaseType): Promise<void> {
@@ -319,26 +278,9 @@ export class CaptchasFacade {
 
   private async loadCaptchaQualityCases(): Promise<void> {
     this.captchaQualityCaseScope?.cancel();
-    const scope = new RequestScope();
-    this.captchaQualityCaseScope = scope;
-    this.captchaQualityError.set(null);
-    try {
-      const cases = await this.captchasApi.getCaptchaQualityCases(
-        this.captchaQualityCaseType(),
-        this.captchaQualityCasePage(),
-        this.captchaQualityCasePageSize(),
-        scope,
-      );
-      this.applyCaptchaQualityCases(cases);
-    } catch (error) {
-      if (!isRequestCancelled(error)) {
-        this.captchaQualityError.set(this.presentation.readError(error));
-      }
-    } finally {
-      if (this.captchaQualityCaseScope === scope) {
-        this.captchaQualityCaseScope = null;
-      }
-    }
+    const scope = new RequestScope(); this.captchaQualityCaseScope = scope;
+    try { await this.loads.cases.load(scope, () => this.captchasApi.getCaptchaQualityCases(this.captchaQualityCaseType(), this.captchaQualityCasePage(), this.captchaQualityCasePageSize(), scope), value => { this.applyCaptchaQualityCases(value); }); }
+    finally { if (this.captchaQualityCaseScope === scope) this.captchaQualityCaseScope = null; scope.cancel(); }
   }
 
   private applyCaptchaQualityCases(cases: CaptchaQualityCasesPage): void {
@@ -889,26 +831,11 @@ export class CaptchasFacade {
     });
   }
 
-  public fetchPendingCaptchaReview(scope: RequestScope) {
-    return this.captchasApi.getCaptchaEvents(
-      1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
-    ).catch((error: unknown) => {
-      if (isRequestCancelled(error)) {
-        throw error;
-      }
-      return null;
-    });
-  }
-
   public disposeCaptchaRequests(): void {
     this.captchaLoadScope?.cancel();
     this.captchaQualityCaseScope?.cancel();
     if (this.captchaReviewMessageTimer !== null) window.clearTimeout(this.captchaReviewMessageTimer);
   }
-
-  public fetchCaptchaSamplingControl(scope: RequestScope) { return this.captchasApi.getCaptchaSamplingControl(scope); }
-
-  public fetchCaptchaAuthorityControl(scope: RequestScope) { return this.captchasApi.getCaptchaAuthorityControl(scope); }
 
   private get operations() { return this.injector.get(DASHBOARD_CAPTCHAS_OPERATIONS); }
 
@@ -917,4 +844,18 @@ export class CaptchasFacade {
   private get presentation() { return this.injector.get(DASHBOARD_CAPTCHAS_PRESENTATION); }
 
   private get ui() { return this.injector.get(DASHBOARD_CAPTCHAS_UI); }
+
+  public loadSamplingControl(scope: RequestScope): Promise<boolean> { return this.loads.sampling.load(scope, () => this.captchasApi.getCaptchaSamplingControl(scope), value => { this.applyCaptchaSamplingControl(value); }); }
+
+  public loadAuthorityControl(scope: RequestScope): Promise<boolean> { return this.loads.authority.load(scope, () => this.captchasApi.getCaptchaAuthorityControl(scope), value => { this.captchaAuthorityControl.set(value); }); }
+
+  public loadPendingReview(scope: RequestScope): Promise<boolean> { return this.loads.pendingReview.load(scope, () => this.captchasApi.getCaptchaEvents(1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope), value => { this.captchaReviewTotal.set(value.pagination.total); }); }
+
+  private async loadCaptchaQualitySections(scope: RequestScope): Promise<boolean> {
+    const quality = this.loads.quality.load(scope, () => this.captchasApi.getCaptchaQuality(scope), value => { this.captchaQuality.set(value); });
+    const cases = this.loads.cases.load(scope, () => this.captchasApi.getCaptchaQualityCases(this.captchaQualityCaseType(), this.captchaQualityCasePage(), this.captchaQualityCasePageSize(), scope), value => { this.applyCaptchaQualityCases(value); });
+    const [success] = await Promise.all([quality, cases]);
+    if (!scope.isCancelled) { this.captchaQualityState.set(success ? 'ready' : 'error'); this.captchaQualityError.set(this.loads.quality.error()); }
+    return success;
+  }
 }

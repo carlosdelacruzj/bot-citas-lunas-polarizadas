@@ -4,12 +4,13 @@ import {
   DASHBOARD_CAPTCHAS_VIEW_CAPTCHAS,
   DASHBOARD_CAPTCHAS_VIEW_PRESENTATION,
 } from '../../dashboard-domain.ports';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   selector: 'app-captchas-view',
-  imports: [FormsModule, ViewStateComponent],
+  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './captchas-view.component.html',
   styleUrl: './captchas-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

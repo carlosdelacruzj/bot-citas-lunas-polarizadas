@@ -5,12 +5,13 @@ import {
   FollowupWorkspaceFacade,
   type FollowupWorkspaceFacadeView,
 } from '../../domains/followups/followup-workspace.facade';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   providers: [FollowupWorkspaceFacade],
   selector: 'app-followups-view',
-  imports: [FormsModule, ViewStateComponent],
+  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './followups-view.component.html',
   styleUrl: './followups-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

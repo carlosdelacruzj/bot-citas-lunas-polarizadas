@@ -180,8 +180,10 @@ export class DashboardUi {
 
   public restoreFocus(): void {
     const target = this.lastFocusedElement;
+    const activeAtClose = document.activeElement;
     this.lastFocusedElement = null;
     window.setTimeout(() => {
+      if (document.activeElement !== activeAtClose && document.activeElement !== document.body) return;
       if (target?.isConnected) {
         target.focus();
         return;

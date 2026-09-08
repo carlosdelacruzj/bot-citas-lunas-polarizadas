@@ -51,8 +51,8 @@ export class OperationsApiClient {
     return response.runs;
   }
 
-  async getRun(runId: string): Promise<RunDetail> {
-    return this.transport.read<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`);
+  async getRun(runId: string, scope?: RequestScope): Promise<RunDetail> {
+    return this.transport.read<RunDetail>(`/api/v1/runs/${encodeURIComponent(runId)}`, scope);
   }
 
   async getWorkerCommands(scope?: RequestScope): Promise<WorkerCommand[]> {

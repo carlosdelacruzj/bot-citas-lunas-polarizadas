@@ -12,12 +12,13 @@ import {
   DASHBOARD_INBOX_VIEW_OPERATIONS,
   DASHBOARD_INBOX_VIEW_UI,
 } from '../../dashboard-domain.ports';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   selector: 'app-inbox-view',
-  imports: [FormsModule, ViewStateComponent],
+  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './inbox-view.component.html',
   styleUrl: './inbox-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,7 +66,7 @@ export class InboxViewComponent {
       })
       .sort((left, right) =>
         severity[left.tone as keyof typeof severity] -
-          severity[right.tone as keyof typeof severity] ||
+        severity[right.tone as keyof typeof severity] ||
         left.updatedAt.localeCompare(right.updatedAt) ||
         left.key.localeCompare(right.key),
       );

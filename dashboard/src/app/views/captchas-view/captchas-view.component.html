@@ -1,3 +1,8 @@
+<app-load-status [section]="captchasDomain.loads.cases" />
+<app-load-status [section]="captchasDomain.loads.quality" />
+<app-load-status [section]="captchasDomain.loads.history" />
+<app-load-status [section]="captchasDomain.loads.review" />
+<app-load-status [section]="captchasDomain.loads.summary" />
 <section class="captcha-dashboard" aria-labelledby="captcha-dashboard-title">
   <div class="captcha-heading">
     <div>
@@ -70,11 +75,11 @@
   </nav>
 
   @if (captchasDomain.captchaWorkspaceMode() === 'review') {
-    @if (captchasDomain.captchaState() === 'loading') {
+    @if (captchasDomain.captchaState() === 'loading' && !captchasDomain.loads.review.updatedAt()) {
       <section class="panel captcha-state" role="status">
         Preparando la cola de revisión...
       </section>
-    } @else if (captchasDomain.captchaState() === 'error') {
+    } @else if (captchasDomain.captchaState() === 'error' && !captchasDomain.loads.review.updatedAt()) {
       <section class="notice bad captcha-state" role="alert">
         <strong>No se pudo cargar la cola.</strong>
         <span>{{ captchasDomain.captchaError() }}</span>
@@ -371,11 +376,11 @@
       }
     </section>
 
-    @if (captchasDomain.captchaState() === 'loading') {
+    @if (captchasDomain.captchaState() === 'loading' && !captchasDomain.loads.history.updatedAt()) {
       <section class="panel captcha-state" role="status">
         Cargando evidencias CAPTCHA...
       </section>
-    } @else if (captchasDomain.captchaState() === 'error') {
+    } @else if (captchasDomain.captchaState() === 'error' && !captchasDomain.loads.history.updatedAt()) {
       <section class="notice bad captcha-state" role="alert">
         <strong>No se pudo cargar esta vista.</strong>
         <span>{{ captchasDomain.captchaError() }}</span>

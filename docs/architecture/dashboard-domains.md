@@ -50,9 +50,9 @@ sus bindings apuntan a los puertos o editores correspondientes.
 
 Los [clientes HTTP y DTO](dashboard-http.md) viven en `api/` por dominio;
 los tipos del shell permanecen en `dashboard-domain.contracts.ts`.
-La carga coordinada conserva el comportamiento previo de `Promise.all` y las
-barreras de generacion. No se modifica el contrato de reservas, pagos ni envios
-ambiguos. Cerrar o fallar un alta mantiene la limpieza de datos sensibles.
+Las [cargas parciales](dashboard-loading.md) publican cada bloque independientemente,
+con barreras de generacion y scopes cancelables. No se modifica el contrato de
+reservas, pagos ni envios ambiguos. Cerrar o fallar un alta limpia datos sensibles.
 
-Las cargas parciales y encapsulacion visual tienen alcance propio en
-[6.3 y 6.4](../roadmap/development-hardening-plan.md).
+La encapsulacion visual y accesibilidad siguen pendientes en
+[6.4](../roadmap/development-hardening-plan.md).

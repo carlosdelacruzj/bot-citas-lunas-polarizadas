@@ -91,6 +91,7 @@ import {
   DASHBOARD_SUMMARY_VIEW_NAVIGATION,
   DASHBOARD_SUMMARY_VIEW_OPERATIONS,
   DASHBOARD_SUMMARY_VIEW_ORDERLIST,
+  DASHBOARD_SUMMARY_VIEW_ORDERS,
   DASHBOARD_SUMMARY_VIEW_PRESENTATION,
   DASHBOARD_SUMMARY_VIEW_UI,
   DASHBOARD_UI_FINANCE,
@@ -114,6 +115,7 @@ import { OrdersListFacade } from './domains/orders/orders-list.facade';
 import { OrdersFacade } from './domains/orders/orders.facade';
 import { DashboardPresentation } from './domains/presentation/presentation.facade';
 import { DashboardUi } from './domains/ui/ui.facade';
+import { LoadStatusComponent } from './load-status/load-status.component';
 import { CreateOrderModalComponent } from './modals/create-order-modal.component';
 import { EditOrderModalComponent } from './modals/edit-order-modal.component';
 import { FinanceEntryModalComponent } from './modals/finance-entry-modal.component';
@@ -125,7 +127,7 @@ import { ViewStateComponent } from './view-state/view-state.component';
 
 @Component({
   selector: 'app-root',
-  imports: [
+  imports: [LoadStatusComponent,
     FormsModule,
     ViewStateComponent,
     RouterOutlet,
@@ -230,6 +232,7 @@ import { ViewStateComponent } from './view-state/view-state.component';
     { provide: DASHBOARD_SUMMARY_VIEW_PRESENTATION, useExisting: DashboardPresentation },
     { provide: DASHBOARD_SUMMARY_VIEW_OPERATIONS, useExisting: OperationsFacade },
     { provide: DASHBOARD_SUMMARY_VIEW_ORDERLIST, useExisting: OrdersListFacade },
+    { provide: DASHBOARD_SUMMARY_VIEW_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_SUMMARY_VIEW_CAPTCHAS, useExisting: CaptchasFacade },
     { provide: DASHBOARD_SUMMARY_VIEW_UI, useExisting: DashboardUi },
     { provide: DASHBOARD_SUMMARY_VIEW_NAVIGATION, useExisting: DashboardNavigation },

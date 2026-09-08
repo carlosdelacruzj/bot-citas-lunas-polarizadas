@@ -1033,12 +1033,19 @@ Medicion: [cierre de 6.2](../../reports/architecture/dashboard-http-contracts-20
 
 Objetivo: que un widget auxiliar caido no invalide una vista completa.
 
-- [ ] Separar datos esenciales y secundarios.
-- [ ] Reemplazar `Promise.all` monoliticos por resultados parciales donde
+- [x] Separar datos esenciales y secundarios.
+- [x] Reemplazar `Promise.all` monoliticos por resultados parciales donde
   corresponda.
-- [ ] Mostrar error y frescura por tarjeta.
-- [ ] Cancelar tambien detalle de orden en exito, error y `finally`.
-- [ ] Probar navegacion rapida y respuestas fuera de orden.
+- [x] Mostrar error y frescura por tarjeta.
+- [x] Cancelar tambien detalle de orden en exito, error y `finally`.
+- [x] Probar navegacion rapida y respuestas fuera de orden.
+
+Cada bloque publica sus datos de forma independiente, con error y fecha de ultima
+lectura correcta. Las lecturas obsoletas se cancelan y no modifican datos, errores
+ni indicadores de carga de la seleccion vigente. Se ampliaron los casos existentes
+para verificar fallos auxiliares, navegacion rapida y respuestas fuera de orden.
+Arquitectura: [cargas parciales](../architecture/dashboard-loading.md).
+Evidencia: [cierre de 6.3](../../reports/architecture/dashboard-partial-loading-2026-09-08.md).
 
 ### 6.4 Encapsulacion visual y accesibilidad
 

@@ -1,3 +1,6 @@
+<app-load-status [section]="financeDomain.loads.entries" />
+<app-load-status [section]="financeDomain.loads.categories" />
+<app-load-status [section]="financeDomain.loads.monthly" />
 <section class="panel finance-dashboard" aria-labelledby="finance-dashboard-title">
   <div class="panel-header monthly-header">
     <div>
@@ -22,6 +25,7 @@
     </div>
   </div>
 
+<app-load-status [section]="financeDomain.loads.summary" />
   @if (financeDomain.financeLoading()) {
     <p class="monthly-loading">Actualizando finanzas...</p>
   } @else if (financeDomain.financeSummary(); as finance) {
@@ -108,13 +112,16 @@
       </article>
     </div>
 
+  }
+    <app-load-status [section]="financeDomain.loads.quality" />
+    <app-load-status [section]="financeDomain.loads.closure" />
     <details class="finance-advanced">
       <summary>
         <span>
           <strong>Datos que necesitan revisión</strong>
           <small>Abre solo si aparece algo pendiente</small>
         </span>
-        @if (financeDomain.financeQuality(); as quality) {
+    @if (financeDomain.financeQuality(); as quality) {
           <span class="badge {{ financeDomain.financeReviewIssueCount() ? 'warn' : 'good' }}">
             {{ financeDomain.financeReviewIssueCount() }} por revisar
           </span>
@@ -387,5 +394,4 @@
       </div>
       </div>
     </details>
-  }
 </section>

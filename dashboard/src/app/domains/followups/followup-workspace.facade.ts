@@ -7,6 +7,8 @@ import type {
   PostAppointmentPayload,
 } from '../../api/followups/followups.contracts';
 import { apiErrorMessage } from '../../api/shared/api-error';
+import { LoadSection } from '../../load-section';
+import { RequestScope } from '../../request-cancellation';
 
 import {
   DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS,
@@ -60,6 +62,8 @@ function paginationWindow(current: number, total: number): number[] {
 
 @Injectable()
 export class FollowupWorkspaceFacade {
+  private readonly reminderScope = new RequestScope();
+  public readonly reminderLoad = new LoadSection('Recordatorios');
   public readonly followupsDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS);
 
   public readonly presentationDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_PRESENTATION);
@@ -432,16 +436,19 @@ export class FollowupWorkspaceFacade {
   }
 
   private async loadReminderStatus(): Promise<void> {
-    try {
-      const status = await this.followupsApi.getAppointmentReminders();
-      this.reminderStatus.set(status);
-      this.syncReminderEditor(status);
-    } catch {
-      this.reminderStatusError.set(true);
-      this.reminderStatus.set(null);
-    } finally {
+    const success = await this.reminderLoad.load(this.reminderScope,
+      () => this.followupsApi.getAppointmentReminders(this.reminderScope), status => {
+        this.reminderStatus.set(status);
+        this.syncReminderEditor(status);
+      });
+    if (!this.reminderScope.isCancelled) {
+      this.reminderStatusError.set(!success);
       this.reminderStatusLoading.set(false);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.reminderScope.cancel();
   }
 
   private syncReminderEditor(status: AppointmentReminderStatus): void {
@@ -478,6 +485,7 @@ export class FollowupWorkspaceFacade {
 export type FollowupWorkspaceFacadeView = Pick<FollowupWorkspaceFacade,
   "prepareReminderEditor"
   | "followupWorkspace"
+  | "reminderLoad"
   | "setFollowupWorkspace"
   | "upcomingAppointments"
   | "postAppointmentOperationalCount"

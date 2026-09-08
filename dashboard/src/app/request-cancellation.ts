@@ -11,6 +11,21 @@ export class RequestScope {
   private readonly cancelledSubject = new Subject<void>();
   private cancelled = false;
 
+  get isCancelled(): boolean {
+    return this.cancelled;
+  }
+
+  fork(): RequestScope {
+    const child = new RequestScope();
+    if (this.cancelled) {
+      child.cancel();
+    } else {
+      const parentSubscription = this.cancelledSubject.subscribe(() => child.cancel());
+      child.cancelledSubject.subscribe(() => parentSubscription.unsubscribe());
+    }
+    return child;
+  }
+
   async read<T>(source: Observable<T>): Promise<T> {
     if (this.cancelled) {
       throw new RequestCancelledError();

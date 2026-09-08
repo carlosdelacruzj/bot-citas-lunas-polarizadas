@@ -8,12 +8,13 @@ import {
   DASHBOARD_ORDERS_VIEW_PRESENTATION,
   DASHBOARD_ORDERS_VIEW_UI,
 } from '../../dashboard-domain.ports';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   selector: 'app-orders-view',
-  imports: [FormsModule, ViewStateComponent],
+  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './orders-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

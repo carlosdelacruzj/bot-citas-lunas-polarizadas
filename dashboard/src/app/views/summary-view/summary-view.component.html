@@ -1,3 +1,8 @@
+<app-load-status [section]="ordersDomain.loads.list" />
+<app-load-status [section]="operationsDomain.loads.runs" />
+<app-load-status [section]="operationsDomain.loads.commands" />
+<app-load-status [section]="operationsDomain.loads.bursts" />
+<app-load-status [section]="captchasDomain.loads.sampling" />
 <section class="panel monthly-dashboard phase-two-summary" aria-labelledby="monthly-dashboard-title">
   <div class="panel-header monthly-header">
     <div>
@@ -17,6 +22,7 @@
     </label>
   </div>
 
+<app-load-status [section]="followupsDomain.loads.reminders" />
   @if (followupsDomain.appointmentReminderStatus(); as reminders) {
     <section class="appointment-reminder-card" aria-labelledby="appointment-reminder-title">
       <div class="appointment-reminder-date" aria-hidden="true">
@@ -60,6 +66,7 @@
     </section>
   }
 
+<app-load-status [section]="financeDomain.loads.monthly" />
   @if (financeDomain.monthlyLoading()) {
     <p class="monthly-loading">Actualizando resumen mensual...</p>
   } @else if (financeDomain.monthlySummary(); as summary) {
@@ -575,6 +582,7 @@
     </div>
   }
 
+<app-load-status [section]="captchasDomain.loads.authority" />
   @if (captchasDomain.captchaAuthorityControl(); as authority) {
     <article
       class="captcha-authority-card"
@@ -692,7 +700,8 @@
     <article class="panel">
     <div class="panel-header">
       <div>
-        <h2>Actividad actual</h2>
+        <app-load-status [section]="operationsDomain.loads.worker" />
+<h2>Actividad actual</h2>
         <p>{{ operationsDomain.currentWorkLabel() }}</p>
       </div>
       <span class="badge {{ presentationDomain.statusTone(operationsDomain.worker()?.paused ? 'paused' : operationsDomain.worker()?.phase) }}">
@@ -800,6 +809,7 @@
         </span>
       </div>
 
+<app-load-status [section]="operationsDomain.loads.opportunity" />
       @if (operationsDomain.opportunityControl(); as control) {
         @if (operationsDomain.opportunityBreakerOpen()) {
           <div class="opportunity-breaker" role="alert">

@@ -4,12 +4,13 @@ import {
   DASHBOARD_RUNS_VIEW_OPERATIONS,
   DASHBOARD_RUNS_VIEW_PRESENTATION,
 } from '../../dashboard-domain.ports';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
   selector: 'app-runs-view',
-  imports: [FormsModule, ViewStateComponent],
+  imports: [LoadStatusComponent, FormsModule, ViewStateComponent],
   templateUrl: './runs-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

@@ -4,11 +4,12 @@ import {
   MessageTemplateEditorFacade,
   type MessageTemplateEditorFacadeView,
 } from '../../domains/messages/message-template-editor.facade';
+import { LoadStatusComponent } from '../../load-status/load-status.component';
 
 @Component({
   providers: [MessageTemplateEditorFacade],
   selector: 'app-message-templates-view',
-  imports: [FormsModule],
+  imports: [LoadStatusComponent, FormsModule],
   templateUrl: './message-templates-view.component.html',
   styleUrl: './message-templates-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

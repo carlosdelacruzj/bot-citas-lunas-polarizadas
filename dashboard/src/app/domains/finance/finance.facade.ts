@@ -1,4 +1,4 @@
-import { Injectable, Injector, inject, signal } from '@angular/core';
+import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FinanceApiClient } from '../../api/finance/finance-api.client';
 import type {
@@ -16,6 +16,7 @@ import type {
 } from '../../api/finance/finance.contracts';
 import type { ServiceOrder } from '../../api/orders/orders.contracts';
 import type { FinanceClosureStatus } from '../../api/states/states.contracts';
+import { LoadSection, loadSections } from '../../load-section';
 
 import { INITIAL_DATE, INITIAL_MONTH } from '../../dashboard-domain.contracts';
 import {
@@ -29,6 +30,15 @@ import { buildPaymentPayload } from '../../sensitive-form-payloads';
 
 @Injectable()
 export class FinanceFacade {
+  public readonly loads = {
+    summary: new LoadSection('Resumen financiero'),
+    entries: new LoadSection('Movimientos'),
+    quality: new LoadSection('Calidad financiera'),
+    closure: new LoadSection('Cierre mensual'),
+    monthly: new LoadSection('Resumen del negocio'),
+    categories: new LoadSection('Categorias'),
+  };
+
   private readonly injector = inject(Injector);
   private readonly financeApi = inject(FinanceApiClient);
   private readonly router = inject(Router);
@@ -37,7 +47,7 @@ export class FinanceFacade {
 
   public readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
 
-  public readonly monthlyLoading = signal(false);
+  public readonly monthlyLoading = computed(() => this.loads.monthly.loading() && !this.loads.monthly.updatedAt());
 
   public readonly financeCategories = signal<FinanceCategory[]>([]);
 
@@ -49,7 +59,7 @@ export class FinanceFacade {
 
   public readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
 
-  public readonly financeLoading = signal(false);
+  public readonly financeLoading = computed(() => this.loads.summary.loading() && !this.loads.summary.updatedAt());
 
   public readonly financeClosureOpeningBalance = signal('');
 
@@ -102,44 +112,8 @@ export class FinanceFacade {
   public readonly paymentAmountAgreed = signal('');
 
   public async changeMonth(month: string): Promise<void> {
-    if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading() || this.financeLoading()) {
-      return;
-    }
-    this.selectedMonth.set(month);
-    const view = this.navigation.activeView();
-    this.monthlyLoading.set(view === 'summary');
-    this.financeLoading.set(view === 'finance');
-    this.ui.errorMessage.set(null);
-    try {
-      if (view === 'summary') {
-        this.monthlySummary.set(await this.financeApi.getMonthlySummaryV2(month));
-      } else {
-        const [entries, financeSummary, financeQuality, financeMonthClosure, monthlySummary] = await Promise.all([
-          this.financeApi.getFinanceEntries(month),
-          this.financeApi.getFinanceSummary(month),
-          this.financeApi.getFinanceDataQuality(month),
-          this.financeApi.getFinanceMonthClosure(month),
-          this.financeApi.getMonthlySummaryV2(month),
-        ]);
-        this.financeEntries.set(entries);
-        this.financeSummary.set(financeSummary);
-        this.financeQuality.set(financeQuality);
-        this.applyFinanceMonthClosure(financeMonthClosure);
-        this.monthlySummary.set(monthlySummary);
-      }
-    } catch (error) {
-      this.ui.errorMessage.set(this.presentation.readError(error));
-    } finally {
-      this.monthlyLoading.set(false);
-      this.financeLoading.set(false);
-    }
-    if (['summary', 'finance'].includes(view)) {
-      void this.router.navigate([], {
-        queryParams: { month },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-    }
+    if (!/^\d{4}-\d{2}$/.test(month) || month === this.selectedMonth()) return;
+    await this.router.navigate([], { queryParams: { month }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   public openNewFinanceEntry(): void {
@@ -411,7 +385,7 @@ export class FinanceFacade {
     this.paymentAmountAgreed.set(agreedAmount);
     this.paymentAmountPaid.set(agreedAmount);
     this.ui.openModal('payment');
-    await this.orders.loadSelectedOrderDetail(order.order_id);
+    if (!(await this.orders.loadSelectedOrderDetail(order.order_id)) || this.ui.formDirty()) return;
     const refreshed = this.orders.selectedOrderDetail();
     if (refreshed?.order_id === order.order_id) {
       const refreshedAmount =
@@ -559,34 +533,17 @@ export class FinanceFacade {
   }
 
   public async loadFinanceView(scope: RequestScope): Promise<void> {
-    const categoriesRequest = this.financeCategories().length
-      ? Promise.resolve(this.financeCategories())
-      : this.financeApi.getFinanceCategories(scope);
-    const [
-      financeCategories,
-      financeEntries,
-      financeSummary,
-      financeQuality,
-      financeMonthClosure,
-      monthlySummary,
-    ] = await Promise.all([
-      categoriesRequest,
-      this.financeApi.getFinanceEntries(this.selectedMonth(), scope),
-      this.financeApi.getFinanceSummary(this.selectedMonth(), scope),
-      this.financeApi.getFinanceDataQuality(this.selectedMonth(), scope),
-      this.financeApi.getFinanceMonthClosure(this.selectedMonth(), scope),
-      this.financeApi.getMonthlySummaryV2(this.selectedMonth(), scope),
+    const month = this.selectedMonth();
+    await loadSections(scope, [
+      this.loads.summary.load(scope, () => this.financeApi.getFinanceSummary(month, scope), value => { this.financeSummary.set(value); }),
+      this.loads.entries.load(scope, () => this.financeApi.getFinanceEntries(month, scope), value => { this.financeEntries.set(value); }),
+    ], [
+      this.financeCategories().length ? Promise.resolve(true) : this.loads.categories.load(scope, () => this.financeApi.getFinanceCategories(scope), value => { this.financeCategories.set(value); }),
+      this.loads.quality.load(scope, () => this.financeApi.getFinanceDataQuality(month, scope), value => { this.financeQuality.set(value); }),
+      this.loads.closure.load(scope, () => this.financeApi.getFinanceMonthClosure(month, scope), value => { this.applyFinanceMonthClosure(value); }),
+      this.loadMonthlySummary(scope),
     ]);
-    this.financeCategories.set(financeCategories);
-    this.financeEntries.set(financeEntries);
-    this.financeSummary.set(financeSummary);
-    this.financeQuality.set(financeQuality);
-    this.applyFinanceMonthClosure(financeMonthClosure);
-    this.monthlySummary.set(monthlySummary);
-    return;
   }
-
-  public fetchMonthlySummary(scope: RequestScope) { return this.financeApi.getMonthlySummaryV2(this.selectedMonth(), scope); }
 
   private get navigation() { return this.injector.get(DASHBOARD_FINANCE_NAVIGATION); }
 
@@ -595,4 +552,17 @@ export class FinanceFacade {
   private get presentation() { return this.injector.get(DASHBOARD_FINANCE_PRESENTATION); }
 
   private get orders() { return this.injector.get(DASHBOARD_FINANCE_ORDERS); }
+
+  public selectMonth(month: string): void {
+    if (month === this.selectedMonth()) return;
+    this.selectedMonth.set(month);
+    this.monthlySummary.set(null); this.financeSummary.set(null); this.financeQuality.set(null);
+    this.financeMonthClosure.set(null); this.financeEntries.set([]);
+    for (const key of ['summary', 'entries', 'quality', 'closure', 'monthly'] as const) this.loads[key].reset();
+  }
+
+  public loadMonthlySummary(scope: RequestScope): Promise<boolean> {
+    const month = this.selectedMonth();
+    return this.loads.monthly.load(scope, () => this.financeApi.getMonthlySummaryV2(month, scope), value => { this.monthlySummary.set(value); });
+  }
 }

@@ -63,3 +63,7 @@ Esta es la alternativa de fixtures prevista en `6.2`, no un validador runtime
 de todas las respuestas. Detecta cambios incompatibles entre DTO y muestras;
 no descubre por si sola una desviacion del servidor vivo. Al cambiar un contrato,
 hay que contrastarlo con su handler y mantener el fixture correspondiente.
+
+Las lecturas de detalle de orden y ejecucion aceptan `RequestScope`; cerrar o
+cambiar de seleccion cancela el GET. Las reglas de publicacion y frescura estan
+en [cargas parciales](dashboard-loading.md). Las mutaciones no reciben reintentos.

@@ -38,8 +38,8 @@ export class OrdersApiClient {
     return this.transport.read<ServicePackageCatalog>('/api/v1/service-packages', scope);
   }
 
-  async getServiceOrder(orderId: string): Promise<ServiceOrderDetail> {
-    return this.transport.read<ServiceOrderDetail>(`/api/v1/service-orders/${encodeURIComponent(orderId)}`);
+  async getServiceOrder(orderId: string, scope?: RequestScope): Promise<ServiceOrderDetail> {
+    return this.transport.read<ServiceOrderDetail>(`/api/v1/service-orders/${encodeURIComponent(orderId)}`, scope);
   }
 
   async getManualSessions(scope?: RequestScope): Promise<ManualSession[]> {
