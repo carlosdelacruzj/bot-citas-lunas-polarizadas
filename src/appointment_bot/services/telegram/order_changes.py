@@ -478,6 +478,7 @@ def _execute_order_change(
             change.order_id,
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=change.action,
             status="applied",
@@ -495,6 +496,7 @@ def _execute_order_change(
                 f"Solicitud: {operation_short}\nOrden: {change.order_id}",
             )
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=actor,
                 action=change.action,
                 status="applied",
@@ -509,6 +511,7 @@ def _execute_order_change(
             f"No pude verificar la solicitud {operation_short}. No confirmo el cambio.",
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=change.action,
             status="failed",

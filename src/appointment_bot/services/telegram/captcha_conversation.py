@@ -378,6 +378,7 @@ def _save_captcha_review_answer(
         )
         return False
     _record_audit_safe(
+        admin_api=admin_api,
         actor=_telegram_actor(chat_id),
         action="captcha_label",
         status="applied",

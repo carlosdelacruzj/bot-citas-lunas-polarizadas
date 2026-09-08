@@ -176,6 +176,7 @@ def _execute_client_creation(
                 "No pude confirmar el alta. Consulta Clientes antes de volver a intentarlo.",
             )
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=actor,
                 action="client_create",
                 status="failed",
@@ -297,6 +298,7 @@ def _execute_client_creation(
                 timer.start()
         logger.info("Created service order from Telegram actor=%s order_id=%s", actor, order_id)
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action="client_create",
             status="applied",
@@ -318,6 +320,7 @@ def _execute_client_creation(
             "la comprobacion posterior. Consulta Clientes; no repitas el alta.",
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action="client_create",
             status="applied",
@@ -337,6 +340,7 @@ def _execute_client_creation(
             "durante la comprobacion posterior. Consulta Clientes; no repitas el alta.",
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action="client_create",
             status="applied",

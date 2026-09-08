@@ -20,6 +20,31 @@ class AdminApiClient:
         self.base_url = base_url.rstrip("/")
         self.token = token
 
+    def record_remote_control_audit(
+        self,
+        *,
+        actor: str,
+        action: str,
+        status: str,
+        target_type: str | None = None,
+        target_id: str | None = None,
+        operation_id: str | None = None,
+        detail: str | None = None,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/api/v1/remote-control-audit",
+            payload={
+                "action": action,
+                "status": status,
+                "target_type": target_type,
+                "target_id": target_id,
+                "operation_id": operation_id,
+                "detail": detail,
+            },
+            actor=actor,
+        )
+
     def get_worker(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/worker")
 
@@ -87,9 +112,7 @@ class AdminApiClient:
         )
 
     def search_service_orders(self, query: str) -> list[dict[str, Any]]:
-        payload = self._request(
-            "POST", "/api/v1/service-orders/search", payload={"query": query}
-        )
+        payload = self._request("POST", "/api/v1/service-orders/search", payload={"query": query})
         orders = payload.get("service_orders", [])
         if not isinstance(orders, list):
             raise TelegramControlError("Admin API returned an invalid search result.")

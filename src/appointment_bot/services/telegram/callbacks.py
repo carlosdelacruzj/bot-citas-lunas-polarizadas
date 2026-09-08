@@ -74,12 +74,14 @@ def _process_callback_query(
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram callback from an unauthorized chat.")
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action="callback", status="denied"
         )
         return
     mutation = _callback_is_mutation(data)
     if mutation and not _mutation_user_authorized(config, chat, sender):
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id, user_id),
             action="callback",
             status="denied",
@@ -92,6 +94,7 @@ def _process_callback_query(
         return
     if not rate_limiter.allow(chat_id, mutation=mutation):
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action="callback", status="rate_limited"
         )
         telegram.answer_callback_query(callback_id, "Espera un minuto y vuelve a intentar.")
@@ -142,6 +145,7 @@ def _process_callback_query(
         _clear_captcha_review_buttons(chat_id, message, telegram)
         if parts[2] == "no":
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=_telegram_actor(chat_id), action="client_create",
                 status="cancelled", operation_id=operation_id,
             )
@@ -150,6 +154,7 @@ def _process_callback_query(
             return
         telegram.answer_callback_query(callback_id, "Registro confirmado.")
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action="client_create",
             status="accepted", operation_id=operation_id,
         )
@@ -168,6 +173,7 @@ def _process_callback_query(
         _clear_captcha_review_buttons(chat_id, message, telegram)
         if parts[2] == "no":
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=_telegram_actor(chat_id), action=change.action,
                 status="cancelled", target_type="service_order",
                 target_id=change.order_id, operation_id=operation_id,
@@ -177,6 +183,7 @@ def _process_callback_query(
             return
         telegram.answer_callback_query(callback_id, "Cambio confirmado.")
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action=change.action,
             status="accepted", target_type="service_order",
             target_id=change.order_id, operation_id=operation_id,
@@ -195,6 +202,7 @@ def _process_callback_query(
     _clear_captcha_review_buttons(chat_id, message, telegram)
     if parts[2] == "no":
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action=confirmation.command,
             status="cancelled", operation_id=operation_id,
         )
@@ -204,6 +212,7 @@ def _process_callback_query(
     telegram.answer_callback_query(callback_id, "Solicitud confirmada.")
     is_opportunity_control = confirmation.command.startswith("opportunity:")
     _record_audit_safe(
+        admin_api=admin_api,
         actor=_telegram_actor(chat_id), action=confirmation.command,
         status="accepted",
         target_type="opportunity_control" if is_opportunity_control else None,

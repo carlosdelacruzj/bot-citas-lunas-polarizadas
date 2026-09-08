@@ -14,6 +14,7 @@ from appointment_bot.services.api.handlers import (
     manual_session,
     opportunity,
     post_appointment,
+    remote_control_audit,
     service_order,
     whatsapp,
     whatsapp_message_template,
@@ -46,6 +47,7 @@ from appointment_bot.services.api.whatsapp_routes import (
 )
 
 POST_ROUTES = (
+    Route("/api/v1/remote-control-audit", remote_control_audit.post_remote_control_audit),
     Route(
         lambda path: whatsapp_message_template_action_path(path, "preview"),
         whatsapp_message_template.post_preview_whatsapp_message_template,

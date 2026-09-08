@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 
-from appointment_bot.db.remote_control_audit import record_remote_control_audit
+from appointment_bot.services.telegram.admin_api_client import AdminApiClient
 from appointment_bot.services.telegram.validation import _valid_order_id
 
 logger = logging.getLogger("appointment_bot.services.telegram_control")
@@ -23,6 +23,7 @@ def _audit_target(arguments: str) -> str | None:
 
 def _record_audit_safe(
     *,
+    admin_api: AdminApiClient,
     actor: str,
     action: str,
     status: str,
@@ -32,7 +33,7 @@ def _record_audit_safe(
     detail: str | None = None,
 ) -> None:
     try:
-        record_remote_control_audit(
+        admin_api.record_remote_control_audit(
             actor=actor,
             action=action,
             status=status,

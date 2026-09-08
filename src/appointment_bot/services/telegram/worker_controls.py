@@ -250,6 +250,7 @@ def _execute_opportunity_control(
                 "El control cambio antes de aplicar la solicitud. No se modifico nada.",
             )
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=actor,
                 action=confirmation.command,
                 status="failed",
@@ -272,6 +273,7 @@ def _execute_opportunity_control(
             str(result.get("message") or "Control de oportunidad actualizado."),
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=confirmation.command,
             status="applied",
@@ -293,6 +295,7 @@ def _execute_opportunity_control(
             ),
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=confirmation.command,
             status="failed",
@@ -330,6 +333,7 @@ def _execute_worker_command(
                 f"La solicitud {operation_short} {detail}. No confirmo el cambio.",
             )
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=actor,
                 action=confirmation.command,
                 status="failed",
@@ -343,6 +347,7 @@ def _execute_worker_command(
             _format_worker_command_success(confirmation.command, operation_short, worker),
         )
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=confirmation.command,
             status="applied",
@@ -359,6 +364,7 @@ def _execute_worker_command(
         except TelegramControlError:
             logger.warning("Could not deliver the worker command failure message.")
         _record_audit_safe(
+            admin_api=admin_api,
             actor=actor,
             action=confirmation.command,
             status="failed",

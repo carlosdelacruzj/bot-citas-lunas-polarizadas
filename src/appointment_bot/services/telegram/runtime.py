@@ -77,7 +77,9 @@ def run_control(*, check_only: bool = False) -> int:
     confirmation_lock = Lock()
     executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram-worker-command")
     telegram.set_operator_commands()
-    _record_audit_safe(actor="telegram-control", action="receiver", status="started")
+    _record_audit_safe(
+        admin_api=admin_api, actor="telegram-control", action="receiver", status="started"
+    )
     logger.info("Telegram control long polling started.")
     try:
         while not stop_event.is_set():

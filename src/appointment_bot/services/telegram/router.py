@@ -132,6 +132,7 @@ def _process_update(
     if chat_id not in config.authorized_chat_ids:
         logger.warning("Ignored Telegram update from an unauthorized chat.")
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id), action="message", status="denied"
         )
         return
@@ -151,6 +152,7 @@ def _process_update(
         )
         if not rate_limiter.allow(chat_id, mutation=guided_mutation):
             _record_audit_safe(
+                admin_api=admin_api,
                 actor=_telegram_actor(chat_id),
                 action="conversation_reply",
                 status="rate_limited",
@@ -275,6 +277,7 @@ def _process_update(
     mutation = command in MUTATING_COMMANDS
     if mutation and not _mutation_user_authorized(config, chat, sender):
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id, user_id),
             action=command,
             status="denied",
@@ -288,6 +291,7 @@ def _process_update(
         return
     if not rate_limiter.allow(chat_id, mutation=mutation):
         _record_audit_safe(
+            admin_api=admin_api,
             actor=_telegram_actor(chat_id),
             action=command,
             status="rate_limited",
@@ -302,6 +306,7 @@ def _process_update(
         return
     audit_target = _audit_target(arguments) if command in ORDER_TARGET_COMMANDS else None
     _record_audit_safe(
+        admin_api=admin_api,
         actor=_telegram_actor(chat_id, user_id),
         action=command,
         status="accepted",
