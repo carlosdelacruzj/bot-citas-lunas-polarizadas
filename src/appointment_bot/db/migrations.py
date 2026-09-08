@@ -9,6 +9,11 @@ from appointment_bot.core.whatsapp_message_templates import (
     MAX_TEMPLATE_LENGTH,
     WHATSAPP_TEMPLATE_DEFINITIONS,
 )
+from appointment_bot.db.migration_steps.whatsapp_legacy import (
+    create_legacy_whatsapp_automation_jobs_schema,
+    create_legacy_whatsapp_followup_messages_schema,
+    create_legacy_whatsapp_messages_schema,
+)
 
 SCHEMA_VERSION = 74
 _MIGRATION_LOCK_ID = 1_047_296_811
@@ -3149,7 +3154,7 @@ def migrate_database(connection: Connection) -> None:
         )
         current_version = 27
     if current_version == 27:
-        _create_whatsapp_messages_schema(connection)
+        create_legacy_whatsapp_messages_schema(connection)
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (28,),
@@ -3168,7 +3173,7 @@ def migrate_database(connection: Connection) -> None:
         )
         current_version = 29
     if current_version == 29:
-        _create_whatsapp_followup_messages_schema(connection)
+        create_legacy_whatsapp_followup_messages_schema(connection)
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (30,),
@@ -3235,7 +3240,7 @@ def migrate_database(connection: Connection) -> None:
         )
         current_version = 35
     if current_version == 35:
-        _create_whatsapp_automation_jobs_schema(connection)
+        create_legacy_whatsapp_automation_jobs_schema(connection)
         connection.execute(
             "UPDATE schema_version SET version = %s WHERE id = 1",
             (36,),
