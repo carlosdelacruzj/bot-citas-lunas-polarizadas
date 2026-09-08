@@ -1,12 +1,13 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  apiErrorMessage,
-  AppointmentApiService,
+import { FollowupsApiClient } from '../../api/followups/followups-api.client';
+import type {
   AppointmentReminderStatus,
   PostAppointmentFollowup,
   PostAppointmentPayload,
-} from '../../appointment-api.service';
+} from '../../api/followups/followups.contracts';
+import { apiErrorMessage } from '../../api/shared/api-error';
+
 import {
   DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS,
   DASHBOARD_FOLLOWUPS_VIEW_PRESENTATION,
@@ -63,7 +64,7 @@ export class FollowupWorkspaceFacade {
 
   public readonly presentationDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_PRESENTATION);
 
-  private readonly api = inject(AppointmentApiService);
+  private readonly followupsApi = inject(FollowupsApiClient);
 
   private readonly route = inject(ActivatedRoute);
 
@@ -409,7 +410,7 @@ export class FollowupWorkspaceFacade {
     this.reminderSaveError.set(null);
     this.reminderSaveSuccess.set(null);
     try {
-      const updated = await this.api.updateAppointmentReminders({
+      const updated = await this.followupsApi.updateAppointmentReminders({
         mode: this.reminderMode(),
         lead_days: this.reminderLeadDays(),
         expected_revision: current.control.revision,
@@ -432,7 +433,7 @@ export class FollowupWorkspaceFacade {
 
   private async loadReminderStatus(): Promise<void> {
     try {
-      const status = await this.api.getAppointmentReminders();
+      const status = await this.followupsApi.getAppointmentReminders();
       this.reminderStatus.set(status);
       this.syncReminderEditor(status);
     } catch {

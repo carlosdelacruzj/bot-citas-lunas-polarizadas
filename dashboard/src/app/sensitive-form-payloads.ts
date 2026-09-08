@@ -1,8 +1,7 @@
-import type {
-  CreateServiceOrderPayload,
-  ExcludedDateRange,
-  PaymentPaidPayload,
-} from './appointment-api.service';
+import type { PaymentPaidPayload } from './api/finance/finance.contracts';
+import type { CreateServiceOrderPayload } from './api/orders/orders.contracts';
+import type { ExcludedDateRange } from './reservation-rules.model';
+
 import type { ServicePackageDefinition, ServicePackageKey } from './service-package.model';
 
 export interface CreateOrderFormValues {

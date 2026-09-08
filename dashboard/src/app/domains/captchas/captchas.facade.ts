@@ -1,7 +1,7 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  AppointmentApiService,
+import { CaptchasApiClient } from '../../api/captchas/captchas-api.client';
+import type {
   CaptchaAuthorityControl,
   CaptchaEvent,
   CaptchaEventsPage,
@@ -14,7 +14,8 @@ import {
   CaptchaQualityWeek,
   CaptchaSamplingControl,
   CaptchaSummary,
-} from '../../appointment-api.service';
+} from '../../api/captchas/captchas.contracts';
+
 import {
   CAPTCHA_QUALITY_CASE_FILTERS,
   CaptchaAgreementFilter,
@@ -38,7 +39,7 @@ import { RequestScope, isRequestCancelled } from '../../request-cancellation';
 @Injectable()
 export class CaptchasFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly captchasApi = inject(CaptchasApiClient);
   private readonly router = inject(Router);
 
   private captchaLoadScope: RequestScope | null = null;
@@ -219,7 +220,7 @@ export class CaptchasFacade {
     try {
       if (this.captchaWorkspaceMode() === 'quality') {
         const [summary] = await Promise.all([
-          this.api.getCaptchaSummary(activeScope),
+          this.captchasApi.getCaptchaSummary(activeScope),
           this.loadCaptchaQuality(activeScope),
         ]);
         this.captchaSummary.set(summary);
@@ -230,8 +231,8 @@ export class CaptchasFacade {
         return;
       }
       const [summary, page, reviewPage] = await Promise.all([
-        this.api.getCaptchaSummary(activeScope),
-        this.api.getCaptchaEvents(
+        this.captchasApi.getCaptchaSummary(activeScope),
+        this.captchasApi.getCaptchaEvents(
           this.captchaPage(),
           this.captchaPageSize(),
           this.captchaSearch().trim(),
@@ -243,7 +244,7 @@ export class CaptchasFacade {
           'all',
           activeScope,
         ),
-        this.api.getCaptchaEvents(
+        this.captchasApi.getCaptchaEvents(
           1, 48, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', activeScope,
         ),
       ]);
@@ -278,8 +279,8 @@ export class CaptchasFacade {
     this.captchaQualityError.set(null);
     try {
       const [quality, cases] = await Promise.all([
-        this.api.getCaptchaQuality(scope),
-        this.api.getCaptchaQualityCases(
+        this.captchasApi.getCaptchaQuality(scope),
+        this.captchasApi.getCaptchaQualityCases(
           this.captchaQualityCaseType(),
           this.captchaQualityCasePage(),
           this.captchaQualityCasePageSize(),
@@ -322,7 +323,7 @@ export class CaptchasFacade {
     this.captchaQualityCaseScope = scope;
     this.captchaQualityError.set(null);
     try {
-      const cases = await this.api.getCaptchaQualityCases(
+      const cases = await this.captchasApi.getCaptchaQualityCases(
         this.captchaQualityCaseType(),
         this.captchaQualityCasePage(),
         this.captchaQualityCasePageSize(),
@@ -353,7 +354,7 @@ export class CaptchasFacade {
     this.captchaDatasetExporting.set(true);
     this.captchaQualityError.set(null);
     try {
-      const archive = await this.api.downloadCaptchaDataset();
+      const archive = await this.captchasApi.downloadCaptchaDataset();
       const url = URL.createObjectURL(archive);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -735,7 +736,7 @@ export class CaptchasFacade {
     this.captchaPendingCorrection.set(null);
     this.clearCaptchaReviewMessage();
     try {
-      const response = await this.api.saveCaptchaHumanLabel(
+      const response = await this.captchasApi.saveCaptchaHumanLabel(
         event.event_id,
         event.image_sha256,
         answer,
@@ -830,7 +831,7 @@ export class CaptchasFacade {
     this.captchaSamplingSaving.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const control = await this.api.updateCaptchaSamplingControl(
+      const control = await this.captchasApi.updateCaptchaSamplingControl(
         this.captchaSamplingEnabled(),
         this.captchaSamplingLimit(),
       );
@@ -863,7 +864,7 @@ export class CaptchasFacade {
         'V6 seguirá comparando en sombra, pero desde el siguiente CAPTCHA final la respuesta se pedirá a 2Captcha.',
       execute: async () => {
         this.captchaAuthorityControl.set(
-          await this.api.updateCaptchaAuthorityControl('2captcha'),
+          await this.captchasApi.updateCaptchaAuthorityControl('2captcha'),
         );
         return { status: 'ok' };
       },
@@ -880,7 +881,7 @@ export class CaptchasFacade {
         : 'V6 resolverá dentro del límite restante y con los umbrales guardados. 2Captcha seguirá disponible como fallback.',
       execute: async () => {
         this.captchaAuthorityControl.set(
-          await this.api.updateCaptchaAuthorityControl('canary', resetCircuit),
+          await this.captchasApi.updateCaptchaAuthorityControl('canary', resetCircuit),
         );
         return { status: 'ok' };
       },
@@ -889,7 +890,7 @@ export class CaptchasFacade {
   }
 
   public fetchPendingCaptchaReview(scope: RequestScope) {
-    return this.api.getCaptchaEvents(
+    return this.captchasApi.getCaptchaEvents(
       1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
     ).catch((error: unknown) => {
       if (isRequestCancelled(error)) {
@@ -905,9 +906,9 @@ export class CaptchasFacade {
     if (this.captchaReviewMessageTimer !== null) window.clearTimeout(this.captchaReviewMessageTimer);
   }
 
-  public fetchCaptchaSamplingControl(scope: RequestScope) { return this.api.getCaptchaSamplingControl(scope); }
+  public fetchCaptchaSamplingControl(scope: RequestScope) { return this.captchasApi.getCaptchaSamplingControl(scope); }
 
-  public fetchCaptchaAuthorityControl(scope: RequestScope) { return this.api.getCaptchaAuthorityControl(scope); }
+  public fetchCaptchaAuthorityControl(scope: RequestScope) { return this.captchasApi.getCaptchaAuthorityControl(scope); }
 
   private get operations() { return this.injector.get(DASHBOARD_CAPTCHAS_OPERATIONS); }
 

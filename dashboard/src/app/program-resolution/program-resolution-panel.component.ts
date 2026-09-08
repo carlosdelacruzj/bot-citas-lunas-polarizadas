@@ -1,11 +1,11 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import type { ServiceOrder } from '../api/orders/orders.contracts';
 import {
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS,
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_UI,
 } from '../dashboard-domain.ports';
 
-import { ServiceOrder } from '../appointment-api.service';
 import { ViewStateComponent } from '../view-state/view-state.component';
 import {
   buildProgramResolution,

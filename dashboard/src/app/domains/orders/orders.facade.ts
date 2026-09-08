@@ -1,20 +1,23 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  AppointmentApiService,
+import { OrdersApiClient } from '../../api/orders/orders-api.client';
+import type {
   CloseServiceOrderPayload,
   ContactUpdatePayload,
-  ExcludedDateRange,
   ManualSession,
-  ManualSessionMode,
   PriorityUpdatePayload,
   ReservationRestrictionsUpdatePayload,
   ServiceOrder,
   ServiceOrderDetail,
+} from '../../api/orders/orders.contracts';
+import type { DocumentType, ManualSessionMode } from '../../api/states/states.contracts';
+import type { ExcludedDateRange } from '../../reservation-rules.model';
+import type {
   ServicePackageCatalog,
   ServicePackageDefinition,
   ServicePackageKey,
-} from '../../appointment-api.service';
+} from '../../service-package.model';
+
 import {
   ClosureReason,
   OrderNextAction,
@@ -40,7 +43,7 @@ import { buildCreateOrderPayload } from '../../sensitive-form-payloads';
 @Injectable()
 export class OrdersFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly ordersApi = inject(OrdersApiClient);
   private readonly router = inject(Router);
   public readonly orderList = inject(OrdersListFacade);
   private readonly activeManualSessionIds = new Set<string>();
@@ -67,7 +70,7 @@ export class OrdersFacade {
 
   public readonly orderDocumentNumber = signal('');
 
-  public readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
+  public readonly orderDocumentType = signal<DocumentType>('dni');
 
   public readonly orderPassword = signal('');
 
@@ -93,7 +96,7 @@ export class OrdersFacade {
 
   public readonly newDocumentNumber = signal('');
 
-  public readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
+  public readonly newDocumentType = signal<DocumentType>('dni');
 
   public readonly newPassword = signal('');
 
@@ -483,7 +486,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title: 'Actualizar contacto',
       message: `Actualizar contacto de ${order.order_id}.`,
-      execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
+      execute: () => this.ordersApi.updateServiceOrderContact(order.order_id, payload),
       onSuccess: () => {
         this.ui.activeModal.set(null);
         this.selectedOrderDetail.set(null);
@@ -512,7 +515,7 @@ export class OrdersFacade {
       title: 'Confirmar alcance de trámites',
       message: `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
       execute: async () => {
-        const response = await this.api.resolveServiceOrderPrograms(order.order_id, payload);
+        const response = await this.ordersApi.resolveServiceOrderPrograms(order.order_id, payload);
         onSuccess(response);
         return response;
       },
@@ -549,7 +552,7 @@ export class OrdersFacade {
       title: documentChanged ? 'Cambiar usuario y contraseña' : 'Cambiar contraseña',
       message,
       execute: () =>
-        this.api.updateServiceOrderCredentials(order.order_id, {
+        this.ordersApi.updateServiceOrderCredentials(order.order_id, {
           document_number: documentNumber,
           document_type: this.orderDocumentType(),
           password,
@@ -596,7 +599,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title: 'Actualizar prioridad',
       message: `Cambiar prioridad de ${order.order_id} de ${order.priority} a ${priority}.${effect}`,
-      execute: () => this.api.updateServiceOrderPriority(order.order_id, payload),
+      execute: () => this.ordersApi.updateServiceOrderPriority(order.order_id, payload),
       onSettled: () => this.orderPriority.set(this.selectedOrder()?.priority ?? priority),
     });
   }
@@ -631,7 +634,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title: 'Actualizar reglas de reserva',
       message: `Guardar las reglas de reserva de ${order.order_id}. Los campos vacíos quitarán esa regla.`,
-      execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
+      execute: () => this.ordersApi.updateServiceOrderRestrictions(order.order_id, payload),
     });
   }
 
@@ -704,7 +707,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title,
       message: `${title} para ${order.order_id}.`,
-      execute: () => this.api.runServiceOrderAction(order.order_id, action),
+      execute: () => this.ordersApi.runServiceOrderAction(order.order_id, action),
       onSuccess: () => this.ui.activeModal.set(null),
     });
   }
@@ -713,7 +716,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title: 'Validar acceso',
       message: `Ingresar al portal y validar identidad y programas de ${order.order_id}.`,
-      execute: () => this.api.revalidateServiceOrder(order.order_id),
+      execute: () => this.ordersApi.revalidateServiceOrder(order.order_id),
       onSuccess: () => this.ui.activeModal.set(null),
     });
   }
@@ -741,7 +744,7 @@ export class OrdersFacade {
     this.ui.setPendingAction({
       title: this.closureReasonLabel(payload.closure_reason),
       message: `${this.closureReasonLabel(payload.closure_reason)} para ${order.order_id}.`,
-      execute: () => this.api.closeServiceOrder(order.order_id, payload),
+      execute: () => this.ordersApi.closeServiceOrder(order.order_id, payload),
       onSuccess: () => this.ui.activeModal.set(null),
     });
   }
@@ -844,7 +847,7 @@ export class OrdersFacade {
       title: 'Crear orden nueva',
       message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${packageDefinition.label.toLocaleLowerCase('es-PE')
         } por S/${reservationPrice}.`,
-      execute: () => this.api.createServiceOrder(payload),
+      execute: () => this.ordersApi.createServiceOrder(payload),
       onSuccess: () => {
         this.clearCreateOrderForm();
         this.ui.activeModal.set(null);
@@ -865,7 +868,7 @@ export class OrdersFacade {
         mode === 'appointment'
           ? `Abrir el panel de citas en un navegador independiente para ${order.order_id}.`
           : `Abrir el portal para consultar ${order.order_id}. El bot no cambiará el estado de la orden.`,
-      execute: () => this.api.openManualSession(order.order_id, mode),
+      execute: () => this.ordersApi.openManualSession(order.order_id, mode),
       onSuccess: (response) => {
         if (response.session_id) {
           this.activeManualSessionIds.add(response.session_id);
@@ -885,7 +888,7 @@ export class OrdersFacade {
       message:
         `Abrir el portal desde el inicio para ${order.order_id}. ` +
         'Se registraran campos y solicitudes de forma sanitizada; tu controlas el envio final.',
-      execute: () => this.api.openManualSession(order.order_id, 'diagnostic'),
+      execute: () => this.ordersApi.openManualSession(order.order_id, 'diagnostic'),
       onSuccess: (response) => {
         if (response.session_id) {
           this.activeManualSessionIds.add(response.session_id);
@@ -905,7 +908,7 @@ export class OrdersFacade {
     this.ui.actionBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const response = await this.api.openManualSession(order.order_id, mode);
+      const response = await this.ordersApi.openManualSession(order.order_id, mode);
       if (response.session_id) {
         this.activeManualSessionIds.add(response.session_id);
       }
@@ -935,7 +938,7 @@ export class OrdersFacade {
     });
     this.ui.errorMessage.set(null);
     try {
-      await this.api.closeManualSession(session.session_id);
+      await this.ordersApi.closeManualSession(session.session_id);
       this.activeManualSessionIds.delete(session.session_id);
       this.manualSessions.update((sessions) =>
         sessions.map((item) =>
@@ -1057,7 +1060,7 @@ export class OrdersFacade {
     this.orderDetailLoading.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const detail = await this.api.getServiceOrder(orderId);
+      const detail = await this.ordersApi.getServiceOrder(orderId);
       if (this.selectedOrderId() !== detail.order_id) {
         return;
       }
@@ -1192,7 +1195,7 @@ export class OrdersFacade {
         new Blob([body], { type: 'application/json' }),
       );
       if (!sent) {
-        void this.api.closeManualSession(sessionId).catch(() => undefined);
+        void this.ordersApi.closeManualSession(sessionId).catch(() => undefined);
       }
     }
     this.activeManualSessionIds.clear();
@@ -1205,8 +1208,8 @@ export class OrdersFacade {
 
   public fetchOrderCommonData(scope: RequestScope) {
     const currentCatalog = this.servicePackageCatalog();
-    const catalogRequest = currentCatalog ? Promise.resolve(currentCatalog) : this.api.getServicePackages(scope);
-    return Promise.all([this.api.getManualSessions(scope), catalogRequest]);
+    const catalogRequest = currentCatalog ? Promise.resolve(currentCatalog) : this.ordersApi.getServicePackages(scope);
+    return Promise.all([this.ordersApi.getManualSessions(scope), catalogRequest]);
   }
 
   public applyOrderCommonData(manualSessions: ManualSession[], catalog: ServicePackageCatalog): void {

@@ -1,4 +1,52 @@
-{
+import type {
+  CaptchaAuthorityControl,
+  CaptchaEventsPage,
+  CaptchaQuality,
+  CaptchaQualityCasesPage,
+  CaptchaSamplingControl,
+  CaptchaSummary,
+} from '../captchas/captchas.contracts';
+import type {
+  FinanceCategory,
+  FinanceDataQualitySummary,
+  FinanceEntry,
+  FinanceMonthClosure,
+  FinanceSummary,
+  MonthlySummaryV2,
+} from '../finance/finance.contracts';
+import type {
+  AppointmentReminderStatus,
+  PostAppointmentPayload,
+} from '../followups/followups.contracts';
+import type { WhatsAppMessageTemplatesResponse } from '../messages/messages.contracts';
+import type {
+  OperatorInboxPayload,
+  OpportunityBurstsResponse,
+  OpportunityControl,
+} from '../operations/operations.contracts';
+
+interface NavigationResponses {
+  '/api/v1/appointment-reminders': AppointmentReminderStatus;
+  '/api/v1/operator-inbox': OperatorInboxPayload;
+  '/api/v1/post-appointment-followups': PostAppointmentPayload;
+  '/api/v1/runtime-controls/opportunity': OpportunityControl;
+  '/api/v1/opportunity-bursts': OpportunityBurstsResponse;
+  '/api/v1/runtime-controls/captcha-sampling': CaptchaSamplingControl;
+  '/api/v1/runtime-controls/captcha-authority': CaptchaAuthorityControl;
+  '/api/v1/captcha-shadow/summary': CaptchaSummary;
+  '/api/v1/captcha-shadow/events': CaptchaEventsPage;
+  '/api/v1/captcha-shadow/quality': CaptchaQuality;
+  '/api/v1/captcha-shadow/quality/cases': CaptchaQualityCasesPage;
+  '/api/v2/monthly-summary': MonthlySummaryV2;
+  '/api/v1/finance/summary': FinanceSummary;
+  '/api/v1/finance/data-quality': FinanceDataQualitySummary;
+  '/api/v1/finance/month-closure': FinanceMonthClosure;
+  '/api/v1/finance/categories': { categories: FinanceCategory[] };
+  '/api/v1/finance/entries': { entries: FinanceEntry[] };
+  '/api/v1/whatsapp-message-templates': WhatsAppMessageTemplatesResponse;
+}
+
+const navigationResponses = {
   "/api/v1/appointment-reminders": {
     "service_date": "2026-09-08",
     "appointment_day": "",
@@ -484,6 +532,9 @@
     "entries": []
   },
   "/api/v1/whatsapp-message-templates": {
+    "status": "ok",
     "templates": []
   }
-}
+} satisfies NavigationResponses;
+
+export default navigationResponses;

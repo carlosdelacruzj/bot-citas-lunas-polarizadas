@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import domainResponses from './fixtures/domain-navigation.json';
+import domainResponses from '../src/app/api/testing/navigation.fixture';
 
 test('navigates locally and surfaces one controlled 409 without side effects', async ({ page }) => {
   let restartRequests = 0;

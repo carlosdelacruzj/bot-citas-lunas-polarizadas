@@ -1,7 +1,7 @@
 import { Injectable, Injector, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  AppointmentApiService,
+import { FinanceApiClient } from '../../api/finance/finance-api.client';
+import type {
   FinanceCategory,
   FinanceDataQuality,
   FinanceDataQualitySummary,
@@ -13,8 +13,10 @@ import {
   MetricPeriod,
   MonthlySummaryV2,
   PaymentResolutionType,
-  ServiceOrder,
-} from '../../appointment-api.service';
+} from '../../api/finance/finance.contracts';
+import type { ServiceOrder } from '../../api/orders/orders.contracts';
+import type { FinanceClosureStatus } from '../../api/states/states.contracts';
+
 import { INITIAL_DATE, INITIAL_MONTH } from '../../dashboard-domain.contracts';
 import {
   DASHBOARD_FINANCE_NAVIGATION,
@@ -28,7 +30,7 @@ import { buildPaymentPayload } from '../../sensitive-form-payloads';
 @Injectable()
 export class FinanceFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly financeApi = inject(FinanceApiClient);
   private readonly router = inject(Router);
 
   public readonly selectedMonth = signal(INITIAL_MONTH);
@@ -110,14 +112,14 @@ export class FinanceFacade {
     this.ui.errorMessage.set(null);
     try {
       if (view === 'summary') {
-        this.monthlySummary.set(await this.api.getMonthlySummaryV2(month));
+        this.monthlySummary.set(await this.financeApi.getMonthlySummaryV2(month));
       } else {
         const [entries, financeSummary, financeQuality, financeMonthClosure, monthlySummary] = await Promise.all([
-          this.api.getFinanceEntries(month),
-          this.api.getFinanceSummary(month),
-          this.api.getFinanceDataQuality(month),
-          this.api.getFinanceMonthClosure(month),
-          this.api.getMonthlySummaryV2(month),
+          this.financeApi.getFinanceEntries(month),
+          this.financeApi.getFinanceSummary(month),
+          this.financeApi.getFinanceDataQuality(month),
+          this.financeApi.getFinanceMonthClosure(month),
+          this.financeApi.getMonthlySummaryV2(month),
         ]);
         this.financeEntries.set(entries);
         this.financeSummary.set(financeSummary);
@@ -191,8 +193,8 @@ export class FinanceFacade {
         : `Registrar ${payload.description} por ${payload.amount_original} ${payload.currency}.`,
       execute: () =>
         entryId
-          ? this.api.updateFinanceEntry(entryId, payload)
-          : this.api.createFinanceEntry(payload),
+          ? this.financeApi.updateFinanceEntry(entryId, payload)
+          : this.financeApi.createFinanceEntry(payload),
       onSuccess: () => {
         this.ui.activeModal.set(null);
         this.clearFinanceForm();
@@ -221,7 +223,7 @@ export class FinanceFacade {
       }
       this.ui.actionBusy.set(true);
       try {
-        await this.api.voidFinanceEntry(entry.entry_id, String(result.value).trim());
+        await this.financeApi.voidFinanceEntry(entry.entry_id, String(result.value).trim());
         await this.navigation.refreshAll();
         this.ui.showToast('Movimiento anulado');
       } catch (error) {
@@ -272,7 +274,7 @@ export class FinanceFacade {
       title: 'Conciliar diferencia de pago',
       message: `Registrar ${this.financeResolutionLabel(resolution).toLowerCase()} como causa explícita. El importe original no se reescribe.`,
       execute: () =>
-        this.api.reconcileFinancePaymentAmount(paymentId, {
+        this.financeApi.reconcileFinancePaymentAmount(paymentId, {
           resolution_type: resolution,
           reason,
         }),
@@ -289,7 +291,7 @@ export class FinanceFacade {
     }[resolution];
   }
 
-  public requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
+  public requestSaveFinanceMonthClosure(status: FinanceClosureStatus): void {
     const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
     const closing = String(this.financeClosureClosingBalance() ?? '').trim();
     if (status === 'reconciled' && (!opening || !closing)) {
@@ -303,7 +305,7 @@ export class FinanceFacade {
           ? 'El cierre solo se guardará si no quedan movimientos pendientes, conversiones faltantes ni diferencias de pago sin conciliar.'
           : 'Se guardarán los saldos y notas sin declarar el mes conciliado.',
       execute: () =>
-        this.api.saveFinanceMonthClosure({
+        this.financeApi.saveFinanceMonthClosure({
           month: this.selectedMonth(),
           opening_prepaid_balance: opening || null,
           closing_prepaid_balance: closing || null,
@@ -447,8 +449,8 @@ export class FinanceFacade {
         ? `Guardar total acumulado de S/${payload.amount_paid} para ${order.order_id}. El saldo seguirá pendiente.`
         : `Cerrar como pagado con S/${payload.amount_paid} para ${order.order_id} e iniciar el postpago.`,
       execute: () => isPartial
-        ? this.api.recordPartialPayment(order.order_id, payload)
-        : this.api.markPaymentPaid(order.order_id, payload),
+        ? this.financeApi.recordPartialPayment(order.order_id, payload)
+        : this.financeApi.markPaymentPaid(order.order_id, payload),
       successMessage: isPartial
         ? 'Abono registrado; el saldo permanece pendiente'
         : 'Pago completo registrado; envío automático en proceso',
@@ -559,7 +561,7 @@ export class FinanceFacade {
   public async loadFinanceView(scope: RequestScope): Promise<void> {
     const categoriesRequest = this.financeCategories().length
       ? Promise.resolve(this.financeCategories())
-      : this.api.getFinanceCategories(scope);
+      : this.financeApi.getFinanceCategories(scope);
     const [
       financeCategories,
       financeEntries,
@@ -569,11 +571,11 @@ export class FinanceFacade {
       monthlySummary,
     ] = await Promise.all([
       categoriesRequest,
-      this.api.getFinanceEntries(this.selectedMonth(), scope),
-      this.api.getFinanceSummary(this.selectedMonth(), scope),
-      this.api.getFinanceDataQuality(this.selectedMonth(), scope),
-      this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
-      this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
+      this.financeApi.getFinanceEntries(this.selectedMonth(), scope),
+      this.financeApi.getFinanceSummary(this.selectedMonth(), scope),
+      this.financeApi.getFinanceDataQuality(this.selectedMonth(), scope),
+      this.financeApi.getFinanceMonthClosure(this.selectedMonth(), scope),
+      this.financeApi.getMonthlySummaryV2(this.selectedMonth(), scope),
     ]);
     this.financeCategories.set(financeCategories);
     this.financeEntries.set(financeEntries);
@@ -584,7 +586,7 @@ export class FinanceFacade {
     return;
   }
 
-  public fetchMonthlySummary(scope: RequestScope) { return this.api.getMonthlySummaryV2(this.selectedMonth(), scope); }
+  public fetchMonthlySummary(scope: RequestScope) { return this.financeApi.getMonthlySummaryV2(this.selectedMonth(), scope); }
 
   private get navigation() { return this.injector.get(DASHBOARD_FINANCE_NAVIGATION); }
 

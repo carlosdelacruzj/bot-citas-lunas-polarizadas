@@ -1,15 +1,15 @@
 import { Injectable, Injector, inject, signal } from '@angular/core';
-import {
-  AppointmentApiService,
-  ServiceOrder,
-  ServiceOrderDetail,
+import { MessagesApiClient } from '../../api/messages/messages-api.client';
+import type {
   WhatsAppFollowUpPackage,
   WhatsAppMessagePackage,
   WhatsAppMessageTemplate,
   WhatsAppReviewPayload,
   WhatsAppReviewResolution,
   WhatsAppWebDraftResponse,
-} from '../../appointment-api.service';
+} from '../../api/messages/messages.contracts';
+import type { ServiceOrder, ServiceOrderDetail } from '../../api/orders/orders.contracts';
+
 import {
   DASHBOARD_MESSAGES_NAVIGATION,
   DASHBOARD_MESSAGES_ORDERS,
@@ -21,7 +21,7 @@ import { RequestScope } from '../../request-cancellation';
 @Injectable()
 export class MessagesFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly messagesApi = inject(MessagesApiClient);
 
   public readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
 
@@ -90,8 +90,8 @@ export class MessagesFacade {
     this.whatsappSessionBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        const response = await this.api.validateWhatsAppWebSession();
+      for (let attempt = 0;attempt < 3;attempt += 1) {
+        const response = await this.messagesApi.validateWhatsAppWebSession();
         if (response.status === 'session_ready') {
           this.whatsappSessionState.set('ready');
           this.ui.showToast('WhatsApp vinculado y listo');
@@ -156,13 +156,13 @@ export class MessagesFacade {
     }
     if (this.whatsappFollowUpMode()) {
       await this.loadWhatsAppFollowUpPackage(() =>
-        this.api.prepareWhatsAppFollowUpTest(recipient),
+        this.messagesApi.prepareWhatsAppFollowUpTest(recipient),
       );
       this.whatsappManualFallbackOpen.set(false);
       this.ui.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
       return;
     }
-    await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
+    await this.loadWhatsAppPackage(() => this.messagesApi.prepareWhatsAppTest(recipient));
     this.whatsappManualFallbackOpen.set(false);
     this.ui.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
@@ -179,7 +179,7 @@ export class MessagesFacade {
     this.ui.openModal('whatsapp');
     try {
       await this.loadWhatsAppPackage(() =>
-        this.api.prepareOrderWhatsApp(order.order_id, allowResend),
+        this.messagesApi.prepareOrderWhatsApp(order.order_id, allowResend),
       );
       this.whatsappManualFallbackOpen.set(false);
       this.ui.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
@@ -212,7 +212,7 @@ export class MessagesFacade {
     this.ui.openModal('whatsapp');
     try {
       const message = await this.loadWhatsAppFollowUpPackage(() =>
-        this.api.preparePostPaymentWhatsApp(order.order_id, allowResend),
+        this.messagesApi.preparePostPaymentWhatsApp(order.order_id, allowResend),
       );
       await this.prepareWhatsAppFollowUpWebDraft(message);
     } catch {
@@ -249,7 +249,7 @@ export class MessagesFacade {
     this.whatsappFollowUpLoading.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const review = await this.api.getWhatsAppReview(
+      const review = await this.messagesApi.getWhatsAppReview(
         order.order_id,
         isFollowUp ? 'whatsapp-followup' : 'whatsapp',
       );
@@ -301,7 +301,7 @@ export class MessagesFacade {
     }
     this.ui.actionBusy.set(true);
     try {
-      await this.api.resolveWhatsAppReview(review.job.job_key, resolution, note || null);
+      await this.messagesApi.resolveWhatsAppReview(review.job.job_key, resolution, note || null);
       await this.navigation.refreshAll();
       this.ui.actionBusy.set(false);
       this.ui.closeModal();
@@ -420,7 +420,7 @@ export class MessagesFacade {
       return;
     }
     try {
-      const blob = await this.api.getWhatsAppAttachment(message.attachment_url);
+      const blob = await this.messagesApi.getWhatsAppAttachment(message.attachment_url);
       const png = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
       this.ui.markCopied('constancia');
@@ -443,7 +443,7 @@ export class MessagesFacade {
     this.whatsappWebBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      let response = await this.api.prepareWhatsAppWebDraft(
+      let response = await this.messagesApi.prepareWhatsAppWebDraft(
         message.message_id,
         'album',
         autoSend,
@@ -451,7 +451,7 @@ export class MessagesFacade {
       if (response.status === 'login_required') {
         const sessionReady = await this.validateWhatsAppSession();
         if (sessionReady) {
-          response = await this.api.prepareWhatsAppWebDraft(
+          response = await this.messagesApi.prepareWhatsAppWebDraft(
             message.message_id,
             'album',
             autoSend,
@@ -513,11 +513,11 @@ export class MessagesFacade {
     this.whatsappWebBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      let response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+      let response = await this.messagesApi.prepareWhatsAppFollowUpWebDraft(message.message_id);
       if (response.status === 'login_required') {
         const sessionReady = await this.validateWhatsAppSession();
         if (sessionReady) {
-          response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
+          response = await this.messagesApi.prepareWhatsAppFollowUpWebDraft(message.message_id);
         }
       }
       this.whatsappWebResult.set(response);
@@ -589,7 +589,7 @@ export class MessagesFacade {
     }
     this.ui.actionBusy.set(true);
     try {
-      const response = await this.api.markWhatsAppSent(message.message_id);
+      const response = await this.messagesApi.markWhatsAppSent(message.message_id);
       this.whatsappPackage.set({
         ...message,
         status: 'sent',
@@ -622,7 +622,7 @@ export class MessagesFacade {
     }
     this.ui.actionBusy.set(true);
     try {
-      const response = await this.api.markWhatsAppFollowUpSent(message.message_id);
+      const response = await this.messagesApi.markWhatsAppFollowUpSent(message.message_id);
       this.whatsappFollowUpPackage.set({
         ...message,
         status: 'sent',
@@ -672,7 +672,7 @@ export class MessagesFacade {
   }
 
   public async loadMessagesView(scope: RequestScope): Promise<void> {
-    this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
+    this.whatsappMessageTemplates.set(await this.messagesApi.getWhatsAppMessageTemplates(scope));
     return;
   }
 

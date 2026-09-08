@@ -1,11 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import {
-  AppointmentApiService,
-  WhatsAppMessageTemplate,
-  apiErrorMessage,
-} from '../../appointment-api.service';
+import { MessagesApiClient } from '../../api/messages/messages-api.client';
+import type { WhatsAppMessageTemplate } from '../../api/messages/messages.contracts';
+import { apiErrorMessage } from '../../api/shared/api-error';
+
 import {
   DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES,
   DASHBOARD_MESSAGE_TEMPLATES_VIEW_PRESENTATION,
@@ -21,7 +20,7 @@ export class MessageTemplateEditorFacade {
 
   public readonly presentationDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_PRESENTATION);
 
-  private readonly api = inject(AppointmentApiService);
+  private readonly messagesApi = inject(MessagesApiClient);
 
   private readonly route = inject(ActivatedRoute);
 
@@ -162,7 +161,7 @@ export class MessageTemplateEditorFacade {
     this.saveError.set(null);
     this.saveSuccess.set(null);
     try {
-      const updated = await this.api.updateWhatsAppMessageTemplate(
+      const updated = await this.messagesApi.updateWhatsAppMessageTemplate(
         template.template_key,
         this.draft(),
         template.revision,
@@ -258,7 +257,7 @@ export class MessageTemplateEditorFacade {
     this.previewState.set('loading');
     this.previewError.set(null);
     try {
-      const response = await this.api.previewWhatsAppMessageTemplate(
+      const response = await this.messagesApi.previewWhatsAppMessageTemplate(
         template.template_key,
         this.draft(),
       );

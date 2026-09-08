@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AppointmentApiService, type ServiceOrder } from '../../appointment-api.service';
-import type { RequestScope } from '../../request-cancellation';
-import { peruDateTimeSortValue } from '../../peru-date-time';
+import { OrdersApiClient } from '../../api/orders/orders-api.client';
+import type { ServiceOrder } from '../../api/orders/orders.contracts';
+
 import { paginationWindow } from '../../pagination';
+import { peruDateTimeSortValue } from '../../peru-date-time';
+import type { RequestScope } from '../../request-cancellation';
 
 export type OrdersListView = Omit<
   OrdersListFacade,
@@ -124,7 +126,7 @@ function compareOptionalTimestamps(
 
 @Injectable()
 export class OrdersListFacade {
-  private readonly api = inject(AppointmentApiService);
+  private readonly ordersApi = inject(OrdersApiClient);
   private readonly initialViewState = readOrderViewState();
   private readonly orderFilterState = signal(readOrderSearch());
   public readonly orderFilter = this.orderFilterState.asReadonly();
@@ -461,7 +463,7 @@ export class OrdersListFacade {
   }
 
   public fetchOrders(scope: RequestScope): Promise<ServiceOrder[]> {
-    return this.api.getServiceOrders(scope);
+    return this.ordersApi.getServiceOrders(scope);
   }
 
   public includeOrder(order: ServiceOrder): void {

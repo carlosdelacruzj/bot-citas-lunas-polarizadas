@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { apiErrorMessage } from '../../appointment-api.service';
+import { apiErrorMessage } from '../../api/shared/api-error';
+
 import { STATUS_PRESENTATIONS, StatusTone } from '../../dashboard-domain.contracts';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from '../../peru-date-time';
 

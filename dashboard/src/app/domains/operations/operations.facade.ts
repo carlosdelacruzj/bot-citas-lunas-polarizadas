@@ -1,7 +1,7 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  AppointmentApiService,
+import { OperationsApiClient } from '../../api/operations/operations-api.client';
+import type {
   HealthPayload,
   OperatorInboxPayload,
   OperatorInboxTask,
@@ -11,11 +11,12 @@ import {
   OpportunityControlTarget,
   RunDetail,
   RunSummary,
-  ServiceOrder,
-  ServiceOrderDetail,
   WorkerCommand,
   WorkerStatus,
-} from '../../appointment-api.service';
+} from '../../api/operations/operations.contracts';
+import { OrdersApiClient } from '../../api/orders/orders-api.client';
+import type { ServiceOrder, ServiceOrderDetail } from '../../api/orders/orders.contracts';
+
 import {
   DashboardSnapshotHealth,
   DashboardSnapshotOrder,
@@ -43,7 +44,8 @@ import { RequestScope } from '../../request-cancellation';
 @Injectable()
 export class OperationsFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly ordersApi = inject(OrdersApiClient);
+  private readonly operationsApi = inject(OperationsApiClient);
   private readonly router = inject(Router);
   public readonly orderList = inject(OrdersListFacade);
   public readonly runStatusFilter = signal('');
@@ -216,7 +218,7 @@ export class OperationsFacade {
     this.ui.actionBusy.set(true);
     this.ui.errorMessage.set(null);
     try {
-      const order = await this.api.getServiceOrder(orderId);
+      const order = await this.ordersApi.getServiceOrder(orderId);
       this.orderList.includeOrder(order);
       return order;
     } catch (error) {
@@ -250,7 +252,7 @@ export class OperationsFacade {
       void this.router.navigate(['/actividad', runId]);
     }
     try {
-      const run = await this.api.getRun(runId);
+      const run = await this.operationsApi.getRun(runId);
       if (this.selectedRunId() !== run.run_id) {
         return;
       }
@@ -497,7 +499,7 @@ export class OperationsFacade {
     this.ui.setPendingAction({
       ...selection,
       execute: async () => {
-        const updated = await this.api.updateOpportunityControl({
+        const updated = await this.operationsApi.updateOpportunityControl({
           action,
           target,
           reason: `dashboard_${action}`,
@@ -520,7 +522,7 @@ export class OperationsFacade {
       message: releaseSafeBackoffs
         ? 'Reiniciar el worker y quitar solo los backoffs técnicos que no llegaron a intentar una reserva.'
         : 'Solicitar reinicio controlado del worker conservando todos los backoffs.',
-      execute: () => this.api.restartWorker(releaseSafeBackoffs),
+      execute: () => this.operationsApi.restartWorker(releaseSafeBackoffs),
       successMessage: (response) => {
         if (!releaseSafeBackoffs) {
           return 'Reinicio controlado solicitado';
@@ -540,7 +542,7 @@ export class OperationsFacade {
       message: paused
         ? 'El worker volverá a admitir revisiones y reservas. Los backoffs y estados protegidos se conservan.'
         : 'El worker dejará de admitir trabajo nuevo cuando llegue a un punto seguro. No corta una reserva en curso ni borra mediciones.',
-      execute: () => (paused ? this.api.resumeWorker() : this.api.pauseWorker()),
+      execute: () => (paused ? this.operationsApi.resumeWorker() : this.operationsApi.pauseWorker()),
       successMessage: paused
         ? 'Reactivación solicitada; el worker la confirmará al aplicarla'
         : 'Pausa solicitada; el worker se detendrá en un punto seguro',
@@ -549,7 +551,7 @@ export class OperationsFacade {
 
   public async copyDashboardSnapshot(): Promise<void> {
     try {
-      const workerCommands = await this.api.getWorkerCommands();
+      const workerCommands = await this.operationsApi.getWorkerCommands();
       this.workerCommands.set(workerCommands);
       const snapshot = {
         snapshot_version: 1,
@@ -672,7 +674,7 @@ export class OperationsFacade {
   }
 
   public async loadInboxView(scope: RequestScope): Promise<void> {
-    const inboxRequest = this.api.getOperatorInbox(scope);
+    const inboxRequest = this.operationsApi.getOperatorInbox(scope);
     if (!this.captchas.captchaShadowEnabled()) {
       this.operatorInbox.set(await inboxRequest);
       this.captchas.captchaReviewTotal.set(0);
@@ -702,14 +704,14 @@ export class OperationsFacade {
       workerCommands,
     ] = await Promise.all([
       this.orderList.fetchOrders(scope),
-      this.api.getRuns(scope),
+      this.operationsApi.getRuns(scope),
       this.finance.fetchMonthlySummary(scope),
       this.captchas.fetchCaptchaSamplingControl(scope),
       this.captchas.fetchCaptchaAuthorityControl(scope),
-      this.api.getOpportunityControl(scope),
-      this.api.getOpportunityBursts(scope),
+      this.operationsApi.getOpportunityControl(scope),
+      this.operationsApi.getOpportunityBursts(scope),
       this.followups.fetchReminderStatus(scope),
-      this.api.getWorkerCommands(scope),
+      this.operationsApi.getWorkerCommands(scope),
     ]);
     this.orders.applyOrders(orders);
     this.runs.set(runs);
@@ -725,8 +727,8 @@ export class OperationsFacade {
 
   public async loadRunsView(scope: RequestScope): Promise<void> {
     const [runs, workerCommands] = await Promise.all([
-      this.api.getRuns(scope),
-      this.api.getWorkerCommands(scope),
+      this.operationsApi.getRuns(scope),
+      this.operationsApi.getWorkerCommands(scope),
     ]);
     this.runs.set(runs);
     this.workerCommands.set(workerCommands);
@@ -734,7 +736,7 @@ export class OperationsFacade {
   }
 
   public fetchOperationalHealth(scope: RequestScope) {
-    return Promise.all([this.api.getHealth(scope), this.api.getWorker(scope)]);
+    return Promise.all([this.operationsApi.getHealth(scope), this.operationsApi.getWorker(scope)]);
   }
 
   public applyOperationalHealth(health: HealthPayload, worker: WorkerStatus): void {

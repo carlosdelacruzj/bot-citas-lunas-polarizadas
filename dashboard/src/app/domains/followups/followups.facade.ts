@@ -1,11 +1,12 @@
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
-import {
-  AppointmentApiService,
+import { FollowupsApiClient } from '../../api/followups/followups-api.client';
+import type {
   AppointmentReminderStatus,
   PostAppointmentFollowup,
   PostAppointmentPayload,
   PostAppointmentQuery,
-} from '../../appointment-api.service';
+} from '../../api/followups/followups.contracts';
+
 import {
   POST_APPOINTMENT_PAGE_SIZES,
   PostAppointmentFilter,
@@ -24,7 +25,7 @@ import { RequestScope, isRequestCancelled } from '../../request-cancellation';
 @Injectable()
 export class FollowupsFacade {
   private readonly injector = inject(Injector);
-  private readonly api = inject(AppointmentApiService);
+  private readonly followupsApi = inject(FollowupsApiClient);
 
   private postAppointmentSearchTimer: number | null = null;
 
@@ -194,11 +195,11 @@ export class FollowupsFacade {
     });
     this.ui.errorMessage.set(null);
     try {
-      await this.api.reviewPostAppointment(item.order_id);
-      let payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
+      await this.followupsApi.reviewPostAppointment(item.order_id);
+      let payload = await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(false));
       if (payload.items.length === 0 && this.postAppointmentPage() > 1) {
         this.postAppointmentPage.update((page) => page - 1);
-        payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
+        payload = await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(false));
       }
       this.setPostAppointmentPayload(payload);
       this.navigation.lastUpdatedAt.set(this.presentation.formatClock(new Date()));
@@ -299,7 +300,7 @@ export class FollowupsFacade {
     const scope = new RequestScope();
     this.postAppointmentRequestScope = scope;
     try {
-      const payload = await this.api.getPostAppointmentFollowups(
+      const payload = await this.followupsApi.getPostAppointmentFollowups(
         this.postAppointmentQuery(false),
         scope,
       );
@@ -335,7 +336,7 @@ export class FollowupsFacade {
 
   public async loadFollowupsView(scope: RequestScope): Promise<void> {
     this.setPostAppointmentPayload(
-      await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
+      await this.followupsApi.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
     );
     return;
   }
@@ -345,7 +346,7 @@ export class FollowupsFacade {
     this.postAppointmentRequestScope?.cancel();
   }
 
-  public fetchReminderStatus(scope: RequestScope) { return this.api.getAppointmentReminders(scope); }
+  public fetchReminderStatus(scope: RequestScope) { return this.followupsApi.getAppointmentReminders(scope); }
 
   private get ui() { return this.injector.get(DASHBOARD_FOLLOWUPS_UI); }
 

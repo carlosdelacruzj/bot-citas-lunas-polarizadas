@@ -1,13 +1,13 @@
-import {
-  ApiActionResponse,
-  CaptchaQualityCaseType,
+import type { CaptchaQualityCaseType } from './api/captchas/captchas.contracts';
+import type {
   HealthPayload,
   OperatorInboxTask,
   RunSummary,
-  ServiceOrder,
   WorkerCommand,
   WorkerStatus,
-} from './appointment-api.service';
+} from './api/operations/operations.contracts';
+import type { ServiceOrder } from './api/orders/orders.contracts';
+import type { ApiActionResponse } from './api/shared/shared.contracts';
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -43,12 +43,12 @@ export const CAPTCHA_QUALITY_CASE_FILTERS: Array<{
   value: CaptchaQualityCaseType;
   label: string;
 }> = [
-  { value: 'wrong', label: 'Errores' },
-  { value: 'high_confidence_wrong', label: 'Error con confianza alta' },
-  { value: 'majority_wrong', label: 'Mayoría incorrecta' },
-  { value: 'unanimous_wrong', label: 'Consenso incorrecto' },
-  { value: 'disagreement', label: 'Desacuerdos' },
-];
+    { value: 'wrong', label: 'Errores' },
+    { value: 'high_confidence_wrong', label: 'Error con confianza alta' },
+    { value: 'majority_wrong', label: 'Mayoría incorrecta' },
+    { value: 'unanimous_wrong', label: 'Consenso incorrecto' },
+    { value: 'disagreement', label: 'Desacuerdos' },
+  ];
 
 export type ModalKind =
   | 'edit-order'
@@ -154,13 +154,13 @@ export type PendingAction = {
 
 export type OrderNextAction = {
   key:
-    | 'manual-session'
-    | 'activate'
-    | 'payment'
-    | 'post-payment-whatsapp'
-    | 'program-resolution'
-    | 'review'
-    | 'none';
+  | 'manual-session'
+  | 'activate'
+  | 'payment'
+  | 'post-payment-whatsapp'
+  | 'program-resolution'
+  | 'review'
+  | 'none';
   label: string;
   description: string;
   disabled: boolean;

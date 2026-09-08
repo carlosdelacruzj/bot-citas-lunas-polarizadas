@@ -1,3 +1,4 @@
+import type { ServiceType } from '../api/states/states.contracts';
 import { ExcludedDateRange } from '../reservation-rules.model';
 import { ServicePackageKey } from '../service-package.model';
 
@@ -33,7 +34,7 @@ export interface ProgramResolutionChildDraft {
 export interface ProgramResolutionOrderTerms {
   reservation_price: string;
   charge_required: boolean;
-  service_type: 'standard' | 'selected_weekday' | 'custom';
+  service_type: ServiceType;
   service_package: ServicePackageKey;
   minimum_reservation_date: string | null;
   maximum_reservation_date: string | null;

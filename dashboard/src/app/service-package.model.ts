@@ -1,3 +1,4 @@
+import type { ServiceType } from './api/states/states.contracts';
 export type ServicePackageKey = 'standard' | 'restricted' | 'integral' | 'custom';
 
 export interface ServicePackageDefinition {
@@ -9,8 +10,8 @@ export interface ServicePackageDefinition {
   balance_amount: string | null;
   management_fee_amount: string | null;
   fixed_price: boolean;
-  default_service_type: 'standard' | 'selected_weekday' | 'custom';
-  compatible_service_types: Array<'standard' | 'selected_weekday' | 'custom'>;
+  default_service_type: ServiceType;
+  compatible_service_types: Array<ServiceType>;
   requires_restrictions: boolean;
 }
 
