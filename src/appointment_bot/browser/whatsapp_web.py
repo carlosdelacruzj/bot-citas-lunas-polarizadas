@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import base64
-import logging
 import queue
 import re
 import threading
 import time
-import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -14,27 +11,117 @@ from typing import Any
 from playwright.sync_api import BrowserContext, Page, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 
-logger = logging.getLogger(__name__)
+from appointment_bot.browser.whatsapp.common import (
+    CHAT_READY_TIMEOUT_SECONDS as CHAT_READY_TIMEOUT_SECONDS,
+)
+from appointment_bot.browser.whatsapp.common import (
+    COMMAND_TIMEOUT_SECONDS as COMMAND_TIMEOUT_SECONDS,
+)
+from appointment_bot.browser.whatsapp.common import (
+    DAILY_SUMMARY_IMAGE_BATCH_SIZE as DAILY_SUMMARY_IMAGE_BATCH_SIZE,
+)
+from appointment_bot.browser.whatsapp.common import (
+    PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS as PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS,
+)
+from appointment_bot.browser.whatsapp.common import (
+    PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS as PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS,
+)
+from appointment_bot.browser.whatsapp.common import PROFILE_DIR as PROFILE_DIR
+from appointment_bot.browser.whatsapp.common import WhatsAppSendUncertain as WhatsAppSendUncertain
+from appointment_bot.browser.whatsapp.common import (
+    _AttachmentBeforeFileSelectionError as _AttachmentBeforeFileSelectionError,
+)
+from appointment_bot.browser.whatsapp.common import _result as _result
+from appointment_bot.browser.whatsapp.common import logger as logger
+from appointment_bot.browser.whatsapp.confirmation import (
+    _message_container_has_confirmed_status as _message_container_has_confirmed_status,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _message_container_has_large_image as _message_container_has_large_image,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _message_container_has_pending_status as _message_container_has_pending_status,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _message_container_is_outgoing as _message_container_is_outgoing,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _message_container_signature as _message_container_signature,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _outgoing_image_message_records as _outgoing_image_message_records,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _outgoing_message_signatures as _outgoing_message_signatures,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _plain_text_send_is_confirmed as _plain_text_send_is_confirmed,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _wait_until_outgoing_images_uploaded as _wait_until_outgoing_images_uploaded,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _wait_until_plain_text_send_finishes as _wait_until_plain_text_send_finishes,
+)
+from appointment_bot.browser.whatsapp.confirmation import (
+    _wait_until_send_attempt_finishes as _wait_until_send_attempt_finishes,
+)
+from appointment_bot.browser.whatsapp.dom import _album_control_summary as _album_control_summary
+from appointment_bot.browser.whatsapp.dom import _album_thumbnails as _album_thumbnails
+from appointment_bot.browser.whatsapp.dom import (
+    _attachment_control_summary as _attachment_control_summary,
+)
+from appointment_bot.browser.whatsapp.dom import (
+    _attachment_menu_summary as _attachment_menu_summary,
+)
+from appointment_bot.browser.whatsapp.dom import (
+    _attachment_menu_visible as _attachment_menu_visible,
+)
+from appointment_bot.browser.whatsapp.dom import (
+    _attachment_option_container as _attachment_option_container,
+)
+from appointment_bot.browser.whatsapp.dom import (
+    _attachment_preview_visible as _attachment_preview_visible,
+)
+from appointment_bot.browser.whatsapp.dom import _caption_editor as _caption_editor
+from appointment_bot.browser.whatsapp.dom import _caption_editor_summary as _caption_editor_summary
+from appointment_bot.browser.whatsapp.dom import (
+    _compact_alphanumeric_text as _compact_alphanumeric_text,
+)
+from appointment_bot.browser.whatsapp.dom import _document_file_input as _document_file_input
+from appointment_bot.browser.whatsapp.dom import (
+    _document_preview_visible as _document_preview_visible,
+)
+from appointment_bot.browser.whatsapp.dom import _file_input_summary as _file_input_summary
+from appointment_bot.browser.whatsapp.dom import (
+    _file_input_summary_from as _file_input_summary_from,
+)
+from appointment_bot.browser.whatsapp.dom import _image_file_input as _image_file_input
+from appointment_bot.browser.whatsapp.dom import (
+    _locator_has_visible_match as _locator_has_visible_match,
+)
+from appointment_bot.browser.whatsapp.dom import (
+    _normal_chat_composer_visible as _normal_chat_composer_visible,
+)
+from appointment_bot.browser.whatsapp.dom import _plain_text_ready as _plain_text_ready
+from appointment_bot.browser.whatsapp.dom import _safe_get_attribute as _safe_get_attribute
+from appointment_bot.browser.whatsapp.dom import _safe_text_content as _safe_text_content
+from appointment_bot.browser.whatsapp.dom import _same_editor_text as _same_editor_text
+from appointment_bot.browser.whatsapp.dom import _visible as _visible
+from appointment_bot.browser.whatsapp.evidence import (
+    _safe_whatsapp_artifact_name as _safe_whatsapp_artifact_name,
+)
+from appointment_bot.browser.whatsapp.evidence import (
+    _save_context_failure_screenshot as _save_context_failure_screenshot,
+)
+from appointment_bot.browser.whatsapp.evidence import (
+    _save_whatsapp_debug_screenshot as _save_whatsapp_debug_screenshot,
+)
+from appointment_bot.browser.whatsapp.evidence import (
+    _whatsapp_qr_image_data_url as _whatsapp_qr_image_data_url,
+)
 
-PROFILE_DIR = Path(".runtime/whatsapp-web-profile")
-COMMAND_TIMEOUT_SECONDS = 180
-CHAT_READY_TIMEOUT_SECONDS = 20
 _HEADLESS_WHATSAPP_USER_AGENT: str | None = None
-
-
-class WhatsAppSendUncertain(RuntimeError):
-    def __init__(self, message: str, *, evidence_path: str | None = None) -> None:
-        super().__init__(message)
-        self.evidence_path = evidence_path
-
-
-class _AttachmentBeforeFileSelectionError(RuntimeError):
-    pass
-
-
-DAILY_SUMMARY_IMAGE_BATCH_SIZE = 4
-PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS = 30
-PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS = 3
 
 
 @dataclass
@@ -693,19 +780,6 @@ def _whatsapp_session_ready(page: Page) -> bool:
     )
 
 
-def _album_thumbnails(page: Page) -> list[Any]:
-    controls = page.locator("[role='button']:has(img):has([data-icon='x-alt'])")
-    thumbnails: list[Any] = []
-    for index in range(controls.count()):
-        control = controls.nth(index)
-        if not control.is_visible():
-            continue
-        box = control.bounding_box()
-        if box and 48 <= box["width"] <= 96 and 48 <= box["height"] <= 96:
-            thumbnails.append(control)
-    return thumbnails
-
-
 def _send_album(
     page: Page,
     *,
@@ -760,66 +834,6 @@ def _send_album(
         "WhatsApp no confirmo el envio del album; las miniaturas continuaron visibles.",
         evidence_path=evidence_path,
     )
-
-
-def _wait_until_outgoing_images_uploaded(
-    page: Page,
-    *,
-    initial_signatures: set[str],
-    expected_count: int,
-) -> bool:
-    deadline = time.monotonic() + 60
-    while time.monotonic() < deadline:
-        new_records = [
-            (signature, state)
-            for signature, state in _outgoing_image_message_records(page)
-            if signature not in initial_signatures
-        ]
-        if len(new_records) < expected_count:
-            page.wait_for_timeout(500)
-            continue
-        batch_states = [state for _signature, state in new_records[-expected_count:]]
-        if all(state == "confirmed" for state in batch_states):
-            page.wait_for_timeout(1_000)
-            return True
-        page.wait_for_timeout(500)
-    return False
-
-
-def _outgoing_image_message_records(page: Page) -> list[tuple[str, str]]:
-    messages = page.locator("div.message-out")
-    require_marker = False
-    if not messages.count():
-        messages = page.locator("[data-testid='msg-container']")
-        require_marker = True
-
-    records: list[tuple[str, str]] = []
-    for index in range(messages.count()):
-        message = messages.nth(index)
-        if require_marker and not _message_container_is_outgoing(message):
-            continue
-        if not _message_container_has_large_image(message):
-            continue
-        if _message_container_has_pending_status(message):
-            state = "pending"
-        elif _message_container_has_confirmed_status(message):
-            state = "confirmed"
-        else:
-            state = "unknown"
-        records.append((_message_container_signature(message), state))
-    return records
-
-
-def _message_container_has_large_image(message) -> bool:
-    images = message.locator("img")
-    for index in range(images.count()):
-        image = images.nth(index)
-        if not image.is_visible():
-            continue
-        box = image.bounding_box()
-        if box and box["width"] >= 100 and box["height"] >= 100:
-            return True
-    return False
 
 
 def _send_daily_slot_summary(
@@ -1077,35 +1091,6 @@ def _fill_selected_album_caption(page: Page, caption: str) -> None:
                 return
         page.wait_for_timeout(300)
     raise RuntimeError("No se pudo escribir la descripcion de una imagen del album.")
-
-
-def _album_control_summary(page: Page) -> list[dict[str, object]]:
-    controls = page.locator("button, [role='button']")
-    viewport = page.viewport_size or {"width": 0, "height": 0}
-    summary: list[dict[str, object]] = []
-    for index in range(min(controls.count(), 160)):
-        control = controls.nth(index)
-        if not control.is_visible():
-            continue
-        box = control.bounding_box()
-        if box is None or box["y"] < viewport["height"] * 0.55:
-            continue
-        summary.append(
-            {
-                "index": index,
-                "aria_label": control.get_attribute("aria-label"),
-                "title": control.get_attribute("title"),
-                "data_testid": control.get_attribute("data-testid"),
-                "box": {key: round(value) for key, value in box.items()},
-                "images": control.locator("img").count(),
-                "canvases": control.locator("canvas").count(),
-                "icons": [
-                    control.locator("[data-icon]").nth(icon_index).get_attribute("data-icon")
-                    for icon_index in range(min(control.locator("[data-icon]").count(), 3))
-                ],
-            }
-        )
-    return summary
 
 
 def _open_recipient_chat(
@@ -1624,24 +1609,6 @@ def _wait_for_attachment_menu(page: Page, *, timeout_seconds: float = 3) -> bool
     return False
 
 
-def _attachment_menu_visible(page: Page) -> bool:
-    media_option = page.get_by_text(
-        re.compile(r"^(Fotos y v.deos|Photos and videos|Photos & videos)$", re.I)
-    ).last
-    if media_option.count() and media_option.is_visible():
-        return True
-    document_option = page.get_by_text(re.compile(r"^(Documento|Document)$", re.I)).last
-    if document_option.count() and document_option.is_visible():
-        return True
-    document_label = page.locator(
-        "[aria-label='Documento'], [aria-label='Document'], "
-        "[title='Documento'], [title='Document']"
-    ).last
-    if document_label.count() and document_label.is_visible():
-        return True
-    return bool(page.locator("[role='menuitem']:visible").count())
-
-
 def _attach_document(page: Page, attachment: Path | list[Path]) -> None:
     files = (
         [str(item) for item in attachment]
@@ -1720,93 +1687,6 @@ def _choose_document_files(page: Page, files: list[str]) -> bool:
         except PlaywrightError:
             logger.info("Documento target did not open a file chooser")
     return False
-
-
-def _attachment_option_container(option):
-    for xpath in (
-        "ancestor-or-self::*[@role='menuitem'][1]",
-        "ancestor-or-self::*[@role='button'][1]",
-        "ancestor-or-self::li[1]",
-        "ancestor-or-self::*[@tabindex='0'][1]",
-    ):
-        candidate = option.locator(f"xpath={xpath}")
-        if candidate.count() and candidate.first.is_visible():
-            return candidate.first
-    return option
-
-
-def _image_file_input(page: Page, *, require_multiple: bool = False):
-    inputs = page.locator("input[type='file']")
-    for index in range(inputs.count() - 1, -1, -1):
-        locator = inputs.nth(index)
-        accept = (locator.get_attribute("accept") or "").casefold()
-        allows_multiple = locator.evaluate("element => element.multiple")
-        if "image" in accept and (not require_multiple or allows_multiple):
-            return locator
-    return None
-
-
-def _document_file_input(page: Page):
-    inputs = page.locator("input[type='file']")
-    for index in range(inputs.count() - 1, -1, -1):
-        locator = inputs.nth(index)
-        accept = (locator.get_attribute("accept") or "").casefold()
-        if "image" in accept or "video" in accept:
-            continue
-        if "pdf" in accept or "application" in accept or not accept:
-            return locator
-    return None
-
-
-def _file_input_summary(page: Page) -> list[dict[str, object]]:
-    inputs = page.locator("input[type='file']")
-    summary: list[dict[str, object]] = []
-    for index in range(inputs.count()):
-        locator = inputs.nth(index)
-        label = locator.locator("xpath=ancestor::li[1]")
-        if not label.count():
-            label = locator.locator("xpath=ancestor::*[@role='button'][1]")
-        label_text = ""
-        if label.count():
-            try:
-                label_text = label.inner_text(timeout=1_000)[:80]
-            except PlaywrightError:
-                label_text = ""
-        summary.append(
-            {
-                "index": index,
-                "accept": _safe_get_attribute(locator, "accept"),
-                "multiple": _safe_get_attribute(locator, "multiple"),
-                "label": label_text,
-            }
-        )
-    return summary
-
-
-def _attachment_menu_summary(page: Page) -> list[dict[str, object]]:
-    controls = page.locator("[role='menu'] [role='button'], [role='menuitem'], [role='menu'] li")
-    summary: list[dict[str, object]] = []
-    for index in range(min(controls.count(), 20)):
-        control = controls.nth(index)
-        if not control.is_visible():
-            continue
-        try:
-            text = control.inner_text(timeout=1_000)[:80]
-        except PlaywrightError:
-            text = ""
-        summary.append(
-            {
-                "text": text,
-                "aria_label": _safe_get_attribute(control, "aria-label"),
-                "inputs": _file_input_summary_from(control),
-            }
-        )
-    return summary
-
-
-def _file_input_summary_from(root) -> list[str | None]:
-    inputs = root.locator("input[type='file']")
-    return [_safe_get_attribute(inputs.nth(index), "accept") for index in range(inputs.count())]
 
 
 def _fill_caption(
@@ -1966,153 +1846,6 @@ def _send_plain_text_message(
     return True
 
 
-def _wait_until_plain_text_send_finishes(
-    page: Page,
-    expected: str,
-    outgoing_signatures: set[str],
-) -> bool:
-    deadline = time.monotonic() + PLAIN_TEXT_CONFIRMATION_TIMEOUT_SECONDS
-    while time.monotonic() < deadline:
-        if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
-            page.wait_for_timeout(750)
-            return True
-        page.wait_for_timeout(500)
-    page.wait_for_timeout(PLAIN_TEXT_CONFIRMATION_GRACE_SECONDS * 1_000)
-    if _plain_text_send_is_confirmed(page, expected, outgoing_signatures):
-        page.wait_for_timeout(750)
-        return True
-    return False
-
-
-def _plain_text_send_is_confirmed(
-    page: Page,
-    expected: str,
-    outgoing_signatures: set[str],
-) -> bool:
-    confirmed_signatures = _outgoing_message_signatures(
-        page,
-        confirmed_only=True,
-        expected_text=expected,
-    )
-    return (
-        not _plain_text_ready(page, expected)
-        and bool(confirmed_signatures - outgoing_signatures)
-    )
-
-
-def _outgoing_message_signatures(
-    page: Page,
-    *,
-    confirmed_only: bool = False,
-    expected_text: str | None = None,
-) -> set[str]:
-    expected_compact = (
-        _compact_alphanumeric_text(expected_text) if expected_text is not None else None
-    )
-    selectors = (
-        ("div.message-out", False),
-        ("div[data-id^='true_']", False),
-        ("[data-testid='msg-container']", True),
-    )
-    signatures: set[str] = set()
-    for selector, requires_outgoing_marker in selectors:
-        messages = page.locator(selector)
-        if not messages.count():
-            continue
-        for index in range(messages.count()):
-            message = messages.nth(index)
-            if requires_outgoing_marker and not _message_container_is_outgoing(message):
-                continue
-            if confirmed_only and not _message_container_has_confirmed_status(message):
-                continue
-            if expected_compact is not None:
-                actual_text = _compact_alphanumeric_text(_safe_text_content(message))
-                if not expected_compact or expected_compact not in actual_text:
-                    continue
-            signatures.add(_message_container_signature(message))
-    return signatures
-
-
-def _message_container_has_confirmed_status(message) -> bool:
-    if _message_container_has_pending_status(message):
-        return False
-    status_markers = message.locator(
-        "[data-icon='msg-check'], [data-icon='msg-dblcheck'], "
-        "[data-icon^='msg-check-'], [data-icon^='msg-dblcheck-'], "
-        "[data-icon*='dblcheck'], "
-        "[class*='wds-ic-read'], [class*='wds-ic-delivered'], "
-        "[class*='wds-ic-sent']"
-    )
-    if _locator_has_visible_match(status_markers):
-        return True
-    labels = message.locator("[aria-label]")
-    confirmed_labels = {
-        "enviado",
-        "entregado",
-        "leido",
-        "sent",
-        "delivered",
-        "read",
-    }
-    for index in range(labels.count()):
-        label = labels.nth(index)
-        if not label.is_visible():
-            continue
-        value = _safe_get_attribute(label, "aria-label") or ""
-        if _compact_alphanumeric_text(value) in confirmed_labels:
-            return True
-    return False
-
-
-def _message_container_has_pending_status(message) -> bool:
-    return _locator_has_visible_match(
-        message.locator(
-            "[data-icon='msg-time'], [data-icon^='msg-time-'], "
-            "[class*='wds-ic-time']"
-        )
-    )
-
-
-def _locator_has_visible_match(locator) -> bool:
-    for index in range(locator.count()):
-        try:
-            if locator.nth(index).is_visible():
-                return True
-        except PlaywrightError:
-            continue
-    return False
-
-
-def _message_container_signature(message) -> str:
-    data_id = _safe_get_attribute(message, "data-id")
-    if data_id:
-        return f"data-id:{data_id}"
-    ancestor = message.locator("xpath=ancestor::*[@data-id][1]")
-    if ancestor.count():
-        ancestor_data_id = _safe_get_attribute(ancestor.first, "data-id")
-        if ancestor_data_id:
-            return f"data-id:{ancestor_data_id}"
-    try:
-        return f"html:{message.evaluate('element => element.outerHTML')}"
-    except PlaywrightError:
-        return f"text:{_safe_text_content(message)}"
-
-
-def _message_container_is_outgoing(message) -> bool:
-    if _message_container_has_confirmed_status(message):
-        return True
-    labels = message.locator("[aria-label]")
-    for index in range(labels.count()):
-        label = (_safe_get_attribute(labels.nth(index), "aria-label") or "").strip()
-        if label.casefold() in {"tú:", "tu:", "you:"}:
-            return True
-    metadata = _safe_text_content(message).casefold()
-    return any(
-        marker in metadata
-        for marker in ("wds-ic-read", "wds-ic-delivered", "wds-ic-sent")
-    )
-
-
 def _click_and_replace_text(page: Page, editor, text: str) -> None:
     box = editor.bounding_box()
     if box:
@@ -2141,20 +1874,6 @@ def _paste_text_message(page: Page, editor, text: str) -> None:
         logger.info("Could not paste follow-up text via clipboard")
 
 
-def _plain_text_ready(page: Page, expected: str) -> bool:
-    editors = page.locator(
-        "footer div[contenteditable='true'], "
-        "div[data-testid='conversation-compose-box-input']"
-    )
-    for index in range(editors.count() - 1, -1, -1):
-        text = _safe_text_content(editors.nth(index))
-        if _same_editor_text(text, expected, require_full_match=True) or (
-            "TikTok" in text and "citaspolarizadasperu" in text
-        ):
-            return True
-    return False
-
-
 def _click_visible_send_button(page: Page) -> bool:
     selectors = (
         "button[aria-label*='Enviar' i]",
@@ -2181,86 +1900,6 @@ def _click_visible_send_button(page: Page) -> bool:
     return _click_bottom_right_send_button(page)
 
 
-def _wait_until_send_attempt_finishes(
-    page: Page,
-    *,
-    attachment_names: list[str],
-    outgoing_signatures: set[str],
-    expected_outgoing_count: int,
-) -> bool:
-    deadline = time.monotonic() + 20
-    while time.monotonic() < deadline:
-        confirmed_signatures = _outgoing_message_signatures(
-            page,
-            confirmed_only=True,
-        )
-        new_confirmed_count = len(confirmed_signatures - outgoing_signatures)
-        if (
-            _normal_chat_composer_visible(page)
-            and new_confirmed_count >= expected_outgoing_count
-        ):
-            page.wait_for_timeout(1_000)
-            return True
-        page.wait_for_timeout(500)
-    evidence_path = _save_whatsapp_debug_screenshot(
-        page,
-        "whatsapp-followup-send-not-confirmed",
-    )
-    document_preview_visible = _document_preview_visible(page, attachment_names)
-    preview_controls_visible = _attachment_preview_visible(page, attachment_names)
-    logger.warning(
-        "WhatsApp document send confirmation failed: "
-        "phase=document_preview_still_open_or_unconfirmed "
-        "confirmed=%s expected=%s document_preview_visible=%s "
-        "preview_controls_visible=%s evidence=%s",
-        new_confirmed_count,
-        expected_outgoing_count,
-        document_preview_visible,
-        preview_controls_visible,
-        evidence_path,
-    )
-    if not document_preview_visible and _normal_chat_composer_visible(page):
-        logger.warning(
-            "WhatsApp document preview closed without full confirmation; "
-            "continuing with the distinct post-payment text and preserving "
-            "the documents as uncertain"
-        )
-        return False
-    raise RuntimeError(
-        "WhatsApp no confirmo el envio de los documentos; la vista previa no cerro "
-        "o no aparecieron todas las burbujas salientes confirmadas. "
-        "Fase: document_preview_still_open_or_unconfirmed."
-    )
-
-
-def _normal_chat_composer_visible(page: Page) -> bool:
-    composer = page.locator("div[data-testid='conversation-compose-box-input']").last
-    return bool(composer.count() and composer.is_visible())
-
-
-def _document_preview_visible(page: Page, names: list[str]) -> bool:
-    document_icons = page.locator("[data-icon='media-document']")
-    if any(document_icons.nth(index).is_visible() for index in range(document_icons.count())):
-        return True
-    for name in names:
-        preview_text = page.get_by_text(name, exact=True)
-        if any(preview_text.nth(index).is_visible() for index in range(preview_text.count())):
-            return True
-    return False
-
-
-def _attachment_preview_visible(page: Page, names: list[str]) -> bool:
-    close_icons = page.locator("[data-icon='x-alt']")
-    send_icons = page.locator("[data-icon='send']")
-    close_visible = any(
-        close_icons.nth(index).is_visible() for index in range(close_icons.count())
-    )
-    send_visible = any(
-        send_icons.nth(index).is_visible() for index in range(send_icons.count())
-    )
-    return close_visible and send_visible and _document_preview_visible(page, names)
-
-
 def _fresh_whatsapp_page(context: BrowserContext) -> Page:
     page = context.new_page()
     for existing in list(context.pages):
@@ -2273,188 +1912,6 @@ def _fresh_whatsapp_page(context: BrowserContext) -> Page:
     return page
 
 
-def _caption_editor(page: Page, *, allow_footer_editor: bool = False):
-    editors = page.locator("div[contenteditable='true']")
-    candidates = []
-    for index in range(editors.count()):
-        editor = editors.nth(index)
-        if not editor.is_visible():
-            continue
-        aria_label = (editor.get_attribute("aria-label") or "").casefold()
-        placeholder = " ".join(
-            filter(
-                None,
-                (
-                    editor.get_attribute("data-placeholder"),
-                    editor.get_attribute("aria-placeholder"),
-                    editor.get_attribute("title"),
-                ),
-            )
-        ).casefold()
-        description = f"{aria_label} {placeholder}"
-        score = 0
-        if any(
-            term in description
-            for term in ("caption", "pie de foto", "comentario", "descripci")
-        ):
-            score += 100
-        if editor.locator("xpath=ancestor::*[@role='dialog']").count():
-            score += 20
-        in_footer = bool(editor.locator("xpath=ancestor::footer").count())
-        if not in_footer and editor.get_attribute("role") == "textbox":
-            score += 40
-        if in_footer and allow_footer_editor:
-            score += 80
-        elif in_footer:
-            score -= 50
-        candidates.append((score, index, editor))
-    if not candidates:
-        return None
-    candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
-    return candidates[0][2] if candidates[0][0] > 0 else None
-
-
-def _same_editor_text(
-    actual: str | None,
-    expected: str,
-    *,
-    require_full_match: bool = False,
-) -> bool:
-    def normalize(value: str) -> str:
-        return " ".join(value.replace("\u200b", "").split())
-
-    actual_normalized = normalize(actual or "")
-    expected_normalized = normalize(expected)
-    if require_full_match:
-        return actual_normalized == expected_normalized or (
-            len(actual_normalized) >= 80
-            and actual_normalized in expected_normalized
-            and any(
-                marker in actual_normalized
-                for marker in (
-                    "TikTok",
-                    "citaspolarizadasperu",
-                    "Gracias por confiar",
-                )
-            )
-        ) or _compact_alphanumeric_text(actual or "") == _compact_alphanumeric_text(
-            expected
-        )
-    return actual_normalized == expected_normalized or len(actual_normalized) >= max(
-        20,
-        len(expected_normalized) // 2,
-    )
-
-
-def _compact_alphanumeric_text(value: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", value)
-    return "".join(
-        character.casefold()
-        for character in decomposed
-        if character.isalnum()
-    )
-
-
-def _caption_editor_summary(page: Page) -> list[dict[str, object]]:
-    editors = page.locator(
-        "[contenteditable='true'], textarea, input, "
-        "[aria-placeholder], [aria-label*='caption' i], "
-        "[aria-label*='comentario' i], [aria-label*='descripci' i]"
-    )
-    summary: list[dict[str, object]] = []
-    for index in range(min(editors.count(), 12)):
-        editor = editors.nth(index)
-        if not editor.is_visible():
-            continue
-        summary.append(
-            {
-                "aria_label": editor.get_attribute("aria-label"),
-                "aria_placeholder": editor.get_attribute("aria-placeholder"),
-                "data_placeholder": editor.get_attribute("data-placeholder"),
-                "data_tab": editor.get_attribute("data-tab"),
-                "title": editor.get_attribute("title"),
-                "tag": editor.evaluate("element => element.tagName"),
-                "role": editor.get_attribute("role"),
-                "contenteditable": editor.get_attribute("contenteditable"),
-                "in_dialog": bool(editor.locator("xpath=ancestor::*[@role='dialog']").count()),
-                "in_footer": bool(editor.locator("xpath=ancestor::footer").count()),
-            }
-        )
-    return summary
-
-
-def _save_whatsapp_debug_screenshot(page: Page, name: str) -> str:
-    debug_screenshot = Path(f".runtime/{name}.png").resolve()
-    debug_screenshot.parent.mkdir(parents=True, exist_ok=True)
-    page.screenshot(path=str(debug_screenshot))
-    return str(Path(".runtime") / f"{name}.png")
-
-
-def _safe_whatsapp_artifact_name(value: str) -> str:
-    return re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-") or "message"
-
-
-def _whatsapp_qr_image_data_url(page: Page) -> str | None:
-    candidates = page.locator("canvas, [data-ref]")
-    for index in range(candidates.count()):
-        candidate = candidates.nth(index)
-        if not candidate.is_visible():
-            continue
-        box = candidate.bounding_box()
-        if not box or not (160 <= box["width"] <= 420 and 160 <= box["height"] <= 420):
-            continue
-        try:
-            image_bytes = candidate.screenshot(type="png")
-        except PlaywrightError:
-            continue
-        encoded = base64.b64encode(image_bytes).decode("ascii")
-        return f"data:image/png;base64,{encoded}"
-    return None
-
-
-def _safe_get_attribute(locator, name: str) -> str | None:
-    try:
-        return locator.get_attribute(name, timeout=1_000)
-    except PlaywrightError:
-        return None
-
-
-def _safe_text_content(locator) -> str:
-    try:
-        return locator.text_content(timeout=1_000) or ""
-    except PlaywrightError:
-        return ""
-
-
-def _visible(page: Page, selector: str) -> bool:
-    locator = page.locator(selector).first
-    return bool(locator.count() and locator.is_visible())
-
-
-def _attachment_control_summary(page: Page) -> list[dict[str, object]]:
-    controls = page.locator("button, [role='button'], [data-icon]")
-    summary: list[dict[str, object]] = []
-    for index in range(min(controls.count(), 80)):
-        control = controls.nth(index)
-        if not control.is_visible():
-            continue
-        icons = control.locator("[data-icon]")
-        summary.append(
-            {
-                "tag": control.evaluate("element => element.tagName"),
-                "aria_label": _safe_get_attribute(control, "aria-label"),
-                "title": _safe_get_attribute(control, "title"),
-                "data_testid": _safe_get_attribute(control, "data-testid"),
-                "data_icon": _safe_get_attribute(control, "data-icon"),
-                "icons": [
-                    _safe_get_attribute(icons.nth(icon_index), "data-icon")
-                    for icon_index in range(min(icons.count(), 4))
-                ],
-            }
-        )
-    return summary
-
-
 def _close_context(context: BrowserContext | None) -> None:
     if context is not None:
         try:
@@ -2462,54 +1919,3 @@ def _close_context(context: BrowserContext | None) -> None:
         except PlaywrightError:
             pass
     return None
-
-
-def _save_context_failure_screenshot(
-    context: BrowserContext | None,
-    draft: dict[str, object],
-) -> str | None:
-    if context is None or not context.pages:
-        return None
-    message_id = _safe_whatsapp_artifact_name(
-        str(draft.get("message_id") or draft.get("action") or "unknown")
-    )
-    try:
-        return _save_whatsapp_debug_screenshot(
-            context.pages[-1],
-            f"whatsapp-automation-error-{message_id}",
-        )
-    except PlaywrightError:
-        return None
-
-
-def _result(
-    status: str,
-    message: str,
-    *,
-    message_id: str | None = None,
-    draft_mode: str | None = None,
-    manual_send_required: bool = True,
-    sent: bool = False,
-    qr_image_data_url: str | None = None,
-    delivery_phase: str | None = None,
-    evidence_path: str | None = None,
-    delivery_components: dict[str, str] | None = None,
-) -> dict[str, Any]:
-    result = {
-        "status": status,
-        "message": message,
-        "message_id": message_id,
-        "manual_send_required": manual_send_required,
-        "sent": sent,
-    }
-    if draft_mode is not None:
-        result["draft_mode"] = draft_mode
-    if qr_image_data_url is not None:
-        result["qr_image_data_url"] = qr_image_data_url
-    if delivery_phase is not None:
-        result["delivery_phase"] = delivery_phase
-    if evidence_path is not None:
-        result["evidence_path"] = evidence_path
-    if delivery_components is not None:
-        result["delivery_components"] = dict(delivery_components)
-    return result
