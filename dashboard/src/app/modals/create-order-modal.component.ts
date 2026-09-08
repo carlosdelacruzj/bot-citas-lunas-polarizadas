@@ -16,7 +16,7 @@ import {
   templateUrl: './create-order-modal.component.html',
 })
 export class CreateOrderModalComponent {
-  protected readonly shell = inject(DASHBOARD_CREATE_ORDER_MODAL_SHELL);
-  protected readonly orders = inject(DASHBOARD_CREATE_ORDER_MODAL_ORDERS);
+  protected readonly shellDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_SHELL);
+  protected readonly ordersDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_ORDERS);
 
 }

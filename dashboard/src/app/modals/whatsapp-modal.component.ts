@@ -10,6 +10,6 @@ import { DASHBOARD_WHATSAPP_MODAL_SHELL } from '../dashboard-domain.ports';
   templateUrl: './whatsapp-modal.component.html',
 })
 export class WhatsappModalComponent {
-  protected readonly shell = inject(DASHBOARD_WHATSAPP_MODAL_SHELL);
+  protected readonly shellDomain = inject(DASHBOARD_WHATSAPP_MODAL_SHELL);
 
 }

@@ -10,14 +10,14 @@
       <input
         name="summaryMonth"
         type="month"
-        [ngModel]="shell.selectedMonth()"
-        [disabled]="shell.monthlyLoading()"
-        (ngModelChange)="shell.changeMonth($event)"
+        [ngModel]="financeDomain.selectedMonth()"
+        [disabled]="financeDomain.monthlyLoading()"
+        (ngModelChange)="financeDomain.changeMonth($event)"
       />
     </label>
   </div>
 
-  @if (shell.appointmentReminderStatus(); as reminders) {
+  @if (shellDomain.appointmentReminderStatus(); as reminders) {
     <section class="appointment-reminder-card" aria-labelledby="appointment-reminder-title">
       <div class="appointment-reminder-date" aria-hidden="true">
         <span>DÍAS</span>
@@ -29,7 +29,7 @@
           {{ reminders.day?.eligible_count ?? 0 }} elegibles para recordatorio
         </h3>
         <p>
-          {{ shell.formatDate(reminders.appointment_day) }} · WhatsApp desde las
+          {{ shellDomain.formatDate(reminders.appointment_day) }} · WhatsApp desde las
           {{ reminders.configuration.time }}, después del resumen diario.
         </p>
       </div>
@@ -47,7 +47,7 @@
           } @else if (reminders.day?.status === 'waiting_summary') {
             Esperando evidencias
           } @else {
-            {{ shell.statusLabel(reminders.day?.status ?? 'not_checked') }}
+            {{ shellDomain.statusLabel(reminders.day?.status ?? 'not_checked') }}
           }
         </span>
         <button type="button" class="secondary" [routerLink]="['/seguimiento']" [queryParams]="{ tab: 'upcoming' }">
@@ -60,23 +60,23 @@
     </section>
   }
 
-  @if (shell.monthlyLoading()) {
+  @if (financeDomain.monthlyLoading()) {
     <p class="monthly-loading">Actualizando resumen mensual...</p>
-  } @else if (shell.monthlySummary(); as summary) {
+  } @else if (financeDomain.monthlySummary(); as summary) {
     <div class="summary-glance">
       <article class="summary-hero">
         <span>Ingresos cobrados</span>
-        <strong>{{ shell.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+        <strong>{{ shellDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
         <small>
           {{ summary.period_metrics.payments_received }} cobros ·
-          {{ shell.metricPeriodLabel(summary.period_metrics.period) }}
+          {{ financeDomain.metricPeriodLabel(summary.period_metrics.period) }}
         </small>
         @if (summary.comparisons.same_day_window; as comparison) {
           @if (
             comparison.selected.metrics.receipt_date_quality.comparison_conclusive &&
             comparison.previous.metrics.receipt_date_quality.comparison_conclusive
           ) {
-            <p>{{ shell.monthlyRevenueComparison(comparison) }}</p>
+            <p>{{ financeDomain.monthlyRevenueComparison(comparison) }}</p>
           } @else {
             <p>Fechas históricas inferidas · comparación de ingresos no concluyente</p>
           }
@@ -95,7 +95,7 @@
         </article>
         <article [class.needs-attention]="summary.current_attention_snapshot.pending_payments > 0">
           <span>Por cobrar ahora</span>
-          <strong>{{ shell.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong>
+          <strong>{{ shellDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong>
           <small>{{ summary.current_attention_snapshot.pending_payments }} reservas pendientes</small>
         </article>
       </div>
@@ -119,11 +119,11 @@
           <div class="bar-list">
             @for (day of summary.period_metrics.daily_revenue; track day.date) {
               <div class="bar-row">
-                <strong>{{ shell.formatDate(day.date) }}</strong>
+                <strong>{{ shellDomain.formatDate(day.date) }}</strong>
                 <div class="bar-track" aria-hidden="true">
-                  <span [style.width.%]="shell.dailyRevenueWidth(summary, day.amount)"></span>
+                  <span [style.width.%]="financeDomain.dailyRevenueWidth(summary, day.amount)"></span>
                 </div>
-                <small>{{ shell.formatMoney(day.amount) }} · {{ day.payments }} cobro{{ day.payments === 1 ? '' : 's' }}</small>
+                <small>{{ shellDomain.formatMoney(day.amount) }} · {{ day.payments }} cobro{{ day.payments === 1 ? '' : 's' }}</small>
               </div>
             }
           </div>
@@ -136,21 +136,21 @@
         <div class="monthly-card-header">
           <div>
             <h3>Pendientes de cobro</h3>
-            <p>Estado actual · {{ shell.formatDateTime(summary.current_attention_snapshot.as_of) }}</p>
+            <p>Estado actual · {{ shellDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</p>
           </div>
         </div>
         @if (summary.current_attention_snapshot.pending_payment_items.length) {
           <div class="attention-list">
             @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
               <div class="attention-action-row">
-                <button type="button" (click)="shell.openOrderFromSummary(item.order_id)">
+                <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
                   <span>
                     <strong>{{ item.name }}</strong>
-                    <small>{{ shell.formatDate(item.reservation_date, 'sin fecha') }} {{ shell.formatTime(item.reservation_hour) }}</small>
+                    <small>{{ shellDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ shellDomain.formatTime(item.reservation_hour) }}</small>
                   </span>
-                  <strong>{{ shell.formatMoney(item.pending_amount) }}</strong>
+                  <strong>{{ shellDomain.formatMoney(item.pending_amount) }}</strong>
                 </button>
-                <button type="button" class="primary compact-action" (click)="shell.openPaymentFromSummary(item.order_id)">Cobrar</button>
+                <button type="button" class="primary compact-action" (click)="shellDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
               </div>
             }
           </div>
@@ -169,17 +169,17 @@
     <div class="universe-ribbon" aria-label="Universos del resumen">
       <article>
         <span class="universe-code">01 · Periodo</span>
-        <strong>{{ shell.metricPeriodLabel(summary.period_metrics.period) }}</strong>
+        <strong>{{ financeDomain.metricPeriodLabel(summary.period_metrics.period) }}</strong>
         <small>Eventos ocurridos dentro del rango cubierto.</small>
       </article>
       <article>
         <span class="universe-code">02 · Cohorte</span>
-        <strong>Altas de {{ shell.selectedMonthLabel() }}</strong>
-        <small>Su conversión se observa hasta {{ shell.formatDateTime(summary.as_of) }}.</small>
+        <strong>Altas de {{ financeDomain.selectedMonthLabel() }}</strong>
+        <small>Su conversión se observa hasta {{ shellDomain.formatDateTime(summary.as_of) }}.</small>
       </article>
       <article>
         <span class="universe-code">03 · Estado vivo</span>
-        <strong>Corte {{ shell.formatDateTime(summary.current_attention_snapshot.as_of) }}</strong>
+        <strong>Corte {{ shellDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</strong>
         <small>No cambia de significado al consultar otro mes.</small>
       </article>
     </div>
@@ -190,12 +190,12 @@
           <p class="eyebrow">Eventos del periodo</p>
           <h3 id="period-results-title">Lo que ocurrió en el rango</h3>
         </div>
-        <span class="badge neutral">{{ shell.metricPeriodLabel(summary.period_metrics.period) }}</span>
+        <span class="badge neutral">{{ financeDomain.metricPeriodLabel(summary.period_metrics.period) }}</span>
       </div>
       <div class="monthly-kpis phase-two-kpis">
         <article class="monthly-kpi primary-kpi">
           <span>Ingresos cobrados</span>
-          <strong>{{ shell.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+          <strong>{{ shellDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
           <small>{{ summary.period_metrics.payments_received }} cobros del periodo</small>
         </article>
         <article class="monthly-kpi">
@@ -210,9 +210,9 @@
         </article>
         <article class="monthly-kpi">
           <span>Cobro promedio</span>
-          <strong>{{ shell.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
+          <strong>{{ shellDomain.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
           <small>
-            {{ shell.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
+            {{ shellDomain.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
             {{ summary.period_metrics.average_ticket.denominator }} cobros
           </small>
         </article>
@@ -226,13 +226,13 @@
               comparison.selected.metrics.receipt_date_quality.comparison_conclusive &&
               comparison.previous.metrics.receipt_date_quality.comparison_conclusive
             ) {
-              <strong>{{ shell.monthlyRevenueComparison(comparison) }}</strong>
+              <strong>{{ financeDomain.monthlyRevenueComparison(comparison) }}</strong>
             } @else {
               <strong>Comparación no concluyente</strong>
             }
             <p>
-              {{ shell.metricPeriodLabel(comparison.selected.period) }} frente a
-              {{ shell.metricPeriodLabel(comparison.previous.period) }}.
+              {{ financeDomain.metricPeriodLabel(comparison.selected.period) }} frente a
+              {{ financeDomain.metricPeriodLabel(comparison.previous.period) }}.
             </p>
             <small>
               @if (
@@ -258,13 +258,13 @@
             summary.comparisons.closed_months.selected.metrics.receipt_date_quality.comparison_conclusive &&
             summary.comparisons.closed_months.previous.metrics.receipt_date_quality.comparison_conclusive
           ) {
-            <strong>{{ shell.closedMonthRevenueComparison(summary) }}</strong>
+            <strong>{{ financeDomain.closedMonthRevenueComparison(summary) }}</strong>
           } @else {
             <strong>Comparación no concluyente</strong>
           }
           <p>
-            {{ shell.metricPeriodLabel(summary.comparisons.closed_months.selected.period) }} frente a
-            {{ shell.metricPeriodLabel(summary.comparisons.closed_months.previous.period) }}.
+            {{ financeDomain.metricPeriodLabel(summary.comparisons.closed_months.selected.period) }} frente a
+            {{ financeDomain.metricPeriodLabel(summary.comparisons.closed_months.previous.period) }}.
           </p>
           <small>
             @if (
@@ -312,7 +312,7 @@
           <div class="monthly-card-header">
             <div>
               <h3>Fuente al crear la orden</h3>
-              <p>Universo: solo órdenes creadas en {{ shell.selectedMonthLabel() }}.</p>
+              <p>Universo: solo órdenes creadas en {{ financeDomain.selectedMonthLabel() }}.</p>
             </div>
           </div>
           @if (summary.cohort_metrics.sources.length) {
@@ -327,7 +327,7 @@
                       {{ source.historical_backfill_source_orders }} con fuente preservada al migrar historial
                     </small>
                   </div>
-                  <strong>{{ shell.formatMoney(source.revenue_ever_collected) }}</strong>
+                  <strong>{{ shellDomain.formatMoney(source.revenue_ever_collected) }}</strong>
                 </div>
               }
             </div>
@@ -358,7 +358,7 @@
       <div class="attention-snapshot-metrics">
         <article><span>Órdenes activas</span><strong>{{ summary.current_attention_snapshot.active_orders }}</strong></article>
         <article><span>Cobros pendientes</span><strong>{{ summary.current_attention_snapshot.pending_payments }}</strong></article>
-        <article><span>Saldo por cobrar</span><strong>{{ shell.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong></article>
+        <article><span>Saldo por cobrar</span><strong>{{ shellDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong></article>
       </div>
       <div class="attention-grid">
         <article class="monthly-card attention-card">
@@ -367,11 +367,11 @@
             <div class="attention-list">
               @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
                 <div class="attention-action-row">
-                  <button type="button" (click)="shell.openOrderFromSummary(item.order_id)">
-                    <span><strong>{{ item.name }}</strong><small>{{ shell.formatDate(item.reservation_date, 'sin fecha') }} {{ shell.formatTime(item.reservation_hour) }} · {{ item.source }}</small></span>
-                    <strong>{{ shell.formatMoney(item.pending_amount) }}</strong>
+                  <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
+                    <span><strong>{{ item.name }}</strong><small>{{ shellDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ shellDomain.formatTime(item.reservation_hour) }} · {{ item.source }}</small></span>
+                    <strong>{{ shellDomain.formatMoney(item.pending_amount) }}</strong>
                   </button>
-                  <button type="button" class="primary compact-action" (click)="shell.openPaymentFromSummary(item.order_id)">Cobrar</button>
+                  <button type="button" class="primary compact-action" (click)="shellDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
                 </div>
               }
             </div>
@@ -382,9 +382,9 @@
           @if (summary.current_attention_snapshot.aged_active_orders.length) {
             <div class="attention-list">
               @for (item of summary.current_attention_snapshot.aged_active_orders; track item.order_id) {
-                <button type="button" (click)="shell.openOrderFromSummary(item.order_id)">
-                  <span><strong>{{ item.name }}</strong><small>Desde {{ shell.formatDate(item.created_date) }}</small></span>
-                  <span class="badge {{ shell.statusTone(item.status) }}">{{ shell.statusLabel(item.status) }}</span>
+                <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
+                  <span><strong>{{ item.name }}</strong><small>Desde {{ shellDomain.formatDate(item.created_date) }}</small></span>
+                  <span class="badge {{ shellDomain.statusTone(item.status) }}">{{ shellDomain.statusLabel(item.status) }}</span>
                 </button>
               }
             </div>
@@ -404,19 +404,19 @@
 <section class="metrics" aria-label="Estado general">
   <article>
     <span>Sistema</span>
-    <strong [class]="shell.statusTone(shell.health()?.status)">{{
-      shell.health()?.status === 'ok' ? 'funcionando' : 'revisar'
+    <strong [class]="shellDomain.statusTone(shellDomain.health()?.status)">{{
+      shellDomain.health()?.status === 'ok' ? 'funcionando' : 'revisar'
     }}</strong>
     <small>Panel y datos</small>
   </article>
   <article>
     <span>Bot de reservas</span>
     <strong
-      [class]="shell.statusTone(shell.worker()?.worker_running ?? shell.health()?.worker_running ?? null)"
+      [class]="shellDomain.statusTone(shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running ?? null)"
     >
-      {{ shell.worker()?.worker_running || shell.health()?.worker_running ? 'activo' : 'detenido' }}
+      {{ shellDomain.worker()?.worker_running || shellDomain.health()?.worker_running ? 'activo' : 'detenido' }}
     </strong>
-    <small>{{ shell.phaseLabel(shell.worker()?.phase ?? shell.health()?.reason) }}</small>
+    <small>{{ shellDomain.phaseLabel(shellDomain.worker()?.phase ?? shellDomain.health()?.reason) }}</small>
   </article>
   <article>
     <span>Clientes listos</span>
@@ -424,7 +424,7 @@
     <small>{{ orderList.filteredOrders().length }} visibles</small>
   </article>
   <article class="clickable-metric">
-    <button type="button" class="metric-action" (click)="shell.showPendingPayments()">
+    <button type="button" class="metric-action" (click)="shellDomain.showPendingPayments()">
       <span>Pagos pendientes</span>
       <strong [class]="orderList.pendingPaymentOrders() > 0 ? 'warn' : 'good'">
         {{ orderList.pendingPaymentOrders() }}
@@ -434,7 +434,7 @@
   </article>
 </section>
 
-@if (shell.captchaShadowEnabled()) {
+@if (shellDomain.captchaShadowEnabled()) {
 <details class="panel settings-panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
   <summary class="settings-summary">
     <span>
@@ -442,11 +442,11 @@
       <small>Abre para cambiar cantidad o resolutor</small>
     </span>
     <div class="captcha-control-badges" aria-label="Estado de los controles CAPTCHA">
-      <span class="badge {{ shell.captchaSamplingEnabled() ? 'warn' : 'good' }}">
-        {{ shell.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
+      <span class="badge {{ shellDomain.captchaSamplingEnabled() ? 'warn' : 'good' }}">
+        {{ shellDomain.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
       </span>
-      <span class="badge {{ shell.captchaAuthorityUsesV6() ? 'good' : 'neutral' }}">
-        {{ shell.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
+      <span class="badge {{ shellDomain.captchaAuthorityUsesV6() ? 'good' : 'neutral' }}">
+        {{ shellDomain.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
       </span>
     </div>
   </summary>
@@ -462,10 +462,10 @@
       <span class="captcha-stage-index">A</span>
       <div>
         <span class="captcha-stage-label">Captura</span>
-        <strong>{{ shell.captchaSamplingEffectiveLimit() }} por oportunidad</strong>
+        <strong>{{ shellDomain.captchaSamplingEffectiveLimit() }} por oportunidad</strong>
         <small>
           {{
-            shell.captchaSamplingEnabled()
+            shellDomain.captchaSamplingEnabled()
               ? 'Guarda imágenes para revisión humana.'
               : 'Sin muestras adicionales.'
           }}
@@ -484,10 +484,10 @@
       <span class="captcha-stage-index">C</span>
       <div>
         <span class="captcha-stage-label">CAPTCHA final</span>
-        <strong>{{ shell.captchaAuthorityUsesV6() ? 'V6 canario' : '2Captcha' }}</strong>
+        <strong>{{ shellDomain.captchaAuthorityUsesV6() ? 'V6 canario' : '2Captcha' }}</strong>
         <small>
           {{
-            shell.captchaAuthorityUsesV6()
+            shellDomain.captchaAuthorityUsesV6()
               ? 'V6 responde si supera confianza; 2Captcha cubre cualquier duda.'
               : 'V6 sigue comparando en sombra.'
           }}
@@ -503,26 +503,26 @@
         <button
           type="button"
           role="radio"
-          [attr.aria-checked]="!shell.captchaSamplingEnabled()"
-          [class.primary]="!shell.captchaSamplingEnabled()"
-          [class.secondary]="shell.captchaSamplingEnabled()"
-          (click)="shell.setCaptchaSamplingEnabled(false)"
+          [attr.aria-checked]="!shellDomain.captchaSamplingEnabled()"
+          [class.primary]="!shellDomain.captchaSamplingEnabled()"
+          [class.secondary]="shellDomain.captchaSamplingEnabled()"
+          (click)="shellDomain.setCaptchaSamplingEnabled(false)"
         >
           Normal · 1 CAPTCHA
         </button>
         <button
           type="button"
           role="radio"
-          [attr.aria-checked]="shell.captchaSamplingEnabled()"
-          [class.primary]="shell.captchaSamplingEnabled()"
-          [class.secondary]="!shell.captchaSamplingEnabled()"
-          (click)="shell.setCaptchaSamplingEnabled(true)"
+          [attr.aria-checked]="shellDomain.captchaSamplingEnabled()"
+          [class.primary]="shellDomain.captchaSamplingEnabled()"
+          [class.secondary]="!shellDomain.captchaSamplingEnabled()"
+          (click)="shellDomain.setCaptchaSamplingEnabled(true)"
         >
           Recolectar muestras
         </button>
       </div>
       <p class="captcha-sampling-help">
-        @if (shell.captchaSamplingEnabled()) {
+        @if (shellDomain.captchaSamplingEnabled()) {
           Guarda varias imágenes antes de resolver la última.
         } @else {
           Prioriza la velocidad para intentar reservar.
@@ -532,7 +532,7 @@
 
     <article class="action-card captcha-sampling-step">
       <h3>2. Define la cantidad</h3>
-      @if (shell.captchaSamplingEnabled()) {
+      @if (shellDomain.captchaSamplingEnabled()) {
         <div class="admin-block">
           <label>
             Total por intento
@@ -541,32 +541,32 @@
               min="2"
               max="50"
               step="1"
-              [disabled]="shell.captchaSamplingSaving()"
-              [ngModel]="shell.captchaSamplingLimit()"
-              (ngModelChange)="shell.setCaptchaSamplingLimit($event)"
+              [disabled]="shellDomain.captchaSamplingSaving()"
+              [ngModel]="shellDomain.captchaSamplingLimit()"
+              (ngModelChange)="shellDomain.setCaptchaSamplingLimit($event)"
             />
             <small>
-              Incluye {{ shell.captchaSamplingLimit() - 1 }} para entrenamiento y 1 final.
+              Incluye {{ shellDomain.captchaSamplingLimit() - 1 }} para entrenamiento y 1 final.
             </small>
           </label>
         </div>
       } @else {
         <p class="empty compact-empty">
           No se agregarán capturas. Al volver a activar se conservará el total
-          {{ shell.captchaSamplingLimit() }}.
+          {{ shellDomain.captchaSamplingLimit() }}.
         </p>
       }
     </article>
   </div>
 
-  @if (shell.captchaSamplingEnabled()) {
+  @if (shellDomain.captchaSamplingEnabled()) {
     <div class="notice warn captcha-sampling-result" role="status">
       En la siguiente oportunidad se guardarán
-      <strong>{{ shell.captchaSamplingLimit() - 1 }} muestras</strong> y quedará
+      <strong>{{ shellDomain.captchaSamplingLimit() - 1 }} muestras</strong> y quedará
       <strong>1 CAPTCHA final</strong>. Si la fecha cumple las reglas, lo resolverá
-      <strong>{{ shell.captchaAuthorityUsesV6() ? 'V6' : '2Captcha' }}</strong>.
+      <strong>{{ shellDomain.captchaAuthorityUsesV6() ? 'V6' : '2Captcha' }}</strong>.
       Si no cumple, no se resolverá. Demora adicional estimada:
-      <strong>+{{ shell.captchaSamplingEstimatedSeconds() }} s</strong>.
+      <strong>+{{ shellDomain.captchaSamplingEstimatedSeconds() }} s</strong>.
     </div>
   } @else {
     <div class="notice good captcha-sampling-result" role="status">
@@ -575,7 +575,7 @@
     </div>
   }
 
-  @if (shell.captchaAuthorityControl(); as authority) {
+  @if (shellDomain.captchaAuthorityControl(); as authority) {
     <article
       class="captcha-authority-card"
       [class.is-open]="authority.circuit_state === 'open'"
@@ -584,10 +584,10 @@
       <div class="captcha-authority-copy">
         <p class="eyebrow">Autoridad del CAPTCHA final</p>
         <h3 id="captcha-authority-title">
-          {{ shell.captchaAuthorityUsesV6() ? 'V6 con red de seguridad' : '2Captcha activo' }}
+          {{ shellDomain.captchaAuthorityUsesV6() ? 'V6 con red de seguridad' : '2Captcha activo' }}
         </h3>
         <p>
-          @if (shell.captchaAuthorityUsesV6()) {
+          @if (shellDomain.captchaAuthorityUsesV6()) {
             V6 resuelve solo con confianza mínima
             {{ authority.min_char_confidence }} / {{ authority.sequence_confidence_product }}.
             Una baja confianza, timeout o circuito abierto deriva a 2Captcha.
@@ -624,16 +624,16 @@
       </div>
 
       <div class="captcha-authority-actions">
-        @if (shell.captchaAuthorityUsesV6()) {
-          <button type="button" class="secondary" (click)="shell.requestCaptchaAuthorityFallback()">
+        @if (shellDomain.captchaAuthorityUsesV6()) {
+          <button type="button" class="secondary" (click)="shellDomain.requestCaptchaAuthorityFallback()">
             Volver a 2Captcha
           </button>
         } @else if (authority.remaining_local_decisions === 0) {
-          <button type="button" class="secondary" (click)="shell.requestCaptchaAuthorityFallback()">
+          <button type="button" class="secondary" (click)="shellDomain.requestCaptchaAuthorityFallback()">
             Cerrar canario en 2Captcha
           </button>
         } @else {
-          <button type="button" class="primary" (click)="shell.requestCaptchaAuthorityCanary()">
+          <button type="button" class="primary" (click)="shellDomain.requestCaptchaAuthorityCanary()">
             {{ authority.circuit_state === 'open' ? 'Reactivar V6' : 'Activar V6' }}
           </button>
         }
@@ -645,15 +645,15 @@
   <dl class="summary-list compact captcha-sampling-facts">
     <div>
       <dt>Modo guardado</dt>
-      <dd>{{ shell.captchaSamplingControl()?.enabled ? 'Recolección' : 'Normal' }}</dd>
+      <dd>{{ shellDomain.captchaSamplingControl()?.enabled ? 'Recolección' : 'Normal' }}</dd>
     </div>
     <div>
       <dt>Cambio pendiente</dt>
-      <dd>{{ shell.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
+      <dd>{{ shellDomain.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
     </div>
     <div>
       <dt>Resolutor guardado</dt>
-      <dd>{{ shell.captchaAuthorityControl()?.mode === 'canary' ? 'V6 canario' : '2Captcha' }}</dd>
+      <dd>{{ shellDomain.captchaAuthorityControl()?.mode === 'canary' ? 'V6 canario' : '2Captcha' }}</dd>
     </div>
     <div>
       <dt>Regla incompatible</dt>
@@ -661,7 +661,7 @@
     </div>
   </dl>
 
-  @if (shell.captchaSamplingEnabled() && orderList.readyOrders() > 1) {
+  @if (shellDomain.captchaSamplingEnabled() && orderList.readyOrders() > 1) {
     <div class="notice warn captcha-sampling-queue-warning" role="alert">
       Hay varias órdenes listas. Considera el modo normal para no retrasar la competencia por un
       cupo.
@@ -671,13 +671,13 @@
     <button
       type="button"
       class="primary"
-      [disabled]="!shell.captchaSamplingDirty() || shell.captchaSamplingSaving()"
-      (click)="shell.saveCaptchaSamplingControl()"
+      [disabled]="!shellDomain.captchaSamplingDirty() || shellDomain.captchaSamplingSaving()"
+      (click)="shellDomain.saveCaptchaSamplingControl()"
     >
       {{
-        shell.captchaSamplingSaving()
+        shellDomain.captchaSamplingSaving()
           ? 'Guardando...'
-          : shell.captchaSamplingDirty()
+          : shellDomain.captchaSamplingDirty()
             ? 'Guardar cambio'
             : 'Configuración guardada'
       }}
@@ -693,14 +693,14 @@
     <div class="panel-header">
       <div>
         <h2>Actividad actual</h2>
-        <p>{{ shell.currentWorkLabel() }}</p>
+        <p>{{ shellDomain.currentWorkLabel() }}</p>
       </div>
-      <span class="badge {{ shell.statusTone(shell.worker()?.paused ? 'paused' : shell.worker()?.phase) }}">
-        {{ shell.worker()?.paused ? 'pausado' : shell.phaseLabel(shell.worker()?.phase) }}
+      <span class="badge {{ shellDomain.statusTone(shellDomain.worker()?.paused ? 'paused' : shellDomain.worker()?.phase) }}">
+        {{ shellDomain.worker()?.paused ? 'pausado' : shellDomain.phaseLabel(shellDomain.worker()?.phase) }}
       </span>
     </div>
 
-    @if (shell.currentOrder(); as order) {
+    @if (shellDomain.currentOrder(); as order) {
       <dl class="summary-list">
         <div>
           <dt>Solicitante</dt>
@@ -713,16 +713,16 @@
         <div>
           <dt>Reserva</dt>
           <dd>
-            {{ shell.formatDate(order.reservation_date, 'pendiente') }}
-            {{ shell.formatTime(order.reservation_hour) }}
+            {{ shellDomain.formatDate(order.reservation_date, 'pendiente') }}
+            {{ shellDomain.formatTime(order.reservation_hour) }}
           </dd>
         </div>
         <div>
           <dt>Pago</dt>
-          <dd>{{ shell.paymentLabel(order) }}</dd>
+          <dd>{{ financeDomain.paymentLabel(order) }}</dd>
         </div>
       </dl>
-    } @else if (shell.generalObserverActive()) {
+    } @else if (shellDomain.generalObserverActive()) {
       <dl class="summary-list">
         <div>
           <dt>Modo</dt>
@@ -730,7 +730,7 @@
         </div>
         <div>
           <dt>Cuenta</dt>
-          <dd>{{ shell.worker()?.masked_account ?? 'cuenta protegida' }}</dd>
+          <dd>{{ shellDomain.worker()?.masked_account ?? 'cuenta protegida' }}</dd>
         </div>
         <div>
           <dt>Alcance</dt>
@@ -751,26 +751,26 @@
     <div class="panel-actions button-row">
       <button
         type="button"
-        [class]="shell.worker()?.paused ? 'primary' : 'danger'"
+        [class]="shellDomain.worker()?.paused ? 'primary' : 'danger'"
         [disabled]="
-          (shell.worker()?.worker_running ?? shell.health()?.worker_running) !== true ||
-          shell.actionBusy() ||
-          shell.pendingWorkerControl() !== null
+          (shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running) !== true ||
+          shellDomain.actionBusy() ||
+          shellDomain.pendingWorkerControl() !== null
         "
         [attr.title]="
-          (shell.worker()?.worker_running ?? shell.health()?.worker_running) !== true
+          (shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running) !== true
             ? 'El worker debe estar activo para aplicar este control'
             : null
         "
-        (click)="shell.requestWorkerPauseToggle()"
+        (click)="shellDomain.requestWorkerPauseToggle()"
       >
-        @if (shell.pendingWorkerControl(); as command) {
+        @if (shellDomain.pendingWorkerControl(); as command) {
           {{ command.command === 'pause' ? 'Pausa solicitada' : 'Reactivación solicitada' }}
         } @else {
-          {{ shell.worker()?.paused ? 'Reactivar búsquedas' : 'Detener búsquedas' }}
+          {{ shellDomain.worker()?.paused ? 'Reactivar búsquedas' : 'Detener búsquedas' }}
         }
       </button>
-      <button type="button" class="danger" (click)="shell.openWorkerRestart()">
+      <button type="button" class="danger" (click)="shellDomain.openWorkerRestart()">
         Reiniciar worker
       </button>
     </div>
@@ -782,41 +782,41 @@
           <strong id="opportunity-control-title">Ráfagas de reserva</strong>
           <small>Abre solo para activar, detener o revisar una protección</small>
         </span>
-        <span class="badge {{ shell.opportunityControlTone() }}">
-          {{ shell.opportunityControlLabel() }}
+        <span class="badge {{ shellDomain.opportunityControlTone() }}">
+          {{ shellDomain.opportunityControlLabel() }}
         </span>
       </summary>
       <div class="settings-body">
       <div class="panel-header">
         <div>
           <h2 id="opportunity-control-title">Control de oportunidades</h2>
-          <p>Ráfagas y reobservación de cupos · máximo {{ shell.opportunityMaxSessions() }} sesiones</p>
+          <p>Ráfagas y reobservación de cupos · máximo {{ shellDomain.opportunityMaxSessions() }} sesiones</p>
         </div>
         <span
-          class="badge {{ shell.opportunityControlTone() }}"
+          class="badge {{ shellDomain.opportunityControlTone() }}"
           aria-live="polite"
         >
-          {{ shell.opportunityControlLabel() }}
+          {{ shellDomain.opportunityControlLabel() }}
         </span>
       </div>
 
-      @if (shell.opportunityControl(); as control) {
-        @if (shell.opportunityBreakerOpen()) {
+      @if (shellDomain.opportunityControl(); as control) {
+        @if (shellDomain.opportunityBreakerOpen()) {
           <div class="opportunity-breaker" role="alert">
             <div>
               <strong>Protección automática activada</strong>
               <p>
-                {{ shell.opportunityReasonLabel(control.breaker.reason) }}
+                {{ shellDomain.opportunityReasonLabel(control.breaker.reason) }}
                 @if (control.breaker.opened_at) {
-                  · {{ shell.formatDateTime(control.breaker.opened_at) }}
+                  · {{ shellDomain.formatDateTime(control.breaker.opened_at) }}
                 }
               </p>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shell.actionBusy() || control.pending_application"
-              (click)="shell.requestResetOpportunityBreaker()"
+              [disabled]="shellDomain.actionBusy() || control.pending_application"
+              (click)="shellDomain.requestResetOpportunityBreaker()"
             >
               Restablecer protección
             </button>
@@ -831,7 +831,7 @@
           <strong>{{ control.pending_application ? 'Pendiente de aplicar' : 'Aplicado' }}</strong>
           · revisión {{ control.revision }}
           @if (control.updated_at) {
-            · {{ shell.formatDateTime(control.updated_at) }}
+            · {{ shellDomain.formatDateTime(control.updated_at) }}
           }
         </p>
 
@@ -839,25 +839,25 @@
           <section class="opportunity-control-row" aria-labelledby="obs006-control-title">
             <div>
               <h3 id="obs006-control-title">Ráfagas de oportunidad</h3>
-              <p>Ráfaga de oportunidades con un máximo de {{ shell.opportunityMaxSessions() }} sesiones simultáneas.</p>
+              <p>Ráfaga de oportunidades con un máximo de {{ shellDomain.opportunityMaxSessions() }} sesiones simultáneas.</p>
             </div>
             <div class="opportunity-control-state">
-              <span class="badge {{ shell.opportunityModeTone(control.obs006.effective_mode) }}">
-                {{ shell.opportunityModeLabel(control.obs006.effective_mode) }}
+              <span class="badge {{ shellDomain.opportunityModeTone(control.obs006.effective_mode) }}">
+                {{ shellDomain.opportunityModeLabel(control.obs006.effective_mode) }}
               </span>
               <small>
-                Deseado: {{ shell.opportunityModeLabel(control.obs006.desired_mode) }}
+                Deseado: {{ shellDomain.opportunityModeLabel(control.obs006.desired_mode) }}
                 · admisiones {{ control.obs006.admissions_allowed ? 'abiertas' : 'cerradas' }}
               </small>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shell.opportunityActionDisabled('obs006')"
+              [disabled]="shellDomain.opportunityActionDisabled('obs006')"
               aria-describedby="opportunity-action-hint"
-              (click)="shell.requestOpportunityContextAction('obs006')"
+              (click)="shellDomain.requestOpportunityContextAction('obs006')"
             >
-              {{ shell.opportunityActionLabel('obs006') }}
+              {{ shellDomain.opportunityActionLabel('obs006') }}
             </button>
           </section>
 
@@ -867,29 +867,29 @@
               <p>Reobservación controlada después de perder un cupo durante la reserva.</p>
             </div>
             <div class="opportunity-control-state">
-              <span class="badge {{ shell.opportunityModeTone(control.obs007.effective_mode) }}">
-                {{ shell.opportunityModeLabel(control.obs007.effective_mode) }}
+              <span class="badge {{ shellDomain.opportunityModeTone(control.obs007.effective_mode) }}">
+                {{ shellDomain.opportunityModeLabel(control.obs007.effective_mode) }}
               </span>
               <small>
-                Deseado: {{ shell.opportunityModeLabel(control.obs007.desired_mode) }}
+                Deseado: {{ shellDomain.opportunityModeLabel(control.obs007.desired_mode) }}
                 · admisiones {{ control.obs007.admissions_allowed ? 'abiertas' : 'cerradas' }}
               </small>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shell.opportunityActionDisabled('obs007')"
+              [disabled]="shellDomain.opportunityActionDisabled('obs007')"
               aria-describedby="opportunity-action-hint"
-              (click)="shell.requestOpportunityContextAction('obs007')"
+              (click)="shellDomain.requestOpportunityContextAction('obs007')"
             >
-              {{ shell.opportunityActionLabel('obs007') }}
+              {{ shellDomain.opportunityActionLabel('obs007') }}
             </button>
           </section>
         </div>
 
         <p id="opportunity-action-hint" class="opportunity-hint">
           Drenar bloquea trabajos nuevos y permite terminar confirmaciones ya iniciadas.
-          @if (shell.opportunityBreakerOpen()) {
+          @if (shellDomain.opportunityBreakerOpen()) {
             La protección debe restablecerse antes de volver a activar controles.
           }
         </p>
@@ -903,15 +903,15 @@
           >
             <strong>Ráfaga activa</strong>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
-            <span>{{ burst.max_active_sessions }} de {{ shell.opportunityMaxSessions() }} sesiones máximas</span>
-            <span>Inició {{ shell.formatDateTime(burst.started_at) }}</span>
+            <span>{{ burst.max_active_sessions }} de {{ shellDomain.opportunityMaxSessions() }} sesiones máximas</span>
+            <span>Inició {{ shellDomain.formatDateTime(burst.started_at) }}</span>
           </div>
-        } @else if (shell.latestOpportunityBurst(); as burst) {
+        } @else if (shellDomain.latestOpportunityBurst(); as burst) {
           <div class="opportunity-burst opportunity-burst--quiet">
             <strong>Última ráfaga</strong>
-            <span>{{ shell.opportunityModeLabel(burst.status) }}</span>
+            <span>{{ shellDomain.opportunityModeLabel(burst.status) }}</span>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
-            <span>{{ shell.opportunityReasonLabel(burst.completion_reason) }}</span>
+            <span>{{ shellDomain.opportunityReasonLabel(burst.completion_reason) }}</span>
           </div>
         }
       } @else {
@@ -937,26 +937,26 @@
         <h2>Lectura segura</h2>
         <p>Snapshot sin secretos ni detalles crudos de evidencia</p>
       </div>
-      <button type="button" class="secondary" (click)="shell.copyDashboardSnapshot()">
+      <button type="button" class="secondary" (click)="shellDomain.copyDashboardSnapshot()">
         Copiar
       </button>
     </div>
     <dl class="summary-list compact">
       <div>
         <dt>Runs visibles</dt>
-        <dd>{{ shell.filteredRuns().length }}</dd>
+        <dd>{{ shellDomain.filteredRuns().length }}</dd>
       </div>
       <div>
         <dt>Runs con error</dt>
-        <dd>{{ shell.failedRuns() }}</dd>
+        <dd>{{ shellDomain.failedRuns() }}</dd>
       </div>
       <div>
         <dt>Estado carga</dt>
-        <dd>{{ shell.loadState() }}</dd>
+        <dd>{{ shellDomain.loadState() }}</dd>
       </div>
       <div>
         <dt>Copiado</dt>
-        <dd>{{ shell.copiedLabel() ?? 'no' }}</dd>
+        <dd>{{ shellDomain.copiedLabel() ?? 'no' }}</dd>
       </div>
     </dl>
     </div>

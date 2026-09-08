@@ -18,21 +18,21 @@
         </tr>
       </thead>
       <tbody>
-        @for (command of shell.workerCommands(); track command.command_id) {
+        @for (command of shellDomain.workerCommands(); track command.command_id) {
           <tr>
             <td data-label="Comando">
               <strong>{{ command.command }}</strong>
               <span>{{ command.command_id }}</span>
             </td>
             <td data-label="Estado">
-              <span class="badge {{ shell.statusTone(command.status) }}">{{
-                shell.statusLabel(command.status)
+              <span class="badge {{ shellDomain.statusTone(command.status) }}">{{
+                shellDomain.statusLabel(command.status)
               }}</span>
             </td>
-            <td data-label="Solicitado">{{ shell.formatDateTime(command.requested_at) }}</td>
+            <td data-label="Solicitado">{{ shellDomain.formatDateTime(command.requested_at) }}</td>
             <td data-label="Procesado">
-              {{ shell.formatDateTime(command.processed_at, 'pendiente') }}
-              <span>{{ shell.formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
+              {{ shellDomain.formatDateTime(command.processed_at, 'pendiente') }}
+              <span>{{ shellDomain.formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
             </td>
             <td data-label="Error">{{ command.error_message ?? '' }}</td>
           </tr>
@@ -63,45 +63,45 @@
       Estado
       <select
         name="runStatus"
-        [ngModel]="shell.runStatusFilter()"
-        (ngModelChange)="shell.runStatusFilter.set($event)"
+        [ngModel]="shellDomain.runStatusFilter()"
+        (ngModelChange)="shellDomain.runStatusFilter.set($event)"
       >
         <option value="">Todos</option>
-        @for (status of shell.runStatuses(); track status) {
+        @for (status of shellDomain.runStatuses(); track status) {
           <option [value]="status">{{ status }}</option>
         }
       </select>
     </label>
   </div>
 
-  @if (shell.selectedRunId()) {
+  @if (shellDomain.selectedRunId()) {
     <article class="run-detail" aria-live="polite">
       <div class="run-detail-header">
         <div>
           <p class="eyebrow">Detalle de corrida</p>
-          <h3>{{ shell.selectedRunId() }}</h3>
+          <h3>{{ shellDomain.selectedRunId() }}</h3>
         </div>
-        <button type="button" class="secondary" (click)="shell.closeRunDetail()">
+        <button type="button" class="secondary" (click)="shellDomain.closeRunDetail()">
           Volver a la lista
         </button>
       </div>
 
-      @if (shell.runDetailState() === 'loading') {
+      @if (shellDomain.runDetailState() === 'loading') {
         <p class="run-detail-state">Cargando detalle sanitizado...</p>
-      } @else if (shell.runDetailState() === 'error') {
+      } @else if (shellDomain.runDetailState() === 'error') {
         <div class="notice bad" role="alert">
-          {{ shell.runDetailError() ?? 'No se pudo cargar la corrida.' }}
-          <button type="button" class="secondary" (click)="shell.selectRun(shell.selectedRunId())">
+          {{ shellDomain.runDetailError() ?? 'No se pudo cargar la corrida.' }}
+          <button type="button" class="secondary" (click)="shellDomain.selectRun(shellDomain.selectedRunId())">
             Reintentar
           </button>
         </div>
-      } @else if (shell.selectedRun(); as run) {
+      } @else if (shellDomain.selectedRun(); as run) {
         <dl class="run-detail-grid">
           <div>
             <dt>Estado</dt>
             <dd>
-              <span class="badge {{ shell.statusTone(run.status) }}">{{
-                shell.statusLabel(run.status)
+              <span class="badge {{ shellDomain.statusTone(run.status) }}">{{
+                shellDomain.statusLabel(run.status)
               }}</span>
             </dd>
           </div>
@@ -111,7 +111,7 @@
           </div>
           <div>
             <dt>Resultado</dt>
-            <dd>{{ shell.runResultLabel(run) }}</dd>
+            <dd>{{ shellDomain.runResultLabel(run) }}</dd>
           </div>
           <div>
             <dt>Codigo de salida</dt>
@@ -119,11 +119,11 @@
           </div>
           <div>
             <dt>Inicio</dt>
-            <dd>{{ shell.formatDateTime(run.started_at) }}</dd>
+            <dd>{{ shellDomain.formatDateTime(run.started_at) }}</dd>
           </div>
           <div>
             <dt>Fin</dt>
-            <dd>{{ shell.formatDateTime(run.finished_at) }}</dd>
+            <dd>{{ shellDomain.formatDateTime(run.finished_at) }}</dd>
           </div>
           <div>
             <dt>Duracion</dt>
@@ -131,18 +131,18 @@
           </div>
           <div>
             <dt>Evidencias</dt>
-            <dd>{{ run.screenshot_count ?? shell.runEvidencePaths(run).length }}</dd>
+            <dd>{{ run.screenshot_count ?? shellDomain.runEvidencePaths(run).length }}</dd>
           </div>
         </dl>
         <div class="run-message">
           <strong>Mensaje</strong>
           <p>{{ run.message || 'Sin mensaje registrado.' }}</p>
         </div>
-        @if (shell.runEvidencePaths(run).length) {
+        @if (shellDomain.runEvidencePaths(run).length) {
           <div class="run-evidence">
             <strong>Rutas permitidas de evidencia</strong>
             <ul>
-              @for (path of shell.runEvidencePaths(run); track path) {
+              @for (path of shellDomain.runEvidencePaths(run); track path) {
                 <li>{{ path }}</li>
               }
             </ul>
@@ -171,17 +171,17 @@
         </tr>
       </thead>
       <tbody>
-        @for (run of shell.filteredRuns(); track run.run_id) {
+        @for (run of shellDomain.filteredRuns(); track run.run_id) {
           <tr
             class="selectable-row"
-            [class.selected-row]="shell.selectedRunId() === run.run_id"
-            (click)="shell.selectRun(run.run_id)"
+            [class.selected-row]="shellDomain.selectedRunId() === run.run_id"
+            (click)="shellDomain.selectRun(run.run_id)"
           >
             <td data-label="Run">
               <button
                 type="button"
                 class="run-link"
-                (click)="$event.stopPropagation(); shell.selectRun(run.run_id)"
+                (click)="$event.stopPropagation(); shellDomain.selectRun(run.run_id)"
               >
                 {{ run.run_id }}
               </button>
@@ -189,8 +189,8 @@
             </td>
             <td data-label="Orden">{{ run.order_id ?? 'observador' }}</td>
             <td data-label="Estado">
-              <span class="badge {{ shell.statusTone(run.status) }}">{{
-                shell.statusLabel(run.status)
+              <span class="badge {{ shellDomain.statusTone(run.status) }}">{{
+                shellDomain.statusLabel(run.status)
               }}</span>
             </td>
             <td data-label="Reserva">
@@ -198,7 +198,7 @@
               <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
             </td>
             <td data-label="Duracion">{{ run.duration_seconds }}s</td>
-            <td data-label="Inicio">{{ shell.formatDateTime(run.started_at) }}</td>
+            <td data-label="Inicio">{{ shellDomain.formatDateTime(run.started_at) }}</td>
           </tr>
         } @empty {
           <tr>

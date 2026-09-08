@@ -11,37 +11,37 @@
         <input
           name="financeMonth"
           type="month"
-          [ngModel]="shell.selectedMonth()"
-          [disabled]="shell.financeLoading()"
-          (ngModelChange)="shell.changeMonth($event)"
+          [ngModel]="financeDomain.selectedMonth()"
+          [disabled]="financeDomain.financeLoading()"
+          (ngModelChange)="financeDomain.changeMonth($event)"
         />
       </label>
-      <button type="button" class="primary" (click)="shell.openNewFinanceEntry()">
+      <button type="button" class="primary" (click)="financeDomain.openNewFinanceEntry()">
         Nuevo movimiento
       </button>
     </div>
   </div>
 
-  @if (shell.financeLoading()) {
+  @if (financeDomain.financeLoading()) {
     <p class="monthly-loading">Actualizando finanzas...</p>
-  } @else if (shell.financeSummary(); as finance) {
+  } @else if (financeDomain.financeSummary(); as finance) {
     <div class="monthly-kpis finance-kpis">
       <article class="monthly-kpi primary-kpi">
         <span>Ingresos cobrados</span>
-        <strong>{{ shell.formatMoney(finance.revenue_collected) }}</strong>
+        <strong>{{ shellDomain.formatMoney(finance.revenue_collected) }}</strong>
         <small>Pagos recibidos en el mes</small>
       </article>
       <article class="monthly-kpi">
         <span>Gastos registrados</span>
-        <strong>{{ shell.formatMoney(finance.recognized_costs) }}</strong>
+        <strong>{{ shellDomain.formatMoney(finance.recognized_costs) }}</strong>
         <small>Gastos usados para calcular el resultado</small>
       </article>
-      <article class="monthly-kpi" [class.warn-kpi]="!shell.financeConversionComplete(finance)">
+      <article class="monthly-kpi" [class.warn-kpi]="!financeDomain.financeConversionComplete(finance)">
         <span>Resultado aproximado</span>
-        <strong>{{ shell.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
+        <strong>{{ shellDomain.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
         <small>
           {{
-            shell.financeConversionComplete(finance)
+            financeDomain.financeConversionComplete(finance)
               ? 'Ingresos menos gastos registrados'
               : finance.unconverted_entries + ' movimientos necesitan revisión'
           }}
@@ -49,7 +49,7 @@
       </article>
       <article class="monthly-kpi">
         <span>Dinero que salió</span>
-        <strong>{{ shell.formatMoney(finance.net_cash_outflow) }}</strong>
+        <strong>{{ shellDomain.formatMoney(finance.net_cash_outflow) }}</strong>
         <small>Salida real de efectivo del mes</small>
       </article>
     </div>
@@ -57,11 +57,11 @@
     @if (!finance.receipt_date_quality.comparison_conclusive) {
       <p class="notice warn compact-finance-notice" role="status">
         Este periodo contiene {{ finance.receipt_date_quality.inferred_receipt_count }} recibos
-        históricos por {{ shell.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
+        históricos por {{ shellDomain.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
         El monto acumulado se conserva, pero sus fechas son inferidas y no permiten una comparación
         mensual concluyente.
         @if (finance.receipt_date_quality.exact_since; as cutoff) {
-          Los recibos nuevos son exactos desde {{ shell.formatDateTime(cutoff) }}.
+          Los recibos nuevos son exactos desde {{ shellDomain.formatDateTime(cutoff) }}.
         }
       </p>
     }
@@ -79,7 +79,7 @@
             @for (category of finance.by_category; track category.category_code) {
               <div>
                 <dt>{{ category.category_name }}</dt>
-                <dd>{{ shell.formatMoney(category.recognized_cost) }}</dd>
+                <dd>{{ shellDomain.formatMoney(category.recognized_cost) }}</dd>
               </div>
             }
           </div>
@@ -114,9 +114,9 @@
           <strong>Datos que necesitan revisión</strong>
           <small>Abre solo si aparece algo pendiente</small>
         </span>
-        @if (shell.financeQuality(); as quality) {
-          <span class="badge {{ shell.financeReviewIssueCount() ? 'warn' : 'good' }}">
-            {{ shell.financeReviewIssueCount() }} por revisar
+        @if (financeDomain.financeQuality(); as quality) {
+          <span class="badge {{ financeDomain.financeReviewIssueCount() ? 'warn' : 'good' }}">
+            {{ financeDomain.financeReviewIssueCount() }} por revisar
           </span>
         }
       </summary>
@@ -129,7 +129,7 @@
       </span>
     </div>
 
-    @if (shell.financeQuality(); as quality) {
+    @if (financeDomain.financeQuality(); as quality) {
       <section class="finance-quality-center" aria-labelledby="finance-quality-title">
         <div class="monthly-card-header">
           <div>
@@ -140,15 +140,15 @@
         </div>
 
         <div class="quality-metrics">
-          <article [class.quality-clear]="(shell.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0) === 0">
+          <article [class.quality-clear]="(financeDomain.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0) === 0">
             <span>Clientes sin contacto</span>
-            <strong>{{ shell.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0 }}</strong>
+            <strong>{{ financeDomain.monthlySummary()?.current_attention_snapshot?.missing_contact_count ?? 0 }}</strong>
             <small>Sin teléfono ni @usuario</small>
           </article>
-          <article [class.quality-clear]="shell.missingAcquisitionSourceOrders() === 0">
+          <article [class.quality-clear]="financeDomain.missingAcquisitionSourceOrders() === 0">
             <span>Clientes sin origen</span>
-            <strong>{{ shell.missingAcquisitionSourceOrders() }}</strong>
-            <small>Cohorte de {{ shell.selectedMonthLabel() }}</small>
+            <strong>{{ financeDomain.missingAcquisitionSourceOrders() }}</strong>
+            <small>Cohorte de {{ financeDomain.selectedMonthLabel() }}</small>
           </article>
           <article [class.quality-clear]="quality.data_quality.actual.unconverted_count === 0">
             <span>Gastos confirmados</span>
@@ -178,8 +178,8 @@
             <div class="quality-list">
               @for (entry of quality.unconverted_entries; track entry.entry_id) {
                 <div>
-                  <span><strong>{{ entry.description }}</strong><small>{{ shell.formatDate(entry.occurred_on) }} · {{ entry.amount_original }} {{ entry.currency }} · {{ entry.data_quality }}</small></span>
-                  <button type="button" class="secondary" (click)="shell.openEditFinanceEntryById(entry.entry_id)">Completar</button>
+                  <span><strong>{{ entry.description }}</strong><small>{{ shellDomain.formatDate(entry.occurred_on) }} · {{ entry.amount_original }} {{ entry.currency }} · {{ entry.data_quality }}</small></span>
+                  <button type="button" class="secondary" (click)="financeDomain.openEditFinanceEntryById(entry.entry_id)">Completar</button>
                 </div>
               }
             </div>
@@ -197,33 +197,33 @@
                     <span>
                       <strong>{{ item.order_id }}</strong>
                       <small>
-                        Acordado {{ shell.formatMoney(item.amount_agreed ?? 0) }} · Cobrado
-                        {{ shell.formatMoney(item.amount_paid ?? 0) }} · Diferencia
-                        {{ shell.formatMoney(item.difference ?? 0) }}
+                        Acordado {{ shellDomain.formatMoney(item.amount_agreed ?? 0) }} · Cobrado
+                        {{ shellDomain.formatMoney(item.amount_paid ?? 0) }} · Diferencia
+                        {{ shellDomain.formatMoney(item.difference ?? 0) }}
                       </small>
                     </span>
                     @if (item.reconciliation; as reconciliation) {
-                      <span class="badge good">{{ shell.financeResolutionLabel(reconciliation.resolution_type) }} · conciliado</span>
-                    } @else if (shell.financeMismatchPaymentId() !== item.payment_id) {
-                      <button type="button" class="secondary" (click)="shell.startFinanceMismatchResolution(item.payment_id)">Explicar diferencia</button>
+                      <span class="badge good">{{ financeDomain.financeResolutionLabel(reconciliation.resolution_type) }} · conciliado</span>
+                    } @else if (financeDomain.financeMismatchPaymentId() !== item.payment_id) {
+                      <button type="button" class="secondary" (click)="financeDomain.startFinanceMismatchResolution(item.payment_id)">Explicar diferencia</button>
                     }
                   </div>
-                  @if (!item.reconciliation && shell.financeMismatchPaymentId() === item.payment_id) {
+                  @if (!item.reconciliation && financeDomain.financeMismatchPaymentId() === item.payment_id) {
                     <div class="mismatch-form">
                       <label>Causa explícita
-                        <select [ngModel]="shell.financeMismatchResolution()" (ngModelChange)="shell.financeMismatchResolution.set($event)">
+                        <select [ngModel]="financeDomain.financeMismatchResolution()" (ngModelChange)="financeDomain.financeMismatchResolution.set($event)">
                           <option value="discount">Descuento</option>
                           <option value="waiver">Condonación</option>
                           <option value="correction">Corrección</option>
                         </select>
                       </label>
                       <label>Motivo
-                        <input type="text" [ngModel]="shell.financeMismatchReason()" (ngModelChange)="shell.financeMismatchReason.set($event)" placeholder="Explica la decisión" />
+                        <input type="text" [ngModel]="financeDomain.financeMismatchReason()" (ngModelChange)="financeDomain.financeMismatchReason.set($event)" placeholder="Explica la decisión" />
                       </label>
                       <small>El responsable se toma de la sesión autenticada.</small>
                       <div class="quality-actions">
-                        <button type="button" class="secondary" (click)="shell.cancelFinanceMismatchResolution()">Cancelar</button>
-                        <button type="button" class="primary" [disabled]="shell.actionBusy()" (click)="shell.requestReconcileFinancePayment(item.payment_id)">Guardar explicación</button>
+                        <button type="button" class="secondary" (click)="financeDomain.cancelFinanceMismatchResolution()">Cancelar</button>
+                        <button type="button" class="primary" [disabled]="shellDomain.actionBusy()" (click)="financeDomain.requestReconcileFinancePayment(item.payment_id)">Guardar explicación</button>
                       </div>
                     </div>
                   }
@@ -235,7 +235,7 @@
       </section>
     }
 
-    @if (shell.financeMonthClosure(); as monthClosure) {
+    @if (financeDomain.financeMonthClosure(); as monthClosure) {
       <section class="finance-month-closure" aria-labelledby="finance-closure-title">
         <div class="monthly-card-header">
           <div>
@@ -249,35 +249,35 @@
         </div>
 
         <dl class="closure-movements">
-          <div><dt>Recargas</dt><dd>{{ shell.formatMoney(monthClosure.movements.prepaid_topups) }}</dd></div>
-          <div><dt>Consumo</dt><dd>{{ shell.formatMoney(monthClosure.movements.prepaid_consumption) }}</dd></div>
-          <div><dt>Reembolsos</dt><dd>{{ shell.formatMoney(monthClosure.movements.refunds) }}</dd></div>
+          <div><dt>Recargas</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.prepaid_topups) }}</dd></div>
+          <div><dt>Consumo</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.prepaid_consumption) }}</dd></div>
+          <div><dt>Reembolsos</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.refunds) }}</dd></div>
           <div><dt>Estimados / pendientes</dt><dd>{{ monthClosure.movements.estimated_entries }} / {{ monthClosure.movements.pending_entries }}</dd></div>
         </dl>
 
         <div class="closure-form">
           <label>Saldo inicial
-            <input type="number" min="0" step="0.01" [ngModel]="shell.financeClosureOpeningBalance()" (ngModelChange)="shell.financeClosureOpeningBalance.set($event)" />
+            <input type="number" min="0" step="0.01" [ngModel]="financeDomain.financeClosureOpeningBalance()" (ngModelChange)="financeDomain.financeClosureOpeningBalance.set($event)" />
           </label>
           <label>Saldo final observado
-            <input type="number" min="0" step="0.01" [ngModel]="shell.financeClosureClosingBalance()" (ngModelChange)="shell.financeClosureClosingBalance.set($event)" />
+            <input type="number" min="0" step="0.01" [ngModel]="financeDomain.financeClosureClosingBalance()" (ngModelChange)="financeDomain.financeClosureClosingBalance.set($event)" />
           </label>
           <small>El responsable del cierre se toma de la sesión autenticada.</small>
           <label class="closure-notes">Notas
-            <textarea rows="2" [ngModel]="shell.financeClosureNotes()" (ngModelChange)="shell.financeClosureNotes.set($event)"></textarea>
+            <textarea rows="2" [ngModel]="financeDomain.financeClosureNotes()" (ngModelChange)="financeDomain.financeClosureNotes.set($event)"></textarea>
           </label>
         </div>
 
         <div class="closure-balance-line">
           <span>Saldo final esperado</span>
-          <strong>{{ monthClosure.expected_closing_prepaid_balance === null ? 'Completa el saldo inicial' : shell.formatMoney(monthClosure.expected_closing_prepaid_balance) }}</strong>
+          <strong>{{ monthClosure.expected_closing_prepaid_balance === null ? 'Completa el saldo inicial' : shellDomain.formatMoney(monthClosure.expected_closing_prepaid_balance) }}</strong>
           <span>Diferencia observada</span>
-          <strong>{{ monthClosure.balance_difference === null ? 'Pendiente' : shell.formatMoney(monthClosure.balance_difference) }}</strong>
+          <strong>{{ monthClosure.balance_difference === null ? 'Pendiente' : shellDomain.formatMoney(monthClosure.balance_difference) }}</strong>
         </div>
 
-        @if (!shell.financeClosureCanReconcile()) {
+        @if (!financeDomain.financeClosureCanReconcile()) {
           <p class="notice warn compact-finance-notice">
-            @if (!shell.financeSelectedMonthIsClosed()) {
+            @if (!financeDomain.financeSelectedMonthIsClosed()) {
               Este mes todavía no terminó. Puedes guardar los datos y completarlos al finalizar.
             } @else {
               Aún faltan importes o explicaciones antes de terminar el mes.
@@ -285,11 +285,11 @@
           </p>
         }
         <div class="quality-actions closure-actions">
-          <button type="button" class="secondary" [disabled]="shell.actionBusy()" (click)="shell.requestSaveFinanceMonthClosure('draft')">Guardar borrador</button>
-          <button type="button" class="primary" [disabled]="shell.actionBusy() || !shell.financeClosureCanReconcile()" (click)="shell.requestSaveFinanceMonthClosure('reconciled')">Terminar mes</button>
+          <button type="button" class="secondary" [disabled]="shellDomain.actionBusy()" (click)="financeDomain.requestSaveFinanceMonthClosure('draft')">Guardar borrador</button>
+          <button type="button" class="primary" [disabled]="shellDomain.actionBusy() || !financeDomain.financeClosureCanReconcile()" (click)="financeDomain.requestSaveFinanceMonthClosure('reconciled')">Terminar mes</button>
         </div>
         @if (monthClosure.closure?.reconciled_at) {
-          <small class="closure-audit">Conciliado por {{ monthClosure.closure?.reconciled_by }} · {{ shell.formatDateTime(monthClosure.closure?.reconciled_at) }}</small>
+          <small class="closure-audit">Conciliado por {{ monthClosure.closure?.reconciled_by }} · {{ shellDomain.formatDateTime(monthClosure.closure?.reconciled_at) }}</small>
         }
       </section>
     }
@@ -300,7 +300,7 @@
       <summary>
         <span>
           <strong>Ver movimientos registrados</strong>
-          <small>{{ shell.financeEntries().length }} movimientos en este mes</small>
+          <small>{{ financeDomain.financeEntries().length }} movimientos en este mes</small>
         </span>
       </summary>
       <div class="finance-movements-body">
@@ -324,11 +324,11 @@
             </tr>
           </thead>
           <tbody>
-            @for (entry of shell.financeEntries(); track entry.entry_id) {
+            @for (entry of financeDomain.financeEntries(); track entry.entry_id) {
               <tr [class.voided-row]="entry.status === 'voided'">
-                <td data-label="Fecha">{{ shell.formatDate(entry.occurred_on) }}</td>
+                <td data-label="Fecha">{{ shellDomain.formatDate(entry.occurred_on) }}</td>
                 <td data-label="Tipo">
-                  <strong>{{ shell.financeKindLabel(entry.entry_kind) }}</strong>
+                  <strong>{{ financeDomain.financeKindLabel(entry.entry_kind) }}</strong>
                   <span>{{ entry.status === 'voided' ? 'anulado' : 'activo' }}</span>
                 </td>
                 <td data-label="Detalle">
@@ -336,16 +336,16 @@
                   <span>{{ entry.description }}</span>
                   <span>{{ entry.vendor ?? entry.channel ?? 'sin proveedor/canal' }}</span>
                 </td>
-                <td data-label="Importe">{{ shell.formatOriginalMoney(entry) }}</td>
+                <td data-label="Importe">{{ financeDomain.formatOriginalMoney(entry) }}</td>
                 <td data-label="Valor PEN">
                   {{
                     entry.amount_pen === null
                       ? 'sin conversión'
-                      : shell.formatMoney(entry.amount_pen)
+                      : shellDomain.formatMoney(entry.amount_pen)
                   }}
                 </td>
                 <td data-label="Calidad">
-                  <span class="badge {{ shell.statusTone(entry.data_quality) }}">
+                  <span class="badge {{ shellDomain.statusTone(entry.data_quality) }}">
                     {{ entry.data_quality }}
                   </span>
                 </td>
@@ -354,14 +354,14 @@
                     <button
                       type="button"
                       class="secondary"
-                      (click)="shell.openEditFinanceEntry(entry)"
+                      (click)="financeDomain.openEditFinanceEntry(entry)"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       class="danger"
-                      (click)="shell.requestVoidFinanceEntry(entry)"
+                      (click)="financeDomain.requestVoidFinanceEntry(entry)"
                     >
                       Anular
                     </button>

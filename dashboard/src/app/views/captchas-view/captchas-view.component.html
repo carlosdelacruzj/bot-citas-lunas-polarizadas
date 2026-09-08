@@ -9,32 +9,32 @@
       <button
         type="button"
         class="secondary"
-        (click)="shell.showAllPendingCaptchas()"
+        (click)="shellDomain.showAllPendingCaptchas()"
       >
         Todos los pendientes
       </button>
       <button
         type="button"
         class="secondary"
-        [disabled]="shell.captchaState() === 'loading'"
-        (click)="shell.loadCaptchaData()"
+        [disabled]="shellDomain.captchaState() === 'loading'"
+        (click)="shellDomain.loadCaptchaData()"
       >
         Actualizar CAPTCHA
       </button>
     </div>
   </div>
 
-  @if (shell.captchaSummary(); as summary) {
+  @if (shellDomain.captchaSummary(); as summary) {
     <div class="captcha-summary-strip" aria-label="Resumen de CAPTCHA">
       <span class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
-        {{ summary.status === 'ok' ? 'Servicio activo' : shell.statusLabel(summary.status) }}
+        {{ summary.status === 'ok' ? 'Servicio activo' : shellDomain.statusLabel(summary.status) }}
       </span>
       <strong>{{ summary.stats.events }} total</strong>
       <span>{{ summary.stats.human_labeled }} validados</span>
-      <span class="{{ shell.captchaReviewTotal() ? 'warn' : 'good' }}">
-        {{ shell.captchaReviewTotal() }} prioritarios
+      <span class="{{ shellDomain.captchaReviewTotal() ? 'warn' : 'good' }}">
+        {{ shellDomain.captchaReviewTotal() }} prioritarios
       </span>
-      <span>{{ shell.captchaPendingTotal() }} pendientes guardados</span>
+      <span>{{ shellDomain.captchaPendingTotal() }} pendientes guardados</span>
       <small
         >{{ summary.models.length }} modelos · {{ summary.outbox.pending }} entregas en
         cola</small
@@ -45,71 +45,71 @@
   <nav class="captcha-workspace-switch" aria-label="Modo de trabajo CAPTCHA">
     <button
       type="button"
-      [class.active]="shell.captchaWorkspaceMode() === 'review'"
-      (click)="shell.showCaptchaWorkspace('review')"
+      [class.active]="shellDomain.captchaWorkspaceMode() === 'review'"
+      (click)="shellDomain.showCaptchaWorkspace('review')"
     >
       Revisar
-      <span>{{ shell.captchaReviewTotal() }}</span>
+      <span>{{ shellDomain.captchaReviewTotal() }}</span>
     </button>
     <button
       type="button"
-      [class.active]="shell.captchaWorkspaceMode() === 'history'"
-      (click)="shell.showCaptchaWorkspace('history')"
+      [class.active]="shellDomain.captchaWorkspaceMode() === 'history'"
+      (click)="shellDomain.showCaptchaWorkspace('history')"
     >
       Historial
-      <span>{{ shell.captchaTotal() }}</span>
+      <span>{{ shellDomain.captchaTotal() }}</span>
     </button>
     <button
       type="button"
-      [class.active]="shell.captchaWorkspaceMode() === 'quality'"
-      (click)="shell.showCaptchaWorkspace('quality')"
+      [class.active]="shellDomain.captchaWorkspaceMode() === 'quality'"
+      (click)="shellDomain.showCaptchaWorkspace('quality')"
     >
       Calidad
-      <span>{{ shell.captchaQuality()?.validated_images ?? 0 }}</span>
+      <span>{{ shellDomain.captchaQuality()?.validated_images ?? 0 }}</span>
     </button>
   </nav>
 
-  @if (shell.captchaWorkspaceMode() === 'review') {
-    @if (shell.captchaState() === 'loading') {
+  @if (shellDomain.captchaWorkspaceMode() === 'review') {
+    @if (shellDomain.captchaState() === 'loading') {
       <section class="panel captcha-state" role="status">
         Preparando la cola de revisión...
       </section>
-    } @else if (shell.captchaState() === 'error') {
+    } @else if (shellDomain.captchaState() === 'error') {
       <section class="notice bad captcha-state" role="alert">
         <strong>No se pudo cargar la cola.</strong>
-        <span>{{ shell.captchaError() }}</span>
-        <button type="button" class="secondary" (click)="shell.loadCaptchaData()">
+        <span>{{ shellDomain.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="shellDomain.loadCaptchaData()">
           Reintentar
         </button>
       </section>
-    } @else if (shell.activeCaptchaReview(); as event) {
+    } @else if (shellDomain.activeCaptchaReview(); as event) {
       <div class="captcha-review-progress">
         <div>
-          <strong>{{ shell.captchaReviewPosition() + 1 }} de {{ shell.captchaReviewTotal() }}</strong>
+          <strong>{{ shellDomain.captchaReviewPosition() + 1 }} de {{ shellDomain.captchaReviewTotal() }}</strong>
           <span
-            >{{ shell.captchaReviewReasonLabel(event) }} ·
-            {{ shell.captchaChoiceLabel(event) }} ·
-            {{ shell.captchaSourceLabel(event) }}</span
+            >{{ shellDomain.captchaReviewReasonLabel(event) }} ·
+            {{ shellDomain.captchaChoiceLabel(event) }} ·
+            {{ shellDomain.captchaSourceLabel(event) }}</span
           >
         </div>
         <small>Atajos: 1–4 elegir · Enter confirmar consenso · ← → navegar</small>
       </div>
 
-      @if (shell.captchaReviewMessage()) {
+      @if (shellDomain.captchaReviewMessage()) {
         <div class="notice neutral captcha-review-message" role="status">
-          {{ shell.captchaReviewMessage() }}
+          {{ shellDomain.captchaReviewMessage() }}
         </div>
       }
 
       <article class="captcha-event-card captcha-review-focus">
         <div class="captcha-event-topline">
           <div>
-            <strong>{{ shell.captchaOrderLabel(event) }}</strong>
+            <strong>{{ shellDomain.captchaOrderLabel(event) }}</strong>
             <span>{{
-              shell.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+              shellDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
             }}</span>
           </div>
-          <span class="badge warn">{{ shell.captchaReviewReasonLabel(event) }}</span>
+          <span class="badge warn">{{ shellDomain.captchaReviewReasonLabel(event) }}</span>
         </div>
 
         <div class="captcha-focus-layout">
@@ -127,13 +127,13 @@
           <section class="captcha-human-review">
             <div class="captcha-review-intro">
               <span class="eyebrow">Elige la respuesta válida</span>
-              @if (shell.captchaChoiceMode(event) === 'consensus') {
+              @if (shellDomain.captchaChoiceMode(event) === 'consensus') {
                 <strong>Todos los modelos coinciden</strong>
                 <small>Confirma con un clic o escribe otra respuesta.</small>
-              } @else if (shell.captchaChoiceMode(event) === 'majority') {
+              } @else if (shellDomain.captchaChoiceMode(event) === 'majority') {
                 <strong>La mayoría de modelos coincide</strong>
                 <small>Escoge la lectura correcta.</small>
-              } @else if (shell.captchaChoiceMode(event) === 'plurality') {
+              } @else if (shellDomain.captchaChoiceMode(event) === 'plurality') {
                 <strong>Hay una coincidencia parcial</strong>
                 <small>Dos modelos coinciden, pero no forman mayoría.</small>
               } @else {
@@ -142,20 +142,20 @@
               }
             </div>
 
-            @if (shell.captchaChoiceMode(event) !== 'manual') {
+            @if (shellDomain.captchaChoiceMode(event) !== 'manual') {
               <div class="captcha-suggestion-list">
                 @for (
-                  option of shell.captchaPredictionOptions(event);
+                  option of shellDomain.captchaPredictionOptions(event);
                   track option.answer;
                   let index = $index
                 ) {
                   <button
                     type="button"
                     class="captcha-suggestion {{
-                      shell.captchaSuggestionTone(event, option.answer)
+                      shellDomain.captchaSuggestionTone(event, option.answer)
                     }}"
-                    [disabled]="shell.captchaSavingEventId() === event.event_id"
-                    (click)="shell.chooseCaptchaPrediction(event, option.answer)"
+                    [disabled]="shellDomain.captchaSavingEventId() === event.event_id"
+                    (click)="shellDomain.chooseCaptchaPrediction(event, option.answer)"
                   >
                     <span class="captcha-shortcut">{{ index + 1 }}</span>
                     <strong>{{ option.answer }}</strong>
@@ -170,11 +170,11 @@
 
             <form
               class="captcha-manual-review"
-              (submit)="$event.preventDefault(); shell.saveCaptchaHumanLabel(event)"
+              (submit)="$event.preventDefault(); shellDomain.saveCaptchaHumanLabel(event)"
             >
               <label [for]="'reviewAnswer-' + event.event_id">
                 {{
-                  shell.captchaChoiceMode(event) === 'manual'
+                  shellDomain.captchaChoiceMode(event) === 'manual'
                     ? 'Respuesta manual'
                     : 'Otra respuesta'
                 }}
@@ -187,16 +187,16 @@
                   autocomplete="off"
                   maxlength="5"
                   placeholder="ABCDE"
-                  [ngModel]="shell.captchaDraft(event)"
-                  (ngModelChange)="shell.updateCaptchaDraft(event.event_id, $event)"
+                  [ngModel]="shellDomain.captchaDraft(event)"
+                  (ngModelChange)="shellDomain.updateCaptchaDraft(event.event_id, $event)"
                 />
                 <button
                   type="submit"
                   class="secondary"
-                  [disabled]="shell.captchaSavingEventId() === event.event_id"
+                  [disabled]="shellDomain.captchaSavingEventId() === event.event_id"
                 >
                   {{
-                    shell.captchaSavingEventId() === event.event_id
+                    shellDomain.captchaSavingEventId() === event.event_id
                       ? 'Guardando...'
                       : 'Guardar manual'
                   }}
@@ -207,18 +207,18 @@
         </div>
 
         <div class="captcha-comparison-grid compact">
-          @if (!shell.isObserverCaptcha(event)) {
+          @if (!shellDomain.isObserverCaptcha(event)) {
             <article class="captcha-answer external">
               <span>2Captcha</span>
               <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
-              <small>{{ shell.formatMilliseconds(event.external_solve_ms) }}</small>
+              <small>{{ shellDomain.formatMilliseconds(event.external_solve_ms) }}</small>
             </article>
           }
           @for (prediction of event.predictions; track prediction.model_name) {
-            <article class="captcha-answer {{ shell.captchaPredictionTone(event, prediction) }}">
-              <span>{{ shell.captchaModelLabel(prediction.model_name) }}</span>
+            <article class="captcha-answer {{ shellDomain.captchaPredictionTone(event, prediction) }}">
+              <span>{{ shellDomain.captchaModelLabel(prediction.model_name) }}</span>
               <strong>{{ prediction.prediction }}</strong>
-              <small>{{ shell.formatMilliseconds(prediction.inference_ms) }}</small>
+              <small>{{ shellDomain.formatMilliseconds(prediction.inference_ms) }}</small>
             </article>
           }
         </div>
@@ -228,16 +228,16 @@
         <button
           type="button"
           class="secondary"
-          [disabled]="shell.captchaReviewPosition() === 0"
-          (click)="shell.moveCaptchaReview(-1)"
+          [disabled]="shellDomain.captchaReviewPosition() === 0"
+          (click)="shellDomain.moveCaptchaReview(-1)"
         >
           Anterior
         </button>
         <button
           type="button"
           class="secondary"
-          [disabled]="shell.captchaReviewPosition() + 1 >= shell.captchaReviewQueue().length"
-          (click)="shell.moveCaptchaReview(1)"
+          [disabled]="shellDomain.captchaReviewPosition() + 1 >= shellDomain.captchaReviewQueue().length"
+          (click)="shellDomain.moveCaptchaReview(1)"
         >
           Omitir por ahora
         </button>
@@ -250,22 +250,22 @@
           No quedan decisiones V6, anomalías, desacuerdos ni muestras de control pendientes.
           Los demás CAPTCHA permanecen guardados.
         </p>
-        <button type="button" class="secondary" (click)="shell.showAllPendingCaptchas()">
+        <button type="button" class="secondary" (click)="shellDomain.showAllPendingCaptchas()">
           Ver todos los pendientes
         </button>
       </section>
     }
-  } @else if (shell.captchaWorkspaceMode() === 'history') {
+  } @else if (shellDomain.captchaWorkspaceMode() === 'history') {
     <section class="panel captcha-controls" aria-label="Filtros de CAPTCHA">
-      <form class="captcha-search" (submit)="$event.preventDefault(); shell.applyCaptchaFilters()">
+      <form class="captcha-search" (submit)="$event.preventDefault(); shellDomain.applyCaptchaFilters()">
         <label class="filter captcha-query">
           Buscar orden, run o respuesta
           <input
             name="captchaSearch"
             type="search"
             placeholder="Ej. order-09045304 o 9M9FH"
-            [ngModel]="shell.captchaSearch()"
-            (ngModelChange)="shell.captchaSearch.set($event)"
+            [ngModel]="shellDomain.captchaSearch()"
+            (ngModelChange)="shellDomain.captchaSearch.set($event)"
           />
         </label>
         <button type="submit" class="primary">Buscar</button>
@@ -276,67 +276,67 @@
           <button
             type="button"
             class="filter-chip"
-            [class.active]="shell.captchaReviewStatus() === 'all'"
-            (click)="shell.changeCaptchaReviewStatus('all')"
+            [class.active]="shellDomain.captchaReviewStatus() === 'all'"
+            (click)="shellDomain.changeCaptchaReviewStatus('all')"
           >
             Todos
           </button>
           <button
             type="button"
             class="filter-chip"
-            [class.active]="shell.captchaReviewStatus() === 'pending'"
-            (click)="shell.changeCaptchaReviewStatus('pending')"
+            [class.active]="shellDomain.captchaReviewStatus() === 'pending'"
+            (click)="shellDomain.changeCaptchaReviewStatus('pending')"
           >
             Pendientes
           </button>
           <button
             type="button"
             class="filter-chip"
-            [class.active]="shell.captchaReviewStatus() === 'validated'"
-            (click)="shell.changeCaptchaReviewStatus('validated')"
+            [class.active]="shellDomain.captchaReviewStatus() === 'validated'"
+            (click)="shellDomain.changeCaptchaReviewStatus('validated')"
           >
             Validados
           </button>
         </div>
-        <button type="button" class="secondary" (click)="shell.toggleCaptchaHistoryFilters()">
+        <button type="button" class="secondary" (click)="shellDomain.toggleCaptchaHistoryFilters()">
           Filtros{{
-            shell.captchaActiveFilterCount() ? ' (' + shell.captchaActiveFilterCount() + ')' : ''
+            shellDomain.captchaActiveFilterCount() ? ' (' + shellDomain.captchaActiveFilterCount() + ')' : ''
           }}
         </button>
       </div>
 
-      @if (shell.captchaHistoryFiltersOpen()) {
+      @if (shellDomain.captchaHistoryFiltersOpen()) {
         <div class="captcha-filter-row">
           <div class="captcha-filter-chips" aria-label="Coincidencia con 2Captcha">
             <button
               type="button"
               class="filter-chip"
-              [class.active]="shell.captchaAgreement() === 'all'"
-              (click)="shell.setCaptchaAgreement('all')"
+              [class.active]="shellDomain.captchaAgreement() === 'all'"
+              (click)="shellDomain.setCaptchaAgreement('all')"
             >
               Todos
             </button>
             <button
               type="button"
               class="filter-chip"
-              [class.active]="shell.captchaAgreement() === 'match'"
-              (click)="shell.setCaptchaAgreement('match')"
+              [class.active]="shellDomain.captchaAgreement() === 'match'"
+              (click)="shellDomain.setCaptchaAgreement('match')"
             >
               Coinciden
             </button>
             <button
               type="button"
               class="filter-chip"
-              [class.active]="shell.captchaAgreement() === 'mismatch'"
-              (click)="shell.setCaptchaAgreement('mismatch')"
+              [class.active]="shellDomain.captchaAgreement() === 'mismatch'"
+              (click)="shellDomain.setCaptchaAgreement('mismatch')"
             >
               Difieren
             </button>
             <button
               type="button"
               class="filter-chip"
-              [class.active]="shell.captchaAgreement() === 'pending'"
-              (click)="shell.setCaptchaAgreement('pending')"
+              [class.active]="shellDomain.captchaAgreement() === 'pending'"
+              (click)="shellDomain.setCaptchaAgreement('pending')"
             >
               Pendientes
             </button>
@@ -346,8 +346,8 @@
             Origen
             <select
               name="captchaSource"
-              [ngModel]="shell.captchaSource()"
-              (ngModelChange)="shell.changeCaptchaSource($event)"
+              [ngModel]="shellDomain.captchaSource()"
+              (ngModelChange)="shellDomain.changeCaptchaSource($event)"
             >
               <option value="all">Todos</option>
               <option value="reservation">Reservas con cliente</option>
@@ -358,8 +358,8 @@
             Portal
             <select
               name="captchaPortalStatus"
-              [ngModel]="shell.captchaPortalStatus()"
-              (ngModelChange)="shell.changeCaptchaPortalStatus($event)"
+              [ngModel]="shellDomain.captchaPortalStatus()"
+              (ngModelChange)="shellDomain.changeCaptchaPortalStatus($event)"
             >
               <option value="all">Todos</option>
               <option value="accepted">Aceptados</option>
@@ -371,49 +371,49 @@
       }
     </section>
 
-    @if (shell.captchaState() === 'loading') {
+    @if (shellDomain.captchaState() === 'loading') {
       <section class="panel captcha-state" role="status">
         Cargando evidencias CAPTCHA...
       </section>
-    } @else if (shell.captchaState() === 'error') {
+    } @else if (shellDomain.captchaState() === 'error') {
       <section class="notice bad captcha-state" role="alert">
         <strong>No se pudo cargar esta vista.</strong>
-        <span>{{ shell.captchaError() }}</span>
-        <button type="button" class="secondary" (click)="shell.loadCaptchaData()">
+        <span>{{ shellDomain.captchaError() }}</span>
+        <button type="button" class="secondary" (click)="shellDomain.loadCaptchaData()">
           Reintentar
         </button>
       </section>
     } @else {
       <div class="captcha-results-meta">
-        <strong>{{ shell.captchaTotal() }} resultados</strong>
-        <span>Página {{ shell.captchaPage() }} de {{ shell.captchaTotalPages() }}</span>
+        <strong>{{ shellDomain.captchaTotal() }} resultados</strong>
+        <span>Página {{ shellDomain.captchaPage() }} de {{ shellDomain.captchaTotalPages() }}</span>
       </div>
 
-      @if (shell.captchaReviewMessage()) {
+      @if (shellDomain.captchaReviewMessage()) {
         <div class="notice neutral captcha-review-message" role="status">
-          {{ shell.captchaReviewMessage() }}
+          {{ shellDomain.captchaReviewMessage() }}
         </div>
       }
 
       <div class="captcha-event-list">
-        @for (event of shell.captchaEvents(); track event.event_id) {
+        @for (event of shellDomain.captchaEvents(); track event.event_id) {
           <article class="captcha-event-card captcha-history-card">
             <div class="captcha-event-topline">
               <div>
-                <strong>{{ shell.captchaOrderLabel(event) }}</strong>
+                <strong>{{ shellDomain.captchaOrderLabel(event) }}</strong>
                 <span>
                   {{
-                    shell.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+                    shellDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
                   }}
                   · intento {{ event.metadata.attempt ?? 1 }}
                 </span>
               </div>
               <div class="captcha-statuses">
-                <span class="badge {{ shell.captchaAgreementTone(event) }}">
-                  {{ shell.captchaAgreementLabel(event) }}
+                <span class="badge {{ shellDomain.captchaAgreementTone(event) }}">
+                  {{ shellDomain.captchaAgreementLabel(event) }}
                 </span>
-                <span class="badge {{ shell.captchaPortalTone(event) }}">
-                  {{ shell.captchaPortalLabel(event) }}
+                <span class="badge {{ shellDomain.captchaPortalTone(event) }}">
+                  {{ shellDomain.captchaPortalLabel(event) }}
                 </span>
                 <span class="badge {{ event.human_label ? 'good' : 'neutral' }}">
                   {{
@@ -423,7 +423,7 @@
                   }}
                 </span>
                 <span class="badge neutral">
-                  Total local: {{ shell.formatMilliseconds(shell.captchaLocalTotalMs(event)) }}
+                  Total local: {{ shellDomain.formatMilliseconds(shellDomain.captchaLocalTotalMs(event)) }}
                 </span>
               </div>
             </div>
@@ -434,10 +434,10 @@
                 <div>
                   <strong>{{ event.human_label?.answer ?? 'Sin validar' }}</strong>
                   <span
-                    >{{ shell.captchaChoiceLabel(event) }} · {{ shell.captchaSourceLabel(event) }}</span
+                    >{{ shellDomain.captchaChoiceLabel(event) }} · {{ shellDomain.captchaSourceLabel(event) }}</span
                   >
                 </div>
-                <span>{{ shell.formatMilliseconds(shell.captchaLocalTotalMs(event)) }}</span>
+                <span>{{ shellDomain.formatMilliseconds(shellDomain.captchaLocalTotalMs(event)) }}</span>
                 <small>Ver detalles</small>
               </summary>
 
@@ -457,15 +457,15 @@
                   <section class="captcha-human-review">
                     <div class="captcha-review-intro">
                       <span class="eyebrow">Elige la respuesta válida</span>
-                      @if (shell.captchaChoiceMode(event) === 'consensus') {
+                      @if (shellDomain.captchaChoiceMode(event) === 'consensus') {
                         <strong>Todos los modelos coinciden</strong>
                         <small>Confirma con un clic o escribe otra respuesta.</small>
-                      } @else if (shell.captchaChoiceMode(event) === 'majority') {
+                      } @else if (shellDomain.captchaChoiceMode(event) === 'majority') {
                         <strong>La mayoría de modelos coincide</strong>
                         <small
                           >Escoge la lectura correcta; luego se compararán todos.</small
                         >
-                      } @else if (shell.captchaChoiceMode(event) === 'plurality') {
+                      } @else if (shellDomain.captchaChoiceMode(event) === 'plurality') {
                         <strong>Hay una coincidencia parcial</strong>
                         <small>Dos modelos coinciden, pero no forman mayoría.</small>
                       } @else {
@@ -476,19 +476,19 @@
                       }
                     </div>
 
-                    @if (shell.captchaChoiceMode(event) !== 'manual') {
+                    @if (shellDomain.captchaChoiceMode(event) !== 'manual') {
                       <div class="captcha-suggestion-list">
                         @for (
-                          option of shell.captchaPredictionOptions(event);
+                          option of shellDomain.captchaPredictionOptions(event);
                           track option.answer
                         ) {
                           <button
                             type="button"
                             class="captcha-suggestion {{
-                              shell.captchaSuggestionTone(event, option.answer)
+                              shellDomain.captchaSuggestionTone(event, option.answer)
                             }}"
-                            [disabled]="shell.captchaSavingEventId() === event.event_id"
-                            (click)="shell.chooseCaptchaPrediction(event, option.answer)"
+                            [disabled]="shellDomain.captchaSavingEventId() === event.event_id"
+                            (click)="shellDomain.chooseCaptchaPrediction(event, option.answer)"
                           >
                             <strong>{{ option.answer }}</strong>
                             <span>
@@ -503,11 +503,11 @@
 
                     <form
                       class="captcha-manual-review"
-                      (submit)="$event.preventDefault(); shell.saveCaptchaHumanLabel(event)"
+                      (submit)="$event.preventDefault(); shellDomain.saveCaptchaHumanLabel(event)"
                     >
                       <label [for]="'humanAnswer-' + event.event_id">
                         {{
-                          shell.captchaChoiceMode(event) === 'manual'
+                          shellDomain.captchaChoiceMode(event) === 'manual'
                             ? 'Respuesta manual'
                             : 'Otra respuesta'
                         }}
@@ -522,16 +522,16 @@
                           maxlength="5"
                           placeholder="ABCDE"
                           aria-label="Respuesta humana del CAPTCHA"
-                          [ngModel]="shell.captchaDraft(event)"
-                          (ngModelChange)="shell.updateCaptchaDraft(event.event_id, $event)"
+                          [ngModel]="shellDomain.captchaDraft(event)"
+                          (ngModelChange)="shellDomain.updateCaptchaDraft(event.event_id, $event)"
                         />
                         <button
                           type="submit"
                           class="secondary"
-                          [disabled]="shell.captchaSavingEventId() === event.event_id"
+                          [disabled]="shellDomain.captchaSavingEventId() === event.event_id"
                         >
                           {{
-                            shell.captchaSavingEventId() === event.event_id
+                            shellDomain.captchaSavingEventId() === event.event_id
                               ? 'Guardando...'
                               : 'Guardar manual'
                           }}
@@ -539,7 +539,7 @@
                       </div>
                     </form>
 
-                    @if (shell.pendingCaptchaCorrection(event.event_id); as correction) {
+                    @if (shellDomain.pendingCaptchaCorrection(event.event_id); as correction) {
                       <div class="notice warn captcha-correction-confirmation" role="alert">
                         <div>
                           <strong
@@ -554,15 +554,15 @@
                           <button
                             type="button"
                             class="danger"
-                            [disabled]="shell.captchaSavingEventId() === event.event_id"
-                            (click)="shell.confirmCaptchaCorrection(event)"
+                            [disabled]="shellDomain.captchaSavingEventId() === event.event_id"
+                            (click)="shellDomain.confirmCaptchaCorrection(event)"
                           >
                             Confirmar cambio
                           </button>
                           <button
                             type="button"
                             class="secondary"
-                            (click)="shell.cancelCaptchaCorrection(event)"
+                            (click)="shellDomain.cancelCaptchaCorrection(event)"
                           >
                             Cancelar
                           </button>
@@ -572,27 +572,27 @@
                   </section>
 
                   <div class="captcha-comparison-grid">
-                    @if (!shell.isObserverCaptcha(event)) {
+                    @if (!shellDomain.isObserverCaptcha(event)) {
                       <article class="captcha-answer external">
                         <span>2Captcha</span>
                         <strong>{{ event.external_answer ?? 'Pendiente' }}</strong>
-                        <small>{{ shell.formatMilliseconds(event.external_solve_ms) }}</small>
+                        <small>{{ shellDomain.formatMilliseconds(event.external_solve_ms) }}</small>
                       </article>
                     }
 
                     @for (prediction of event.predictions; track prediction.model_name) {
                       <article
                         class="captcha-answer {{
-                          shell.captchaPredictionTone(event, prediction)
+                          shellDomain.captchaPredictionTone(event, prediction)
                         }}"
                       >
-                        <span>{{ shell.captchaModelLabel(prediction.model_name) }}</span>
+                        <span>{{ shellDomain.captchaModelLabel(prediction.model_name) }}</span>
                         <strong>{{ prediction.prediction }}</strong>
-                        <small>{{ shell.formatMilliseconds(prediction.inference_ms) }}</small>
+                        <small>{{ shellDomain.formatMilliseconds(prediction.inference_ms) }}</small>
                         <small>
-                          Confianza {{ shell.formatConfidence(prediction.mean_confidence) }} ·
+                          Confianza {{ shellDomain.formatConfidence(prediction.mean_confidence) }} ·
                           mínima
-                          {{ shell.formatConfidence(prediction.min_char_confidence) }}
+                          {{ shellDomain.formatConfidence(prediction.min_char_confidence) }}
                         </small>
                       </article>
                     }
@@ -631,8 +631,8 @@
           Resultados por página
           <select
             name="captchaPageSize"
-            [ngModel]="shell.captchaPageSize()"
-            (ngModelChange)="shell.changeCaptchaPageSize($event)"
+            [ngModel]="shellDomain.captchaPageSize()"
+            (ngModelChange)="shellDomain.changeCaptchaPageSize($event)"
           >
             <option [ngValue]="12">12</option>
             <option [ngValue]="24">24</option>
@@ -641,23 +641,23 @@
         </label>
       </div>
 
-      @if (shell.captchaTotalPages() > 1) {
+      @if (shellDomain.captchaTotalPages() > 1) {
         <nav class="captcha-pagination" aria-label="Páginas de CAPTCHA">
           <button
             type="button"
             class="secondary"
-            [disabled]="shell.captchaPage() === 1"
-            (click)="shell.goToCaptchaPage(shell.captchaPage() - 1)"
+            [disabled]="shellDomain.captchaPage() === 1"
+            (click)="shellDomain.goToCaptchaPage(shellDomain.captchaPage() - 1)"
           >
             Anterior
           </button>
-          @for (page of shell.captchaPageNumbers(); track page) {
+          @for (page of shellDomain.captchaPageNumbers(); track page) {
             <button
               type="button"
               class="page-button"
-              [class.active]="page === shell.captchaPage()"
-              [attr.aria-current]="page === shell.captchaPage() ? 'page' : null"
-              (click)="shell.goToCaptchaPage(page)"
+              [class.active]="page === shellDomain.captchaPage()"
+              [attr.aria-current]="page === shellDomain.captchaPage() ? 'page' : null"
+              (click)="shellDomain.goToCaptchaPage(page)"
             >
               {{ page }}
             </button>
@@ -665,8 +665,8 @@
           <button
             type="button"
             class="secondary"
-            [disabled]="shell.captchaPage() === shell.captchaTotalPages()"
-            (click)="shell.goToCaptchaPage(shell.captchaPage() + 1)"
+            [disabled]="shellDomain.captchaPage() === shellDomain.captchaTotalPages()"
+            (click)="shellDomain.goToCaptchaPage(shellDomain.captchaPage() + 1)"
           >
             Siguiente
           </button>
@@ -674,28 +674,28 @@
       }
     }
   } @else {
-    @if (shell.captchaQualityState() === 'loading' && !shell.captchaQuality()) {
+    @if (shellDomain.captchaQualityState() === 'loading' && !shellDomain.captchaQuality()) {
       <app-view-state
         state="loading"
         title="Calculando calidad"
         message="Comparando las validaciones humanas con cada modelo…"
         [skeletonRows]="4"
       />
-    } @else if (shell.captchaQualityState() === 'error' && !shell.captchaQuality()) {
+    } @else if (shellDomain.captchaQualityState() === 'error' && !shellDomain.captchaQuality()) {
       <app-view-state
         state="error"
         title="No se pudo calcular la calidad"
-        [message]="shell.captchaQualityError() ?? 'Intenta nuevamente.'"
-        (retry)="shell.loadCaptchaQuality()"
+        [message]="shellDomain.captchaQualityError() ?? 'Intenta nuevamente.'"
+        (retry)="shellDomain.loadCaptchaQuality()"
       />
-    } @else if (shell.captchaQuality(); as quality) {
-      @if (shell.captchaQualityError()) {
+    } @else if (shellDomain.captchaQuality(); as quality) {
+      @if (shellDomain.captchaQualityError()) {
         <app-view-state
           state="stale"
           title="Mostrando la última medición disponible"
-          [message]="shell.captchaQualityError() ?? 'No se pudo cargar la revisión de calidad.'"
+          [message]="shellDomain.captchaQualityError() ?? 'No se pudo cargar la revisión de calidad.'"
           [compact]="true"
-          (retry)="shell.loadCaptchaQuality()"
+          (retry)="shellDomain.loadCaptchaQuality()"
         />
       }
 
@@ -707,10 +707,10 @@
         <button
           type="button"
           class="primary"
-          [disabled]="shell.captchaDatasetExporting() || !quality.validated_images"
-          (click)="shell.exportCaptchaDataset()"
+          [disabled]="shellDomain.captchaDatasetExporting() || !quality.validated_images"
+          (click)="shellDomain.exportCaptchaDataset()"
         >
-          {{ shell.captchaDatasetExporting() ? 'Preparando ZIP…' : 'Exportar dataset' }}
+          {{ shellDomain.captchaDatasetExporting() ? 'Preparando ZIP…' : 'Exportar dataset' }}
         </button>
       </div>
 
@@ -722,9 +722,9 @@
         </article>
         <article>
           <span>Mejor exactitud</span>
-          @if (shell.captchaQualityBestModel(); as bestModel) {
-            <strong>{{ shell.captchaQualityAccuracy(bestModel.accuracy) }}</strong>
-            <small>{{ shell.captchaModelLabel(bestModel.model_name) }} · {{ bestModel.evaluated }} casos</small>
+          @if (shellDomain.captchaQualityBestModel(); as bestModel) {
+            <strong>{{ shellDomain.captchaQualityAccuracy(bestModel.accuracy) }}</strong>
+            <small>{{ shellDomain.captchaModelLabel(bestModel.model_name) }} · {{ bestModel.evaluated }} casos</small>
           } @else {
             <strong>Sin dato</strong>
             <small>Faltan validaciones</small>
@@ -732,12 +732,12 @@
         </article>
         <article>
           <span>p90 modelos locales</span>
-          <strong>{{ shell.formatMilliseconds(quality.local_total_ms.p90) }}</strong>
+          <strong>{{ shellDomain.formatMilliseconds(quality.local_total_ms.p90) }}</strong>
           <small>Suma de los modelos disponibles por imagen</small>
         </article>
         <article>
           <span>p90 de 2Captcha</span>
-          <strong>{{ shell.formatMilliseconds(quality.external_solver_ms.p90) }}</strong>
+          <strong>{{ shellDomain.formatMilliseconds(quality.external_solver_ms.p90) }}</strong>
           <small>{{ quality.external_solver_ms.samples }} respuestas externas</small>
         </article>
       </div>
@@ -776,22 +776,22 @@
             <tbody>
               @for (model of quality.models; track model.model_name) {
                 <tr>
-                  <td><strong>{{ shell.captchaModelLabel(model.model_name) }}</strong></td>
+                  <td><strong>{{ shellDomain.captchaModelLabel(model.model_name) }}</strong></td>
                   <td>{{ model.correct }}/{{ model.evaluated }}</td>
                   <td>
-                    <span class="badge {{ shell.captchaQualityModelTone(model) }}">
-                      {{ shell.captchaQualityAccuracy(model.accuracy) }}
+                    <span class="badge {{ shellDomain.captchaQualityModelTone(model) }}">
+                      {{ shellDomain.captchaQualityAccuracy(model.accuracy) }}
                     </span>
                   </td>
                   <td>
-                    {{ shell.formatConfidence(model.confidence.average) }}
+                    {{ shellDomain.formatConfidence(model.confidence.average) }}
                     @if (model.confidence.wrong_average !== null) {
-                      <small>Error: {{ shell.formatConfidence(model.confidence.wrong_average) }}</small>
+                      <small>Error: {{ shellDomain.formatConfidence(model.confidence.wrong_average) }}</small>
                     }
                   </td>
-                  <td>{{ shell.formatMilliseconds(model.inference_ms.average) }}</td>
-                  <td>{{ shell.formatMilliseconds(model.inference_ms.p50) }}</td>
-                  <td>{{ shell.formatMilliseconds(model.inference_ms.p90) }}</td>
+                  <td>{{ shellDomain.formatMilliseconds(model.inference_ms.average) }}</td>
+                  <td>{{ shellDomain.formatMilliseconds(model.inference_ms.p50) }}</td>
+                  <td>{{ shellDomain.formatMilliseconds(model.inference_ms.p90) }}</td>
                 </tr>
               }
             </tbody>
@@ -834,10 +834,10 @@
                   <div><strong>{{ week.week }}</strong><span>{{ week.validated }} validados</span></div>
                   <div class="captcha-quality-week-models">
                     @for (model of quality.models; track model.model_name) {
-                      @if (shell.captchaQualityWeeklyModel(week, model.model_name); as weeklyModel) {
+                      @if (shellDomain.captchaQualityWeeklyModel(week, model.model_name); as weeklyModel) {
                         <span>
-                          {{ shell.captchaModelLabel(model.model_name) }}
-                          <strong>{{ shell.captchaQualityAccuracy(weeklyModel.accuracy) }}</strong>
+                          {{ shellDomain.captchaModelLabel(model.model_name) }}
+                          <strong>{{ shellDomain.captchaQualityAccuracy(weeklyModel.accuracy) }}</strong>
                         </span>
                       }
                     }
@@ -862,16 +862,16 @@
             <h3>Casos útiles para mejorar</h3>
             <p>Prioriza errores y desacuerdos sin revisar nuevamente todo el historial.</p>
           </div>
-          @if (shell.captchaQualityCases(); as casesPage) {
+          @if (shellDomain.captchaQualityCases(); as casesPage) {
             <span>{{ casesPage.pagination.total }} casos</span>
           }
         </div>
         <div class="captcha-filter-chips captcha-quality-case-filters">
-          @for (filter of shell.captchaQualityCaseFilters; track filter.value) {
+          @for (filter of shellDomain.captchaQualityCaseFilters; track filter.value) {
             <button
               type="button"
-              [class.active]="shell.captchaQualityCaseType() === filter.value"
-              (click)="shell.changeCaptchaQualityCaseType(filter.value)"
+              [class.active]="shellDomain.captchaQualityCaseType() === filter.value"
+              (click)="shellDomain.changeCaptchaQualityCaseType(filter.value)"
             >
               {{ filter.label }}
               <span>{{ quality.useful_case_counts[filter.value] }}</span>
@@ -879,7 +879,7 @@
           }
         </div>
 
-        @if (shell.captchaQualityCases(); as casesPage) {
+        @if (shellDomain.captchaQualityCases(); as casesPage) {
           @if (casesPage.cases.length) {
             <div class="captcha-quality-case-list">
               @for (item of casesPage.cases; track item.event_id) {
@@ -889,8 +889,8 @@
                   </a>
                   <div class="captcha-quality-case-copy">
                     <div>
-                      <strong>{{ shell.captchaQualityCaseSummary(item) }}</strong>
-                      <span>{{ shell.formatDateTime(item.received_at_utc) }}</span>
+                      <strong>{{ shellDomain.captchaQualityCaseSummary(item) }}</strong>
+                      <span>{{ shellDomain.formatDateTime(item.received_at_utc) }}</span>
                     </div>
                     <div class="captcha-quality-case-answers">
                       <span class="good">Humano <strong>{{ item.human_answer }}</strong></span>
@@ -899,7 +899,7 @@
                       </span>
                       @for (prediction of item.predictions; track prediction.model_name) {
                         <span [class.bad]="prediction.prediction !== item.human_answer">
-                          {{ shell.captchaModelLabel(prediction.model_name) }}
+                          {{ shellDomain.captchaModelLabel(prediction.model_name) }}
                           <strong>{{ prediction.prediction }}</strong>
                         </span>
                       }
@@ -923,21 +923,21 @@
                 type="button"
                 class="secondary"
                 [disabled]="casesPage.pagination.page === 1"
-                (click)="shell.goToCaptchaQualityCasePage(casesPage.pagination.page - 1)"
+                (click)="shellDomain.goToCaptchaQualityCasePage(casesPage.pagination.page - 1)"
               >Anterior</button>
-              @for (page of shell.captchaQualityCasePageNumbers(); track page) {
+              @for (page of shellDomain.captchaQualityCasePageNumbers(); track page) {
                 <button
                   type="button"
                   class="page-button"
                   [class.active]="page === casesPage.pagination.page"
-                  (click)="shell.goToCaptchaQualityCasePage(page)"
+                  (click)="shellDomain.goToCaptchaQualityCasePage(page)"
                 >{{ page }}</button>
               }
               <button
                 type="button"
                 class="secondary"
                 [disabled]="casesPage.pagination.page === casesPage.pagination.total_pages"
-                (click)="shell.goToCaptchaQualityCasePage(casesPage.pagination.page + 1)"
+                (click)="shellDomain.goToCaptchaQualityCasePage(casesPage.pagination.page + 1)"
               >Siguiente</button>
             </nav>
           }

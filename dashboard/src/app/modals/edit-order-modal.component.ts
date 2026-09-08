@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  DASHBOARD_EDIT_ORDER_MODAL_FINANCE,
   DASHBOARD_EDIT_ORDER_MODAL_ORDERS,
   DASHBOARD_EDIT_ORDER_MODAL_SHELL,
 } from '../dashboard-domain.ports';
@@ -23,7 +24,8 @@ import {
   templateUrl: './edit-order-modal.component.html',
 })
 export class EditOrderModalComponent {
-  protected readonly shell = inject(DASHBOARD_EDIT_ORDER_MODAL_SHELL);
-  protected readonly orders = inject(DASHBOARD_EDIT_ORDER_MODAL_ORDERS);
+  protected readonly shellDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_SHELL);
+  protected readonly ordersDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_ORDERS);
+  protected readonly financeDomain = inject(DASHBOARD_EDIT_ORDER_MODAL_FINANCE);
 
 }

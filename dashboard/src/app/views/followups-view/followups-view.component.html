@@ -28,7 +28,7 @@
   </button>
 </nav>
 
-@if (shell.postAppointmentPayload(); as payload) {
+@if (shellDomain.postAppointmentPayload(); as payload) {
   @if (followupWorkspace() === 'upcoming') {
     <div id="panel-upcoming" role="tabpanel" aria-labelledby="tab-upcoming" class="followup-workspace">
       @if (reminderStatus(); as reminders) {
@@ -77,13 +77,13 @@
               @else { Activos }
             </span>
             <div><strong>{{ reminders.control.lead_days }} {{ reminders.control.lead_days === 1 ? 'día' : 'días' }} antes</strong>
-              <span>Hoy se revisan las citas del {{ shell.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
+              <span>Hoy se revisan las citas del {{ shellDomain.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
           </div>
           <small>Primero debe terminar el resumen diario · Evidencias: {{ reminders.day?.summary_status ?? 'pendientes' }}</small>
         </section>
 
         <section class="followups-metrics upcoming-metrics" aria-label="Resumen de recordatorios">
-          <article><span>Fecha que se trabaja hoy</span><strong class="metric-date">{{ shell.formatDate(reminders.appointment_day) }}</strong></article>
+          <article><span>Fecha que se trabaja hoy</span><strong class="metric-date">{{ shellDomain.formatDate(reminders.appointment_day) }}</strong></article>
           <article class="followup-metric--warn"><span>En cola o espera</span><strong>{{ (reminders.job_counts['queued'] ?? 0) + (reminders.job_counts['blocked'] ?? 0) }}</strong></article>
           <article class="followup-metric--good"><span>Enviados</span><strong>{{ reminders.job_counts['sent'] ?? 0 }}</strong></article>
         </section>
@@ -95,7 +95,7 @@
             @for (candidate of reminderCandidates(); track candidate.order_id) {
               <article class="panel upcoming-card">
                 <div class="upcoming-date">
-                  <span>{{ shell.formatDate(candidate.appointment_day) }}</span>
+                  <span>{{ shellDomain.formatDate(candidate.appointment_day) }}</span>
                   <strong>{{ candidate.appointment_hour || 'Sin hora' }}</strong>
                 </div>
                 <div class="upcoming-identity">
@@ -106,7 +106,7 @@
                   }
                 </div>
                 <div class="upcoming-next-action">
-                  <span class="badge {{ candidate.status === 'eligible' || candidate.status === 'scheduled' ? 'good' : shell.statusTone(candidate.status) }}">{{ reminderCandidateStatusLabel(candidate.status) }}</span>
+                  <span class="badge {{ candidate.status === 'eligible' || candidate.status === 'scheduled' ? 'good' : shellDomain.statusTone(candidate.status) }}">{{ reminderCandidateStatusLabel(candidate.status) }}</span>
                   <small>{{ reminderCandidateNextAction(candidate.status) }}</small>
                 </div>
                 <details class="upcoming-details">
@@ -164,9 +164,9 @@
             <div class="target-date-example">
               <span aria-hidden="true">→</span>
               @if (reminderDraftAppliesNextDay()) {
-                <p>El lote de hoy conserva las citas del <strong>{{ shell.formatDate(reminders.appointment_day) }}</strong>. Desde el {{ shell.formatDate(reminderDraftServiceDate()) }} se prepararán citas del <strong>{{ shell.formatDate(reminderTargetExample()) }}</strong>.</p>
+                <p>El lote de hoy conserva las citas del <strong>{{ shellDomain.formatDate(reminders.appointment_day) }}</strong>. Desde el {{ shellDomain.formatDate(reminderDraftServiceDate()) }} se prepararán citas del <strong>{{ shellDomain.formatDate(reminderTargetExample()) }}</strong>.</p>
               } @else {
-                <p>El {{ shell.formatDate(reminderDraftServiceDate()) }} se prepararán recordatorios para las citas del <strong>{{ shell.formatDate(reminderTargetExample()) }}</strong>.</p>
+                <p>El {{ shellDomain.formatDate(reminderDraftServiceDate()) }} se prepararán recordatorios para las citas del <strong>{{ shellDomain.formatDate(reminderTargetExample()) }}</strong>.</p>
               }
             </div>
 
@@ -208,15 +208,15 @@
         <label class="followup-search"><span>Buscar una cita</span>
           <input name="postAppointmentSearch" type="search" autocomplete="off"
             placeholder="Nombre, orden, documento, placa, expediente o sede"
-            [ngModel]="shell.postAppointmentSearch()" (ngModelChange)="shell.setPostAppointmentSearch($event)" />
+            [ngModel]="shellDomain.postAppointmentSearch()" (ngModelChange)="shellDomain.setPostAppointmentSearch($event)" />
         </label>
         <div class="filter-and-sort-row">
           @if (followupWorkspace() === 'post_appointment') {
             <div class="quick-filters" aria-label="Filtrar casos que necesitan revisión">
-              @for (filter of shell.postAppointmentQuickFilters(); track filter.key) {
+              @for (filter of shellDomain.postAppointmentQuickFilters(); track filter.key) {
                 @if (filter.key !== 'access_lost') {
-                  <button type="button" class="filter-chip" [class.active]="shell.postAppointmentFilter() === filter.key"
-                    [attr.aria-pressed]="shell.postAppointmentFilter() === filter.key" (click)="shell.setPostAppointmentFilter(filter.key)">{{ filter.key === 'active' ? 'Todos' : filter.label }} <span>{{ filter.count }}</span></button>
+                  <button type="button" class="filter-chip" [class.active]="shellDomain.postAppointmentFilter() === filter.key"
+                    [attr.aria-pressed]="shellDomain.postAppointmentFilter() === filter.key" (click)="shellDomain.setPostAppointmentFilter(filter.key)">{{ filter.key === 'active' ? 'Todos' : filter.label }} <span>{{ filter.count }}</span></button>
                 }
               }
             </div>
@@ -255,7 +255,7 @@
             @if (payload.automation.running) { · {{ payload.automation.running }} en revisión }
             · {{ payload.automation.completed_today }} revisadas hoy
             @if (payload.automation.failed_today) { · {{ payload.automation.failed_today }} con fallo }
-            @if (payload.automation.last_run_at) { · último ciclo {{ shell.formatDateTime(payload.automation.last_run_at) }} }
+            @if (payload.automation.last_run_at) { · último ciclo {{ shellDomain.formatDateTime(payload.automation.last_run_at) }} }
           </small>
         </section>
       }
@@ -264,7 +264,7 @@
         @if (followupWorkspace() === 'post_appointment') {
           <article><span>En seguimiento</span><strong>{{ postAppointmentOperationalCount() }}</strong></article>
           <article class="followup-metric--warn"><span>Requieren atención</span><strong>{{ payload.summary.needs_attention }}</strong></article>
-          <article class="followup-metric--good"><span>Con avance</span><strong>{{ shell.postAppointmentQuickFilters()[4].count }}</strong></article>
+          <article class="followup-metric--good"><span>Con avance</span><strong>{{ shellDomain.postAppointmentQuickFilters()[4].count }}</strong></article>
         } @else {
           <article><span>En historial</span><strong>{{ postAppointmentHistoryCount() }}</strong></article>
           <article class="followup-metric--good"><span>Completados</span><strong>{{ postAppointmentCompletedCount() }}</strong></article>
@@ -272,28 +272,28 @@
         }
       </section>
 
-      @if (shell.postAppointmentItems().length === 0) {
+      @if (shellDomain.postAppointmentItems().length === 0) {
         <app-view-state state="empty" title="No encontramos citas con estos filtros" message="Prueba otra búsqueda o cambia el filtro para volver a ver resultados." />
       } @else {
         <section class="followups-list" aria-label="Citas con seguimiento">
-          @for (item of shell.paginatedPostAppointmentItems(); track item.order_id; let itemIndex = $index) {
+          @for (item of shellDomain.paginatedPostAppointmentItems(); track item.order_id; let itemIndex = $index) {
             <article class="panel followup-card">
               <header class="followup-card-header">
-                <span class="followup-record-number" aria-label="Registro {{ shell.postAppointmentItemNumber(itemIndex) }}">#{{ shell.postAppointmentItemLabel(itemIndex) }}</span>
+                <span class="followup-record-number" aria-label="Registro {{ shellDomain.postAppointmentItemNumber(itemIndex) }}">#{{ shellDomain.postAppointmentItemLabel(itemIndex) }}</span>
                 <div><div class="followup-identity"><h3>{{ item.applicant_name }}</h3><span>{{ item.document_number_masked }}</span></div>
-                  <p>Cita {{ shell.formatDate(item.appointment_date) }} @if (item.appointment_hour) { · {{ item.appointment_hour }} } @if (item.site) { · {{ item.site }} }</p>
+                  <p>Cita {{ shellDomain.formatDate(item.appointment_date) }} @if (item.appointment_hour) { · {{ item.appointment_hour }} } @if (item.site) { · {{ item.site }} }</p>
                   @if (item.program_expediente || item.program_plate) { <p>@if (item.program_expediente) { Exp. {{ item.program_expediente }} } @if (item.program_plate) { · Placa {{ item.program_plate }} }</p> }
                 </div>
-                <div class="followup-status-block"><span class="badge {{ shell.statusTone(postAppointmentDisplayOutcome(item)) }}">{{ shell.statusLabel(postAppointmentDisplayOutcome(item)) }}</span><small>{{ postAppointmentDisplayDetail(item) }}</small></div>
+                <div class="followup-status-block"><span class="badge {{ shellDomain.statusTone(postAppointmentDisplayOutcome(item)) }}">{{ shellDomain.statusLabel(postAppointmentDisplayOutcome(item)) }}</span><small>{{ postAppointmentDisplayDetail(item) }}</small></div>
               </header>
 
               @if (item.stages.length) {
                 <details class="followup-stage-disclosure"><summary><span>Ver recorrido completo</span><small>{{ item.stages.length }} etapas registradas</small></summary>
                   <ol class="stage-rail" aria-label="Etapas observadas en el portal">
                     @for (stage of item.stages; track stage.stage_key; let stageIndex = $index) {
-                      <li class="{{ shell.postAppointmentStageTone(item, stage) }}"><div class="stage-track" aria-hidden="true"><span class="stage-marker">{{ stageIndex + 1 }}</span></div>
-                        <div class="stage-copy"><strong>{{ stage.stage_label }}</strong><span>{{ stage.status_text || 'Sin estado' }} @if (stage.stage_date) { · {{ shell.formatDate(stage.stage_date) }} } @if (stage.stage_hour) { {{ stage.stage_hour }} }</span>
-                          @if (stage.message_text) { <small class="{{ shell.postAppointmentMessageTone(item, stage.message_class) }}">{{ stage.message_text }}</small> }</div></li>
+                      <li class="{{ shellDomain.postAppointmentStageTone(item, stage) }}"><div class="stage-track" aria-hidden="true"><span class="stage-marker">{{ stageIndex + 1 }}</span></div>
+                        <div class="stage-copy"><strong>{{ stage.stage_label }}</strong><span>{{ stage.status_text || 'Sin estado' }} @if (stage.stage_date) { · {{ shellDomain.formatDate(stage.stage_date) }} } @if (stage.stage_hour) { {{ stage.stage_hour }} }</span>
+                          @if (stage.message_text) { <small class="{{ shellDomain.postAppointmentMessageTone(item, stage.message_class) }}">{{ stage.message_text }}</small> }</div></li>
                     }
                   </ol>
                 </details>
@@ -306,18 +306,18 @@
                   @if (postAppointmentNextReviewLabel(item); as nextReviewLabel) { <small class="next-automatic-review">{{ nextReviewLabel }}</small> }
                   @if (item.error_message) { <small class="followup-error">{{ item.error_message }}</small> }</div>
                 @if (followupWorkspace() === 'history' || item.outcome === 'access_lost') { <div class="followup-archive-state"><span>Historial</span><small>Sin acciones automáticas</small></div> }
-                @else { <button type="button" class="primary" [disabled]="shell.isPostAppointmentReviewing(item.order_id)" (click)="shell.reviewPostAppointment(item)">{{ shell.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}</button> }
+                @else { <button type="button" class="primary" [disabled]="shellDomain.isPostAppointmentReviewing(item.order_id)" (click)="shellDomain.reviewPostAppointment(item)">{{ shellDomain.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}</button> }
               </footer>
             </article>
           }
         </section>
 
-        <div class="order-table-footer"><span aria-live="polite">{{ shell.postAppointmentPageStart() }}–{{ shell.postAppointmentPageEnd() }} de {{ payload.pagination.total }} · Página {{ shell.currentPostAppointmentPage() }} de {{ shell.postAppointmentTotalPages() }}</span>
-          <label class="filter">Citas por página <select name="postAppointmentPageSize" [ngModel]="shell.postAppointmentPageSize()" (ngModelChange)="shell.changePostAppointmentPageSize($event)"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="20">20</option></select></label></div>
-        @if (shell.postAppointmentTotalPages() > 1) {
-          <nav class="order-pagination" aria-label="Páginas de citas"><button type="button" class="secondary" [disabled]="shell.currentPostAppointmentPage() === 1" (click)="shell.goToPostAppointmentPage(shell.currentPostAppointmentPage() - 1)">Anterior</button>
-            @for (page of shell.postAppointmentPageNumbers(); track page) { <button type="button" class="page-button" [class.active]="page === shell.currentPostAppointmentPage()" [attr.aria-current]="page === shell.currentPostAppointmentPage() ? 'page' : null" [attr.aria-label]="'Página ' + page" (click)="shell.goToPostAppointmentPage(page)">{{ page }}</button> }
-            <button type="button" class="secondary" [disabled]="shell.currentPostAppointmentPage() === shell.postAppointmentTotalPages()" (click)="shell.goToPostAppointmentPage(shell.currentPostAppointmentPage() + 1)">Siguiente</button></nav>
+        <div class="order-table-footer"><span aria-live="polite">{{ shellDomain.postAppointmentPageStart() }}–{{ shellDomain.postAppointmentPageEnd() }} de {{ payload.pagination.total }} · Página {{ shellDomain.currentPostAppointmentPage() }} de {{ shellDomain.postAppointmentTotalPages() }}</span>
+          <label class="filter">Citas por página <select name="postAppointmentPageSize" [ngModel]="shellDomain.postAppointmentPageSize()" (ngModelChange)="shellDomain.changePostAppointmentPageSize($event)"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="20">20</option></select></label></div>
+        @if (shellDomain.postAppointmentTotalPages() > 1) {
+          <nav class="order-pagination" aria-label="Páginas de citas"><button type="button" class="secondary" [disabled]="shellDomain.currentPostAppointmentPage() === 1" (click)="shellDomain.goToPostAppointmentPage(shellDomain.currentPostAppointmentPage() - 1)">Anterior</button>
+            @for (page of shellDomain.postAppointmentPageNumbers(); track page) { <button type="button" class="page-button" [class.active]="page === shellDomain.currentPostAppointmentPage()" [attr.aria-current]="page === shellDomain.currentPostAppointmentPage() ? 'page' : null" [attr.aria-label]="'Página ' + page" (click)="shellDomain.goToPostAppointmentPage(page)">{{ page }}</button> }
+            <button type="button" class="secondary" [disabled]="shellDomain.currentPostAppointmentPage() === shellDomain.postAppointmentTotalPages()" (click)="shellDomain.goToPostAppointmentPage(shellDomain.currentPostAppointmentPage() + 1)">Siguiente</button></nav>
         }
       }
     </div>

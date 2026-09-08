@@ -1,5 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import type { App } from './app';
+import type { FinanceFacade } from './domains/finance/finance.facade';
 import type { OrdersListFacade } from './domains/orders/orders-list.facade';
 import type { OrdersFacade } from './domains/orders/orders.facade';
 
@@ -13,7 +14,6 @@ export const DASHBOARD_ORDERS_SHELL = new InjectionToken<Pick<App,
   | "activeModal"
   | "restoreFocus"
   | "openModal"
-  | "openPayment"
   | "openPostPaymentWhatsApp"
   | "openWhatsAppReview"
   | "errorMessage"
@@ -25,9 +25,41 @@ export const DASHBOARD_ORDERS_SHELL = new InjectionToken<Pick<App,
   | "showToast"
   | "readError"
   | "statusLabel"
+>>('DASHBOARD_ORDERS_SHELL');
+
+export const DASHBOARD_ORDERS_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "openPayment"
   | "paymentAmountPaid"
   | "paymentAmountAgreed"
->>('DASHBOARD_ORDERS_SHELL');
+>>('DASHBOARD_ORDERS_FINANCE');
+
+export const DASHBOARD_FINANCE_SHELL = new InjectionToken<Pick<App,
+  "activeView"
+  | "errorMessage"
+  | "readError"
+  | "openModal"
+  | "setPendingAction"
+  | "activeModal"
+  | "getSweetAlert"
+  | "actionBusy"
+  | "refreshAll"
+  | "showToast"
+  | "formatDate"
+  | "formatMoney"
+  | "formatPercent"
+  | "editField"
+  | "statusLabel"
+  | "optionalText"
+  | "formDirty"
+>>('DASHBOARD_FINANCE_SHELL');
+
+export const DASHBOARD_FINANCE_ORDERS = new InjectionToken<Pick<OrdersFacade,
+  "selectOrder"
+  | "standardPackageAmount"
+  | "loadSelectedOrderDetail"
+  | "selectedOrderDetail"
+  | "requireSelectedOrder"
+>>('DASHBOARD_FINANCE_ORDERS');
 
 export const DASHBOARD_CREATE_ORDER_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
@@ -66,7 +98,6 @@ export const DASHBOARD_EDIT_ORDER_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
   | "closeModal"
   | "statusLabel"
-  | "paymentLabel"
   | "editField"
   | "statusTone"
 >>('DASHBOARD_EDIT_ORDER_MODAL_SHELL');
@@ -103,12 +134,19 @@ export const DASHBOARD_EDIT_ORDER_MODAL_ORDERS = new InjectionToken<Pick<OrdersF
   | "requestPriorityUpdate"
 >>('DASHBOARD_EDIT_ORDER_MODAL_ORDERS');
 
+export const DASHBOARD_EDIT_ORDER_MODAL_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "paymentLabel"
+>>('DASHBOARD_EDIT_ORDER_MODAL_FINANCE');
+
 export const DASHBOARD_FINANCE_ENTRY_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
-  | "editingFinanceEntryId"
   | "closeModal"
-  | "financeOccurredOn"
   | "editField"
+>>('DASHBOARD_FINANCE_ENTRY_MODAL_SHELL');
+
+export const DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "editingFinanceEntryId"
+  | "financeOccurredOn"
   | "financeEntryKind"
   | "financeCategoryCode"
   | "financeCategories"
@@ -126,7 +164,7 @@ export const DASHBOARD_FINANCE_ENTRY_MODAL_SHELL = new InjectionToken<Pick<App,
   | "financeEvidenceReference"
   | "financeNotes"
   | "requestSaveFinanceEntry"
->>('DASHBOARD_FINANCE_ENTRY_MODAL_SHELL');
+>>('DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE');
 
 export const DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST = new InjectionToken<Pick<OrdersListFacade,
   "orders"
@@ -160,14 +198,10 @@ export const DASHBOARD_PAYMENT_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
   | "closeModal"
   | "formatMoney"
-  | "paymentAmountAgreed"
   | "formatDate"
   | "formatTime"
-  | "paymentAmountPaid"
   | "editField"
-  | "setQuickPaymentAmount"
   | "actionBusy"
-  | "requestMarkPaid"
 >>('DASHBOARD_PAYMENT_MODAL_SHELL');
 
 export const DASHBOARD_PAYMENT_MODAL_ORDERS = new InjectionToken<Pick<OrdersFacade,
@@ -176,6 +210,13 @@ export const DASHBOARD_PAYMENT_MODAL_ORDERS = new InjectionToken<Pick<OrdersFaca
   | "servicePackageDefinition"
   | "standardPackageAmount"
 >>('DASHBOARD_PAYMENT_MODAL_ORDERS');
+
+export const DASHBOARD_PAYMENT_MODAL_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "paymentAmountAgreed"
+  | "paymentAmountPaid"
+  | "setQuickPaymentAmount"
+  | "requestMarkPaid"
+>>('DASHBOARD_PAYMENT_MODAL_FINANCE');
 
 export const DASHBOARD_WHATSAPP_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
@@ -317,21 +358,18 @@ export const DASHBOARD_CAPTCHAS_VIEW_SHELL = new InjectionToken<Pick<App,
   | "captchaQualityCasePageNumbers"
 >>('DASHBOARD_CAPTCHAS_VIEW_SHELL');
 
-export const DASHBOARD_FINANCE_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_FINANCE_VIEW_FINANCE = new InjectionToken<Pick<FinanceFacade,
   "selectedMonth"
   | "financeLoading"
   | "changeMonth"
   | "openNewFinanceEntry"
   | "financeSummary"
-  | "formatMoney"
   | "financeConversionComplete"
-  | "formatDateTime"
   | "financeQuality"
   | "financeReviewIssueCount"
   | "monthlySummary"
   | "missingAcquisitionSourceOrders"
   | "selectedMonthLabel"
-  | "formatDate"
   | "openEditFinanceEntryById"
   | "financeResolutionLabel"
   | "financeMismatchPaymentId"
@@ -339,7 +377,6 @@ export const DASHBOARD_FINANCE_VIEW_SHELL = new InjectionToken<Pick<App,
   | "financeMismatchResolution"
   | "financeMismatchReason"
   | "cancelFinanceMismatchResolution"
-  | "actionBusy"
   | "requestReconcileFinancePayment"
   | "financeMonthClosure"
   | "financeClosureOpeningBalance"
@@ -351,9 +388,16 @@ export const DASHBOARD_FINANCE_VIEW_SHELL = new InjectionToken<Pick<App,
   | "financeEntries"
   | "financeKindLabel"
   | "formatOriginalMoney"
-  | "statusTone"
   | "openEditFinanceEntry"
   | "requestVoidFinanceEntry"
+>>('DASHBOARD_FINANCE_VIEW_FINANCE');
+
+export const DASHBOARD_FINANCE_VIEW_SHELL = new InjectionToken<Pick<App,
+  "formatMoney"
+  | "formatDateTime"
+  | "formatDate"
+  | "actionBusy"
+  | "statusTone"
 >>('DASHBOARD_FINANCE_VIEW_SHELL');
 
 export const DASHBOARD_FOLLOWUPS_VIEW_SHELL = new InjectionToken<Pick<App,
@@ -426,12 +470,9 @@ export const DASHBOARD_ORDERS_VIEW_SHELL = new InjectionToken<Pick<App,
   | "canPreparePostPaymentWhatsApp"
   | "postPaymentWhatsAppHint"
   | "openPostPaymentWhatsApp"
-  | "openPayment"
   | "copiedLabel"
   | "formatDate"
   | "formatTime"
-  | "paymentLabel"
-  | "paymentAmountLabel"
   | "formatDateTime"
 >>('DASHBOARD_ORDERS_VIEW_SHELL');
 
@@ -473,6 +514,12 @@ export const DASHBOARD_ORDERS_VIEW_ORDERS = new InjectionToken<Pick<OrdersFacade
   | "rowPrimaryActionLabel"
   | "openManualSessionNow"
 >>('DASHBOARD_ORDERS_VIEW_ORDERS');
+
+export const DASHBOARD_ORDERS_VIEW_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "openPayment"
+  | "paymentLabel"
+  | "paymentAmountLabel"
+>>('DASHBOARD_ORDERS_VIEW_FINANCE');
 
 export const DASHBOARD_ORDERS_VIEW_ORDERLIST = new InjectionToken<Pick<OrdersListFacade,
   "orderPageStart"
@@ -519,24 +566,28 @@ export const DASHBOARD_RUNS_VIEW_SHELL = new InjectionToken<Pick<App,
   | "filteredRuns"
 >>('DASHBOARD_RUNS_VIEW_SHELL');
 
-export const DASHBOARD_SUMMARY_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_SUMMARY_VIEW_FINANCE = new InjectionToken<Pick<FinanceFacade,
   "selectedMonth"
   | "monthlyLoading"
   | "changeMonth"
-  | "appointmentReminderStatus"
-  | "formatDate"
-  | "statusLabel"
   | "monthlySummary"
-  | "formatMoney"
   | "metricPeriodLabel"
   | "monthlyRevenueComparison"
   | "dailyRevenueWidth"
+  | "selectedMonthLabel"
+  | "closedMonthRevenueComparison"
+  | "paymentLabel"
+>>('DASHBOARD_SUMMARY_VIEW_FINANCE');
+
+export const DASHBOARD_SUMMARY_VIEW_SHELL = new InjectionToken<Pick<App,
+  "appointmentReminderStatus"
+  | "formatDate"
+  | "statusLabel"
+  | "formatMoney"
   | "formatDateTime"
   | "openOrderFromSummary"
   | "formatTime"
   | "openPaymentFromSummary"
-  | "selectedMonthLabel"
-  | "closedMonthRevenueComparison"
   | "statusTone"
   | "health"
   | "worker"
@@ -559,7 +610,6 @@ export const DASHBOARD_SUMMARY_VIEW_SHELL = new InjectionToken<Pick<App,
   | "saveCaptchaSamplingControl"
   | "currentWorkLabel"
   | "currentOrder"
-  | "paymentLabel"
   | "generalObserverActive"
   | "actionBusy"
   | "pendingWorkerControl"
@@ -592,6 +642,15 @@ export const DASHBOARD_SUMMARY_VIEW_ORDERLIST = new InjectionToken<Pick<OrdersLi
   | "confirmedOrders"
 >>('DASHBOARD_SUMMARY_VIEW_ORDERLIST');
 
+export const DASHBOARD_SHELL_FINANCE = new InjectionToken<Pick<FinanceFacade,
+  "monthlySummary"
+  | "financeSummary"
+  | "selectedMonth"
+  | "loadFinanceView"
+  | "openPayment"
+  | "clearFinanceForm"
+>>('DASHBOARD_SHELL_FINANCE');
+
 export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   "closeTrackedManualSessionsWithBeacon"
   | "orderPanelOpen"
@@ -603,12 +662,9 @@ export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "loadOrdersView"
   | "openEditOrder"
   | "requestOrderValidation"
-  | "standardPackageAmount"
-  | "loadSelectedOrderDetail"
   | "selectedOrderDetail"
   | "hydrateSelectedOrderForms"
   | "clearCreateOrderForm"
-  | "requireSelectedOrder"
   | "applyOrders"
   | "manualSessionOrderLabel"
   | "manualSessionTypeLabel"
@@ -617,4 +673,4 @@ export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "handleBeforeUnload"
 >>('DASHBOARD_SHELL_ORDERS');
 
-export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;
+export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_FINANCE, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_FINANCE, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_FINANCE, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_FINANCE, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;

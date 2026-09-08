@@ -1,5 +1,5 @@
-@if (shell.activeModal() === 'order-actions') {
-  @if (orders.modalOrder(); as order) {
+@if (shellDomain.activeModal() === 'order-actions') {
+  @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
       role="dialog"
@@ -10,13 +10,13 @@
         <div class="modal-header">
           <div>
             <h2 id="order-actions-title">Acciones de orden</h2>
-            <p>{{ orders.orderLabel(order) }}</p>
+            <p>{{ ordersDomain.orderLabel(order) }}</p>
           </div>
           <button
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="shell.closeModal()"
+            (click)="shellDomain.closeModal()"
           >
             Cerrar
           </button>
@@ -25,15 +25,15 @@
         <dl class="summary-list">
           <div>
             <dt>Estado</dt>
-            <dd>{{ shell.statusLabel(order.status) }}</dd>
+            <dd>{{ shellDomain.statusLabel(order.status) }}</dd>
           </div>
           <div>
             <dt>Reserva</dt>
-            <dd>{{ shell.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+            <dd>{{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
           </div>
           <div>
             <dt>Cierre</dt>
-            <dd>{{ orders.closureDisplay(order) }}</dd>
+            <dd>{{ ordersDomain.closureDisplay(order) }}</dd>
           </div>
           <div>
             <dt>Tramite</dt>
@@ -50,41 +50,41 @@
             type="button"
             class="secondary"
             [disabled]="order.status !== 'ready'"
-            (click)="orders.requestOrderAction('pause', 'Pausar orden')"
+            (click)="ordersDomain.requestOrderAction('pause', 'Pausar orden')"
           >
             Pausar
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="order.status !== 'paused' || orders.hasActiveChildOrders(order)"
+            [disabled]="order.status !== 'paused' || ordersDomain.hasActiveChildOrders(order)"
             title="No se puede activar una orden padre con subordenes activas"
-            (click)="orders.requestOrderAction('activate', 'Activar orden')"
+            (click)="ordersDomain.requestOrderAction('activate', 'Activar orden')"
           >
             Activar
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="!order.charge_required || orders.isClosedOrder(order)"
-            (click)="orders.requestOrderAction('no-charge', 'Marcar sin cobro')"
+            [disabled]="!order.charge_required || ordersDomain.isClosedOrder(order)"
+            (click)="ordersDomain.requestOrderAction('no-charge', 'Marcar sin cobro')"
           >
             Sin cobro
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="shell.actionBusy()"
-            (click)="orders.requestManualSession()"
+            [disabled]="shellDomain.actionBusy()"
+            (click)="ordersDomain.requestManualSession()"
           >
-            {{ orders.manualSessionActionLabel(order) }}
+            {{ ordersDomain.manualSessionActionLabel(order) }}
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="shell.actionBusy()"
+            [disabled]="shellDomain.actionBusy()"
             title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
-            (click)="orders.requestDiagnosticSession()"
+            (click)="ordersDomain.requestDiagnosticSession()"
           >
             Medir flujo manual
           </button>
@@ -97,8 +97,8 @@
               Resultado
               <select
                 name="modalClosureReason"
-                [ngModel]="orders.closureReason()"
-                (ngModelChange)="orders.setClosureReason($event)"
+                [ngModel]="ordersDomain.closureReason()"
+                (ngModelChange)="ordersDomain.setClosureReason($event)"
               >
                 <option value="client_withdrew">Cliente retirado</option>
                 <option value="external_slot">Cupo por tercero</option>
@@ -115,16 +115,16 @@
                 name="modalClosureNote"
                 type="text"
                 placeholder="Ej. duplicado de order-xxxxx"
-                [ngModel]="orders.closureNote()"
-                (ngModelChange)="shell.editField(orders.closureNote, $event)"
+                [ngModel]="ordersDomain.closureNote()"
+                (ngModelChange)="shellDomain.editField(ordersDomain.closureNote, $event)"
               />
             </label>
           </div>
           <button
             type="button"
             class="danger"
-            [disabled]="orders.isClosedOrder(order)"
-            (click)="orders.requestCloseOrder()"
+            [disabled]="ordersDomain.isClosedOrder(order)"
+            (click)="ordersDomain.requestCloseOrder()"
           >
             Cerrar con resultado
           </button>

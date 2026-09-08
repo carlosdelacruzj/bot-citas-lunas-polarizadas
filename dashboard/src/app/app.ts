@@ -29,24 +29,13 @@ import {
   CaptchaQualityWeek,
   CaptchaSamplingControl,
   CaptchaSummary,
-  FinanceCategory,
-  FinanceDataQuality,
-  FinanceDataQualitySummary,
-  FinanceEntry,
-  FinanceEntryKind,
-  FinanceEntryPayload,
-  FinanceMonthClosure,
-  FinanceSummary,
   HealthPayload,
-  MetricPeriod,
-  MonthlySummaryV2,
   OperatorInboxPayload,
   OperatorInboxTask,
   OpportunityBurst,
   OpportunityControl,
   OpportunityControlAction,
   OpportunityControlTarget,
-  PaymentResolutionType,
   PostAppointmentFollowup,
   PostAppointmentPayload,
   PostAppointmentQuery,
@@ -79,8 +68,6 @@ import {
   DashboardSnapshotWorker,
   DashboardSnapshotWorkerCommand,
   ERROR_MESSAGE_DURATION_MS,
-  INITIAL_DATE,
-  INITIAL_MONTH,
   InboxOrderTask,
   LoadState,
   ModalKind,
@@ -99,26 +86,36 @@ import {
   DASHBOARD_CAPTCHAS_VIEW_SHELL,
   DASHBOARD_CREATE_ORDER_MODAL_ORDERS,
   DASHBOARD_CREATE_ORDER_MODAL_SHELL,
+  DASHBOARD_EDIT_ORDER_MODAL_FINANCE,
   DASHBOARD_EDIT_ORDER_MODAL_ORDERS,
   DASHBOARD_EDIT_ORDER_MODAL_SHELL,
+  DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE,
   DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST,
   DASHBOARD_FINANCE_ENTRY_MODAL_SHELL,
+  DASHBOARD_FINANCE_ORDERS,
+  DASHBOARD_FINANCE_SHELL,
+  DASHBOARD_FINANCE_VIEW_FINANCE,
   DASHBOARD_FINANCE_VIEW_SHELL,
   DASHBOARD_FOLLOWUPS_VIEW_SHELL,
   DASHBOARD_INBOX_VIEW_SHELL,
   DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL,
+  DASHBOARD_ORDERS_FINANCE,
   DASHBOARD_ORDERS_SHELL,
+  DASHBOARD_ORDERS_VIEW_FINANCE,
   DASHBOARD_ORDERS_VIEW_ORDERLIST,
   DASHBOARD_ORDERS_VIEW_ORDERS,
   DASHBOARD_ORDERS_VIEW_SHELL,
   DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS,
   DASHBOARD_ORDER_ACTIONS_MODAL_SHELL,
+  DASHBOARD_PAYMENT_MODAL_FINANCE,
   DASHBOARD_PAYMENT_MODAL_ORDERS,
   DASHBOARD_PAYMENT_MODAL_SHELL,
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS,
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL,
   DASHBOARD_RUNS_VIEW_SHELL,
+  DASHBOARD_SHELL_FINANCE,
   DASHBOARD_SHELL_ORDERS,
+  DASHBOARD_SUMMARY_VIEW_FINANCE,
   DASHBOARD_SUMMARY_VIEW_ORDERLIST,
   DASHBOARD_SUMMARY_VIEW_SHELL,
   DASHBOARD_WHATSAPP_MODAL_SHELL,
@@ -130,6 +127,7 @@ import {
   dashboardRefreshInterval,
 } from './dashboard-refresh.policy';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
+import { FinanceFacade } from './domains/finance/finance.facade';
 import { OrdersListFacade } from './domains/orders/orders-list.facade';
 import { OrdersFacade } from './domains/orders/orders.facade';
 import { CreateOrderModalComponent } from './modals/create-order-modal.component';
@@ -142,7 +140,6 @@ import { WorkerRestartModalComponent } from './modals/worker-restart-modal.compo
 import { paginationWindow } from './pagination';
 import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
 import { RequestScope, isRequestCancelled } from './request-cancellation';
-import { buildPaymentPayload } from './sensitive-form-payloads';
 import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
 
 @Component({
@@ -160,33 +157,43 @@ import { ViewStateComponent, ViewStateKind } from './view-state/view-state.compo
     FinanceEntryModalComponent,
     WorkerRestartModalComponent,
   ],
-  providers: [OrdersListFacade, OrdersFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) },
+  providers: [OrdersListFacade, OrdersFacade, FinanceFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDERS_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_ORDERS_FINANCE, useExisting: FinanceFacade },
+    { provide: DASHBOARD_FINANCE_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FINANCE_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_CREATE_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_CREATE_ORDER_MODAL_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_EDIT_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_EDIT_ORDER_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_EDIT_ORDER_MODAL_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, useExisting: OrdersListFacade },
     { provide: DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_PAYMENT_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_PAYMENT_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_PAYMENT_MODAL_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_WHATSAPP_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_WORKER_RESTART_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_CAPTCHAS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FINANCE_VIEW_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_FINANCE_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_FOLLOWUPS_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_INBOX_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDERS_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDERS_VIEW_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_ORDERS_VIEW_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_ORDERS_VIEW_ORDERLIST, useExisting: OrdersListFacade },
     { provide: DASHBOARD_RUNS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_SUMMARY_VIEW_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_SUMMARY_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_SUMMARY_VIEW_ORDERLIST, useExisting: OrdersListFacade },
+    { provide: DASHBOARD_SHELL_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_SHELL_ORDERS, useExisting: OrdersFacade }
   ],
   templateUrl: './app.html',
@@ -389,73 +396,9 @@ export class App implements OnDestroy {
 
   public readonly releaseSafeBackoffsOnRestart = signal(false);
 
-  public readonly selectedMonth = signal(INITIAL_MONTH);
-
-  public readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
-
   public readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
 
   public readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
-
-  public readonly monthlyLoading = signal(false);
-
-  public readonly financeCategories = signal<FinanceCategory[]>([]);
-
-  public readonly financeEntries = signal<FinanceEntry[]>([]);
-
-  public readonly financeSummary = signal<FinanceSummary | null>(null);
-
-  public readonly financeQuality = signal<FinanceDataQualitySummary | null>(null);
-
-  public readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
-
-  public readonly financeLoading = signal(false);
-
-  public readonly financeClosureOpeningBalance = signal('');
-
-  public readonly financeClosureClosingBalance = signal('');
-
-  public readonly financeClosureNotes = signal('');
-
-  public readonly financeMismatchPaymentId = signal('');
-
-  public readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
-
-  public readonly financeMismatchReason = signal('');
-
-  public readonly editingFinanceEntryId = signal('');
-
-  public readonly financeOccurredOn = signal(INITIAL_DATE);
-
-  public readonly financeEntryKind = signal<FinanceEntryKind>('expense');
-
-  public readonly financeCategoryCode = signal('marketing');
-
-  public readonly financeVendor = signal('');
-
-  public readonly financeDescription = signal('');
-
-  public readonly financeAmountOriginal = signal('');
-
-  public readonly financeCurrency = signal('PEN');
-
-  public readonly financeExchangeRatePen = signal('');
-
-  public readonly financeQuantity = signal('');
-
-  public readonly financeUnit = signal('');
-
-  public readonly financeChannel = signal('');
-
-  public readonly financeCampaign = signal('');
-
-  public readonly financeOrderId = signal('');
-
-  public readonly financeEvidenceReference = signal('');
-
-  public readonly financeNotes = signal('');
-
-  public readonly financeDataQuality = signal<FinanceDataQuality>('actual');
 
   public readonly loadState = signal<LoadState>('idle');
 
@@ -466,10 +409,6 @@ export class App implements OnDestroy {
   public readonly errorMessage = signal<string | null>(null);
 
   public readonly copiedLabel = signal<string | null>(null);
-
-  public readonly paymentAmountPaid = signal('');
-
-  public readonly paymentAmountAgreed = signal('');
 
   public readonly actionBusy = signal(false);
 
@@ -704,10 +643,10 @@ export class App implements OnDestroy {
     const view = this.activeView();
     const state = this.loadState();
     if (view === 'summary') {
-      return this.monthlySummary() !== null;
+      return this.finance.monthlySummary() !== null;
     }
     if (view === 'finance') {
-      return this.financeSummary() !== null;
+      return this.finance.financeSummary() !== null;
     }
     if (view === 'messageTemplates') {
       return this.whatsappMessageTemplates().length > 0 || state === 'ready';
@@ -888,9 +827,9 @@ export class App implements OnDestroy {
     if (
       ['summary', 'finance'].includes(view) &&
       /^\d{4}-\d{2}$/.test(month ?? '') &&
-      month !== this.selectedMonth()
+      month !== this.finance.selectedMonth()
     ) {
-      this.selectedMonth.set(month);
+      this.finance.selectedMonth.set(month);
       queryChanged = true;
     }
     const captchaMode = tree.queryParams['mode'];
@@ -1030,7 +969,7 @@ export class App implements OnDestroy {
   private async refreshViewData(view: ViewKey, showLoading: boolean, scope: RequestScope): Promise<void> {
  if (view === 'inbox') { await this.loadInboxView(scope); return; }
 if (view === 'summary') { await this.loadSummaryView(scope); return; }
-if (view === 'finance') { await this.loadFinanceView(scope); return; }
+if (view === 'finance') { await this.finance.loadFinanceView(scope); return; }
 if (view === 'messageTemplates') { await this.loadMessagesView(scope); return; }
 if (view === 'orders') { await this.orders.loadOrdersView(scope); return; }
 if (view === 'runs') { await this.loadRunsView(scope); return; }
@@ -1641,260 +1580,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
     });
   }
 
-  public async changeMonth(month: string): Promise<void> {
-    if (!/^\d{4}-\d{2}$/.test(month) || this.monthlyLoading() || this.financeLoading()) {
-      return;
-    }
-    this.selectedMonth.set(month);
-    const view = this.activeView();
-    this.monthlyLoading.set(view === 'summary');
-    this.financeLoading.set(view === 'finance');
-    this.errorMessage.set(null);
-    try {
-      if (view === 'summary') {
-        this.monthlySummary.set(await this.api.getMonthlySummaryV2(month));
-      } else {
-        const [entries, financeSummary, financeQuality, financeMonthClosure, monthlySummary] = await Promise.all([
-          this.api.getFinanceEntries(month),
-          this.api.getFinanceSummary(month),
-          this.api.getFinanceDataQuality(month),
-          this.api.getFinanceMonthClosure(month),
-          this.api.getMonthlySummaryV2(month),
-        ]);
-        this.financeEntries.set(entries);
-        this.financeSummary.set(financeSummary);
-        this.financeQuality.set(financeQuality);
-        this.applyFinanceMonthClosure(financeMonthClosure);
-        this.monthlySummary.set(monthlySummary);
-      }
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      this.monthlyLoading.set(false);
-      this.financeLoading.set(false);
-    }
-    if (['summary', 'finance'].includes(view)) {
-      void this.router.navigate([], {
-        queryParams: { month },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-    }
-  }
-
-  public openNewFinanceEntry(): void {
-    this.clearFinanceForm();
-    this.openModal('finance-entry');
-  }
-
-  public openEditFinanceEntry(entry: FinanceEntry): void {
-    if (entry.status !== 'active') {
-      return;
-    }
-    this.editingFinanceEntryId.set(entry.entry_id);
-    this.financeOccurredOn.set(entry.occurred_on);
-    this.financeEntryKind.set(entry.entry_kind);
-    this.financeCategoryCode.set(entry.category_code);
-    this.financeVendor.set(entry.vendor ?? '');
-    this.financeDescription.set(entry.description);
-    this.financeAmountOriginal.set(String(entry.amount_original));
-    this.financeCurrency.set(entry.currency);
-    this.financeExchangeRatePen.set(
-      entry.currency === 'PEN' ? '' : String(entry.exchange_rate_pen ?? ''),
-    );
-    this.financeQuantity.set(String(entry.quantity ?? ''));
-    this.financeUnit.set(entry.unit ?? '');
-    this.financeChannel.set(entry.channel ?? '');
-    this.financeCampaign.set(entry.campaign ?? '');
-    this.financeOrderId.set(entry.order_id ?? '');
-    this.financeEvidenceReference.set(entry.evidence_reference ?? '');
-    this.financeNotes.set(entry.notes ?? '');
-    this.financeDataQuality.set(entry.data_quality);
-    this.openModal('finance-entry');
-  }
-
-  public openEditFinanceEntryById(entryId: string): void {
-    const entry = this.financeEntries().find((item) => item.entry_id === entryId);
-    if (entry) {
-      this.openEditFinanceEntry(entry);
-    }
-  }
-
-  public requestSaveFinanceEntry(): void {
-    const payload = this.financeFormPayload();
-    if (!payload) {
-      return;
-    }
-    const entryId = this.editingFinanceEntryId();
-    this.setPendingAction({
-      title: entryId ? 'Actualizar movimiento' : 'Registrar movimiento',
-      message: entryId
-        ? `Actualizar ${entryId}. El historial conservara la fecha de modificacion.`
-        : `Registrar ${payload.description} por ${payload.amount_original} ${payload.currency}.`,
-      execute: () =>
-        entryId
-          ? this.api.updateFinanceEntry(entryId, payload)
-          : this.api.createFinanceEntry(payload),
-      onSuccess: () => {
-        this.activeModal.set(null);
-        this.clearFinanceForm();
-      },
-    });
-  }
-
-  public async requestVoidFinanceEntry(entry: FinanceEntry): Promise<void> {
-    if (entry.status !== 'active') {
-      return;
-    }
-    void (await this.getSweetAlert()).fire({
-      title: 'Anular movimiento',
-      text: 'Escribe el motivo. El registro se conservara para auditoria y dejara de calcularse.',
-      input: 'text',
-      inputLabel: 'Motivo de anulacion',
-      inputValidator: (value) =>
-        value.trim().length >= 3 ? undefined : 'Ingresa al menos 3 caracteres.',
-      showCancelButton: true,
-      confirmButtonText: 'Anular',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#b42318',
-    }).then(async (result) => {
-      if (!result.isConfirmed || !result.value) {
-        return;
-      }
-      this.actionBusy.set(true);
-      try {
-        await this.api.voidFinanceEntry(entry.entry_id, String(result.value).trim());
-        await this.refreshAll();
-        this.showToast('Movimiento anulado');
-      } catch (error) {
-        this.errorMessage.set(this.readError(error));
-      } finally {
-        this.actionBusy.set(false);
-      }
-    });
-  }
-
-  public financeKindLabel(kind: FinanceEntryKind): string {
-    const labels: Record<FinanceEntryKind, string> = {
-      expense: 'Gasto directo',
-      prepaid_topup: 'Recarga prepagada',
-      prepaid_consumption: 'Consumo prepagado',
-      refund: 'Reembolso',
-    };
-    return labels[kind];
-  }
-
-  public financeConversionComplete(summary: FinanceSummary): boolean {
-    return summary.conversion_complete;
-  }
-
-  public formatOriginalMoney(entry: FinanceEntry): string {
-    return `${entry.currency} ${entry.amount_original.toFixed(entry.currency === 'PEN' ? 2 : 4)}`;
-  }
-
-  public startFinanceMismatchResolution(paymentId: string): void {
-    this.financeMismatchPaymentId.set(paymentId);
-    this.financeMismatchResolution.set('discount');
-    this.financeMismatchReason.set('');
-  }
-
-  public cancelFinanceMismatchResolution(): void {
-    this.financeMismatchPaymentId.set('');
-    this.financeMismatchReason.set('');
-  }
-
-  public requestReconcileFinancePayment(paymentId: string): void {
-    const reason = this.financeMismatchReason().trim();
-    if (reason.length < 3) {
-      this.errorMessage.set('Indica una causa de al menos 3 caracteres.');
-      return;
-    }
-    const resolution = this.financeMismatchResolution();
-    void this.setPendingAction({
-      title: 'Conciliar diferencia de pago',
-      message: `Registrar ${this.financeResolutionLabel(resolution).toLowerCase()} como causa explícita. El importe original no se reescribe.`,
-      execute: () =>
-        this.api.reconcileFinancePaymentAmount(paymentId, {
-          resolution_type: resolution,
-          reason,
-        }),
-      successMessage: 'Diferencia de pago conciliada',
-      onSuccess: () => this.cancelFinanceMismatchResolution(),
-    });
-  }
-
-  public financeResolutionLabel(resolution: PaymentResolutionType): string {
-    return {
-      discount: 'Descuento',
-      waiver: 'Condonación',
-      correction: 'Corrección',
-    }[resolution];
-  }
-
-  public requestSaveFinanceMonthClosure(status: 'draft' | 'reconciled'): void {
-    const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
-    const closing = String(this.financeClosureClosingBalance() ?? '').trim();
-    if (status === 'reconciled' && (!opening || !closing)) {
-      this.errorMessage.set('Para conciliar, completa saldo inicial y saldo final.');
-      return;
-    }
-    void this.setPendingAction({
-      title: status === 'reconciled' ? 'Cerrar mes financiero' : 'Guardar borrador de cierre',
-      message:
-        status === 'reconciled'
-          ? 'El cierre solo se guardará si no quedan movimientos pendientes, conversiones faltantes ni diferencias de pago sin conciliar.'
-          : 'Se guardarán los saldos y notas sin declarar el mes conciliado.',
-      execute: () =>
-        this.api.saveFinanceMonthClosure({
-          month: this.selectedMonth(),
-          opening_prepaid_balance: opening || null,
-          closing_prepaid_balance: closing || null,
-          status,
-          notes: this.financeClosureNotes().trim() || null,
-        }),
-      successMessage: status === 'reconciled' ? 'Mes financiero conciliado' : 'Borrador de cierre guardado',
-    });
-  }
-
-  public financeClosureCanReconcile(): boolean {
-    const closure = this.financeMonthClosure();
-    const quality = this.financeQuality();
-    return Boolean(
-      closure &&
-        quality &&
-        this.financeSelectedMonthIsClosed() &&
-        closure.movements.pending_entries === 0 &&
-        closure.movements.unconverted_entries === 0 &&
-        quality.unreconciled_paid_amount_mismatch_count === 0,
-    );
-  }
-
-  public financeSelectedMonthIsClosed(): boolean {
-    return this.selectedMonth() < INITIAL_MONTH;
-  }
-
-  public missingAcquisitionSourceOrders(): number {
-    return (
-      this.monthlySummary()?.cohort_metrics.sources.find((source) => source.source === 'sin_fuente')
-        ?.orders_created ?? 0
-    );
-  }
-
-  public financeReviewIssueCount(): number {
-    const quality = this.financeQuality();
-    if (!quality) {
-      return 0;
-    }
-    return (
-      quality.unreconciled_paid_amount_mismatch_count +
-      quality.unconverted_entries.length +
-      quality.data_quality.estimated.entry_count +
-      quality.data_quality.pending.entry_count +
-      (this.monthlySummary()?.current_attention_snapshot.missing_contact_count ?? 0) +
-      this.missingAcquisitionSourceOrders()
-    );
-  }
-
   public formatMoney(value: number): string {
     return new Intl.NumberFormat('es-PE', {
       style: 'currency',
@@ -1909,55 +1594,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     }).format(value);
-  }
-
-  public metricPeriodLabel(period: MetricPeriod): string {
-    if (period.coverage_end_exclusive <= period.start) {
-      return 'Sin cobertura todavía';
-    }
-    const start = this.formatDate(period.start);
-    const end = new Date(`${period.coverage_end_exclusive}T12:00:00`);
-    end.setDate(end.getDate() - 1);
-    return `${start} – ${this.formatDate(end.toISOString().slice(0, 10))}`;
-  }
-
-  public selectedMonthLabel(): string {
-    const [year, month] = this.selectedMonth().split('-').map(Number);
-    return new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric' }).format(
-      new Date(year, month - 1, 1),
-    );
-  }
-
-  public monthlyRevenueComparison(
-    comparison: NonNullable<MonthlySummaryV2['comparisons']['same_day_window']>,
-  ): string {
-    return this.revenueDeltaLabel(
-      comparison.selected.metrics.revenue_collected,
-      comparison.previous.metrics.revenue_collected,
-    );
-  }
-
-  public closedMonthRevenueComparison(summary: MonthlySummaryV2): string {
-    return this.revenueDeltaLabel(
-      summary.comparisons.closed_months.selected.metrics.revenue_collected,
-      summary.comparisons.closed_months.previous.metrics.revenue_collected,
-    );
-  }
-
-  public dailyRevenueWidth(summary: MonthlySummaryV2, amount: number): number {
-    const maximum = Math.max(
-      ...summary.period_metrics.daily_revenue.map((item) => item.amount),
-      0,
-    );
-    return maximum ? Math.max((amount / maximum) * 100, 3) : 0;
-  }
-
-  private revenueDeltaLabel(current: number, previous: number): string {
-    if (!previous) {
-      return current > 0 ? `${this.formatMoney(current)} · sin cobros comparables previos` : 'Sin cobros en ambos rangos';
-    }
-    const change = current / previous - 1;
-    return `${this.formatMoney(current)} · ${change >= 0 ? '+' : ''}${this.formatPercent(change)}`;
   }
 
   public openInboxCaptchaReview(): void {
@@ -1997,7 +1633,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       return;
     }
     if (task.action === 'register_payment') {
-      await this.openPayment(order);
+      await this.finance.openPayment(order);
       return;
     }
     if (
@@ -2034,7 +1670,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       return;
     }
     void this.router.navigate(['/ordenes', orderId]);
-    void this.openPayment(order);
+    void this.finance.openPayment(order);
   }
 
   public async selectRun(runId: string, updateRoute = true): Promise<void> {
@@ -2086,27 +1722,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       return run.screenshot_paths;
     }
     return run.screenshot_path ? [run.screenshot_path] : [];
-  }
-
-  public async openPayment(order: ServiceOrder): Promise<void> {
-    this.orders.selectOrder(order.order_id, false);
-    const standardAmount = this.orders.standardPackageAmount() ?? '';
-    const agreedAmount = order.amount_agreed ?? order.reservation_price ?? standardAmount;
-    this.paymentAmountAgreed.set(agreedAmount);
-    this.paymentAmountPaid.set(agreedAmount);
-    this.openModal('payment');
-    await this.orders.loadSelectedOrderDetail(order.order_id);
-    const refreshed = this.orders.selectedOrderDetail();
-    if (refreshed?.order_id === order.order_id) {
-      const refreshedAmount =
-        refreshed.amount_agreed ?? refreshed.reservation_price ?? standardAmount;
-      this.paymentAmountAgreed.set(refreshedAmount);
-      this.paymentAmountPaid.set(refreshedAmount);
-    }
-  }
-
-  public setQuickPaymentAmount(amount: string): void {
-    this.editField(this.paymentAmountPaid, amount);
   }
 
   public showPendingPayments(): void {
@@ -2923,7 +2538,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       this.orders.clearCreateOrderForm();
     }
     if (modal === 'finance-entry') {
-      this.clearFinanceForm();
+      this.finance.clearFinanceForm();
     }
     if (modal === 'whatsapp') {
       this.whatsappPackage.set(null);
@@ -2943,39 +2558,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
   public editField<T>(field: WritableSignal<T>, value: T): void {
     field.set(value);
     this.formDirty.set(true);
-  }
-
-  public requestMarkPaid(): void {
-    const order = this.orders.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const result = buildPaymentPayload(this.paymentAmountPaid(), this.paymentAmountAgreed(), {
-      expected_payment_status: order.payment_status,
-      expected_amount_agreed: order.amount_agreed,
-      expected_amount_paid: order.amount_paid ?? '0.00',
-    });
-    if (!result.payload) {
-      this.errorMessage.set(result.error);
-      return;
-    }
-    const payload = result.payload;
-    const paid = Number(payload.amount_paid);
-    const agreed = Number(payload.amount_agreed);
-    const isPartial = Number.isFinite(agreed) && paid < agreed;
-    this.setPendingAction({
-      title: isPartial ? 'Registrar abono' : 'Confirmar pago completo',
-      message: isPartial
-        ? `Guardar total acumulado de S/${payload.amount_paid} para ${order.order_id}. El saldo seguirá pendiente.`
-        : `Cerrar como pagado con S/${payload.amount_paid} para ${order.order_id} e iniciar el postpago.`,
-      execute: () => isPartial
-        ? this.api.recordPartialPayment(order.order_id, payload)
-        : this.api.markPaymentPaid(order.order_id, payload),
-      successMessage: isPartial
-        ? 'Abono registrado; el saldo permanece pendiente'
-        : 'Pago completo registrado; envío automático en proceso',
-      onSuccess: () => this.activeModal.set(null),
-    });
   }
 
   public requestRestartWorker(): void {
@@ -3298,27 +2880,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
     return 'Sin orden activa';
   }
 
-  public paymentLabel(order: ServiceOrder): string {
-    if (!order.charge_required) {
-      return 'Sin cobro';
-    }
-    return this.statusLabel(order.payment_status, 'Sin pago');
-  }
-
-  public paymentAmountLabel(order: ServiceOrder): string {
-    if (!order.charge_required) {
-      return '';
-    }
-    if (order.payment_status === 'pending' && order.amount_agreed) {
-      const agreed = Number(order.amount_agreed);
-      const paid = Number(order.amount_paid ?? 0);
-      if (Number.isFinite(agreed) && Number.isFinite(paid)) {
-        return Math.max(agreed - paid, 0).toFixed(2);
-      }
-    }
-    return order.amount_paid ?? order.amount_agreed ?? '';
-  }
-
   public statusLabel(
     value: string | boolean | null | undefined,
     fallback = 'Sin estado',
@@ -3503,7 +3064,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       .catch(() => undefined);
   }
 
-  private getSweetAlert(): Promise<typeof import('sweetalert2').default> {
+  public getSweetAlert(): Promise<typeof import('sweetalert2').default> {
     this.sweetAlertPromise ??= import('sweetalert2').then((module) => module.default);
     return this.sweetAlertPromise;
   }
@@ -3670,85 +3231,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
     }
   }
 
-  private financeFormPayload(): FinanceEntryPayload | null {
-    const amountOriginal = String(this.financeAmountOriginal() ?? '').trim();
-    const exchangeRate = String(this.financeExchangeRatePen() ?? '').trim();
-    const quantity = String(this.financeQuantity() ?? '').trim();
-    const amount = Number(amountOriginal);
-    if (!this.financeOccurredOn() || !this.financeDescription().trim()) {
-      this.errorMessage.set('Fecha y descripcion son obligatorias.');
-      return null;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      this.errorMessage.set('El importe debe ser mayor que cero.');
-      return null;
-    }
-    if (
-      this.financeCurrency() !== 'PEN' &&
-      exchangeRate &&
-      (!Number.isFinite(Number(exchangeRate)) || Number(exchangeRate) <= 0)
-    ) {
-      this.errorMessage.set('El tipo de cambio debe ser mayor que cero.');
-      return null;
-    }
-    return {
-      occurred_on: this.financeOccurredOn(),
-      entry_kind: this.financeEntryKind(),
-      category_code: this.financeCategoryCode(),
-      vendor: this.optionalText(this.financeVendor()),
-      description: this.financeDescription().trim(),
-      amount_original: amountOriginal,
-      currency: this.financeCurrency().trim().toUpperCase(),
-      exchange_rate_pen: this.financeCurrency() === 'PEN' ? null : this.optionalText(exchangeRate),
-      quantity: this.optionalText(quantity),
-      unit: this.optionalText(this.financeUnit()),
-      channel: this.optionalText(this.financeChannel()),
-      campaign: this.optionalText(this.financeCampaign()),
-      order_id: this.optionalText(this.financeOrderId()),
-      evidence_reference: this.optionalText(this.financeEvidenceReference()),
-      notes: this.optionalText(this.financeNotes()),
-      data_quality: this.financeDataQuality(),
-    };
-  }
-
-  private clearFinanceForm(): void {
-    this.editingFinanceEntryId.set('');
-    this.financeOccurredOn.set(INITIAL_DATE);
-    this.financeEntryKind.set('expense');
-    this.financeCategoryCode.set('marketing');
-    this.financeVendor.set('');
-    this.financeDescription.set('');
-    this.financeAmountOriginal.set('');
-    this.financeCurrency.set('PEN');
-    this.financeExchangeRatePen.set('');
-    this.financeQuantity.set('');
-    this.financeUnit.set('');
-    this.financeChannel.set('');
-    this.financeCampaign.set('');
-    this.financeOrderId.set('');
-    this.financeEvidenceReference.set('');
-    this.financeNotes.set('');
-    this.financeDataQuality.set('actual');
-    this.formDirty.set(false);
-  }
-
-  private applyFinanceMonthClosure(payload: FinanceMonthClosure): void {
-    this.financeMonthClosure.set(payload);
-    this.financeClosureOpeningBalance.set(
-      payload.closure?.opening_prepaid_balance === null ||
-        payload.closure?.opening_prepaid_balance === undefined
-        ? ''
-        : String(payload.closure.opening_prepaid_balance),
-    );
-    this.financeClosureClosingBalance.set(
-      payload.closure?.closing_prepaid_balance === null ||
-        payload.closure?.closing_prepaid_balance === undefined
-        ? ''
-        : String(payload.closure.closing_prepaid_balance),
-    );
-    this.financeClosureNotes.set(payload.closure?.notes ?? '');
-  }
-
   private formatClock(date: Date): string {
     return date.toLocaleTimeString('es-PE', {
       timeZone: 'America/Lima',
@@ -3809,7 +3291,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       ] = await Promise.all([
         this.orderList.fetchOrders(scope),
         this.api.getRuns(scope),
-        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
+        this.api.getMonthlySummaryV2(this.finance.selectedMonth(), scope),
         this.api.getCaptchaSamplingControl(scope),
         this.api.getCaptchaAuthorityControl(scope),
         this.api.getOpportunityControl(scope),
@@ -3819,41 +3301,13 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       ]);
       this.orders.applyOrders(orders);
       this.runs.set(runs);
-      this.monthlySummary.set(monthlySummary);
+      this.finance.monthlySummary.set(monthlySummary);
       this.applyCaptchaSamplingControl(captchaSamplingControl);
       this.captchaAuthorityControl.set(captchaAuthorityControl);
       this.opportunityControl.set(opportunityControl);
       this.opportunityBursts.set(opportunityBursts.bursts);
       this.appointmentReminderStatus.set(appointmentReminderStatus);
       this.workerCommands.set(workerCommands);
-      return;
-    }
-
-  public async loadFinanceView(scope: RequestScope): Promise<void> {
-      const categoriesRequest = this.financeCategories().length
-        ? Promise.resolve(this.financeCategories())
-        : this.api.getFinanceCategories(scope);
-      const [
-        financeCategories,
-        financeEntries,
-        financeSummary,
-        financeQuality,
-        financeMonthClosure,
-        monthlySummary,
-      ] = await Promise.all([
-        categoriesRequest,
-        this.api.getFinanceEntries(this.selectedMonth(), scope),
-        this.api.getFinanceSummary(this.selectedMonth(), scope),
-        this.api.getFinanceDataQuality(this.selectedMonth(), scope),
-        this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
-        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
-      ]);
-      this.financeCategories.set(financeCategories);
-      this.financeEntries.set(financeEntries);
-      this.financeSummary.set(financeSummary);
-      this.financeQuality.set(financeQuality);
-      this.applyFinanceMonthClosure(financeMonthClosure);
-      this.monthlySummary.set(monthlySummary);
       return;
     }
 
@@ -3879,6 +3333,8 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       return;
     }
   @HostListener('window:beforeunload') public onBeforeUnload(): void { this.orders.handleBeforeUnload(); }
+
+  public get finance() { return this.injector.get(DASHBOARD_SHELL_FINANCE); }
 
   public get orders() { return this.injector.get(DASHBOARD_SHELL_ORDERS); }
 }

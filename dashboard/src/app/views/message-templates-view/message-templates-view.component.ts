@@ -30,7 +30,7 @@ type PreviewState = 'ready' | 'loading' | 'error';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MessageTemplatesViewComponent implements OnDestroy {
-  protected readonly shell = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL);
+  protected readonly shellDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL);
 
   @ViewChild('templateEditor') private templateEditor?: ElementRef<HTMLTextAreaElement>;
 
@@ -58,7 +58,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
   protected readonly selectedTemplate = computed<WhatsAppMessageTemplate | null>(() => {
     const key = this.selectedTemplateKey();
     return (
-      this.shell.whatsappMessageTemplates()
+      this.shellDomain.whatsappMessageTemplates()
         .find((item: WhatsAppMessageTemplate) => item.template_key === key) ?? null
     );
   });
@@ -71,8 +71,8 @@ export class MessageTemplatesViewComponent implements OnDestroy {
 
   constructor() {
     effect(() => {
-      const templates = this.shell.whatsappMessageTemplates() as WhatsAppMessageTemplate[];
-      const editingPaused = this.shell.formDirty();
+      const templates = this.shellDomain.whatsappMessageTemplates() as WhatsAppMessageTemplate[];
+      const editingPaused = this.shellDomain.formDirty();
       if (!templates.length || editingPaused) {
         return;
       }
@@ -92,11 +92,11 @@ export class MessageTemplatesViewComponent implements OnDestroy {
       window.clearTimeout(this.previewTimer);
     }
     this.previewGeneration += 1;
-    this.shell.formDirty.set(false);
+    this.shellDomain.formDirty.set(false);
   }
 
   protected chooseTemplate(templateKey: string): void {
-    const template = this.shell.whatsappMessageTemplates()
+    const template = this.shellDomain.whatsappMessageTemplates()
       .find((item: WhatsAppMessageTemplate) => item.template_key === templateKey);
     if (!template || templateKey === this.selectedTemplateKey()) {
       return;
@@ -107,7 +107,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
     ) {
       return;
     }
-    this.shell.formDirty.set(false);
+    this.shellDomain.formDirty.set(false);
     this.hydrate(template);
   }
 
@@ -117,7 +117,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
     this.saveError.set(null);
     this.saveSuccess.set(null);
     this.conflictCurrent.set(null);
-    this.shell.formDirty.set(this.isDirty());
+    this.shellDomain.formDirty.set(this.isDirty());
     this.schedulePreview();
   }
 
@@ -181,7 +181,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
         template.revision,
       );
       this.replaceTemplate(updated);
-      this.shell.formDirty.set(false);
+      this.shellDomain.formDirty.set(false);
       this.hydrate(updated);
       this.saveSuccess.set(
         `Revisión ${updated.revision} guardada. No se preparó ni envió ningún WhatsApp.`,
@@ -207,7 +207,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
       return;
     }
     this.replaceTemplate(current);
-    this.shell.formDirty.set(false);
+    this.shellDomain.formDirty.set(false);
     this.hydrate(current);
     this.saveSuccess.set(`Se cargó la revisión vigente ${current.revision}.`);
   }
@@ -221,7 +221,7 @@ export class MessageTemplatesViewComponent implements OnDestroy {
     this.hydratedRevision = current.revision;
     this.conflictCurrent.set(null);
     this.saveError.set(null);
-    this.shell.formDirty.set(this.draft() !== current.message_template);
+    this.shellDomain.formDirty.set(this.draft() !== current.message_template);
     this.saveSuccess.set(
       `Tu borrador se conserva sobre la revisión ${current.revision}. Revísalo antes de guardar.`,
     );
@@ -309,11 +309,11 @@ export class MessageTemplatesViewComponent implements OnDestroy {
     this.saveSuccess.set(null);
     this.conflictCurrent.set(null);
     this.hydratedRevision = template.revision;
-    this.shell.formDirty.set(false);
+    this.shellDomain.formDirty.set(false);
   }
 
   private replaceTemplate(updated: WhatsAppMessageTemplate): void {
-    this.shell.whatsappMessageTemplates.update((templates: WhatsAppMessageTemplate[]) =>
+    this.shellDomain.whatsappMessageTemplates.update((templates: WhatsAppMessageTemplate[]) =>
       templates.map((item) =>
         item.template_key === updated.template_key ? updated : item,
       ),

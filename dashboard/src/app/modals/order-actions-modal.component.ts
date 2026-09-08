@@ -13,7 +13,7 @@ import {
   templateUrl: './order-actions-modal.component.html',
 })
 export class OrderActionsModalComponent {
-  protected readonly shell = inject(DASHBOARD_ORDER_ACTIONS_MODAL_SHELL);
-  protected readonly orders = inject(DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS);
+  protected readonly shellDomain = inject(DASHBOARD_ORDER_ACTIONS_MODAL_SHELL);
+  protected readonly ordersDomain = inject(DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS);
 
 }

@@ -12,6 +12,6 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class RunsViewComponent {
-  protected readonly shell = inject(DASHBOARD_RUNS_VIEW_SHELL);
+  protected readonly shellDomain = inject(DASHBOARD_RUNS_VIEW_SHELL);
 
 }

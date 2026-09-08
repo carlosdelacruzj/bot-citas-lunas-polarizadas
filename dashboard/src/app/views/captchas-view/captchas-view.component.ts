@@ -13,6 +13,6 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class CaptchasViewComponent {
-  protected readonly shell = inject(DASHBOARD_CAPTCHAS_VIEW_SHELL);
+  protected readonly shellDomain = inject(DASHBOARD_CAPTCHAS_VIEW_SHELL);
 
 }

@@ -21,7 +21,7 @@ import {
   SPANISH_LIST_FORMAT,
   WEEKDAY_NAMES,
 } from '../../dashboard-domain.contracts';
-import { DASHBOARD_ORDERS_SHELL } from '../../dashboard-domain.ports';
+import { DASHBOARD_ORDERS_FINANCE, DASHBOARD_ORDERS_SHELL } from '../../dashboard-domain.ports';
 import { OrdersListFacade } from '../../domains/orders/orders-list.facade';
 import {
   ProgramResolutionPayload,
@@ -364,7 +364,7 @@ export class OrdersFacade {
     } else if (action.key === 'activate') {
       this.requestOrderAction('activate', 'Activar orden');
     } else if (action.key === 'payment') {
-      void this.shell.openPayment(order);
+      void this.finance.openPayment(order);
     } else if (action.key === 'post-payment-whatsapp') {
       void this.shell.openPostPaymentWhatsApp(order);
     } else if (action.key === 'program-resolution') {
@@ -411,7 +411,7 @@ export class OrdersFacade {
       return;
     }
     if (order.payment_status === 'pending') {
-      void this.shell.openPayment(order);
+      void this.finance.openPayment(order);
       return;
     }
     if (
@@ -1098,8 +1098,8 @@ export class OrdersFacade {
     this.orderExcludedDateRanges.set([...(order.excluded_date_ranges ?? [])]);
     this.orderExcludedDateStart.set('');
     this.orderExcludedDateEnd.set('');
-    this.shell.paymentAmountPaid.set(order.amount_paid ?? '');
-    this.shell.paymentAmountAgreed.set(order.amount_agreed ?? '');
+    this.finance.paymentAmountPaid.set(order.amount_paid ?? '');
+    this.finance.paymentAmountAgreed.set(order.amount_agreed ?? '');
     this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
     this.closureNote.set(order.closure_note ?? '');
   }
@@ -1199,4 +1199,6 @@ export class OrdersFacade {
     }
 
   private get shell() { return this.injector.get(DASHBOARD_ORDERS_SHELL); }
+
+  private get finance() { return this.injector.get(DASHBOARD_ORDERS_FINANCE); }
 }

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  DASHBOARD_ORDERS_VIEW_FINANCE,
   DASHBOARD_ORDERS_VIEW_ORDERLIST,
   DASHBOARD_ORDERS_VIEW_ORDERS,
   DASHBOARD_ORDERS_VIEW_SHELL,
@@ -16,8 +17,9 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class OrdersViewComponent {
-  protected readonly shell = inject(DASHBOARD_ORDERS_VIEW_SHELL);
-  protected readonly orders = inject(DASHBOARD_ORDERS_VIEW_ORDERS);
+  protected readonly shellDomain = inject(DASHBOARD_ORDERS_VIEW_SHELL);
+  protected readonly ordersDomain = inject(DASHBOARD_ORDERS_VIEW_ORDERS);
+  protected readonly financeDomain = inject(DASHBOARD_ORDERS_VIEW_FINANCE);
   protected readonly orderList = inject(DASHBOARD_ORDERS_VIEW_ORDERLIST);
 
 }

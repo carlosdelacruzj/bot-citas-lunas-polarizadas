@@ -11,34 +11,34 @@
       <button
         type="button"
         class="secondary"
-        [disabled]="shell.whatsappSessionBusy()"
-        (click)="shell.validateWhatsAppSession()"
+        [disabled]="shellDomain.whatsappSessionBusy()"
+        (click)="shellDomain.validateWhatsAppSession()"
       >
         {{
-          shell.whatsappSessionBusy()
+          shellDomain.whatsappSessionBusy()
             ? 'Validando WhatsApp...'
-            : shell.whatsappSessionState() === 'ready'
+            : shellDomain.whatsappSessionState() === 'ready'
               ? 'WhatsApp listo'
               : 'Validar WhatsApp'
         }}
       </button>
-      <button type="button" class="secondary" (click)="shell.openWhatsAppEvidenceTest()">
+      <button type="button" class="secondary" (click)="shellDomain.openWhatsAppEvidenceTest()">
         Probar evidencias
       </button>
-      <button type="button" class="secondary" (click)="shell.openWhatsAppTest()">
+      <button type="button" class="secondary" (click)="shellDomain.openWhatsAppTest()">
         Probar post-pago
       </button>
-      <button type="button" class="primary" (click)="orders.openCreateOrder()">Nueva orden</button>
+      <button type="button" class="primary" (click)="ordersDomain.openCreateOrder()">Nueva orden</button>
     </div>
   </div>
 
-  @if (orders.orderPanelOpen()) {
-    @if (orders.selectedOrder(); as order) {
+  @if (ordersDomain.orderPanelOpen()) {
+    @if (ordersDomain.selectedOrder(); as order) {
       <button
         type="button"
         class="order-drawer-backdrop"
         aria-label="Cerrar detalle de orden"
-        (click)="orders.closeOrderPanel()"
+        (click)="ordersDomain.closeOrderPanel()"
       ></button>
       <aside
         class="order-workspace"
@@ -54,22 +54,22 @@
             <h3 id="selected-order-title">{{ order.applicant_name ?? order.order_id }}</h3>
             <p>{{ order.order_id }} · {{ order.document_number_masked }}</p>
           </div>
-          <button type="button" class="icon-button" (click)="orders.closeOrderPanel()">
+          <button type="button" class="icon-button" (click)="ordersDomain.closeOrderPanel()">
             Cerrar
           </button>
         </div>
         <div class="next-action-card">
           <span>Control previo del portal</span>
-          <strong class="badge {{ shell.statusTone(order.preflight_status) }}">
-            {{ orders.preflightLabel(order) }}
+          <strong class="badge {{ shellDomain.statusTone(order.preflight_status) }}">
+            {{ ordersDomain.preflightLabel(order) }}
           </strong>
           @if (order.preflight_message) {
             <small>{{ order.preflight_message }}</small>
           }
           @if (order.registration_notice_status) {
             <small>
-              Aviso de registro: {{ shell.statusLabel(order.registration_notice_type) }} ·
-              {{ shell.statusLabel(order.registration_notice_status) }}
+              Aviso de registro: {{ shellDomain.statusLabel(order.registration_notice_type) }} ·
+              {{ shellDomain.statusLabel(order.registration_notice_status) }}
             </small>
             @if (order.registration_notice_error) {
               <small>{{ order.registration_notice_error }}</small>
@@ -78,24 +78,24 @@
         </div>
         <div class="next-action-card">
           <span>Siguiente accion valida</span>
-          <strong>{{ orders.orderNextAction().label }}</strong>
-          <small>{{ orders.orderNextAction().description }}</small>
+          <strong>{{ ordersDomain.orderNextAction().label }}</strong>
+          <small>{{ ordersDomain.orderNextAction().description }}</small>
           <div class="next-action-buttons">
             <button
               type="button"
               class="primary"
-              [disabled]="orders.orderNextAction().disabled || shell.actionBusy()"
-              (click)="orders.runNextOrderAction()"
+              [disabled]="ordersDomain.orderNextAction().disabled || shellDomain.actionBusy()"
+              (click)="ordersDomain.runNextOrderAction()"
             >
-              {{ orders.orderNextAction().label }}
+              {{ ordersDomain.orderNextAction().label }}
             </button>
             @if (order.payment_status === 'pending') {
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!shell.canPrepareOrderWhatsApp(order) || shell.actionBusy()"
-                [title]="shell.whatsappPreparationHint(order)"
-                (click)="shell.openOrderWhatsApp(order)"
+                [disabled]="!shellDomain.canPrepareOrderWhatsApp(order) || shellDomain.actionBusy()"
+                [title]="shellDomain.whatsappPreparationHint(order)"
+                (click)="shellDomain.openOrderWhatsApp(order)"
               >
                 {{
                   order.whatsapp_message_status === 'sent'
@@ -107,9 +107,9 @@
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!shell.canPreparePostPaymentWhatsApp(order) || shell.actionBusy()"
-                [title]="shell.postPaymentWhatsAppHint(order)"
-                (click)="shell.openPostPaymentWhatsApp(order)"
+                [disabled]="!shellDomain.canPreparePostPaymentWhatsApp(order) || shellDomain.actionBusy()"
+                [title]="shellDomain.postPaymentWhatsAppHint(order)"
+                (click)="shellDomain.openPostPaymentWhatsApp(order)"
               >
                 {{
                   order.whatsapp_followup_status === 'sent'
@@ -120,9 +120,9 @@
             }
           </div>
           @if (order.payment_status === 'pending') {
-            <small>{{ shell.whatsappPreparationHint(order) }}</small>
+            <small>{{ shellDomain.whatsappPreparationHint(order) }}</small>
           } @else if (order.payment_status === 'paid') {
-            <small>{{ shell.postPaymentWhatsAppHint(order) }}</small>
+            <small>{{ shellDomain.postPaymentWhatsAppHint(order) }}</small>
           }
         </div>
 
@@ -131,21 +131,21 @@
             order.preflight_status !== 'not_required' &&
             order.preflight_status !== 'validated'
           ) {
-            @if (orders.needsProgramResolution(order)) {
+            @if (ordersDomain.needsProgramResolution(order)) {
               <button
                 type="button"
                 class="primary"
-                [disabled]="shell.actionBusy()"
-                (click)="orders.openProgramResolution(order)"
+                [disabled]="shellDomain.actionBusy()"
+                (click)="ordersDomain.openProgramResolution(order)"
               >
                 Resolver trámites
               </button>
-            } @else if (orders.needsCredentialCorrection(order)) {
+            } @else if (ordersDomain.needsCredentialCorrection(order)) {
               <button
                 type="button"
                 class="primary"
-                [disabled]="shell.actionBusy()"
-                (click)="orders.openEditOrder(order, 'credentials')"
+                [disabled]="shellDomain.actionBusy()"
+                (click)="ordersDomain.openEditOrder(order, 'credentials')"
               >
                 Corregir acceso
               </button>
@@ -153,8 +153,8 @@
               <button
                 type="button"
                 class="primary"
-                [disabled]="order.preflight_status === 'running' || shell.actionBusy()"
-                (click)="orders.requestOrderValidation(order)"
+                [disabled]="order.preflight_status === 'running' || shellDomain.actionBusy()"
+                (click)="ordersDomain.requestOrderValidation(order)"
               >
                 {{
                   order.preflight_status === 'failed' ? 'Volver a validar' : 'Validar acceso'
@@ -163,17 +163,17 @@
             }
           }
           @if (order.payment_status === 'pending') {
-            <button type="button" class="primary" (click)="shell.openPayment(order)">
+            <button type="button" class="primary" (click)="financeDomain.openPayment(order)">
               Registrar pago
             </button>
           }
-          <button type="button" class="secondary" (click)="orders.openEditOrder(order, 'contact')">
+          <button type="button" class="secondary" (click)="ordersDomain.openEditOrder(order, 'contact')">
             Editar contacto
           </button>
           <button
             type="button"
             class="secondary"
-            (click)="orders.openEditOrder(order, 'restrictions')"
+            (click)="ordersDomain.openEditOrder(order, 'restrictions')"
           >
             Editar reglas
           </button>
@@ -181,7 +181,7 @@
             <button
               type="button"
               class="secondary"
-              (click)="orders.requestOrderAction('pause', 'Pausar orden')"
+              (click)="ordersDomain.requestOrderAction('pause', 'Pausar orden')"
             >
               Pausar
             </button>
@@ -190,11 +190,11 @@
               type="button"
               class="primary"
               [disabled]="
-                orders.hasActiveChildOrders(order) ||
+                ordersDomain.hasActiveChildOrders(order) ||
                 (order.preflight_status !== 'not_required' &&
                   order.preflight_status !== 'validated')
               "
-              (click)="orders.requestOrderAction('activate', 'Activar orden')"
+              (click)="ordersDomain.requestOrderAction('activate', 'Activar orden')"
             >
               Activar
             </button>
@@ -203,13 +203,13 @@
             <button
               type="button"
               class="secondary"
-              [disabled]="shell.actionBusy()"
-              (click)="orders.requestManualSession()"
+              [disabled]="shellDomain.actionBusy()"
+              (click)="ordersDomain.requestManualSession()"
             >
               Abrir portal
             </button>
           }
-          <button type="button" class="secondary" (click)="orders.openOrderActions(order)">
+          <button type="button" class="secondary" (click)="ordersDomain.openOrderActions(order)">
             Más acciones
           </button>
         </div>
@@ -225,42 +225,42 @@
               <div>
                 <dt>WhatsApp</dt>
                 <dd>
-                  @if (orders.orderDetailLoading()) {
+                  @if (ordersDomain.orderDetailLoading()) {
                     Cargando contacto...
                   } @else {
-                    {{ orders.selectedOrderWhatsapp() }}
+                    {{ ordersDomain.selectedOrderWhatsapp() }}
                   }
                 </dd>
               </div>
               <div class="inline-actions">
-                @if (orders.selectedOrderDetail()?.contact_whatsapp) {
+                @if (ordersDomain.selectedOrderDetail()?.contact_whatsapp) {
                   <button
                     type="button"
                     class="secondary"
-                    (click)="orders.openSelectedOrderWhatsapp()"
+                    (click)="ordersDomain.openSelectedOrderWhatsapp()"
                   >
                     Abrir WhatsApp
                   </button>
                   <button
                     type="button"
                     class="secondary"
-                    (click)="orders.copySelectedOrderWhatsapp()"
+                    (click)="ordersDomain.copySelectedOrderWhatsapp()"
                   >
-                    {{ shell.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
+                    {{ shellDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
                   </button>
-                } @else if (orders.selectedOrderDetail()?.contact_whatsapp_username) {
+                } @else if (ordersDomain.selectedOrderDetail()?.contact_whatsapp_username) {
                   <button
                     type="button"
                     class="secondary"
-                    (click)="orders.copySelectedOrderWhatsapp()"
+                    (click)="ordersDomain.copySelectedOrderWhatsapp()"
                   >
-                    {{ shell.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
+                    {{ shellDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
                   </button>
                 } @else {
                   <button
                     type="button"
                     class="secondary"
-                    (click)="orders.openEditOrder(order, 'contact')"
+                    (click)="ordersDomain.openEditOrder(order, 'contact')"
                   >
                     Agregar WhatsApp
                   </button>
@@ -271,11 +271,11 @@
                 <dd>{{ order.contact_source ?? 'sin fuente' }}</dd>
               </div>
             </dl>
-            @if (!orders.isClosedOrder(order)) {
+            @if (!ordersDomain.isClosedOrder(order)) {
               <button
                 type="button"
                 class="secondary"
-                (click)="orders.openEditOrder(order, 'credentials')"
+                (click)="ordersDomain.openEditOrder(order, 'credentials')"
               >
                 Editar acceso al portal
               </button>
@@ -287,45 +287,45 @@
               <div>
                 <dt>Servicio</dt>
                 <dd>
-                  {{ orders.serviceTypeLabel(order) }} ·
-                  {{ orders.servicePriceLabel(order) }}
+                  {{ ordersDomain.serviceTypeLabel(order) }} ·
+                  {{ ordersDomain.servicePriceLabel(order) }}
                 </dd>
               </div>
               <div>
                 <dt>Prioridad {{ order.priority }}</dt>
-                <dd>{{ orders.priorityExplanation(order) }}</dd>
+                <dd>{{ ordersDomain.priorityExplanation(order) }}</dd>
               </div>
               <div>
                 <dt>Días permitidos</dt>
-                <dd>{{ orders.restrictionDaysLabel(order) }}</dd>
+                <dd>{{ ordersDomain.restrictionDaysLabel(order) }}</dd>
               </div>
               <div>
                 <dt>Fechas autorizadas</dt>
-                <dd>{{ orders.restrictionTimingLabel(order) }}</dd>
+                <dd>{{ ordersDomain.restrictionTimingLabel(order) }}</dd>
               </div>
             </dl>
             <div class="priority-presets">
               <button
                 type="button"
                 class="secondary"
-                [disabled]="order.priority === 0 || orders.isClosedOrder(order)"
-                (click)="orders.setQuickPriority(0)"
+                [disabled]="order.priority === 0 || ordersDomain.isClosedOrder(order)"
+                (click)="ordersDomain.setQuickPriority(0)"
               >
                 Cola normal
               </button>
               <button
                 type="button"
                 class="primary"
-                [disabled]="order.priority === 100 || orders.isClosedOrder(order)"
-                (click)="orders.setQuickPriority(100)"
+                [disabled]="order.priority === 100 || ordersDomain.isClosedOrder(order)"
+                (click)="ordersDomain.setQuickPriority(100)"
               >
                 Enfoque 100
               </button>
               <button
                 type="button"
                 class="primary"
-                [disabled]="order.priority === 200 || orders.isClosedOrder(order)"
-                (click)="orders.setQuickPriority(200)"
+                [disabled]="order.priority === 200 || ordersDomain.isClosedOrder(order)"
+                (click)="ordersDomain.setQuickPriority(200)"
               >
                 Exclusivo 200
               </button>
@@ -336,13 +336,13 @@
             <dl>
               <div>
                 <dt>Estado</dt>
-                <dd>{{ shell.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+                <dd>{{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
               </div>
               <div>
                 <dt>Fecha</dt>
                 <dd>
-                  {{ shell.formatDate(order.reservation_date, 'sin fecha') }}
-                  {{ shell.formatTime(order.reservation_hour) }}
+                  {{ shellDomain.formatDate(order.reservation_date, 'sin fecha') }}
+                  {{ shellDomain.formatTime(order.reservation_hour) }}
                 </dd>
               </div>
               <div>
@@ -356,20 +356,20 @@
             <dl>
               <div>
                 <dt>Pago</dt>
-                <dd>{{ shell.paymentLabel(order) }} {{ shell.paymentAmountLabel(order) }}</dd>
+                <dd>{{ financeDomain.paymentLabel(order) }} {{ financeDomain.paymentAmountLabel(order) }}</dd>
               </div>
               <div>
                 <dt>WhatsApp cliente</dt>
                 <dd>
                   {{ order.whatsapp_message_status ?? 'sin preparar' }}
                   @if (order.whatsapp_message_sent_at) {
-                    · {{ shell.formatDateTime(order.whatsapp_message_sent_at) }}
+                    · {{ shellDomain.formatDateTime(order.whatsapp_message_sent_at) }}
                   }
                 </dd>
               </div>
               <div>
                 <dt>Cierre</dt>
-                <dd>{{ orders.closureDisplay(order) }}</dd>
+                <dd>{{ ordersDomain.closureDisplay(order) }}</dd>
               </div>
               <div>
                 <dt>Nota</dt>
@@ -394,21 +394,21 @@
               </div>
               <div>
                 <dt>Subordenes</dt>
-                <dd>{{ orders.selectedOrderChildren().length }}</dd>
+                <dd>{{ ordersDomain.selectedOrderChildren().length }}</dd>
               </div>
             </dl>
-            @if (orders.selectedOrderChildren().length) {
+            @if (ordersDomain.selectedOrderChildren().length) {
               <ul>
-                @for (child of orders.selectedOrderChildren(); track child.order_id) {
+                @for (child of ordersDomain.selectedOrderChildren(); track child.order_id) {
                   <li>
                     <button
                       type="button"
                       class="run-link"
-                      (click)="orders.selectOrder(child.order_id)"
+                      (click)="ordersDomain.selectOrder(child.order_id)"
                     >
                       {{ child.order_id }}
                     </button>
-                    · {{ shell.statusLabel(child.status) }}
+                    · {{ shellDomain.statusLabel(child.status) }}
                   </li>
                 }
               </ul>
@@ -506,10 +506,10 @@
             class="selectable-row"
             tabindex="0"
             [attr.data-order-row]="order.order_id"
-            [class.selected-row]="orders.selectedOrderId() === order.order_id"
-            (click)="orders.selectOrder(order.order_id)"
-            (keydown.enter)="orders.selectOrder(order.order_id)"
-            (keydown.space)="$event.preventDefault(); orders.selectOrder(order.order_id)"
+            [class.selected-row]="ordersDomain.selectedOrderId() === order.order_id"
+            (click)="ordersDomain.selectOrder(order.order_id)"
+            (keydown.enter)="ordersDomain.selectOrder(order.order_id)"
+            (keydown.space)="$event.preventDefault(); ordersDomain.selectOrder(order.order_id)"
           >
             <td data-label="Cliente">
               <strong>{{
@@ -521,23 +521,23 @@
               </span>
             </td>
             <td data-label="Estado">
-              <span class="badge {{ shell.statusTone(order.status) }}">{{
-                orders.orderStatusDisplay(order)
+              <span class="badge {{ shellDomain.statusTone(order.status) }}">{{
+                ordersDomain.orderStatusDisplay(order)
               }}</span>
-              <span class="badge {{ shell.statusTone(order.preflight_status) }}">
-                {{ orders.preflightLabel(order) }}
+              <span class="badge {{ shellDomain.statusTone(order.preflight_status) }}">
+                {{ ordersDomain.preflightLabel(order) }}
               </span>
             </td>
             <td data-label="Reserva">
-              {{ shell.statusLabel(order.reservation_status, 'Pendiente') }}
+              {{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}
               <span>
-                {{ shell.formatDate(order.reservation_date) }}
-                {{ shell.formatTime(order.reservation_hour) }}
+                {{ shellDomain.formatDate(order.reservation_date) }}
+                {{ shellDomain.formatTime(order.reservation_hour) }}
               </span>
             </td>
             <td data-label="Pago">
-              {{ shell.paymentLabel(order) }}
-              <span>{{ shell.paymentAmountLabel(order) }}</span>
+              {{ financeDomain.paymentLabel(order) }}
+              <span>{{ financeDomain.paymentAmountLabel(order) }}</span>
             </td>
             <td data-label="Reglas de fecha" class="restriction-cell">
               <div
@@ -547,11 +547,11 @@
                 <strong>
                   {{
                     orderList.hasReservationRestrictions(order)
-                      ? orders.restrictionDaysLabel(order)
+                      ? ordersDomain.restrictionDaysLabel(order)
                       : 'Sin reglas'
                   }}
                 </strong>
-                <span>{{ orders.restrictionTimingLabel(order) }}</span>
+                <span>{{ ordersDomain.restrictionTimingLabel(order) }}</span>
               </div>
             </td>
             <td data-label="Acciones">
@@ -562,18 +562,18 @@
                 <button
                   type="button"
                   class="primary row-main-action"
-                  [disabled]="shell.actionBusy()"
-                  (click)="$event.stopPropagation(); orders.runRowPrimaryAction(order)"
+                  [disabled]="shellDomain.actionBusy()"
+                  (click)="$event.stopPropagation(); ordersDomain.runRowPrimaryAction(order)"
                 >
-                  {{ orders.rowPrimaryActionLabel(order) }}
+                  {{ ordersDomain.rowPrimaryActionLabel(order) }}
                 </button>
                 @if (order.status === 'ready') {
                   <button
                     type="button"
                     class="secondary"
-                    [disabled]="shell.actionBusy()"
+                    [disabled]="shellDomain.actionBusy()"
                     title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
-                    (click)="$event.stopPropagation(); orders.openManualSessionNow(order, 'diagnostic')"
+                    (click)="$event.stopPropagation(); ordersDomain.openManualSessionNow(order, 'diagnostic')"
                   >
                     Abrir con medición
                   </button>

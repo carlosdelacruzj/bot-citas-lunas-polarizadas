@@ -1,4 +1,4 @@
-@if (shell.activeModal() === 'finance-entry') {
+@if (shellDomain.activeModal() === 'finance-entry') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -10,7 +10,7 @@
         <div>
           <p class="eyebrow">Finanzas</p>
           <h2 id="finance-entry-title">
-            {{ shell.editingFinanceEntryId() ? 'Editar movimiento' : 'Nuevo movimiento' }}
+            {{ financeDomain.editingFinanceEntryId() ? 'Editar movimiento' : 'Nuevo movimiento' }}
           </h2>
           <p>Registra el importe original y su conversión real a soles cuando corresponda.</p>
         </div>
@@ -18,7 +18,7 @@
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          (click)="shell.closeModal()"
+          (click)="shellDomain.closeModal()"
         >
           Cerrar
         </button>
@@ -35,8 +35,8 @@
             name="financeOccurredOn"
             type="date"
             required
-            [ngModel]="shell.financeOccurredOn()"
-            (ngModelChange)="shell.editField(shell.financeOccurredOn, $event)"
+            [ngModel]="financeDomain.financeOccurredOn()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeOccurredOn, $event)"
           />
         </label>
         <label>
@@ -44,8 +44,8 @@
           <select
             name="financeEntryKind"
             required
-            [ngModel]="shell.financeEntryKind()"
-            (ngModelChange)="shell.editField(shell.financeEntryKind, $event)"
+            [ngModel]="financeDomain.financeEntryKind()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeEntryKind, $event)"
           >
             <option value="expense">Gasto directo</option>
             <option value="prepaid_topup">Recarga prepagada</option>
@@ -58,10 +58,10 @@
           <select
             name="financeCategoryCode"
             required
-            [ngModel]="shell.financeCategoryCode()"
-            (ngModelChange)="shell.editField(shell.financeCategoryCode, $event)"
+            [ngModel]="financeDomain.financeCategoryCode()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeCategoryCode, $event)"
           >
-            @for (category of shell.financeCategories(); track category.category_code) {
+            @for (category of financeDomain.financeCategories(); track category.category_code) {
               <option [value]="category.category_code">{{ category.display_name }}</option>
             }
           </select>
@@ -70,8 +70,8 @@
           Calidad del dato
           <select
             name="financeDataQuality"
-            [ngModel]="shell.financeDataQuality()"
-            (ngModelChange)="shell.editField(shell.financeDataQuality, $event)"
+            [ngModel]="financeDomain.financeDataQuality()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeDataQuality, $event)"
           >
             <option value="actual">Real / comprobado</option>
             <option value="estimated">Estimado</option>
@@ -84,8 +84,8 @@
             name="financeDescription"
             type="text"
             required
-            [ngModel]="shell.financeDescription()"
-            (ngModelChange)="shell.editField(shell.financeDescription, $event)"
+            [ngModel]="financeDomain.financeDescription()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeDescription, $event)"
           />
         </label>
         <label>
@@ -94,8 +94,8 @@
             name="financeVendor"
             type="text"
             placeholder="2Captcha, TikTok..."
-            [ngModel]="shell.financeVendor()"
-            (ngModelChange)="shell.editField(shell.financeVendor, $event)"
+            [ngModel]="financeDomain.financeVendor()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeVendor, $event)"
           />
         </label>
         <label>
@@ -106,16 +106,16 @@
             min="0.0001"
             step="0.0001"
             required
-            [ngModel]="shell.financeAmountOriginal()"
-            (ngModelChange)="shell.editField(shell.financeAmountOriginal, $event)"
+            [ngModel]="financeDomain.financeAmountOriginal()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeAmountOriginal, $event)"
           />
         </label>
         <label>
           Moneda <span class="required-marker" aria-hidden="true">*</span>
           <select
             name="financeCurrency"
-            [ngModel]="shell.financeCurrency()"
-            (ngModelChange)="shell.editField(shell.financeCurrency, $event)"
+            [ngModel]="financeDomain.financeCurrency()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeCurrency, $event)"
           >
             <option value="PEN">PEN — soles</option>
             <option value="USD">USD — dólares</option>
@@ -128,9 +128,9 @@
             type="number"
             min="0.000001"
             step="0.000001"
-            [disabled]="shell.financeCurrency() === 'PEN'"
-            [ngModel]="shell.financeExchangeRatePen()"
-            (ngModelChange)="shell.editField(shell.financeExchangeRatePen, $event)"
+            [disabled]="financeDomain.financeCurrency() === 'PEN'"
+            [ngModel]="financeDomain.financeExchangeRatePen()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeExchangeRatePen, $event)"
           />
           <small>Si falta en una moneda extranjera, el margen quedará incompleto.</small>
         </label>
@@ -142,8 +142,8 @@
             min="0.001"
             step="0.001"
             placeholder="50"
-            [ngModel]="shell.financeQuantity()"
-            (ngModelChange)="shell.editField(shell.financeQuantity, $event)"
+            [ngModel]="financeDomain.financeQuantity()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeQuantity, $event)"
           />
         </label>
         <label>
@@ -152,8 +152,8 @@
             name="financeUnit"
             type="text"
             placeholder="captcha, hora, día..."
-            [ngModel]="shell.financeUnit()"
-            (ngModelChange)="shell.editField(shell.financeUnit, $event)"
+            [ngModel]="financeDomain.financeUnit()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeUnit, $event)"
           />
         </label>
         <label>
@@ -162,8 +162,8 @@
             name="financeChannel"
             type="text"
             placeholder="tiktok, whatsapp..."
-            [ngModel]="shell.financeChannel()"
-            (ngModelChange)="shell.editField(shell.financeChannel, $event)"
+            [ngModel]="financeDomain.financeChannel()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeChannel, $event)"
           />
         </label>
         <label>
@@ -171,16 +171,16 @@
           <input
             name="financeCampaign"
             type="text"
-            [ngModel]="shell.financeCampaign()"
-            (ngModelChange)="shell.editField(shell.financeCampaign, $event)"
+            [ngModel]="financeDomain.financeCampaign()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeCampaign, $event)"
           />
         </label>
         <label>
           Orden relacionada
           <select
             name="financeOrderId"
-            [ngModel]="shell.financeOrderId()"
-            (ngModelChange)="shell.editField(shell.financeOrderId, $event)"
+            [ngModel]="financeDomain.financeOrderId()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeOrderId, $event)"
           >
             <option value="">Sin orden específica</option>
             @for (order of orderList.orders(); track order.order_id) {
@@ -196,8 +196,8 @@
             name="financeEvidenceReference"
             type="text"
             placeholder="Recibo, panel o comprobante; nunca un secreto"
-            [ngModel]="shell.financeEvidenceReference()"
-            (ngModelChange)="shell.editField(shell.financeEvidenceReference, $event)"
+            [ngModel]="financeDomain.financeEvidenceReference()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeEvidenceReference, $event)"
           />
         </label>
         <label class="finance-notes-field">
@@ -205,13 +205,13 @@
           <textarea
             name="financeNotes"
             rows="3"
-            [ngModel]="shell.financeNotes()"
-            (ngModelChange)="shell.editField(shell.financeNotes, $event)"
+            [ngModel]="financeDomain.financeNotes()"
+            (ngModelChange)="shellDomain.editField(financeDomain.financeNotes, $event)"
           ></textarea>
         </label>
       </div>
 
-      @if (shell.financeEntryKind() === 'prepaid_topup') {
+      @if (financeDomain.financeEntryKind() === 'prepaid_topup') {
         <p class="notice warn finance-form-notice">
           Esta recarga afectará caja, pero no el costo reconocido. Registra después el consumo
           real como “Consumo prepagado”.
@@ -219,9 +219,9 @@
       }
 
       <div class="modal-actions">
-        <button type="button" class="secondary" (click)="shell.closeModal()">Cancelar</button>
-        <button type="button" class="primary" (click)="shell.requestSaveFinanceEntry()">
-          {{ shell.editingFinanceEntryId() ? 'Guardar cambios' : 'Registrar movimiento' }}
+        <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cancelar</button>
+        <button type="button" class="primary" (click)="financeDomain.requestSaveFinanceEntry()">
+          {{ financeDomain.editingFinanceEntryId() ? 'Guardar cambios' : 'Registrar movimiento' }}
         </button>
       </div>
     </div>

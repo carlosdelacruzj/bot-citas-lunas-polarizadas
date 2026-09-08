@@ -42,7 +42,7 @@
         <a
           class="sidebar-link"
           routerLink="/resumen"
-          [queryParams]="{ month: selectedMonth() }"
+          [queryParams]="{ month: finance.selectedMonth() }"
           [class.active]="activeView() === 'summary'"
           [attr.aria-current]="activeView() === 'summary' ? 'page' : null"
           title="Resumen"
@@ -87,7 +87,7 @@
         <a
           class="sidebar-link"
           routerLink="/finanzas"
-          [queryParams]="{ month: selectedMonth() }"
+          [queryParams]="{ month: finance.selectedMonth() }"
           [class.active]="activeView() === 'finance'"
           [attr.aria-current]="activeView() === 'finance' ? 'page' : null"
           title="Finanzas"

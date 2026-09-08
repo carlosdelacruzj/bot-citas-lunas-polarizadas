@@ -10,6 +10,6 @@ import { DASHBOARD_WORKER_RESTART_MODAL_SHELL } from '../dashboard-domain.ports'
   templateUrl: './worker-restart-modal.component.html',
 })
 export class WorkerRestartModalComponent {
-  protected readonly shell = inject(DASHBOARD_WORKER_RESTART_MODAL_SHELL);
+  protected readonly shellDomain = inject(DASHBOARD_WORKER_RESTART_MODAL_SHELL);
 
 }

@@ -1,5 +1,5 @@
-@if (shell.activeModal() === 'payment') {
-  @if (orders.modalOrder(); as order) {
+@if (shellDomain.activeModal() === 'payment') {
+  @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
       role="dialog"
@@ -10,13 +10,13 @@
         <div class="modal-header">
           <div>
             <h2 id="payment-title">Registrar pago</h2>
-            <p>{{ orders.orderLabel(order) }}</p>
+            <p>{{ ordersDomain.orderLabel(order) }}</p>
           </div>
           <button
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="shell.closeModal()"
+            (click)="shellDomain.closeModal()"
           >
             Cerrar
           </button>
@@ -25,29 +25,29 @@
         <dl class="payment-summary">
           <div>
             <dt>Monto acordado</dt>
-            <dd>{{ shell.formatMoney(+shell.paymentAmountAgreed()) }}</dd>
+            <dd>{{ shellDomain.formatMoney(+financeDomain.paymentAmountAgreed()) }}</dd>
           </div>
           <div>
             <dt>Registrado hasta ahora</dt>
-            <dd>{{ shell.formatMoney(+(order.amount_paid || 0)) }}</dd>
+            <dd>{{ shellDomain.formatMoney(+(order.amount_paid || 0)) }}</dd>
           </div>
           <div>
             <dt>Reserva</dt>
             <dd>
-              {{ shell.formatDate(order.reservation_date, 'sin fecha') }}
-              {{ shell.formatTime(order.reservation_hour) }}
+              {{ shellDomain.formatDate(order.reservation_date, 'sin fecha') }}
+              {{ shellDomain.formatTime(order.reservation_hour) }}
             </dd>
           </div>
         </dl>
 
         @if (order.service_package === 'integral') {
-          @if (orders.servicePackageDefinition(order.service_package); as servicePackage) {
+          @if (ordersDomain.servicePackageDefinition(order.service_package); as servicePackage) {
             <p class="required-help">
-              Paquete integral: {{ shell.formatMoney(+servicePackage.official_fee_amount) }} de tasa
-              oficial y {{ shell.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
-              gestión. Registra {{ shell.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
+              Paquete integral: {{ shellDomain.formatMoney(+servicePackage.official_fee_amount) }} de tasa
+              oficial y {{ shellDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
+              gestión. Registra {{ shellDomain.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
               hayas recibido el segundo abono de
-              {{ shell.formatMoney(+(servicePackage.balance_amount || 0)) }}.
+              {{ shellDomain.formatMoney(+(servicePackage.balance_amount || 0)) }}.
             </p>
           }
         }
@@ -61,19 +61,19 @@
             step="0.01"
             inputmode="decimal"
             aria-describedby="payment-amount-help"
-            [ngModel]="shell.paymentAmountPaid()"
-            (ngModelChange)="shell.editField(shell.paymentAmountPaid, $event)"
+            [ngModel]="financeDomain.paymentAmountPaid()"
+            (ngModelChange)="shellDomain.editField(financeDomain.paymentAmountPaid, $event)"
           />
         </label>
         <p id="payment-amount-help" class="required-help">
           Incluye los abonos anteriores. Por ejemplo, si recibiste S/40 y luego S/10,
           escribe 50.
         </p>
-        @if (+shell.paymentAmountPaid() > 0 && +shell.paymentAmountAgreed() > 0) {
+        @if (+financeDomain.paymentAmountPaid() > 0 && +financeDomain.paymentAmountAgreed() > 0) {
           <p class="required-help" aria-live="polite">
-            @if (+shell.paymentAmountPaid() < +shell.paymentAmountAgreed()) {
+            @if (+financeDomain.paymentAmountPaid() < +financeDomain.paymentAmountAgreed()) {
               Quedarán pendientes
-              <strong>{{ shell.formatMoney(+shell.paymentAmountAgreed() - +shell.paymentAmountPaid()) }}</strong>.
+              <strong>{{ shellDomain.formatMoney(+financeDomain.paymentAmountAgreed() - +financeDomain.paymentAmountPaid()) }}</strong>.
               No se enviará el postpago todavía.
             } @else {
               El pago quedará completo y se encolará el envío de postpago.
@@ -81,38 +81,38 @@
           </p>
         }
         <div class="quick-amounts" aria-label="Montos rápidos">
-          <button type="button" class="secondary" (click)="shell.setQuickPaymentAmount('40.00')">
+          <button type="button" class="secondary" (click)="financeDomain.setQuickPaymentAmount('40.00')">
             S/40
           </button>
-          @if (orders.standardPackageAmount(); as standardAmount) {
+          @if (ordersDomain.standardPackageAmount(); as standardAmount) {
             <button
               type="button"
               class="secondary"
-              (click)="shell.setQuickPaymentAmount(standardAmount)"
+              (click)="financeDomain.setQuickPaymentAmount(standardAmount)"
             >
-              {{ shell.formatMoney(+standardAmount) }}
+              {{ shellDomain.formatMoney(+standardAmount) }}
             </button>
           }
-          @if (shell.paymentAmountAgreed()) {
+          @if (financeDomain.paymentAmountAgreed()) {
             <button
               type="button"
               class="secondary"
-              (click)="shell.setQuickPaymentAmount(shell.paymentAmountAgreed())"
+              (click)="financeDomain.setQuickPaymentAmount(financeDomain.paymentAmountAgreed())"
             >
               Total acordado
             </button>
           }
         </div>
         <div class="modal-actions">
-          <button type="button" class="secondary" (click)="shell.closeModal()">Cancelar</button>
+          <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cancelar</button>
           <button
             type="button"
             class="primary"
-            [disabled]="!shell.paymentAmountPaid() || shell.actionBusy()"
-            (click)="shell.requestMarkPaid()"
+            [disabled]="!financeDomain.paymentAmountPaid() || shellDomain.actionBusy()"
+            (click)="financeDomain.requestMarkPaid()"
           >
-            @if (+shell.paymentAmountPaid() > 0 && +shell.paymentAmountAgreed() > 0) {
-              {{ +shell.paymentAmountPaid() < +shell.paymentAmountAgreed() ? 'Registrar abono' : 'Completar pago' }}
+            @if (+financeDomain.paymentAmountPaid() > 0 && +financeDomain.paymentAmountAgreed() > 0) {
+              {{ +financeDomain.paymentAmountPaid() < +financeDomain.paymentAmountAgreed() ? 'Registrar abono' : 'Completar pago' }}
             } @else {
               Registrar pago
             }
