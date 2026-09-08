@@ -60,7 +60,7 @@
         </div>
         <div class="next-action-card">
           <span>Control previo del portal</span>
-          <strong class="badge {{ shellDomain.statusTone(order.preflight_status) }}">
+          <strong class="badge {{ presentationDomain.statusTone(order.preflight_status) }}">
             {{ ordersDomain.preflightLabel(order) }}
           </strong>
           @if (order.preflight_message) {
@@ -68,8 +68,8 @@
           }
           @if (order.registration_notice_status) {
             <small>
-              Aviso de registro: {{ shellDomain.statusLabel(order.registration_notice_type) }} ·
-              {{ shellDomain.statusLabel(order.registration_notice_status) }}
+              Aviso de registro: {{ presentationDomain.statusLabel(order.registration_notice_type) }} ·
+              {{ presentationDomain.statusLabel(order.registration_notice_status) }}
             </small>
             @if (order.registration_notice_error) {
               <small>{{ order.registration_notice_error }}</small>
@@ -84,7 +84,7 @@
             <button
               type="button"
               class="primary"
-              [disabled]="ordersDomain.orderNextAction().disabled || shellDomain.actionBusy()"
+              [disabled]="ordersDomain.orderNextAction().disabled || uiDomain.actionBusy()"
               (click)="ordersDomain.runNextOrderAction()"
             >
               {{ ordersDomain.orderNextAction().label }}
@@ -93,7 +93,7 @@
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!messagesDomain.canPrepareOrderWhatsApp(order) || shellDomain.actionBusy()"
+                [disabled]="!messagesDomain.canPrepareOrderWhatsApp(order) || uiDomain.actionBusy()"
                 [title]="messagesDomain.whatsappPreparationHint(order)"
                 (click)="messagesDomain.openOrderWhatsApp(order)"
               >
@@ -107,7 +107,7 @@
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!messagesDomain.canPreparePostPaymentWhatsApp(order) || shellDomain.actionBusy()"
+                [disabled]="!messagesDomain.canPreparePostPaymentWhatsApp(order) || uiDomain.actionBusy()"
                 [title]="messagesDomain.postPaymentWhatsAppHint(order)"
                 (click)="messagesDomain.openPostPaymentWhatsApp(order)"
               >
@@ -135,7 +135,7 @@
               <button
                 type="button"
                 class="primary"
-                [disabled]="shellDomain.actionBusy()"
+                [disabled]="uiDomain.actionBusy()"
                 (click)="ordersDomain.openProgramResolution(order)"
               >
                 Resolver trámites
@@ -144,7 +144,7 @@
               <button
                 type="button"
                 class="primary"
-                [disabled]="shellDomain.actionBusy()"
+                [disabled]="uiDomain.actionBusy()"
                 (click)="ordersDomain.openEditOrder(order, 'credentials')"
               >
                 Corregir acceso
@@ -153,7 +153,7 @@
               <button
                 type="button"
                 class="primary"
-                [disabled]="order.preflight_status === 'running' || shellDomain.actionBusy()"
+                [disabled]="order.preflight_status === 'running' || uiDomain.actionBusy()"
                 (click)="ordersDomain.requestOrderValidation(order)"
               >
                 {{
@@ -203,7 +203,7 @@
             <button
               type="button"
               class="secondary"
-              [disabled]="shellDomain.actionBusy()"
+              [disabled]="uiDomain.actionBusy()"
               (click)="ordersDomain.requestManualSession()"
             >
               Abrir portal
@@ -246,7 +246,7 @@
                     class="secondary"
                     (click)="ordersDomain.copySelectedOrderWhatsapp()"
                   >
-                    {{ shellDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
+                    {{ uiDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar número' }}
                   </button>
                 } @else if (ordersDomain.selectedOrderDetail()?.contact_whatsapp_username) {
                   <button
@@ -254,7 +254,7 @@
                     class="secondary"
                     (click)="ordersDomain.copySelectedOrderWhatsapp()"
                   >
-                    {{ shellDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
+                    {{ uiDomain.copiedLabel() === 'whatsapp-number' ? 'Copiado' : 'Copiar usuario' }}
                   </button>
                 } @else {
                   <button
@@ -336,13 +336,13 @@
             <dl>
               <div>
                 <dt>Estado</dt>
-                <dd>{{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+                <dd>{{ presentationDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
               </div>
               <div>
                 <dt>Fecha</dt>
                 <dd>
-                  {{ shellDomain.formatDate(order.reservation_date, 'sin fecha') }}
-                  {{ shellDomain.formatTime(order.reservation_hour) }}
+                  {{ presentationDomain.formatDate(order.reservation_date, 'sin fecha') }}
+                  {{ presentationDomain.formatTime(order.reservation_hour) }}
                 </dd>
               </div>
               <div>
@@ -363,7 +363,7 @@
                 <dd>
                   {{ order.whatsapp_message_status ?? 'sin preparar' }}
                   @if (order.whatsapp_message_sent_at) {
-                    · {{ shellDomain.formatDateTime(order.whatsapp_message_sent_at) }}
+                    · {{ presentationDomain.formatDateTime(order.whatsapp_message_sent_at) }}
                   }
                 </dd>
               </div>
@@ -408,7 +408,7 @@
                     >
                       {{ child.order_id }}
                     </button>
-                    · {{ shellDomain.statusLabel(child.status) }}
+                    · {{ presentationDomain.statusLabel(child.status) }}
                   </li>
                 }
               </ul>
@@ -521,18 +521,18 @@
               </span>
             </td>
             <td data-label="Estado">
-              <span class="badge {{ shellDomain.statusTone(order.status) }}">{{
+              <span class="badge {{ presentationDomain.statusTone(order.status) }}">{{
                 ordersDomain.orderStatusDisplay(order)
               }}</span>
-              <span class="badge {{ shellDomain.statusTone(order.preflight_status) }}">
+              <span class="badge {{ presentationDomain.statusTone(order.preflight_status) }}">
                 {{ ordersDomain.preflightLabel(order) }}
               </span>
             </td>
             <td data-label="Reserva">
-              {{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}
+              {{ presentationDomain.statusLabel(order.reservation_status, 'Pendiente') }}
               <span>
-                {{ shellDomain.formatDate(order.reservation_date) }}
-                {{ shellDomain.formatTime(order.reservation_hour) }}
+                {{ presentationDomain.formatDate(order.reservation_date) }}
+                {{ presentationDomain.formatTime(order.reservation_hour) }}
               </span>
             </td>
             <td data-label="Pago">
@@ -562,7 +562,7 @@
                 <button
                   type="button"
                   class="primary row-main-action"
-                  [disabled]="shellDomain.actionBusy()"
+                  [disabled]="uiDomain.actionBusy()"
                   (click)="$event.stopPropagation(); ordersDomain.runRowPrimaryAction(order)"
                 >
                   {{ ordersDomain.rowPrimaryActionLabel(order) }}
@@ -571,7 +571,7 @@
                   <button
                     type="button"
                     class="secondary"
-                    [disabled]="shellDomain.actionBusy()"
+                    [disabled]="uiDomain.actionBusy()"
                     title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
                     (click)="$event.stopPropagation(); ordersDomain.openManualSessionNow(order, 'diagnostic')"
                   >

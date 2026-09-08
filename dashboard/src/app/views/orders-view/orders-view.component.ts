@@ -5,7 +5,8 @@ import {
   DASHBOARD_ORDERS_VIEW_MESSAGES,
   DASHBOARD_ORDERS_VIEW_ORDERLIST,
   DASHBOARD_ORDERS_VIEW_ORDERS,
-  DASHBOARD_ORDERS_VIEW_SHELL,
+  DASHBOARD_ORDERS_VIEW_PRESENTATION,
+  DASHBOARD_ORDERS_VIEW_UI,
 } from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
@@ -20,7 +21,8 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
 export class OrdersViewComponent {
   protected readonly messagesDomain = inject(DASHBOARD_ORDERS_VIEW_MESSAGES);
   protected readonly ordersDomain = inject(DASHBOARD_ORDERS_VIEW_ORDERS);
-  protected readonly shellDomain = inject(DASHBOARD_ORDERS_VIEW_SHELL);
+  protected readonly presentationDomain = inject(DASHBOARD_ORDERS_VIEW_PRESENTATION);
+  protected readonly uiDomain = inject(DASHBOARD_ORDERS_VIEW_UI);
   protected readonly financeDomain = inject(DASHBOARD_ORDERS_VIEW_FINANCE);
   protected readonly orderList = inject(DASHBOARD_ORDERS_VIEW_ORDERLIST);
 

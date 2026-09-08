@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE,
   DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST,
-  DASHBOARD_FINANCE_ENTRY_MODAL_SHELL,
+  DASHBOARD_FINANCE_ENTRY_MODAL_UI,
 } from '../dashboard-domain.ports';
 
 
@@ -14,7 +14,7 @@ import {
   templateUrl: './finance-entry-modal.component.html',
 })
 export class FinanceEntryModalComponent {
-  protected readonly shellDomain = inject(DASHBOARD_FINANCE_ENTRY_MODAL_SHELL);
+  protected readonly uiDomain = inject(DASHBOARD_FINANCE_ENTRY_MODAL_UI);
   protected readonly financeDomain = inject(DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE);
   protected readonly orderList = inject(DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST);
 

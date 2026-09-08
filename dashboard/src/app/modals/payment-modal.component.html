@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'payment') {
+@if (uiDomain.activeModal() === 'payment') {
   @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
@@ -16,7 +16,7 @@
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="shellDomain.closeModal()"
+            (click)="uiDomain.closeModal()"
           >
             Cerrar
           </button>
@@ -25,17 +25,17 @@
         <dl class="payment-summary">
           <div>
             <dt>Monto acordado</dt>
-            <dd>{{ shellDomain.formatMoney(+financeDomain.paymentAmountAgreed()) }}</dd>
+            <dd>{{ presentationDomain.formatMoney(+financeDomain.paymentAmountAgreed()) }}</dd>
           </div>
           <div>
             <dt>Registrado hasta ahora</dt>
-            <dd>{{ shellDomain.formatMoney(+(order.amount_paid || 0)) }}</dd>
+            <dd>{{ presentationDomain.formatMoney(+(order.amount_paid || 0)) }}</dd>
           </div>
           <div>
             <dt>Reserva</dt>
             <dd>
-              {{ shellDomain.formatDate(order.reservation_date, 'sin fecha') }}
-              {{ shellDomain.formatTime(order.reservation_hour) }}
+              {{ presentationDomain.formatDate(order.reservation_date, 'sin fecha') }}
+              {{ presentationDomain.formatTime(order.reservation_hour) }}
             </dd>
           </div>
         </dl>
@@ -43,11 +43,11 @@
         @if (order.service_package === 'integral') {
           @if (ordersDomain.servicePackageDefinition(order.service_package); as servicePackage) {
             <p class="required-help">
-              Paquete integral: {{ shellDomain.formatMoney(+servicePackage.official_fee_amount) }} de tasa
-              oficial y {{ shellDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
-              gestión. Registra {{ shellDomain.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
+              Paquete integral: {{ presentationDomain.formatMoney(+servicePackage.official_fee_amount) }} de tasa
+              oficial y {{ presentationDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
+              gestión. Registra {{ presentationDomain.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
               hayas recibido el segundo abono de
-              {{ shellDomain.formatMoney(+(servicePackage.balance_amount || 0)) }}.
+              {{ presentationDomain.formatMoney(+(servicePackage.balance_amount || 0)) }}.
             </p>
           }
         }
@@ -62,7 +62,7 @@
             inputmode="decimal"
             aria-describedby="payment-amount-help"
             [ngModel]="financeDomain.paymentAmountPaid()"
-            (ngModelChange)="shellDomain.editField(financeDomain.paymentAmountPaid, $event)"
+            (ngModelChange)="uiDomain.editField(financeDomain.paymentAmountPaid, $event)"
           />
         </label>
         <p id="payment-amount-help" class="required-help">
@@ -73,7 +73,7 @@
           <p class="required-help" aria-live="polite">
             @if (+financeDomain.paymentAmountPaid() < +financeDomain.paymentAmountAgreed()) {
               Quedarán pendientes
-              <strong>{{ shellDomain.formatMoney(+financeDomain.paymentAmountAgreed() - +financeDomain.paymentAmountPaid()) }}</strong>.
+              <strong>{{ presentationDomain.formatMoney(+financeDomain.paymentAmountAgreed() - +financeDomain.paymentAmountPaid()) }}</strong>.
               No se enviará el postpago todavía.
             } @else {
               El pago quedará completo y se encolará el envío de postpago.
@@ -90,7 +90,7 @@
               class="secondary"
               (click)="financeDomain.setQuickPaymentAmount(standardAmount)"
             >
-              {{ shellDomain.formatMoney(+standardAmount) }}
+              {{ presentationDomain.formatMoney(+standardAmount) }}
             </button>
           }
           @if (financeDomain.paymentAmountAgreed()) {
@@ -104,11 +104,11 @@
           }
         </div>
         <div class="modal-actions">
-          <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cancelar</button>
+          <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
           <button
             type="button"
             class="primary"
-            [disabled]="!financeDomain.paymentAmountPaid() || shellDomain.actionBusy()"
+            [disabled]="!financeDomain.paymentAmountPaid() || uiDomain.actionBusy()"
             (click)="financeDomain.requestMarkPaid()"
           >
             @if (+financeDomain.paymentAmountPaid() > 0 && +financeDomain.paymentAmountAgreed() > 0) {

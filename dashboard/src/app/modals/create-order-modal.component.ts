@@ -2,7 +2,8 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_CREATE_ORDER_MODAL_ORDERS,
-  DASHBOARD_CREATE_ORDER_MODAL_SHELL,
+  DASHBOARD_CREATE_ORDER_MODAL_PRESENTATION,
+  DASHBOARD_CREATE_ORDER_MODAL_UI,
 } from '../dashboard-domain.ports';
 
 import {
@@ -16,7 +17,8 @@ import {
   templateUrl: './create-order-modal.component.html',
 })
 export class CreateOrderModalComponent {
-  protected readonly shellDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_SHELL);
+  protected readonly uiDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_UI);
   protected readonly ordersDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_ORDERS);
+  protected readonly presentationDomain = inject(DASHBOARD_CREATE_ORDER_MODAL_PRESENTATION);
 
 }

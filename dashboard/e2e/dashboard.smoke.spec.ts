@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test';
+import domainResponses from './fixtures/domain-navigation.json';
 
 test('navigates locally and surfaces one controlled 409 without side effects', async ({ page }) => {
   let restartRequests = 0;
   const unexpectedMutations: string[] = [];
+  const runtimeErrors: string[] = [];
+  page.on('pageerror', (error) => runtimeErrors.push(error.message));
 
   await page.route('**/*', async (route) => {
     const request = route.request();
@@ -10,7 +13,7 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
     if (url.pathname === '/health') {
       await route.fulfill({ json: {
         status: 'ok', message: 'API simulada para smoke test', worker_running: true,
-        reason: 'running', captcha_shadow_enabled: false,
+        reason: 'running', captcha_shadow_enabled: true,
       } });
       return;
     }
@@ -33,6 +36,7 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
       return;
     }
     const responses: Record<string, unknown> = {
+      ...domainResponses,
       '/api/v1/worker': { worker_running: true, phase: 'monitoring' },
       '/api/v1/manual-sessions': { manual_sessions: [] },
       '/api/v1/service-packages': {
@@ -58,6 +62,20 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
 
   await page.goto('/ordenes');
   await expect(page.getByRole('heading', { name: 'Ordenes', exact: true })).toBeVisible();
+  await page.locator('input[name="orderFilter"]').fill('consulta local');
+  for (const [route, component] of [
+    ['pendientes', 'app-inbox-view'],
+    ['resumen', 'app-summary-view'],
+    ['finanzas', 'app-finance-view'],
+    ['mensajes', 'app-message-templates-view'],
+    ['seguimiento', 'app-followups-view'],
+    ['captchas', 'app-captchas-view'],
+    ['ordenes', 'app-orders-view'],
+  ]) {
+    await page.locator(`nav a[href^="/${route}"]`).click();
+    await expect(page.locator(component)).toBeVisible();
+  }
+  await expect(page.locator('input[name="orderFilter"]')).toHaveValue('consulta local');
   await page.getByRole('link', { name: 'Actividad' }).click();
   await expect(page).toHaveURL(/\/actividad$/);
   await expect(page.getByRole('heading', { name: 'Comandos worker' })).toBeVisible();
@@ -77,4 +95,5 @@ test('navigates locally and surfaces one controlled 409 without side effects', a
   });
   expect(restartRequests).toBe(1);
   expect(unexpectedMutations).toEqual([]);
+  expect(runtimeErrors).toEqual([]);
 });

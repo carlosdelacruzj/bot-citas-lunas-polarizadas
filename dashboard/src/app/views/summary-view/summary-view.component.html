@@ -29,7 +29,7 @@
           {{ reminders.day?.eligible_count ?? 0 }} elegibles para recordatorio
         </h3>
         <p>
-          {{ shellDomain.formatDate(reminders.appointment_day) }} · WhatsApp desde las
+          {{ presentationDomain.formatDate(reminders.appointment_day) }} · WhatsApp desde las
           {{ reminders.configuration.time }}, después del resumen diario.
         </p>
       </div>
@@ -47,7 +47,7 @@
           } @else if (reminders.day?.status === 'waiting_summary') {
             Esperando evidencias
           } @else {
-            {{ shellDomain.statusLabel(reminders.day?.status ?? 'not_checked') }}
+            {{ presentationDomain.statusLabel(reminders.day?.status ?? 'not_checked') }}
           }
         </span>
         <button type="button" class="secondary" [routerLink]="['/seguimiento']" [queryParams]="{ tab: 'upcoming' }">
@@ -66,7 +66,7 @@
     <div class="summary-glance">
       <article class="summary-hero">
         <span>Ingresos cobrados</span>
-        <strong>{{ shellDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+        <strong>{{ presentationDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
         <small>
           {{ summary.period_metrics.payments_received }} cobros ·
           {{ financeDomain.metricPeriodLabel(summary.period_metrics.period) }}
@@ -95,7 +95,7 @@
         </article>
         <article [class.needs-attention]="summary.current_attention_snapshot.pending_payments > 0">
           <span>Por cobrar ahora</span>
-          <strong>{{ shellDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong>
+          <strong>{{ presentationDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong>
           <small>{{ summary.current_attention_snapshot.pending_payments }} reservas pendientes</small>
         </article>
       </div>
@@ -119,11 +119,11 @@
           <div class="bar-list">
             @for (day of summary.period_metrics.daily_revenue; track day.date) {
               <div class="bar-row">
-                <strong>{{ shellDomain.formatDate(day.date) }}</strong>
+                <strong>{{ presentationDomain.formatDate(day.date) }}</strong>
                 <div class="bar-track" aria-hidden="true">
                   <span [style.width.%]="financeDomain.dailyRevenueWidth(summary, day.amount)"></span>
                 </div>
-                <small>{{ shellDomain.formatMoney(day.amount) }} · {{ day.payments }} cobro{{ day.payments === 1 ? '' : 's' }}</small>
+                <small>{{ presentationDomain.formatMoney(day.amount) }} · {{ day.payments }} cobro{{ day.payments === 1 ? '' : 's' }}</small>
               </div>
             }
           </div>
@@ -136,21 +136,21 @@
         <div class="monthly-card-header">
           <div>
             <h3>Pendientes de cobro</h3>
-            <p>Estado actual · {{ shellDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</p>
+            <p>Estado actual · {{ presentationDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</p>
           </div>
         </div>
         @if (summary.current_attention_snapshot.pending_payment_items.length) {
           <div class="attention-list">
             @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
               <div class="attention-action-row">
-                <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
+                <button type="button" (click)="operationsDomain.openOrderFromSummary(item.order_id)">
                   <span>
                     <strong>{{ item.name }}</strong>
-                    <small>{{ shellDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ shellDomain.formatTime(item.reservation_hour) }}</small>
+                    <small>{{ presentationDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ presentationDomain.formatTime(item.reservation_hour) }}</small>
                   </span>
-                  <strong>{{ shellDomain.formatMoney(item.pending_amount) }}</strong>
+                  <strong>{{ presentationDomain.formatMoney(item.pending_amount) }}</strong>
                 </button>
-                <button type="button" class="primary compact-action" (click)="shellDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
+                <button type="button" class="primary compact-action" (click)="operationsDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
               </div>
             }
           </div>
@@ -175,11 +175,11 @@
       <article>
         <span class="universe-code">02 · Cohorte</span>
         <strong>Altas de {{ financeDomain.selectedMonthLabel() }}</strong>
-        <small>Su conversión se observa hasta {{ shellDomain.formatDateTime(summary.as_of) }}.</small>
+        <small>Su conversión se observa hasta {{ presentationDomain.formatDateTime(summary.as_of) }}.</small>
       </article>
       <article>
         <span class="universe-code">03 · Estado vivo</span>
-        <strong>Corte {{ shellDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</strong>
+        <strong>Corte {{ presentationDomain.formatDateTime(summary.current_attention_snapshot.as_of) }}</strong>
         <small>No cambia de significado al consultar otro mes.</small>
       </article>
     </div>
@@ -195,7 +195,7 @@
       <div class="monthly-kpis phase-two-kpis">
         <article class="monthly-kpi primary-kpi">
           <span>Ingresos cobrados</span>
-          <strong>{{ shellDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
+          <strong>{{ presentationDomain.formatMoney(summary.period_metrics.revenue_collected) }}</strong>
           <small>{{ summary.period_metrics.payments_received }} cobros del periodo</small>
         </article>
         <article class="monthly-kpi">
@@ -210,9 +210,9 @@
         </article>
         <article class="monthly-kpi">
           <span>Cobro promedio</span>
-          <strong>{{ shellDomain.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
+          <strong>{{ presentationDomain.formatMoney(summary.period_metrics.average_ticket.value) }}</strong>
           <small>
-            {{ shellDomain.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
+            {{ presentationDomain.formatMoney(summary.period_metrics.average_ticket.numerator) }} ÷
             {{ summary.period_metrics.average_ticket.denominator }} cobros
           </small>
         </article>
@@ -327,7 +327,7 @@
                       {{ source.historical_backfill_source_orders }} con fuente preservada al migrar historial
                     </small>
                   </div>
-                  <strong>{{ shellDomain.formatMoney(source.revenue_ever_collected) }}</strong>
+                  <strong>{{ presentationDomain.formatMoney(source.revenue_ever_collected) }}</strong>
                 </div>
               }
             </div>
@@ -358,7 +358,7 @@
       <div class="attention-snapshot-metrics">
         <article><span>Órdenes activas</span><strong>{{ summary.current_attention_snapshot.active_orders }}</strong></article>
         <article><span>Cobros pendientes</span><strong>{{ summary.current_attention_snapshot.pending_payments }}</strong></article>
-        <article><span>Saldo por cobrar</span><strong>{{ shellDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong></article>
+        <article><span>Saldo por cobrar</span><strong>{{ presentationDomain.formatMoney(summary.current_attention_snapshot.pending_amount) }}</strong></article>
       </div>
       <div class="attention-grid">
         <article class="monthly-card attention-card">
@@ -367,11 +367,11 @@
             <div class="attention-list">
               @for (item of summary.current_attention_snapshot.pending_payment_items; track item.order_id) {
                 <div class="attention-action-row">
-                  <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
-                    <span><strong>{{ item.name }}</strong><small>{{ shellDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ shellDomain.formatTime(item.reservation_hour) }} · {{ item.source }}</small></span>
-                    <strong>{{ shellDomain.formatMoney(item.pending_amount) }}</strong>
+                  <button type="button" (click)="operationsDomain.openOrderFromSummary(item.order_id)">
+                    <span><strong>{{ item.name }}</strong><small>{{ presentationDomain.formatDate(item.reservation_date, 'sin fecha') }} {{ presentationDomain.formatTime(item.reservation_hour) }} · {{ item.source }}</small></span>
+                    <strong>{{ presentationDomain.formatMoney(item.pending_amount) }}</strong>
                   </button>
-                  <button type="button" class="primary compact-action" (click)="shellDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
+                  <button type="button" class="primary compact-action" (click)="operationsDomain.openPaymentFromSummary(item.order_id)">Cobrar</button>
                 </div>
               }
             </div>
@@ -382,9 +382,9 @@
           @if (summary.current_attention_snapshot.aged_active_orders.length) {
             <div class="attention-list">
               @for (item of summary.current_attention_snapshot.aged_active_orders; track item.order_id) {
-                <button type="button" (click)="shellDomain.openOrderFromSummary(item.order_id)">
-                  <span><strong>{{ item.name }}</strong><small>Desde {{ shellDomain.formatDate(item.created_date) }}</small></span>
-                  <span class="badge {{ shellDomain.statusTone(item.status) }}">{{ shellDomain.statusLabel(item.status) }}</span>
+                <button type="button" (click)="operationsDomain.openOrderFromSummary(item.order_id)">
+                  <span><strong>{{ item.name }}</strong><small>Desde {{ presentationDomain.formatDate(item.created_date) }}</small></span>
+                  <span class="badge {{ presentationDomain.statusTone(item.status) }}">{{ presentationDomain.statusLabel(item.status) }}</span>
                 </button>
               }
             </div>
@@ -404,19 +404,19 @@
 <section class="metrics" aria-label="Estado general">
   <article>
     <span>Sistema</span>
-    <strong [class]="shellDomain.statusTone(shellDomain.health()?.status)">{{
-      shellDomain.health()?.status === 'ok' ? 'funcionando' : 'revisar'
+    <strong [class]="presentationDomain.statusTone(operationsDomain.health()?.status)">{{
+      operationsDomain.health()?.status === 'ok' ? 'funcionando' : 'revisar'
     }}</strong>
     <small>Panel y datos</small>
   </article>
   <article>
     <span>Bot de reservas</span>
     <strong
-      [class]="shellDomain.statusTone(shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running ?? null)"
+      [class]="presentationDomain.statusTone(operationsDomain.worker()?.worker_running ?? operationsDomain.health()?.worker_running ?? null)"
     >
-      {{ shellDomain.worker()?.worker_running || shellDomain.health()?.worker_running ? 'activo' : 'detenido' }}
+      {{ operationsDomain.worker()?.worker_running || operationsDomain.health()?.worker_running ? 'activo' : 'detenido' }}
     </strong>
-    <small>{{ shellDomain.phaseLabel(shellDomain.worker()?.phase ?? shellDomain.health()?.reason) }}</small>
+    <small>{{ operationsDomain.phaseLabel(operationsDomain.worker()?.phase ?? operationsDomain.health()?.reason) }}</small>
   </article>
   <article>
     <span>Clientes listos</span>
@@ -424,7 +424,7 @@
     <small>{{ orderList.filteredOrders().length }} visibles</small>
   </article>
   <article class="clickable-metric">
-    <button type="button" class="metric-action" (click)="shellDomain.showPendingPayments()">
+    <button type="button" class="metric-action" (click)="operationsDomain.showPendingPayments()">
       <span>Pagos pendientes</span>
       <strong [class]="orderList.pendingPaymentOrders() > 0 ? 'warn' : 'good'">
         {{ orderList.pendingPaymentOrders() }}
@@ -693,14 +693,14 @@
     <div class="panel-header">
       <div>
         <h2>Actividad actual</h2>
-        <p>{{ shellDomain.currentWorkLabel() }}</p>
+        <p>{{ operationsDomain.currentWorkLabel() }}</p>
       </div>
-      <span class="badge {{ shellDomain.statusTone(shellDomain.worker()?.paused ? 'paused' : shellDomain.worker()?.phase) }}">
-        {{ shellDomain.worker()?.paused ? 'pausado' : shellDomain.phaseLabel(shellDomain.worker()?.phase) }}
+      <span class="badge {{ presentationDomain.statusTone(operationsDomain.worker()?.paused ? 'paused' : operationsDomain.worker()?.phase) }}">
+        {{ operationsDomain.worker()?.paused ? 'pausado' : operationsDomain.phaseLabel(operationsDomain.worker()?.phase) }}
       </span>
     </div>
 
-    @if (shellDomain.currentOrder(); as order) {
+    @if (operationsDomain.currentOrder(); as order) {
       <dl class="summary-list">
         <div>
           <dt>Solicitante</dt>
@@ -713,8 +713,8 @@
         <div>
           <dt>Reserva</dt>
           <dd>
-            {{ shellDomain.formatDate(order.reservation_date, 'pendiente') }}
-            {{ shellDomain.formatTime(order.reservation_hour) }}
+            {{ presentationDomain.formatDate(order.reservation_date, 'pendiente') }}
+            {{ presentationDomain.formatTime(order.reservation_hour) }}
           </dd>
         </div>
         <div>
@@ -722,7 +722,7 @@
           <dd>{{ financeDomain.paymentLabel(order) }}</dd>
         </div>
       </dl>
-    } @else if (shellDomain.generalObserverActive()) {
+    } @else if (operationsDomain.generalObserverActive()) {
       <dl class="summary-list">
         <div>
           <dt>Modo</dt>
@@ -730,7 +730,7 @@
         </div>
         <div>
           <dt>Cuenta</dt>
-          <dd>{{ shellDomain.worker()?.masked_account ?? 'cuenta protegida' }}</dd>
+          <dd>{{ operationsDomain.worker()?.masked_account ?? 'cuenta protegida' }}</dd>
         </div>
         <div>
           <dt>Alcance</dt>
@@ -751,26 +751,26 @@
     <div class="panel-actions button-row">
       <button
         type="button"
-        [class]="shellDomain.worker()?.paused ? 'primary' : 'danger'"
+        [class]="operationsDomain.worker()?.paused ? 'primary' : 'danger'"
         [disabled]="
-          (shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running) !== true ||
-          shellDomain.actionBusy() ||
-          shellDomain.pendingWorkerControl() !== null
+          (operationsDomain.worker()?.worker_running ?? operationsDomain.health()?.worker_running) !== true ||
+          uiDomain.actionBusy() ||
+          operationsDomain.pendingWorkerControl() !== null
         "
         [attr.title]="
-          (shellDomain.worker()?.worker_running ?? shellDomain.health()?.worker_running) !== true
+          (operationsDomain.worker()?.worker_running ?? operationsDomain.health()?.worker_running) !== true
             ? 'El worker debe estar activo para aplicar este control'
             : null
         "
-        (click)="shellDomain.requestWorkerPauseToggle()"
+        (click)="operationsDomain.requestWorkerPauseToggle()"
       >
-        @if (shellDomain.pendingWorkerControl(); as command) {
+        @if (operationsDomain.pendingWorkerControl(); as command) {
           {{ command.command === 'pause' ? 'Pausa solicitada' : 'Reactivación solicitada' }}
         } @else {
-          {{ shellDomain.worker()?.paused ? 'Reactivar búsquedas' : 'Detener búsquedas' }}
+          {{ operationsDomain.worker()?.paused ? 'Reactivar búsquedas' : 'Detener búsquedas' }}
         }
       </button>
-      <button type="button" class="danger" (click)="shellDomain.openWorkerRestart()">
+      <button type="button" class="danger" (click)="operationsDomain.openWorkerRestart()">
         Reiniciar worker
       </button>
     </div>
@@ -782,41 +782,41 @@
           <strong id="opportunity-control-title">Ráfagas de reserva</strong>
           <small>Abre solo para activar, detener o revisar una protección</small>
         </span>
-        <span class="badge {{ shellDomain.opportunityControlTone() }}">
-          {{ shellDomain.opportunityControlLabel() }}
+        <span class="badge {{ operationsDomain.opportunityControlTone() }}">
+          {{ operationsDomain.opportunityControlLabel() }}
         </span>
       </summary>
       <div class="settings-body">
       <div class="panel-header">
         <div>
           <h2 id="opportunity-control-title">Control de oportunidades</h2>
-          <p>Ráfagas y reobservación de cupos · máximo {{ shellDomain.opportunityMaxSessions() }} sesiones</p>
+          <p>Ráfagas y reobservación de cupos · máximo {{ operationsDomain.opportunityMaxSessions() }} sesiones</p>
         </div>
         <span
-          class="badge {{ shellDomain.opportunityControlTone() }}"
+          class="badge {{ operationsDomain.opportunityControlTone() }}"
           aria-live="polite"
         >
-          {{ shellDomain.opportunityControlLabel() }}
+          {{ operationsDomain.opportunityControlLabel() }}
         </span>
       </div>
 
-      @if (shellDomain.opportunityControl(); as control) {
-        @if (shellDomain.opportunityBreakerOpen()) {
+      @if (operationsDomain.opportunityControl(); as control) {
+        @if (operationsDomain.opportunityBreakerOpen()) {
           <div class="opportunity-breaker" role="alert">
             <div>
               <strong>Protección automática activada</strong>
               <p>
-                {{ shellDomain.opportunityReasonLabel(control.breaker.reason) }}
+                {{ operationsDomain.opportunityReasonLabel(control.breaker.reason) }}
                 @if (control.breaker.opened_at) {
-                  · {{ shellDomain.formatDateTime(control.breaker.opened_at) }}
+                  · {{ presentationDomain.formatDateTime(control.breaker.opened_at) }}
                 }
               </p>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shellDomain.actionBusy() || control.pending_application"
-              (click)="shellDomain.requestResetOpportunityBreaker()"
+              [disabled]="uiDomain.actionBusy() || control.pending_application"
+              (click)="operationsDomain.requestResetOpportunityBreaker()"
             >
               Restablecer protección
             </button>
@@ -831,7 +831,7 @@
           <strong>{{ control.pending_application ? 'Pendiente de aplicar' : 'Aplicado' }}</strong>
           · revisión {{ control.revision }}
           @if (control.updated_at) {
-            · {{ shellDomain.formatDateTime(control.updated_at) }}
+            · {{ presentationDomain.formatDateTime(control.updated_at) }}
           }
         </p>
 
@@ -839,25 +839,25 @@
           <section class="opportunity-control-row" aria-labelledby="obs006-control-title">
             <div>
               <h3 id="obs006-control-title">Ráfagas de oportunidad</h3>
-              <p>Ráfaga de oportunidades con un máximo de {{ shellDomain.opportunityMaxSessions() }} sesiones simultáneas.</p>
+              <p>Ráfaga de oportunidades con un máximo de {{ operationsDomain.opportunityMaxSessions() }} sesiones simultáneas.</p>
             </div>
             <div class="opportunity-control-state">
-              <span class="badge {{ shellDomain.opportunityModeTone(control.obs006.effective_mode) }}">
-                {{ shellDomain.opportunityModeLabel(control.obs006.effective_mode) }}
+              <span class="badge {{ operationsDomain.opportunityModeTone(control.obs006.effective_mode) }}">
+                {{ operationsDomain.opportunityModeLabel(control.obs006.effective_mode) }}
               </span>
               <small>
-                Deseado: {{ shellDomain.opportunityModeLabel(control.obs006.desired_mode) }}
+                Deseado: {{ operationsDomain.opportunityModeLabel(control.obs006.desired_mode) }}
                 · admisiones {{ control.obs006.admissions_allowed ? 'abiertas' : 'cerradas' }}
               </small>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shellDomain.opportunityActionDisabled('obs006')"
+              [disabled]="operationsDomain.opportunityActionDisabled('obs006')"
               aria-describedby="opportunity-action-hint"
-              (click)="shellDomain.requestOpportunityContextAction('obs006')"
+              (click)="operationsDomain.requestOpportunityContextAction('obs006')"
             >
-              {{ shellDomain.opportunityActionLabel('obs006') }}
+              {{ operationsDomain.opportunityActionLabel('obs006') }}
             </button>
           </section>
 
@@ -867,29 +867,29 @@
               <p>Reobservación controlada después de perder un cupo durante la reserva.</p>
             </div>
             <div class="opportunity-control-state">
-              <span class="badge {{ shellDomain.opportunityModeTone(control.obs007.effective_mode) }}">
-                {{ shellDomain.opportunityModeLabel(control.obs007.effective_mode) }}
+              <span class="badge {{ operationsDomain.opportunityModeTone(control.obs007.effective_mode) }}">
+                {{ operationsDomain.opportunityModeLabel(control.obs007.effective_mode) }}
               </span>
               <small>
-                Deseado: {{ shellDomain.opportunityModeLabel(control.obs007.desired_mode) }}
+                Deseado: {{ operationsDomain.opportunityModeLabel(control.obs007.desired_mode) }}
                 · admisiones {{ control.obs007.admissions_allowed ? 'abiertas' : 'cerradas' }}
               </small>
             </div>
             <button
               type="button"
               class="secondary"
-              [disabled]="shellDomain.opportunityActionDisabled('obs007')"
+              [disabled]="operationsDomain.opportunityActionDisabled('obs007')"
               aria-describedby="opportunity-action-hint"
-              (click)="shellDomain.requestOpportunityContextAction('obs007')"
+              (click)="operationsDomain.requestOpportunityContextAction('obs007')"
             >
-              {{ shellDomain.opportunityActionLabel('obs007') }}
+              {{ operationsDomain.opportunityActionLabel('obs007') }}
             </button>
           </section>
         </div>
 
         <p id="opportunity-action-hint" class="opportunity-hint">
           Drenar bloquea trabajos nuevos y permite terminar confirmaciones ya iniciadas.
-          @if (shellDomain.opportunityBreakerOpen()) {
+          @if (operationsDomain.opportunityBreakerOpen()) {
             La protección debe restablecerse antes de volver a activar controles.
           }
         </p>
@@ -903,15 +903,15 @@
           >
             <strong>Ráfaga activa</strong>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
-            <span>{{ burst.max_active_sessions }} de {{ shellDomain.opportunityMaxSessions() }} sesiones máximas</span>
-            <span>Inició {{ shellDomain.formatDateTime(burst.started_at) }}</span>
+            <span>{{ burst.max_active_sessions }} de {{ operationsDomain.opportunityMaxSessions() }} sesiones máximas</span>
+            <span>Inició {{ presentationDomain.formatDateTime(burst.started_at) }}</span>
           </div>
-        } @else if (shellDomain.latestOpportunityBurst(); as burst) {
+        } @else if (operationsDomain.latestOpportunityBurst(); as burst) {
           <div class="opportunity-burst opportunity-burst--quiet">
             <strong>Última ráfaga</strong>
-            <span>{{ shellDomain.opportunityModeLabel(burst.status) }}</span>
+            <span>{{ operationsDomain.opportunityModeLabel(burst.status) }}</span>
             <span>{{ burst.scheduled_clients }} clientes programados</span>
-            <span>{{ shellDomain.opportunityReasonLabel(burst.completion_reason) }}</span>
+            <span>{{ operationsDomain.opportunityReasonLabel(burst.completion_reason) }}</span>
           </div>
         }
       } @else {
@@ -937,26 +937,26 @@
         <h2>Lectura segura</h2>
         <p>Snapshot sin secretos ni detalles crudos de evidencia</p>
       </div>
-      <button type="button" class="secondary" (click)="shellDomain.copyDashboardSnapshot()">
+      <button type="button" class="secondary" (click)="operationsDomain.copyDashboardSnapshot()">
         Copiar
       </button>
     </div>
     <dl class="summary-list compact">
       <div>
         <dt>Runs visibles</dt>
-        <dd>{{ shellDomain.filteredRuns().length }}</dd>
+        <dd>{{ operationsDomain.filteredRuns().length }}</dd>
       </div>
       <div>
         <dt>Runs con error</dt>
-        <dd>{{ shellDomain.failedRuns() }}</dd>
+        <dd>{{ operationsDomain.failedRuns() }}</dd>
       </div>
       <div>
         <dt>Estado carga</dt>
-        <dd>{{ shellDomain.loadState() }}</dd>
+        <dd>{{ navigationDomain.loadState() }}</dd>
       </div>
       <div>
         <dt>Copiado</dt>
-        <dd>{{ shellDomain.copiedLabel() ?? 'no' }}</dd>
+        <dd>{{ uiDomain.copiedLabel() ?? 'no' }}</dd>
       </div>
     </dl>
     </div>

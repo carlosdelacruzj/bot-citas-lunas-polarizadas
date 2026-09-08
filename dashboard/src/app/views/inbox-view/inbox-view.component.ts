@@ -9,7 +9,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_INBOX_VIEW_CAPTCHAS,
-  DASHBOARD_INBOX_VIEW_SHELL,
+  DASHBOARD_INBOX_VIEW_OPERATIONS,
+  DASHBOARD_INBOX_VIEW_UI,
 } from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
@@ -23,25 +24,26 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class InboxViewComponent {
-  protected readonly shellDomain = inject(DASHBOARD_INBOX_VIEW_SHELL);
+  protected readonly operationsDomain = inject(DASHBOARD_INBOX_VIEW_OPERATIONS);
+  protected readonly uiDomain = inject(DASHBOARD_INBOX_VIEW_UI);
   protected readonly captchasDomain = inject(DASHBOARD_INBOX_VIEW_CAPTCHAS);
 
   protected readonly taskSearch = signal('');
   protected readonly taskFilter = signal<'all' | 'access' | 'paused' | 'payment' | 'messages'>('all');
 
   protected readonly filters = computed(() => [
-    { key: 'all' as const, label: 'Todos', count: this.shellDomain.inboxPendingTotal() },
-    { key: 'access' as const, label: 'Accesos', count: this.shellDomain.inboxAccessCount() },
-    { key: 'paused' as const, label: 'Pausados', count: this.shellDomain.inboxPausedCount() },
-    { key: 'payment' as const, label: 'Pagos', count: this.shellDomain.inboxPaymentCount() },
-    { key: 'messages' as const, label: 'Mensajes', count: this.shellDomain.inboxMessageCount() },
+    { key: 'all' as const, label: 'Todos', count: this.operationsDomain.inboxPendingTotal() },
+    { key: 'access' as const, label: 'Accesos', count: this.operationsDomain.inboxAccessCount() },
+    { key: 'paused' as const, label: 'Pausados', count: this.operationsDomain.inboxPausedCount() },
+    { key: 'payment' as const, label: 'Pagos', count: this.operationsDomain.inboxPaymentCount() },
+    { key: 'messages' as const, label: 'Mensajes', count: this.operationsDomain.inboxMessageCount() },
   ]);
 
   protected readonly visibleTasks = computed(() => {
     const search = this.taskSearch().trim().toLocaleLowerCase('es');
     const filter = this.taskFilter();
     const severity = { bad: 0, warn: 1, neutral: 2 } as const;
-    return [...this.shellDomain.inboxOrderTasks()]
+    return [...this.operationsDomain.inboxOrderTasks()]
       .filter((task) => {
         const matchesFilter =
           filter === 'all' ||

@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_FINANCE_VIEW_FINANCE,
-  DASHBOARD_FINANCE_VIEW_SHELL,
+  DASHBOARD_FINANCE_VIEW_PRESENTATION,
+  DASHBOARD_FINANCE_VIEW_UI,
 } from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
@@ -16,6 +17,7 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
 })
 export class FinanceViewComponent {
   protected readonly financeDomain = inject(DASHBOARD_FINANCE_VIEW_FINANCE);
-  protected readonly shellDomain = inject(DASHBOARD_FINANCE_VIEW_SHELL);
+  protected readonly presentationDomain = inject(DASHBOARD_FINANCE_VIEW_PRESENTATION);
+  protected readonly uiDomain = inject(DASHBOARD_FINANCE_VIEW_UI);
 
 }

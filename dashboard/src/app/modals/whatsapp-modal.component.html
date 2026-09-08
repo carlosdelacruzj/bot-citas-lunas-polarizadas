@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'whatsapp') {
+@if (uiDomain.activeModal() === 'whatsapp') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -34,8 +34,8 @@
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          [disabled]="shellDomain.actionBusy()"
-          (click)="shellDomain.closeModal()"
+          [disabled]="uiDomain.actionBusy()"
+          (click)="uiDomain.closeModal()"
         >
           Cerrar
         </button>
@@ -86,10 +86,10 @@
       @if (messagesDomain.whatsappReview(); as review) {
         <section class="admin-block action-card">
           <p class="eyebrow">Intento técnico conservado</p>
-          <h3>{{ shellDomain.statusLabel(review.job.status) }}</h3>
+          <h3>{{ presentationDomain.statusLabel(review.job.status) }}</h3>
           <p>{{ review.job.error_message ?? 'El envío terminó sin confirmación suficiente.' }}</p>
           <small>
-            Trabajo {{ review.job.job_key }} · {{ shellDomain.formatDateTime(review.job.finished_at) }}
+            Trabajo {{ review.job.job_key }} · {{ presentationDomain.formatDateTime(review.job.finished_at) }}
           </small>
           @if (review.job.template_trace.length) {
             <small>
@@ -113,10 +113,10 @@
           </div>
           <div>
             <span>Estado</span>
-            <strong class="badge {{ shellDomain.statusTone(message.status) }}">{{
-              shellDomain.statusLabel(message.status)
+            <strong class="badge {{ presentationDomain.statusTone(message.status) }}">{{
+              presentationDomain.statusLabel(message.status)
             }}</strong>
-            <small>{{ shellDomain.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            <small>{{ presentationDomain.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
           </div>
           <div>
             <span>Plantilla</span>
@@ -233,7 +233,7 @@
             <button
               type="button"
               class="primary"
-              [disabled]="message.status === 'sent' || shellDomain.actionBusy()"
+              [disabled]="message.status === 'sent' || uiDomain.actionBusy()"
               (click)="messagesDomain.confirmWhatsAppFollowUpSent()"
             >
               {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
@@ -273,7 +273,7 @@
             <button
               type="button"
               class="primary"
-              [disabled]="shellDomain.actionBusy() || !review.job.message_id"
+              [disabled]="uiDomain.actionBusy() || !review.job.message_id"
               (click)="messagesDomain.resolveWhatsAppReview('confirmed_complete')"
             >
               Ya estaba completo
@@ -281,7 +281,7 @@
             <button
               type="button"
               class="secondary"
-              [disabled]="shellDomain.actionBusy() || !review.job.message_id"
+              [disabled]="uiDomain.actionBusy() || !review.job.message_id"
               (click)="messagesDomain.resolveWhatsAppReview('completed_missing')"
             >
               Ya completé lo faltante
@@ -289,7 +289,7 @@
             <button
               type="button"
               class="danger"
-              [disabled]="shellDomain.actionBusy() || !messagesDomain.whatsappReviewNote().trim()"
+              [disabled]="uiDomain.actionBusy() || !messagesDomain.whatsappReviewNote().trim()"
               (click)="messagesDomain.resolveWhatsAppReview('dismissed')"
             >
               Cerrar sin envío
@@ -307,10 +307,10 @@
           </div>
           <div>
             <span>Estado</span>
-            <strong class="badge {{ shellDomain.statusTone(message.status) }}">{{
-              shellDomain.statusLabel(message.status)
+            <strong class="badge {{ presentationDomain.statusTone(message.status) }}">{{
+              presentationDomain.statusLabel(message.status)
             }}</strong>
-            <small>{{ shellDomain.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            <small>{{ presentationDomain.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
           </div>
           <div>
             <span>Plantillas</span>
@@ -458,7 +458,7 @@
           <button
             type="button"
             class="primary"
-            [disabled]="message.status === 'sent' || shellDomain.actionBusy()"
+            [disabled]="message.status === 'sent' || uiDomain.actionBusy()"
             (click)="messagesDomain.confirmWhatsAppSent()"
           >
             {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío realizado' }}

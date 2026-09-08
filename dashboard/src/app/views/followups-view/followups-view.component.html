@@ -77,13 +77,13 @@
               @else { Activos }
             </span>
             <div><strong>{{ reminders.control.lead_days }} {{ reminders.control.lead_days === 1 ? 'día' : 'días' }} antes</strong>
-              <span>Hoy se revisan las citas del {{ editor.shellDomain.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
+              <span>Hoy se revisan las citas del {{ editor.presentationDomain.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
           </div>
           <small>Primero debe terminar el resumen diario · Evidencias: {{ reminders.day?.summary_status ?? 'pendientes' }}</small>
         </section>
 
         <section class="followups-metrics upcoming-metrics" aria-label="Resumen de recordatorios">
-          <article><span>Fecha que se trabaja hoy</span><strong class="metric-date">{{ editor.shellDomain.formatDate(reminders.appointment_day) }}</strong></article>
+          <article><span>Fecha que se trabaja hoy</span><strong class="metric-date">{{ editor.presentationDomain.formatDate(reminders.appointment_day) }}</strong></article>
           <article class="followup-metric--warn"><span>En cola o espera</span><strong>{{ (reminders.job_counts['queued'] ?? 0) + (reminders.job_counts['blocked'] ?? 0) }}</strong></article>
           <article class="followup-metric--good"><span>Enviados</span><strong>{{ reminders.job_counts['sent'] ?? 0 }}</strong></article>
         </section>
@@ -95,7 +95,7 @@
             @for (candidate of editor.reminderCandidates(); track candidate.order_id) {
               <article class="panel upcoming-card">
                 <div class="upcoming-date">
-                  <span>{{ editor.shellDomain.formatDate(candidate.appointment_day) }}</span>
+                  <span>{{ editor.presentationDomain.formatDate(candidate.appointment_day) }}</span>
                   <strong>{{ candidate.appointment_hour || 'Sin hora' }}</strong>
                 </div>
                 <div class="upcoming-identity">
@@ -106,7 +106,7 @@
                   }
                 </div>
                 <div class="upcoming-next-action">
-                  <span class="badge {{ candidate.status === 'eligible' || candidate.status === 'scheduled' ? 'good' : editor.shellDomain.statusTone(candidate.status) }}">{{ editor.reminderCandidateStatusLabel(candidate.status) }}</span>
+                  <span class="badge {{ candidate.status === 'eligible' || candidate.status === 'scheduled' ? 'good' : editor.presentationDomain.statusTone(candidate.status) }}">{{ editor.reminderCandidateStatusLabel(candidate.status) }}</span>
                   <small>{{ editor.reminderCandidateNextAction(candidate.status) }}</small>
                 </div>
                 <details class="upcoming-details">
@@ -164,9 +164,9 @@
             <div class="target-date-example">
               <span aria-hidden="true">→</span>
               @if (editor.reminderDraftAppliesNextDay()) {
-                <p>El lote de hoy conserva las citas del <strong>{{ editor.shellDomain.formatDate(reminders.appointment_day) }}</strong>. Desde el {{ editor.shellDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán citas del <strong>{{ editor.shellDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
+                <p>El lote de hoy conserva las citas del <strong>{{ editor.presentationDomain.formatDate(reminders.appointment_day) }}</strong>. Desde el {{ editor.presentationDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán citas del <strong>{{ editor.presentationDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
               } @else {
-                <p>El {{ editor.shellDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán recordatorios para las citas del <strong>{{ editor.shellDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
+                <p>El {{ editor.presentationDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán recordatorios para las citas del <strong>{{ editor.presentationDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
               }
             </div>
 
@@ -255,7 +255,7 @@
             @if (payload.automation.running) { · {{ payload.automation.running }} en revisión }
             · {{ payload.automation.completed_today }} revisadas hoy
             @if (payload.automation.failed_today) { · {{ payload.automation.failed_today }} con fallo }
-            @if (payload.automation.last_run_at) { · último ciclo {{ editor.shellDomain.formatDateTime(payload.automation.last_run_at) }} }
+            @if (payload.automation.last_run_at) { · último ciclo {{ editor.presentationDomain.formatDateTime(payload.automation.last_run_at) }} }
           </small>
         </section>
       }
@@ -281,10 +281,10 @@
               <header class="followup-card-header">
                 <span class="followup-record-number" aria-label="Registro {{ editor.followupsDomain.postAppointmentItemNumber(itemIndex) }}">#{{ editor.followupsDomain.postAppointmentItemLabel(itemIndex) }}</span>
                 <div><div class="followup-identity"><h3>{{ item.applicant_name }}</h3><span>{{ item.document_number_masked }}</span></div>
-                  <p>Cita {{ editor.shellDomain.formatDate(item.appointment_date) }} @if (item.appointment_hour) { · {{ item.appointment_hour }} } @if (item.site) { · {{ item.site }} }</p>
+                  <p>Cita {{ editor.presentationDomain.formatDate(item.appointment_date) }} @if (item.appointment_hour) { · {{ item.appointment_hour }} } @if (item.site) { · {{ item.site }} }</p>
                   @if (item.program_expediente || item.program_plate) { <p>@if (item.program_expediente) { Exp. {{ item.program_expediente }} } @if (item.program_plate) { · Placa {{ item.program_plate }} }</p> }
                 </div>
-                <div class="followup-status-block"><span class="badge {{ editor.shellDomain.statusTone(editor.postAppointmentDisplayOutcome(item)) }}">{{ editor.shellDomain.statusLabel(editor.postAppointmentDisplayOutcome(item)) }}</span><small>{{ editor.postAppointmentDisplayDetail(item) }}</small></div>
+                <div class="followup-status-block"><span class="badge {{ editor.presentationDomain.statusTone(editor.postAppointmentDisplayOutcome(item)) }}">{{ editor.presentationDomain.statusLabel(editor.postAppointmentDisplayOutcome(item)) }}</span><small>{{ editor.postAppointmentDisplayDetail(item) }}</small></div>
               </header>
 
               @if (item.stages.length) {
@@ -292,7 +292,7 @@
                   <ol class="stage-rail" aria-label="Etapas observadas en el portal">
                     @for (stage of item.stages; track stage.stage_key; let stageIndex = $index) {
                       <li class="{{ editor.followupsDomain.postAppointmentStageTone(item, stage) }}"><div class="stage-track" aria-hidden="true"><span class="stage-marker">{{ stageIndex + 1 }}</span></div>
-                        <div class="stage-copy"><strong>{{ stage.stage_label }}</strong><span>{{ stage.status_text || 'Sin estado' }} @if (stage.stage_date) { · {{ editor.shellDomain.formatDate(stage.stage_date) }} } @if (stage.stage_hour) { {{ stage.stage_hour }} }</span>
+                        <div class="stage-copy"><strong>{{ stage.stage_label }}</strong><span>{{ stage.status_text || 'Sin estado' }} @if (stage.stage_date) { · {{ editor.presentationDomain.formatDate(stage.stage_date) }} } @if (stage.stage_hour) { {{ stage.stage_hour }} }</span>
                           @if (stage.message_text) { <small class="{{ editor.followupsDomain.postAppointmentMessageTone(item, stage.message_class) }}">{{ stage.message_text }}</small> }</div></li>
                     }
                   </ol>

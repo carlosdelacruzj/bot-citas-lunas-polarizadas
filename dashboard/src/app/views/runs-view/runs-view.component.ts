@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DASHBOARD_RUNS_VIEW_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_RUNS_VIEW_OPERATIONS,
+  DASHBOARD_RUNS_VIEW_PRESENTATION,
+} from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
@@ -12,6 +15,7 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class RunsViewComponent {
-  protected readonly shellDomain = inject(DASHBOARD_RUNS_VIEW_SHELL);
+  protected readonly operationsDomain = inject(DASHBOARD_RUNS_VIEW_OPERATIONS);
+  protected readonly presentationDomain = inject(DASHBOARD_RUNS_VIEW_PRESENTATION);
 
 }

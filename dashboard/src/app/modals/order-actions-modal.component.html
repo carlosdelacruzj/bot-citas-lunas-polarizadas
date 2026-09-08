@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'order-actions') {
+@if (uiDomain.activeModal() === 'order-actions') {
   @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
@@ -16,7 +16,7 @@
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="shellDomain.closeModal()"
+            (click)="uiDomain.closeModal()"
           >
             Cerrar
           </button>
@@ -25,11 +25,11 @@
         <dl class="summary-list">
           <div>
             <dt>Estado</dt>
-            <dd>{{ shellDomain.statusLabel(order.status) }}</dd>
+            <dd>{{ presentationDomain.statusLabel(order.status) }}</dd>
           </div>
           <div>
             <dt>Reserva</dt>
-            <dd>{{ shellDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+            <dd>{{ presentationDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
           </div>
           <div>
             <dt>Cierre</dt>
@@ -74,7 +74,7 @@
           <button
             type="button"
             class="secondary"
-            [disabled]="shellDomain.actionBusy()"
+            [disabled]="uiDomain.actionBusy()"
             (click)="ordersDomain.requestManualSession()"
           >
             {{ ordersDomain.manualSessionActionLabel(order) }}
@@ -82,7 +82,7 @@
           <button
             type="button"
             class="secondary"
-            [disabled]="shellDomain.actionBusy()"
+            [disabled]="uiDomain.actionBusy()"
             title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
             (click)="ordersDomain.requestDiagnosticSession()"
           >
@@ -116,7 +116,7 @@
                 type="text"
                 placeholder="Ej. duplicado de order-xxxxx"
                 [ngModel]="ordersDomain.closureNote()"
-                (ngModelChange)="shellDomain.editField(ordersDomain.closureNote, $event)"
+                (ngModelChange)="uiDomain.editField(ordersDomain.closureNote, $event)"
               />
             </label>
           </div>

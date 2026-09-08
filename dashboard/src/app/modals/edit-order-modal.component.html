@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'edit-order') {
+@if (uiDomain.activeModal() === 'edit-order') {
   @if (ordersDomain.modalOrder(); as order) {
     <section
       class="modal-backdrop"
@@ -16,7 +16,7 @@
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="shellDomain.closeModal()"
+            (click)="uiDomain.closeModal()"
           >
             Cerrar
           </button>
@@ -25,8 +25,8 @@
         <section class="selected-detail" aria-label="Detalle de orden seleccionada">
           <div>
             <span>Estado</span>
-            <strong>{{ shellDomain.statusLabel(order.status) }}</strong>
-            <small>{{ shellDomain.statusLabel(order.reservation_status, 'Sin reserva') }}</small>
+            <strong>{{ presentationDomain.statusLabel(order.status) }}</strong>
+            <small>{{ presentationDomain.statusLabel(order.reservation_status, 'Sin reserva') }}</small>
           </div>
           <div>
             <span>Contacto actual</span>
@@ -68,7 +68,7 @@
                     type="text"
                     [disabled]="ordersDomain.orderDetailLoading()"
                     [ngModel]="ordersDomain.contactName()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.contactName, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactName, $event)"
                   />
                 </label>
                 <label>
@@ -79,7 +79,7 @@
                     [disabled]="ordersDomain.orderDetailLoading()"
                     [placeholder]="ordersDomain.selectedOrderWhatsappPlaceholder()"
                     [ngModel]="ordersDomain.contactWhatsapp()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.contactWhatsapp, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactWhatsapp, $event)"
                   />
                 </label>
                 <label>
@@ -90,7 +90,7 @@
                     placeholder="@usuario"
                     [disabled]="ordersDomain.orderDetailLoading()"
                     [ngModel]="ordersDomain.contactWhatsappUsername()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.contactWhatsappUsername, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactWhatsappUsername, $event)"
                   />
                   <small>El numero tiene prioridad cuando ambos estan registrados.</small>
                 </label>
@@ -101,7 +101,7 @@
                     type="text"
                     [disabled]="ordersDomain.orderDetailLoading()"
                     [ngModel]="ordersDomain.contactSource()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.contactSource, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactSource, $event)"
                   />
                 </label>
               </div>
@@ -123,8 +123,8 @@
                   <h3>Acceso al portal</h3>
                   <p class="muted">Corrige el usuario o reemplaza la contraseña.</p>
                 </div>
-                <span class="badge {{ shellDomain.statusTone(order.preflight_status) }}">
-                  {{ shellDomain.statusLabel(order.preflight_status) }}
+                <span class="badge {{ presentationDomain.statusTone(order.preflight_status) }}">
+                  {{ presentationDomain.statusLabel(order.preflight_status) }}
                 </span>
               </div>
               @if (ordersDomain.orderDetailLoading()) {
@@ -137,7 +137,7 @@
                     name="modalOrderDocumentType"
                     [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
                     [ngModel]="ordersDomain.orderDocumentType()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.orderDocumentType, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.orderDocumentType, $event)"
                   >
                     <option value="dni">DNI</option>
                     <option value="foreign_resident_card">Carné de Extranjería</option>
@@ -152,7 +152,7 @@
                     required
                     [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
                     [ngModel]="ordersDomain.orderDocumentNumber()"
-                    (ngModelChange)="shellDomain.editField(ordersDomain.orderDocumentNumber, $event)"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.orderDocumentNumber, $event)"
                     aria-describedby="credentials-help dashboard-error"
                   />
                 </label>
@@ -166,7 +166,7 @@
                       required
                       [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
                       [ngModel]="ordersDomain.orderPassword()"
-                      (ngModelChange)="shellDomain.editField(ordersDomain.orderPassword, $event)"
+                      (ngModelChange)="uiDomain.editField(ordersDomain.orderPassword, $event)"
                       aria-describedby="credentials-help dashboard-error"
                     />
                     <button
@@ -212,11 +212,11 @@
                 [excludedDateRanges]="ordersDomain.orderExcludedDateRanges()"
                 [excludedDateStart]="ordersDomain.orderExcludedDateStart()"
                 [excludedDateEnd]="ordersDomain.orderExcludedDateEnd()"
-                (minimumDateChange)="shellDomain.editField(ordersDomain.orderMinimumReservationDate, $event)"
-                (maximumDateChange)="shellDomain.editField(ordersDomain.orderMaximumReservationDate, $event)"
-                (allowedWeekdaysChange)="shellDomain.editField(ordersDomain.orderAllowedWeekdays, $event)"
-                (excludedDateStartChange)="shellDomain.editField(ordersDomain.orderExcludedDateStart, $event)"
-                (excludedDateEndChange)="shellDomain.editField(ordersDomain.orderExcludedDateEnd, $event)"
+                (minimumDateChange)="uiDomain.editField(ordersDomain.orderMinimumReservationDate, $event)"
+                (maximumDateChange)="uiDomain.editField(ordersDomain.orderMaximumReservationDate, $event)"
+                (allowedWeekdaysChange)="uiDomain.editField(ordersDomain.orderAllowedWeekdays, $event)"
+                (excludedDateStartChange)="uiDomain.editField(ordersDomain.orderExcludedDateStart, $event)"
+                (excludedDateEndChange)="uiDomain.editField(ordersDomain.orderExcludedDateEnd, $event)"
                 (addExcludedDateRange)="ordersDomain.addOrderExcludedDateRange()"
                 (removeExcludedDateRange)="ordersDomain.removeOrderExcludedDateRange($event)"
                 (clearExcludedDateRanges)="ordersDomain.clearOrderExcludedDateRanges()"
@@ -246,7 +246,7 @@
                   step="1"
                   [disabled]="ordersDomain.isClosedOrder(order)"
                   [ngModel]="ordersDomain.orderPriority()"
-                  (ngModelChange)="shellDomain.editField(ordersDomain.orderPriority, $event)"
+                  (ngModelChange)="uiDomain.editField(ordersDomain.orderPriority, $event)"
                 />
               </label>
               <p class="muted">

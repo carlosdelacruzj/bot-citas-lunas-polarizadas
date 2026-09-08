@@ -2,7 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS,
-  DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL,
+  DASHBOARD_PROGRAM_RESOLUTION_PANEL_UI,
 } from '../dashboard-domain.ports';
 
 import { ServiceOrder } from '../appointment-api.service';
@@ -29,7 +29,7 @@ import {
 })
 export class ProgramResolutionPanelComponent {
   protected readonly ordersDomain = inject(DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS);
-  protected readonly shellDomain = inject(DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL);
+  protected readonly uiDomain = inject(DASHBOARD_PROGRAM_RESOLUTION_PANEL_UI);
 
   readonly order = input.required<ServiceOrder>();
 
@@ -63,12 +63,12 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionSameTermsConfirmed.set(false);
     this.programResolutionCustomInheritanceConfirmed.set(false);
     this.programResolutionResult.set(null);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected chooseProgramExpediente(value: string): void {
     this.programResolutionSelectedExpediente.set(value);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected chooseProgramResolutionCommercialMode(
@@ -78,7 +78,7 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionSameTermsConfirmed.set(false);
     this.programResolutionCustomInheritanceConfirmed.set(false);
     this.programResolutionResult.set(null);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
     if (value === 'custom') {
       this.hydrateProgramResolutionChildren();
     }
@@ -86,19 +86,19 @@ export class ProgramResolutionPanelComponent {
 
   protected setSameTermsConfirmed(value: boolean): void {
     this.programResolutionSameTermsConfirmed.set(value);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected setCustomInheritanceConfirmed(value: boolean): void {
     this.programResolutionCustomInheritanceConfirmed.set(value);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected chooseCommunicationDecision(
     value: ProgramResolutionCommunicationDecision,
   ): void {
     this.programResolutionCommunicationDecision.set(value);
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected updateProgramResolutionChildPrice(expediente: string, value: string): void {
@@ -109,7 +109,7 @@ export class ProgramResolutionPanelComponent {
         reservationPrice: value,
       },
     }));
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected updateProgramResolutionChildCharge(expediente: string, value: boolean): void {
@@ -120,7 +120,7 @@ export class ProgramResolutionPanelComponent {
         chargeRequired: value,
       },
     }));
-    this.shellDomain.formDirty.set(true);
+    this.uiDomain.formDirty.set(true);
   }
 
   protected programResolutionChildDraft(expediente: string): ProgramResolutionChildDraft {
@@ -139,7 +139,7 @@ export class ProgramResolutionPanelComponent {
   protected requestProgramResolution(): void {
     const result = buildProgramResolution(this.programResolutionDraftInput());
     if (!result.ok) {
-      this.shellDomain.errorMessage.set(result.error);
+      this.uiDomain.errorMessage.set(result.error);
       return;
     }
     this.ordersDomain.requestProgramResolution(result.payload, result.confirmationLabel, (response) => {
@@ -181,6 +181,6 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionCommunicationDecision.set('');
     this.programResolutionChildren.set({});
     this.programResolutionResult.set(null);
-    this.shellDomain.formDirty.set(false);
+    this.uiDomain.formDirty.set(false);
   }
 }

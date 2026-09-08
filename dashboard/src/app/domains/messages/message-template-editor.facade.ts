@@ -8,7 +8,8 @@ import {
 } from '../../appointment-api.service';
 import {
   DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES,
-  DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL,
+  DASHBOARD_MESSAGE_TEMPLATES_VIEW_PRESENTATION,
+  DASHBOARD_MESSAGE_TEMPLATES_VIEW_UI,
 } from '../../dashboard-domain.ports';
 type PreviewState = 'ready' | 'loading' | 'error';
 
@@ -16,7 +17,9 @@ type PreviewState = 'ready' | 'loading' | 'error';
 export class MessageTemplateEditorFacade {
   public readonly messagesDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES);
 
-  public readonly shellDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL);
+  public readonly uiDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_UI);
+
+  public readonly presentationDomain = inject(DASHBOARD_MESSAGE_TEMPLATES_VIEW_PRESENTATION);
 
   private readonly api = inject(AppointmentApiService);
 
@@ -73,7 +76,7 @@ export class MessageTemplateEditorFacade {
   constructor() {
     effect(() => {
       const templates = this.messagesDomain.whatsappMessageTemplates() as WhatsAppMessageTemplate[];
-      const editingPaused = this.shellDomain.formDirty();
+      const editingPaused = this.uiDomain.formDirty();
       if (!templates.length || editingPaused) {
         return;
       }
@@ -93,7 +96,7 @@ export class MessageTemplateEditorFacade {
       window.clearTimeout(this.previewTimer);
     }
     this.previewGeneration += 1;
-    this.shellDomain.formDirty.set(false);
+    this.uiDomain.formDirty.set(false);
   }
 
   public chooseTemplate(templateKey: string): void {
@@ -108,7 +111,7 @@ export class MessageTemplateEditorFacade {
     ) {
       return;
     }
-    this.shellDomain.formDirty.set(false);
+    this.uiDomain.formDirty.set(false);
     this.hydrate(template);
   }
 
@@ -118,7 +121,7 @@ export class MessageTemplateEditorFacade {
     this.saveError.set(null);
     this.saveSuccess.set(null);
     this.conflictCurrent.set(null);
-    this.shellDomain.formDirty.set(this.isDirty());
+    this.uiDomain.formDirty.set(this.isDirty());
     this.schedulePreview();
   }
 
@@ -165,7 +168,7 @@ export class MessageTemplateEditorFacade {
         template.revision,
       );
       this.replaceTemplate(updated);
-      this.shellDomain.formDirty.set(false);
+      this.uiDomain.formDirty.set(false);
       this.hydrate(updated);
       this.saveSuccess.set(
         `Revisión ${updated.revision} guardada. No se preparó ni envió ningún WhatsApp.`,
@@ -191,7 +194,7 @@ export class MessageTemplateEditorFacade {
       return;
     }
     this.replaceTemplate(current);
-    this.shellDomain.formDirty.set(false);
+    this.uiDomain.formDirty.set(false);
     this.hydrate(current);
     this.saveSuccess.set(`Se cargó la revisión vigente ${current.revision}.`);
   }
@@ -205,7 +208,7 @@ export class MessageTemplateEditorFacade {
     this.hydratedRevision = current.revision;
     this.conflictCurrent.set(null);
     this.saveError.set(null);
-    this.shellDomain.formDirty.set(this.draft() !== current.message_template);
+    this.uiDomain.formDirty.set(this.draft() !== current.message_template);
     this.saveSuccess.set(
       `Tu borrador se conserva sobre la revisión ${current.revision}. Revísalo antes de guardar.`,
     );
@@ -293,7 +296,7 @@ export class MessageTemplateEditorFacade {
     this.saveSuccess.set(null);
     this.conflictCurrent.set(null);
     this.hydratedRevision = template.revision;
-    this.shellDomain.formDirty.set(false);
+    this.uiDomain.formDirty.set(false);
   }
 
   private replaceTemplate(updated: WhatsAppMessageTemplate): void {
@@ -303,7 +306,6 @@ export class MessageTemplateEditorFacade {
       ),
     );
   }
-
 
 }
 
@@ -315,7 +317,7 @@ export type MessageTemplateEditorFacadeView = Pick<MessageTemplateEditorFacade,
   | "chooseTemplate"
   | "templateCode"
   | "appliesFromLabel"
-  | "shellDomain"
+  | "presentationDomain"
   | "previewState"
   | "saveReviewOpen"
   | "restoreRecommended"

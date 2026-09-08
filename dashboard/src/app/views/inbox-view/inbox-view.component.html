@@ -4,13 +4,13 @@
     <h2 id="inbox-title">Lo que requiere tu atención</h2>
     <p>Una sola siguiente acción por cliente, con los bloqueos más urgentes primero.</p>
   </div>
-  <div class="inbox-total" [class.clear]="shellDomain.inboxPendingTotal() === 0">
-    <strong>{{ shellDomain.inboxPendingTotal() }}</strong>
-    <span>{{ shellDomain.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
+  <div class="inbox-total" [class.clear]="operationsDomain.inboxPendingTotal() === 0">
+    <strong>{{ operationsDomain.inboxPendingTotal() }}</strong>
+    <span>{{ operationsDomain.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
   </div>
 </section>
 
-@if (shellDomain.inboxPendingTotal() === 0) {
+@if (operationsDomain.inboxPendingTotal() === 0) {
   <app-view-state
     state="empty"
     title="Todo está al día"
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ shellDomain.inboxPendingTotal() }} pendientes</p>
+    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ operationsDomain.inboxPendingTotal() }} pendientes</p>
 
     @if (visibleTasks().length === 0) {
       <app-view-state state="empty" title="No hay pendientes con estos filtros" message="Prueba otra búsqueda o vuelve a mostrar todos los tipos de trabajo." />
@@ -67,15 +67,15 @@
             <button
               type="button"
               class="secondary"
-              (click)="shellDomain.openInboxOrder(task.orderId)"
+              (click)="operationsDomain.openInboxOrder(task.orderId)"
             >
               Ver orden
             </button>
             <button
               type="button"
               class="primary"
-              [disabled]="shellDomain.actionBusy()"
-              (click)="shellDomain.runInboxOrderTask(task)"
+              [disabled]="uiDomain.actionBusy()"
+              (click)="operationsDomain.runInboxOrderTask(task)"
             >
               <span>Siguiente acción</span>
               {{ task.actionLabel }}
@@ -98,7 +98,7 @@
     <div class="inbox-training-action">
       <strong>{{ captchasDomain.captchaReviewTotal() }}</strong>
       <span>por etiquetar</span>
-      <button type="button" class="secondary" (click)="shellDomain.openInboxCaptchaReview()">Abrir revisión</button>
+      <button type="button" class="secondary" (click)="operationsDomain.openInboxCaptchaReview()">Abrir revisión</button>
     </div>
   </section>
 }

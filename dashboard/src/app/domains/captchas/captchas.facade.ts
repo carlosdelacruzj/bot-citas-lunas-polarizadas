@@ -26,7 +26,12 @@ import {
   CaptchaWorkspaceMode,
   LoadState,
 } from '../../dashboard-domain.contracts';
-import { DASHBOARD_CAPTCHAS_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_CAPTCHAS_NAVIGATION,
+  DASHBOARD_CAPTCHAS_OPERATIONS,
+  DASHBOARD_CAPTCHAS_PRESENTATION,
+  DASHBOARD_CAPTCHAS_UI,
+} from '../../dashboard-domain.ports';
 import { paginationWindow } from '../../pagination';
 import { RequestScope, isRequestCancelled } from '../../request-cancellation';
 
@@ -36,11 +41,11 @@ export class CaptchasFacade {
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
 
-  public captchaLoadScope: RequestScope | null = null;
+  private captchaLoadScope: RequestScope | null = null;
 
-  public captchaQualityCaseScope: RequestScope | null = null;
+  private captchaQualityCaseScope: RequestScope | null = null;
 
-  public captchaReviewMessageTimer: number | null = null;
+  private captchaReviewMessageTimer: number | null = null;
 
   public readonly captchaAuthorityControl = signal<CaptchaAuthorityControl | null>(null);
 
@@ -101,7 +106,7 @@ export class CaptchasFacade {
   public readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
 
   public readonly captchaShadowEnabled = computed(
-    () => this.shell.health()?.captcha_shadow_enabled === true,
+    () => this.operations.health()?.captcha_shadow_enabled === true,
   );
 
   public readonly captchaQuality = signal<CaptchaQuality | null>(null);
@@ -156,14 +161,14 @@ export class CaptchasFacade {
     const control = this.captchaAuthorityControl();
     return Boolean(
       control?.mode === 'canary' &&
-        control.circuit_state === 'closed' &&
-        control.remaining_local_decisions > 0,
+      control.circuit_state === 'closed' &&
+      control.remaining_local_decisions > 0,
     );
   });
 
   public handleCaptchaReviewKeyboard(event: KeyboardEvent): void {
     if (
-      this.shell.activeView() !== 'captchas' ||
+      this.navigation.activeView() !== 'captchas' ||
       this.captchaWorkspaceMode() !== 'review' ||
       event.ctrlKey ||
       event.metaKey ||
@@ -258,7 +263,7 @@ export class CaptchasFacade {
         return;
       }
       this.captchaState.set('error');
-      this.captchaError.set(this.shell.readError(error));
+      this.captchaError.set(this.presentation.readError(error));
     } finally {
       if (ownsScope && this.captchaLoadScope === activeScope) {
         this.captchaLoadScope = null;
@@ -289,7 +294,7 @@ export class CaptchasFacade {
         return;
       }
       this.captchaQualityState.set('error');
-      this.captchaQualityError.set(this.shell.readError(error));
+      this.captchaQualityError.set(this.presentation.readError(error));
     }
   }
 
@@ -326,7 +331,7 @@ export class CaptchasFacade {
       this.applyCaptchaQualityCases(cases);
     } catch (error) {
       if (!isRequestCancelled(error)) {
-        this.captchaQualityError.set(this.shell.readError(error));
+        this.captchaQualityError.set(this.presentation.readError(error));
       }
     } finally {
       if (this.captchaQualityCaseScope === scope) {
@@ -359,7 +364,7 @@ export class CaptchasFacade {
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
     } catch (error) {
-      this.captchaQualityError.set(this.shell.readError(error));
+      this.captchaQualityError.set(this.presentation.readError(error));
     } finally {
       this.captchaDatasetExporting.set(false);
     }
@@ -398,8 +403,8 @@ export class CaptchasFacade {
     this.captchaWorkspaceMode.set(mode);
     this.captchaPendingCorrection.set(null);
     this.clearCaptchaReviewMessage();
-    this.shell.scheduleNextRefresh();
-    if (this.shell.activeView() === 'captchas') {
+    this.navigation.scheduleNextRefresh();
+    if (this.navigation.activeView() === 'captchas') {
       void this.router.navigate([], {
         queryParams: { mode },
         queryParamsHandling: 'merge',
@@ -746,14 +751,14 @@ export class CaptchasFacade {
         this.captchaSummary.update((summary) =>
           summary && !event.human_label
             ? {
-                ...summary,
-                stats: { ...summary.stats, human_labeled: summary.stats.human_labeled + 1 },
-              }
+              ...summary,
+              stats: { ...summary.stats, human_labeled: summary.stats.human_labeled + 1 },
+            }
             : summary,
         );
       }
     } catch (error) {
-      this.showCaptchaReviewMessage(this.shell.readError(error), 6_000);
+      this.showCaptchaReviewMessage(this.presentation.readError(error), 6_000);
     } finally {
       this.captchaSavingEventId.set('');
     }
@@ -823,7 +828,7 @@ export class CaptchasFacade {
       return;
     }
     this.captchaSamplingSaving.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       const control = await this.api.updateCaptchaSamplingControl(
         this.captchaSamplingEnabled(),
@@ -831,13 +836,13 @@ export class CaptchasFacade {
       );
       this.captchaSamplingDirty.set(false);
       this.applyCaptchaSamplingControl(control);
-      this.shell.showToast(
+      this.ui.showToast(
         control.enabled
           ? `Muestreo activado: ${control.sample_limit} CAPTCHA por lote`
           : 'Muestreo adicional desactivado',
       );
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       this.captchaSamplingSaving.set(false);
     }
@@ -852,7 +857,7 @@ export class CaptchasFacade {
   }
 
   public requestCaptchaAuthorityFallback(): void {
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Usar 2Captcha como autoridad',
       message:
         'V6 seguirá comparando en sombra, pero desde el siguiente CAPTCHA final la respuesta se pedirá a 2Captcha.',
@@ -868,7 +873,7 @@ export class CaptchasFacade {
 
   public requestCaptchaAuthorityCanary(): void {
     const resetCircuit = this.captchaAuthorityControl()?.circuit_state === 'open';
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: resetCircuit ? 'Reactivar canario V6' : 'Activar canario V6',
       message: resetCircuit
         ? 'Se cerrará el circuito después de tu revisión. V6 volverá a resolver únicamente dentro del límite restante y con fallback a 2Captcha.'
@@ -883,5 +888,32 @@ export class CaptchasFacade {
     });
   }
 
-  private get shell() { return this.injector.get(DASHBOARD_CAPTCHAS_SHELL); }
+  public fetchPendingCaptchaReview(scope: RequestScope) {
+    return this.api.getCaptchaEvents(
+      1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
+    ).catch((error: unknown) => {
+      if (isRequestCancelled(error)) {
+        throw error;
+      }
+      return null;
+    });
+  }
+
+  public disposeCaptchaRequests(): void {
+    this.captchaLoadScope?.cancel();
+    this.captchaQualityCaseScope?.cancel();
+    if (this.captchaReviewMessageTimer !== null) window.clearTimeout(this.captchaReviewMessageTimer);
+  }
+
+  public fetchCaptchaSamplingControl(scope: RequestScope) { return this.api.getCaptchaSamplingControl(scope); }
+
+  public fetchCaptchaAuthorityControl(scope: RequestScope) { return this.api.getCaptchaAuthorityControl(scope); }
+
+  private get operations() { return this.injector.get(DASHBOARD_CAPTCHAS_OPERATIONS); }
+
+  private get navigation() { return this.injector.get(DASHBOARD_CAPTCHAS_NAVIGATION); }
+
+  private get presentation() { return this.injector.get(DASHBOARD_CAPTCHAS_PRESENTATION); }
+
+  private get ui() { return this.injector.get(DASHBOARD_CAPTCHAS_UI); }
 }

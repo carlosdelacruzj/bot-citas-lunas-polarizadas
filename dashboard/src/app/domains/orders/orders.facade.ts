@@ -24,7 +24,9 @@ import {
 import {
   DASHBOARD_ORDERS_FINANCE,
   DASHBOARD_ORDERS_MESSAGES,
-  DASHBOARD_ORDERS_SHELL,
+  DASHBOARD_ORDERS_NAVIGATION,
+  DASHBOARD_ORDERS_PRESENTATION,
+  DASHBOARD_ORDERS_UI,
 } from '../../dashboard-domain.ports';
 import { OrdersListFacade } from '../../domains/orders/orders-list.facade';
 import {
@@ -186,7 +188,7 @@ export class OrdersFacade {
           order.whatsapp_followup_status === 'sent'
             ? 'El paquete post-pago ya figura enviado; usa esto solo para un reenvio.'
             : 'La reserva esta pagada; envia indicaciones y PDFs al cliente.',
-        disabled: this.shell.actionBusy(),
+        disabled: this.ui.actionBusy(),
       };
     }
     if (this.isClosedOrder(order)) {
@@ -203,7 +205,7 @@ export class OrdersFacade {
         label: 'Resolver trámites pendientes',
         description:
           'El portal devolvió varios expedientes pendientes. Elige explícitamente el alcance acordado.',
-        disabled: this.shell.actionBusy(),
+        disabled: this.ui.actionBusy(),
       };
     }
     if (order.payment_status === 'pending') {
@@ -230,7 +232,7 @@ export class OrdersFacade {
         key: 'manual-session',
         label: 'Abrir sesion manual',
         description: 'La orden esta lista para una revision manual independiente.',
-        disabled: this.shell.actionBusy(),
+        disabled: this.ui.actionBusy(),
       };
     }
     return {
@@ -289,9 +291,9 @@ export class OrdersFacade {
     }
     const isContinuous = days.every((day, index) => index === 0 || day === days[index - 1] + 1);
     if (isContinuous && days.length >= 3) {
-      return this.shell.capitalize(`${WEEKDAY_NAMES[days[0] - 1]} a ${WEEKDAY_NAMES[days.at(-1)! - 1]}`);
+      return this.presentation.capitalize(`${WEEKDAY_NAMES[days[0] - 1]} a ${WEEKDAY_NAMES[days.at(-1)! - 1]}`);
     }
-    return this.shell.capitalize(SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])));
+    return this.presentation.capitalize(SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])));
   }
 
   public restrictionTimingLabel(order: ServiceOrder): string {
@@ -300,14 +302,14 @@ export class OrdersFacade {
 
   public selectOrder(orderId: string, loadDetail = true, updateRoute = true): void {
     if (!this.orderPanelOpen()) {
-      this.shell.captureFocus();
+      this.ui.captureFocus();
     }
     this.selectedOrderId.set(orderId);
     this.orderPanelOpen.set(true);
     this.selectedOrderDetail.set(null);
-    this.shell.formDirty.set(false);
+    this.ui.formDirty.set(false);
     this.hydrateSelectedOrderForms();
-    if (updateRoute && this.shell.activeView() === 'orders') {
+    if (updateRoute && this.navigation.activeView() === 'orders') {
       void this.router.navigate(['/ordenes', orderId]);
     }
     if (loadDetail) {
@@ -319,16 +321,16 @@ export class OrdersFacade {
   }
 
   public closeOrderPanel(updateRoute = true): void {
-    if (this.shell.activeModal() || this.shell.actionBusy()) {
+    if (this.ui.activeModal() || this.ui.actionBusy()) {
       return;
     }
     this.orderPanelOpen.set(false);
     this.selectedOrderDetail.set(null);
-    this.shell.formDirty.set(false);
-    if (updateRoute && this.shell.activeView() === 'orders') {
+    this.ui.formDirty.set(false);
+    if (updateRoute && this.navigation.activeView() === 'orders') {
       void this.router.navigateByUrl('/ordenes');
     }
-    this.shell.restoreFocus();
+    this.ui.restoreFocus();
   }
 
   public async openEditOrder(
@@ -337,24 +339,24 @@ export class OrdersFacade {
   ): Promise<void> {
     this.selectOrder(order.order_id, false);
     this.editOrderSection.set(section);
-    this.shell.openModal('edit-order');
+    this.ui.openModal('edit-order');
     await this.loadSelectedOrderDetail(order.order_id);
   }
 
   public async openProgramResolution(order: ServiceOrder): Promise<void> {
     this.selectOrder(order.order_id, false);
     this.editOrderSection.set('program-resolution');
-    this.shell.openModal('edit-order');
+    this.ui.openModal('edit-order');
     await this.loadSelectedOrderDetail(order.order_id);
   }
 
   public openOrderActions(order: ServiceOrder): void {
     this.selectOrder(order.order_id);
-    this.shell.openModal('order-actions');
+    this.ui.openModal('order-actions');
   }
 
   public openCreateOrder(): void {
-    this.shell.openModal('create-order');
+    this.ui.openModal('create-order');
   }
 
   public runNextOrderAction(): void {
@@ -461,7 +463,7 @@ export class OrdersFacade {
 
   public requestContactUpdate(): void {
     if (this.orderDetailLoading()) {
-      this.shell.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
+      this.ui.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
       return;
     }
     const order = this.requireSelectedOrder();
@@ -469,21 +471,21 @@ export class OrdersFacade {
       return;
     }
     const payload: ContactUpdatePayload = {
-      contact_name: this.shell.optionalText(this.contactName()),
-      contact_whatsapp: this.shell.optionalText(this.contactWhatsapp()),
-      contact_whatsapp_username: this.shell.optionalText(this.contactWhatsappUsername()),
-      contact_source: this.shell.optionalText(this.contactSource()),
+      contact_name: this.presentation.optionalText(this.contactName()),
+      contact_whatsapp: this.presentation.optionalText(this.contactWhatsapp()),
+      contact_whatsapp_username: this.presentation.optionalText(this.contactWhatsappUsername()),
+      contact_source: this.presentation.optionalText(this.contactSource()),
     };
     if (!payload.contact_name && !payload.contact_whatsapp && !payload.contact_whatsapp_username) {
-      this.shell.errorMessage.set('Ingresa nombre o WhatsApp para actualizar contacto.');
+      this.ui.errorMessage.set('Ingresa nombre o WhatsApp para actualizar contacto.');
       return;
     }
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Actualizar contacto',
       message: `Actualizar contacto de ${order.order_id}.`,
       execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
       onSuccess: () => {
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
         this.selectedOrderDetail.set(null);
       },
     });
@@ -506,7 +508,7 @@ export class OrdersFacade {
     if (!order) {
       return;
     }
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Confirmar alcance de trámites',
       message: `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
       execute: async () => {
@@ -524,26 +526,26 @@ export class OrdersFacade {
 
   public requestCredentialsUpdate(): void {
     if (this.orderDetailLoading()) {
-      this.shell.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
+      this.ui.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
       return;
     }
     const order = this.requireSelectedOrder();
     const detail = this.selectedOrderDetail();
     if (!order || !detail) {
-      this.shell.errorMessage.set('No se pudo cargar el acceso actual de la orden.');
+      this.ui.errorMessage.set('No se pudo cargar el acceso actual de la orden.');
       return;
     }
     const documentNumber = this.orderDocumentNumber().trim();
     const password = this.orderPassword();
     if (!documentNumber || !password) {
-      this.shell.errorMessage.set('Usuario o documento y nueva contraseña son obligatorios.');
+      this.ui.errorMessage.set('Usuario o documento y nueva contraseña son obligatorios.');
       return;
     }
     const documentChanged = documentNumber !== detail.document_number;
     const message = documentChanged
       ? 'Cambiarás el usuario o documento de acceso. La cuenta y sus subórdenes se pausarán hasta validar la nueva identidad en el portal.'
       : 'Reemplazarás la contraseña. La cuenta y sus subórdenes se pausarán hasta validar nuevamente el acceso al portal.';
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: documentChanged ? 'Cambiar usuario y contraseña' : 'Cambiar contraseña',
       message,
       execute: () =>
@@ -555,7 +557,7 @@ export class OrdersFacade {
       onSuccess: () => {
         this.orderPassword.set('');
         this.orderPasswordVisible.set(false);
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
         this.selectedOrderDetail.set(null);
       },
       onSettled: () => {
@@ -572,7 +574,7 @@ export class OrdersFacade {
     }
     const priority = Number(this.orderPriority());
     if (!Number.isInteger(priority) || priority < 0) {
-      this.shell.errorMessage.set('La prioridad debe ser un numero entero igual o mayor que 0.');
+      this.ui.errorMessage.set('La prioridad debe ser un numero entero igual o mayor que 0.');
       return;
     }
     const payload: PriorityUpdatePayload = { priority };
@@ -591,7 +593,7 @@ export class OrdersFacade {
           : leavesFocusedMode
             ? ' La orden volvera a la cola normal.'
             : ' Se aplicara en la siguiente seleccion de la cola.';
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Actualizar prioridad',
       message: `Cambiar prioridad de ${order.order_id} de ${order.priority} a ${priority}.${effect}`,
       execute: () => this.api.updateServiceOrderPriority(order.order_id, payload),
@@ -613,8 +615,8 @@ export class OrdersFacade {
       return;
     }
     const payload: ReservationRestrictionsUpdatePayload = {
-      minimum_reservation_date: this.shell.optionalText(this.orderMinimumReservationDate()),
-      maximum_reservation_date: this.shell.optionalText(this.orderMaximumReservationDate()),
+      minimum_reservation_date: this.presentation.optionalText(this.orderMinimumReservationDate()),
+      maximum_reservation_date: this.presentation.optionalText(this.orderMaximumReservationDate()),
       allowed_weekdays: this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
       excluded_date_ranges: excludedDateRanges,
     };
@@ -623,10 +625,10 @@ export class OrdersFacade {
       payload.maximum_reservation_date &&
       payload.maximum_reservation_date < payload.minimum_reservation_date
     ) {
-      this.shell.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
+      this.ui.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
       return;
     }
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Actualizar reglas de reserva',
       message: `Guardar las reglas de reserva de ${order.order_id}. Los campos vacíos quitarán esa regla.`,
       execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
@@ -645,19 +647,19 @@ export class OrdersFacade {
     this.orderExcludedDateRanges.set(ranges);
     this.orderExcludedDateStart.set('');
     this.orderExcludedDateEnd.set('');
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public removeOrderExcludedDateRange(index: number): void {
     this.orderExcludedDateRanges.update((ranges) =>
       ranges.filter((_, rangeIndex) => rangeIndex !== index),
     );
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public clearOrderExcludedDateRanges(): void {
     this.orderExcludedDateRanges.set([]);
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public addNewExcludedDateRange(): void {
@@ -672,19 +674,19 @@ export class OrdersFacade {
     this.newExcludedDateRanges.set(ranges);
     this.newExcludedDateStart.set('');
     this.newExcludedDateEnd.set('');
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public removeNewExcludedDateRange(index: number): void {
     this.newExcludedDateRanges.update((ranges) =>
       ranges.filter((_, rangeIndex) => rangeIndex !== index),
     );
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public clearNewExcludedDateRanges(): void {
     this.newExcludedDateRanges.set([]);
-    this.shell.formDirty.set(true);
+    this.ui.formDirty.set(true);
   }
 
   public requestOrderAction(
@@ -696,23 +698,23 @@ export class OrdersFacade {
       return;
     }
     if (action === 'activate' && this.hasActiveChildOrders(order)) {
-      this.shell.errorMessage.set('No se puede activar una orden padre con subordenes activas.');
+      this.ui.errorMessage.set('No se puede activar una orden padre con subordenes activas.');
       return;
     }
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title,
       message: `${title} para ${order.order_id}.`,
       execute: () => this.api.runServiceOrderAction(order.order_id, action),
-      onSuccess: () => this.shell.activeModal.set(null),
+      onSuccess: () => this.ui.activeModal.set(null),
     });
   }
 
   public requestOrderValidation(order: ServiceOrder): void {
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Validar acceso',
       message: `Ingresar al portal y validar identidad y programas de ${order.order_id}.`,
       execute: () => this.api.revalidateServiceOrder(order.order_id),
-      onSuccess: () => this.shell.activeModal.set(null),
+      onSuccess: () => this.ui.activeModal.set(null),
     });
   }
 
@@ -734,13 +736,13 @@ export class OrdersFacade {
     }
     const payload: CloseServiceOrderPayload = {
       closure_reason: this.closureReason(),
-      closure_note: this.shell.optionalText(this.closureNote()),
+      closure_note: this.presentation.optionalText(this.closureNote()),
     };
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: this.closureReasonLabel(payload.closure_reason),
       message: `${this.closureReasonLabel(payload.closure_reason)} para ${order.order_id}.`,
       execute: () => this.api.closeServiceOrder(order.order_id, payload),
-      onSuccess: () => this.shell.activeModal.set(null),
+      onSuccess: () => this.ui.activeModal.set(null),
     });
   }
 
@@ -757,7 +759,7 @@ export class OrdersFacade {
     const reason = allowed.includes(value as ClosureReason)
       ? (value as ClosureReason)
       : 'client_withdrew';
-    this.shell.editField(this.closureReason, reason);
+    this.ui.editField(this.closureReason, reason);
   }
 
   public async copySelectedOrderWhatsapp(): Promise<void> {
@@ -767,7 +769,7 @@ export class OrdersFacade {
       return;
     }
     await navigator.clipboard.writeText(recipient);
-    this.shell.markCopied('whatsapp-number');
+    this.ui.markCopied('whatsapp-number');
   }
 
   public openSelectedOrderWhatsapp(): void {
@@ -833,20 +835,19 @@ export class OrdersFacade {
       excludedDateRanges,
     }, packageDefinition);
     if (!result.payload || !packageDefinition) {
-      this.shell.errorMessage.set(result.error);
+      this.ui.errorMessage.set(result.error);
       return;
     }
     const payload = result.payload;
     const reservationPrice = payload.reservation_price;
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Crear orden nueva',
-      message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${
-        packageDefinition.label.toLocaleLowerCase('es-PE')
-      } por S/${reservationPrice}.`,
+      message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${packageDefinition.label.toLocaleLowerCase('es-PE')
+        } por S/${reservationPrice}.`,
       execute: () => this.api.createServiceOrder(payload),
       onSuccess: () => {
         this.clearCreateOrderForm();
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
       },
       onSettled: () => this.clearCreateOrderSensitiveFields(),
     });
@@ -858,7 +859,7 @@ export class OrdersFacade {
       return;
     }
     const mode = this.manualSessionMode(order);
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: this.manualSessionActionLabel(order),
       message:
         mode === 'appointment'
@@ -869,7 +870,7 @@ export class OrdersFacade {
         if (response.session_id) {
           this.activeManualSessionIds.add(response.session_id);
         }
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
       },
     });
   }
@@ -879,7 +880,7 @@ export class OrdersFacade {
     if (!order) {
       return;
     }
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: 'Medir flujo manual',
       message:
         `Abrir el portal desde el inicio para ${order.order_id}. ` +
@@ -889,7 +890,7 @@ export class OrdersFacade {
         if (response.session_id) {
           this.activeManualSessionIds.add(response.session_id);
         }
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
       },
     });
   }
@@ -898,18 +899,18 @@ export class OrdersFacade {
     order: ServiceOrder,
     mode: ManualSessionMode = this.manualSessionMode(order),
   ): Promise<void> {
-    if (this.shell.actionBusy()) {
+    if (this.ui.actionBusy()) {
       return;
     }
-    this.shell.actionBusy.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.actionBusy.set(true);
+    this.ui.errorMessage.set(null);
     try {
       const response = await this.api.openManualSession(order.order_id, mode);
       if (response.session_id) {
         this.activeManualSessionIds.add(response.session_id);
       }
-      await this.shell.refreshAll();
-      this.shell.showToast(
+      await this.navigation.refreshAll();
+      this.ui.showToast(
         mode === 'diagnostic'
           ? 'Medición activa'
           : mode === 'appointment'
@@ -917,9 +918,9 @@ export class OrdersFacade {
             : 'Portal abierto para consulta',
       );
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
-      this.shell.actionBusy.set(false);
+      this.ui.actionBusy.set(false);
     }
   }
 
@@ -932,7 +933,7 @@ export class OrdersFacade {
       next.add(session.session_id);
       return next;
     });
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       await this.api.closeManualSession(session.session_id);
       this.activeManualSessionIds.delete(session.session_id);
@@ -940,17 +941,17 @@ export class OrdersFacade {
         sessions.map((item) =>
           item.session_id === session.session_id
             ? {
-                ...item,
-                status: 'closing',
-                close_requested: true,
-                status_message: 'Cierre solicitado; esperando que Chromium termine.',
-              }
+              ...item,
+              status: 'closing',
+              close_requested: true,
+              status_message: 'Cierre solicitado; esperando que Chromium termine.',
+            }
             : item,
         ),
       );
-      this.shell.showToast('Cierre solicitado');
+      this.ui.showToast('Cierre solicitado');
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       this.closingManualSessionIds.update((sessionIds) => {
         const next = new Set(sessionIds);
@@ -1040,13 +1041,13 @@ export class OrdersFacade {
     if (childCount) {
       return `Contenedor · ${childCount} trámite${childCount === 1 ? '' : 's'}`;
     }
-    return this.shell.statusLabel(order.status);
+    return this.presentation.statusLabel(order.status);
   }
 
   public requireSelectedOrder(): ServiceOrder | null {
     const order = this.selectedOrder();
     if (!order) {
-      this.shell.errorMessage.set('Carga y selecciona una orden primero.');
+      this.ui.errorMessage.set('Carga y selecciona una orden primero.');
       return null;
     }
     return order;
@@ -1054,7 +1055,7 @@ export class OrdersFacade {
 
   public async loadSelectedOrderDetail(orderId: string): Promise<void> {
     this.orderDetailLoading.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       const detail = await this.api.getServiceOrder(orderId);
       if (this.selectedOrderId() !== detail.order_id) {
@@ -1063,7 +1064,7 @@ export class OrdersFacade {
       this.selectedOrderDetail.set(detail);
       this.hydrateSelectedOrderForms(detail);
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       if (this.selectedOrderId() === orderId) {
         this.orderDetailLoading.set(false);
@@ -1080,7 +1081,7 @@ export class OrdersFacade {
   }
 
   public hydrateSelectedOrderForms(detail: ServiceOrderDetail | null = null): void {
-    if (this.shell.formDirty()) {
+    if (this.ui.formDirty()) {
       return;
     }
     const order = this.selectedOrder();
@@ -1153,11 +1154,11 @@ export class OrdersFacade {
       return this.normalizeExcludedDateRanges(ranges);
     }
     if (!start || !end) {
-      this.shell.errorMessage.set('Completa ambas fechas del rango excluido.');
+      this.ui.errorMessage.set('Completa ambas fechas del rango excluido.');
       return null;
     }
     if (end < start) {
-      this.shell.errorMessage.set('El final del rango excluido no puede ser anterior al inicio.');
+      this.ui.errorMessage.set('El final del rango excluido no puede ser anterior al inicio.');
       return null;
     }
     return this.normalizeExcludedDateRanges([...ranges, { start_date: start, end_date: end }]);
@@ -1198,13 +1199,28 @@ export class OrdersFacade {
   }
 
   public async loadOrdersView(scope: RequestScope): Promise<void> {
-      this.applyOrders(await this.orderList.fetchOrders(scope));
-      return;
-    }
+    this.applyOrders(await this.orderList.fetchOrders(scope));
+    return;
+  }
+
+  public fetchOrderCommonData(scope: RequestScope) {
+    const currentCatalog = this.servicePackageCatalog();
+    const catalogRequest = currentCatalog ? Promise.resolve(currentCatalog) : this.api.getServicePackages(scope);
+    return Promise.all([this.api.getManualSessions(scope), catalogRequest]);
+  }
+
+  public applyOrderCommonData(manualSessions: ManualSession[], catalog: ServicePackageCatalog): void {
+    this.manualSessions.set(manualSessions);
+    this.servicePackageCatalog.set(catalog);
+  }
 
   private get messages() { return this.injector.get(DASHBOARD_ORDERS_MESSAGES); }
 
-  private get shell() { return this.injector.get(DASHBOARD_ORDERS_SHELL); }
+  private get ui() { return this.injector.get(DASHBOARD_ORDERS_UI); }
+
+  private get presentation() { return this.injector.get(DASHBOARD_ORDERS_PRESENTATION); }
+
+  private get navigation() { return this.injector.get(DASHBOARD_ORDERS_NAVIGATION); }
 
   private get finance() { return this.injector.get(DASHBOARD_ORDERS_FINANCE); }
 }

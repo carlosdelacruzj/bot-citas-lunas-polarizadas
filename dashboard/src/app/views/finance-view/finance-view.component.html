@@ -28,17 +28,17 @@
     <div class="monthly-kpis finance-kpis">
       <article class="monthly-kpi primary-kpi">
         <span>Ingresos cobrados</span>
-        <strong>{{ shellDomain.formatMoney(finance.revenue_collected) }}</strong>
+        <strong>{{ presentationDomain.formatMoney(finance.revenue_collected) }}</strong>
         <small>Pagos recibidos en el mes</small>
       </article>
       <article class="monthly-kpi">
         <span>Gastos registrados</span>
-        <strong>{{ shellDomain.formatMoney(finance.recognized_costs) }}</strong>
+        <strong>{{ presentationDomain.formatMoney(finance.recognized_costs) }}</strong>
         <small>Gastos usados para calcular el resultado</small>
       </article>
       <article class="monthly-kpi" [class.warn-kpi]="!financeDomain.financeConversionComplete(finance)">
         <span>Resultado aproximado</span>
-        <strong>{{ shellDomain.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
+        <strong>{{ presentationDomain.formatMoney(finance.operating_margin_before_unregistered_costs) }}</strong>
         <small>
           {{
             financeDomain.financeConversionComplete(finance)
@@ -49,7 +49,7 @@
       </article>
       <article class="monthly-kpi">
         <span>Dinero que salió</span>
-        <strong>{{ shellDomain.formatMoney(finance.net_cash_outflow) }}</strong>
+        <strong>{{ presentationDomain.formatMoney(finance.net_cash_outflow) }}</strong>
         <small>Salida real de efectivo del mes</small>
       </article>
     </div>
@@ -57,11 +57,11 @@
     @if (!finance.receipt_date_quality.comparison_conclusive) {
       <p class="notice warn compact-finance-notice" role="status">
         Este periodo contiene {{ finance.receipt_date_quality.inferred_receipt_count }} recibos
-        históricos por {{ shellDomain.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
+        históricos por {{ presentationDomain.formatMoney(finance.receipt_date_quality.inferred_amount) }}.
         El monto acumulado se conserva, pero sus fechas son inferidas y no permiten una comparación
         mensual concluyente.
         @if (finance.receipt_date_quality.exact_since; as cutoff) {
-          Los recibos nuevos son exactos desde {{ shellDomain.formatDateTime(cutoff) }}.
+          Los recibos nuevos son exactos desde {{ presentationDomain.formatDateTime(cutoff) }}.
         }
       </p>
     }
@@ -79,7 +79,7 @@
             @for (category of finance.by_category; track category.category_code) {
               <div>
                 <dt>{{ category.category_name }}</dt>
-                <dd>{{ shellDomain.formatMoney(category.recognized_cost) }}</dd>
+                <dd>{{ presentationDomain.formatMoney(category.recognized_cost) }}</dd>
               </div>
             }
           </div>
@@ -178,7 +178,7 @@
             <div class="quality-list">
               @for (entry of quality.unconverted_entries; track entry.entry_id) {
                 <div>
-                  <span><strong>{{ entry.description }}</strong><small>{{ shellDomain.formatDate(entry.occurred_on) }} · {{ entry.amount_original }} {{ entry.currency }} · {{ entry.data_quality }}</small></span>
+                  <span><strong>{{ entry.description }}</strong><small>{{ presentationDomain.formatDate(entry.occurred_on) }} · {{ entry.amount_original }} {{ entry.currency }} · {{ entry.data_quality }}</small></span>
                   <button type="button" class="secondary" (click)="financeDomain.openEditFinanceEntryById(entry.entry_id)">Completar</button>
                 </div>
               }
@@ -197,9 +197,9 @@
                     <span>
                       <strong>{{ item.order_id }}</strong>
                       <small>
-                        Acordado {{ shellDomain.formatMoney(item.amount_agreed ?? 0) }} · Cobrado
-                        {{ shellDomain.formatMoney(item.amount_paid ?? 0) }} · Diferencia
-                        {{ shellDomain.formatMoney(item.difference ?? 0) }}
+                        Acordado {{ presentationDomain.formatMoney(item.amount_agreed ?? 0) }} · Cobrado
+                        {{ presentationDomain.formatMoney(item.amount_paid ?? 0) }} · Diferencia
+                        {{ presentationDomain.formatMoney(item.difference ?? 0) }}
                       </small>
                     </span>
                     @if (item.reconciliation; as reconciliation) {
@@ -223,7 +223,7 @@
                       <small>El responsable se toma de la sesión autenticada.</small>
                       <div class="quality-actions">
                         <button type="button" class="secondary" (click)="financeDomain.cancelFinanceMismatchResolution()">Cancelar</button>
-                        <button type="button" class="primary" [disabled]="shellDomain.actionBusy()" (click)="financeDomain.requestReconcileFinancePayment(item.payment_id)">Guardar explicación</button>
+                        <button type="button" class="primary" [disabled]="uiDomain.actionBusy()" (click)="financeDomain.requestReconcileFinancePayment(item.payment_id)">Guardar explicación</button>
                       </div>
                     </div>
                   }
@@ -249,9 +249,9 @@
         </div>
 
         <dl class="closure-movements">
-          <div><dt>Recargas</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.prepaid_topups) }}</dd></div>
-          <div><dt>Consumo</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.prepaid_consumption) }}</dd></div>
-          <div><dt>Reembolsos</dt><dd>{{ shellDomain.formatMoney(monthClosure.movements.refunds) }}</dd></div>
+          <div><dt>Recargas</dt><dd>{{ presentationDomain.formatMoney(monthClosure.movements.prepaid_topups) }}</dd></div>
+          <div><dt>Consumo</dt><dd>{{ presentationDomain.formatMoney(monthClosure.movements.prepaid_consumption) }}</dd></div>
+          <div><dt>Reembolsos</dt><dd>{{ presentationDomain.formatMoney(monthClosure.movements.refunds) }}</dd></div>
           <div><dt>Estimados / pendientes</dt><dd>{{ monthClosure.movements.estimated_entries }} / {{ monthClosure.movements.pending_entries }}</dd></div>
         </dl>
 
@@ -270,9 +270,9 @@
 
         <div class="closure-balance-line">
           <span>Saldo final esperado</span>
-          <strong>{{ monthClosure.expected_closing_prepaid_balance === null ? 'Completa el saldo inicial' : shellDomain.formatMoney(monthClosure.expected_closing_prepaid_balance) }}</strong>
+          <strong>{{ monthClosure.expected_closing_prepaid_balance === null ? 'Completa el saldo inicial' : presentationDomain.formatMoney(monthClosure.expected_closing_prepaid_balance) }}</strong>
           <span>Diferencia observada</span>
-          <strong>{{ monthClosure.balance_difference === null ? 'Pendiente' : shellDomain.formatMoney(monthClosure.balance_difference) }}</strong>
+          <strong>{{ monthClosure.balance_difference === null ? 'Pendiente' : presentationDomain.formatMoney(monthClosure.balance_difference) }}</strong>
         </div>
 
         @if (!financeDomain.financeClosureCanReconcile()) {
@@ -285,11 +285,11 @@
           </p>
         }
         <div class="quality-actions closure-actions">
-          <button type="button" class="secondary" [disabled]="shellDomain.actionBusy()" (click)="financeDomain.requestSaveFinanceMonthClosure('draft')">Guardar borrador</button>
-          <button type="button" class="primary" [disabled]="shellDomain.actionBusy() || !financeDomain.financeClosureCanReconcile()" (click)="financeDomain.requestSaveFinanceMonthClosure('reconciled')">Terminar mes</button>
+          <button type="button" class="secondary" [disabled]="uiDomain.actionBusy()" (click)="financeDomain.requestSaveFinanceMonthClosure('draft')">Guardar borrador</button>
+          <button type="button" class="primary" [disabled]="uiDomain.actionBusy() || !financeDomain.financeClosureCanReconcile()" (click)="financeDomain.requestSaveFinanceMonthClosure('reconciled')">Terminar mes</button>
         </div>
         @if (monthClosure.closure?.reconciled_at) {
-          <small class="closure-audit">Conciliado por {{ monthClosure.closure?.reconciled_by }} · {{ shellDomain.formatDateTime(monthClosure.closure?.reconciled_at) }}</small>
+          <small class="closure-audit">Conciliado por {{ monthClosure.closure?.reconciled_by }} · {{ presentationDomain.formatDateTime(monthClosure.closure?.reconciled_at) }}</small>
         }
       </section>
     }
@@ -326,7 +326,7 @@
           <tbody>
             @for (entry of financeDomain.financeEntries(); track entry.entry_id) {
               <tr [class.voided-row]="entry.status === 'voided'">
-                <td data-label="Fecha">{{ shellDomain.formatDate(entry.occurred_on) }}</td>
+                <td data-label="Fecha">{{ presentationDomain.formatDate(entry.occurred_on) }}</td>
                 <td data-label="Tipo">
                   <strong>{{ financeDomain.financeKindLabel(entry.entry_kind) }}</strong>
                   <span>{{ entry.status === 'voided' ? 'anulado' : 'activo' }}</span>
@@ -341,11 +341,11 @@
                   {{
                     entry.amount_pen === null
                       ? 'sin conversión'
-                      : shellDomain.formatMoney(entry.amount_pen)
+                      : presentationDomain.formatMoney(entry.amount_pen)
                   }}
                 </td>
                 <td data-label="Calidad">
-                  <span class="badge {{ shellDomain.statusTone(entry.data_quality) }}">
+                  <span class="badge {{ presentationDomain.statusTone(entry.data_quality) }}">
                     {{ entry.data_quality }}
                   </span>
                 </td>

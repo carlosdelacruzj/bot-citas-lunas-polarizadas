@@ -10,14 +10,18 @@ import {
   WhatsAppReviewResolution,
   WhatsAppWebDraftResponse,
 } from '../../appointment-api.service';
-import { DASHBOARD_MESSAGES_ORDERS, DASHBOARD_MESSAGES_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_MESSAGES_NAVIGATION,
+  DASHBOARD_MESSAGES_ORDERS,
+  DASHBOARD_MESSAGES_PRESENTATION,
+  DASHBOARD_MESSAGES_UI,
+} from '../../dashboard-domain.ports';
 import { RequestScope } from '../../request-cancellation';
 
 @Injectable()
 export class MessagesFacade {
   private readonly injector = inject(Injector);
   private readonly api = inject(AppointmentApiService);
-
 
   public readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
 
@@ -63,7 +67,7 @@ export class MessagesFacade {
     this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
-    this.shell.openModal('whatsapp');
+    this.ui.openModal('whatsapp');
   }
 
   public openWhatsAppEvidenceTest(): void {
@@ -76,7 +80,7 @@ export class MessagesFacade {
     this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
-    this.shell.openModal('whatsapp');
+    this.ui.openModal('whatsapp');
   }
 
   public async validateWhatsAppSession(): Promise<boolean> {
@@ -84,18 +88,18 @@ export class MessagesFacade {
       return false;
     }
     this.whatsappSessionBusy.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         const response = await this.api.validateWhatsAppWebSession();
         if (response.status === 'session_ready') {
           this.whatsappSessionState.set('ready');
-          this.shell.showToast('WhatsApp vinculado y listo');
+          this.ui.showToast('WhatsApp vinculado y listo');
           return true;
         }
         if (response.status !== 'login_required') {
           this.whatsappSessionState.set('error');
-          await (await this.shell.getSweetAlert()).fire({
+          await (await this.ui.getSweetAlert()).fire({
             icon: 'warning',
             title: 'WhatsApp no está disponible',
             text: response.message,
@@ -104,7 +108,7 @@ export class MessagesFacade {
           return false;
         }
         this.whatsappSessionState.set('login_required');
-        const scanResult = await (await this.shell.getSweetAlert()).fire({
+        const scanResult = await (await this.ui.getSweetAlert()).fire({
           icon: 'info',
           title: 'Vincular WhatsApp',
           text: response.message,
@@ -122,7 +126,7 @@ export class MessagesFacade {
         }
       }
       this.whatsappSessionState.set('error');
-      await (await this.shell.getSweetAlert()).fire({
+      await (await this.ui.getSweetAlert()).fire({
         icon: 'warning',
         title: 'Vinculación pendiente',
         text: 'WhatsApp todavía no confirmó el QR. Vuelve a validar la sesión.',
@@ -131,11 +135,11 @@ export class MessagesFacade {
       return false;
     } catch (error) {
       this.whatsappSessionState.set('error');
-      this.shell.errorMessage.set(this.shell.readError(error));
-      await (await this.shell.getSweetAlert()).fire({
+      this.ui.errorMessage.set(this.presentation.readError(error));
+      await (await this.ui.getSweetAlert()).fire({
         icon: 'error',
         title: 'No se pudo validar WhatsApp',
-        text: this.shell.errorMessage() ?? 'Error desconocido.',
+        text: this.ui.errorMessage() ?? 'Error desconocido.',
         confirmButtonText: 'Entendido',
       });
       return false;
@@ -147,7 +151,7 @@ export class MessagesFacade {
   public async prepareWhatsAppTest(): Promise<void> {
     const recipient = this.whatsappTestRecipient().trim();
     if (!recipient) {
-      this.shell.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
+      this.ui.errorMessage.set('Ingresa tu WhatsApp con codigo de pais, por ejemplo +51987654321.');
       return;
     }
     if (this.whatsappFollowUpMode()) {
@@ -155,12 +159,12 @@ export class MessagesFacade {
         this.api.prepareWhatsAppFollowUpTest(recipient),
       );
       this.whatsappManualFallbackOpen.set(false);
-      this.shell.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
+      this.ui.showToast('Prueba preparada: revisa el contenido antes de enviarlo');
       return;
     }
     await this.loadWhatsAppPackage(() => this.api.prepareWhatsAppTest(recipient));
     this.whatsappManualFallbackOpen.set(false);
-    this.shell.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
+    this.ui.showToast('Prueba preparada: revisa las imágenes y el texto antes de enviarla');
   }
 
   public async openOrderWhatsApp(order: ServiceOrder, allowResend = false): Promise<void> {
@@ -172,16 +176,16 @@ export class MessagesFacade {
     this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(false);
-    this.shell.openModal('whatsapp');
+    this.ui.openModal('whatsapp');
     try {
       await this.loadWhatsAppPackage(() =>
         this.api.prepareOrderWhatsApp(order.order_id, allowResend),
       );
       this.whatsappManualFallbackOpen.set(false);
-      this.shell.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
+      this.ui.showToast('Paquete preparado: revisa las imágenes y el texto antes de enviarlo');
     } catch {
       if (!allowResend && order.whatsapp_message_status === 'sent') {
-        const result = await (await this.shell.getSweetAlert()).fire({
+        const result = await (await this.ui.getSweetAlert()).fire({
           icon: 'warning',
           title: 'Mensaje ya enviado',
           text: 'Esta orden ya tiene un envio confirmado. ¿Deseas preparar un reenvio?',
@@ -205,7 +209,7 @@ export class MessagesFacade {
     this.whatsappReview.set(null);
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
-    this.shell.openModal('whatsapp');
+    this.ui.openModal('whatsapp');
     try {
       const message = await this.loadWhatsAppFollowUpPackage(() =>
         this.api.preparePostPaymentWhatsApp(order.order_id, allowResend),
@@ -213,7 +217,7 @@ export class MessagesFacade {
       await this.prepareWhatsAppFollowUpWebDraft(message);
     } catch {
       if (!allowResend && order.whatsapp_followup_status === 'sent') {
-        const result = await (await this.shell.getSweetAlert()).fire({
+        const result = await (await this.ui.getSweetAlert()).fire({
           icon: 'warning',
           title: 'Post-pago ya enviado',
           text: 'Esta orden ya tiene un seguimiento post-pago confirmado. ¿Deseas preparar un reenvio?',
@@ -241,9 +245,9 @@ export class MessagesFacade {
     this.whatsappReviewNote.set('');
     this.whatsappWebResult.set(null);
     this.whatsappManualFallbackOpen.set(true);
-    this.shell.openModal('whatsapp');
+    this.ui.openModal('whatsapp');
     this.whatsappFollowUpLoading.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       const review = await this.api.getWhatsAppReview(
         order.order_id,
@@ -252,7 +256,7 @@ export class MessagesFacade {
       this.whatsappReview.set(review);
       this.whatsappFollowUpPackage.set(review.message);
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       this.whatsappFollowUpLoading.set(false);
     }
@@ -260,12 +264,12 @@ export class MessagesFacade {
 
   public async resolveWhatsAppReview(resolution: WhatsAppReviewResolution): Promise<void> {
     const review = this.whatsappReview();
-    if (!review || this.shell.actionBusy()) {
+    if (!review || this.ui.actionBusy()) {
       return;
     }
     const note = this.whatsappReviewNote().trim();
     if (resolution === 'dismissed' && !note) {
-      this.shell.errorMessage.set('Indica el motivo para cerrar el pendiente sin envío.');
+      this.ui.errorMessage.set('Indica el motivo para cerrar el pendiente sin envío.');
       return;
     }
     const labels: Record<WhatsAppReviewResolution, { title: string; text: string }> = {
@@ -283,7 +287,7 @@ export class MessagesFacade {
       },
     };
     const copy = labels[resolution];
-    const confirmation = await (await this.shell.getSweetAlert()).fire({
+    const confirmation = await (await this.ui.getSweetAlert()).fire({
       icon: resolution === 'dismissed' ? 'warning' : 'question',
       title: copy.title,
       text: copy.text,
@@ -295,17 +299,17 @@ export class MessagesFacade {
     if (!confirmation.isConfirmed) {
       return;
     }
-    this.shell.actionBusy.set(true);
+    this.ui.actionBusy.set(true);
     try {
       await this.api.resolveWhatsAppReview(review.job.job_key, resolution, note || null);
-      await this.shell.refreshAll();
-      this.shell.actionBusy.set(false);
-      this.shell.closeModal();
-      this.shell.showToast('Pendiente de WhatsApp resuelto y auditado');
+      await this.navigation.refreshAll();
+      this.ui.actionBusy.set(false);
+      this.ui.closeModal();
+      this.ui.showToast('Pendiente de WhatsApp resuelto y auditado');
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
-      this.shell.actionBusy.set(false);
+      this.ui.actionBusy.set(false);
     }
   }
 
@@ -403,10 +407,10 @@ export class MessagesFacade {
   public async copyWhatsAppText(text: string, label: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
-      this.shell.markCopied(label);
-      this.shell.showToast('Texto copiado');
+      this.ui.markCopied(label);
+      this.ui.showToast('Texto copiado');
     } catch {
-      this.shell.errorMessage.set('El navegador no permitio copiar. Selecciona el texto manualmente.');
+      this.ui.errorMessage.set('El navegador no permitio copiar. Selecciona el texto manualmente.');
     }
   }
 
@@ -419,10 +423,10 @@ export class MessagesFacade {
       const blob = await this.api.getWhatsAppAttachment(message.attachment_url);
       const png = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
-      this.shell.markCopied('constancia');
-      this.shell.showToast('Constancia copiada. Pegala con Ctrl+V en WhatsApp.');
+      this.ui.markCopied('constancia');
+      this.ui.showToast('Constancia copiada. Pegala con Ctrl+V en WhatsApp.');
     } catch {
-      this.shell.errorMessage.set(
+      this.ui.errorMessage.set(
         'No se pudo copiar la imagen. Usa Descargar constancia como alternativa.',
       );
     }
@@ -437,7 +441,7 @@ export class MessagesFacade {
       return;
     }
     this.whatsappWebBusy.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       let response = await this.api.prepareWhatsAppWebDraft(
         message.message_id,
@@ -459,17 +463,17 @@ export class MessagesFacade {
       if (response.status === 'login_required') {
         this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
-        this.shell.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
+        this.ui.showToast('WhatsApp preparado: revisa el álbum y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        this.shell.showToast('Constancia y cobro enviados por WhatsApp');
+        this.ui.showToast('Constancia y cobro enviados por WhatsApp');
       }
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
       this.whatsappManualFallbackOpen.set(true);
     } finally {
       this.whatsappWebBusy.set(false);
@@ -481,7 +485,7 @@ export class MessagesFacade {
     if (!message || message.status === 'sent' || this.whatsappWebBusy()) {
       return;
     }
-    const result = await (await this.shell.getSweetAlert()).fire({
+    const result = await (await this.ui.getSweetAlert()).fire({
       icon: 'question',
       title: message.test_mode ? 'Enviar prueba de evidencias' : 'Enviar evidencia y cobro',
       text:
@@ -507,7 +511,7 @@ export class MessagesFacade {
       return null;
     }
     this.whatsappWebBusy.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       let response = await this.api.prepareWhatsAppFollowUpWebDraft(message.message_id);
       if (response.status === 'login_required') {
@@ -521,18 +525,18 @@ export class MessagesFacade {
       if (response.status === 'login_required') {
         this.whatsappSessionState.set('login_required');
       } else if (response.status === 'draft_ready') {
-        this.shell.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
+        this.ui.showToast('Post-pago preparado: revisa WhatsApp y pulsa Enviar');
       } else if (response.status === 'sent') {
         this.whatsappFollowUpPackage.set({
           ...message,
           status: 'sent',
           sent_at: response.sent_at ?? new Date().toISOString(),
         });
-        this.shell.showToast('Post-pago enviado por WhatsApp');
+        this.ui.showToast('Post-pago enviado por WhatsApp');
       }
       return response;
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
       this.whatsappManualFallbackOpen.set(true);
       return null;
     } finally {
@@ -549,7 +553,7 @@ export class MessagesFacade {
       (total, step) => total + step.attachment_urls.length,
       0,
     );
-    const result = await (await this.shell.getSweetAlert()).fire({
+    const result = await (await this.ui.getSweetAlert()).fire({
       icon: 'question',
       title: message.test_mode ? 'Enviar prueba post-pago' : 'Enviar post-pago',
       text:
@@ -572,7 +576,7 @@ export class MessagesFacade {
     if (!message || message.status === 'sent') {
       return;
     }
-    const result = await (await this.shell.getSweetAlert()).fire({
+    const result = await (await this.ui.getSweetAlert()).fire({
       icon: 'question',
       title: 'Confirmar envio',
       text: 'Confirma solo despues de enviar saludo, constancia y cobro en WhatsApp.',
@@ -583,7 +587,7 @@ export class MessagesFacade {
     if (!result.isConfirmed) {
       return;
     }
-    this.shell.actionBusy.set(true);
+    this.ui.actionBusy.set(true);
     try {
       const response = await this.api.markWhatsAppSent(message.message_id);
       this.whatsappPackage.set({
@@ -591,12 +595,12 @@ export class MessagesFacade {
         status: 'sent',
         sent_at: response.sent_at ?? new Date().toISOString(),
       });
-      await this.shell.refreshAll();
-      this.shell.showToast('Envio de WhatsApp registrado');
+      await this.navigation.refreshAll();
+      this.ui.showToast('Envio de WhatsApp registrado');
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
-      this.shell.actionBusy.set(false);
+      this.ui.actionBusy.set(false);
     }
   }
 
@@ -605,7 +609,7 @@ export class MessagesFacade {
     if (!message || message.status === 'sent') {
       return;
     }
-    const result = await (await this.shell.getSweetAlert()).fire({
+    const result = await (await this.ui.getSweetAlert()).fire({
       icon: 'question',
       title: 'Confirmar seguimiento',
       text: 'Confirma solo despues de enviar el paquete post-pago en WhatsApp.',
@@ -616,7 +620,7 @@ export class MessagesFacade {
     if (!result.isConfirmed) {
       return;
     }
-    this.shell.actionBusy.set(true);
+    this.ui.actionBusy.set(true);
     try {
       const response = await this.api.markWhatsAppFollowUpSent(message.message_id);
       this.whatsappFollowUpPackage.set({
@@ -624,12 +628,12 @@ export class MessagesFacade {
         status: 'sent',
         sent_at: response.sent_at ?? new Date().toISOString(),
       });
-      await this.shell.refreshAll();
-      this.shell.showToast('Seguimiento post-pago registrado');
+      await this.navigation.refreshAll();
+      this.ui.showToast('Seguimiento post-pago registrado');
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
-      this.shell.actionBusy.set(false);
+      this.ui.actionBusy.set(false);
     }
   }
 
@@ -637,13 +641,13 @@ export class MessagesFacade {
     load: () => Promise<WhatsAppMessagePackage>,
   ): Promise<WhatsAppMessagePackage> {
     this.whatsappPackageLoading.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       const message = await load();
       this.whatsappPackage.set(message);
       return message;
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
       throw error;
     } finally {
       this.whatsappPackageLoading.set(false);
@@ -654,13 +658,13 @@ export class MessagesFacade {
     load: () => Promise<WhatsAppFollowUpPackage>,
   ): Promise<WhatsAppFollowUpPackage> {
     this.whatsappFollowUpLoading.set(true);
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       const message = await load();
       this.whatsappFollowUpPackage.set(message);
       return message;
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
       throw error;
     } finally {
       this.whatsappFollowUpLoading.set(false);
@@ -668,11 +672,28 @@ export class MessagesFacade {
   }
 
   public async loadMessagesView(scope: RequestScope): Promise<void> {
-      this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
-      return;
-    }
+    this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
+    return;
+  }
 
-  private get shell() { return this.injector.get(DASHBOARD_MESSAGES_SHELL); }
+  public clearWhatsAppForm(): void {
+    this.whatsappPackage.set(null);
+    this.whatsappFollowUpPackage.set(null);
+    this.whatsappTestRecipient.set('');
+    this.whatsappTestMode.set(false);
+    this.whatsappFollowUpMode.set(false);
+    this.whatsappReviewMode.set(false);
+    this.whatsappReview.set(null);
+    this.whatsappReviewNote.set('');
+    this.whatsappWebResult.set(null);
+    this.whatsappManualFallbackOpen.set(false);
+  }
+
+  private get ui() { return this.injector.get(DASHBOARD_MESSAGES_UI); }
+
+  private get presentation() { return this.injector.get(DASHBOARD_MESSAGES_PRESENTATION); }
+
+  private get navigation() { return this.injector.get(DASHBOARD_MESSAGES_NAVIGATION); }
 
   private get orders() { return this.injector.get(DASHBOARD_MESSAGES_ORDERS); }
 }

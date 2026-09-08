@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@
 import { FormsModule } from '@angular/forms';
 import {
   DASHBOARD_CAPTCHAS_VIEW_CAPTCHAS,
-  DASHBOARD_CAPTCHAS_VIEW_SHELL,
+  DASHBOARD_CAPTCHAS_VIEW_PRESENTATION,
 } from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
@@ -17,6 +17,6 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
 })
 export class CaptchasViewComponent {
   protected readonly captchasDomain = inject(DASHBOARD_CAPTCHAS_VIEW_CAPTCHAS);
-  protected readonly shellDomain = inject(DASHBOARD_CAPTCHAS_VIEW_SHELL);
+  protected readonly presentationDomain = inject(DASHBOARD_CAPTCHAS_VIEW_PRESENTATION);
 
 }

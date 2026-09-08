@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'worker-restart') {
+@if (uiDomain.activeModal() === 'worker-restart') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -9,13 +9,13 @@
       <div class="modal-header">
         <div>
           <h2 id="worker-restart-title">Reiniciar worker</h2>
-          <p>{{ shellDomain.phaseLabel(shellDomain.worker()?.phase ?? shellDomain.health()?.reason) }}</p>
+          <p>{{ operationsDomain.phaseLabel(operationsDomain.worker()?.phase ?? operationsDomain.health()?.reason) }}</p>
         </div>
         <button
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          (click)="shellDomain.closeModal()"
+          (click)="uiDomain.closeModal()"
         >
           Cerrar
         </button>
@@ -25,13 +25,13 @@
           <dt>Worker</dt>
           <dd>
             {{
-              shellDomain.worker()?.worker_running || shellDomain.health()?.worker_running ? 'activo' : 'sin confirmar'
+              operationsDomain.worker()?.worker_running || operationsDomain.health()?.worker_running ? 'activo' : 'sin confirmar'
             }}
           </dd>
         </div>
         <div>
           <dt>Actividad actual</dt>
-          <dd>{{ shellDomain.currentWorkLabel() }}</dd>
+          <dd>{{ operationsDomain.currentWorkLabel() }}</dd>
         </div>
       </dl>
       <section class="restart-backoff-option">
@@ -39,8 +39,8 @@
           <input
             name="releaseSafeBackoffsOnRestart"
             type="checkbox"
-            [ngModel]="shellDomain.releaseSafeBackoffsOnRestart()"
-            (ngModelChange)="shellDomain.releaseSafeBackoffsOnRestart.set($event)"
+            [ngModel]="operationsDomain.releaseSafeBackoffsOnRestart()"
+            (ngModelChange)="operationsDomain.releaseSafeBackoffsOnRestart.set($event)"
           />
           <span>
             <strong>Quitar backoff de errores técnicos seguros</strong>
@@ -52,10 +52,10 @@
         </label>
       </section>
       <div class="modal-actions">
-        <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cancelar</button>
-        <button type="button" class="danger" (click)="shellDomain.requestRestartWorker()">
+        <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
+        <button type="button" class="danger" (click)="operationsDomain.requestRestartWorker()">
           {{
-            shellDomain.releaseSafeBackoffsOnRestart()
+            operationsDomain.releaseSafeBackoffsOnRestart()
               ? 'Reiniciar y reintentar'
               : 'Reiniciar worker'
           }}

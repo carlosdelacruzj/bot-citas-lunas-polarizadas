@@ -27,7 +27,7 @@
   @if (captchasDomain.captchaSummary(); as summary) {
     <div class="captcha-summary-strip" aria-label="Resumen de CAPTCHA">
       <span class="status-inline {{ summary.status === 'ok' ? 'good' : 'bad' }}">
-        {{ summary.status === 'ok' ? 'Servicio activo' : shellDomain.statusLabel(summary.status) }}
+        {{ summary.status === 'ok' ? 'Servicio activo' : presentationDomain.statusLabel(summary.status) }}
       </span>
       <strong>{{ summary.stats.events }} total</strong>
       <span>{{ summary.stats.human_labeled }} validados</span>
@@ -106,7 +106,7 @@
           <div>
             <strong>{{ captchasDomain.captchaOrderLabel(event) }}</strong>
             <span>{{
-              shellDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+              presentationDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
             }}</span>
           </div>
           <span class="badge warn">{{ captchasDomain.captchaReviewReasonLabel(event) }}</span>
@@ -403,7 +403,7 @@
                 <strong>{{ captchasDomain.captchaOrderLabel(event) }}</strong>
                 <span>
                   {{
-                    shellDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
+                    presentationDomain.formatDateTime(event.metadata.captured_at_utc ?? event.received_at_utc)
                   }}
                   · intento {{ event.metadata.attempt ?? 1 }}
                 </span>
@@ -890,7 +890,7 @@
                   <div class="captcha-quality-case-copy">
                     <div>
                       <strong>{{ captchasDomain.captchaQualityCaseSummary(item) }}</strong>
-                      <span>{{ shellDomain.formatDateTime(item.received_at_utc) }}</span>
+                      <span>{{ presentationDomain.formatDateTime(item.received_at_utc) }}</span>
                     </div>
                     <div class="captcha-quality-case-answers">
                       <span class="good">Humano <strong>{{ item.human_answer }}</strong></span>

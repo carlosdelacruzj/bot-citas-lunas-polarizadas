@@ -227,7 +227,7 @@
       <button
         type="button"
         class="primary"
-        [disabled]="!canSubmitProgramResolution() || shellDomain.actionBusy()"
+        [disabled]="!canSubmitProgramResolution() || uiDomain.actionBusy()"
         (click)="requestProgramResolution()"
       >
         Revisar y confirmar decisión
@@ -246,7 +246,7 @@
             <small>No se envió ni se encoló. Una acción posterior separada deberá autorizar cualquier comunicación.</small>
           </div>
         }
-        <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cerrar</button>
+        <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cerrar</button>
       </section>
     }
   } @else {

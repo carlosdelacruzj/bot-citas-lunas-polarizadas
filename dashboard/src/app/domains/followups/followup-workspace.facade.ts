@@ -9,7 +9,7 @@ import {
 } from '../../appointment-api.service';
 import {
   DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS,
-  DASHBOARD_FOLLOWUPS_VIEW_SHELL,
+  DASHBOARD_FOLLOWUPS_VIEW_PRESENTATION,
 } from '../../dashboard-domain.ports';
 type FollowupWorkspace = 'upcoming' | 'post_appointment' | 'history';
 
@@ -61,7 +61,7 @@ function paginationWindow(current: number, total: number): number[] {
 export class FollowupWorkspaceFacade {
   public readonly followupsDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS);
 
-  public readonly shellDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_SHELL);
+  public readonly presentationDomain = inject(DASHBOARD_FOLLOWUPS_VIEW_PRESENTATION);
 
   private readonly api = inject(AppointmentApiService);
 
@@ -327,7 +327,7 @@ export class FollowupWorkspaceFacade {
       uncertain: 'Envío incierto', skipped: 'Omitido al revalidar',
       scheduled: 'Cita programada',
     };
-    return labels[status] ?? this.shellDomain.statusLabel(status);
+    return labels[status] ?? this.presentationDomain.statusLabel(status);
   }
 
   public reminderCandidateNextAction(status: string): string {
@@ -355,14 +355,14 @@ export class FollowupWorkspaceFacade {
   public postAppointmentFreshnessLabel(item: PostAppointmentFollowup): string {
     if (item.review_freshness === 'not_applicable') {
       return item.last_reviewed_at
-        ? `Seguimiento finalizado · última revisión: ${this.shellDomain.formatDateTime(item.last_reviewed_at)}`
+        ? `Seguimiento finalizado · última revisión: ${this.presentationDomain.formatDateTime(item.last_reviewed_at)}`
         : 'Seguimiento finalizado';
     }
     if (item.review_freshness === 'not_reviewed' || !item.last_reviewed_at) {
       return 'Nunca revisado';
     }
     const prefix = item.review_freshness === 'current' ? 'Actualizada hoy' : 'Desactualizada';
-    return `${prefix} · última revisión: ${this.shellDomain.formatDateTime(item.last_reviewed_at)}`;
+    return `${prefix} · última revisión: ${this.presentationDomain.formatDateTime(item.last_reviewed_at)}`;
   }
 
   public postAppointmentFreshnessTone(item: PostAppointmentFollowup): 'current' | 'stale' | 'neutral' {
@@ -373,7 +373,7 @@ export class FollowupWorkspaceFacade {
 
   public postAppointmentNextReviewLabel(item: PostAppointmentFollowup): string | null {
     if (!item.next_automatic_review_at) return null;
-    return `Elegible para revisión automática desde: ${this.shellDomain.formatDateTime(item.next_automatic_review_at)}`;
+    return `Elegible para revisión automática desde: ${this.presentationDomain.formatDateTime(item.next_automatic_review_at)}`;
   }
 
   public handleReminderDialogClosed(): void {
@@ -464,12 +464,14 @@ export class FollowupWorkspaceFacade {
     return Boolean(value && value >= PERU_DATE_FORMATTER.format(new Date()));
   }
 
-  public prepareReminderEditor(): void { const status = this.reminderStatus();
-if (status) this.syncReminderEditor(status);
-this.reminderSaveError.set(null);
-this.reminderSaveSuccess.set(null);
-this.reminderActivationReview.set(false);
-this.reminderEditorOpen.set(true); }
+  public prepareReminderEditor(): void {
+    const status = this.reminderStatus();
+    if (status) this.syncReminderEditor(status);
+    this.reminderSaveError.set(null);
+    this.reminderSaveSuccess.set(null);
+    this.reminderActivationReview.set(false);
+    this.reminderEditorOpen.set(true);
+  }
 }
 
 export type FollowupWorkspaceFacadeView = Pick<FollowupWorkspaceFacade,
@@ -489,7 +491,7 @@ export type FollowupWorkspaceFacadeView = Pick<FollowupWorkspaceFacade,
   | "reminderCandidateSort"
   | "chooseReminderSort"
   | "filteredReminderCandidates"
-  | "shellDomain"
+  | "presentationDomain"
   | "reminderCandidates"
   | "reminderCandidateStatusLabel"
   | "reminderCandidateNextAction"

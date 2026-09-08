@@ -16,7 +16,12 @@ import {
   ServiceOrder,
 } from '../../appointment-api.service';
 import { INITIAL_DATE, INITIAL_MONTH } from '../../dashboard-domain.contracts';
-import { DASHBOARD_FINANCE_ORDERS, DASHBOARD_FINANCE_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_FINANCE_NAVIGATION,
+  DASHBOARD_FINANCE_ORDERS,
+  DASHBOARD_FINANCE_PRESENTATION,
+  DASHBOARD_FINANCE_UI,
+} from '../../dashboard-domain.ports';
 import { RequestScope } from '../../request-cancellation';
 import { buildPaymentPayload } from '../../sensitive-form-payloads';
 
@@ -99,10 +104,10 @@ export class FinanceFacade {
       return;
     }
     this.selectedMonth.set(month);
-    const view = this.shell.activeView();
+    const view = this.navigation.activeView();
     this.monthlyLoading.set(view === 'summary');
     this.financeLoading.set(view === 'finance');
-    this.shell.errorMessage.set(null);
+    this.ui.errorMessage.set(null);
     try {
       if (view === 'summary') {
         this.monthlySummary.set(await this.api.getMonthlySummaryV2(month));
@@ -121,7 +126,7 @@ export class FinanceFacade {
         this.monthlySummary.set(monthlySummary);
       }
     } catch (error) {
-      this.shell.errorMessage.set(this.shell.readError(error));
+      this.ui.errorMessage.set(this.presentation.readError(error));
     } finally {
       this.monthlyLoading.set(false);
       this.financeLoading.set(false);
@@ -137,7 +142,7 @@ export class FinanceFacade {
 
   public openNewFinanceEntry(): void {
     this.clearFinanceForm();
-    this.shell.openModal('finance-entry');
+    this.ui.openModal('finance-entry');
   }
 
   public openEditFinanceEntry(entry: FinanceEntry): void {
@@ -163,7 +168,7 @@ export class FinanceFacade {
     this.financeEvidenceReference.set(entry.evidence_reference ?? '');
     this.financeNotes.set(entry.notes ?? '');
     this.financeDataQuality.set(entry.data_quality);
-    this.shell.openModal('finance-entry');
+    this.ui.openModal('finance-entry');
   }
 
   public openEditFinanceEntryById(entryId: string): void {
@@ -179,7 +184,7 @@ export class FinanceFacade {
       return;
     }
     const entryId = this.editingFinanceEntryId();
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: entryId ? 'Actualizar movimiento' : 'Registrar movimiento',
       message: entryId
         ? `Actualizar ${entryId}. El historial conservara la fecha de modificacion.`
@@ -189,7 +194,7 @@ export class FinanceFacade {
           ? this.api.updateFinanceEntry(entryId, payload)
           : this.api.createFinanceEntry(payload),
       onSuccess: () => {
-        this.shell.activeModal.set(null);
+        this.ui.activeModal.set(null);
         this.clearFinanceForm();
       },
     });
@@ -199,7 +204,7 @@ export class FinanceFacade {
     if (entry.status !== 'active') {
       return;
     }
-    void (await this.shell.getSweetAlert()).fire({
+    void (await this.ui.getSweetAlert()).fire({
       title: 'Anular movimiento',
       text: 'Escribe el motivo. El registro se conservara para auditoria y dejara de calcularse.',
       input: 'text',
@@ -214,15 +219,15 @@ export class FinanceFacade {
       if (!result.isConfirmed || !result.value) {
         return;
       }
-      this.shell.actionBusy.set(true);
+      this.ui.actionBusy.set(true);
       try {
         await this.api.voidFinanceEntry(entry.entry_id, String(result.value).trim());
-        await this.shell.refreshAll();
-        this.shell.showToast('Movimiento anulado');
+        await this.navigation.refreshAll();
+        this.ui.showToast('Movimiento anulado');
       } catch (error) {
-        this.shell.errorMessage.set(this.shell.readError(error));
+        this.ui.errorMessage.set(this.presentation.readError(error));
       } finally {
-        this.shell.actionBusy.set(false);
+        this.ui.actionBusy.set(false);
       }
     });
   }
@@ -259,11 +264,11 @@ export class FinanceFacade {
   public requestReconcileFinancePayment(paymentId: string): void {
     const reason = this.financeMismatchReason().trim();
     if (reason.length < 3) {
-      this.shell.errorMessage.set('Indica una causa de al menos 3 caracteres.');
+      this.ui.errorMessage.set('Indica una causa de al menos 3 caracteres.');
       return;
     }
     const resolution = this.financeMismatchResolution();
-    void this.shell.setPendingAction({
+    void this.ui.setPendingAction({
       title: 'Conciliar diferencia de pago',
       message: `Registrar ${this.financeResolutionLabel(resolution).toLowerCase()} como causa explícita. El importe original no se reescribe.`,
       execute: () =>
@@ -288,10 +293,10 @@ export class FinanceFacade {
     const opening = String(this.financeClosureOpeningBalance() ?? '').trim();
     const closing = String(this.financeClosureClosingBalance() ?? '').trim();
     if (status === 'reconciled' && (!opening || !closing)) {
-      this.shell.errorMessage.set('Para conciliar, completa saldo inicial y saldo final.');
+      this.ui.errorMessage.set('Para conciliar, completa saldo inicial y saldo final.');
       return;
     }
-    void this.shell.setPendingAction({
+    void this.ui.setPendingAction({
       title: status === 'reconciled' ? 'Cerrar mes financiero' : 'Guardar borrador de cierre',
       message:
         status === 'reconciled'
@@ -314,11 +319,11 @@ export class FinanceFacade {
     const quality = this.financeQuality();
     return Boolean(
       closure &&
-        quality &&
-        this.financeSelectedMonthIsClosed() &&
-        closure.movements.pending_entries === 0 &&
-        closure.movements.unconverted_entries === 0 &&
-        quality.unreconciled_paid_amount_mismatch_count === 0,
+      quality &&
+      this.financeSelectedMonthIsClosed() &&
+      closure.movements.pending_entries === 0 &&
+      closure.movements.unconverted_entries === 0 &&
+      quality.unreconciled_paid_amount_mismatch_count === 0,
     );
   }
 
@@ -352,10 +357,10 @@ export class FinanceFacade {
     if (period.coverage_end_exclusive <= period.start) {
       return 'Sin cobertura todavía';
     }
-    const start = this.shell.formatDate(period.start);
+    const start = this.presentation.formatDate(period.start);
     const end = new Date(`${period.coverage_end_exclusive}T12:00:00`);
     end.setDate(end.getDate() - 1);
-    return `${start} – ${this.shell.formatDate(end.toISOString().slice(0, 10))}`;
+    return `${start} – ${this.presentation.formatDate(end.toISOString().slice(0, 10))}`;
   }
 
   public selectedMonthLabel(): string {
@@ -391,10 +396,10 @@ export class FinanceFacade {
 
   private revenueDeltaLabel(current: number, previous: number): string {
     if (!previous) {
-      return current > 0 ? `${this.shell.formatMoney(current)} · sin cobros comparables previos` : 'Sin cobros en ambos rangos';
+      return current > 0 ? `${this.presentation.formatMoney(current)} · sin cobros comparables previos` : 'Sin cobros en ambos rangos';
     }
     const change = current / previous - 1;
-    return `${this.shell.formatMoney(current)} · ${change >= 0 ? '+' : ''}${this.shell.formatPercent(change)}`;
+    return `${this.presentation.formatMoney(current)} · ${change >= 0 ? '+' : ''}${this.presentation.formatPercent(change)}`;
   }
 
   public async openPayment(order: ServiceOrder): Promise<void> {
@@ -403,7 +408,7 @@ export class FinanceFacade {
     const agreedAmount = order.amount_agreed ?? order.reservation_price ?? standardAmount;
     this.paymentAmountAgreed.set(agreedAmount);
     this.paymentAmountPaid.set(agreedAmount);
-    this.shell.openModal('payment');
+    this.ui.openModal('payment');
     await this.orders.loadSelectedOrderDetail(order.order_id);
     const refreshed = this.orders.selectedOrderDetail();
     if (refreshed?.order_id === order.order_id) {
@@ -415,7 +420,7 @@ export class FinanceFacade {
   }
 
   public setQuickPaymentAmount(amount: string): void {
-    this.shell.editField(this.paymentAmountPaid, amount);
+    this.ui.editField(this.paymentAmountPaid, amount);
   }
 
   public requestMarkPaid(): void {
@@ -429,14 +434,14 @@ export class FinanceFacade {
       expected_amount_paid: order.amount_paid ?? '0.00',
     });
     if (!result.payload) {
-      this.shell.errorMessage.set(result.error);
+      this.ui.errorMessage.set(result.error);
       return;
     }
     const payload = result.payload;
     const paid = Number(payload.amount_paid);
     const agreed = Number(payload.amount_agreed);
     const isPartial = Number.isFinite(agreed) && paid < agreed;
-    this.shell.setPendingAction({
+    this.ui.setPendingAction({
       title: isPartial ? 'Registrar abono' : 'Confirmar pago completo',
       message: isPartial
         ? `Guardar total acumulado de S/${payload.amount_paid} para ${order.order_id}. El saldo seguirá pendiente.`
@@ -447,7 +452,7 @@ export class FinanceFacade {
       successMessage: isPartial
         ? 'Abono registrado; el saldo permanece pendiente'
         : 'Pago completo registrado; envío automático en proceso',
-      onSuccess: () => this.shell.activeModal.set(null),
+      onSuccess: () => this.ui.activeModal.set(null),
     });
   }
 
@@ -455,7 +460,7 @@ export class FinanceFacade {
     if (!order.charge_required) {
       return 'Sin cobro';
     }
-    return this.shell.statusLabel(order.payment_status, 'Sin pago');
+    return this.presentation.statusLabel(order.payment_status, 'Sin pago');
   }
 
   public paymentAmountLabel(order: ServiceOrder): string {
@@ -478,11 +483,11 @@ export class FinanceFacade {
     const quantity = String(this.financeQuantity() ?? '').trim();
     const amount = Number(amountOriginal);
     if (!this.financeOccurredOn() || !this.financeDescription().trim()) {
-      this.shell.errorMessage.set('Fecha y descripcion son obligatorias.');
+      this.ui.errorMessage.set('Fecha y descripcion son obligatorias.');
       return null;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
-      this.shell.errorMessage.set('El importe debe ser mayor que cero.');
+      this.ui.errorMessage.set('El importe debe ser mayor que cero.');
       return null;
     }
     if (
@@ -490,25 +495,25 @@ export class FinanceFacade {
       exchangeRate &&
       (!Number.isFinite(Number(exchangeRate)) || Number(exchangeRate) <= 0)
     ) {
-      this.shell.errorMessage.set('El tipo de cambio debe ser mayor que cero.');
+      this.ui.errorMessage.set('El tipo de cambio debe ser mayor que cero.');
       return null;
     }
     return {
       occurred_on: this.financeOccurredOn(),
       entry_kind: this.financeEntryKind(),
       category_code: this.financeCategoryCode(),
-      vendor: this.shell.optionalText(this.financeVendor()),
+      vendor: this.presentation.optionalText(this.financeVendor()),
       description: this.financeDescription().trim(),
       amount_original: amountOriginal,
       currency: this.financeCurrency().trim().toUpperCase(),
-      exchange_rate_pen: this.financeCurrency() === 'PEN' ? null : this.shell.optionalText(exchangeRate),
-      quantity: this.shell.optionalText(quantity),
-      unit: this.shell.optionalText(this.financeUnit()),
-      channel: this.shell.optionalText(this.financeChannel()),
-      campaign: this.shell.optionalText(this.financeCampaign()),
-      order_id: this.shell.optionalText(this.financeOrderId()),
-      evidence_reference: this.shell.optionalText(this.financeEvidenceReference()),
-      notes: this.shell.optionalText(this.financeNotes()),
+      exchange_rate_pen: this.financeCurrency() === 'PEN' ? null : this.presentation.optionalText(exchangeRate),
+      quantity: this.presentation.optionalText(quantity),
+      unit: this.presentation.optionalText(this.financeUnit()),
+      channel: this.presentation.optionalText(this.financeChannel()),
+      campaign: this.presentation.optionalText(this.financeCampaign()),
+      order_id: this.presentation.optionalText(this.financeOrderId()),
+      evidence_reference: this.presentation.optionalText(this.financeEvidenceReference()),
+      notes: this.presentation.optionalText(this.financeNotes()),
       data_quality: this.financeDataQuality(),
     };
   }
@@ -531,7 +536,7 @@ export class FinanceFacade {
     this.financeEvidenceReference.set('');
     this.financeNotes.set('');
     this.financeDataQuality.set('actual');
-    this.shell.formDirty.set(false);
+    this.ui.formDirty.set(false);
   }
 
   private applyFinanceMonthClosure(payload: FinanceMonthClosure): void {
@@ -552,34 +557,40 @@ export class FinanceFacade {
   }
 
   public async loadFinanceView(scope: RequestScope): Promise<void> {
-      const categoriesRequest = this.financeCategories().length
-        ? Promise.resolve(this.financeCategories())
-        : this.api.getFinanceCategories(scope);
-      const [
-        financeCategories,
-        financeEntries,
-        financeSummary,
-        financeQuality,
-        financeMonthClosure,
-        monthlySummary,
-      ] = await Promise.all([
-        categoriesRequest,
-        this.api.getFinanceEntries(this.selectedMonth(), scope),
-        this.api.getFinanceSummary(this.selectedMonth(), scope),
-        this.api.getFinanceDataQuality(this.selectedMonth(), scope),
-        this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
-        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
-      ]);
-      this.financeCategories.set(financeCategories);
-      this.financeEntries.set(financeEntries);
-      this.financeSummary.set(financeSummary);
-      this.financeQuality.set(financeQuality);
-      this.applyFinanceMonthClosure(financeMonthClosure);
-      this.monthlySummary.set(monthlySummary);
-      return;
-    }
+    const categoriesRequest = this.financeCategories().length
+      ? Promise.resolve(this.financeCategories())
+      : this.api.getFinanceCategories(scope);
+    const [
+      financeCategories,
+      financeEntries,
+      financeSummary,
+      financeQuality,
+      financeMonthClosure,
+      monthlySummary,
+    ] = await Promise.all([
+      categoriesRequest,
+      this.api.getFinanceEntries(this.selectedMonth(), scope),
+      this.api.getFinanceSummary(this.selectedMonth(), scope),
+      this.api.getFinanceDataQuality(this.selectedMonth(), scope),
+      this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
+      this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
+    ]);
+    this.financeCategories.set(financeCategories);
+    this.financeEntries.set(financeEntries);
+    this.financeSummary.set(financeSummary);
+    this.financeQuality.set(financeQuality);
+    this.applyFinanceMonthClosure(financeMonthClosure);
+    this.monthlySummary.set(monthlySummary);
+    return;
+  }
 
-  private get shell() { return this.injector.get(DASHBOARD_FINANCE_SHELL); }
+  public fetchMonthlySummary(scope: RequestScope) { return this.api.getMonthlySummaryV2(this.selectedMonth(), scope); }
+
+  private get navigation() { return this.injector.get(DASHBOARD_FINANCE_NAVIGATION); }
+
+  private get ui() { return this.injector.get(DASHBOARD_FINANCE_UI); }
+
+  private get presentation() { return this.injector.get(DASHBOARD_FINANCE_PRESENTATION); }
 
   private get orders() { return this.injector.get(DASHBOARD_FINANCE_ORDERS); }
 }

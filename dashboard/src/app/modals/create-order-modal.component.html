@@ -1,4 +1,4 @@
-@if (shellDomain.activeModal() === 'create-order') {
+@if (uiDomain.activeModal() === 'create-order') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -15,7 +15,7 @@
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          (click)="shellDomain.closeModal()"
+          (click)="uiDomain.closeModal()"
         >
           Cerrar
         </button>
@@ -28,7 +28,7 @@
             name="newDocumentType"
             required
             [ngModel]="ordersDomain.newDocumentType()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newDocumentType, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newDocumentType, $event)"
           >
             <option value="dni">DNI</option>
             <option value="foreign_resident_card">Carné de Extranjería</option>
@@ -41,10 +41,10 @@
             type="text"
             autocomplete="off"
             required
-            [attr.aria-invalid]="!ordersDomain.newDocumentNumber().trim() && shellDomain.formDirty()"
+            [attr.aria-invalid]="!ordersDomain.newDocumentNumber().trim() && uiDomain.formDirty()"
             aria-describedby="create-required-help dashboard-error"
             [ngModel]="ordersDomain.newDocumentNumber()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newDocumentNumber, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newDocumentNumber, $event)"
           />
         </label>
         <label>
@@ -54,10 +54,10 @@
             type="password"
             autocomplete="new-password"
             required
-            [attr.aria-invalid]="!ordersDomain.newPassword() && shellDomain.formDirty()"
+            [attr.aria-invalid]="!ordersDomain.newPassword() && uiDomain.formDirty()"
             aria-describedby="create-required-help dashboard-error"
             [ngModel]="ordersDomain.newPassword()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newPassword, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newPassword, $event)"
           />
         </label>
         <label>
@@ -66,10 +66,10 @@
             name="newContactName"
             type="text"
             required
-            [attr.aria-invalid]="!ordersDomain.newContactName().trim() && shellDomain.formDirty()"
+            [attr.aria-invalid]="!ordersDomain.newContactName().trim() && uiDomain.formDirty()"
             aria-describedby="create-required-help dashboard-error"
             [ngModel]="ordersDomain.newContactName()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newContactName, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactName, $event)"
           />
         </label>
         <label>
@@ -78,7 +78,7 @@
             name="newContactWhatsapp"
             type="text"
             [ngModel]="ordersDomain.newContactWhatsapp()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newContactWhatsapp, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsapp, $event)"
           />
         </label>
         <label>
@@ -88,7 +88,7 @@
             type="text"
             placeholder="@usuario"
             [ngModel]="ordersDomain.newContactWhatsappUsername()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newContactWhatsappUsername, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactWhatsappUsername, $event)"
           />
           <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
         </label>
@@ -97,10 +97,10 @@
           <select
             name="newContactSource"
             required
-            [attr.aria-invalid]="!ordersDomain.newContactSource() && shellDomain.formDirty()"
+            [attr.aria-invalid]="!ordersDomain.newContactSource() && uiDomain.formDirty()"
             aria-describedby="create-required-help dashboard-error"
             [ngModel]="ordersDomain.newContactSource()"
-            (ngModelChange)="shellDomain.editField(ordersDomain.newContactSource, $event)"
+            (ngModelChange)="uiDomain.editField(ordersDomain.newContactSource, $event)"
           >
             <option value="">Selecciona una fuente</option>
             <option value="tiktok">TikTok</option>
@@ -126,7 +126,7 @@
               name="newServicePackage"
               required
               [ngModel]="ordersDomain.newServicePackage()"
-              (ngModelChange)="shellDomain.editField(ordersDomain.newServicePackage, $event)"
+              (ngModelChange)="uiDomain.editField(ordersDomain.newServicePackage, $event)"
             >
               @for (servicePackage of ordersDomain.servicePackages(); track servicePackage.key) {
                 <option [ngValue]="servicePackage.key">
@@ -146,7 +146,7 @@
                 step="0.01"
                 required
                 [ngModel]="ordersDomain.newCustomReservationPrice()"
-                (ngModelChange)="shellDomain.editField(ordersDomain.newCustomReservationPrice, $event)"
+                (ngModelChange)="uiDomain.editField(ordersDomain.newCustomReservationPrice, $event)"
               />
             </label>
           }
@@ -155,21 +155,21 @@
           <p class="required-help">
             Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
             disponibilidad acordada. El precio queda fijado en
-            {{ shellDomain.formatMoney(+(ordersDomain.newServicePackageDefinition()?.total_amount || 0)) }}.
+            {{ presentationDomain.formatMoney(+(ordersDomain.newServicePackageDefinition()?.total_amount || 0)) }}.
           </p>
         }
         @if (ordersDomain.newServicePackage() === 'integral' && ordersDomain.newServicePackageDefinition(); as servicePackage) {
           <p class="required-help">
             Al crear la orden confirmas que recibiste el primer abono de
-            {{ shellDomain.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
-            oficial de {{ shellDomain.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
+            {{ presentationDomain.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
+            oficial de {{ presentationDomain.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
             registrará ambos movimientos y dejará
-            {{ shellDomain.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
+            {{ presentationDomain.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
           </p>
           <dl class="payment-summary">
-            <div><dt>Total</dt><dd>{{ shellDomain.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
-            <div><dt>Tasa oficial</dt><dd>{{ shellDomain.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
-            <div><dt>Gestión</dt><dd>{{ shellDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
+            <div><dt>Total</dt><dd>{{ presentationDomain.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
+            <div><dt>Tasa oficial</dt><dd>{{ presentationDomain.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
+            <div><dt>Gestión</dt><dd>{{ presentationDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
           </dl>
         }
       </fieldset>
@@ -191,11 +191,11 @@
           [excludedDateRanges]="ordersDomain.newExcludedDateRanges()"
           [excludedDateStart]="ordersDomain.newExcludedDateStart()"
           [excludedDateEnd]="ordersDomain.newExcludedDateEnd()"
-          (minimumDateChange)="shellDomain.editField(ordersDomain.newMinimumReservationDate, $event)"
-          (maximumDateChange)="shellDomain.editField(ordersDomain.newMaximumReservationDate, $event)"
-          (allowedWeekdaysChange)="shellDomain.editField(ordersDomain.newAllowedWeekdays, $event)"
-          (excludedDateStartChange)="shellDomain.editField(ordersDomain.newExcludedDateStart, $event)"
-          (excludedDateEndChange)="shellDomain.editField(ordersDomain.newExcludedDateEnd, $event)"
+          (minimumDateChange)="uiDomain.editField(ordersDomain.newMinimumReservationDate, $event)"
+          (maximumDateChange)="uiDomain.editField(ordersDomain.newMaximumReservationDate, $event)"
+          (allowedWeekdaysChange)="uiDomain.editField(ordersDomain.newAllowedWeekdays, $event)"
+          (excludedDateStartChange)="uiDomain.editField(ordersDomain.newExcludedDateStart, $event)"
+          (excludedDateEndChange)="uiDomain.editField(ordersDomain.newExcludedDateEnd, $event)"
           (addExcludedDateRange)="ordersDomain.addNewExcludedDateRange()"
           (removeExcludedDateRange)="ordersDomain.removeNewExcludedDateRange($event)"
           (clearExcludedDateRanges)="ordersDomain.clearNewExcludedDateRanges()"
@@ -203,7 +203,7 @@
       </fieldset>
 
       <div class="modal-actions">
-        <button type="button" class="secondary" (click)="shellDomain.closeModal()">Cancelar</button>
+        <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
         <button type="button" class="primary" (click)="ordersDomain.requestCreateOrder()">
           Crear orden
         </button>
