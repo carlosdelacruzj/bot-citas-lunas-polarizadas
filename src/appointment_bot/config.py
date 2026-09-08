@@ -1,10 +1,13 @@
 import os
 from dataclasses import dataclass
 from datetime import time as datetime_time
+from functools import cached_property
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
 from appointment_bot.configuration.parsers import (
     _parse_bool,
     _parse_evidence_profile,
@@ -14,22 +17,12 @@ from appointment_bot.configuration.parsers import (
     _parse_time,
     _parse_time_windows,
 )
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.configuration.telegram import TelegramSettings
+from appointment_bot.configuration.whatsapp import WhatsappSettings
 
 OPPORTUNITY_BURST_SESSION_LIMIT = 3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 DEFAULT_OBSERVER_HOT_WINDOWS = (
@@ -142,6 +135,128 @@ class Settings:
         if len(self.login_username) <= 3:
             return "***"
         return f"{self.login_username[:2]}***{self.login_username[-1]}"
+
+    @cached_property
+    def runtime(self) -> RuntimeSettings:
+        return RuntimeSettings(
+            headless=self.headless,
+            block_heavy_assets=self.block_heavy_assets,
+            log_level=self.log_level,
+            error_backoff_seconds=self.error_backoff_seconds,
+            queue_max_reservations_per_run=self.queue_max_reservations_per_run,
+            queue_delay_min_seconds=self.queue_delay_min_seconds,
+            queue_delay_max_seconds=self.queue_delay_max_seconds,
+            continuous_worker_enabled=self.continuous_worker_enabled,
+            worker_embedded_api_enabled=self.worker_embedded_api_enabled,
+            worker_progress_grace_seconds=self.worker_progress_grace_seconds,
+            final_ready_review_enabled=self.final_ready_review_enabled,
+            worker_daily_cutoff_time=self.worker_daily_cutoff_time,
+            observer_session_seconds=self.observer_session_seconds,
+            observer_max_attempts=self.observer_max_attempts,
+            observer_interval_min_seconds=self.observer_interval_min_seconds,
+            observer_interval_max_seconds=self.observer_interval_max_seconds,
+            observer_site_toggle_enabled=self.observer_site_toggle_enabled,
+            observer_site_toggle_attempts=self.observer_site_toggle_attempts,
+            observer_site_toggle_interval_min_seconds=self.observer_site_toggle_interval_min_seconds,
+            observer_site_toggle_interval_max_seconds=self.observer_site_toggle_interval_max_seconds,
+            observer_reload_probe_after_attempt=self.observer_reload_probe_after_attempt,
+            observer_active_order_limit=self.observer_active_order_limit,
+            opportunity_handoff_max_candidates=self.opportunity_handoff_max_candidates,
+            opportunity_handoff_max_seconds=self.opportunity_handoff_max_seconds,
+            opportunity_burst_max_sessions=self.opportunity_burst_max_sessions,
+            opportunity_burst_max_clients=self.opportunity_burst_max_clients,
+            opportunity_burst_max_seconds=self.opportunity_burst_max_seconds,
+            opportunity_burst_session_seconds=self.opportunity_burst_session_seconds,
+            opportunity_burst_attempts=self.opportunity_burst_attempts,
+            opportunity_burst_reload_probe_after_attempt=self.opportunity_burst_reload_probe_after_attempt,
+            slot_lost_reobservation_seconds=self.slot_lost_reobservation_seconds,
+            slot_lost_reobservation_attempts=self.slot_lost_reobservation_attempts,
+            slot_lost_reobservation_reload_probe_after_attempt=self.slot_lost_reobservation_reload_probe_after_attempt,
+            observer_required_site=self.observer_required_site,
+            observer_hot_windows=self.observer_hot_windows,
+            observer_hot_window_extension_seconds=self.observer_hot_window_extension_seconds,
+            outside_hot_window_min_seconds=self.outside_hot_window_min_seconds,
+            outside_hot_window_max_seconds=self.outside_hot_window_max_seconds,
+            unavailable_streak_limit=self.unavailable_streak_limit,
+            recovery_backoff_min_seconds=self.recovery_backoff_min_seconds,
+            recovery_backoff_max_seconds=self.recovery_backoff_max_seconds,
+            database_url=self.database_url,
+            logs_dir=self.logs_dir,
+            credential_encryption_keys=self.credential_encryption_keys,
+        )
+
+    @cached_property
+    def reservation(self) -> ReservationSettings:
+        return ReservationSettings(
+            target_url=self.target_url,
+            login_username=self.login_username,
+            login_password=self.login_password,
+            login_document_type=self.login_document_type,
+            auto_reserve=self.auto_reserve,
+            monitor_window_seconds=self.monitor_window_seconds,
+            monitor_max_attempts=self.monitor_max_attempts,
+            monitor_interval_min_seconds=self.monitor_interval_min_seconds,
+            monitor_interval_max_seconds=self.monitor_interval_max_seconds,
+            monitor_site_toggle_enabled=self.monitor_site_toggle_enabled,
+            monitor_reload_probe_after_attempt=self.monitor_reload_probe_after_attempt,
+            session_retry_delays_seconds=self.session_retry_delays_seconds,
+            login_timeout_seconds=self.login_timeout_seconds,
+            postback_timeout_seconds=self.postback_timeout_seconds,
+            read_timeout_seconds=self.read_timeout_seconds,
+            reservation_timeout_seconds=self.reservation_timeout_seconds,
+        )
+
+    @cached_property
+    def captcha(self) -> CaptchaSettings:
+        return CaptchaSettings(
+            captcha_api_key=self.captcha_api_key,
+            captcha_rejection_cooldown_seconds=self.captcha_rejection_cooldown_seconds,
+            reservation_captcha_max_attempts=self.reservation_captcha_max_attempts,
+            observer_captcha_sample_limit=self.observer_captcha_sample_limit,
+            captcha_shadow_enabled=self.captcha_shadow_enabled,
+            captcha_shadow_url=self.captcha_shadow_url,
+            captcha_shadow_queue_size=self.captcha_shadow_queue_size,
+            captcha_shadow_timeout_seconds=self.captcha_shadow_timeout_seconds,
+            reservation_captcha_sample_limit=self.reservation_captcha_sample_limit,
+            reservation_captcha_runtime_control_enabled=self.reservation_captcha_runtime_control_enabled,
+            reservation_math_pre_submit_delay_min_seconds=self.reservation_math_pre_submit_delay_min_seconds,
+            reservation_math_pre_submit_delay_max_seconds=self.reservation_math_pre_submit_delay_max_seconds,
+        )
+
+    @cached_property
+    def evidence(self) -> EvidenceSettings:
+        return EvidenceSettings(
+            screenshot_on_error=self.screenshot_on_error,
+            screenshot_on_relevant_result=self.screenshot_on_relevant_result,
+            screenshot_device_scale_factor=self.screenshot_device_scale_factor,
+            client_video_width=self.client_video_width,
+            client_video_height=self.client_video_height,
+            record_client_sessions=self.record_client_sessions,
+            record_client_video_final_mp4=self.record_client_video_final_mp4,
+            cleanup_retention_days=self.cleanup_retention_days,
+            screenshots_dir=self.screenshots_dir,
+            client_videos_dir=self.client_videos_dir,
+            artifact_prefix=self.artifact_prefix,
+        )
+
+    @cached_property
+    def telegram(self) -> TelegramSettings:
+        return TelegramSettings(
+            telegram_enabled=self.telegram_enabled,
+            telegram_bot_token=self.telegram_bot_token,
+            telegram_chat_id=self.telegram_chat_id,
+            telegram_notify_unavailable=self.telegram_notify_unavailable,
+        )
+
+    @cached_property
+    def whatsapp(self) -> WhatsappSettings:
+        return WhatsappSettings(
+            appointment_reminders_time=self.appointment_reminders_time,
+            appointment_reminders_summary_grace_minutes=self.appointment_reminders_summary_grace_minutes,
+            appointment_reminders_reconcile_seconds=self.appointment_reminders_reconcile_seconds,
+            appointment_reminders_send_interval_seconds=self.appointment_reminders_send_interval_seconds,
+            appointment_reminders_daily_limit=self.appointment_reminders_daily_limit,
+        )
 
 
 def load_settings(*, require_login: bool = True) -> Settings:
@@ -561,8 +676,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
 
     if (
         settings.observer_site_toggle_enabled
-        and settings.observer_reload_probe_after_attempt
-        > settings.observer_site_toggle_attempts
+        and settings.observer_reload_probe_after_attempt > settings.observer_site_toggle_attempts
     ):
         raise ValueError(
             "OBSERVER_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal to "
@@ -571,8 +685,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
 
     if (
         settings.opportunity_burst_max_clients != 0
-        and settings.opportunity_burst_max_clients
-        < settings.opportunity_burst_max_sessions
+        and settings.opportunity_burst_max_clients < settings.opportunity_burst_max_sessions
     ):
         raise ValueError(
             "OPPORTUNITY_BURST_MAX_CLIENTS must be 0 or greater than or equal to "
@@ -586,38 +699,25 @@ def load_settings(*, require_login: bool = True) -> Settings:
         )
 
     if settings.opportunity_burst_max_seconds > 300:
-        raise ValueError(
-            "OPPORTUNITY_BURST_MAX_SECONDS must be less than or equal to 300"
-        )
+        raise ValueError("OPPORTUNITY_BURST_MAX_SECONDS must be less than or equal to 300")
 
     if settings.opportunity_burst_session_seconds > 20:
-        raise ValueError(
-            "OPPORTUNITY_BURST_SESSION_SECONDS must be less than or equal to 20"
-        )
+        raise ValueError("OPPORTUNITY_BURST_SESSION_SECONDS must be less than or equal to 20")
 
     if settings.opportunity_burst_attempts > 5:
-        raise ValueError(
-            "OPPORTUNITY_BURST_ATTEMPTS must be less than or equal to 5"
-        )
+        raise ValueError("OPPORTUNITY_BURST_ATTEMPTS must be less than or equal to 5")
 
-    if (
-        settings.opportunity_burst_reload_probe_after_attempt
-        > settings.opportunity_burst_attempts
-    ):
+    if settings.opportunity_burst_reload_probe_after_attempt > settings.opportunity_burst_attempts:
         raise ValueError(
             "OPPORTUNITY_BURST_RELOAD_PROBE_AFTER_ATTEMPT must be less than or equal "
             "to OPPORTUNITY_BURST_ATTEMPTS"
         )
 
     if settings.slot_lost_reobservation_seconds > 30:
-        raise ValueError(
-            "SLOT_LOST_REOBSERVATION_SECONDS must be less than or equal to 30"
-        )
+        raise ValueError("SLOT_LOST_REOBSERVATION_SECONDS must be less than or equal to 30")
 
     if settings.slot_lost_reobservation_attempts > 10:
-        raise ValueError(
-            "SLOT_LOST_REOBSERVATION_ATTEMPTS must be less than or equal to 10"
-        )
+        raise ValueError("SLOT_LOST_REOBSERVATION_ATTEMPTS must be less than or equal to 10")
 
     if (
         settings.slot_lost_reobservation_reload_probe_after_attempt
@@ -632,9 +732,7 @@ def load_settings(*, require_login: bool = True) -> Settings:
         raise ValueError("OBSERVER_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50")
 
     if settings.reservation_captcha_sample_limit > 50:
-        raise ValueError(
-            "RESERVATION_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50"
-        )
+        raise ValueError("RESERVATION_CAPTCHA_SAMPLE_LIMIT must be less than or equal to 50")
 
     if settings.outside_hot_window_max_seconds < settings.outside_hot_window_min_seconds:
         raise ValueError(
