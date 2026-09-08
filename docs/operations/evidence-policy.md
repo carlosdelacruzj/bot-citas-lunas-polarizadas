@@ -58,6 +58,11 @@ con fallback WebM. Un fallo anterior a crear el navegador no puede tener video.
 
 ## Datos compartibles
 
+Las copias `cupos-unicos-marcados` agregan 80 px de margen claro arriba y abajo
+para publicaciones. Conservan el ancho y la escala del contenido: una captura
+de 1896 x 836 produce una copia de 1896 x 996. El original no se modifica;
+la version y huella del diseno validan tambien las dimensiones ampliadas.
+
 - Nombres, apellidos, documento, placa, expediente, WhatsApp, identificadores
   completos de orden, cuentas, tokens, passwords y respuestas CAPTCHA deben
   estar enmascarados en todo archivo versionado.

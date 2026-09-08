@@ -18,7 +18,8 @@ from appointment_bot.utils.screenshots import screenshot_artifact_dir_for_date
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path(".runtime/whatsapp-daily-summary/config.json")
-LAYOUT_VERSION = "provided-assets-v9-adaptive-width"
+LAYOUT_VERSION = "provided-assets-v10-vertical-padding"
+PUBLICATION_VERTICAL_PADDING = 80
 ORIGINAL_DIRECTORY_NAME = "cupos-unicos"
 WATERMARKED_DIRECTORY_NAME = "cupos-unicos-marcados"
 BRAND_ASSETS_DIRECTORY = Path(__file__).resolve().parents[1] / "assets" / "brand"
@@ -243,8 +244,9 @@ def _watermark_is_current(
 
 def _verify_rendered_image(source: Path, destination: Path, fingerprint: str) -> None:
     with Image.open(source) as original, Image.open(destination) as rendered:
-        if rendered.size != original.size:
-            raise ValueError("La imagen marcada no conserva las dimensiones originales.")
+        expected_size = (original.width, original.height + 2 * PUBLICATION_VERTICAL_PADDING)
+        if rendered.size != expected_size:
+            raise ValueError("La imagen marcada no conserva el ancho y los margenes esperados.")
         if rendered.info.get("watermark_fingerprint") != fingerprint:
             raise ValueError("La imagen marcada no corresponde al original o al diseno vigente.")
         rendered.verify()
@@ -258,7 +260,6 @@ def _render_watermark(
     with Image.open(source) as original:
         canvas = original.convert("RGBA")
 
-    width, height = canvas.size
     central_watermark = _get_brand_asset(CENTRAL_WATERMARK_PATH)
     bottom_signature = _get_brand_asset(BOTTOM_SIGNATURE_PATH)
     channel_signature = _get_brand_asset(CHANNEL_SIGNATURE_PATH)
@@ -266,12 +267,18 @@ def _render_watermark(
     _paste_channel_signature(canvas, channel_signature)
     _paste_horizontal_channel_names(canvas, channel_signature)
     _paste_bottom_signature(canvas, bottom_signature)
+    publication = Image.new(
+        "RGBA",
+        (canvas.width, canvas.height + 2 * PUBLICATION_VERTICAL_PADDING),
+        (247, 248, 252, 255),
+    )
+    publication.alpha_composite(canvas, (0, PUBLICATION_VERTICAL_PADDING))
 
     metadata = PngImagePlugin.PngInfo()
     metadata.add_text("watermark_layout", LAYOUT_VERSION)
     metadata.add_text("watermark_fingerprint", fingerprint)
     metadata.add_text("watermark_owner", BRAND_NAME)
-    canvas.convert("RGB").save(destination, format="PNG", pnginfo=metadata, optimize=True)
+    publication.convert("RGB").save(destination, format="PNG", pnginfo=metadata, optimize=True)
 
 
 def _get_brand_asset(path: Path) -> Image.Image:
