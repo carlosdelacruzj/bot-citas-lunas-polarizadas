@@ -3,8 +3,8 @@
     <div>
       <h2>Ordenes</h2>
       <p>
-        Mostrando {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de
-        {{ dashboard.filteredOrders().length }} resultados · {{ dashboard.orders().length }} cargadas
+        Mostrando {{ orders.orderPageStart() }}–{{ orders.orderPageEnd() }} de
+        {{ orders.filteredOrders().length }} resultados · {{ orders.orders().length }} cargadas
       </p>
     </div>
     <div class="panel-actions">
@@ -421,12 +421,12 @@
 
   <div class="order-controls" aria-label="Filtros de ordenes">
     <div class="quick-filters">
-      @for (filter of dashboard.orderQuickFilters(); track filter.key) {
+      @for (filter of orders.orderQuickFilters(); track filter.key) {
         <button
           type="button"
           class="filter-chip"
-          [class.active]="dashboard.orderQuickFilter() === filter.key"
-          (click)="dashboard.setOrderQuickFilter(filter.key)"
+          [class.active]="orders.orderQuickFilter() === filter.key"
+          (click)="orders.setOrderQuickFilter(filter.key)"
         >
           {{ filter.label }}
           <span>{{ filter.count }}</span>
@@ -440,16 +440,16 @@
         <input
           name="orderFilter"
           type="search"
-          [ngModel]="dashboard.orderFilter()"
-          (ngModelChange)="dashboard.setOrderFilter($event)"
+          [ngModel]="orders.orderFilter()"
+          (ngModelChange)="orders.setOrderFilter($event)"
         />
       </label>
       <label class="filter">
         Ordenar
         <select
           name="orderSort"
-          [ngModel]="dashboard.orderSortKey()"
-          (ngModelChange)="dashboard.chooseOrderSort($event)"
+          [ngModel]="orders.orderSortKey()"
+          (ngModelChange)="orders.chooseOrderSort($event)"
         >
           <option value="queue">Orden real</option>
           <option value="priority">Prioridad</option>
@@ -465,9 +465,9 @@
       <button
         type="button"
         class="secondary sort-direction"
-        (click)="dashboard.toggleOrderSortDirection()"
+        (click)="orders.toggleOrderSortDirection()"
       >
-        {{ dashboard.orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
+        {{ orders.orderSortDirection() === 'asc' ? 'Ascendente' : 'Descendente' }}
       </button>
     </div>
   </div>
@@ -476,24 +476,24 @@
     <table class="responsive-table order-table">
       <thead>
         <tr>
-          <th [attr.aria-sort]="dashboard.orderAriaSort('applicant')">
-            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('applicant')">
-              Cliente {{ dashboard.sortIndicator('applicant') }}
+          <th [attr.aria-sort]="orders.orderAriaSort('applicant')">
+            <button type="button" class="sort-header" (click)="orders.setOrderSort('applicant')">
+              Cliente {{ orders.sortIndicator('applicant') }}
             </button>
           </th>
-          <th [attr.aria-sort]="dashboard.orderAriaSort('status')">
-            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('status')">
-              Estado {{ dashboard.sortIndicator('status') }}
+          <th [attr.aria-sort]="orders.orderAriaSort('status')">
+            <button type="button" class="sort-header" (click)="orders.setOrderSort('status')">
+              Estado {{ orders.sortIndicator('status') }}
             </button>
           </th>
-          <th [attr.aria-sort]="dashboard.orderAriaSort('reservation')">
-            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('reservation')">
-              Reserva {{ dashboard.sortIndicator('reservation') }}
+          <th [attr.aria-sort]="orders.orderAriaSort('reservation')">
+            <button type="button" class="sort-header" (click)="orders.setOrderSort('reservation')">
+              Reserva {{ orders.sortIndicator('reservation') }}
             </button>
           </th>
-          <th [attr.aria-sort]="dashboard.orderAriaSort('payment')">
-            <button type="button" class="sort-header" (click)="dashboard.setOrderSort('payment')">
-              Pago {{ dashboard.sortIndicator('payment') }}
+          <th [attr.aria-sort]="orders.orderAriaSort('payment')">
+            <button type="button" class="sort-header" (click)="orders.setOrderSort('payment')">
+              Pago {{ orders.sortIndicator('payment') }}
             </button>
           </th>
           <th>Reglas de fecha</th>
@@ -501,7 +501,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (order of dashboard.paginatedOrders(); track order.order_id) {
+        @for (order of orders.paginatedOrders(); track order.order_id) {
           <tr
             class="selectable-row"
             tabindex="0"
@@ -542,11 +542,11 @@
             <td data-label="Reglas de fecha" class="restriction-cell">
               <div
                 class="restriction-summary"
-                [class.unrestricted]="!dashboard.hasReservationRestrictions(order)"
+                [class.unrestricted]="!orders.hasReservationRestrictions(order)"
               >
                 <strong>
                   {{
-                    dashboard.hasReservationRestrictions(order)
+                    orders.hasReservationRestrictions(order)
                       ? dashboard.restrictionDaysLabel(order)
                       : 'Sin reglas'
                   }}
@@ -599,15 +599,15 @@
 
   <div class="order-table-footer">
     <span>
-      {{ dashboard.orderPageStart() }}–{{ dashboard.orderPageEnd() }} de {{ dashboard.filteredOrders().length }} resultados ·
-      Página {{ dashboard.currentOrderPage() }} de {{ dashboard.orderTotalPages() }}
+      {{ orders.orderPageStart() }}–{{ orders.orderPageEnd() }} de {{ orders.filteredOrders().length }} resultados ·
+      Página {{ orders.currentOrderPage() }} de {{ orders.orderTotalPages() }}
     </span>
     <label class="filter">
       Filas por página
       <select
         name="orderPageSize"
-        [ngModel]="dashboard.orderPageSize()"
-        (ngModelChange)="dashboard.changeOrderPageSize($event)"
+        [ngModel]="orders.orderPageSize()"
+        (ngModelChange)="orders.changeOrderPageSize($event)"
       >
         <option [ngValue]="10">10</option>
         <option [ngValue]="20">20</option>
@@ -616,24 +616,24 @@
     </label>
   </div>
 
-  @if (dashboard.orderTotalPages() > 1) {
+  @if (orders.orderTotalPages() > 1) {
     <nav class="order-pagination" aria-label="Páginas de órdenes">
       <button
         type="button"
         class="secondary"
-        [disabled]="dashboard.currentOrderPage() === 1"
-        (click)="dashboard.goToOrderPage(dashboard.currentOrderPage() - 1)"
+        [disabled]="orders.currentOrderPage() === 1"
+        (click)="orders.goToOrderPage(orders.currentOrderPage() - 1)"
       >
         Anterior
       </button>
-      @for (page of dashboard.orderPageNumbers(); track page) {
+      @for (page of orders.orderPageNumbers(); track page) {
         <button
           type="button"
           class="page-button"
-          [class.active]="page === dashboard.currentOrderPage()"
-          [attr.aria-current]="page === dashboard.currentOrderPage() ? 'page' : null"
+          [class.active]="page === orders.currentOrderPage()"
+          [attr.aria-current]="page === orders.currentOrderPage() ? 'page' : null"
           [attr.aria-label]="'Página ' + page"
-          (click)="dashboard.goToOrderPage(page)"
+          (click)="orders.goToOrderPage(page)"
         >
           {{ page }}
         </button>
@@ -641,8 +641,8 @@
       <button
         type="button"
         class="secondary"
-        [disabled]="dashboard.currentOrderPage() === dashboard.orderTotalPages()"
-        (click)="dashboard.goToOrderPage(dashboard.currentOrderPage() + 1)"
+        [disabled]="orders.currentOrderPage() === orders.orderTotalPages()"
+        (click)="orders.goToOrderPage(orders.currentOrderPage() + 1)"
       >
         Siguiente
       </button>

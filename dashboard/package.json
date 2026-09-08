@@ -9,7 +9,7 @@
     "test:unit": "ng test --watch=false",
     "test:e2e": "playwright test",
     "report:clones": "jscpd src --min-lines 5 --min-tokens 50 --reporters console,json --output ../reports/ci/jscpd --ignore \"**/*.spec.ts\"",
-    "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit --noUnusedLocals --noUnusedParameters",
     "watch": "ng build --watch --configuration development"
   },
   "prettier": {

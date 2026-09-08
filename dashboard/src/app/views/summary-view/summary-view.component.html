@@ -420,16 +420,16 @@
   </article>
   <article>
     <span>Clientes listos</span>
-    <strong>{{ dashboard.readyOrders() }}</strong>
-    <small>{{ dashboard.filteredOrders().length }} visibles</small>
+    <strong>{{ dashboard.orderList.readyOrders() }}</strong>
+    <small>{{ dashboard.orderList.filteredOrders().length }} visibles</small>
   </article>
   <article class="clickable-metric">
     <button type="button" class="metric-action" (click)="dashboard.showPendingPayments()">
       <span>Pagos pendientes</span>
-      <strong [class]="dashboard.pendingPaymentOrders() > 0 ? 'warn' : 'good'">
-        {{ dashboard.pendingPaymentOrders() }}
+      <strong [class]="dashboard.orderList.pendingPaymentOrders() > 0 ? 'warn' : 'good'">
+        {{ dashboard.orderList.pendingPaymentOrders() }}
       </strong>
-      <small>{{ dashboard.confirmedOrders() }} reservas confirmadas · Filtrar</small>
+      <small>{{ dashboard.orderList.confirmedOrders() }} reservas confirmadas · Filtrar</small>
     </button>
   </article>
 </section>
@@ -661,7 +661,7 @@
     </div>
   </dl>
 
-  @if (dashboard.captchaSamplingEnabled() && dashboard.readyOrders() > 1) {
+  @if (dashboard.captchaSamplingEnabled() && dashboard.orderList.readyOrders() > 1) {
     <div class="notice warn captcha-sampling-queue-warning" role="alert">
       Hay varias órdenes listas. Considera el modo normal para no retrasar la competencia por un
       cupo.

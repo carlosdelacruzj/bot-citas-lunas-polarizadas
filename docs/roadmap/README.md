@@ -118,9 +118,14 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 Cerrar 5.5.5: observar el siguiente caso natural de WhatsApp con la version
 extraida cargada en Admin API antes de retirar los reexports.
-No generar envios para forzar la aceptacion. Las fases 6 a 8 cubren
-dashboard por dominio, contratos, consultas y cierre. No combinar estas
-extracciones con cambios funcionales del portal.
+No generar envios para forzar la aceptacion. Esta autorizado avanzar `6.1`
+mientras se observan `5.5.5` y `2.6`, conservando ambos pendientes.
+Siguiente bloque de `6.1`: extraer alta, detalle, edicion, confirmaciones y
+comandos de ordenes; retirar su dependencia de la fachada global antes de
+pasar a Finanzas. Cierre: estado propio, consumidores migrados, miembros
+anteriores retirados y comportamiento y bundle verificados.
+Las fases 6 a 8 cubren dashboard por dominio, contratos, consultas y cierre.
+No combinar estas extracciones con cambios funcionales del portal.
 
 ## Fuera de alcance o sin autorizacion
 

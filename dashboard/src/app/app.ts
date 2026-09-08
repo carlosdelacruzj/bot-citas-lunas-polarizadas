@@ -1,3 +1,5 @@
+import { OrdersListFacade } from './domains/orders/orders-list.facade';
+import { paginationWindow } from './pagination';
 import {
   Component,
   HostListener,
@@ -79,7 +81,6 @@ import {
   formatPeruDate,
   formatPeruDateTime,
   formatPeruTime,
-  peruDateTimeSortValue,
 } from './peru-date-time';
 import { formatReservationDateRules } from './reservation-rule-labels';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
@@ -143,24 +144,6 @@ type ModalKind =
   | 'finance-entry'
   | 'whatsapp'
   | null;
-type OrderQuickFilter =
-  | 'all'
-  | 'ready'
-  | 'payment_pending'
-  | 'confirmed'
-  | 'archived'
-  | 'closed_no_charge'
-  | 'restricted';
-type OrderSortKey =
-  | 'queue'
-  | 'priority'
-  | 'created_at'
-  | 'updated_at'
-  | 'status'
-  | 'reservation'
-  | 'payment'
-  | 'closure'
-  | 'applicant';
 type PostAppointmentFilter =
   | 'active'
   | 'attention'
@@ -232,13 +215,6 @@ type DashboardSnapshotWorkerCommand = Pick<
   WorkerCommand,
   'command_id' | 'command' | 'status' | 'requested_at' | 'claimed_at' | 'processed_at'
 >;
-type OrderViewState = {
-  quickFilter: OrderQuickFilter;
-  sortKey: OrderSortKey;
-  sortDirection: SortDirection;
-  page: number;
-  pageSize: number;
-};
 type PendingAction = {
   title: string;
   message: string;
@@ -278,37 +254,7 @@ type InboxOrderTask = {
 };
 
 const ERROR_MESSAGE_DURATION_MS = 8_000;
-const ORDER_VIEW_STATE_KEY = 'appointment-dashboard-order-view';
-const ORDER_SEARCH_SESSION_KEY = 'appointment-dashboard-order-search';
-const ORDER_PAGE_SIZES = [10, 20, 50] as const;
 const POST_APPOINTMENT_PAGE_SIZES = [5, 10, 20] as const;
-const ORDER_QUICK_FILTERS: readonly OrderQuickFilter[] = [
-  'all',
-  'ready',
-  'payment_pending',
-  'confirmed',
-  'archived',
-  'closed_no_charge',
-  'restricted',
-];
-const ORDER_SORT_KEYS: readonly OrderSortKey[] = [
-  'queue',
-  'priority',
-  'created_at',
-  'updated_at',
-  'status',
-  'reservation',
-  'payment',
-  'closure',
-  'applicant',
-];
-const DEFAULT_ORDER_VIEW_STATE: OrderViewState = {
-  quickFilter: 'all',
-  sortKey: 'queue',
-  sortDirection: 'desc',
-  page: 1,
-  pageSize: 20,
-};
 const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
   active: { label: 'Activo', tone: 'good' },
   actual: { label: 'Real', tone: 'good' },
@@ -395,60 +341,6 @@ const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
   messageTemplates: { label: 'Mensajes de WhatsApp', group: 'Administración' },
   captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
 };
-const INITIAL_ORDER_VIEW_STATE = readOrderViewState();
-
-function readOrderViewState(): OrderViewState {
-  try {
-    const stored = JSON.parse(
-      window.localStorage.getItem(ORDER_VIEW_STATE_KEY) ?? '{}',
-    ) as Partial<OrderViewState>;
-    return {
-      quickFilter: ORDER_QUICK_FILTERS.includes(stored.quickFilter as OrderQuickFilter)
-        ? (stored.quickFilter as OrderQuickFilter)
-        : DEFAULT_ORDER_VIEW_STATE.quickFilter,
-      sortKey: ORDER_SORT_KEYS.includes(stored.sortKey as OrderSortKey)
-        ? (stored.sortKey as OrderSortKey)
-        : DEFAULT_ORDER_VIEW_STATE.sortKey,
-      sortDirection: stored.sortDirection === 'asc' ? 'asc' : 'desc',
-      page: Number.isInteger(stored.page) && Number(stored.page) > 0 ? Number(stored.page) : 1,
-      pageSize: ORDER_PAGE_SIZES.includes(stored.pageSize as (typeof ORDER_PAGE_SIZES)[number])
-        ? Number(stored.pageSize)
-        : DEFAULT_ORDER_VIEW_STATE.pageSize,
-    };
-  } catch {
-    return DEFAULT_ORDER_VIEW_STATE;
-  }
-}
-function readOrderSearch(): string {
-  try {
-    return window.sessionStorage.getItem(ORDER_SEARCH_SESSION_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
-
-function paginationWindow(current: number, total: number): number[] {
-  const start = Math.max(1, Math.min(current - 2, total - 4));
-  const end = Math.min(total, start + 4);
-  return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
-}
-
-function compareOptionalTimestamps(
-  left: number | null,
-  right: number | null,
-  direction: number,
-): number {
-  if (left === null && right === null) {
-    return 0;
-  }
-  if (left === null) {
-    return 1;
-  }
-  if (right === null) {
-    return -1;
-  }
-  return (left - right) * direction;
-}
 
 function normalizeDashboardText(value: unknown): string {
   return String(value ?? '')
@@ -473,7 +365,7 @@ function normalizeDashboardText(value: unknown): string {
     FinanceEntryModalComponent,
     WorkerRestartModalComponent,
   ],
-  providers: [{ provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) }],
+  providers: [OrdersListFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) }],
   templateUrl: './app.html',
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None,
@@ -482,6 +374,7 @@ export class App implements OnDestroy {
   public readonly formatDate = formatPeruDate;
   public readonly formatDateTime = formatPeruDateTime;
   public readonly formatTime = formatPeruTime;
+  public readonly orderList = inject(OrdersListFacade);
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
   private autoRefreshTimer: number | null = null;
@@ -512,16 +405,6 @@ export class App implements OnDestroy {
   public readonly pageHidden = signal(document.visibilityState === 'hidden');
   public readonly formDirty = signal(false);
   public readonly lastUpdatedAt = signal<string | null>(null);
-  public readonly orderFilter = signal(readOrderSearch());
-  public readonly orderQuickFilter = signal<OrderQuickFilter>(
-    INITIAL_ORDER_VIEW_STATE.quickFilter,
-  );
-  public readonly orderSortKey = signal<OrderSortKey>(INITIAL_ORDER_VIEW_STATE.sortKey);
-  public readonly orderSortDirection = signal<SortDirection>(
-    INITIAL_ORDER_VIEW_STATE.sortDirection,
-  );
-  public readonly orderPage = signal(INITIAL_ORDER_VIEW_STATE.page);
-  public readonly orderPageSize = signal(INITIAL_ORDER_VIEW_STATE.pageSize);
   public readonly runStatusFilter = signal('');
   public readonly health = signal<HealthPayload | null>(null);
   public readonly worker = signal<WorkerStatus | null>(null);
@@ -533,7 +416,6 @@ export class App implements OnDestroy {
   public readonly captchaSamplingLimit = signal(10);
   public readonly captchaSamplingDirty = signal(false);
   public readonly captchaSamplingSaving = signal(false);
-  public readonly orders = signal<ServiceOrder[]>([]);
   public readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
   public readonly runs = signal<RunSummary[]>([]);
   public readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
@@ -701,84 +583,16 @@ export class App implements OnDestroy {
 
   public readonly selectedOrder = computed(() => {
     const selected = this.selectedOrderId();
-    return this.orders().find((order) => order.order_id === selected) ?? this.orders()[0] ?? null;
+    return this.orderList.orders().find((order) => order.order_id === selected) ?? this.orderList.orders()[0] ?? null;
   });
   public readonly latestOpportunityBurst = computed(
     () => this.opportunityBursts()[0] ?? null,
   );
   public readonly currentOrder = computed(() => {
     const currentOrderId = this.worker()?.current_order_id;
-    return this.orders().find((order) => order.order_id === currentOrderId) ?? null;
+    return this.orderList.orders().find((order) => order.order_id === currentOrderId) ?? null;
   });
   public readonly modalOrder = computed(() => this.selectedOrder());
-  public readonly filteredOrders = computed(() => {
-    const filter = this.orderFilter().trim().toLowerCase();
-    const quickFilter = this.orderQuickFilter();
-    const filtered = this.orders().filter((order) => {
-      const matchesText =
-        !filter ||
-        [
-          order.order_id,
-          order.applicant_name,
-          order.document_number_masked,
-          order.contact_name,
-          order.contact_source,
-          order.contact_whatsapp_masked,
-          order.status,
-          order.reservation_status,
-          order.payment_status,
-          order.closure_reason,
-          order.closure_note,
-          order.program_expediente,
-          order.program_plate,
-          order.parent_order_id,
-        ]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(filter));
-      return matchesText && this.matchesOrderQuickFilter(order, quickFilter);
-    });
-    return this.sortOrders(filtered);
-  });
-  public readonly orderTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.filteredOrders().length / this.orderPageSize())),
-  );
-  public readonly currentOrderPage = computed(() =>
-    Math.min(this.orderPage(), this.orderTotalPages()),
-  );
-  public readonly paginatedOrders = computed(() => {
-    const start = (this.currentOrderPage() - 1) * this.orderPageSize();
-    return this.filteredOrders().slice(start, start + this.orderPageSize());
-  });
-  public readonly orderPageStart = computed(() =>
-    this.filteredOrders().length ? (this.currentOrderPage() - 1) * this.orderPageSize() + 1 : 0,
-  );
-  public readonly orderPageEnd = computed(() =>
-    Math.min(this.currentOrderPage() * this.orderPageSize(), this.filteredOrders().length),
-  );
-  public readonly orderPageNumbers = computed(() =>
-    paginationWindow(this.currentOrderPage(), this.orderTotalPages()),
-  );
-  public readonly orderQuickFilters = computed(() => [
-    { key: 'all' as const, label: 'Todas', count: this.orders().length },
-    { key: 'ready' as const, label: 'Listas', count: this.countOrders('ready') },
-    {
-      key: 'payment_pending' as const,
-      label: 'Pagos pendientes',
-      count: this.countOrders('payment_pending'),
-    },
-    { key: 'confirmed' as const, label: 'Confirmadas', count: this.countOrders('confirmed') },
-    { key: 'archived' as const, label: 'Archivadas', count: this.countOrders('archived') },
-    {
-      key: 'closed_no_charge' as const,
-      label: 'Cerradas sin cobro',
-      count: this.countOrders('closed_no_charge'),
-    },
-    {
-      key: 'restricted' as const,
-      label: 'Con reglas de fecha',
-      count: this.countOrders('restricted'),
-    },
-  ]);
   public readonly filteredRuns = computed(() => {
     const status = this.runStatusFilter().trim();
     if (!status) {
@@ -810,9 +624,6 @@ export class App implements OnDestroy {
     const pagination = this.captchaQualityCases()?.pagination;
     return pagination ? paginationWindow(pagination.page, pagination.total_pages) : [];
   });
-  public readonly readyOrders = computed(
-    () => this.orders().filter((order) => order.status === 'ready').length,
-  );
   public readonly captchaSamplingEffectiveLimit = computed(() =>
     this.captchaSamplingEnabled() ? this.captchaSamplingLimit() : 1,
   );
@@ -827,9 +638,6 @@ export class App implements OnDestroy {
         control.remaining_local_decisions > 0,
     );
   });
-  public readonly pendingPaymentOrders = computed(
-    () => this.orders().filter((order) => order.payment_status === 'pending').length,
-  );
   public readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
     const icons: Record<OperatorInboxTask['kind'], string> = {
       preflight: '!',
@@ -873,9 +681,6 @@ export class App implements OnDestroy {
   );
   public readonly inboxPendingTotal = computed(
     () => this.inboxOrderTasks().length,
-  );
-  public readonly confirmedOrders = computed(
-    () => this.orders().filter((order) => order.reservation_status === 'confirmed').length,
   );
   public readonly postAppointmentItems = computed(
     () => this.postAppointmentPayload()?.items ?? [],
@@ -940,7 +745,7 @@ export class App implements OnDestroy {
   );
   public readonly selectedOrderChildren = computed(() => {
     const orderId = this.selectedOrder()?.order_id;
-    return orderId ? this.orders().filter((order) => order.parent_order_id === orderId) : [];
+    return orderId ? this.orderList.orders().filter((order) => order.parent_order_id === orderId) : [];
   });
   public readonly orderNextAction = computed<OrderNextAction>(() => {
     const order = this.selectedOrder();
@@ -1076,7 +881,7 @@ export class App implements OnDestroy {
       return this.whatsappMessageTemplates().length > 0 || state === 'ready';
     }
     if (view === 'orders') {
-      return this.orders().length > 0 || state === 'ready';
+      return this.orderList.orders().length > 0 || state === 'ready';
     }
     if (view === 'runs') {
       return this.runs().length > 0 || this.workerCommands().length > 0 || state === 'ready';
@@ -1087,7 +892,7 @@ export class App implements OnDestroy {
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
     }
-    return this.orders().length > 0 || state === 'ready';
+    return this.orderList.orders().length > 0 || state === 'ready';
   });
   public readonly activeViewState = computed<ViewStateKind | null>(() => {
     const state = this.loadState();
@@ -1284,7 +1089,7 @@ export class App implements OnDestroy {
     if (view === 'orders') {
       const orderId = segments[1];
       if (orderId) {
-        if (!this.orders().some((order) => order.order_id === orderId)) {
+        if (!this.orderList.orders().some((order) => order.order_id === orderId)) {
           this.errorMessage.set(`La orden ${orderId} no existe o ya no está disponible.`);
           await this.router.navigateByUrl('/ordenes', { replaceUrl: true });
           return;
@@ -1437,7 +1242,7 @@ export class App implements OnDestroy {
         appointmentReminderStatus,
         workerCommands,
       ] = await Promise.all([
-        this.api.getServiceOrders(scope),
+        this.orderList.fetchOrders(scope),
         this.api.getRuns(scope),
         this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
         this.api.getCaptchaSamplingControl(scope),
@@ -1490,7 +1295,7 @@ export class App implements OnDestroy {
       return;
     }
     if (view === 'orders') {
-      this.applyOrders(await this.api.getServiceOrders(scope));
+      this.applyOrders(await this.orderList.fetchOrders(scope));
       return;
     }
     if (view === 'runs') {
@@ -1512,8 +1317,7 @@ export class App implements OnDestroy {
   }
 
   private applyOrders(orders: ServiceOrder[]): void {
-    this.orders.set(orders);
-    this.keepValidOrderPage();
+    this.orderList.replaceOrders(orders);
     this.keepValidSelection(orders);
     this.hydrateSelectedOrderForms();
     if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
@@ -2394,15 +2198,6 @@ export class App implements OnDestroy {
     }).format(value);
   }
 
-  public hasReservationRestrictions(order: ServiceOrder): boolean {
-    return Boolean(
-      order.minimum_reservation_date ||
-      order.maximum_reservation_date ||
-      (order.allowed_weekdays && order.allowed_weekdays.length > 0) ||
-      (order.excluded_date_ranges?.length ?? 0) > 0,
-    );
-  }
-
   public serviceTypeLabel(order: ServiceOrder): string {
     return this.servicePackageDefinition(order.service_package)?.label
       ?? order.service_package;
@@ -2536,7 +2331,7 @@ export class App implements OnDestroy {
     this.errorMessage.set(null);
     try {
       const order = await this.api.getServiceOrder(orderId);
-      this.orders.update((orders) => [order, ...orders.filter((item) => item.order_id !== orderId)]);
+      this.orderList.includeOrder(order);
       return order;
     } catch (error) {
       this.errorMessage.set(this.readError(error));
@@ -2551,7 +2346,7 @@ export class App implements OnDestroy {
   }
 
   public openPaymentFromSummary(orderId: string): void {
-    const order = this.orders().find((item) => item.order_id === orderId);
+    const order = this.orderList.orders().find((item) => item.order_id === orderId);
     if (!order) {
       this.openOrderFromSummary(orderId);
       return;
@@ -2683,7 +2478,7 @@ export class App implements OnDestroy {
   }
 
   public showPendingPayments(): void {
-    this.setOrderQuickFilter('payment_pending');
+    this.orderList.setOrderQuickFilter('payment_pending');
     void this.router.navigateByUrl('/ordenes');
   }
 
@@ -3629,85 +3424,6 @@ export class App implements OnDestroy {
     this.formDirty.set(true);
   }
 
-  public setOrderQuickFilter(filter: OrderQuickFilter): void {
-    this.orderQuickFilter.set(filter);
-    this.resetOrderPage();
-    this.persistOrderViewState();
-  }
-
-  public setOrderFilter(value: string): void {
-    this.orderFilter.set(value);
-    this.resetOrderPage();
-    this.persistOrderViewState();
-    try {
-      window.sessionStorage.setItem(ORDER_SEARCH_SESSION_KEY, value);
-    } catch {
-      // La búsqueda permanece disponible en memoria si el navegador bloquea storage.
-    }
-  }
-
-  public setOrderSort(key: OrderSortKey): void {
-    if (this.orderSortKey() === key) {
-      this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
-    } else {
-      this.orderSortKey.set(key);
-      this.orderSortDirection.set(this.defaultOrderSortDirection(key));
-    }
-    this.resetOrderPage();
-    this.persistOrderViewState();
-  }
-
-  public chooseOrderSort(key: OrderSortKey): void {
-    if (this.orderSortKey() === key) {
-      return;
-    }
-    this.orderSortKey.set(key);
-    this.orderSortDirection.set(this.defaultOrderSortDirection(key));
-    this.resetOrderPage();
-    this.persistOrderViewState();
-  }
-
-  public toggleOrderSortDirection(): void {
-    this.orderSortDirection.set(this.orderSortDirection() === 'asc' ? 'desc' : 'asc');
-    this.resetOrderPage();
-    this.persistOrderViewState();
-  }
-
-  public changeOrderPageSize(value: number | string): void {
-    const pageSize = Number(value);
-    if (!ORDER_PAGE_SIZES.includes(pageSize as (typeof ORDER_PAGE_SIZES)[number])) {
-      return;
-    }
-    this.orderPageSize.set(pageSize);
-    this.resetOrderPage();
-    this.persistOrderViewState();
-  }
-
-  public goToOrderPage(page: number): void {
-    if (page < 1 || page > this.orderTotalPages() || page === this.currentOrderPage()) {
-      return;
-    }
-    this.orderPage.set(page);
-    this.persistOrderViewState();
-    window.requestAnimationFrame(() => {
-      document.querySelector('.order-controls')?.scrollIntoView({ behavior: 'smooth' });
-    });
-  }
-
-  public sortIndicator(key: OrderSortKey): string {
-    if (this.orderSortKey() !== key) {
-      return '';
-    }
-    return this.orderSortDirection() === 'asc' ? 'ASC' : 'DESC';
-  }
-
-  public orderAriaSort(key: OrderSortKey): 'ascending' | 'descending' | null {
-    if (this.orderSortKey() !== key) {
-      return null;
-    }
-    return this.orderSortDirection() === 'asc' ? 'ascending' : 'descending';
-  }
-
   public requestContactUpdate(): void {
     if (this.orderDetailLoading()) {
       this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
@@ -4531,7 +4247,7 @@ export class App implements OnDestroy {
         health: this.snapshotHealth(this.health()),
         worker: this.snapshotWorker(this.worker()),
         current_order: this.snapshotOrder(this.currentOrder()),
-        service_orders: this.filteredOrders().map((order) => this.snapshotOrder(order)),
+        service_orders: this.orderList.filteredOrders().map((order) => this.snapshotOrder(order)),
         runs: this.filteredRuns().map((run) => this.snapshotRun(run)),
         worker_commands: workerCommands.map((command) => this.snapshotWorkerCommand(command)),
       };
@@ -4624,7 +4340,7 @@ export class App implements OnDestroy {
   }
 
   public manualSessionOrderLabel(session: ManualSession): string {
-    const order = this.orders().find((item) => item.order_id === session.order_id);
+    const order = this.orderList.orders().find((item) => item.order_id === session.order_id);
     if (!order) {
       return session.order_id;
     }
@@ -4647,7 +4363,7 @@ export class App implements OnDestroy {
   }
 
   public hasActiveChildOrders(order: ServiceOrder): boolean {
-    return this.orders().some(
+    return this.orderList.orders().some(
       (item) =>
         item.parent_order_id === order.order_id &&
         ['ready', 'paused', 'reserved_payment_pending'].includes(item.status),
@@ -4655,7 +4371,7 @@ export class App implements OnDestroy {
   }
 
   public programChildCount(order: ServiceOrder): number {
-    return this.orders().filter((item) => item.parent_order_id === order.order_id).length;
+    return this.orderList.orders().filter((item) => item.parent_order_id === order.order_id).length;
   }
 
   public orderStatusDisplay(order: ServiceOrder): string {
@@ -5051,134 +4767,6 @@ export class App implements OnDestroy {
       return;
     }
     this.selectedOrderId.set(orders[0]?.order_id ?? '');
-  }
-
-  private countOrders(filter: OrderQuickFilter): number {
-    return this.orders().filter((order) => this.matchesOrderQuickFilter(order, filter)).length;
-  }
-
-  private matchesOrderQuickFilter(order: ServiceOrder, filter: OrderQuickFilter): boolean {
-    if (filter === 'all') {
-      return true;
-    }
-    if (filter === 'ready') {
-      return order.status === 'ready';
-    }
-    if (filter === 'payment_pending') {
-      return order.payment_status === 'pending';
-    }
-    if (filter === 'confirmed') {
-      return order.reservation_status === 'confirmed';
-    }
-    if (filter === 'archived') {
-      return order.status === 'archived';
-    }
-    if (filter === 'closed_no_charge') {
-      return order.status === 'archived' && !order.charge_required;
-    }
-    return this.hasReservationRestrictions(order);
-  }
-
-  private sortOrders(orders: ServiceOrder[]): ServiceOrder[] {
-    const direction = this.orderSortDirection() === 'asc' ? 1 : -1;
-    const key = this.orderSortKey();
-    return [...orders].sort((left, right) => {
-      if (key === 'queue') {
-        return this.compareQueueOrder(left, right) * direction;
-      }
-      if (key === 'reservation') {
-        const compared = compareOptionalTimestamps(
-          peruDateTimeSortValue(left.reservation_date, left.reservation_hour),
-          peruDateTimeSortValue(right.reservation_date, right.reservation_hour),
-          direction,
-        );
-        if (compared !== 0) {
-          return compared;
-        }
-        return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
-      }
-      const leftValue = this.orderSortValue(left, key);
-      const rightValue = this.orderSortValue(right, key);
-      const compared =
-        typeof leftValue === 'number' && typeof rightValue === 'number'
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue), 'es', { numeric: true });
-      if (compared !== 0) {
-        return compared * direction;
-      }
-      return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
-    });
-  }
-
-  private orderSortValue(order: ServiceOrder, key: OrderSortKey): string | number {
-    if (key === 'queue') {
-      return order.priority;
-    }
-    if (key === 'priority') {
-      return order.priority;
-    }
-    if (key === 'created_at') {
-      return peruDateTimeSortValue(order.created_at) ?? 0;
-    }
-    if (key === 'updated_at') {
-      return peruDateTimeSortValue(order.updated_at) ?? 0;
-    }
-    if (key === 'status') {
-      return order.status;
-    }
-    if (key === 'payment') {
-      return order.payment_status ?? '';
-    }
-    if (key === 'closure') {
-      return order.closure_reason ?? '';
-    }
-    return order.applicant_name ?? order.document_number_masked ?? '';
-  }
-
-  private compareQueueOrder(left: ServiceOrder, right: ServiceOrder): number {
-    const priorityCompare = right.priority - left.priority;
-    if (priorityCompare !== 0) {
-      return priorityCompare;
-    }
-    const createdCompare =
-      (peruDateTimeSortValue(left.created_at) ?? 0) -
-      (peruDateTimeSortValue(right.created_at) ?? 0);
-    if (createdCompare !== 0) {
-      return createdCompare;
-    }
-    return left.order_id.localeCompare(right.order_id, 'es', { numeric: true });
-  }
-
-  private defaultOrderSortDirection(key: OrderSortKey): SortDirection {
-    return key === 'applicant' || key === 'status' || key === 'queue' ? 'asc' : 'desc';
-  }
-
-  private resetOrderPage(): void {
-    this.orderPage.set(1);
-  }
-
-  private keepValidOrderPage(): void {
-    const validPage = Math.min(this.orderPage(), this.orderTotalPages());
-    if (validPage === this.orderPage()) {
-      return;
-    }
-    this.orderPage.set(validPage);
-    this.persistOrderViewState();
-  }
-
-  private persistOrderViewState(): void {
-    const state: OrderViewState = {
-      quickFilter: this.orderQuickFilter(),
-      sortKey: this.orderSortKey(),
-      sortDirection: this.orderSortDirection(),
-      page: this.orderPage(),
-      pageSize: this.orderPageSize(),
-    };
-    try {
-      window.localStorage.setItem(ORDER_VIEW_STATE_KEY, JSON.stringify(state));
-    } catch {
-      // El estado sigue funcionando durante la sesión si el navegador bloquea storage.
-    }
   }
 
   private hydrateSelectedOrderForms(detail: ServiceOrderDetail | null = null): void {

@@ -183,7 +183,7 @@
             (ngModelChange)="view.editField(view.financeOrderId, $event)"
           >
             <option value="">Sin orden específica</option>
-            @for (order of view.orders(); track order.order_id) {
+            @for (order of view.orderList.orders(); track order.order_id) {
               <option [value]="order.order_id">
                 {{ order.applicant_name ?? order.document_number_masked }}
               </option>

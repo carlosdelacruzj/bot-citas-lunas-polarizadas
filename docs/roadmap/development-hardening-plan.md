@@ -957,6 +957,9 @@ Ver [ownership](../architecture/whatsapp-browser.md) y
 
 Orden obligatorio: Telegram, Admin API, migraciones, configuracion y WhatsApp.
 Terminar y publicar cada bloque antes de abrir el siguiente.
+Excepcion autorizada: avanzar el refactor independiente de `6.1` mientras se
+observan los casos naturales de `5.5.5` y `2.6`. Sus casillas siguen abiertas;
+esta excepcion no permite forzar envios ni retirar la fachada WhatsApp sin evidencia.
 
 Criterio de cierre de fase: core y motor no dependen de adaptadores, los casos
 de uso no viven dentro de repositorios y no existen ciclos ni monkey patches
@@ -988,6 +991,19 @@ Para cada dominio:
 
 No crear un store global nuevo que reproduzca el mismo problema con otro
 nombre.
+
+Avance parcial: el listado de ordenes posee `OrdersListFacade`, con consulta,
+estado, filtros, orden, paginacion, preferencias y contadores propios. La vista
+consume una superficie sin comandos de reemplazo ni carga; las senales son de
+solo lectura. Sus 37 miembros anteriores ya no estan en `App`. Resumen y el
+selector de orden de Finanzas comparten esa misma instancia. La coordinacion
+de refresh y seleccion sigue en el shell para conservar el comportamiento.
+
+Pendiente inmediato dentro del primer dominio: extraer alta, detalle, edicion,
+confirmaciones y comandos; retirar entonces el acceso de Ordenes a la fachada
+global. No empezar Finanzas como dominio hasta validar ese bloque. Las casillas
+generales de `6.1` siguen abiertas porque abarcan los seis dominios.
+Medicion y limites: [primer bloque](../../reports/architecture/dashboard-orders-list-extraction-2026-09-08.md).
 
 ### 6.2 Dividir contratos y clientes HTTP
 
