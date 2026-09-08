@@ -982,28 +982,31 @@ Orden recomendado:
 
 Para cada dominio:
 
-- [ ] crear fachada estrecha y estado propio;
-- [ ] mover carga, comandos, confirmaciones y formato del dominio;
-- [ ] limitar lo que la vista puede leer;
-- [ ] migrar tests y templates;
-- [ ] eliminar miembros equivalentes de `App`;
-- [ ] medir bundle y comportamiento antes de continuar.
+- [x] crear fachada estrecha y estado propio;
+- [x] mover carga, comandos, confirmaciones y formato del dominio;
+- [x] limitar lo que la vista puede leer;
+- [x] migrar tests y templates;
+- [x] eliminar miembros equivalentes de `App`;
+- [x] medir bundle y comportamiento antes de continuar.
 
 No crear un store global nuevo que reproduzca el mismo problema con otro
 nombre.
 
-Avance parcial: el listado de ordenes posee `OrdersListFacade`, con consulta,
-estado, filtros, orden, paginacion, preferencias y contadores propios. La vista
-consume una superficie sin comandos de reemplazo ni carga; las senales son de
-solo lectura. Sus 37 miembros anteriores ya no estan en `App`. Resumen y el
-selector de orden de Finanzas comparten esa misma instancia. La coordinacion
-de refresh y seleccion sigue en el shell para conservar el comportamiento.
+Completado para los seis dominios. `App` conserva composicion, proveedores y
+eventos del documento; cada dominio posee sus cargas, estado y comandos.
+Los editores de plantillas y recordatorios tienen instancia por vista; el
+listado de ordenes conserva una unica instancia compartida. Navegacion coordina
+refresh y cancelacion; UI comparte confirmaciones y foco, sin almacenar datos
+de negocio. Los consumidores usan puertos tipados por superficie y se retiro
+`DashboardViewFacade` tras migrar su ultimo consumidor.
 
-Pendiente inmediato dentro del primer dominio: extraer alta, detalle, edicion,
-confirmaciones y comandos; retirar entonces el acceso de Ordenes a la fachada
-global. No empezar Finanzas como dominio hasta validar ese bloque. Las casillas
-generales de `6.1` siguen abiertas porque abarcan los seis dominios.
-Medicion y limites: [primer bloque](../../reports/architecture/dashboard-orders-list-extraction-2026-09-08.md).
+Se validaron y midieron los seis bloques antes de continuar. Pasan 14 pruebas
+unitarias del dashboard y el smoke existente recorre ocho pantallas con API
+simulada. `App`: 4988 a 289 lineas; bundle inicial: 553.51 a 570.05 kB.
+Arquitectura: [dominios del dashboard](../architecture/dashboard-domains.md).
+Evidencia y limites: [cierre completo](../../reports/architecture/dashboard-domain-extraction-2026-09-08.md).
+Esto no cierra contratos HTTP (`6.2`), cargas parciales (`6.3`), accesibilidad
+(`6.4`) ni la aceptacion natural pendiente de `5.5.5` y `2.6`.
 
 ### 6.2 Dividir contratos y clientes HTTP
 

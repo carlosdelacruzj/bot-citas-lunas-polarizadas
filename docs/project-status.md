@@ -142,10 +142,10 @@ especial de ordenes de prueba.
 
 Contrato: [`contracts/appointment-followups.md`](contracts/appointment-followups.md).
 
-El contrato Angular esta tipado. Ordenes usa una proyeccion especifica;
-compatibilidad y detalle autorizado permanecen separados. `OrdersListFacade`
-posee consulta, filtros, orden, paginacion y preferencias, con senales de solo
-lectura. Alta, detalle y acciones todavia dependen de `App`; la extraccion es parcial.
+El [dashboard por dominio](architecture/dashboard-domains.md) conserva `App`
+como shell. Ordenes, Finanzas, Mensajes, Seguimiento, CAPTCHA y Operaciones
+poseen estado y comandos; vistas y modales consumen puertos estrechos. La
+proyeccion de ordenes, compatibilidad y detalle autorizado permanecen separados.
 
 Cerrar, cancelar o fallar un alta elimina password, documento y contacto. Las
 confirmaciones y la copia diagnostica no muestran esos datos personales.
