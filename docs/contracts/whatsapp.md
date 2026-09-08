@@ -1,9 +1,9 @@
 # Contrato de comunicaciones WhatsApp
 
-Estado: vigente. Ultima verificacion: `2026-08-31`.
+Estado: vigente. Ultima verificacion: `2026-09-08`.
 
 Codigo propietario: `src/appointment_bot/core/whatsapp_delivery.py`,
-`src/appointment_bot/browser/whatsapp_web.py`,
+`src/appointment_bot/browser/whatsapp/`,
 `src/appointment_bot/services/whatsapp*` y `src/appointment_bot/db/whatsapp*`.
 
 ## Propiedad y cola

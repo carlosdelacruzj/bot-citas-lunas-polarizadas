@@ -931,16 +931,25 @@ Ver [evidencia fechada](../../reports/architecture/configuration-domains-2026-09
 Ownership destino: infraestructura de navegador bajo `browser/whatsapp/`; los
 servicios conservan preparacion, persistencia y politica de trabajos.
 
-- [ ] Caracterizar sesion, destinatario, adjuntos, preview, texto y estados
+- [x] Caracterizar sesion, destinatario, adjuntos, preview, texto y estados
   `failed`, `uncertain` y `sent` sin realizar envios de prueba.
-- [ ] Extraer primero detectores DOM puros y confirmacion tecnica, preservando
+- [x] Extraer primero detectores DOM puros y confirmacion tecnica, preservando
   que cualquier indicador pendiente veta el exito.
-- [ ] Extraer navegacion y validacion exacta del destinatario.
-- [ ] Extraer imagenes, albumes, documentos y previews sin mezclar sus etapas.
-- [ ] Extraer composicion y envio conservando screenshot y contexto ante
+- [x] Extraer navegacion y validacion exacta del destinatario.
+- [x] Extraer imagenes, albumes, documentos y previews sin mezclar sus etapas.
+- [x] Extraer composicion y envio conservando screenshot y contexto ante
   ambiguedad.
 - [ ] Migrar consumidores y retirar la fachada solo despues de pruebas y de la
   siguiente aceptacion natural aplicable; nunca reintentar `uncertain`.
+
+Extraccion tecnica publicada en `browser/whatsapp/`: 90 definiciones
+estructuralmente identicas, 48 escenarios DOM aislados y siete payloads publicos
+equivalentes. Los servicios usan la nueva API; cero imports productivos de la
+fachada y un unico manager. Pasan 181 tests, 24 subtests y cobertura critica.
+La fachada conserva reexports hasta la siguiente aceptacion natural posterior
+a la extraccion; este cierre no se sustituye por HTML sintetico.
+Ver [ownership](../architecture/whatsapp-browser.md) y
+[evidencia fechada](../../reports/architecture/whatsapp-extraction-2026-09-08.json).
 
 Orden obligatorio: Telegram, Admin API, migraciones, configuracion y WhatsApp.
 Terminar y publicar cada bloque antes de abrir el siguiente.

@@ -115,9 +115,10 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Continuar con la extraccion 5.5.5 de WhatsApp Web. En 5.5.4 queda retirar
-la fachada Settings cuando los consumidores de composicion y copias por cliente
-usen grupos propios sin perder el contrato de carga. Las fases 6 a 8 cubren
+Cerrar los retiros de fachadas de 5.5.4 y 5.5.5: migrar las fronteras de
+composicion y copias por cliente a grupos propios; observar el siguiente caso
+natural de WhatsApp posterior a su extraccion antes de retirar los reexports.
+No generar envios para forzar ese cierre. Las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.
 

@@ -37,7 +37,7 @@ Estado general:
 
 ## Arquitectura vigente
 
-Configuracion en seis grupos inmutables bajo `configuration/`; `Settings` conserva la carga y las copias por cliente.
+[Configuracion por dominio](architecture/domain-configuration.md) en seis grupos inmutables; `Settings` conserva la carga y las copias por cliente.
 
 ### Worker
 
@@ -166,7 +166,7 @@ emite el alias financiero `is_complete`; el contrato usa `conversion_complete`.
 
 Reglas vigentes:
 
-- un unico perfil persistente de WhatsApp pertenece a Admin API;
+- un unico perfil persistente pertenece a Admin API; [infraestructura modular](architecture/whatsapp-browser.md) en `browser/whatsapp/`;
 - albumes y paquetes postpago conservan confirmacion por componentes;
 - `sent` requiere evidencia tecnica suficiente;
 - un reloj o indicador pendiente visible veta la confirmacion;
