@@ -3,10 +3,10 @@
 Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos.
 
 ## Corte y cobertura
-- Generado: `2026-09-07 15:55:08 America/Lima`.
+- Generado: `2026-09-08 00:10:09 America/Lima`.
 - Ventana solicitada: mes activo 2026-09 (America/Lima).
-- Rango real de eventos indexados: `2026-09-01 09:04:52` a `2026-09-07 13:54:20` (America/Lima).
-- Cobertura temporal verificable: 366/366 eventos con hora de cierre.
+- Rango real de eventos indexados: `2026-09-01 09:04:52` a `2026-09-07 18:00:11` (America/Lima).
+- Cobertura temporal verificable: 467/467 eventos con hora de cierre.
 - Fuente: filas sanitizadas del indice compacto de evidencia.
 
 ## Limites
@@ -16,30 +16,30 @@ Este archivo es la lectura rapida antes de abrir HTML, screenshots o logs largos
 - La ausencia de un evento no demuestra que el portal no haya sido consultado.
 
 ## Totales
-- Eventos indexados: 366
-- Reservas registradas: 56
+- Eventos indexados: 467
+- Reservas registradas: 61
 - Reservas no confirmadas: 0
-- Disponibilidades completas: 231
+- Disponibilidades completas: 327
 - Disponibilidades parciales: 36
 - Senales de defensa: 3
 
 ## Origen de deteccion
-- fetch_probe: 17
-- normal: 337
+- fetch_probe: 22
+- normal: 433
 - reload_probe: 4
 - slot_lost_reobservation: 8
 
 ## Ultimos eventos utiles
-- 2026-09-07 13:54:20 | sin orden | available | normal | 07/10/2026 08:00 | sin outcome
-- 2026-09-07 13:29:46 | sin orden | available | normal | 09/10/2026 09:00 | sin outcome
-- 2026-09-07 12:54:23 | sin orden | available | normal | 08/10/2026 10:00 | sin outcome
-- 2026-09-07 12:51:27 | order-*** | registered | fetch_probe | 07/10/2026 10:00 | confirmed
-- 2026-09-07 11:35:50 | order-*** | registered | fetch_probe | 06/10/2026 11:00 | confirmed
-- 2026-09-07 11:35:35 | order-*** | partial | fetch_probe | 06/10/2026 11:00 | blocked_by_order_rule
-- 2026-09-07 10:02:58 | sin orden | available | normal | 06/10/2026 10:00 | sin outcome
-- 2026-09-07 10:01:57 | order-*** | registered | fetch_probe | 06/10/2026 10:00 | confirmed
-- 2026-09-07 10:01:39 | order-*** | unavailable | fetch_probe | 03/10/2026 10:00 | slot_lost
-- 2026-09-07 10:01:02 | order-*** | registered | fetch_probe | 03/10/2026 10:00 | confirmed
+- 2026-09-07 18:00:11 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:59:58 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:59:07 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:58:54 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:58:03 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:57:50 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:56:59 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:56:46 | sin orden | available | normal | 21/10/2026 09:00 | sin outcome
+- 2026-09-07 17:55:26 | sin orden | available | normal | 20/10/2026 09:00 | sin outcome
+- 2026-09-07 17:55:13 | sin orden | available | normal | 20/10/2026 09:00 | sin outcome
 
 ## Senales de defensa
 - 2026-09-03 13:02:34 | order-*** | http_429 | La reserva fue confirmada por mensaje de exito del portal.
