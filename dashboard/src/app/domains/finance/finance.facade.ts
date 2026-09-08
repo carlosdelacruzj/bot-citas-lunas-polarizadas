@@ -25,7 +25,7 @@ export class FinanceFacade {
   private readonly injector = inject(Injector);
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
-  
+
   public readonly selectedMonth = signal(INITIAL_MONTH);
 
   public readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);

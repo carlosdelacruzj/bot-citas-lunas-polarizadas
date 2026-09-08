@@ -1,12 +1,18 @@
 import { InjectionToken } from '@angular/core';
 import type { App } from './app';
 import type { FinanceFacade } from './domains/finance/finance.facade';
+import type { MessagesFacade } from './domains/messages/messages.facade';
 import type { OrdersListFacade } from './domains/orders/orders-list.facade';
 import type { OrdersFacade } from './domains/orders/orders.facade';
 
-export const DASHBOARD_ORDERS_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_ORDERS_MESSAGES = new InjectionToken<Pick<MessagesFacade,
   "isPostPaymentWhatsAppCandidate"
-  | "actionBusy"
+  | "openPostPaymentWhatsApp"
+  | "openWhatsAppReview"
+>>('DASHBOARD_ORDERS_MESSAGES');
+
+export const DASHBOARD_ORDERS_SHELL = new InjectionToken<Pick<App,
+  "actionBusy"
   | "capitalize"
   | "captureFocus"
   | "formDirty"
@@ -14,8 +20,6 @@ export const DASHBOARD_ORDERS_SHELL = new InjectionToken<Pick<App,
   | "activeModal"
   | "restoreFocus"
   | "openModal"
-  | "openPostPaymentWhatsApp"
-  | "openWhatsAppReview"
   | "errorMessage"
   | "optionalText"
   | "setPendingAction"
@@ -60,6 +64,22 @@ export const DASHBOARD_FINANCE_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "selectedOrderDetail"
   | "requireSelectedOrder"
 >>('DASHBOARD_FINANCE_ORDERS');
+
+export const DASHBOARD_MESSAGES_SHELL = new InjectionToken<Pick<App,
+  "openModal"
+  | "errorMessage"
+  | "showToast"
+  | "getSweetAlert"
+  | "readError"
+  | "actionBusy"
+  | "refreshAll"
+  | "closeModal"
+  | "markCopied"
+>>('DASHBOARD_MESSAGES_SHELL');
+
+export const DASHBOARD_MESSAGES_ORDERS = new InjectionToken<Pick<OrdersFacade,
+  "selectedOrderDetail"
+>>('DASHBOARD_MESSAGES_ORDERS');
 
 export const DASHBOARD_CREATE_ORDER_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
@@ -220,11 +240,17 @@ export const DASHBOARD_PAYMENT_MODAL_FINANCE = new InjectionToken<Pick<FinanceFa
 
 export const DASHBOARD_WHATSAPP_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
-  | "whatsappTestMode"
-  | "whatsappReviewMode"
-  | "whatsappFollowUpMode"
   | "actionBusy"
   | "closeModal"
+  | "statusLabel"
+  | "formatDateTime"
+  | "statusTone"
+>>('DASHBOARD_WHATSAPP_MODAL_SHELL');
+
+export const DASHBOARD_WHATSAPP_MODAL_MESSAGES = new InjectionToken<Pick<MessagesFacade,
+  "whatsappTestMode"
+  | "whatsappReviewMode"
+  | "whatsappFollowUpMode"
   | "whatsappPackage"
   | "whatsappFollowUpPackage"
   | "whatsappTestRecipient"
@@ -232,9 +258,6 @@ export const DASHBOARD_WHATSAPP_MODAL_SHELL = new InjectionToken<Pick<App,
   | "whatsappPackageLoading"
   | "prepareWhatsAppTest"
   | "whatsappReview"
-  | "statusLabel"
-  | "formatDateTime"
-  | "statusTone"
   | "copyWhatsAppText"
   | "whatsappWebBusy"
   | "confirmAndSendWhatsAppFollowUp"
@@ -246,7 +269,7 @@ export const DASHBOARD_WHATSAPP_MODAL_SHELL = new InjectionToken<Pick<App,
   | "whatsappManualFallbackOpen"
   | "copyWhatsAppAttachment"
   | "confirmWhatsAppSent"
->>('DASHBOARD_WHATSAPP_MODAL_SHELL');
+>>('DASHBOARD_WHATSAPP_MODAL_MESSAGES');
 
 export const DASHBOARD_WORKER_RESTART_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
@@ -449,32 +472,28 @@ export const DASHBOARD_INBOX_VIEW_SHELL = new InjectionToken<Pick<App,
   | "openInboxCaptchaReview"
 >>('DASHBOARD_INBOX_VIEW_SHELL');
 
-export const DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES = new InjectionToken<Pick<MessagesFacade,
   "whatsappMessageTemplates"
-  | "formDirty"
+>>('DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES');
+
+export const DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL = new InjectionToken<Pick<App,
+  "formDirty"
   | "formatDateTime"
 >>('DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL');
 
-export const DASHBOARD_ORDERS_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_ORDERS_VIEW_MESSAGES = new InjectionToken<Pick<MessagesFacade,
   "whatsappSessionBusy"
   | "validateWhatsAppSession"
   | "whatsappSessionState"
   | "openWhatsAppEvidenceTest"
   | "openWhatsAppTest"
-  | "statusTone"
-  | "statusLabel"
-  | "actionBusy"
   | "canPrepareOrderWhatsApp"
   | "whatsappPreparationHint"
   | "openOrderWhatsApp"
   | "canPreparePostPaymentWhatsApp"
   | "postPaymentWhatsAppHint"
   | "openPostPaymentWhatsApp"
-  | "copiedLabel"
-  | "formatDate"
-  | "formatTime"
-  | "formatDateTime"
->>('DASHBOARD_ORDERS_VIEW_SHELL');
+>>('DASHBOARD_ORDERS_VIEW_MESSAGES');
 
 export const DASHBOARD_ORDERS_VIEW_ORDERS = new InjectionToken<Pick<OrdersFacade,
   "openCreateOrder"
@@ -514,6 +533,16 @@ export const DASHBOARD_ORDERS_VIEW_ORDERS = new InjectionToken<Pick<OrdersFacade
   | "rowPrimaryActionLabel"
   | "openManualSessionNow"
 >>('DASHBOARD_ORDERS_VIEW_ORDERS');
+
+export const DASHBOARD_ORDERS_VIEW_SHELL = new InjectionToken<Pick<App,
+  "statusTone"
+  | "statusLabel"
+  | "actionBusy"
+  | "copiedLabel"
+  | "formatDate"
+  | "formatTime"
+  | "formatDateTime"
+>>('DASHBOARD_ORDERS_VIEW_SHELL');
 
 export const DASHBOARD_ORDERS_VIEW_FINANCE = new InjectionToken<Pick<FinanceFacade,
   "openPayment"
@@ -651,6 +680,23 @@ export const DASHBOARD_SHELL_FINANCE = new InjectionToken<Pick<FinanceFacade,
   | "clearFinanceForm"
 >>('DASHBOARD_SHELL_FINANCE');
 
+export const DASHBOARD_SHELL_MESSAGES = new InjectionToken<Pick<MessagesFacade,
+  "whatsappMessageTemplates"
+  | "loadMessagesView"
+  | "openOrderWhatsApp"
+  | "openWhatsAppReview"
+  | "whatsappPackage"
+  | "whatsappFollowUpPackage"
+  | "whatsappTestRecipient"
+  | "whatsappTestMode"
+  | "whatsappFollowUpMode"
+  | "whatsappReviewMode"
+  | "whatsappReview"
+  | "whatsappReviewNote"
+  | "whatsappWebResult"
+  | "whatsappManualFallbackOpen"
+>>('DASHBOARD_SHELL_MESSAGES');
+
 export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   "closeTrackedManualSessionsWithBeacon"
   | "orderPanelOpen"
@@ -662,7 +708,6 @@ export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "loadOrdersView"
   | "openEditOrder"
   | "requestOrderValidation"
-  | "selectedOrderDetail"
   | "hydrateSelectedOrderForms"
   | "clearCreateOrderForm"
   | "applyOrders"
@@ -673,4 +718,4 @@ export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "handleBeforeUnload"
 >>('DASHBOARD_SHELL_ORDERS');
 
-export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_FINANCE, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_FINANCE, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_FINANCE, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_FINANCE, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;
+export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_FINANCE, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WHATSAPP_MODAL_MESSAGES, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_FINANCE, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_MESSAGES, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_FINANCE, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_FINANCE, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;

@@ -21,7 +21,11 @@ import {
   SPANISH_LIST_FORMAT,
   WEEKDAY_NAMES,
 } from '../../dashboard-domain.contracts';
-import { DASHBOARD_ORDERS_FINANCE, DASHBOARD_ORDERS_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_ORDERS_FINANCE,
+  DASHBOARD_ORDERS_MESSAGES,
+  DASHBOARD_ORDERS_SHELL,
+} from '../../dashboard-domain.ports';
 import { OrdersListFacade } from '../../domains/orders/orders-list.facade';
 import {
   ProgramResolutionPayload,
@@ -144,7 +148,7 @@ export class OrdersFacade {
       };
     }
     if (
-      this.shell.isPostPaymentWhatsAppCandidate(order) &&
+      this.messages.isPostPaymentWhatsAppCandidate(order) &&
       order.whatsapp_followup_action_state !== 'not_applicable'
     ) {
       if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
@@ -366,11 +370,11 @@ export class OrdersFacade {
     } else if (action.key === 'payment') {
       void this.finance.openPayment(order);
     } else if (action.key === 'post-payment-whatsapp') {
-      void this.shell.openPostPaymentWhatsApp(order);
+      void this.messages.openPostPaymentWhatsApp(order);
     } else if (action.key === 'program-resolution') {
       void this.openProgramResolution(order);
     } else if (action.key === 'review') {
-      void this.shell.openWhatsAppReview(order);
+      void this.messages.openWhatsAppReview(order);
     }
   }
 
@@ -382,7 +386,7 @@ export class OrdersFacade {
       return 'Registrar pago';
     }
     if (
-      this.shell.isPostPaymentWhatsAppCandidate(order) &&
+      this.messages.isPostPaymentWhatsAppCandidate(order) &&
       order.whatsapp_followup_action_state !== 'not_applicable'
     ) {
       if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
@@ -415,14 +419,14 @@ export class OrdersFacade {
       return;
     }
     if (
-      this.shell.isPostPaymentWhatsAppCandidate(order) &&
+      this.messages.isPostPaymentWhatsAppCandidate(order) &&
       order.whatsapp_followup_action_state !== 'not_applicable'
     ) {
       this.selectOrder(order.order_id);
       if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
-        void this.shell.openWhatsAppReview(order);
+        void this.messages.openWhatsAppReview(order);
       } else if (order.whatsapp_followup_action_state === 'sent') {
-        void this.shell.openPostPaymentWhatsApp(order);
+        void this.messages.openPostPaymentWhatsApp(order);
       }
       return;
     }
@@ -1197,6 +1201,8 @@ export class OrdersFacade {
       this.applyOrders(await this.orderList.fetchOrders(scope));
       return;
     }
+
+  private get messages() { return this.injector.get(DASHBOARD_ORDERS_MESSAGES); }
 
   private get shell() { return this.injector.get(DASHBOARD_ORDERS_SHELL); }
 

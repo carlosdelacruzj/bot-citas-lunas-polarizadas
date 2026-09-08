@@ -11,21 +11,21 @@
       <button
         type="button"
         class="secondary"
-        [disabled]="shellDomain.whatsappSessionBusy()"
-        (click)="shellDomain.validateWhatsAppSession()"
+        [disabled]="messagesDomain.whatsappSessionBusy()"
+        (click)="messagesDomain.validateWhatsAppSession()"
       >
         {{
-          shellDomain.whatsappSessionBusy()
+          messagesDomain.whatsappSessionBusy()
             ? 'Validando WhatsApp...'
-            : shellDomain.whatsappSessionState() === 'ready'
+            : messagesDomain.whatsappSessionState() === 'ready'
               ? 'WhatsApp listo'
               : 'Validar WhatsApp'
         }}
       </button>
-      <button type="button" class="secondary" (click)="shellDomain.openWhatsAppEvidenceTest()">
+      <button type="button" class="secondary" (click)="messagesDomain.openWhatsAppEvidenceTest()">
         Probar evidencias
       </button>
-      <button type="button" class="secondary" (click)="shellDomain.openWhatsAppTest()">
+      <button type="button" class="secondary" (click)="messagesDomain.openWhatsAppTest()">
         Probar post-pago
       </button>
       <button type="button" class="primary" (click)="ordersDomain.openCreateOrder()">Nueva orden</button>
@@ -93,9 +93,9 @@
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!shellDomain.canPrepareOrderWhatsApp(order) || shellDomain.actionBusy()"
-                [title]="shellDomain.whatsappPreparationHint(order)"
-                (click)="shellDomain.openOrderWhatsApp(order)"
+                [disabled]="!messagesDomain.canPrepareOrderWhatsApp(order) || shellDomain.actionBusy()"
+                [title]="messagesDomain.whatsappPreparationHint(order)"
+                (click)="messagesDomain.openOrderWhatsApp(order)"
               >
                 {{
                   order.whatsapp_message_status === 'sent'
@@ -107,9 +107,9 @@
               <button
                 type="button"
                 class="whatsapp-action"
-                [disabled]="!shellDomain.canPreparePostPaymentWhatsApp(order) || shellDomain.actionBusy()"
-                [title]="shellDomain.postPaymentWhatsAppHint(order)"
-                (click)="shellDomain.openPostPaymentWhatsApp(order)"
+                [disabled]="!messagesDomain.canPreparePostPaymentWhatsApp(order) || shellDomain.actionBusy()"
+                [title]="messagesDomain.postPaymentWhatsAppHint(order)"
+                (click)="messagesDomain.openPostPaymentWhatsApp(order)"
               >
                 {{
                   order.whatsapp_followup_status === 'sent'
@@ -120,9 +120,9 @@
             }
           </div>
           @if (order.payment_status === 'pending') {
-            <small>{{ shellDomain.whatsappPreparationHint(order) }}</small>
+            <small>{{ messagesDomain.whatsappPreparationHint(order) }}</small>
           } @else if (order.payment_status === 'paid') {
-            <small>{{ shellDomain.postPaymentWhatsAppHint(order) }}</small>
+            <small>{{ messagesDomain.postPaymentWhatsAppHint(order) }}</small>
           }
         </div>
 

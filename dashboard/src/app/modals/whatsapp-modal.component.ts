@@ -1,6 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DASHBOARD_WHATSAPP_MODAL_SHELL } from '../dashboard-domain.ports';
+import {
+  DASHBOARD_WHATSAPP_MODAL_MESSAGES,
+  DASHBOARD_WHATSAPP_MODAL_SHELL,
+} from '../dashboard-domain.ports';
 
 
 @Component({
@@ -11,5 +14,6 @@ import { DASHBOARD_WHATSAPP_MODAL_SHELL } from '../dashboard-domain.ports';
 })
 export class WhatsappModalComponent {
   protected readonly shellDomain = inject(DASHBOARD_WHATSAPP_MODAL_SHELL);
+  protected readonly messagesDomain = inject(DASHBOARD_WHATSAPP_MODAL_MESSAGES);
 
 }
