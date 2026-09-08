@@ -1,7 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import {
+  DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS,
+  DASHBOARD_ORDER_ACTIONS_MODAL_SHELL,
+} from '../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
 
 @Component({
   selector: 'app-order-actions-modal',
@@ -10,5 +13,7 @@ import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
   templateUrl: './order-actions-modal.component.html',
 })
 export class OrderActionsModalComponent {
-  protected readonly view = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_ORDER_ACTIONS_MODAL_SHELL);
+  protected readonly orders = inject(DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS);
+
 }

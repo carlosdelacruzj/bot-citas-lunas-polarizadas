@@ -1,8 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import {
+  DASHBOARD_CREATE_ORDER_MODAL_ORDERS,
+  DASHBOARD_CREATE_ORDER_MODAL_SHELL,
+} from '../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
-import { ReservationRulesEditorComponent } from '../reservation-rules-editor/reservation-rules-editor.component';
+import {
+  ReservationRulesEditorComponent,
+} from '../reservation-rules-editor/reservation-rules-editor.component';
 
 @Component({
   selector: 'app-create-order-modal',
@@ -11,5 +16,7 @@ import { ReservationRulesEditorComponent } from '../reservation-rules-editor/res
   templateUrl: './create-order-modal.component.html',
 })
 export class CreateOrderModalComponent {
-  protected readonly view = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_CREATE_ORDER_MODAL_SHELL);
+  protected readonly orders = inject(DASHBOARD_CREATE_ORDER_MODAL_ORDERS);
+
 }

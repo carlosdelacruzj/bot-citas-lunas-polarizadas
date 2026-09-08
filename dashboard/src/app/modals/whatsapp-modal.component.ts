@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DASHBOARD_WHATSAPP_MODAL_SHELL } from '../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
 
 @Component({
   selector: 'app-whatsapp-modal',
@@ -10,5 +10,6 @@ import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
   templateUrl: './whatsapp-modal.component.html',
 })
 export class WhatsappModalComponent {
-  protected readonly view = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_WHATSAPP_MODAL_SHELL);
+
 }

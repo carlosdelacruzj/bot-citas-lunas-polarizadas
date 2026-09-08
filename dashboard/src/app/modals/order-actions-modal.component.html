@@ -1,5 +1,5 @@
-@if (view.activeModal() === 'order-actions') {
-  @if (view.modalOrder(); as order) {
+@if (shell.activeModal() === 'order-actions') {
+  @if (orders.modalOrder(); as order) {
     <section
       class="modal-backdrop"
       role="dialog"
@@ -10,13 +10,13 @@
         <div class="modal-header">
           <div>
             <h2 id="order-actions-title">Acciones de orden</h2>
-            <p>{{ view.orderLabel(order) }}</p>
+            <p>{{ orders.orderLabel(order) }}</p>
           </div>
           <button
             type="button"
             class="icon-button"
             data-modal-initial-focus
-            (click)="view.closeModal()"
+            (click)="shell.closeModal()"
           >
             Cerrar
           </button>
@@ -25,15 +25,15 @@
         <dl class="summary-list">
           <div>
             <dt>Estado</dt>
-            <dd>{{ view.statusLabel(order.status) }}</dd>
+            <dd>{{ shell.statusLabel(order.status) }}</dd>
           </div>
           <div>
             <dt>Reserva</dt>
-            <dd>{{ view.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+            <dd>{{ shell.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
           </div>
           <div>
             <dt>Cierre</dt>
-            <dd>{{ view.closureDisplay(order) }}</dd>
+            <dd>{{ orders.closureDisplay(order) }}</dd>
           </div>
           <div>
             <dt>Tramite</dt>
@@ -50,41 +50,41 @@
             type="button"
             class="secondary"
             [disabled]="order.status !== 'ready'"
-            (click)="view.requestOrderAction('pause', 'Pausar orden')"
+            (click)="orders.requestOrderAction('pause', 'Pausar orden')"
           >
             Pausar
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="order.status !== 'paused' || view.hasActiveChildOrders(order)"
+            [disabled]="order.status !== 'paused' || orders.hasActiveChildOrders(order)"
             title="No se puede activar una orden padre con subordenes activas"
-            (click)="view.requestOrderAction('activate', 'Activar orden')"
+            (click)="orders.requestOrderAction('activate', 'Activar orden')"
           >
             Activar
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="!order.charge_required || view.isClosedOrder(order)"
-            (click)="view.requestOrderAction('no-charge', 'Marcar sin cobro')"
+            [disabled]="!order.charge_required || orders.isClosedOrder(order)"
+            (click)="orders.requestOrderAction('no-charge', 'Marcar sin cobro')"
           >
             Sin cobro
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="view.actionBusy()"
-            (click)="view.requestManualSession()"
+            [disabled]="shell.actionBusy()"
+            (click)="orders.requestManualSession()"
           >
-            {{ view.manualSessionActionLabel(order) }}
+            {{ orders.manualSessionActionLabel(order) }}
           </button>
           <button
             type="button"
             class="secondary"
-            [disabled]="view.actionBusy()"
+            [disabled]="shell.actionBusy()"
             title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
-            (click)="view.requestDiagnosticSession()"
+            (click)="orders.requestDiagnosticSession()"
           >
             Medir flujo manual
           </button>
@@ -97,8 +97,8 @@
               Resultado
               <select
                 name="modalClosureReason"
-                [ngModel]="view.closureReason()"
-                (ngModelChange)="view.setClosureReason($event)"
+                [ngModel]="orders.closureReason()"
+                (ngModelChange)="orders.setClosureReason($event)"
               >
                 <option value="client_withdrew">Cliente retirado</option>
                 <option value="external_slot">Cupo por tercero</option>
@@ -115,16 +115,16 @@
                 name="modalClosureNote"
                 type="text"
                 placeholder="Ej. duplicado de order-xxxxx"
-                [ngModel]="view.closureNote()"
-                (ngModelChange)="view.editField(view.closureNote, $event)"
+                [ngModel]="orders.closureNote()"
+                (ngModelChange)="shell.editField(orders.closureNote, $event)"
               />
             </label>
           </div>
           <button
             type="button"
             class="danger"
-            [disabled]="view.isClosedOrder(order)"
-            (click)="view.requestCloseOrder()"
+            [disabled]="orders.isClosedOrder(order)"
+            (click)="orders.requestCloseOrder()"
           >
             Cerrar con resultado
           </button>

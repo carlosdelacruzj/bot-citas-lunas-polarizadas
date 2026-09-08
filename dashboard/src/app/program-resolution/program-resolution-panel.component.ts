@@ -1,20 +1,23 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import {
+  DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS,
+  DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL,
+} from '../dashboard-domain.ports';
 
 import { ServiceOrder } from '../appointment-api.service';
-import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
 import { ViewStateComponent } from '../view-state/view-state.component';
 import {
   buildProgramResolution,
   defaultProgramResolutionChildren,
   pendingResolutionPrograms as filterPendingResolutionPrograms,
-  programResolutionDetails as readProgramResolutionDetails,
   ProgramResolutionChildDraft,
   ProgramResolutionChoice,
   ProgramResolutionCommercialMode,
   ProgramResolutionCommunicationDecision,
   ProgramResolutionDraftInput,
   ProgramResolutionResponse,
+  programResolutionDetails as readProgramResolutionDetails,
 } from './program-resolution';
 
 @Component({
@@ -25,7 +28,9 @@ import {
   styleUrl: './program-resolution-panel.component.css',
 })
 export class ProgramResolutionPanelComponent {
-  protected readonly view = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly orders = inject(DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS);
+  protected readonly shell = inject(DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL);
+
   readonly order = input.required<ServiceOrder>();
 
   protected readonly programResolutionChoice = signal<ProgramResolutionChoice>('');
@@ -41,7 +46,7 @@ export class ProgramResolutionPanelComponent {
   );
   protected readonly programResolutionResult = signal<ProgramResolutionResponse | null>(null);
   protected readonly programResolutionDetails = computed(() =>
-    readProgramResolutionDetails(this.view.selectedOrderDetail()?.preflight_details),
+    readProgramResolutionDetails(this.orders.selectedOrderDetail()?.preflight_details),
   );
   protected readonly pendingResolutionPrograms = computed(() =>
     filterPendingResolutionPrograms(this.programResolutionDetails()),
@@ -58,12 +63,12 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionSameTermsConfirmed.set(false);
     this.programResolutionCustomInheritanceConfirmed.set(false);
     this.programResolutionResult.set(null);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected chooseProgramExpediente(value: string): void {
     this.programResolutionSelectedExpediente.set(value);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected chooseProgramResolutionCommercialMode(
@@ -73,7 +78,7 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionSameTermsConfirmed.set(false);
     this.programResolutionCustomInheritanceConfirmed.set(false);
     this.programResolutionResult.set(null);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
     if (value === 'custom') {
       this.hydrateProgramResolutionChildren();
     }
@@ -81,19 +86,19 @@ export class ProgramResolutionPanelComponent {
 
   protected setSameTermsConfirmed(value: boolean): void {
     this.programResolutionSameTermsConfirmed.set(value);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected setCustomInheritanceConfirmed(value: boolean): void {
     this.programResolutionCustomInheritanceConfirmed.set(value);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected chooseCommunicationDecision(
     value: ProgramResolutionCommunicationDecision,
   ): void {
     this.programResolutionCommunicationDecision.set(value);
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected updateProgramResolutionChildPrice(expediente: string, value: string): void {
@@ -104,7 +109,7 @@ export class ProgramResolutionPanelComponent {
         reservationPrice: value,
       },
     }));
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected updateProgramResolutionChildCharge(expediente: string, value: boolean): void {
@@ -115,7 +120,7 @@ export class ProgramResolutionPanelComponent {
         chargeRequired: value,
       },
     }));
-    this.view.formDirty.set(true);
+    this.shell.formDirty.set(true);
   }
 
   protected programResolutionChildDraft(expediente: string): ProgramResolutionChildDraft {
@@ -134,10 +139,10 @@ export class ProgramResolutionPanelComponent {
   protected requestProgramResolution(): void {
     const result = buildProgramResolution(this.programResolutionDraftInput());
     if (!result.ok) {
-      this.view.errorMessage.set(result.error);
+      this.shell.errorMessage.set(result.error);
       return;
     }
-    this.view.requestProgramResolution(result.payload, result.confirmationLabel, (response) => {
+    this.orders.requestProgramResolution(result.payload, result.confirmationLabel, (response) => {
       this.programResolutionResult.set(response);
     });
   }
@@ -176,6 +181,6 @@ export class ProgramResolutionPanelComponent {
     this.programResolutionCommunicationDecision.set('');
     this.programResolutionChildren.set({});
     this.programResolutionResult.set(null);
-    this.view.formDirty.set(false);
+    this.shell.formDirty.set(false);
   }
 }

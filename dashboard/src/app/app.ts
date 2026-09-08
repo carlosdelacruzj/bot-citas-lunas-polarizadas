@@ -1,8 +1,7 @@
-import { OrdersListFacade } from './domains/orders/orders-list.facade';
-import { paginationWindow } from './pagination';
 import {
   Component,
   HostListener,
+  Injector,
   OnDestroy,
   ViewEncapsulation,
   WritableSignal,
@@ -15,11 +14,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
-
 import {
-  ApiActionResponse,
-  AppointmentReminderStatus,
   AppointmentApiService,
+  AppointmentReminderStatus,
   CaptchaAuthorityControl,
   CaptchaEvent,
   CaptchaEventsPage,
@@ -32,323 +29,121 @@ import {
   CaptchaQualityWeek,
   CaptchaSamplingControl,
   CaptchaSummary,
-  CloseServiceOrderPayload,
-  ContactUpdatePayload,
-  ExcludedDateRange,
   FinanceCategory,
   FinanceDataQuality,
   FinanceDataQualitySummary,
   FinanceEntry,
   FinanceEntryKind,
   FinanceEntryPayload,
-  FinanceSummary,
   FinanceMonthClosure,
+  FinanceSummary,
   HealthPayload,
-  ManualSession,
-  ManualSessionMode,
   MetricPeriod,
   MonthlySummaryV2,
   OperatorInboxPayload,
   OperatorInboxTask,
-  PaymentResolutionType,
   OpportunityBurst,
   OpportunityControl,
   OpportunityControlAction,
   OpportunityControlTarget,
+  PaymentResolutionType,
   PostAppointmentFollowup,
   PostAppointmentPayload,
   PostAppointmentQuery,
-  PriorityUpdatePayload,
-  ReservationRestrictionsUpdatePayload,
   RunDetail,
   RunSummary,
-  ServicePackageCatalog,
-  ServicePackageDefinition,
-  ServicePackageKey,
   ServiceOrder,
   ServiceOrderDetail,
-  WorkerCommand,
-  WorkerStatus,
   WhatsAppFollowUpPackage,
-  WhatsAppMessageTemplate,
   WhatsAppMessagePackage,
+  WhatsAppMessageTemplate,
   WhatsAppReviewPayload,
   WhatsAppReviewResolution,
   WhatsAppWebDraftResponse,
+  WorkerCommand,
+  WorkerStatus,
   apiErrorMessage,
 } from './appointment-api.service';
 import {
-  formatPeruDate,
-  formatPeruDateTime,
-  formatPeruTime,
-} from './peru-date-time';
-import { formatReservationDateRules } from './reservation-rule-labels';
-import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
-import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
+  CAPTCHA_QUALITY_CASE_FILTERS,
+  CaptchaAgreementFilter,
+  CaptchaPendingCorrection,
+  CaptchaPortalFilter,
+  CaptchaPredictionOption,
+  CaptchaReviewFilter,
+  CaptchaSourceFilter,
+  CaptchaWorkspaceMode,
+  DashboardSnapshotHealth,
+  DashboardSnapshotOrder,
+  DashboardSnapshotRun,
+  DashboardSnapshotWorker,
+  DashboardSnapshotWorkerCommand,
+  ERROR_MESSAGE_DURATION_MS,
+  INITIAL_DATE,
+  INITIAL_MONTH,
+  InboxOrderTask,
+  LoadState,
+  ModalKind,
+  POST_APPOINTMENT_PAGE_SIZES,
+  PendingAction,
+  PostAppointmentFilter,
+  PostAppointmentSortKey,
+  STATUS_PRESENTATIONS,
+  SortDirection,
+  StatusTone,
+  VIEW_LABELS,
+  ViewKey,
+  normalizeDashboardText,
+} from './dashboard-domain.contracts';
+import {
+  DASHBOARD_CAPTCHAS_VIEW_SHELL,
+  DASHBOARD_CREATE_ORDER_MODAL_ORDERS,
+  DASHBOARD_CREATE_ORDER_MODAL_SHELL,
+  DASHBOARD_EDIT_ORDER_MODAL_ORDERS,
+  DASHBOARD_EDIT_ORDER_MODAL_SHELL,
+  DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST,
+  DASHBOARD_FINANCE_ENTRY_MODAL_SHELL,
+  DASHBOARD_FINANCE_VIEW_SHELL,
+  DASHBOARD_FOLLOWUPS_VIEW_SHELL,
+  DASHBOARD_INBOX_VIEW_SHELL,
+  DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL,
+  DASHBOARD_ORDERS_SHELL,
+  DASHBOARD_ORDERS_VIEW_ORDERLIST,
+  DASHBOARD_ORDERS_VIEW_ORDERS,
+  DASHBOARD_ORDERS_VIEW_SHELL,
+  DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS,
+  DASHBOARD_ORDER_ACTIONS_MODAL_SHELL,
+  DASHBOARD_PAYMENT_MODAL_ORDERS,
+  DASHBOARD_PAYMENT_MODAL_SHELL,
+  DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS,
+  DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL,
+  DASHBOARD_RUNS_VIEW_SHELL,
+  DASHBOARD_SHELL_ORDERS,
+  DASHBOARD_SUMMARY_VIEW_ORDERLIST,
+  DASHBOARD_SUMMARY_VIEW_SHELL,
+  DASHBOARD_WHATSAPP_MODAL_SHELL,
+  DASHBOARD_WORKER_RESTART_MODAL_SHELL,
+} from './dashboard-domain.ports';
 import {
   CaptchaRefreshMode,
   dashboardDataExpired,
   dashboardRefreshInterval,
 } from './dashboard-refresh.policy';
-import { RequestScope, isRequestCancelled } from './request-cancellation';
-import { WhatsappModalComponent } from './modals/whatsapp-modal.component';
-import { PaymentModalComponent } from './modals/payment-modal.component';
-import { EditOrderModalComponent } from './modals/edit-order-modal.component';
-import { OrderActionsModalComponent } from './modals/order-actions-modal.component';
+import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
+import { OrdersListFacade } from './domains/orders/orders-list.facade';
+import { OrdersFacade } from './domains/orders/orders.facade';
 import { CreateOrderModalComponent } from './modals/create-order-modal.component';
+import { EditOrderModalComponent } from './modals/edit-order-modal.component';
 import { FinanceEntryModalComponent } from './modals/finance-entry-modal.component';
+import { OrderActionsModalComponent } from './modals/order-actions-modal.component';
+import { PaymentModalComponent } from './modals/payment-modal.component';
+import { WhatsappModalComponent } from './modals/whatsapp-modal.component';
 import { WorkerRestartModalComponent } from './modals/worker-restart-modal.component';
-import {
-  ProgramResolutionPayload,
-  ProgramResolutionResponse,
-} from './program-resolution/program-resolution';
-import { buildCreateOrderPayload, buildPaymentPayload } from './sensitive-form-payloads';
-
-type LoadState = 'idle' | 'loading' | 'ready' | 'error';
-type ViewKey =
-  | 'inbox'
-  | 'summary'
-  | 'finance'
-  | 'messageTemplates'
-  | 'orders'
-  | 'followups'
-  | 'runs'
-  | 'captchas';
-type CaptchaAgreementFilter = 'all' | 'match' | 'mismatch' | 'pending';
-type CaptchaPortalFilter = 'all' | 'accepted' | 'rejected' | 'unverified';
-type CaptchaSourceFilter = 'all' | 'reservation' | 'observer';
-type CaptchaReviewFilter = 'all' | 'validated' | 'pending';
-type CaptchaWorkspaceMode = 'review' | 'history' | 'quality';
-type CaptchaPredictionOption = { answer: string; modelNames: string[] };
-type CaptchaPendingCorrection = {
-  eventId: string;
-  previousAnswer: string;
-  nextAnswer: string;
-};
-const CAPTCHA_QUALITY_CASE_FILTERS: Array<{
-  value: CaptchaQualityCaseType;
-  label: string;
-}> = [
-  { value: 'wrong', label: 'Errores' },
-  { value: 'high_confidence_wrong', label: 'Error con confianza alta' },
-  { value: 'majority_wrong', label: 'Mayoría incorrecta' },
-  { value: 'unanimous_wrong', label: 'Consenso incorrecto' },
-  { value: 'disagreement', label: 'Desacuerdos' },
-];
-type ModalKind =
-  | 'edit-order'
-  | 'payment'
-  | 'order-actions'
-  | 'create-order'
-  | 'worker-restart'
-  | 'finance-entry'
-  | 'whatsapp'
-  | null;
-type PostAppointmentFilter =
-  | 'active'
-  | 'attention'
-  | 'observations'
-  | 'access_lost'
-  | 'progressed'
-  | 'history';
-type PostAppointmentSortKey = 'priority' | 'appointment_date' | 'last_reviewed_at' | 'applicant';
-type ClosureReason =
-  | 'completed_by_us'
-  | 'family_no_charge'
-  | 'client_withdrew'
-  | 'external_slot'
-  | 'duplicate'
-  | 'not_serviceable'
-  | 'uncollectible';
-type SortDirection = 'asc' | 'desc';
-type StatusTone = 'good' | 'warn' | 'bad' | 'neutral';
-type StatusPresentation = { label: string; tone: StatusTone };
-type DashboardSnapshotHealth = Pick<
-  HealthPayload,
-  'status' | 'worker_running' | 'reason' | 'captcha_shadow_enabled'
->;
-type DashboardSnapshotWorker = Pick<
-  WorkerStatus,
-  | 'phase'
-  | 'paused'
-  | 'current_order_id'
-  | 'session_started_at'
-  | 'last_check_at'
-  | 'next_check_at'
-  | 'confirmed_reservations'
-  | 'consecutive_errors'
-  | 'updated_at'
-  | 'worker_running'
-  | 'continuous_worker_enabled'
->;
-type DashboardSnapshotOrder = Pick<
-  ServiceOrder,
-  | 'order_id'
-  | 'priority'
-  | 'charge_required'
-  | 'service_type'
-  | 'status'
-  | 'reservation_status'
-  | 'payment_status'
-  | 'whatsapp_message_action_state'
-  | 'whatsapp_followup_action_state'
-  | 'parent_order_id'
-  | 'preflight_status'
-  | 'registration_notice_status'
-  | 'created_at'
-  | 'updated_at'
->;
-type DashboardSnapshotRun = Pick<
-  RunSummary,
-  | 'run_id'
-  | 'order_id'
-  | 'status'
-  | 'exit_code'
-  | 'started_at'
-  | 'finished_at'
-  | 'duration_seconds'
-  | 'reservation_attempted'
-  | 'reservation_confirmed'
-  | 'screenshot_count'
->;
-type DashboardSnapshotWorkerCommand = Pick<
-  WorkerCommand,
-  'command_id' | 'command' | 'status' | 'requested_at' | 'claimed_at' | 'processed_at'
->;
-type PendingAction = {
-  title: string;
-  message: string;
-  execute: () => Promise<ApiActionResponse>;
-  successMessage?: string | ((response: ApiActionResponse) => string);
-  onSuccess?: (response: ApiActionResponse) => void;
-  afterRefresh?: (response: ApiActionResponse) => void | Promise<void>;
-  onSettled?: () => void;
-};
-type OrderNextAction = {
-  key:
-    | 'manual-session'
-    | 'activate'
-    | 'payment'
-    | 'post-payment-whatsapp'
-    | 'program-resolution'
-    | 'review'
-    | 'none';
-  label: string;
-  description: string;
-  disabled: boolean;
-};
-type InboxOrderTask = {
-  key: OperatorInboxTask['key'];
-  kind: OperatorInboxTask['kind'];
-  action: OperatorInboxTask['action'];
-  orderId: string;
-  applicantName: string | null;
-  documentNumberMasked: string;
-  title: string;
-  description: string;
-  label: string;
-  actionLabel: string;
-  icon: string;
-  tone: 'bad' | 'warn' | 'neutral';
-  updatedAt: string;
-};
-
-const ERROR_MESSAGE_DURATION_MS = 8_000;
-const POST_APPOINTMENT_PAGE_SIZES = [5, 10, 20] as const;
-const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
-  active: { label: 'Activo', tone: 'good' },
-  actual: { label: 'Real', tone: 'good' },
-  archived: { label: 'Archivada', tone: 'neutral' },
-  available: { label: 'Disponible', tone: 'warn' },
-  blocked: { label: 'Bloqueado', tone: 'warn' },
-  cancelled: { label: 'Cancelado', tone: 'neutral' },
-  claimed: { label: 'En proceso', tone: 'warn' },
-  closing: { label: 'Cerrando', tone: 'warn' },
-  close_timeout: { label: 'Cierre demorado', tone: 'bad' },
-  closed: { label: 'Cerrado', tone: 'neutral' },
-  completed: { label: 'Completado', tone: 'good' },
-  observation_with_progress: { label: 'Observación con avance', tone: 'warn' },
-  observation_no_progress: { label: 'Observación sin avance', tone: 'bad' },
-  awaiting_update: { label: 'Esperando actualización', tone: 'warn' },
-  in_progress: { label: 'En progreso', tone: 'good' },
-  upcoming: { label: 'Cita próxima', tone: 'neutral' },
-  access_lost: { label: 'Archivado · acceso perdido', tone: 'neutral' },
-  portal_unavailable: { label: 'Portal no disponible', tone: 'bad' },
-  review_required: { label: 'Revisión pendiente', tone: 'warn' },
-  not_checked: { label: 'Aún no revisado', tone: 'neutral' },
-  confirmed: { label: 'Confirmada', tone: 'good' },
-  degraded: { label: 'Degradado', tone: 'bad' },
-  draft_ready: { label: 'Borrador preparado', tone: 'warn' },
-  error: { label: 'Error', tone: 'bad' },
-  estimated: { label: 'Estimado', tone: 'warn' },
-  failed: { label: 'Fallido', tone: 'bad' },
-  family_no_charge: { label: 'Familiar sin cobro', tone: 'warn' },
-  invalid_credentials: { label: 'Credenciales rechazadas', tone: 'bad' },
-  login_required: { label: 'Requiere vinculación', tone: 'warn' },
-  mixed: { label: 'Mixto', tone: 'warn' },
-  monitoring_started: { label: 'Monitoreo iniciado', tone: 'good' },
-  no_pending_request: { label: 'Sin solicitud pendiente', tone: 'warn' },
-  not_required: { label: 'No requerido', tone: 'neutral' },
-  ok: { label: 'Correcto', tone: 'good' },
-  opening: { label: 'Abriendo', tone: 'warn' },
-  outside_hot_window: { label: 'Fuera de horario', tone: 'warn' },
-  paid: { label: 'Pagado', tone: 'good' },
-  partial: { label: 'Parcial', tone: 'warn' },
-  paused: { label: 'Pausada', tone: 'warn' },
-  pending: { label: 'Pendiente', tone: 'warn' },
-  prepared: { label: 'Preparado', tone: 'warn' },
-  queued: { label: 'En cola', tone: 'warn' },
-  session_ready: { label: 'WhatsApp listo', tone: 'good' },
-  ready: { label: 'Lista', tone: 'good' },
-  registered: { label: 'Registrada', tone: 'good' },
-  rejected: { label: 'Rechazado', tone: 'bad' },
-  reservation_unconfirmed: { label: 'Reserva sin confirmar', tone: 'bad' },
-  reserved_payment_pending: { label: 'Reservada, pago pendiente', tone: 'warn' },
-  resolved: { label: 'Conciliado manualmente', tone: 'neutral' },
-  running: { label: 'En ejecución', tone: 'warn' },
-  sent: { label: 'Enviado', tone: 'good' },
-  uncertain: { label: 'Envío incierto', tone: 'bad' },
-  unknown: { label: 'Desconocido', tone: 'bad' },
-  unavailable: { label: 'Sin disponibilidad', tone: 'neutral' },
-  validated: { label: 'Validado', tone: 'good' },
-  voided: { label: 'Anulado', tone: 'neutral' },
-  written_off: { label: 'Incobrable', tone: 'neutral' },
-  web_unavailable: { label: 'WhatsApp Web no disponible', tone: 'bad' },
-};
-const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-const SPANISH_LIST_FORMAT = new Intl.ListFormat('es-PE', {
-  style: 'long',
-  type: 'conjunction',
-});
-const INITIAL_MONTH = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/Lima',
-  year: 'numeric',
-  month: '2-digit',
-}).format(new Date());
-const INITIAL_DATE = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/Lima',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-}).format(new Date());
-const VIEW_LABELS: Record<ViewKey, { label: string; group: string }> = {
-  inbox: { label: 'Pendientes', group: 'Operación' },
-  summary: { label: 'Resumen', group: 'Operación' },
-  orders: { label: 'Órdenes', group: 'Operación' },
-  followups: { label: 'Citas y recordatorios', group: 'Operación' },
-  runs: { label: 'Runs y actividad', group: 'Operación' },
-  finance: { label: 'Finanzas', group: 'Administración' },
-  messageTemplates: { label: 'Mensajes de WhatsApp', group: 'Administración' },
-  captchas: { label: 'Control de CAPTCHA', group: 'Automatización' },
-};
-
-function normalizeDashboardText(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLocaleLowerCase('es');
-}
+import { paginationWindow } from './pagination';
+import { formatPeruDate, formatPeruDateTime, formatPeruTime } from './peru-date-time';
+import { RequestScope, isRequestCancelled } from './request-cancellation';
+import { buildPaymentPayload } from './sensitive-form-payloads';
+import { ViewStateComponent, ViewStateKind } from './view-state/view-state.component';
 
 @Component({
   selector: 'app-root',
@@ -365,110 +160,224 @@ function normalizeDashboardText(value: unknown): string {
     FinanceEntryModalComponent,
     WorkerRestartModalComponent,
   ],
-  providers: [OrdersListFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) }],
+  providers: [OrdersListFacade, OrdersFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_ORDERS_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_CREATE_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_CREATE_ORDER_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_EDIT_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_EDIT_ORDER_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, useExisting: OrdersListFacade },
+    { provide: DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_PAYMENT_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_PAYMENT_MODAL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_WHATSAPP_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_WORKER_RESTART_MODAL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_CAPTCHAS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FINANCE_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FOLLOWUPS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_INBOX_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_ORDERS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_ORDERS_VIEW_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_ORDERS_VIEW_ORDERLIST, useExisting: OrdersListFacade },
+    { provide: DASHBOARD_RUNS_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_SUMMARY_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_SUMMARY_VIEW_ORDERLIST, useExisting: OrdersListFacade },
+    { provide: DASHBOARD_SHELL_ORDERS, useExisting: OrdersFacade }
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class App implements OnDestroy {
-  public readonly formatDate = formatPeruDate;
-  public readonly formatDateTime = formatPeruDateTime;
-  public readonly formatTime = formatPeruTime;
-  public readonly orderList = inject(OrdersListFacade);
+  private readonly injector = inject(Injector);
   private readonly api = inject(AppointmentApiService);
   private readonly router = inject(Router);
+  public readonly orderList = inject(OrdersListFacade);
+  public readonly formatDate = formatPeruDate;
+
+  public readonly formatDateTime = formatPeruDateTime;
+
+  public readonly formatTime = formatPeruTime;
+
   private autoRefreshTimer: number | null = null;
+
   private postAppointmentSearchTimer: number | null = null;
+
   private postAppointmentRequestScope: RequestScope | null = null;
-  private readonly activeManualSessionIds = new Set<string>();
+
   private readonly loadedViews = new Set<ViewKey>();
+
   private readonly lastSuccessfulViewUpdate = new Map<ViewKey, number>();
+
   private refreshInFlight: Promise<void> | null = null;
+
   private refreshingView: ViewKey | null = null;
+
   private currentRefreshScope: RequestScope | null = null;
+
   private captchaLoadScope: RequestScope | null = null;
+
   private captchaQualityCaseScope: RequestScope | null = null;
+
   private refreshGeneration = 0;
+
   private routerSubscription: Subscription | null = null;
+
   private sweetAlertPromise: Promise<typeof import('sweetalert2').default> | null = null;
+
   private captchaReviewMessageTimer: number | null = null;
+
   private errorMessageTimer: number | null = null;
+
   private lastFocusedElement: HTMLElement | null = null;
 
   public readonly activeView = signal<ViewKey>('summary');
+
   public readonly sidebarCollapsed = signal(
     window.localStorage.getItem('appointment-dashboard-sidebar-collapsed') === 'true',
   );
+
   public readonly mobileMenuOpen = signal(false);
+
   public readonly activeModal = signal<ModalKind>(null);
+
   public readonly autoRefreshEnabled = signal(true);
+
   public readonly pageHidden = signal(document.visibilityState === 'hidden');
+
   public readonly formDirty = signal(false);
+
   public readonly lastUpdatedAt = signal<string | null>(null);
+
   public readonly runStatusFilter = signal('');
+
   public readonly health = signal<HealthPayload | null>(null);
+
   public readonly worker = signal<WorkerStatus | null>(null);
+
   public readonly opportunityControl = signal<OpportunityControl | null>(null);
+
   public readonly opportunityBursts = signal<OpportunityBurst[]>([]);
+
   public readonly captchaAuthorityControl = signal<CaptchaAuthorityControl | null>(null);
+
   public readonly captchaSamplingControl = signal<CaptchaSamplingControl | null>(null);
+
   public readonly captchaSamplingEnabled = signal(false);
+
   public readonly captchaSamplingLimit = signal(10);
+
   public readonly captchaSamplingDirty = signal(false);
+
   public readonly captchaSamplingSaving = signal(false);
+
   public readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
+
   public readonly runs = signal<RunSummary[]>([]);
+
   public readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
+
   public readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
+
   public readonly postAppointmentFilter = signal<PostAppointmentFilter>('active');
+
   public readonly postAppointmentSearch = signal('');
+
   public readonly postAppointmentSortKey = signal<PostAppointmentSortKey>('priority');
+
   public readonly postAppointmentSortDirection = signal<SortDirection>('asc');
+
   public readonly postAppointmentPage = signal(1);
+
   public readonly postAppointmentPageSize = signal(10);
+
   public readonly captchaSummary = signal<CaptchaSummary | null>(null);
+
   public readonly captchaEvents = signal<CaptchaEvent[]>([]);
+
   public readonly captchaReviewQueue = signal<CaptchaEvent[]>([]);
+
   public readonly captchaReviewTotal = signal(0);
+
   public readonly captchaPendingTotal = signal(0);
+
   public readonly captchaReviewPosition = signal(0);
+
   public readonly captchaWorkspaceMode = signal<CaptchaWorkspaceMode>('review');
+
   public readonly captchaHistoryFiltersOpen = signal(false);
+
   public readonly captchaState = signal<LoadState>('idle');
+
   public readonly captchaError = signal<string | null>(null);
+
   public readonly captchaPage = signal(1);
+
   public readonly captchaPageSize = signal(12);
+
   public readonly captchaTotal = signal(0);
+
   public readonly captchaTotalPages = signal(1);
+
   public readonly captchaSearch = signal('');
+
   public readonly captchaAgreement = signal<CaptchaAgreementFilter>('all');
+
   public readonly captchaPortalStatus = signal<CaptchaPortalFilter>('all');
+
   public readonly captchaSource = signal<CaptchaSourceFilter>('all');
+
   public readonly captchaReviewStatus = signal<CaptchaReviewFilter>('all');
+
   public readonly captchaDrafts = signal<Record<string, string>>({});
+
   public readonly captchaSavingEventId = signal('');
+
   public readonly captchaReviewMessage = signal<string | null>(null);
+
   public readonly captchaPendingCorrection = signal<CaptchaPendingCorrection | null>(null);
+
   public readonly captchaShadowEnabled = computed(
     () => this.health()?.captcha_shadow_enabled === true,
   );
+
   public readonly captchaQuality = signal<CaptchaQuality | null>(null);
+
   public readonly captchaQualityCases = signal<CaptchaQualityCasesPage | null>(null);
+
   public readonly captchaQualityState = signal<LoadState>('idle');
+
   public readonly captchaQualityError = signal<string | null>(null);
+
   public readonly captchaQualityCaseType = signal<CaptchaQualityCaseType>('wrong');
+
   public readonly captchaQualityCasePage = signal(1);
+
   public readonly captchaQualityCasePageSize = signal(12);
+
   public readonly captchaDatasetExporting = signal(false);
+
   public readonly captchaQualityCaseFilters = CAPTCHA_QUALITY_CASE_FILTERS;
+
   public readonly activeCaptchaReview = computed(
     () => this.captchaReviewQueue()[this.captchaReviewPosition()] ?? null,
   );
+
   public readonly selectedRunId = signal('');
+
   public readonly selectedRunDetail = signal<RunDetail | null>(null);
+
   public readonly runDetailState = signal<LoadState>('idle');
+
   public readonly runDetailError = signal<string | null>(null);
+
   public readonly workerCommands = signal<WorkerCommand[]>([]);
+
   public readonly pendingWorkerControl = computed(
     () =>
       this.workerCommands().find(
@@ -477,122 +386,136 @@ export class App implements OnDestroy {
           (command.status === 'pending' || command.status === 'processing'),
       ) ?? null,
   );
+
   public readonly releaseSafeBackoffsOnRestart = signal(false);
-  public readonly manualSessions = signal<ManualSession[]>([]);
-  public readonly closingManualSessionIds = signal<ReadonlySet<string>>(new Set());
+
   public readonly selectedMonth = signal(INITIAL_MONTH);
+
   public readonly monthlySummary = signal<MonthlySummaryV2 | null>(null);
+
   public readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
+
   public readonly whatsappMessageTemplates = signal<WhatsAppMessageTemplate[]>([]);
+
   public readonly monthlyLoading = signal(false);
+
   public readonly financeCategories = signal<FinanceCategory[]>([]);
+
   public readonly financeEntries = signal<FinanceEntry[]>([]);
+
   public readonly financeSummary = signal<FinanceSummary | null>(null);
+
   public readonly financeQuality = signal<FinanceDataQualitySummary | null>(null);
+
   public readonly financeMonthClosure = signal<FinanceMonthClosure | null>(null);
+
   public readonly financeLoading = signal(false);
+
   public readonly financeClosureOpeningBalance = signal('');
+
   public readonly financeClosureClosingBalance = signal('');
+
   public readonly financeClosureNotes = signal('');
+
   public readonly financeMismatchPaymentId = signal('');
+
   public readonly financeMismatchResolution = signal<PaymentResolutionType>('discount');
+
   public readonly financeMismatchReason = signal('');
+
   public readonly editingFinanceEntryId = signal('');
+
   public readonly financeOccurredOn = signal(INITIAL_DATE);
+
   public readonly financeEntryKind = signal<FinanceEntryKind>('expense');
+
   public readonly financeCategoryCode = signal('marketing');
+
   public readonly financeVendor = signal('');
+
   public readonly financeDescription = signal('');
+
   public readonly financeAmountOriginal = signal('');
+
   public readonly financeCurrency = signal('PEN');
+
   public readonly financeExchangeRatePen = signal('');
+
   public readonly financeQuantity = signal('');
+
   public readonly financeUnit = signal('');
+
   public readonly financeChannel = signal('');
+
   public readonly financeCampaign = signal('');
+
   public readonly financeOrderId = signal('');
+
   public readonly financeEvidenceReference = signal('');
+
   public readonly financeNotes = signal('');
+
   public readonly financeDataQuality = signal<FinanceDataQuality>('actual');
+
   public readonly loadState = signal<LoadState>('idle');
+
   public readonly viewLoadError = signal<string | null>(null);
+
   public readonly refreshingViewState = signal<ViewKey | null>(null);
+
   public readonly errorMessage = signal<string | null>(null);
+
   public readonly copiedLabel = signal<string | null>(null);
-  public readonly selectedOrderId = signal('');
-  public readonly orderPanelOpen = signal(false);
-  public readonly selectedOrderDetail = signal<ServiceOrderDetail | null>(null);
-  public readonly orderDetailLoading = signal(false);
-  public readonly contactName = signal('');
-  public readonly contactWhatsapp = signal('');
-  public readonly contactWhatsappUsername = signal('');
-  public readonly contactSource = signal('whatsapp');
-  public readonly orderDocumentNumber = signal('');
-  public readonly orderDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
-  public readonly orderPassword = signal('');
-  public readonly orderPasswordVisible = signal(false);
-  public readonly orderPriority = signal(0);
-  public readonly orderMinimumReservationDate = signal('');
-  public readonly orderMaximumReservationDate = signal('');
-  public readonly orderAllowedWeekdays = signal<number[]>([]);
-  public readonly orderExcludedDateRanges = signal<ExcludedDateRange[]>([]);
-  public readonly orderExcludedDateStart = signal('');
-  public readonly orderExcludedDateEnd = signal('');
+
   public readonly paymentAmountPaid = signal('');
+
   public readonly paymentAmountAgreed = signal('');
-  public readonly editOrderSection = signal<
-    'all' | 'contact' | 'credentials' | 'restrictions' | 'program-resolution'
-  >('all');
-  public readonly newDocumentNumber = signal('');
-  public readonly newDocumentType = signal<'dni' | 'foreign_resident_card'>('dni');
-  public readonly newPassword = signal('');
-  public readonly newContactName = signal('');
-  public readonly newContactWhatsapp = signal('');
-  public readonly newContactWhatsappUsername = signal('');
-  public readonly newContactSource = signal('');
-  public readonly servicePackageCatalog = signal<ServicePackageCatalog | null>(null);
-  public readonly newServicePackage = signal<ServicePackageKey>('standard');
-  public readonly newCustomReservationPrice = signal('');
-  public readonly newMinimumReservationDate = signal('');
-  public readonly newMaximumReservationDate = signal('');
-  public readonly newAllowedWeekdays = signal<number[]>([]);
-  public readonly newExcludedDateRanges = signal<ExcludedDateRange[]>([]);
-  public readonly newExcludedDateStart = signal('');
-  public readonly newExcludedDateEnd = signal('');
-  public readonly closureReason = signal<ClosureReason>('client_withdrew');
-  public readonly closureNote = signal('');
+
   public readonly actionBusy = signal(false);
+
   public readonly pendingAction = signal<PendingAction | null>(null);
+
   public readonly whatsappPackage = signal<WhatsAppMessagePackage | null>(null);
+
   public readonly whatsappFollowUpPackage = signal<WhatsAppFollowUpPackage | null>(null);
+
   public readonly whatsappPackageLoading = signal(false);
+
   public readonly whatsappFollowUpLoading = signal(false);
+
   public readonly whatsappTestRecipient = signal('');
+
   public readonly whatsappTestMode = signal(false);
+
   public readonly whatsappFollowUpMode = signal(false);
+
   public readonly whatsappReviewMode = signal(false);
+
   public readonly whatsappReview = signal<WhatsAppReviewPayload | null>(null);
+
   public readonly whatsappReviewNote = signal('');
+
   public readonly whatsappWebBusy = signal(false);
+
   public readonly whatsappWebResult = signal<WhatsAppWebDraftResponse | null>(null);
+
   public readonly whatsappManualFallbackOpen = signal(false);
+
   public readonly whatsappSessionBusy = signal(false);
+
   public readonly whatsappSessionState = signal<
     'unknown' | 'ready' | 'login_required' | 'error'
   >('unknown');
 
-  public readonly selectedOrder = computed(() => {
-    const selected = this.selectedOrderId();
-    return this.orderList.orders().find((order) => order.order_id === selected) ?? this.orderList.orders()[0] ?? null;
-  });
   public readonly latestOpportunityBurst = computed(
     () => this.opportunityBursts()[0] ?? null,
   );
+
   public readonly currentOrder = computed(() => {
     const currentOrderId = this.worker()?.current_order_id;
     return this.orderList.orders().find((order) => order.order_id === currentOrderId) ?? null;
   });
-  public readonly modalOrder = computed(() => this.selectedOrder());
+
   public readonly filteredRuns = computed(() => {
     const status = this.runStatusFilter().trim();
     if (!status) {
@@ -600,6 +523,7 @@ export class App implements OnDestroy {
     }
     return this.runs().filter((run) => run.status === status);
   });
+
   public readonly runStatuses = computed(() =>
     Array.from(
       new Set(
@@ -609,9 +533,11 @@ export class App implements OnDestroy {
       ),
     ).sort(),
   );
+
   public readonly captchaPageNumbers = computed(() => {
     return paginationWindow(this.captchaPage(), this.captchaTotalPages());
   });
+
   public readonly captchaQualityBestModel = computed<CaptchaQualityModel | null>(() => {
     return [...(this.captchaQuality()?.models ?? [])]
       .filter((model) => model.accuracy !== null)
@@ -620,16 +546,20 @@ export class App implements OnDestroy {
           (right.accuracy ?? 0) - (left.accuracy ?? 0) || right.evaluated - left.evaluated,
       )[0] ?? null;
   });
+
   public readonly captchaQualityCasePageNumbers = computed(() => {
     const pagination = this.captchaQualityCases()?.pagination;
     return pagination ? paginationWindow(pagination.page, pagination.total_pages) : [];
   });
+
   public readonly captchaSamplingEffectiveLimit = computed(() =>
     this.captchaSamplingEnabled() ? this.captchaSamplingLimit() : 1,
   );
+
   public readonly captchaSamplingEstimatedSeconds = computed(() =>
     Math.round(Math.max(this.captchaSamplingEffectiveLimit() - 1, 0) * 4) / 10,
   );
+
   public readonly captchaAuthorityUsesV6 = computed(() => {
     const control = this.captchaAuthorityControl();
     return Boolean(
@@ -638,6 +568,7 @@ export class App implements OnDestroy {
         control.remaining_local_decisions > 0,
     );
   });
+
   public readonly inboxOrderTasks = computed<InboxOrderTask[]>(() => {
     const icons: Record<OperatorInboxTask['kind'], string> = {
       preflight: '!',
@@ -664,27 +595,34 @@ export class App implements OnDestroy {
       updatedAt: task.updated_at,
     }));
   });
+
   public readonly inboxAccessCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'preflight').length,
   );
+
   public readonly inboxPaymentCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'payment').length,
   );
+
   public readonly inboxPausedCount = computed(
     () => this.inboxOrderTasks().filter((task) => task.kind === 'paused').length,
   );
+
   public readonly inboxMessageCount = computed(
     () =>
       this.inboxOrderTasks().filter((task) =>
         ['contact', 'whatsapp', 'followup', 'review'].includes(task.kind),
       ).length,
   );
+
   public readonly inboxPendingTotal = computed(
     () => this.inboxOrderTasks().length,
   );
+
   public readonly postAppointmentItems = computed(
     () => this.postAppointmentPayload()?.items ?? [],
   );
+
   public readonly postAppointmentQuickFilters = computed(() => {
     const counts = this.postAppointmentPayload()?.filter_counts;
     return [
@@ -715,6 +653,7 @@ export class App implements OnDestroy {
       },
     ];
   });
+
   public readonly postAppointmentTotalPages = computed(() =>
     Math.max(
       1,
@@ -724,150 +663,43 @@ export class App implements OnDestroy {
       ),
     ),
   );
+
   public readonly currentPostAppointmentPage = computed(() =>
     Math.min(this.postAppointmentPage(), this.postAppointmentTotalPages()),
   );
+
   public readonly paginatedPostAppointmentItems = computed(() => this.postAppointmentItems());
+
   public readonly postAppointmentPageStart = computed(() =>
     (this.postAppointmentPayload()?.pagination.total ?? 0) > 0
       ? (this.postAppointmentPayload()?.pagination.offset ?? 0) + 1
       : 0,
   );
+
   public readonly postAppointmentPageEnd = computed(() =>
     (this.postAppointmentPayload()?.pagination.offset ?? 0) +
       this.postAppointmentItems().length,
   );
+
   public readonly postAppointmentPageNumbers = computed(() =>
     paginationWindow(this.currentPostAppointmentPage(), this.postAppointmentTotalPages()),
   );
+
   public readonly failedRuns = computed(
     () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
   );
-  public readonly selectedOrderChildren = computed(() => {
-    const orderId = this.selectedOrder()?.order_id;
-    return orderId ? this.orderList.orders().filter((order) => order.parent_order_id === orderId) : [];
-  });
-  public readonly orderNextAction = computed<OrderNextAction>(() => {
-    const order = this.selectedOrder();
-    if (!order) {
-      return {
-        key: 'none',
-        label: 'Selecciona una orden',
-        description: 'Elige una fila para ver el siguiente paso operativo.',
-        disabled: true,
-      };
-    }
-    if (
-      this.isPostPaymentWhatsAppCandidate(order) &&
-      order.whatsapp_followup_action_state !== 'not_applicable'
-    ) {
-      if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
-        return {
-          key: 'none',
-          label: 'Seguimiento automático en proceso',
-          description: 'No requiere intervención mientras el envío automático siga activo.',
-          disabled: true,
-        };
-      }
-      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
-        return {
-          key: 'review',
-          label: 'Revisar seguimiento',
-          description:
-            order.whatsapp_followup_action_state === 'uncertain'
-              ? 'El resultado es ambiguo; comprueba WhatsApp antes de decidir.'
-              : 'El envío falló; revisa la evidencia antes de repetirlo.',
-          disabled: false,
-        };
-      }
-      if (order.whatsapp_followup_action_state === 'resolved') {
-        return {
-          key: 'none',
-          label: 'Post-pago conciliado',
-          description: 'El operador cerró este resultado y ya no requiere atención.',
-          disabled: true,
-        };
-      }
-      return {
-        key: 'post-payment-whatsapp',
-        label:
-          order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago',
-        description:
-          order.whatsapp_followup_status === 'sent'
-            ? 'El paquete post-pago ya figura enviado; usa esto solo para un reenvio.'
-            : 'La reserva esta pagada; envia indicaciones y PDFs al cliente.',
-        disabled: this.actionBusy(),
-      };
-    }
-    if (this.isClosedOrder(order)) {
-      return {
-        key: 'none',
-        label: 'Sin acciones pendientes',
-        description: `La orden esta cerrada como ${this.closureDisplay(order)}.`,
-        disabled: true,
-      };
-    }
-    if (this.needsProgramResolution(order)) {
-      return {
-        key: 'program-resolution',
-        label: 'Resolver trámites pendientes',
-        description:
-          'El portal devolvió varios expedientes pendientes. Elige explícitamente el alcance acordado.',
-        disabled: this.actionBusy(),
-      };
-    }
-    if (order.payment_status === 'pending') {
-      return {
-        key: 'payment',
-        label: 'Registrar pago',
-        description: 'La reserva esta lista y el cobro sigue pendiente.',
-        disabled: false,
-      };
-    }
-    if (order.status === 'paused') {
-      const blocked = this.hasActiveChildOrders(order);
-      return {
-        key: 'activate',
-        label: blocked ? 'Padre bloqueado por subordenes' : 'Activar orden',
-        description: blocked
-          ? 'Gestiona primero las subordenes activas.'
-          : 'La orden esta pausada y puede volver a la cola.',
-        disabled: blocked,
-      };
-    }
-    if (order.status === 'ready') {
-      return {
-        key: 'manual-session',
-        label: 'Abrir sesion manual',
-        description: 'La orden esta lista para una revision manual independiente.',
-        disabled: this.actionBusy(),
-      };
-    }
-    return {
-      key: 'review',
-      label: 'Revisar acciones',
-      description: `Revisa las opciones compatibles con el estado ${order.status}.`,
-      disabled: false,
-    };
-  });
+
   public readonly selectedRun = computed(() => this.selectedRunDetail());
-  public readonly selectedOrderWhatsappPlaceholder = computed(
-    () => this.selectedOrder()?.contact_whatsapp_masked ?? 'sin numero registrado',
-  );
-  public readonly selectedOrderWhatsapp = computed(() => {
-    const order = this.selectedOrder();
-    const detail = this.selectedOrderDetail();
-    if (order && detail?.order_id === order.order_id) {
-      return detail.contact_whatsapp ?? detail.contact_whatsapp_username ?? 'sin WhatsApp';
-    }
-    return order?.contact_whatsapp_masked ?? order?.contact_whatsapp_username_masked ?? 'sin WhatsApp';
-  });
+
   public readonly autoRefreshPaused = computed(
     () =>
       !this.autoRefreshEnabled() || this.formDirty() || this.actionBusy() || !!this.pendingAction(),
   );
+
   public readonly activeViewLabel = computed(() => VIEW_LABELS[this.activeView()].label);
+
   public readonly activeViewGroup = computed(() => VIEW_LABELS[this.activeView()].group);
+
   public readonly hasActiveViewData = computed(() => {
     const view = this.activeView();
     const state = this.loadState();
@@ -894,6 +726,7 @@ export class App implements OnDestroy {
     }
     return this.orderList.orders().length > 0 || state === 'ready';
   });
+
   public readonly activeViewState = computed<ViewStateKind | null>(() => {
     const state = this.loadState();
     const hasData = this.hasActiveViewData();
@@ -941,12 +774,7 @@ export class App implements OnDestroy {
     if (this.errorMessageTimer !== null) {
       window.clearTimeout(this.errorMessageTimer);
     }
-    this.closeTrackedManualSessionsWithBeacon();
-  }
-
-  @HostListener('window:beforeunload')
-  public handleBeforeUnload(): void {
-    this.closeTrackedManualSessionsWithBeacon();
+    this.orders.closeTrackedManualSessionsWithBeacon();
   }
 
   @HostListener('document:visibilitychange')
@@ -984,8 +812,8 @@ export class App implements OnDestroy {
       this.closeModal();
       return;
     }
-    if (this.orderPanelOpen()) {
-      this.closeOrderPanel();
+    if (this.orders.orderPanelOpen()) {
+      this.orders.closeOrderPanel();
     }
   }
 
@@ -1094,11 +922,11 @@ export class App implements OnDestroy {
           await this.router.navigateByUrl('/ordenes', { replaceUrl: true });
           return;
         }
-        if (this.selectedOrderId() !== orderId || !this.orderPanelOpen()) {
-          this.selectOrder(orderId, true, false);
+        if (this.orders.selectedOrderId() !== orderId || !this.orders.orderPanelOpen()) {
+          this.orders.selectOrder(orderId, true, false);
         }
-      } else if (this.orderPanelOpen()) {
-        this.closeOrderPanel(false);
+      } else if (this.orders.orderPanelOpen()) {
+        this.orders.closeOrderPanel(false);
       }
     }
     if (view === 'runs') {
@@ -1183,7 +1011,7 @@ export class App implements OnDestroy {
   }
 
   private async refreshCommonData(scope: RequestScope): Promise<void> {
-    const currentCatalog = this.servicePackageCatalog();
+    const currentCatalog = this.orders.servicePackageCatalog();
     const catalogRequest = currentCatalog
       ? Promise.resolve(currentCatalog)
       : this.api.getServicePackages(scope);
@@ -1195,135 +1023,20 @@ export class App implements OnDestroy {
     ]);
     this.health.set(health);
     this.worker.set(worker);
-    this.manualSessions.set(manualSessions);
-    this.servicePackageCatalog.set(servicePackageCatalog);
+    this.orders.manualSessions.set(manualSessions);
+    this.orders.servicePackageCatalog.set(servicePackageCatalog);
   }
 
-  private async refreshViewData(
-    view: ViewKey,
-    showLoading: boolean,
-    scope: RequestScope,
-  ): Promise<void> {
-    if (view === 'inbox') {
-      const inboxRequest = this.api.getOperatorInbox(scope);
-      if (!this.captchaShadowEnabled()) {
-        this.operatorInbox.set(await inboxRequest);
-        this.captchaReviewTotal.set(0);
-        return;
-      }
-      const [inbox, pendingCaptchas] = await Promise.all([
-        inboxRequest,
-        this.api
-          .getCaptchaEvents(
-            1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
-          )
-          .catch((error: unknown) => {
-            if (isRequestCancelled(error)) {
-              throw error;
-            }
-            return null;
-          }),
-      ]);
-      this.operatorInbox.set(inbox);
-      if (pendingCaptchas) {
-        this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
-      }
-      return;
-    }
-    if (view === 'summary') {
-      const [
-        orders,
-        runs,
-        monthlySummary,
-        captchaSamplingControl,
-        captchaAuthorityControl,
-        opportunityControl,
-        opportunityBursts,
-        appointmentReminderStatus,
-        workerCommands,
-      ] = await Promise.all([
-        this.orderList.fetchOrders(scope),
-        this.api.getRuns(scope),
-        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
-        this.api.getCaptchaSamplingControl(scope),
-        this.api.getCaptchaAuthorityControl(scope),
-        this.api.getOpportunityControl(scope),
-        this.api.getOpportunityBursts(scope),
-        this.api.getAppointmentReminders(scope),
-        this.api.getWorkerCommands(scope),
-      ]);
-      this.applyOrders(orders);
-      this.runs.set(runs);
-      this.monthlySummary.set(monthlySummary);
-      this.applyCaptchaSamplingControl(captchaSamplingControl);
-      this.captchaAuthorityControl.set(captchaAuthorityControl);
-      this.opportunityControl.set(opportunityControl);
-      this.opportunityBursts.set(opportunityBursts.bursts);
-      this.appointmentReminderStatus.set(appointmentReminderStatus);
-      this.workerCommands.set(workerCommands);
-      return;
-    }
-    if (view === 'finance') {
-      const categoriesRequest = this.financeCategories().length
-        ? Promise.resolve(this.financeCategories())
-        : this.api.getFinanceCategories(scope);
-      const [
-        financeCategories,
-        financeEntries,
-        financeSummary,
-        financeQuality,
-        financeMonthClosure,
-        monthlySummary,
-      ] = await Promise.all([
-        categoriesRequest,
-        this.api.getFinanceEntries(this.selectedMonth(), scope),
-        this.api.getFinanceSummary(this.selectedMonth(), scope),
-        this.api.getFinanceDataQuality(this.selectedMonth(), scope),
-        this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
-        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
-      ]);
-      this.financeCategories.set(financeCategories);
-      this.financeEntries.set(financeEntries);
-      this.financeSummary.set(financeSummary);
-      this.financeQuality.set(financeQuality);
-      this.applyFinanceMonthClosure(financeMonthClosure);
-      this.monthlySummary.set(monthlySummary);
-      return;
-    }
-    if (view === 'messageTemplates') {
-      this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
-      return;
-    }
-    if (view === 'orders') {
-      this.applyOrders(await this.orderList.fetchOrders(scope));
-      return;
-    }
-    if (view === 'runs') {
-      const [runs, workerCommands] = await Promise.all([
-        this.api.getRuns(scope),
-        this.api.getWorkerCommands(scope),
-      ]);
-      this.runs.set(runs);
-      this.workerCommands.set(workerCommands);
-      return;
-    }
-    if (view === 'followups') {
-      this.setPostAppointmentPayload(
-        await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
-      );
-      return;
-    }
-    await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
-  }
-
-  private applyOrders(orders: ServiceOrder[]): void {
-    this.orderList.replaceOrders(orders);
-    this.keepValidSelection(orders);
-    this.hydrateSelectedOrderForms();
-    if (this.orderPanelOpen() && this.selectedOrderId() && !this.selectedOrderDetail()) {
-      void this.loadSelectedOrderDetail(this.selectedOrderId());
-    }
-  }
+  private async refreshViewData(view: ViewKey, showLoading: boolean, scope: RequestScope): Promise<void> {
+ if (view === 'inbox') { await this.loadInboxView(scope); return; }
+if (view === 'summary') { await this.loadSummaryView(scope); return; }
+if (view === 'finance') { await this.loadFinanceView(scope); return; }
+if (view === 'messageTemplates') { await this.loadMessagesView(scope); return; }
+if (view === 'orders') { await this.orders.loadOrdersView(scope); return; }
+if (view === 'runs') { await this.loadRunsView(scope); return; }
+if (view === 'followups') { await this.loadFollowupsView(scope); return; }
+ await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
+}
 
   public toggleSidebar(): void {
     const collapsed = !this.sidebarCollapsed();
@@ -2198,37 +1911,6 @@ export class App implements OnDestroy {
     }).format(value);
   }
 
-  public serviceTypeLabel(order: ServiceOrder): string {
-    return this.servicePackageDefinition(order.service_package)?.label
-      ?? order.service_package;
-  }
-
-  public servicePriceLabel(order: ServiceOrder): string {
-    const amount = Number(order.reservation_price);
-    return Number.isFinite(amount) ? `S/${amount.toFixed(2)}` : `S/${order.reservation_price}`;
-  }
-
-  public restrictionDaysLabel(order: ServiceOrder): string {
-    const days = Array.from(
-      new Set((order.allowed_weekdays ?? []).filter((day) => day >= 1 && day <= 7)),
-    ).sort((left, right) => left - right);
-    if (!days.length) {
-      return 'Cualquier día';
-    }
-    if (days.length === 7) {
-      return 'Todos los días';
-    }
-    const isContinuous = days.every((day, index) => index === 0 || day === days[index - 1] + 1);
-    if (isContinuous && days.length >= 3) {
-      return this.capitalize(`${WEEKDAY_NAMES[days[0] - 1]} a ${WEEKDAY_NAMES[days.at(-1)! - 1]}`);
-    }
-    return this.capitalize(SPANISH_LIST_FORMAT.format(days.map((day) => WEEKDAY_NAMES[day - 1])));
-  }
-
-  public restrictionTimingLabel(order: ServiceOrder): string {
-    return formatReservationDateRules(order);
-  }
-
   public metricPeriodLabel(period: MetricPeriod): string {
     if (period.coverage_end_exclusive <= period.start) {
       return 'Sin cobertura todavía';
@@ -2297,20 +1979,20 @@ export class App implements OnDestroy {
       return;
     }
     if (task.action === 'correct_credentials') {
-      await this.openEditOrder(order, 'credentials');
+      await this.orders.openEditOrder(order, 'credentials');
       return;
     }
     if (task.action === 'revalidate') {
-      this.selectOrder(order.order_id, false);
-      this.requestOrderValidation(order);
+      this.orders.selectOrder(order.order_id, false);
+      this.orders.requestOrderValidation(order);
       return;
     }
     if (task.action === 'edit_contact') {
-      await this.openEditOrder(order, 'contact');
+      await this.orders.openEditOrder(order, 'contact');
       return;
     }
     if (task.action === 'prepare_whatsapp') {
-      this.selectOrder(order.order_id, false);
+      this.orders.selectOrder(order.order_id, false);
       await this.openOrderWhatsApp(order);
       return;
     }
@@ -2353,39 +2035,6 @@ export class App implements OnDestroy {
     }
     void this.router.navigate(['/ordenes', orderId]);
     void this.openPayment(order);
-  }
-
-  public selectOrder(orderId: string, loadDetail = true, updateRoute = true): void {
-    if (!this.orderPanelOpen()) {
-      this.captureFocus();
-    }
-    this.selectedOrderId.set(orderId);
-    this.orderPanelOpen.set(true);
-    this.selectedOrderDetail.set(null);
-    this.formDirty.set(false);
-    this.hydrateSelectedOrderForms();
-    if (updateRoute && this.activeView() === 'orders') {
-      void this.router.navigate(['/ordenes', orderId]);
-    }
-    if (loadDetail) {
-      void this.loadSelectedOrderDetail(orderId);
-    }
-    window.setTimeout(() => {
-      document.querySelector<HTMLElement>('[data-order-panel]')?.focus();
-    });
-  }
-
-  public closeOrderPanel(updateRoute = true): void {
-    if (this.activeModal() || this.actionBusy()) {
-      return;
-    }
-    this.orderPanelOpen.set(false);
-    this.selectedOrderDetail.set(null);
-    this.formDirty.set(false);
-    if (updateRoute && this.activeView() === 'orders') {
-      void this.router.navigateByUrl('/ordenes');
-    }
-    this.restoreFocus();
   }
 
   public async selectRun(runId: string, updateRoute = true): Promise<void> {
@@ -2439,32 +2088,15 @@ export class App implements OnDestroy {
     return run.screenshot_path ? [run.screenshot_path] : [];
   }
 
-  public async openEditOrder(
-    order: ServiceOrder,
-    section: 'all' | 'contact' | 'credentials' | 'restrictions' | 'program-resolution' = 'all',
-  ): Promise<void> {
-    this.selectOrder(order.order_id, false);
-    this.editOrderSection.set(section);
-    this.openModal('edit-order');
-    await this.loadSelectedOrderDetail(order.order_id);
-  }
-
-  public async openProgramResolution(order: ServiceOrder): Promise<void> {
-    this.selectOrder(order.order_id, false);
-    this.editOrderSection.set('program-resolution');
-    this.openModal('edit-order');
-    await this.loadSelectedOrderDetail(order.order_id);
-  }
-
   public async openPayment(order: ServiceOrder): Promise<void> {
-    this.selectOrder(order.order_id, false);
-    const standardAmount = this.standardPackageAmount() ?? '';
+    this.orders.selectOrder(order.order_id, false);
+    const standardAmount = this.orders.standardPackageAmount() ?? '';
     const agreedAmount = order.amount_agreed ?? order.reservation_price ?? standardAmount;
     this.paymentAmountAgreed.set(agreedAmount);
     this.paymentAmountPaid.set(agreedAmount);
     this.openModal('payment');
-    await this.loadSelectedOrderDetail(order.order_id);
-    const refreshed = this.selectedOrderDetail();
+    await this.orders.loadSelectedOrderDetail(order.order_id);
+    const refreshed = this.orders.selectedOrderDetail();
     if (refreshed?.order_id === order.order_id) {
       const refreshedAmount =
         refreshed.amount_agreed ?? refreshed.reservation_price ?? standardAmount;
@@ -2480,15 +2112,6 @@ export class App implements OnDestroy {
   public showPendingPayments(): void {
     this.orderList.setOrderQuickFilter('payment_pending');
     void this.router.navigateByUrl('/ordenes');
-  }
-
-  public openOrderActions(order: ServiceOrder): void {
-    this.selectOrder(order.order_id);
-    this.openModal('order-actions');
-  }
-
-  public openCreateOrder(): void {
-    this.openModal('create-order');
   }
 
   public openWhatsAppTest(): void {
@@ -2760,7 +2383,7 @@ export class App implements OnDestroy {
     if (order.whatsapp_message_action_state === 'resolved') {
       return false;
     }
-    const detail = this.selectedOrderDetail();
+    const detail = this.orders.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return false;
     }
@@ -2780,7 +2403,7 @@ export class App implements OnDestroy {
     ) {
       return 'Requiere reserva confirmada, pago pendiente y monto acordado.';
     }
-    const detail = this.selectedOrderDetail();
+    const detail = this.orders.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return 'Cargando contacto protegido...';
     }
@@ -2799,7 +2422,7 @@ export class App implements OnDestroy {
     if (order.whatsapp_followup_action_state === 'resolved') {
       return false;
     }
-    const detail = this.selectedOrderDetail();
+    const detail = this.orders.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return false;
     }
@@ -2813,7 +2436,7 @@ export class App implements OnDestroy {
     if (order.whatsapp_followup_action_state === 'resolved') {
       return 'El resultado fue conciliado y cerrado por el operador.';
     }
-    const detail = this.selectedOrderDetail();
+    const detail = this.orders.selectedOrderDetail();
     if (!detail || detail.order_id !== order.order_id) {
       return 'Cargando contacto protegido...';
     }
@@ -3295,9 +2918,9 @@ export class App implements OnDestroy {
     this.activeModal.set(null);
     this.pendingAction.set(null);
     this.formDirty.set(false);
-    this.hydrateSelectedOrderForms();
+    this.orders.hydrateSelectedOrderForms();
     if (modal === 'create-order') {
-      this.clearCreateOrderForm();
+      this.orders.clearCreateOrderForm();
     }
     if (modal === 'finance-entry') {
       this.clearFinanceForm();
@@ -3317,416 +2940,13 @@ export class App implements OnDestroy {
     this.restoreFocus();
   }
 
-  public runNextOrderAction(): void {
-    const order = this.selectedOrder();
-    const action = this.orderNextAction();
-    if (!order || action.disabled) {
-      return;
-    }
-    if (action.key === 'manual-session') {
-      void this.openManualSessionNow(order);
-    } else if (action.key === 'activate') {
-      this.requestOrderAction('activate', 'Activar orden');
-    } else if (action.key === 'payment') {
-      void this.openPayment(order);
-    } else if (action.key === 'post-payment-whatsapp') {
-      void this.openPostPaymentWhatsApp(order);
-    } else if (action.key === 'program-resolution') {
-      void this.openProgramResolution(order);
-    } else if (action.key === 'review') {
-      void this.openWhatsAppReview(order);
-    }
-  }
-
-  public rowPrimaryActionLabel(order: ServiceOrder): string {
-    if (this.needsProgramResolution(order)) {
-      return 'Resolver trámites';
-    }
-    if (order.payment_status === 'pending') {
-      return 'Registrar pago';
-    }
-    if (
-      this.isPostPaymentWhatsAppCandidate(order) &&
-      order.whatsapp_followup_action_state !== 'not_applicable'
-    ) {
-      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
-        return 'Revisar post-pago';
-      }
-      if (['queued', 'blocked', 'running'].includes(order.whatsapp_followup_action_state)) {
-        return 'Ver seguimiento';
-      }
-      if (order.whatsapp_followup_action_state === 'resolved') {
-        return 'Post-pago conciliado';
-      }
-      return order.whatsapp_followup_status === 'sent' ? 'Reenviar post-pago' : 'Enviar post-pago';
-    }
-    if (order.status === 'paused') {
-      return 'Activar';
-    }
-    if (order.status === 'ready') {
-      return 'Abrir sesión';
-    }
-    return 'Ver detalle';
-  }
-
-  public runRowPrimaryAction(order: ServiceOrder): void {
-    if (this.needsProgramResolution(order)) {
-      void this.openProgramResolution(order);
-      return;
-    }
-    if (order.payment_status === 'pending') {
-      void this.openPayment(order);
-      return;
-    }
-    if (
-      this.isPostPaymentWhatsAppCandidate(order) &&
-      order.whatsapp_followup_action_state !== 'not_applicable'
-    ) {
-      this.selectOrder(order.order_id);
-      if (['failed', 'uncertain'].includes(order.whatsapp_followup_action_state)) {
-        void this.openWhatsAppReview(order);
-      } else if (order.whatsapp_followup_action_state === 'sent') {
-        void this.openPostPaymentWhatsApp(order);
-      }
-      return;
-    }
-    if (order.status === 'paused') {
-      this.selectOrder(order.order_id);
-      this.requestOrderAction('activate', 'Activar orden');
-    } else if (order.status === 'ready') {
-      void this.openManualSessionNow(order);
-    } else {
-      this.selectOrder(order.order_id);
-    }
-  }
-
-  public setQuickPriority(priority: number): void {
-    this.orderPriority.set(priority);
-    this.requestPriorityUpdate();
-  }
-
-  public priorityExplanation(order: ServiceOrder): string {
-    if (order.priority >= 200) {
-      return 'Enfoque exclusivo: el worker revisa unicamente esta orden.';
-    }
-    if (order.priority >= 100) {
-      return 'Enfoque prioritario: se atiende antes que la cola normal.';
-    }
-    return 'Cola normal: mayor numero primero; empate por orden de creacion.';
-  }
-
-  public isClosedOrder(order: ServiceOrder): boolean {
-    return ['archived', 'paid'].includes(order.status) || !!order.closed_at;
-  }
-
   public editField<T>(field: WritableSignal<T>, value: T): void {
     field.set(value);
     this.formDirty.set(true);
   }
 
-  public requestContactUpdate(): void {
-    if (this.orderDetailLoading()) {
-      this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
-      return;
-    }
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const payload: ContactUpdatePayload = {
-      contact_name: this.optionalText(this.contactName()),
-      contact_whatsapp: this.optionalText(this.contactWhatsapp()),
-      contact_whatsapp_username: this.optionalText(this.contactWhatsappUsername()),
-      contact_source: this.optionalText(this.contactSource()),
-    };
-    if (!payload.contact_name && !payload.contact_whatsapp && !payload.contact_whatsapp_username) {
-      this.errorMessage.set('Ingresa nombre o WhatsApp para actualizar contacto.');
-      return;
-    }
-    this.setPendingAction({
-      title: 'Actualizar contacto',
-      message: `Actualizar contacto de ${order.order_id}.`,
-      execute: () => this.api.updateServiceOrderContact(order.order_id, payload),
-      onSuccess: () => {
-        this.activeModal.set(null);
-        this.selectedOrderDetail.set(null);
-      },
-    });
-  }
-
-  public needsCredentialCorrection(order: ServiceOrder): boolean {
-    return order.preflight_error_type === 'invalid_credentials';
-  }
-
-  public needsProgramResolution(order: ServiceOrder): boolean {
-    return order.preflight_error_type === 'multiple_pending_resolution_required';
-  }
-
-  public requestProgramResolution(
-    payload: ProgramResolutionPayload,
-    confirmationLabel: string,
-    onSuccess: (response: ProgramResolutionResponse) => void,
-  ): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    this.setPendingAction({
-      title: 'Confirmar alcance de trámites',
-      message: `${confirmationLabel}. No se enviará ningún mensaje. La decisión de comunicación quedará registrada.`,
-      execute: async () => {
-        const response = await this.api.resolveServiceOrderPrograms(order.order_id, payload);
-        onSuccess(response);
-        return response;
-      },
-      successMessage: (response) => response.message ?? 'Resolución registrada sin envío',
-    });
-  }
-
-  public toggleOrderPasswordVisibility(): void {
-    this.orderPasswordVisible.update((visible) => !visible);
-  }
-
-  public requestCredentialsUpdate(): void {
-    if (this.orderDetailLoading()) {
-      this.errorMessage.set('Espera a que cargue el detalle protegido de la orden.');
-      return;
-    }
-    const order = this.requireSelectedOrder();
-    const detail = this.selectedOrderDetail();
-    if (!order || !detail) {
-      this.errorMessage.set('No se pudo cargar el acceso actual de la orden.');
-      return;
-    }
-    const documentNumber = this.orderDocumentNumber().trim();
-    const password = this.orderPassword();
-    if (!documentNumber || !password) {
-      this.errorMessage.set('Usuario o documento y nueva contraseña son obligatorios.');
-      return;
-    }
-    const documentChanged = documentNumber !== detail.document_number;
-    const message = documentChanged
-      ? 'Cambiarás el usuario o documento de acceso. La cuenta y sus subórdenes se pausarán hasta validar la nueva identidad en el portal.'
-      : 'Reemplazarás la contraseña. La cuenta y sus subórdenes se pausarán hasta validar nuevamente el acceso al portal.';
-    this.setPendingAction({
-      title: documentChanged ? 'Cambiar usuario y contraseña' : 'Cambiar contraseña',
-      message,
-      execute: () =>
-        this.api.updateServiceOrderCredentials(order.order_id, {
-          document_number: documentNumber,
-          document_type: this.orderDocumentType(),
-          password,
-        }),
-      onSuccess: () => {
-        this.orderPassword.set('');
-        this.orderPasswordVisible.set(false);
-        this.activeModal.set(null);
-        this.selectedOrderDetail.set(null);
-      },
-      onSettled: () => {
-        this.orderPassword.set('');
-        this.orderPasswordVisible.set(false);
-      },
-    });
-  }
-
-  public requestPriorityUpdate(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const priority = Number(this.orderPriority());
-    if (!Number.isInteger(priority) || priority < 0) {
-      this.errorMessage.set('La prioridad debe ser un numero entero igual o mayor que 0.');
-      return;
-    }
-    const payload: PriorityUpdatePayload = { priority };
-    const entersExclusiveMode = order.priority < 200 && priority >= 200;
-    const leavesExclusiveMode = order.priority >= 200 && priority < 200;
-    const entersFocusedMode = order.priority < 100 && priority >= 100;
-    const leavesFocusedMode = order.priority >= 100 && priority < 100;
-    const effect = entersExclusiveMode
-      ? ' Activara el enfoque exclusivo, limpiara su pausa y cualquier exclusivo anterior volvera a prioridad 100.'
-      : leavesExclusiveMode
-        ? priority >= 100
-          ? ' Saldra del modo exclusivo y conservara el enfoque prioritario.'
-          : ' Saldra del modo exclusivo y volvera a la cola normal.'
-        : entersFocusedMode
-          ? ' Activara enfoque y desplazara una orden de la cola normal.'
-          : leavesFocusedMode
-            ? ' La orden volvera a la cola normal.'
-            : ' Se aplicara en la siguiente seleccion de la cola.';
-    this.setPendingAction({
-      title: 'Actualizar prioridad',
-      message: `Cambiar prioridad de ${order.order_id} de ${order.priority} a ${priority}.${effect}`,
-      execute: () => this.api.updateServiceOrderPriority(order.order_id, payload),
-      onSettled: () => this.orderPriority.set(this.selectedOrder()?.priority ?? priority),
-    });
-  }
-
-  public requestReservationRestrictionsUpdate(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const excludedDateRanges = this.prepareExcludedDateRanges(
-      this.orderExcludedDateRanges(),
-      this.orderExcludedDateStart(),
-      this.orderExcludedDateEnd(),
-    );
-    if (excludedDateRanges === null) {
-      return;
-    }
-    const payload: ReservationRestrictionsUpdatePayload = {
-      minimum_reservation_date: this.optionalText(this.orderMinimumReservationDate()),
-      maximum_reservation_date: this.optionalText(this.orderMaximumReservationDate()),
-      allowed_weekdays: this.orderAllowedWeekdays().length > 0 ? this.orderAllowedWeekdays() : null,
-      excluded_date_ranges: excludedDateRanges,
-    };
-    if (
-      payload.minimum_reservation_date &&
-      payload.maximum_reservation_date &&
-      payload.maximum_reservation_date < payload.minimum_reservation_date
-    ) {
-      this.errorMessage.set('La fecha final no puede ser anterior a la fecha inicial.');
-      return;
-    }
-    this.setPendingAction({
-      title: 'Actualizar reglas de reserva',
-      message: `Guardar las reglas de reserva de ${order.order_id}. Los campos vacíos quitarán esa regla.`,
-      execute: () => this.api.updateServiceOrderRestrictions(order.order_id, payload),
-    });
-  }
-
-  public addOrderExcludedDateRange(): void {
-    const ranges = this.prepareExcludedDateRanges(
-      this.orderExcludedDateRanges(),
-      this.orderExcludedDateStart(),
-      this.orderExcludedDateEnd(),
-    );
-    if (ranges === null) {
-      return;
-    }
-    this.orderExcludedDateRanges.set(ranges);
-    this.orderExcludedDateStart.set('');
-    this.orderExcludedDateEnd.set('');
-    this.formDirty.set(true);
-  }
-
-  public removeOrderExcludedDateRange(index: number): void {
-    this.orderExcludedDateRanges.update((ranges) =>
-      ranges.filter((_, rangeIndex) => rangeIndex !== index),
-    );
-    this.formDirty.set(true);
-  }
-
-  public clearOrderExcludedDateRanges(): void {
-    this.orderExcludedDateRanges.set([]);
-    this.formDirty.set(true);
-  }
-
-  public addNewExcludedDateRange(): void {
-    const ranges = this.prepareExcludedDateRanges(
-      this.newExcludedDateRanges(),
-      this.newExcludedDateStart(),
-      this.newExcludedDateEnd(),
-    );
-    if (ranges === null) {
-      return;
-    }
-    this.newExcludedDateRanges.set(ranges);
-    this.newExcludedDateStart.set('');
-    this.newExcludedDateEnd.set('');
-    this.formDirty.set(true);
-  }
-
-  public removeNewExcludedDateRange(index: number): void {
-    this.newExcludedDateRanges.update((ranges) =>
-      ranges.filter((_, rangeIndex) => rangeIndex !== index),
-    );
-    this.formDirty.set(true);
-  }
-
-  public clearNewExcludedDateRanges(): void {
-    this.newExcludedDateRanges.set([]);
-    this.formDirty.set(true);
-  }
-
-  public requestOrderAction(
-    action: 'pause' | 'activate' | 'no-charge' | 'done',
-    title: string,
-  ): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    if (action === 'activate' && this.hasActiveChildOrders(order)) {
-      this.errorMessage.set('No se puede activar una orden padre con subordenes activas.');
-      return;
-    }
-    this.setPendingAction({
-      title,
-      message: `${title} para ${order.order_id}.`,
-      execute: () => this.api.runServiceOrderAction(order.order_id, action),
-      onSuccess: () => this.activeModal.set(null),
-    });
-  }
-
-  public requestOrderValidation(order: ServiceOrder): void {
-    this.setPendingAction({
-      title: 'Validar acceso',
-      message: `Ingresar al portal y validar identidad y programas de ${order.order_id}.`,
-      execute: () => this.api.revalidateServiceOrder(order.order_id),
-      onSuccess: () => this.activeModal.set(null),
-    });
-  }
-
-  public preflightLabel(order: ServiceOrder): string {
-    const labels: Record<ServiceOrder['preflight_status'], string> = {
-      not_required: 'Sin validación previa',
-      pending: 'Validación pendiente',
-      running: 'Validando acceso',
-      validated: 'Acceso validado',
-      failed: 'Validación fallida',
-    };
-    return labels[order.preflight_status] ?? order.preflight_status;
-  }
-
-  public requestCloseOrder(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const payload: CloseServiceOrderPayload = {
-      closure_reason: this.closureReason(),
-      closure_note: this.optionalText(this.closureNote()),
-    };
-    this.setPendingAction({
-      title: this.closureReasonLabel(payload.closure_reason),
-      message: `${this.closureReasonLabel(payload.closure_reason)} para ${order.order_id}.`,
-      execute: () => this.api.closeServiceOrder(order.order_id, payload),
-      onSuccess: () => this.activeModal.set(null),
-    });
-  }
-
-  public setClosureReason(value: string): void {
-    const allowed: ClosureReason[] = [
-      'completed_by_us',
-      'family_no_charge',
-      'client_withdrew',
-      'external_slot',
-      'duplicate',
-      'not_serviceable',
-      'uncollectible',
-    ];
-    const reason = allowed.includes(value as ClosureReason)
-      ? (value as ClosureReason)
-      : 'client_withdrew';
-    this.editField(this.closureReason, reason);
-  }
-
   public requestMarkPaid(): void {
-    const order = this.requireSelectedOrder();
+    const order = this.orders.requireSelectedOrder();
     if (!order) {
       return;
     }
@@ -3755,98 +2975,6 @@ export class App implements OnDestroy {
         ? 'Abono registrado; el saldo permanece pendiente'
         : 'Pago completo registrado; envío automático en proceso',
       onSuccess: () => this.activeModal.set(null),
-    });
-  }
-
-  public async copySelectedOrderWhatsapp(): Promise<void> {
-    const recipient = this.selectedOrderDetail()?.contact_whatsapp
-      ?? this.selectedOrderDetail()?.contact_whatsapp_username;
-    if (!recipient) {
-      return;
-    }
-    await navigator.clipboard.writeText(recipient);
-    this.markCopied('whatsapp-number');
-  }
-
-  public openSelectedOrderWhatsapp(): void {
-    const digits = this.selectedOrderDetail()?.contact_whatsapp?.replace(/\D/g, '');
-    if (digits) {
-      window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  public servicePackages(): ServicePackageDefinition[] {
-    return this.servicePackageCatalog()?.service_packages ?? [];
-  }
-
-  public servicePackageDefinition(
-    key: string | null | undefined,
-  ): ServicePackageDefinition | null {
-    return this.servicePackages().find((item) => item.key === key) ?? null;
-  }
-
-  public newServicePackageDefinition(): ServicePackageDefinition | null {
-    return this.servicePackageDefinition(this.newServicePackage());
-  }
-
-  public servicePackageOptionLabel(definition: ServicePackageDefinition): string {
-    if (!definition.total_amount) {
-      return definition.label;
-    }
-    if (definition.key === 'integral') {
-      return `${definition.label} — S/${definition.total_amount} `
-        + `(S/${definition.initial_payment_amount} + S/${definition.balance_amount})`;
-    }
-    return `${definition.label} — S/${definition.total_amount}`;
-  }
-
-  public standardPackageAmount(): string | null {
-    return this.servicePackageDefinition('standard')?.total_amount ?? null;
-  }
-
-  public requestCreateOrder(): void {
-    const excludedDateRanges = this.prepareExcludedDateRanges(
-      this.newExcludedDateRanges(),
-      this.newExcludedDateStart(),
-      this.newExcludedDateEnd(),
-    );
-    if (excludedDateRanges === null) {
-      return;
-    }
-    const servicePackage = this.newServicePackage();
-    const packageDefinition = this.servicePackageDefinition(servicePackage);
-    const result = buildCreateOrderPayload({
-      documentNumber: this.newDocumentNumber(),
-      documentType: this.newDocumentType(),
-      password: this.newPassword(),
-      contactWhatsapp: this.newContactWhatsapp(),
-      contactWhatsappUsername: this.newContactWhatsappUsername(),
-      contactName: this.newContactName(),
-      contactSource: this.newContactSource(),
-      servicePackage,
-      customReservationPrice: this.newCustomReservationPrice(),
-      minimumReservationDate: this.newMinimumReservationDate(),
-      maximumReservationDate: this.newMaximumReservationDate(),
-      allowedWeekdays: this.newAllowedWeekdays(),
-      excludedDateRanges,
-    }, packageDefinition);
-    if (!result.payload || !packageDefinition) {
-      this.errorMessage.set(result.error);
-      return;
-    }
-    const payload = result.payload;
-    const reservationPrice = payload.reservation_price;
-    this.setPendingAction({
-      title: 'Crear orden nueva',
-      message: `Crear orden para documento ${this.maskDocumentNumber(payload.document_number)} como ${
-        packageDefinition.label.toLocaleLowerCase('es-PE')
-      } por S/${reservationPrice}.`,
-      execute: () => this.api.createServiceOrder(payload),
-      onSuccess: () => {
-        this.clearCreateOrderForm();
-        this.activeModal.set(null);
-      },
-      onSettled: () => this.clearCreateOrderSensitiveFields(),
     });
   }
 
@@ -3968,118 +3096,6 @@ export class App implements OnDestroy {
       },
       successMessage: 'Canario V6 activo para el siguiente CAPTCHA compatible',
     });
-  }
-
-  public requestManualSession(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    const mode = this.manualSessionMode(order);
-    this.setPendingAction({
-      title: this.manualSessionActionLabel(order),
-      message:
-        mode === 'appointment'
-          ? `Abrir el panel de citas en un navegador independiente para ${order.order_id}.`
-          : `Abrir el portal para consultar ${order.order_id}. El bot no cambiará el estado de la orden.`,
-      execute: () => this.api.openManualSession(order.order_id, mode),
-      onSuccess: (response) => {
-        if (response.session_id) {
-          this.activeManualSessionIds.add(response.session_id);
-        }
-        this.activeModal.set(null);
-      },
-    });
-  }
-
-  public requestDiagnosticSession(): void {
-    const order = this.requireSelectedOrder();
-    if (!order) {
-      return;
-    }
-    this.setPendingAction({
-      title: 'Medir flujo manual',
-      message:
-        `Abrir el portal desde el inicio para ${order.order_id}. ` +
-        'Se registraran campos y solicitudes de forma sanitizada; tu controlas el envio final.',
-      execute: () => this.api.openManualSession(order.order_id, 'diagnostic'),
-      onSuccess: (response) => {
-        if (response.session_id) {
-          this.activeManualSessionIds.add(response.session_id);
-        }
-        this.activeModal.set(null);
-      },
-    });
-  }
-
-  public async openManualSessionNow(
-    order: ServiceOrder,
-    mode: ManualSessionMode = this.manualSessionMode(order),
-  ): Promise<void> {
-    if (this.actionBusy()) {
-      return;
-    }
-    this.actionBusy.set(true);
-    this.errorMessage.set(null);
-    try {
-      const response = await this.api.openManualSession(order.order_id, mode);
-      if (response.session_id) {
-        this.activeManualSessionIds.add(response.session_id);
-      }
-      await this.refreshAll();
-      this.showToast(
-        mode === 'diagnostic'
-          ? 'Medición activa'
-          : mode === 'appointment'
-            ? 'Sesión manual abierta'
-            : 'Portal abierto para consulta',
-      );
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      this.actionBusy.set(false);
-    }
-  }
-
-  public async closeManualSession(session: ManualSession): Promise<void> {
-    if (this.isManualSessionClosing(session.session_id) || session.close_requested) {
-      return;
-    }
-    this.closingManualSessionIds.update((sessionIds) => {
-      const next = new Set(sessionIds);
-      next.add(session.session_id);
-      return next;
-    });
-    this.errorMessage.set(null);
-    try {
-      await this.api.closeManualSession(session.session_id);
-      this.activeManualSessionIds.delete(session.session_id);
-      this.manualSessions.update((sessions) =>
-        sessions.map((item) =>
-          item.session_id === session.session_id
-            ? {
-                ...item,
-                status: 'closing',
-                close_requested: true,
-                status_message: 'Cierre solicitado; esperando que Chromium termine.',
-              }
-            : item,
-        ),
-      );
-      this.showToast('Cierre solicitado');
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      this.closingManualSessionIds.update((sessionIds) => {
-        const next = new Set(sessionIds);
-        next.delete(session.session_id);
-        return next;
-      });
-    }
-  }
-
-  public isManualSessionClosing(sessionId: string): boolean {
-    return this.closingManualSessionIds().has(sessionId);
   }
 
   public setPostAppointmentFilter(filter: PostAppointmentFilter): void {
@@ -4282,13 +3298,6 @@ export class App implements OnDestroy {
     return 'Sin orden activa';
   }
 
-  public orderLabel(order: ServiceOrder | null): string {
-    if (!order) {
-      return 'Sin orden seleccionada';
-    }
-    return `${order.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
-  }
-
   public paymentLabel(order: ServiceOrder): string {
     if (!order.charge_required) {
       return 'Sin cobro';
@@ -4308,78 +3317,6 @@ export class App implements OnDestroy {
       }
     }
     return order.amount_paid ?? order.amount_agreed ?? '';
-  }
-
-  public closureReasonLabel(reason: string | null | undefined): string {
-    const labels: Record<ClosureReason, string> = {
-      completed_by_us: 'Realizado por nosotros',
-      family_no_charge: 'Familiar sin cobro',
-      client_withdrew: 'Cliente retirado',
-      external_slot: 'Cupo por tercero',
-      duplicate: 'Duplicado',
-      not_serviceable: 'No gestionable',
-      uncollectible: 'Incobrable',
-    };
-    if (!reason) {
-      return 'sin cierre';
-    }
-    return labels[reason as ClosureReason] ?? reason.replaceAll('_', ' ');
-  }
-
-  public closureDisplay(order: ServiceOrder): string {
-    if (order.closure_reason) {
-      return this.closureReasonLabel(order.closure_reason);
-    }
-    if (order.status === 'archived') {
-      return 'Archivado sin razon';
-    }
-    if (order.status === 'paid') {
-      return 'Realizado por nosotros';
-    }
-    return 'abierto';
-  }
-
-  public manualSessionOrderLabel(session: ManualSession): string {
-    const order = this.orderList.orders().find((item) => item.order_id === session.order_id);
-    if (!order) {
-      return session.order_id;
-    }
-    return `${session.order_id} | ${order.applicant_name ?? order.document_number_masked}`;
-  }
-
-  public manualSessionMode(order: ServiceOrder): ManualSessionMode {
-    return order.status === 'ready' ? 'appointment' : 'portal';
-  }
-
-  public manualSessionActionLabel(order: ServiceOrder): string {
-    return this.manualSessionMode(order) === 'appointment' ? 'Sesión manual' : 'Abrir portal';
-  }
-
-  public manualSessionTypeLabel(session: ManualSession): string {
-    if (session.mode === 'diagnostic') {
-      return 'Diagnóstico protegido';
-    }
-    return session.mode === 'appointment' ? 'Operativa' : 'Consulta';
-  }
-
-  public hasActiveChildOrders(order: ServiceOrder): boolean {
-    return this.orderList.orders().some(
-      (item) =>
-        item.parent_order_id === order.order_id &&
-        ['ready', 'paused', 'reserved_payment_pending'].includes(item.status),
-    );
-  }
-
-  public programChildCount(order: ServiceOrder): number {
-    return this.orderList.orders().filter((item) => item.parent_order_id === order.order_id).length;
-  }
-
-  public orderStatusDisplay(order: ServiceOrder): string {
-    const childCount = this.programChildCount(order);
-    if (childCount) {
-      return `Contenedor · ${childCount} trámite${childCount === 1 ? '' : 's'}`;
-    }
-    return this.statusLabel(order.status);
   }
 
   public statusLabel(
@@ -4487,7 +3424,7 @@ export class App implements OnDestroy {
     };
   }
 
-  private markCopied(label: string): void {
+  public markCopied(label: string): void {
     this.copiedLabel.set(label);
     window.setTimeout(() => {
       if (this.copiedLabel() === label) {
@@ -4496,11 +3433,11 @@ export class App implements OnDestroy {
     }, 1600);
   }
 
-  private readError(error: unknown): string {
+  public readError(error: unknown): string {
     return apiErrorMessage(error);
   }
 
-  private async setPendingAction(action: PendingAction): Promise<void> {
+  public async setPendingAction(action: PendingAction): Promise<void> {
     this.errorMessage.set(null);
     this.captureFocus();
     this.pendingAction.set(action);
@@ -4550,7 +3487,7 @@ export class App implements OnDestroy {
     }
   }
 
-  private showToast(title: string): void {
+  public showToast(title: string): void {
     void this.getSweetAlert()
       .then((sweetAlert) =>
         sweetAlert.fire({
@@ -4605,13 +3542,13 @@ export class App implements OnDestroy {
     }
   }
 
-  private openModal(modal: Exclude<ModalKind, null>): void {
+  public openModal(modal: Exclude<ModalKind, null>): void {
     this.captureFocus();
     this.activeModal.set(modal);
     this.focusModal();
   }
 
-  private captureFocus(): void {
+  public captureFocus(): void {
     const activeElement = document.activeElement;
     this.lastFocusedElement = activeElement instanceof HTMLElement ? activeElement : null;
   }
@@ -4622,7 +3559,7 @@ export class App implements OnDestroy {
     });
   }
 
-  private restoreFocus(): void {
+  public restoreFocus(): void {
     const target = this.lastFocusedElement;
     this.lastFocusedElement = null;
     window.setTimeout(() => {
@@ -4631,37 +3568,9 @@ export class App implements OnDestroy {
         return;
       }
       document
-        .querySelector<HTMLElement>(`[data-order-row="${CSS.escape(this.selectedOrderId())}"]`)
+        .querySelector<HTMLElement>(`[data-order-row="${CSS.escape(this.orders.selectedOrderId())}"]`)
         ?.focus();
     });
-  }
-
-  private requireSelectedOrder(): ServiceOrder | null {
-    const order = this.selectedOrder();
-    if (!order) {
-      this.errorMessage.set('Carga y selecciona una orden primero.');
-      return null;
-    }
-    return order;
-  }
-
-  private async loadSelectedOrderDetail(orderId: string): Promise<void> {
-    this.orderDetailLoading.set(true);
-    this.errorMessage.set(null);
-    try {
-      const detail = await this.api.getServiceOrder(orderId);
-      if (this.selectedOrderId() !== detail.order_id) {
-        return;
-      }
-      this.selectedOrderDetail.set(detail);
-      this.hydrateSelectedOrderForms(detail);
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      if (this.selectedOrderId() === orderId) {
-        this.orderDetailLoading.set(false);
-      }
-    }
   }
 
   private async refreshFromTimer(): Promise<void> {
@@ -4761,77 +3670,6 @@ export class App implements OnDestroy {
     }
   }
 
-  private keepValidSelection(orders: ServiceOrder[]): void {
-    const selected = this.selectedOrderId();
-    if (selected && orders.some((order) => order.order_id === selected)) {
-      return;
-    }
-    this.selectedOrderId.set(orders[0]?.order_id ?? '');
-  }
-
-  private hydrateSelectedOrderForms(detail: ServiceOrderDetail | null = null): void {
-    if (this.formDirty()) {
-      return;
-    }
-    const order = this.selectedOrder();
-    if (!order) {
-      return;
-    }
-    this.contactName.set(order.contact_name ?? '');
-    this.contactWhatsapp.set(detail?.contact_whatsapp ?? '');
-    this.contactWhatsappUsername.set(detail?.contact_whatsapp_username ?? '');
-    this.contactSource.set(order.contact_source ?? 'whatsapp');
-    this.orderDocumentNumber.set(detail?.document_number ?? '');
-    this.orderDocumentType.set(order.document_type);
-    this.orderPassword.set('');
-    this.orderPasswordVisible.set(false);
-    this.orderPriority.set(order.priority);
-    this.orderMinimumReservationDate.set(order.minimum_reservation_date ?? '');
-    this.orderMaximumReservationDate.set(order.maximum_reservation_date ?? '');
-    this.orderAllowedWeekdays.set([...(order.allowed_weekdays ?? [])]);
-    this.orderExcludedDateRanges.set([...(order.excluded_date_ranges ?? [])]);
-    this.orderExcludedDateStart.set('');
-    this.orderExcludedDateEnd.set('');
-    this.paymentAmountPaid.set(order.amount_paid ?? '');
-    this.paymentAmountAgreed.set(order.amount_agreed ?? '');
-    this.closureReason.set((order.closure_reason as ClosureReason | null) ?? 'client_withdrew');
-    this.closureNote.set(order.closure_note ?? '');
-  }
-
-  private clearCreateOrderForm(): void {
-    this.newDocumentNumber.set('');
-    this.newDocumentType.set('dni');
-    this.newPassword.set('');
-    this.newContactName.set('');
-    this.newContactWhatsapp.set('');
-    this.newContactWhatsappUsername.set('');
-    this.newContactSource.set('');
-    this.newServicePackage.set(this.servicePackageCatalog()?.default_package ?? 'standard');
-    this.newCustomReservationPrice.set('');
-    this.newMinimumReservationDate.set('');
-    this.newMaximumReservationDate.set('');
-    this.newAllowedWeekdays.set([]);
-    this.newExcludedDateRanges.set([]);
-    this.newExcludedDateStart.set('');
-    this.newExcludedDateEnd.set('');
-  }
-
-  private clearCreateOrderSensitiveFields(): void {
-    this.newDocumentNumber.set('');
-    this.newPassword.set('');
-    this.newContactName.set('');
-    this.newContactWhatsapp.set('');
-    this.newContactWhatsappUsername.set('');
-  }
-
-  private maskDocumentNumber(value: string): string {
-    const normalized = value.trim();
-    if (normalized.length <= 3) {
-      return '***';
-    }
-    return `${normalized.slice(0, 2)}${'*'.repeat(Math.max(normalized.length - 3, 1))}${normalized.slice(-1)}`;
-  }
-
   private financeFormPayload(): FinanceEntryPayload | null {
     const amountOriginal = String(this.financeAmountOriginal() ?? '').trim();
     const exchangeRate = String(this.financeExchangeRatePen() ?? '').trim();
@@ -4921,67 +3759,126 @@ export class App implements OnDestroy {
     });
   }
 
-  private capitalize(value: string): string {
+  public capitalize(value: string): string {
     return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
   }
 
-  private prepareExcludedDateRanges(
-    ranges: ExcludedDateRange[],
-    startDate: string,
-    endDate: string,
-  ): ExcludedDateRange[] | null {
-    const start = startDate.trim();
-    const end = endDate.trim();
-    if (!start && !end) {
-      return this.normalizeExcludedDateRanges(ranges);
-    }
-    if (!start || !end) {
-      this.errorMessage.set('Completa ambas fechas del rango excluido.');
-      return null;
-    }
-    if (end < start) {
-      this.errorMessage.set('El final del rango excluido no puede ser anterior al inicio.');
-      return null;
-    }
-    return this.normalizeExcludedDateRanges([...ranges, { start_date: start, end_date: end }]);
-  }
-
-  private normalizeExcludedDateRanges(ranges: ExcludedDateRange[]): ExcludedDateRange[] {
-    const sorted = [...ranges].sort((left, right) =>
-      left.start_date.localeCompare(right.start_date),
-    );
-    const merged: ExcludedDateRange[] = [];
-    for (const range of sorted) {
-      const previous = merged.at(-1);
-      if (previous && range.start_date <= previous.end_date) {
-        previous.end_date =
-          previous.end_date >= range.end_date ? previous.end_date : range.end_date;
-        continue;
-      }
-      merged.push({ ...range });
-    }
-    return merged;
-  }
-
-  private optionalText(value: string): string | null {
+  public optionalText(value: string): string | null {
     const trimmed = value.trim();
     return trimmed || null;
   }
 
-  private closeTrackedManualSessionsWithBeacon(): void {
-    if (!this.activeManualSessionIds.size) {
+  public async loadInboxView(scope: RequestScope): Promise<void> {
+      const inboxRequest = this.api.getOperatorInbox(scope);
+      if (!this.captchaShadowEnabled()) {
+        this.operatorInbox.set(await inboxRequest);
+        this.captchaReviewTotal.set(0);
+        return;
+      }
+      const [inbox, pendingCaptchas] = await Promise.all([
+        inboxRequest,
+        this.api
+          .getCaptchaEvents(
+            1, 12, '', 'all', 'all', 'all', 'pending', 'review_priority', 'targeted', scope,
+          )
+          .catch((error: unknown) => {
+            if (isRequestCancelled(error)) {
+              throw error;
+            }
+            return null;
+          }),
+      ]);
+      this.operatorInbox.set(inbox);
+      if (pendingCaptchas) {
+        this.captchaReviewTotal.set(pendingCaptchas.pagination.total);
+      }
       return;
     }
-    for (const sessionId of this.activeManualSessionIds) {
-      const body = JSON.stringify({ session_id: sessionId });
-      const sent = navigator.sendBeacon?.(
-        '/api/v1/manual-session/close',
-        new Blob([body], { type: 'application/json' }),
-      );
-      if (!sent) {
-        void this.api.closeManualSession(sessionId).catch(() => undefined);
-      }
+
+  public async loadSummaryView(scope: RequestScope): Promise<void> {
+      const [
+        orders,
+        runs,
+        monthlySummary,
+        captchaSamplingControl,
+        captchaAuthorityControl,
+        opportunityControl,
+        opportunityBursts,
+        appointmentReminderStatus,
+        workerCommands,
+      ] = await Promise.all([
+        this.orderList.fetchOrders(scope),
+        this.api.getRuns(scope),
+        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
+        this.api.getCaptchaSamplingControl(scope),
+        this.api.getCaptchaAuthorityControl(scope),
+        this.api.getOpportunityControl(scope),
+        this.api.getOpportunityBursts(scope),
+        this.api.getAppointmentReminders(scope),
+        this.api.getWorkerCommands(scope),
+      ]);
+      this.orders.applyOrders(orders);
+      this.runs.set(runs);
+      this.monthlySummary.set(monthlySummary);
+      this.applyCaptchaSamplingControl(captchaSamplingControl);
+      this.captchaAuthorityControl.set(captchaAuthorityControl);
+      this.opportunityControl.set(opportunityControl);
+      this.opportunityBursts.set(opportunityBursts.bursts);
+      this.appointmentReminderStatus.set(appointmentReminderStatus);
+      this.workerCommands.set(workerCommands);
+      return;
     }
-    this.activeManualSessionIds.clear();
-  }
+
+  public async loadFinanceView(scope: RequestScope): Promise<void> {
+      const categoriesRequest = this.financeCategories().length
+        ? Promise.resolve(this.financeCategories())
+        : this.api.getFinanceCategories(scope);
+      const [
+        financeCategories,
+        financeEntries,
+        financeSummary,
+        financeQuality,
+        financeMonthClosure,
+        monthlySummary,
+      ] = await Promise.all([
+        categoriesRequest,
+        this.api.getFinanceEntries(this.selectedMonth(), scope),
+        this.api.getFinanceSummary(this.selectedMonth(), scope),
+        this.api.getFinanceDataQuality(this.selectedMonth(), scope),
+        this.api.getFinanceMonthClosure(this.selectedMonth(), scope),
+        this.api.getMonthlySummaryV2(this.selectedMonth(), scope),
+      ]);
+      this.financeCategories.set(financeCategories);
+      this.financeEntries.set(financeEntries);
+      this.financeSummary.set(financeSummary);
+      this.financeQuality.set(financeQuality);
+      this.applyFinanceMonthClosure(financeMonthClosure);
+      this.monthlySummary.set(monthlySummary);
+      return;
+    }
+
+  public async loadMessagesView(scope: RequestScope): Promise<void> {
+      this.whatsappMessageTemplates.set(await this.api.getWhatsAppMessageTemplates(scope));
+      return;
+    }
+
+  public async loadRunsView(scope: RequestScope): Promise<void> {
+      const [runs, workerCommands] = await Promise.all([
+        this.api.getRuns(scope),
+        this.api.getWorkerCommands(scope),
+      ]);
+      this.runs.set(runs);
+      this.workerCommands.set(workerCommands);
+      return;
+    }
+
+  public async loadFollowupsView(scope: RequestScope): Promise<void> {
+      this.setPostAppointmentPayload(
+        await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
+      );
+      return;
+    }
+  @HostListener('window:beforeunload') public onBeforeUnload(): void { this.orders.handleBeforeUnload(); }
+
+  public get orders() { return this.injector.get(DASHBOARD_SHELL_ORDERS); }
 }

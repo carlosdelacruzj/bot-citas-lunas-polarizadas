@@ -1,8 +1,11 @@
-import { OrdersListFacade, type OrdersListView } from '../../domains/orders/orders-list.facade';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import {
+  DASHBOARD_ORDERS_VIEW_ORDERLIST,
+  DASHBOARD_ORDERS_VIEW_ORDERS,
+  DASHBOARD_ORDERS_VIEW_SHELL,
+} from '../../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
@@ -13,6 +16,8 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   encapsulation: ViewEncapsulation.None,
 })
 export class OrdersViewComponent {
-  protected readonly orders: OrdersListView = inject(OrdersListFacade);
-  protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_ORDERS_VIEW_SHELL);
+  protected readonly orders = inject(DASHBOARD_ORDERS_VIEW_ORDERS);
+  protected readonly orderList = inject(DASHBOARD_ORDERS_VIEW_ORDERLIST);
+
 }

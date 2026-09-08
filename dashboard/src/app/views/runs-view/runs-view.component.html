@@ -18,21 +18,21 @@
         </tr>
       </thead>
       <tbody>
-        @for (command of dashboard.workerCommands(); track command.command_id) {
+        @for (command of shell.workerCommands(); track command.command_id) {
           <tr>
             <td data-label="Comando">
               <strong>{{ command.command }}</strong>
               <span>{{ command.command_id }}</span>
             </td>
             <td data-label="Estado">
-              <span class="badge {{ dashboard.statusTone(command.status) }}">{{
-                dashboard.statusLabel(command.status)
+              <span class="badge {{ shell.statusTone(command.status) }}">{{
+                shell.statusLabel(command.status)
               }}</span>
             </td>
-            <td data-label="Solicitado">{{ dashboard.formatDateTime(command.requested_at) }}</td>
+            <td data-label="Solicitado">{{ shell.formatDateTime(command.requested_at) }}</td>
             <td data-label="Procesado">
-              {{ dashboard.formatDateTime(command.processed_at, 'pendiente') }}
-              <span>{{ dashboard.formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
+              {{ shell.formatDateTime(command.processed_at, 'pendiente') }}
+              <span>{{ shell.formatDateTime(command.claimed_at, 'sin reclamar') }}</span>
             </td>
             <td data-label="Error">{{ command.error_message ?? '' }}</td>
           </tr>
@@ -63,45 +63,45 @@
       Estado
       <select
         name="runStatus"
-        [ngModel]="dashboard.runStatusFilter()"
-        (ngModelChange)="dashboard.runStatusFilter.set($event)"
+        [ngModel]="shell.runStatusFilter()"
+        (ngModelChange)="shell.runStatusFilter.set($event)"
       >
         <option value="">Todos</option>
-        @for (status of dashboard.runStatuses(); track status) {
+        @for (status of shell.runStatuses(); track status) {
           <option [value]="status">{{ status }}</option>
         }
       </select>
     </label>
   </div>
 
-  @if (dashboard.selectedRunId()) {
+  @if (shell.selectedRunId()) {
     <article class="run-detail" aria-live="polite">
       <div class="run-detail-header">
         <div>
           <p class="eyebrow">Detalle de corrida</p>
-          <h3>{{ dashboard.selectedRunId() }}</h3>
+          <h3>{{ shell.selectedRunId() }}</h3>
         </div>
-        <button type="button" class="secondary" (click)="dashboard.closeRunDetail()">
+        <button type="button" class="secondary" (click)="shell.closeRunDetail()">
           Volver a la lista
         </button>
       </div>
 
-      @if (dashboard.runDetailState() === 'loading') {
+      @if (shell.runDetailState() === 'loading') {
         <p class="run-detail-state">Cargando detalle sanitizado...</p>
-      } @else if (dashboard.runDetailState() === 'error') {
+      } @else if (shell.runDetailState() === 'error') {
         <div class="notice bad" role="alert">
-          {{ dashboard.runDetailError() ?? 'No se pudo cargar la corrida.' }}
-          <button type="button" class="secondary" (click)="dashboard.selectRun(dashboard.selectedRunId())">
+          {{ shell.runDetailError() ?? 'No se pudo cargar la corrida.' }}
+          <button type="button" class="secondary" (click)="shell.selectRun(shell.selectedRunId())">
             Reintentar
           </button>
         </div>
-      } @else if (dashboard.selectedRun(); as run) {
+      } @else if (shell.selectedRun(); as run) {
         <dl class="run-detail-grid">
           <div>
             <dt>Estado</dt>
             <dd>
-              <span class="badge {{ dashboard.statusTone(run.status) }}">{{
-                dashboard.statusLabel(run.status)
+              <span class="badge {{ shell.statusTone(run.status) }}">{{
+                shell.statusLabel(run.status)
               }}</span>
             </dd>
           </div>
@@ -111,7 +111,7 @@
           </div>
           <div>
             <dt>Resultado</dt>
-            <dd>{{ dashboard.runResultLabel(run) }}</dd>
+            <dd>{{ shell.runResultLabel(run) }}</dd>
           </div>
           <div>
             <dt>Codigo de salida</dt>
@@ -119,11 +119,11 @@
           </div>
           <div>
             <dt>Inicio</dt>
-            <dd>{{ dashboard.formatDateTime(run.started_at) }}</dd>
+            <dd>{{ shell.formatDateTime(run.started_at) }}</dd>
           </div>
           <div>
             <dt>Fin</dt>
-            <dd>{{ dashboard.formatDateTime(run.finished_at) }}</dd>
+            <dd>{{ shell.formatDateTime(run.finished_at) }}</dd>
           </div>
           <div>
             <dt>Duracion</dt>
@@ -131,18 +131,18 @@
           </div>
           <div>
             <dt>Evidencias</dt>
-            <dd>{{ run.screenshot_count ?? dashboard.runEvidencePaths(run).length }}</dd>
+            <dd>{{ run.screenshot_count ?? shell.runEvidencePaths(run).length }}</dd>
           </div>
         </dl>
         <div class="run-message">
           <strong>Mensaje</strong>
           <p>{{ run.message || 'Sin mensaje registrado.' }}</p>
         </div>
-        @if (dashboard.runEvidencePaths(run).length) {
+        @if (shell.runEvidencePaths(run).length) {
           <div class="run-evidence">
             <strong>Rutas permitidas de evidencia</strong>
             <ul>
-              @for (path of dashboard.runEvidencePaths(run); track path) {
+              @for (path of shell.runEvidencePaths(run); track path) {
                 <li>{{ path }}</li>
               }
             </ul>
@@ -171,17 +171,17 @@
         </tr>
       </thead>
       <tbody>
-        @for (run of dashboard.filteredRuns(); track run.run_id) {
+        @for (run of shell.filteredRuns(); track run.run_id) {
           <tr
             class="selectable-row"
-            [class.selected-row]="dashboard.selectedRunId() === run.run_id"
-            (click)="dashboard.selectRun(run.run_id)"
+            [class.selected-row]="shell.selectedRunId() === run.run_id"
+            (click)="shell.selectRun(run.run_id)"
           >
             <td data-label="Run">
               <button
                 type="button"
                 class="run-link"
-                (click)="$event.stopPropagation(); dashboard.selectRun(run.run_id)"
+                (click)="$event.stopPropagation(); shell.selectRun(run.run_id)"
               >
                 {{ run.run_id }}
               </button>
@@ -189,8 +189,8 @@
             </td>
             <td data-label="Orden">{{ run.order_id ?? 'observador' }}</td>
             <td data-label="Estado">
-              <span class="badge {{ dashboard.statusTone(run.status) }}">{{
-                dashboard.statusLabel(run.status)
+              <span class="badge {{ shell.statusTone(run.status) }}">{{
+                shell.statusLabel(run.status)
               }}</span>
             </td>
             <td data-label="Reserva">
@@ -198,7 +198,7 @@
               <span>{{ run.reservation_attempted ? 'intento reserva' : 'sin intento' }}</span>
             </td>
             <td data-label="Duracion">{{ run.duration_seconds }}s</td>
-            <td data-label="Inicio">{{ dashboard.formatDateTime(run.started_at) }}</td>
+            <td data-label="Inicio">{{ shell.formatDateTime(run.started_at) }}</td>
           </tr>
         } @empty {
           <tr>

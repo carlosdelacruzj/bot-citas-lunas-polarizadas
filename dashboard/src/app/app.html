@@ -207,23 +207,23 @@
       </section>
     }
 
-    @if (manualSessions().length) {
+    @if (orders.manualSessions().length) {
       <section class="panel manual-sessions-panel" aria-label="Sesiones manuales abiertas">
         <div class="panel-header">
           <div>
             <h2>Sesiones manuales</h2>
-            <p>{{ manualSessions().length }} abiertas</p>
+            <p>{{ orders.manualSessions().length }} abiertas</p>
           </div>
           <button type="button" class="secondary" (click)="refreshNow()">Actualizar</button>
         </div>
 
         <div class="manual-session-list">
-          @for (session of manualSessions(); track session.session_id) {
+          @for (session of orders.manualSessions(); track session.session_id) {
             <article class="manual-session-row">
               <div>
-                <strong>{{ manualSessionOrderLabel(session) }}</strong>
+                <strong>{{ orders.manualSessionOrderLabel(session) }}</strong>
                 <span>
-                  {{ manualSessionTypeLabel(session) }} · {{ statusLabel(session.order_status) }}
+                  {{ orders.manualSessionTypeLabel(session) }} · {{ statusLabel(session.order_status) }}
                 </span>
                 <small>{{ session.session_id }}</small>
                 @if (session.status_message) {
@@ -251,10 +251,10 @@
               <button
                 type="button"
                 class="danger"
-                [disabled]="isManualSessionClosing(session.session_id) || session.close_requested"
-                (click)="closeManualSession(session)"
+                [disabled]="orders.isManualSessionClosing(session.session_id) || session.close_requested"
+                (click)="orders.closeManualSession(session)"
               >
-                {{ isManualSessionClosing(session.session_id) ? 'Cerrando…' : 'Cerrar' }}
+                {{ orders.isManualSessionClosing(session.session_id) ? 'Cerrando…' : 'Cerrar' }}
               </button>
             </article>
           }

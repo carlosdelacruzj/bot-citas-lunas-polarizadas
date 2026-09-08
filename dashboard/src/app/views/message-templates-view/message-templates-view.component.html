@@ -8,7 +8,7 @@
     </p>
   </div>
   <div class="template-safety" aria-label="Garantías del editor">
-    <span><strong>{{ dashboard.whatsappMessageTemplates().length }}</strong> mensajes</span>
+    <span><strong>{{ shell.whatsappMessageTemplates().length }}</strong> mensajes</span>
     <span><strong>0</strong> envíos desde aquí</span>
     <span><strong>1</strong> revisión por guardado</span>
   </div>
@@ -24,7 +24,7 @@
       </div>
 
       <div class="template-list" role="tablist" aria-orientation="vertical">
-        @for (item of dashboard.whatsappMessageTemplates(); track item.template_key) {
+        @for (item of shell.whatsappMessageTemplates(); track item.template_key) {
           <button
             type="button"
             role="tab"
@@ -60,7 +60,7 @@
         <div class="revision-stamp" aria-label="Revisión vigente">
           <span>REV</span>
           <strong>{{ template.revision }}</strong>
-          <small>{{ dashboard.formatDateTime(template.updated_at, 'sin fecha') }}</small>
+          <small>{{ shell.formatDateTime(template.updated_at, 'sin fecha') }}</small>
         </div>
       </header>
 

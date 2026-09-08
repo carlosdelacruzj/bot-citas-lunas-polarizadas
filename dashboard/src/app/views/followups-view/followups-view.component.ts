@@ -1,8 +1,16 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DASHBOARD_FOLLOWUPS_VIEW_SHELL } from '../../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 import {
   apiErrorMessage,
   AppointmentApiService,
@@ -57,14 +65,15 @@ function paginationWindow(current: number, total: number): number[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FollowupsViewComponent {
+  protected readonly shell = inject(DASHBOARD_FOLLOWUPS_VIEW_SHELL);
+
   @ViewChild('reminderDialog') private reminderDialog?: ElementRef<HTMLDialogElement>;
 
-  protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
   private readonly api = inject(AppointmentApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly followupWorkspace = signal<FollowupWorkspace>(this.readInitialWorkspace());
-  protected readonly reminderStatus = signal<AppointmentReminderStatus | null>(this.dashboard.appointmentReminderStatus());
+  protected readonly reminderStatus = signal<AppointmentReminderStatus | null>(this.shell.appointmentReminderStatus());
   protected readonly reminderStatusLoading = signal(this.reminderStatus() === null);
   protected readonly reminderStatusError = signal(false);
   protected readonly reminderEditorOpen = signal(false);
@@ -83,13 +92,13 @@ export class FollowupsViewComponent {
   protected readonly reminderLeadDayOptions: readonly ReminderLeadDays[] = [1, 2, 3];
 
   protected readonly postAppointmentOperationalCount = computed(() =>
-    this.dashboard.postAppointmentPayload()?.filter_counts.active ?? 0,
+    this.shell.postAppointmentPayload()?.filter_counts.active ?? 0,
   );
   protected readonly postAppointmentHistoryCount = computed(() =>
-    this.dashboard.postAppointmentPayload()?.filter_counts.history ?? 0,
+    this.shell.postAppointmentPayload()?.filter_counts.history ?? 0,
   );
   protected readonly postAppointmentCompletedCount = computed(() =>
-    this.dashboard.postAppointmentPayload()?.filter_counts.completed ?? 0,
+    this.shell.postAppointmentPayload()?.filter_counts.completed ?? 0,
   );
 
   protected readonly upcomingAppointments = computed<UpcomingAppointment[]>(() => {
@@ -97,7 +106,7 @@ export class FollowupsViewComponent {
     const reminderByOrder = new Map<string, ReminderCandidate>(
       reminderCandidates.map((candidate) => [candidate.order_id, candidate]),
     );
-    const future = (this.dashboard.postAppointmentPayload()?.upcoming ?? [])
+    const future = (this.shell.postAppointmentPayload()?.upcoming ?? [])
       .filter((item: UpcomingFollowup) => this.isTodayOrFuture(item.appointment_date))
       .map((item: UpcomingFollowup): UpcomingAppointment => {
         const reminder = reminderByOrder.get(item.order_id);
@@ -228,13 +237,13 @@ export class FollowupsViewComponent {
   });
 
   constructor() {
-    this.dashboard.setPostAppointmentFilter(this.followupWorkspace() === 'history' ? 'history' : 'active');
+    this.shell.setPostAppointmentFilter(this.followupWorkspace() === 'history' ? 'history' : 'active');
     void this.loadReminderStatus();
   }
 
   protected setFollowupWorkspace(workspace: FollowupWorkspace): void {
     this.followupWorkspace.set(workspace);
-    this.dashboard.setPostAppointmentFilter(workspace === 'history' ? 'history' : 'active');
+    this.shell.setPostAppointmentFilter(workspace === 'history' ? 'history' : 'active');
     void this.router.navigate([], { relativeTo: this.route, queryParams: { tab: workspace }, replaceUrl: true });
   }
 
@@ -283,9 +292,9 @@ export class FollowupsViewComponent {
       applicant: { key: 'applicant', direction: 'asc' },
     };
     const choice = choices[sort];
-    this.dashboard.choosePostAppointmentSort(choice.key);
-    if (this.dashboard.postAppointmentSortDirection() !== choice.direction) {
-      this.dashboard.togglePostAppointmentSortDirection();
+    this.shell.choosePostAppointmentSort(choice.key);
+    if (this.shell.postAppointmentSortDirection() !== choice.direction) {
+      this.shell.togglePostAppointmentSortDirection();
     }
   }
 
@@ -296,7 +305,7 @@ export class FollowupsViewComponent {
       uncertain: 'Envío incierto', skipped: 'Omitido al revalidar',
       scheduled: 'Cita programada',
     };
-    return labels[status] ?? this.dashboard.statusLabel(status);
+    return labels[status] ?? this.shell.statusLabel(status);
   }
 
   protected reminderCandidateNextAction(status: string): string {
@@ -318,20 +327,20 @@ export class FollowupsViewComponent {
     if (this.isExpiredUpcoming(item)) {
       return 'La cita ya pasó y todavía no existe una revisión post-cita concluyente.';
     }
-    return this.dashboard.postAppointmentOutcomeDetail(item);
+    return this.shell.postAppointmentOutcomeDetail(item);
   }
 
   protected postAppointmentFreshnessLabel(item: PostAppointmentFollowup): string {
     if (item.review_freshness === 'not_applicable') {
       return item.last_reviewed_at
-        ? `Seguimiento finalizado · última revisión: ${this.dashboard.formatDateTime(item.last_reviewed_at)}`
+        ? `Seguimiento finalizado · última revisión: ${this.shell.formatDateTime(item.last_reviewed_at)}`
         : 'Seguimiento finalizado';
     }
     if (item.review_freshness === 'not_reviewed' || !item.last_reviewed_at) {
       return 'Nunca revisado';
     }
     const prefix = item.review_freshness === 'current' ? 'Actualizada hoy' : 'Desactualizada';
-    return `${prefix} · última revisión: ${this.dashboard.formatDateTime(item.last_reviewed_at)}`;
+    return `${prefix} · última revisión: ${this.shell.formatDateTime(item.last_reviewed_at)}`;
   }
 
   protected postAppointmentFreshnessTone(item: PostAppointmentFollowup): 'current' | 'stale' | 'neutral' {
@@ -342,7 +351,7 @@ export class FollowupsViewComponent {
 
   protected postAppointmentNextReviewLabel(item: PostAppointmentFollowup): string | null {
     if (!item.next_automatic_review_at) return null;
-    return `Elegible para revisión automática desde: ${this.dashboard.formatDateTime(item.next_automatic_review_at)}`;
+    return `Elegible para revisión automática desde: ${this.shell.formatDateTime(item.next_automatic_review_at)}`;
   }
 
   protected openReminderEditor(): void {

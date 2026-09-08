@@ -1,4 +1,4 @@
-@if (view.activeModal() === 'create-order') {
+@if (shell.activeModal() === 'create-order') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -15,7 +15,7 @@
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          (click)="view.closeModal()"
+          (click)="shell.closeModal()"
         >
           Cerrar
         </button>
@@ -27,8 +27,8 @@
           <select
             name="newDocumentType"
             required
-            [ngModel]="view.newDocumentType()"
-            (ngModelChange)="view.editField(view.newDocumentType, $event)"
+            [ngModel]="orders.newDocumentType()"
+            (ngModelChange)="shell.editField(orders.newDocumentType, $event)"
           >
             <option value="dni">DNI</option>
             <option value="foreign_resident_card">Carné de Extranjería</option>
@@ -41,10 +41,10 @@
             type="text"
             autocomplete="off"
             required
-            [attr.aria-invalid]="!view.newDocumentNumber().trim() && view.formDirty()"
+            [attr.aria-invalid]="!orders.newDocumentNumber().trim() && shell.formDirty()"
             aria-describedby="create-required-help dashboard-error"
-            [ngModel]="view.newDocumentNumber()"
-            (ngModelChange)="view.editField(view.newDocumentNumber, $event)"
+            [ngModel]="orders.newDocumentNumber()"
+            (ngModelChange)="shell.editField(orders.newDocumentNumber, $event)"
           />
         </label>
         <label>
@@ -54,10 +54,10 @@
             type="password"
             autocomplete="new-password"
             required
-            [attr.aria-invalid]="!view.newPassword() && view.formDirty()"
+            [attr.aria-invalid]="!orders.newPassword() && shell.formDirty()"
             aria-describedby="create-required-help dashboard-error"
-            [ngModel]="view.newPassword()"
-            (ngModelChange)="view.editField(view.newPassword, $event)"
+            [ngModel]="orders.newPassword()"
+            (ngModelChange)="shell.editField(orders.newPassword, $event)"
           />
         </label>
         <label>
@@ -66,10 +66,10 @@
             name="newContactName"
             type="text"
             required
-            [attr.aria-invalid]="!view.newContactName().trim() && view.formDirty()"
+            [attr.aria-invalid]="!orders.newContactName().trim() && shell.formDirty()"
             aria-describedby="create-required-help dashboard-error"
-            [ngModel]="view.newContactName()"
-            (ngModelChange)="view.editField(view.newContactName, $event)"
+            [ngModel]="orders.newContactName()"
+            (ngModelChange)="shell.editField(orders.newContactName, $event)"
           />
         </label>
         <label>
@@ -77,8 +77,8 @@
           <input
             name="newContactWhatsapp"
             type="text"
-            [ngModel]="view.newContactWhatsapp()"
-            (ngModelChange)="view.editField(view.newContactWhatsapp, $event)"
+            [ngModel]="orders.newContactWhatsapp()"
+            (ngModelChange)="shell.editField(orders.newContactWhatsapp, $event)"
           />
         </label>
         <label>
@@ -87,8 +87,8 @@
             name="newContactWhatsappUsername"
             type="text"
             placeholder="@usuario"
-            [ngModel]="view.newContactWhatsappUsername()"
-            (ngModelChange)="view.editField(view.newContactWhatsappUsername, $event)"
+            [ngModel]="orders.newContactWhatsappUsername()"
+            (ngModelChange)="shell.editField(orders.newContactWhatsappUsername, $event)"
           />
           <small>Si tambien registras un numero, los mensajes usaran el numero.</small>
         </label>
@@ -97,10 +97,10 @@
           <select
             name="newContactSource"
             required
-            [attr.aria-invalid]="!view.newContactSource() && view.formDirty()"
+            [attr.aria-invalid]="!orders.newContactSource() && shell.formDirty()"
             aria-describedby="create-required-help dashboard-error"
-            [ngModel]="view.newContactSource()"
-            (ngModelChange)="view.editField(view.newContactSource, $event)"
+            [ngModel]="orders.newContactSource()"
+            (ngModelChange)="shell.editField(orders.newContactSource, $event)"
           >
             <option value="">Selecciona una fuente</option>
             <option value="tiktok">TikTok</option>
@@ -125,17 +125,17 @@
             <select
               name="newServicePackage"
               required
-              [ngModel]="view.newServicePackage()"
-              (ngModelChange)="view.editField(view.newServicePackage, $event)"
+              [ngModel]="orders.newServicePackage()"
+              (ngModelChange)="shell.editField(orders.newServicePackage, $event)"
             >
-              @for (servicePackage of view.servicePackages(); track servicePackage.key) {
+              @for (servicePackage of orders.servicePackages(); track servicePackage.key) {
                 <option [ngValue]="servicePackage.key">
-                  {{ view.servicePackageOptionLabel(servicePackage) }}
+                  {{ orders.servicePackageOptionLabel(servicePackage) }}
                 </option>
               }
             </select>
           </label>
-          @if (view.newServicePackageDefinition()?.fixed_price === false) {
+          @if (orders.newServicePackageDefinition()?.fixed_price === false) {
             <label>
               Precio acordado (S/) <span class="required-marker" aria-hidden="true">*</span>
               <input
@@ -145,31 +145,31 @@
                 max="99999.99"
                 step="0.01"
                 required
-                [ngModel]="view.newCustomReservationPrice()"
-                (ngModelChange)="view.editField(view.newCustomReservationPrice, $event)"
+                [ngModel]="orders.newCustomReservationPrice()"
+                (ngModelChange)="shell.editField(orders.newCustomReservationPrice, $event)"
               />
             </label>
           }
         </div>
-        @if (view.newServicePackageDefinition()?.requires_restrictions) {
+        @if (orders.newServicePackageDefinition()?.requires_restrictions) {
           <p class="required-help">
             Exige una fecha inicial, una fecha final y reglas que impidan reservar fuera de la
             disponibilidad acordada. El precio queda fijado en
-            {{ view.formatMoney(+(view.newServicePackageDefinition()?.total_amount || 0)) }}.
+            {{ shell.formatMoney(+(orders.newServicePackageDefinition()?.total_amount || 0)) }}.
           </p>
         }
-        @if (view.newServicePackage() === 'integral' && view.newServicePackageDefinition(); as servicePackage) {
+        @if (orders.newServicePackage() === 'integral' && orders.newServicePackageDefinition(); as servicePackage) {
           <p class="required-help">
             Al crear la orden confirmas que recibiste el primer abono de
-            {{ view.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
-            oficial de {{ view.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
+            {{ shell.formatMoney(+servicePackage.initial_payment_amount) }} y pagaste la tasa
+            oficial de {{ shell.formatMoney(+servicePackage.official_fee_amount) }}. El sistema
             registrará ambos movimientos y dejará
-            {{ view.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
+            {{ shell.formatMoney(+(servicePackage.balance_amount || 0)) }} pendientes.
           </p>
           <dl class="payment-summary">
-            <div><dt>Total</dt><dd>{{ view.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
-            <div><dt>Tasa oficial</dt><dd>{{ view.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
-            <div><dt>Gestión</dt><dd>{{ view.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
+            <div><dt>Total</dt><dd>{{ shell.formatMoney(+(servicePackage.total_amount || 0)) }}</dd></div>
+            <div><dt>Tasa oficial</dt><dd>{{ shell.formatMoney(+servicePackage.official_fee_amount) }}</dd></div>
+            <div><dt>Gestión</dt><dd>{{ shell.formatMoney(+(servicePackage.management_fee_amount || 0)) }}</dd></div>
           </dl>
         }
       </fieldset>
@@ -178,33 +178,33 @@
         <legend>Restricción de fechas (opcional)</legend>
         <p>
           {{
-            view.newServicePackageDefinition()?.requires_restrictions
+            orders.newServicePackageDefinition()?.requires_restrictions
               ? 'Configura obligatoriamente el periodo y las exclusiones acordadas.'
               : 'Déjalo vacío para buscar cualquier fecha disponible.'
           }}
         </p>
         <app-reservation-rules-editor
           controlPrefix="new"
-          [minimumDate]="view.newMinimumReservationDate()"
-          [maximumDate]="view.newMaximumReservationDate()"
-          [allowedWeekdays]="view.newAllowedWeekdays()"
-          [excludedDateRanges]="view.newExcludedDateRanges()"
-          [excludedDateStart]="view.newExcludedDateStart()"
-          [excludedDateEnd]="view.newExcludedDateEnd()"
-          (minimumDateChange)="view.editField(view.newMinimumReservationDate, $event)"
-          (maximumDateChange)="view.editField(view.newMaximumReservationDate, $event)"
-          (allowedWeekdaysChange)="view.editField(view.newAllowedWeekdays, $event)"
-          (excludedDateStartChange)="view.editField(view.newExcludedDateStart, $event)"
-          (excludedDateEndChange)="view.editField(view.newExcludedDateEnd, $event)"
-          (addExcludedDateRange)="view.addNewExcludedDateRange()"
-          (removeExcludedDateRange)="view.removeNewExcludedDateRange($event)"
-          (clearExcludedDateRanges)="view.clearNewExcludedDateRanges()"
+          [minimumDate]="orders.newMinimumReservationDate()"
+          [maximumDate]="orders.newMaximumReservationDate()"
+          [allowedWeekdays]="orders.newAllowedWeekdays()"
+          [excludedDateRanges]="orders.newExcludedDateRanges()"
+          [excludedDateStart]="orders.newExcludedDateStart()"
+          [excludedDateEnd]="orders.newExcludedDateEnd()"
+          (minimumDateChange)="shell.editField(orders.newMinimumReservationDate, $event)"
+          (maximumDateChange)="shell.editField(orders.newMaximumReservationDate, $event)"
+          (allowedWeekdaysChange)="shell.editField(orders.newAllowedWeekdays, $event)"
+          (excludedDateStartChange)="shell.editField(orders.newExcludedDateStart, $event)"
+          (excludedDateEndChange)="shell.editField(orders.newExcludedDateEnd, $event)"
+          (addExcludedDateRange)="orders.addNewExcludedDateRange()"
+          (removeExcludedDateRange)="orders.removeNewExcludedDateRange($event)"
+          (clearExcludedDateRanges)="orders.clearNewExcludedDateRanges()"
         />
       </fieldset>
 
       <div class="modal-actions">
-        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
-        <button type="button" class="primary" (click)="view.requestCreateOrder()">
+        <button type="button" class="secondary" (click)="shell.closeModal()">Cancelar</button>
+        <button type="button" class="primary" (click)="orders.requestCreateOrder()">
           Crear orden
         </button>
       </div>

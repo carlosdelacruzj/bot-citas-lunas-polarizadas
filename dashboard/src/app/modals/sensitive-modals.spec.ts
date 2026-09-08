@@ -2,7 +2,7 @@ import { signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DASHBOARD_VIEW_FACADE, type DashboardViewFacade } from '../dashboard-view.facade';
+import { DASHBOARD_DOMAIN_VIEW_TOKENS } from '../dashboard-domain.ports';
 import { CreateOrderModalComponent } from './create-order-modal.component';
 import { EditOrderModalComponent } from './edit-order-modal.component';
 import { PaymentModalComponent } from './payment-modal.component';
@@ -66,7 +66,7 @@ function fakeView(activeModal: string): Record<string, unknown> {
 async function render<T>(component: { new(): T }, view: Record<string, unknown>) {
   await TestBed.configureTestingModule({
     imports: [component],
-    providers: [{ provide: DASHBOARD_VIEW_FACADE, useValue: view as unknown as DashboardViewFacade }],
+    providers: DASHBOARD_DOMAIN_VIEW_TOKENS.map((token) => ({ provide: token, useValue: view })),
   }).compileComponents();
   const fixture = TestBed.createComponent(component);
   fixture.detectChanges();

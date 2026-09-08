@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DASHBOARD_WORKER_RESTART_MODAL_SHELL } from '../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
 
 @Component({
   selector: 'app-worker-restart-modal',
@@ -10,5 +10,6 @@ import { DASHBOARD_VIEW_FACADE } from '../dashboard-view.facade';
   templateUrl: './worker-restart-modal.component.html',
 })
 export class WorkerRestartModalComponent {
-  protected readonly view = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_WORKER_RESTART_MODAL_SHELL);
+
 }

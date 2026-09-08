@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DASHBOARD_FINANCE_VIEW_SHELL } from '../../dashboard-domain.ports';
 
-import { DASHBOARD_VIEW_FACADE } from '../../dashboard-view.facade';
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
 @Component({
@@ -12,5 +12,6 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FinanceViewComponent {
-  protected readonly dashboard = inject(DASHBOARD_VIEW_FACADE);
+  protected readonly shell = inject(DASHBOARD_FINANCE_VIEW_SHELL);
+
 }

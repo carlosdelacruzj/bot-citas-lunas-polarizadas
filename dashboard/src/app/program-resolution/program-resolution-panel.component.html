@@ -11,7 +11,7 @@
     <span class="badge warn">Orden pausada</span>
   </div>
 
-  @if (view.orderDetailLoading()) {
+  @if (orders.orderDetailLoading()) {
     <app-view-state
       state="loading"
       [compact]="true"
@@ -30,7 +30,7 @@
       </div>
       <div>
         <span>Condiciones actuales</span>
-        <strong>{{ view.servicePriceLabel(order()) }}</strong>
+        <strong>{{ orders.servicePriceLabel(order()) }}</strong>
       </div>
     </div>
 
@@ -119,8 +119,8 @@
           <legend>2. Condiciones comerciales por expediente</legend>
           <div class="inherited-terms">
             <strong>Reglas que heredará cada suborden</strong>
-            <span>{{ view.restrictionDaysLabel(order()) }}</span>
-            <span>{{ view.restrictionTimingLabel(order()) }}</span>
+            <span>{{ orders.restrictionDaysLabel(order()) }}</span>
+            <span>{{ orders.restrictionTimingLabel(order()) }}</span>
           </div>
           <label class="choice-card">
             <input
@@ -132,7 +132,7 @@
             />
             <span>
               <strong>Las mismas condiciones para cada expediente</strong>
-              <small>{{ view.servicePriceLabel(order()) }} · {{ order().charge_required ? 'con cobro' : 'sin cobro adicional' }}</small>
+              <small>{{ orders.servicePriceLabel(order()) }} · {{ order().charge_required ? 'con cobro' : 'sin cobro adicional' }}</small>
             </span>
           </label>
           @if (programResolutionCommercialMode() === 'same_terms_per_program') {
@@ -193,7 +193,7 @@
                     />
                     Requiere cobro
                   </label>
-                  <small>Reglas heredadas: {{ view.restrictionDaysLabel(order()) }} · {{ view.restrictionTimingLabel(order()) }}</small>
+                  <small>Reglas heredadas: {{ orders.restrictionDaysLabel(order()) }} · {{ orders.restrictionTimingLabel(order()) }}</small>
                 </article>
               }
             }
@@ -227,7 +227,7 @@
       <button
         type="button"
         class="primary"
-        [disabled]="!canSubmitProgramResolution() || view.actionBusy()"
+        [disabled]="!canSubmitProgramResolution() || shell.actionBusy()"
         (click)="requestProgramResolution()"
       >
         Revisar y confirmar decisión
@@ -246,7 +246,7 @@
             <small>No se envió ni se encoló. Una acción posterior separada deberá autorizar cualquier comunicación.</small>
           </div>
         }
-        <button type="button" class="secondary" (click)="view.closeModal()">Cerrar</button>
+        <button type="button" class="secondary" (click)="shell.closeModal()">Cerrar</button>
       </section>
     }
   } @else {
@@ -255,7 +255,7 @@
       [compact]="true"
       title="El listado ya no está disponible"
       message="Actualiza la orden. No se puede decidir sin los expedientes y la firma exacta del portal."
-      (retry)="view.openProgramResolution(order())"
+      (retry)="orders.openProgramResolution(order())"
     />
   }
 </section>

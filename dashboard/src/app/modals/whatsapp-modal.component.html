@@ -1,4 +1,4 @@
-@if (view.activeModal() === 'whatsapp') {
+@if (shell.activeModal() === 'whatsapp') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -11,19 +11,19 @@
           <p class="eyebrow">Envío asistido sin API</p>
           <h2 id="whatsapp-title">
             {{
-              view.whatsappTestMode()
+              shell.whatsappTestMode()
                 ? 'Prueba post-pago'
-                : view.whatsappReviewMode()
+                : shell.whatsappReviewMode()
                   ? 'Resolver pendiente de WhatsApp'
-                : view.whatsappFollowUpMode()
+                : shell.whatsappFollowUpMode()
                   ? 'Seguimiento post-pago'
                   : 'Confirmación y cobro'
             }}
           </h2>
           <p>
             {{
-              view.whatsappFollowUpMode()
-                ? view.whatsappReviewMode()
+              shell.whatsappFollowUpMode()
+                ? shell.whatsappReviewMode()
                   ? 'Revisa la evidencia sin provocar otro intento automático.'
                   : 'Primero revisa el paquete; WhatsApp solo se abrirá después de confirmar el envío.'
                 : 'Preparar el borrador no registra un envío hasta que lo confirmes manualmente.'
@@ -34,14 +34,14 @@
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          [disabled]="view.actionBusy()"
-          (click)="view.closeModal()"
+          [disabled]="shell.actionBusy()"
+          (click)="shell.closeModal()"
         >
           Cerrar
         </button>
       </div>
 
-      @if (view.whatsappTestMode() && !view.whatsappPackage() && !view.whatsappFollowUpPackage()) {
+      @if (shell.whatsappTestMode() && !shell.whatsappPackage() && !shell.whatsappFollowUpPackage()) {
         <section class="admin-block whatsapp-test-form">
           <h3>Indica tu propio número</h3>
           <label>
@@ -50,8 +50,8 @@
               name="whatsappTestRecipient"
               type="tel"
               placeholder="+51987654321"
-              [ngModel]="view.whatsappTestRecipient()"
-              (ngModelChange)="view.whatsappTestRecipient.set($event)"
+              [ngModel]="shell.whatsappTestRecipient()"
+              (ngModelChange)="shell.whatsappTestRecipient.set($event)"
             />
           </label>
           <p class="muted">
@@ -61,13 +61,13 @@
           <button
             type="button"
             class="primary"
-            [disabled]="view.whatsappFollowUpLoading() || view.whatsappPackageLoading()"
-            (click)="view.prepareWhatsAppTest()"
+            [disabled]="shell.whatsappFollowUpLoading() || shell.whatsappPackageLoading()"
+            (click)="shell.prepareWhatsAppTest()"
           >
             {{
-              view.whatsappFollowUpLoading() || view.whatsappPackageLoading()
+              shell.whatsappFollowUpLoading() || shell.whatsappPackageLoading()
                 ? 'Preparando...'
-                : view.whatsappFollowUpMode()
+                : shell.whatsappFollowUpMode()
                   ? 'Preparar prueba post-pago'
                   : 'Crear prueba de evidencias'
             }}
@@ -75,21 +75,21 @@
         </section>
       }
 
-      @if (view.whatsappPackageLoading() && !view.whatsappPackage()) {
+      @if (shell.whatsappPackageLoading() && !shell.whatsappPackage()) {
         <p class="empty">Preparando textos y constancia...</p>
       }
 
-      @if (view.whatsappFollowUpLoading() && !view.whatsappFollowUpPackage()) {
+      @if (shell.whatsappFollowUpLoading() && !shell.whatsappFollowUpPackage()) {
         <p class="empty">Preparando mensajes post-pago...</p>
       }
 
-      @if (view.whatsappReview(); as review) {
+      @if (shell.whatsappReview(); as review) {
         <section class="admin-block action-card">
           <p class="eyebrow">Intento técnico conservado</p>
-          <h3>{{ view.statusLabel(review.job.status) }}</h3>
+          <h3>{{ shell.statusLabel(review.job.status) }}</h3>
           <p>{{ review.job.error_message ?? 'El envío terminó sin confirmación suficiente.' }}</p>
           <small>
-            Trabajo {{ review.job.job_key }} · {{ view.formatDateTime(review.job.finished_at) }}
+            Trabajo {{ review.job.job_key }} · {{ shell.formatDateTime(review.job.finished_at) }}
           </small>
           @if (review.job.template_trace.length) {
             <small>
@@ -104,7 +104,7 @@
         </section>
       }
 
-      @if (view.whatsappFollowUpPackage(); as message) {
+      @if (shell.whatsappFollowUpPackage(); as message) {
         <section class="whatsapp-package-summary">
           <div>
             <span>Destino</span>
@@ -113,10 +113,10 @@
           </div>
           <div>
             <span>Estado</span>
-            <strong class="badge {{ view.statusTone(message.status) }}">{{
-              view.statusLabel(message.status)
+            <strong class="badge {{ shell.statusTone(message.status) }}">{{
+              shell.statusLabel(message.status)
             }}</strong>
-            <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            <small>{{ shell.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
           </div>
           <div>
             <span>Plantilla</span>
@@ -132,12 +132,12 @@
             <p class="eyebrow">Contenido preparado</p>
             <h3>Revisa los textos y documentos antes de enviar</h3>
           </div>
-          @if (view.whatsappReviewMode()) {
+          @if (shell.whatsappReviewMode()) {
             <div class="modal-actions">
               <button
                 type="button"
                 class="primary"
-                (click)="view.copyWhatsAppText(message.combined_text, 'texto post-pago completo')"
+                (click)="shell.copyWhatsAppText(message.combined_text, 'texto post-pago completo')"
               >
                 Copiar el texto completo que faltó
               </button>
@@ -151,12 +151,12 @@
                   <strong>{{ step.title }}</strong>
                 </div>
                 <textarea readonly [value]="step.text"></textarea>
-                @if (view.whatsappReviewMode()) {
+                @if (shell.whatsappReviewMode()) {
                   <div class="modal-actions">
                     <button
                       type="button"
                       class="secondary"
-                      (click)="view.copyWhatsAppText(step.text, step.title)"
+                      (click)="shell.copyWhatsAppText(step.text, step.title)"
                     >
                       Copiar solo este texto
                     </button>
@@ -172,11 +172,11 @@
                       <a
                         class="button-link secondary"
                         [href]="attachmentUrl"
-                        [attr.download]="view.whatsappReviewMode() ? '' : null"
-                        [attr.target]="view.whatsappReviewMode() ? null : '_blank'"
-                        [attr.rel]="view.whatsappReviewMode() ? null : 'noreferrer'"
+                        [attr.download]="shell.whatsappReviewMode() ? '' : null"
+                        [attr.target]="shell.whatsappReviewMode() ? null : '_blank'"
+                        [attr.rel]="shell.whatsappReviewMode() ? null : 'noreferrer'"
                       >
-                        {{ view.whatsappReviewMode() ? 'Descargar' : 'Revisar' }} PDF
+                        {{ shell.whatsappReviewMode() ? 'Descargar' : 'Revisar' }} PDF
                         {{ attachmentIndex + 1 }}
                       </a>
                     }
@@ -187,7 +187,7 @@
           </div>
         </section>
 
-        @if (!view.whatsappReviewMode()) {
+        @if (!shell.whatsappReviewMode()) {
           <section class="admin-block whatsapp-web-preparation">
           <p class="eyebrow">Envío automático · WhatsApp Web local</p>
           <h3>
@@ -204,18 +204,18 @@
           <button
             type="button"
             class="primary whatsapp-action"
-            [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
-            (click)="view.confirmAndSendWhatsAppFollowUp()"
+            [disabled]="shell.whatsappWebBusy() || message.status === 'sent'"
+            (click)="shell.confirmAndSendWhatsAppFollowUp()"
           >
             {{
-              view.whatsappWebBusy()
+              shell.whatsappWebBusy()
                 ? 'Enviando por WhatsApp...'
                 : message.test_mode
                   ? 'Enviar prueba por WhatsApp'
                   : 'Enviar automáticamente'
             }}
           </button>
-          @if (view.whatsappWebResult(); as webResult) {
+          @if (shell.whatsappWebResult(); as webResult) {
             <p
               class="whatsapp-web-status"
               [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'"
@@ -233,8 +233,8 @@
             <button
               type="button"
               class="primary"
-              [disabled]="message.status === 'sent' || view.actionBusy()"
-              (click)="view.confirmWhatsAppFollowUpSent()"
+              [disabled]="message.status === 'sent' || shell.actionBusy()"
+              (click)="shell.confirmWhatsAppFollowUpSent()"
             >
               {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío post-pago' }}
             </button>
@@ -242,7 +242,7 @@
         }
       }
 
-      @if (view.whatsappReview(); as review) {
+      @if (shell.whatsappReview(); as review) {
         <section class="admin-block action-card">
           <p class="eyebrow">Resolución del operador</p>
           <h3>¿Qué comprobaste en el chat?</h3>
@@ -265,32 +265,32 @@
             <textarea
               name="whatsappReviewNote"
               placeholder="Ej. Los dos PDFs ya estaban enviados; completé únicamente el texto."
-              [ngModel]="view.whatsappReviewNote()"
-              (ngModelChange)="view.whatsappReviewNote.set($event)"
+              [ngModel]="shell.whatsappReviewNote()"
+              (ngModelChange)="shell.whatsappReviewNote.set($event)"
             ></textarea>
           </label>
           <div class="modal-actions">
             <button
               type="button"
               class="primary"
-              [disabled]="view.actionBusy() || !review.job.message_id"
-              (click)="view.resolveWhatsAppReview('confirmed_complete')"
+              [disabled]="shell.actionBusy() || !review.job.message_id"
+              (click)="shell.resolveWhatsAppReview('confirmed_complete')"
             >
               Ya estaba completo
             </button>
             <button
               type="button"
               class="secondary"
-              [disabled]="view.actionBusy() || !review.job.message_id"
-              (click)="view.resolveWhatsAppReview('completed_missing')"
+              [disabled]="shell.actionBusy() || !review.job.message_id"
+              (click)="shell.resolveWhatsAppReview('completed_missing')"
             >
               Ya completé lo faltante
             </button>
             <button
               type="button"
               class="danger"
-              [disabled]="view.actionBusy() || !view.whatsappReviewNote().trim()"
-              (click)="view.resolveWhatsAppReview('dismissed')"
+              [disabled]="shell.actionBusy() || !shell.whatsappReviewNote().trim()"
+              (click)="shell.resolveWhatsAppReview('dismissed')"
             >
               Cerrar sin envío
             </button>
@@ -298,7 +298,7 @@
         </section>
       }
 
-      @if (view.whatsappPackage(); as message) {
+      @if (shell.whatsappPackage(); as message) {
         <section class="whatsapp-package-summary">
           <div>
             <span>Destino</span>
@@ -307,10 +307,10 @@
           </div>
           <div>
             <span>Estado</span>
-            <strong class="badge {{ view.statusTone(message.status) }}">{{
-              view.statusLabel(message.status)
+            <strong class="badge {{ shell.statusTone(message.status) }}">{{
+              shell.statusLabel(message.status)
             }}</strong>
-            <small>{{ view.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
+            <small>{{ shell.formatDateTime(message.sent_at ?? message.prepared_at) }}</small>
           </div>
           <div>
             <span>Plantillas</span>
@@ -366,13 +366,13 @@
           <button
             type="button"
             class="primary whatsapp-action"
-            [disabled]="view.whatsappWebBusy() || message.status === 'sent'"
-            (click)="view.confirmAndSendWhatsAppEvidence()"
+            [disabled]="shell.whatsappWebBusy() || message.status === 'sent'"
+            (click)="shell.confirmAndSendWhatsAppEvidence()"
           >
             {{
               message.status === 'sent'
                 ? 'Envío completado'
-                : view.whatsappWebBusy()
+                : shell.whatsappWebBusy()
                   ? message.test_mode
                     ? 'Enviando prueba por WhatsApp...'
                     : 'Preparando WhatsApp Web...'
@@ -381,7 +381,7 @@
                     : 'Enviar por WhatsApp'
             }}
           </button>
-          @if (view.whatsappWebResult(); as webResult) {
+          @if (shell.whatsappWebResult(); as webResult) {
             <p
               class="whatsapp-web-status"
               [class.ready]="webResult.status === 'draft_ready' || webResult.status === 'sent'"
@@ -391,7 +391,7 @@
           }
         </section>
 
-        <details class="manual-fallback" [open]="view.whatsappManualFallbackOpen()">
+        <details class="manual-fallback" [open]="shell.whatsappManualFallbackOpen()">
           <summary>Respaldo manual si WhatsApp Web no pudo prepararse</summary>
           <div class="whatsapp-steps">
             <article class="whatsapp-step">
@@ -407,7 +407,7 @@
                   rel="noreferrer"
                   >Abrir WhatsApp</a
                 >
-                <button type="button" class="primary" (click)="view.copyWhatsAppAttachment()">
+                <button type="button" class="primary" (click)="shell.copyWhatsAppAttachment()">
                   Copiar constancia
                 </button>
                 <a class="button-link secondary" [href]="message.attachment_url" download
@@ -416,7 +416,7 @@
                 <button
                   type="button"
                   class="secondary"
-                  (click)="view.copyWhatsAppText(message.greeting, 'confirmación')"
+                  (click)="shell.copyWhatsAppText(message.greeting, 'confirmación')"
                 >
                   Copiar texto
                 </button>
@@ -441,7 +441,7 @@
                 <button
                   type="button"
                   class="secondary"
-                  (click)="view.copyWhatsAppText(message.payment_message, 'cobro')"
+                  (click)="shell.copyWhatsAppText(message.payment_message, 'cobro')"
                 >
                   Copiar cobro
                 </button>
@@ -458,8 +458,8 @@
           <button
             type="button"
             class="primary"
-            [disabled]="message.status === 'sent' || view.actionBusy()"
-            (click)="view.confirmWhatsAppSent()"
+            [disabled]="message.status === 'sent' || shell.actionBusy()"
+            (click)="shell.confirmWhatsAppSent()"
           >
             {{ message.status === 'sent' ? 'Envío confirmado' : 'Confirmar envío realizado' }}
           </button>

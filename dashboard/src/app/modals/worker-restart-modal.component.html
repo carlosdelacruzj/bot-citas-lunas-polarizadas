@@ -1,4 +1,4 @@
-@if (view.activeModal() === 'worker-restart') {
+@if (shell.activeModal() === 'worker-restart') {
   <section
     class="modal-backdrop"
     role="dialog"
@@ -9,13 +9,13 @@
       <div class="modal-header">
         <div>
           <h2 id="worker-restart-title">Reiniciar worker</h2>
-          <p>{{ view.phaseLabel(view.worker()?.phase ?? view.health()?.reason) }}</p>
+          <p>{{ shell.phaseLabel(shell.worker()?.phase ?? shell.health()?.reason) }}</p>
         </div>
         <button
           type="button"
           class="icon-button"
           data-modal-initial-focus
-          (click)="view.closeModal()"
+          (click)="shell.closeModal()"
         >
           Cerrar
         </button>
@@ -25,13 +25,13 @@
           <dt>Worker</dt>
           <dd>
             {{
-              view.worker()?.worker_running || view.health()?.worker_running ? 'activo' : 'sin confirmar'
+              shell.worker()?.worker_running || shell.health()?.worker_running ? 'activo' : 'sin confirmar'
             }}
           </dd>
         </div>
         <div>
           <dt>Actividad actual</dt>
-          <dd>{{ view.currentWorkLabel() }}</dd>
+          <dd>{{ shell.currentWorkLabel() }}</dd>
         </div>
       </dl>
       <section class="restart-backoff-option">
@@ -39,8 +39,8 @@
           <input
             name="releaseSafeBackoffsOnRestart"
             type="checkbox"
-            [ngModel]="view.releaseSafeBackoffsOnRestart()"
-            (ngModelChange)="view.releaseSafeBackoffsOnRestart.set($event)"
+            [ngModel]="shell.releaseSafeBackoffsOnRestart()"
+            (ngModelChange)="shell.releaseSafeBackoffsOnRestart.set($event)"
           />
           <span>
             <strong>Quitar backoff de errores técnicos seguros</strong>
@@ -52,10 +52,10 @@
         </label>
       </section>
       <div class="modal-actions">
-        <button type="button" class="secondary" (click)="view.closeModal()">Cancelar</button>
-        <button type="button" class="danger" (click)="view.requestRestartWorker()">
+        <button type="button" class="secondary" (click)="shell.closeModal()">Cancelar</button>
+        <button type="button" class="danger" (click)="shell.requestRestartWorker()">
           {{
-            view.releaseSafeBackoffsOnRestart()
+            shell.releaseSafeBackoffsOnRestart()
               ? 'Reiniciar y reintentar'
               : 'Reiniciar worker'
           }}

@@ -4,13 +4,13 @@
     <h2 id="inbox-title">Lo que requiere tu atención</h2>
     <p>Una sola siguiente acción por cliente, con los bloqueos más urgentes primero.</p>
   </div>
-  <div class="inbox-total" [class.clear]="dashboard.inboxPendingTotal() === 0">
-    <strong>{{ dashboard.inboxPendingTotal() }}</strong>
-    <span>{{ dashboard.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
+  <div class="inbox-total" [class.clear]="shell.inboxPendingTotal() === 0">
+    <strong>{{ shell.inboxPendingTotal() }}</strong>
+    <span>{{ shell.inboxPendingTotal() === 1 ? 'pendiente' : 'pendientes' }}</span>
   </div>
 </section>
 
-@if (dashboard.inboxPendingTotal() === 0) {
+@if (shell.inboxPendingTotal() === 0) {
   <app-view-state
     state="empty"
     title="Todo está al día"
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ dashboard.inboxPendingTotal() }} pendientes</p>
+    <p class="inbox-result-count" aria-live="polite">{{ visibleTasks().length }} de {{ shell.inboxPendingTotal() }} pendientes</p>
 
     @if (visibleTasks().length === 0) {
       <app-view-state state="empty" title="No hay pendientes con estos filtros" message="Prueba otra búsqueda o vuelve a mostrar todos los tipos de trabajo." />
@@ -67,15 +67,15 @@
             <button
               type="button"
               class="secondary"
-              (click)="dashboard.openInboxOrder(task.orderId)"
+              (click)="shell.openInboxOrder(task.orderId)"
             >
               Ver orden
             </button>
             <button
               type="button"
               class="primary"
-              [disabled]="dashboard.actionBusy()"
-              (click)="dashboard.runInboxOrderTask(task)"
+              [disabled]="shell.actionBusy()"
+              (click)="shell.runInboxOrderTask(task)"
             >
               <span>Siguiente acción</span>
               {{ task.actionLabel }}
@@ -88,7 +88,7 @@
   </section>
 }
 
-@if (dashboard.captchaShadowEnabled() && dashboard.captchaReviewTotal() > 0) {
+@if (shell.captchaShadowEnabled() && shell.captchaReviewTotal() > 0) {
   <section class="panel inbox-training" aria-labelledby="inbox-training-title">
     <div>
       <p class="eyebrow">Entrenamiento local</p>
@@ -96,9 +96,9 @@
       <p>Este backlog mejora el modelo, pero no bloquea clientes, pagos ni mensajes.</p>
     </div>
     <div class="inbox-training-action">
-      <strong>{{ dashboard.captchaReviewTotal() }}</strong>
+      <strong>{{ shell.captchaReviewTotal() }}</strong>
       <span>por etiquetar</span>
-      <button type="button" class="secondary" (click)="dashboard.openInboxCaptchaReview()">Abrir revisión</button>
+      <button type="button" class="secondary" (click)="shell.openInboxCaptchaReview()">Abrir revisión</button>
     </div>
   </section>
 }
