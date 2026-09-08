@@ -18,10 +18,11 @@ generados en `reports/`.
 
 ## Congelamiento temporal de features
 
-Las fases 0 a 4 del
-[`plan integral de endurecimiento`](development-hardening-plan.md) estan
-cerradas. El esquema `v74` ya esta activo; el paquete integral debe cerrar su
-primera aceptacion natural antes de otro crecimiento funcional.
+La implementacion tecnica de las fases 0 a 4 del
+[`plan integral de endurecimiento`](development-hardening-plan.md) esta completa.
+La fase 2.6 conserva pendiente su aceptacion funcional: el esquema `v74` ya esta
+activo, pero el paquete integral debe cerrar su primer caso natural posterior
+antes de otro crecimiento funcional.
 
 ## P0 - Aceptacion natural y seguridad
 
@@ -115,10 +116,9 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Cerrar los retiros de fachadas de 5.5.4 y 5.5.5: migrar las fronteras de
-composicion y copias por cliente a grupos propios; observar el siguiente caso
-natural de WhatsApp posterior a su extraccion antes de retirar los reexports.
-No generar envios para forzar ese cierre. Las fases 6 a 8 cubren
+Cerrar 5.5.5: cargar el codigo extraido de WhatsApp en Admin API en una frontera
+segura y observar el siguiente caso natural antes de retirar los reexports.
+No generar envios para forzar la aceptacion. Las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.
 

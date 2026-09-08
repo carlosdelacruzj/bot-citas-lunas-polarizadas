@@ -57,7 +57,7 @@ SQL y no inicia PowerShell directamente. Su receptor incluye un monitor
 autenticado del lease del worker, sin reinicios automaticos.
 Los adaptadores, polling, estado, router, conversaciones y presentacion tienen
 propietarios separados en `services/telegram/`. `telegram_control.py` conserva
-el comando de inicio y reexports compatibles; el paquete no importa esa fachada.
+solo el comando de inicio; la auditoria remota se persiste mediante Admin API.
 
 ### CAPTCHA sombra
 

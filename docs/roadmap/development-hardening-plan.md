@@ -488,8 +488,9 @@ original sigue dentro de CAPTCHA, submit o confirmacion.
 Criterio de cierre: una operacion lenta no deja vencer el lease global y una
 perdida real detiene admision nueva sin duplicar submit.
 
-Estado de fase: implementacion tecnica `1.1` a `1.5` completa. La aceptacion
-integral permanece abierta solo por la ventana natural indicada en `1.3A`.
+Estado de fase: implementacion tecnica `1.1` a `1.5` completa. La aceptacion de
+`1.3A` esta cerrada para la ventana documentada; no demuestra mejor conversion
+ni valida la concurrencia de la rama posterior al cambio de CAPTCHA.
 
 ## Fase 2 - Estabilizar pagos y paquete integral (`v72 -> v74`)
 
@@ -907,8 +908,8 @@ Ver [contrato de migraciones](../architecture/database-migrations.md) y
 
 #### 5.5.4 Agrupar configuracion por dominio
 
-Ownership destino: parsers compartidos y settings de runtime, reservas,
-WhatsApp, CAPTCHA y evidencia; `Settings` permanece como fachada temporal.
+Ownership: grupos inmutables y parsers en `configuration/`; cada consumidor
+recibe sus dominios explicitamente. La fachada plana `Settings` esta retirada.
 
 - [x] Caracterizar defaults, limites, aliases y fallos por variable invalida o
   ausente.
@@ -916,15 +917,15 @@ WhatsApp, CAPTCHA y evidencia; `Settings` permanece como fachada temporal.
 - [x] Crear grupos por dominio sin cambiar nombres de entorno ni `.env`.
 - [x] Migrar consumidores dominio por dominio y evitar un nuevo objeto global
   que reproduzca el mismo acoplamiento.
-- [ ] Retirar la fachada solo cuando el ultimo consumidor use el grupo dueño.
+- [x] Retirar la fachada solo cuando el ultimo consumidor use el grupo due?o.
 
-Extraccion validada: seis grupos inmutables, 288 accesos migrados en 48 modulos
-y logging recibe solo RuntimeSettings. Coinciden 1744 escenarios de entorno
-sintetico; pasan 181 tests y 24 subtests. `Settings` conserva la carga ordenada,
-el constructor plano y `dataclasses.replace` para composicion por cliente;
-su retiro queda pendiente mientras existan esos consumidores. No hay objeto
-global nuevo ni cambios de variables o `.env`.
-Ver [evidencia fechada](../../reports/architecture/configuration-domains-2026-09-08.json).
+Cierre tecnico: cero referencias productivas a Settings o config.py; DB,
+servicios, motor, puertos y worker reciben grupos propios. Las copias por cliente
+operan sobre el grupo propietario. Coinciden 1744 escenarios de entorno y 32
+combinaciones de ejecucion del worker; pasan 181 tests, 24 subtests y cobertura
+critica sin bajar umbrales. No se agregaron ni eliminaron casos automatizados.
+Ver [contrato](../architecture/domain-configuration.md) y
+[evidencia fechada](../../reports/architecture/configuration-retirement-2026-09-08.json).
 
 #### 5.5.5 Separar WhatsApp Web
 
@@ -1043,6 +1044,11 @@ innecesario.
 - [ ] Reutilizar los modulos `services/api/*` existentes.
 - [ ] Centralizar limite JSON, cache, errores y headers.
 - [ ] Conservar compatibilidad medida hasta su retiro autorizado.
+
+El registro y el transporte comun se adelantaron en `5.5.2`. Esta fase no
+repite esa extraccion: falta declarar los parsers por ruta y completar el
+contrato uniforme sin retirar compatibilidades que aun tengan consumidores.
+Las casillas permanecen abiertas hasta revisar esos criterios completos.
 
 ### 7.3 Bandeja y consultas proporcionales
 

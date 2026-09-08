@@ -37,7 +37,7 @@ Estado general:
 
 ## Arquitectura vigente
 
-[Configuracion por dominio](architecture/domain-configuration.md) en seis grupos inmutables; `Settings` conserva la carga y las copias por cliente.
+[Configuracion por dominio](architecture/domain-configuration.md) con grupos explicitos por consumidor y copias por cliente; la fachada plana esta retirada.
 
 ### Worker
 
@@ -48,7 +48,7 @@ el primer expediente disponible sin filtrar su estado porque solo consulta; las
 cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exactamente.
 ### Admin API
 
-Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva el entrypoint y los imports compatibles.
+Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva solo el entrypoint; su auditoria pasa por Admin API.
 Admin API declara GET, POST y PUT en `services/api/`, con handlers por dominio
 en `api/handlers/`; `LocalApiHandler` conserva solo transporte HTTP. Es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,

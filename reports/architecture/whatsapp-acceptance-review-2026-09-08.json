@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-09-08T11:53:48.015758+00:00",
+  "scope": "read-only natural acceptance following WhatsApp extraction; no messages or runtime mutations",
+  "extraction_commit": "2216bf5",
+  "extraction_committed_at": "2026-09-08T02:22:17-05:00",
+  "admin_api": {
+    "port": 8766,
+    "pid": 20772,
+    "started_at": "2026-09-07T06:28:24-05:00",
+    "health_http_status": 200,
+    "loads_browser_at_startup": true,
+    "provenance_reason": "local_api imports GET_ROUTES; get_routes imports handlers.whatsapp and whatsapp_routes; whatsapp_routes imports browser functions eagerly. Process predates extraction."
+  },
+  "post_extraction_job_groups": [],
+  "active_job_status_counts": {},
+  "production_facade_imports": 0,
+  "acceptance_sufficient": false,
+  "missing_requirement": "Admin API must first load extracted browser implementation through a safely coordinated restart; then observe applicable natural job with frozen template, per-component technical evidence and persisted result. Existing old-process results do not establish acceptance of extracted code.",
+  "actions_performed": {
+    "get_health": true,
+    "read_only_database_aggregates": true,
+    "restart": false,
+    "send": false,
+    "retry": false,
+    "env_edit": false
+  },
+  "restart_readiness_inventory": {
+    "reservation_attempts_unresolved": [],
+    "order_submission_states": [],
+    "order_leases": [
+      [
+        1,
+        0
+      ]
+    ],
+    "worker_lease": [
+      [
+        "stopped",
+        false,
+        null,
+        "2026-09-07 23:00:11.463928+00:00"
+      ]
+    ],
+    "preflights_unfinished": [],
+    "burst_unfinished": [],
+    "burst_executions_unfinished": [],
+    "reobservation_without_terminal": [
+      [
+        0
+      ]
+    ],
+    "postappointment_unfinished": [],
+    "whatsapp_active": [],
+    "worker_commands_unfinished": [],
+    "reminder_day_statuses": [],
+    "generated_at": "2026-09-08T12:06:15.803226+00:00",
+    "manual_sessions": {
+      "source": "GET /api/v1/manual-sessions field manual_sessions",
+      "active": 1,
+      "checked_at": "2026-09-08T07:05:39-05:00"
+    },
+    "restart_safe_now": false,
+    "blocking_reason": "One active manual browser session owned by Admin API. Do not interrupt it.",
+    "postappointment_api": {
+      "running": 0,
+      "due_count": 26,
+      "scheduled_time": "20:00",
+      "timezone": "America/Lima"
+    },
+    "reminder_scheduler_window_open": false,
+    "manual_session_order_leases": 1,
+    "supervision": {
+      "admin_python_pid": 20772,
+      "venv_launcher_pid": 20756,
+      "supervisor_pid": 13260,
+      "supervisor_verified": "scripts/start-admin-dashboard.ps1",
+      "restart_delay_seconds_default": 30,
+      "graceful_admin_restart_endpoint": false
+    }
+  }
+}

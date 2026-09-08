@@ -192,3 +192,9 @@ Codigos HTTP esperados:
 
 Un cliente no debe convertir automaticamente `409`, timeout o error ambiguo en
 un segundo submit.
+
+## Auditoria de controles remotos
+`POST /api/v1/remote-control-audit` recibe accion, estado y contexto opcional.
+Autentica antes de leer el body; el actor nunca procede del JSON. Devuelve `201`
+al persistir, `400` ante datos invalidos y `503` sin exponer errores internos.
+Telegram persiste auditoria por este endpoint, sin acceso directo a PostgreSQL.

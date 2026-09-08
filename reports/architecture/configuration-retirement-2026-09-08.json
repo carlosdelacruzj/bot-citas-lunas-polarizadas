@@ -1,0 +1,36 @@
+{
+  "cutoff": "2026-09-08 America/Lima",
+  "environment_cases_equivalent": 1744,
+  "scope": "Comparacion sintetica sin dotenv ni conexiones; claves/defaults/errores preservados; no valores operativos.",
+  "production_settings_references": 0,
+  "production_old_config_imports": 0,
+  "database_modules_migrated": 32,
+  "database_functions_migrated": 187,
+  "service_manual_modules_migrated": 17,
+  "engine_ast_equivalent_modules": 33,
+  "engine_internal_calls_bound": 114,
+  "worker": {
+    "order_execution_mode_parity_cases": 32,
+    "static_direct_call_bindings": 203,
+    "static_binding_failures": 0,
+    "scope": "Synthetic settings and mocked order lookup, lease and engine; no database or browser activity.",
+    "continuous_helper_parity_cases": 24,
+    "final_ready_review_group_parity": true,
+    "normalized_worker_ast_equal_modules": 15
+  },
+  "protocol_methods_bound": 15,
+  "queue_dependency_calls_bound": 18,
+  "admin_composition_lifecycle_autospec": "passed without socket or services",
+  "tests": {
+    "passed": 181,
+    "subtests_passed": 24,
+    "critical_coverage": "passed unchanged thresholds",
+    "test_cases_added": 0,
+    "test_cases_removed": 0
+  },
+  "architecture": {
+    "modules": 318,
+    "existing_exceptions": 1,
+    "cycles": 0
+  }
+}
