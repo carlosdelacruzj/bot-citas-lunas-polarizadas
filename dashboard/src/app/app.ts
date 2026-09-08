@@ -16,7 +16,6 @@ import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router
 import { Subscription, filter } from 'rxjs';
 import {
   AppointmentApiService,
-  AppointmentReminderStatus,
   CaptchaAuthorityControl,
   CaptchaEvent,
   CaptchaEventsPage,
@@ -36,9 +35,6 @@ import {
   OpportunityControl,
   OpportunityControlAction,
   OpportunityControlTarget,
-  PostAppointmentFollowup,
-  PostAppointmentPayload,
-  PostAppointmentQuery,
   RunDetail,
   RunSummary,
   ServiceOrder,
@@ -65,12 +61,8 @@ import {
   InboxOrderTask,
   LoadState,
   ModalKind,
-  POST_APPOINTMENT_PAGE_SIZES,
   PendingAction,
-  PostAppointmentFilter,
-  PostAppointmentSortKey,
   STATUS_PRESENTATIONS,
-  SortDirection,
   StatusTone,
   VIEW_LABELS,
   ViewKey,
@@ -90,6 +82,8 @@ import {
   DASHBOARD_FINANCE_SHELL,
   DASHBOARD_FINANCE_VIEW_FINANCE,
   DASHBOARD_FINANCE_VIEW_SHELL,
+  DASHBOARD_FOLLOWUPS_SHELL,
+  DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS,
   DASHBOARD_FOLLOWUPS_VIEW_SHELL,
   DASHBOARD_INBOX_VIEW_SHELL,
   DASHBOARD_MESSAGES_ORDERS,
@@ -113,9 +107,11 @@ import {
   DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL,
   DASHBOARD_RUNS_VIEW_SHELL,
   DASHBOARD_SHELL_FINANCE,
+  DASHBOARD_SHELL_FOLLOWUPS,
   DASHBOARD_SHELL_MESSAGES,
   DASHBOARD_SHELL_ORDERS,
   DASHBOARD_SUMMARY_VIEW_FINANCE,
+  DASHBOARD_SUMMARY_VIEW_FOLLOWUPS,
   DASHBOARD_SUMMARY_VIEW_ORDERLIST,
   DASHBOARD_SUMMARY_VIEW_SHELL,
   DASHBOARD_WHATSAPP_MODAL_MESSAGES,
@@ -129,6 +125,7 @@ import {
 } from './dashboard-refresh.policy';
 import { DASHBOARD_VIEW_FACADE } from './dashboard-view.facade';
 import { FinanceFacade } from './domains/finance/finance.facade';
+import { FollowupsFacade } from './domains/followups/followups.facade';
 import { MessagesFacade } from './domains/messages/messages.facade';
 import { OrdersListFacade } from './domains/orders/orders-list.facade';
 import { OrdersFacade } from './domains/orders/orders.facade';
@@ -159,7 +156,7 @@ import { ViewStateComponent, ViewStateKind } from './view-state/view-state.compo
     FinanceEntryModalComponent,
     WorkerRestartModalComponent,
   ],
-  providers: [OrdersListFacade, OrdersFacade, FinanceFacade, MessagesFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) },
+  providers: [OrdersListFacade, OrdersFacade, FinanceFacade, MessagesFacade, FollowupsFacade, { provide: DASHBOARD_VIEW_FACADE, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDERS_MESSAGES, useExisting: MessagesFacade },
     { provide: DASHBOARD_ORDERS_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_ORDERS_FINANCE, useExisting: FinanceFacade },
@@ -167,6 +164,7 @@ import { ViewStateComponent, ViewStateKind } from './view-state/view-state.compo
     { provide: DASHBOARD_FINANCE_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_MESSAGES_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_MESSAGES_ORDERS, useExisting: OrdersFacade },
+    { provide: DASHBOARD_FOLLOWUPS_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_CREATE_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_CREATE_ORDER_MODAL_ORDERS, useExisting: OrdersFacade },
     { provide: DASHBOARD_EDIT_ORDER_MODAL_SHELL, useExisting: forwardRef(() => App) },
@@ -188,6 +186,7 @@ import { ViewStateComponent, ViewStateKind } from './view-state/view-state.compo
     { provide: DASHBOARD_CAPTCHAS_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_FINANCE_VIEW_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_FINANCE_VIEW_SHELL, useExisting: forwardRef(() => App) },
+    { provide: DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS, useExisting: FollowupsFacade },
     { provide: DASHBOARD_FOLLOWUPS_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_INBOX_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES, useExisting: MessagesFacade },
@@ -199,10 +198,12 @@ import { ViewStateComponent, ViewStateKind } from './view-state/view-state.compo
     { provide: DASHBOARD_ORDERS_VIEW_ORDERLIST, useExisting: OrdersListFacade },
     { provide: DASHBOARD_RUNS_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_SUMMARY_VIEW_FINANCE, useExisting: FinanceFacade },
+    { provide: DASHBOARD_SUMMARY_VIEW_FOLLOWUPS, useExisting: FollowupsFacade },
     { provide: DASHBOARD_SUMMARY_VIEW_SHELL, useExisting: forwardRef(() => App) },
     { provide: DASHBOARD_SUMMARY_VIEW_ORDERLIST, useExisting: OrdersListFacade },
     { provide: DASHBOARD_SHELL_FINANCE, useExisting: FinanceFacade },
     { provide: DASHBOARD_SHELL_MESSAGES, useExisting: MessagesFacade },
+    { provide: DASHBOARD_SHELL_FOLLOWUPS, useExisting: FollowupsFacade },
     { provide: DASHBOARD_SHELL_ORDERS, useExisting: OrdersFacade }
   ],
   templateUrl: './app.html',
@@ -221,10 +222,6 @@ export class App implements OnDestroy {
   public readonly formatTime = formatPeruTime;
 
   private autoRefreshTimer: number | null = null;
-
-  private postAppointmentSearchTimer: number | null = null;
-
-  private postAppointmentRequestScope: RequestScope | null = null;
 
   private readonly loadedViews = new Set<ViewKey>();
 
@@ -295,22 +292,6 @@ export class App implements OnDestroy {
   public readonly operatorInbox = signal<OperatorInboxPayload | null>(null);
 
   public readonly runs = signal<RunSummary[]>([]);
-
-  public readonly postAppointmentPayload = signal<PostAppointmentPayload | null>(null);
-
-  public readonly reviewingPostAppointmentOrderIds = signal<ReadonlySet<string>>(new Set());
-
-  public readonly postAppointmentFilter = signal<PostAppointmentFilter>('active');
-
-  public readonly postAppointmentSearch = signal('');
-
-  public readonly postAppointmentSortKey = signal<PostAppointmentSortKey>('priority');
-
-  public readonly postAppointmentSortDirection = signal<SortDirection>('asc');
-
-  public readonly postAppointmentPage = signal(1);
-
-  public readonly postAppointmentPageSize = signal(10);
 
   public readonly captchaSummary = signal<CaptchaSummary | null>(null);
 
@@ -404,8 +385,6 @@ export class App implements OnDestroy {
   );
 
   public readonly releaseSafeBackoffsOnRestart = signal(false);
-
-  public readonly appointmentReminderStatus = signal<AppointmentReminderStatus | null>(null);
 
   public readonly loadState = signal<LoadState>('idle');
 
@@ -533,72 +512,6 @@ export class App implements OnDestroy {
     () => this.inboxOrderTasks().length,
   );
 
-  public readonly postAppointmentItems = computed(
-    () => this.postAppointmentPayload()?.items ?? [],
-  );
-
-  public readonly postAppointmentQuickFilters = computed(() => {
-    const counts = this.postAppointmentPayload()?.filter_counts;
-    return [
-      {
-        key: 'active' as const,
-        label: 'En seguimiento',
-        count: counts?.active ?? 0,
-      },
-      {
-        key: 'attention' as const,
-        label: 'Requieren atención',
-        count: counts?.attention ?? 0,
-      },
-      {
-        key: 'observations' as const,
-        label: 'Con observación',
-        count: counts?.observations ?? 0,
-      },
-      {
-        key: 'access_lost' as const,
-        label: 'Historial sin acceso',
-        count: counts?.access_lost ?? 0,
-      },
-      {
-        key: 'progressed' as const,
-        label: 'Con avance',
-        count: counts?.progressed ?? 0,
-      },
-    ];
-  });
-
-  public readonly postAppointmentTotalPages = computed(() =>
-    Math.max(
-      1,
-      Math.ceil(
-        (this.postAppointmentPayload()?.pagination.total ?? 0) /
-          this.postAppointmentPageSize(),
-      ),
-    ),
-  );
-
-  public readonly currentPostAppointmentPage = computed(() =>
-    Math.min(this.postAppointmentPage(), this.postAppointmentTotalPages()),
-  );
-
-  public readonly paginatedPostAppointmentItems = computed(() => this.postAppointmentItems());
-
-  public readonly postAppointmentPageStart = computed(() =>
-    (this.postAppointmentPayload()?.pagination.total ?? 0) > 0
-      ? (this.postAppointmentPayload()?.pagination.offset ?? 0) + 1
-      : 0,
-  );
-
-  public readonly postAppointmentPageEnd = computed(() =>
-    (this.postAppointmentPayload()?.pagination.offset ?? 0) +
-      this.postAppointmentItems().length,
-  );
-
-  public readonly postAppointmentPageNumbers = computed(() =>
-    paginationWindow(this.currentPostAppointmentPage(), this.postAppointmentTotalPages()),
-  );
-
   public readonly failedRuns = computed(
     () => this.runs().filter((run) => this.statusTone(run.status) === 'bad').length,
   );
@@ -633,7 +546,7 @@ export class App implements OnDestroy {
       return this.runs().length > 0 || this.workerCommands().length > 0 || state === 'ready';
     }
     if (view === 'followups') {
-      return this.postAppointmentPayload() !== null;
+      return this.followups.postAppointmentPayload() !== null;
     }
     if (view === 'captchas') {
       return this.captchaSummary() !== null;
@@ -674,10 +587,10 @@ export class App implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearRefreshTimer();
-    if (this.postAppointmentSearchTimer !== null) {
-      window.clearTimeout(this.postAppointmentSearchTimer);
+    if (this.followups.postAppointmentSearchTimer !== null) {
+      window.clearTimeout(this.followups.postAppointmentSearchTimer);
     }
-    this.postAppointmentRequestScope?.cancel();
+    this.followups.postAppointmentRequestScope?.cancel();
     this.currentRefreshScope?.cancel();
     this.captchaLoadScope?.cancel();
     this.captchaQualityCaseScope?.cancel();
@@ -948,7 +861,7 @@ if (view === 'finance') { await this.finance.loadFinanceView(scope); return; }
 if (view === 'messageTemplates') { await this.messages.loadMessagesView(scope); return; }
 if (view === 'orders') { await this.orders.loadOrdersView(scope); return; }
 if (view === 'runs') { await this.loadRunsView(scope); return; }
-if (view === 'followups') { await this.loadFollowupsView(scope); return; }
+if (view === 'followups') { await this.followups.loadFollowupsView(scope); return; }
  await this.loadCaptchaData(showLoading || this.captchaState() === 'idle', scope);
 }
 
@@ -2075,161 +1988,6 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
     });
   }
 
-  public setPostAppointmentFilter(filter: PostAppointmentFilter): void {
-    this.postAppointmentFilter.set(filter);
-    this.postAppointmentPage.set(1);
-    this.schedulePostAppointmentReload();
-  }
-
-  public setPostAppointmentSearch(value: string): void {
-    this.postAppointmentSearch.set(value);
-    this.postAppointmentPage.set(1);
-    this.schedulePostAppointmentReload(275);
-  }
-
-  public choosePostAppointmentSort(key: PostAppointmentSortKey): void {
-    if (this.postAppointmentSortKey() === key) {
-      return;
-    }
-    this.postAppointmentSortKey.set(key);
-    this.postAppointmentSortDirection.set(
-      key === 'priority' || key === 'applicant' ? 'asc' : 'desc',
-    );
-    this.postAppointmentPage.set(1);
-    this.schedulePostAppointmentReload();
-  }
-
-  public togglePostAppointmentSortDirection(): void {
-    this.postAppointmentSortDirection.set(
-      this.postAppointmentSortDirection() === 'asc' ? 'desc' : 'asc',
-    );
-    this.postAppointmentPage.set(1);
-    this.schedulePostAppointmentReload();
-  }
-
-  public changePostAppointmentPageSize(value: number | string): void {
-    const pageSize = Number(value);
-    if (
-      !POST_APPOINTMENT_PAGE_SIZES.includes(
-        pageSize as (typeof POST_APPOINTMENT_PAGE_SIZES)[number],
-      )
-    ) {
-      return;
-    }
-    this.postAppointmentPageSize.set(pageSize);
-    this.postAppointmentPage.set(1);
-    this.schedulePostAppointmentReload();
-  }
-
-  public goToPostAppointmentPage(page: number): void {
-    if (
-      page < 1 ||
-      page > this.postAppointmentTotalPages() ||
-      page === this.currentPostAppointmentPage()
-    ) {
-      return;
-    }
-    this.postAppointmentPage.set(page);
-    this.schedulePostAppointmentReload();
-    window.requestAnimationFrame(() => {
-      document.querySelector('.followups-controls')?.scrollIntoView({ behavior: 'smooth' });
-    });
-  }
-
-  public postAppointmentItemNumber(index: number): number {
-    return this.postAppointmentPageStart() + index;
-  }
-
-  public postAppointmentItemLabel(index: number): string {
-    return String(this.postAppointmentItemNumber(index)).padStart(3, '0');
-  }
-
-  public async reviewPostAppointment(item: PostAppointmentFollowup): Promise<void> {
-    if (item.outcome === 'access_lost' || this.isPostAppointmentReviewing(item.order_id)) {
-      return;
-    }
-    this.reviewingPostAppointmentOrderIds.update((orderIds) => {
-      const next = new Set(orderIds);
-      next.add(item.order_id);
-      return next;
-    });
-    this.errorMessage.set(null);
-    try {
-      await this.api.reviewPostAppointment(item.order_id);
-      let payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
-      if (payload.items.length === 0 && this.postAppointmentPage() > 1) {
-        this.postAppointmentPage.update((page) => page - 1);
-        payload = await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(false));
-      }
-      this.setPostAppointmentPayload(payload);
-      this.lastUpdatedAt.set(this.formatClock(new Date()));
-      this.showToast('Seguimiento post-cita actualizado');
-    } catch (error) {
-      this.errorMessage.set(this.readError(error));
-    } finally {
-      this.reviewingPostAppointmentOrderIds.update((orderIds) => {
-        const next = new Set(orderIds);
-        next.delete(item.order_id);
-        return next;
-      });
-    }
-  }
-
-  public isPostAppointmentReviewing(orderId: string): boolean {
-    return this.reviewingPostAppointmentOrderIds().has(orderId);
-  }
-
-  public postAppointmentOutcomeDetail(item: PostAppointmentFollowup): string {
-    const details: Record<string, string> = {
-      upcoming: 'La cita todavía no ocurre; puede revisarse más adelante.',
-      awaiting_update: 'La fecha pasó, pero el portal aún no muestra avance posterior.',
-      in_progress: 'El portal ya registra actividad posterior a la cita.',
-      completed: 'La etapa final figura atendida o completada.',
-      observation_with_progress: 'Hubo una observación y también avance posterior.',
-      observation_no_progress: 'Hubo una observación y no aparece avance posterior.',
-      access_lost:
-        'Archivado: el cliente cambió sus credenciales. Se conserva el último historial sin programar nuevas revisiones.',
-      portal_unavailable: 'La consulta no pudo completarse por un error del portal.',
-      review_required: 'Todavía no existe una revisión post-cita concluyente.',
-    };
-    return details[item.outcome] ?? 'Estado pendiente de interpretación.';
-  }
-
-  public postAppointmentStageTone(
-    item: PostAppointmentFollowup,
-    stage: { stage_date: string | null; status_text: string | null; message_class: string },
-  ): string {
-    if (stage.message_class === 'observation' && !item.later_progress_observed) {
-      return 'followup-stage--bad';
-    }
-    if (stage.message_class === 'observation' && item.later_progress_observed) {
-      return 'followup-stage--good';
-    }
-    const status = normalizeDashboardText(stage.status_text);
-    if (
-      ['rechazado', 'cancelado', 'observado', 'no atendido', 'desaprobado'].includes(status)
-    ) {
-      return 'followup-stage--bad';
-    }
-    if (
-      stage.message_class === 'ok' ||
-      stage.stage_date ||
-      ['atendido', 'programado', 'por programar', 'aprobado', 'completado'].includes(status)
-    ) {
-      return 'followup-stage--good';
-    }
-    return 'followup-stage--neutral';
-  }
-
-  public postAppointmentMessageTone(
-    item: PostAppointmentFollowup,
-    messageClass: string,
-  ): string {
-    return messageClass === 'observation' && !item.later_progress_observed
-      ? 'stage-observation'
-      : 'stage-ok';
-  }
-
   public async copyDashboardSnapshot(): Promise<void> {
     try {
       const workerCommands = await this.api.getWorkerCommands();
@@ -2528,71 +2286,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
     }
   }
 
-  private postAppointmentQuery(includeUpcoming: boolean): PostAppointmentQuery {
-    return {
-      filter: this.postAppointmentFilter(),
-      search: this.postAppointmentSearch().trim(),
-      sort: this.postAppointmentSortKey(),
-      direction: this.postAppointmentSortDirection(),
-      limit: this.postAppointmentPageSize(),
-      offset: (this.postAppointmentPage() - 1) * this.postAppointmentPageSize(),
-      include_upcoming: includeUpcoming,
-    };
-  }
-
-  private schedulePostAppointmentReload(delay = 0): void {
-    if (this.postAppointmentSearchTimer !== null) {
-      window.clearTimeout(this.postAppointmentSearchTimer);
-    }
-    this.postAppointmentSearchTimer = window.setTimeout(() => {
-      this.postAppointmentSearchTimer = null;
-      void this.reloadPostAppointmentFollowups();
-    }, delay);
-  }
-
-  private async reloadPostAppointmentFollowups(): Promise<void> {
-    if (this.activeView() !== 'followups') {
-      return;
-    }
-    this.postAppointmentRequestScope?.cancel();
-    const scope = new RequestScope();
-    this.postAppointmentRequestScope = scope;
-    try {
-      const payload = await this.api.getPostAppointmentFollowups(
-        this.postAppointmentQuery(false),
-        scope,
-      );
-      if (this.postAppointmentRequestScope === scope) {
-        this.setPostAppointmentPayload(payload);
-      }
-    } catch (error) {
-      if (!isRequestCancelled(error) && this.postAppointmentRequestScope === scope) {
-        this.errorMessage.set(this.readError(error));
-      }
-    } finally {
-      if (this.postAppointmentRequestScope === scope) {
-        this.postAppointmentRequestScope = null;
-      }
-    }
-  }
-
-  private setPostAppointmentPayload(payload: PostAppointmentPayload): void {
-    const current = this.postAppointmentPayload();
-    this.postAppointmentPayload.set({
-      ...payload,
-      upcoming: payload.upcoming ?? current?.upcoming ?? [],
-    });
-    const totalPages = Math.max(
-      1,
-      Math.ceil(payload.pagination.total / this.postAppointmentPageSize()),
-    );
-    if (this.postAppointmentPage() > totalPages) {
-      this.postAppointmentPage.set(totalPages);
-      this.schedulePostAppointmentReload();
-    }
-  }
-
-  private formatClock(date: Date): string {
+  public formatClock(date: Date): string {
     return date.toLocaleTimeString('es-PE', {
       timeZone: 'America/Lima',
       hour: '2-digit',
@@ -2667,7 +2361,7 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       this.captchaAuthorityControl.set(captchaAuthorityControl);
       this.opportunityControl.set(opportunityControl);
       this.opportunityBursts.set(opportunityBursts.bursts);
-      this.appointmentReminderStatus.set(appointmentReminderStatus);
+      this.followups.appointmentReminderStatus.set(appointmentReminderStatus);
       this.workerCommands.set(workerCommands);
       return;
     }
@@ -2681,18 +2375,13 @@ if (view === 'followups') { await this.loadFollowupsView(scope); return; }
       this.workerCommands.set(workerCommands);
       return;
     }
-
-  public async loadFollowupsView(scope: RequestScope): Promise<void> {
-      this.setPostAppointmentPayload(
-        await this.api.getPostAppointmentFollowups(this.postAppointmentQuery(true), scope),
-      );
-      return;
-    }
   @HostListener('window:beforeunload') public onBeforeUnload(): void { this.orders.handleBeforeUnload(); }
 
   public get finance() { return this.injector.get(DASHBOARD_SHELL_FINANCE); }
 
   public get messages() { return this.injector.get(DASHBOARD_SHELL_MESSAGES); }
+
+  public get followups() { return this.injector.get(DASHBOARD_SHELL_FOLLOWUPS); }
 
   public get orders() { return this.injector.get(DASHBOARD_SHELL_ORDERS); }
 }

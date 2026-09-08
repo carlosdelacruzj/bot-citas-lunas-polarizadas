@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import type { App } from './app';
 import type { FinanceFacade } from './domains/finance/finance.facade';
+import type { FollowupsFacade } from './domains/followups/followups.facade';
 import type { MessagesFacade } from './domains/messages/messages.facade';
 import type { OrdersListFacade } from './domains/orders/orders-list.facade';
 import type { OrdersFacade } from './domains/orders/orders.facade';
@@ -80,6 +81,15 @@ export const DASHBOARD_MESSAGES_SHELL = new InjectionToken<Pick<App,
 export const DASHBOARD_MESSAGES_ORDERS = new InjectionToken<Pick<OrdersFacade,
   "selectedOrderDetail"
 >>('DASHBOARD_MESSAGES_ORDERS');
+
+export const DASHBOARD_FOLLOWUPS_SHELL = new InjectionToken<Pick<App,
+  "errorMessage"
+  | "lastUpdatedAt"
+  | "formatClock"
+  | "showToast"
+  | "readError"
+  | "activeView"
+>>('DASHBOARD_FOLLOWUPS_SHELL');
 
 export const DASHBOARD_CREATE_ORDER_MODAL_SHELL = new InjectionToken<Pick<App,
   "activeModal"
@@ -423,18 +433,14 @@ export const DASHBOARD_FINANCE_VIEW_SHELL = new InjectionToken<Pick<App,
   | "statusTone"
 >>('DASHBOARD_FINANCE_VIEW_SHELL');
 
-export const DASHBOARD_FOLLOWUPS_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS = new InjectionToken<Pick<FollowupsFacade,
   "appointmentReminderStatus"
   | "postAppointmentPayload"
   | "setPostAppointmentFilter"
   | "choosePostAppointmentSort"
   | "postAppointmentSortDirection"
   | "togglePostAppointmentSortDirection"
-  | "statusLabel"
   | "postAppointmentOutcomeDetail"
-  | "formatDateTime"
-  | "formatDate"
-  | "statusTone"
   | "postAppointmentSearch"
   | "setPostAppointmentSearch"
   | "postAppointmentQuickFilters"
@@ -455,6 +461,13 @@ export const DASHBOARD_FOLLOWUPS_VIEW_SHELL = new InjectionToken<Pick<App,
   | "changePostAppointmentPageSize"
   | "goToPostAppointmentPage"
   | "postAppointmentPageNumbers"
+>>('DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS');
+
+export const DASHBOARD_FOLLOWUPS_VIEW_SHELL = new InjectionToken<Pick<App,
+  "statusLabel"
+  | "formatDateTime"
+  | "formatDate"
+  | "statusTone"
 >>('DASHBOARD_FOLLOWUPS_VIEW_SHELL');
 
 export const DASHBOARD_INBOX_VIEW_SHELL = new InjectionToken<Pick<App,
@@ -608,9 +621,12 @@ export const DASHBOARD_SUMMARY_VIEW_FINANCE = new InjectionToken<Pick<FinanceFac
   | "paymentLabel"
 >>('DASHBOARD_SUMMARY_VIEW_FINANCE');
 
-export const DASHBOARD_SUMMARY_VIEW_SHELL = new InjectionToken<Pick<App,
+export const DASHBOARD_SUMMARY_VIEW_FOLLOWUPS = new InjectionToken<Pick<FollowupsFacade,
   "appointmentReminderStatus"
-  | "formatDate"
+>>('DASHBOARD_SUMMARY_VIEW_FOLLOWUPS');
+
+export const DASHBOARD_SUMMARY_VIEW_SHELL = new InjectionToken<Pick<App,
+  "formatDate"
   | "statusLabel"
   | "formatMoney"
   | "formatDateTime"
@@ -697,6 +713,14 @@ export const DASHBOARD_SHELL_MESSAGES = new InjectionToken<Pick<MessagesFacade,
   | "whatsappManualFallbackOpen"
 >>('DASHBOARD_SHELL_MESSAGES');
 
+export const DASHBOARD_SHELL_FOLLOWUPS = new InjectionToken<Pick<FollowupsFacade,
+  "postAppointmentPayload"
+  | "postAppointmentSearchTimer"
+  | "postAppointmentRequestScope"
+  | "loadFollowupsView"
+  | "appointmentReminderStatus"
+>>('DASHBOARD_SHELL_FOLLOWUPS');
+
 export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   "closeTrackedManualSessionsWithBeacon"
   | "orderPanelOpen"
@@ -718,4 +742,4 @@ export const DASHBOARD_SHELL_ORDERS = new InjectionToken<Pick<OrdersFacade,
   | "handleBeforeUnload"
 >>('DASHBOARD_SHELL_ORDERS');
 
-export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_FINANCE, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WHATSAPP_MODAL_MESSAGES, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_FINANCE, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_MESSAGES, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_FINANCE, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_FINANCE, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;
+export const DASHBOARD_DOMAIN_VIEW_TOKENS = [DASHBOARD_CREATE_ORDER_MODAL_SHELL, DASHBOARD_CREATE_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_SHELL, DASHBOARD_EDIT_ORDER_MODAL_ORDERS, DASHBOARD_EDIT_ORDER_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_SHELL, DASHBOARD_FINANCE_ENTRY_MODAL_FINANCE, DASHBOARD_FINANCE_ENTRY_MODAL_ORDERLIST, DASHBOARD_ORDER_ACTIONS_MODAL_SHELL, DASHBOARD_ORDER_ACTIONS_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_SHELL, DASHBOARD_PAYMENT_MODAL_ORDERS, DASHBOARD_PAYMENT_MODAL_FINANCE, DASHBOARD_WHATSAPP_MODAL_SHELL, DASHBOARD_WHATSAPP_MODAL_MESSAGES, DASHBOARD_WORKER_RESTART_MODAL_SHELL, DASHBOARD_PROGRAM_RESOLUTION_PANEL_ORDERS, DASHBOARD_PROGRAM_RESOLUTION_PANEL_SHELL, DASHBOARD_CAPTCHAS_VIEW_SHELL, DASHBOARD_FINANCE_VIEW_FINANCE, DASHBOARD_FINANCE_VIEW_SHELL, DASHBOARD_FOLLOWUPS_VIEW_FOLLOWUPS, DASHBOARD_FOLLOWUPS_VIEW_SHELL, DASHBOARD_INBOX_VIEW_SHELL, DASHBOARD_MESSAGE_TEMPLATES_VIEW_MESSAGES, DASHBOARD_MESSAGE_TEMPLATES_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_MESSAGES, DASHBOARD_ORDERS_VIEW_ORDERS, DASHBOARD_ORDERS_VIEW_SHELL, DASHBOARD_ORDERS_VIEW_FINANCE, DASHBOARD_ORDERS_VIEW_ORDERLIST, DASHBOARD_RUNS_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_FINANCE, DASHBOARD_SUMMARY_VIEW_FOLLOWUPS, DASHBOARD_SUMMARY_VIEW_SHELL, DASHBOARD_SUMMARY_VIEW_ORDERLIST] as const;
