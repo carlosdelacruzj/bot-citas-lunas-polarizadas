@@ -88,7 +88,7 @@
   </section>
 }
 
-@if (shellDomain.captchaShadowEnabled() && shellDomain.captchaReviewTotal() > 0) {
+@if (captchasDomain.captchaShadowEnabled() && captchasDomain.captchaReviewTotal() > 0) {
   <section class="panel inbox-training" aria-labelledby="inbox-training-title">
     <div>
       <p class="eyebrow">Entrenamiento local</p>
@@ -96,7 +96,7 @@
       <p>Este backlog mejora el modelo, pero no bloquea clientes, pagos ni mensajes.</p>
     </div>
     <div class="inbox-training-action">
-      <strong>{{ shellDomain.captchaReviewTotal() }}</strong>
+      <strong>{{ captchasDomain.captchaReviewTotal() }}</strong>
       <span>por etiquetar</span>
       <button type="button" class="secondary" (click)="shellDomain.openInboxCaptchaReview()">Abrir revisión</button>
     </div>

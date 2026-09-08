@@ -434,7 +434,7 @@
   </article>
 </section>
 
-@if (shellDomain.captchaShadowEnabled()) {
+@if (captchasDomain.captchaShadowEnabled()) {
 <details class="panel settings-panel captcha-sampling-panel" aria-labelledby="captcha-sampling-title">
   <summary class="settings-summary">
     <span>
@@ -442,11 +442,11 @@
       <small>Abre para cambiar cantidad o resolutor</small>
     </span>
     <div class="captcha-control-badges" aria-label="Estado de los controles CAPTCHA">
-      <span class="badge {{ shellDomain.captchaSamplingEnabled() ? 'warn' : 'good' }}">
-        {{ shellDomain.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
+      <span class="badge {{ captchasDomain.captchaSamplingEnabled() ? 'warn' : 'good' }}">
+        {{ captchasDomain.captchaSamplingEnabled() ? 'recolección activa' : '1 captura' }}
       </span>
-      <span class="badge {{ shellDomain.captchaAuthorityUsesV6() ? 'good' : 'neutral' }}">
-        {{ shellDomain.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
+      <span class="badge {{ captchasDomain.captchaAuthorityUsesV6() ? 'good' : 'neutral' }}">
+        {{ captchasDomain.captchaAuthorityUsesV6() ? 'V6 resuelve' : '2Captcha resuelve' }}
       </span>
     </div>
   </summary>
@@ -462,10 +462,10 @@
       <span class="captcha-stage-index">A</span>
       <div>
         <span class="captcha-stage-label">Captura</span>
-        <strong>{{ shellDomain.captchaSamplingEffectiveLimit() }} por oportunidad</strong>
+        <strong>{{ captchasDomain.captchaSamplingEffectiveLimit() }} por oportunidad</strong>
         <small>
           {{
-            shellDomain.captchaSamplingEnabled()
+            captchasDomain.captchaSamplingEnabled()
               ? 'Guarda imágenes para revisión humana.'
               : 'Sin muestras adicionales.'
           }}
@@ -484,10 +484,10 @@
       <span class="captcha-stage-index">C</span>
       <div>
         <span class="captcha-stage-label">CAPTCHA final</span>
-        <strong>{{ shellDomain.captchaAuthorityUsesV6() ? 'V6 canario' : '2Captcha' }}</strong>
+        <strong>{{ captchasDomain.captchaAuthorityUsesV6() ? 'V6 canario' : '2Captcha' }}</strong>
         <small>
           {{
-            shellDomain.captchaAuthorityUsesV6()
+            captchasDomain.captchaAuthorityUsesV6()
               ? 'V6 responde si supera confianza; 2Captcha cubre cualquier duda.'
               : 'V6 sigue comparando en sombra.'
           }}
@@ -503,26 +503,26 @@
         <button
           type="button"
           role="radio"
-          [attr.aria-checked]="!shellDomain.captchaSamplingEnabled()"
-          [class.primary]="!shellDomain.captchaSamplingEnabled()"
-          [class.secondary]="shellDomain.captchaSamplingEnabled()"
-          (click)="shellDomain.setCaptchaSamplingEnabled(false)"
+          [attr.aria-checked]="!captchasDomain.captchaSamplingEnabled()"
+          [class.primary]="!captchasDomain.captchaSamplingEnabled()"
+          [class.secondary]="captchasDomain.captchaSamplingEnabled()"
+          (click)="captchasDomain.setCaptchaSamplingEnabled(false)"
         >
           Normal · 1 CAPTCHA
         </button>
         <button
           type="button"
           role="radio"
-          [attr.aria-checked]="shellDomain.captchaSamplingEnabled()"
-          [class.primary]="shellDomain.captchaSamplingEnabled()"
-          [class.secondary]="!shellDomain.captchaSamplingEnabled()"
-          (click)="shellDomain.setCaptchaSamplingEnabled(true)"
+          [attr.aria-checked]="captchasDomain.captchaSamplingEnabled()"
+          [class.primary]="captchasDomain.captchaSamplingEnabled()"
+          [class.secondary]="!captchasDomain.captchaSamplingEnabled()"
+          (click)="captchasDomain.setCaptchaSamplingEnabled(true)"
         >
           Recolectar muestras
         </button>
       </div>
       <p class="captcha-sampling-help">
-        @if (shellDomain.captchaSamplingEnabled()) {
+        @if (captchasDomain.captchaSamplingEnabled()) {
           Guarda varias imágenes antes de resolver la última.
         } @else {
           Prioriza la velocidad para intentar reservar.
@@ -532,7 +532,7 @@
 
     <article class="action-card captcha-sampling-step">
       <h3>2. Define la cantidad</h3>
-      @if (shellDomain.captchaSamplingEnabled()) {
+      @if (captchasDomain.captchaSamplingEnabled()) {
         <div class="admin-block">
           <label>
             Total por intento
@@ -541,32 +541,32 @@
               min="2"
               max="50"
               step="1"
-              [disabled]="shellDomain.captchaSamplingSaving()"
-              [ngModel]="shellDomain.captchaSamplingLimit()"
-              (ngModelChange)="shellDomain.setCaptchaSamplingLimit($event)"
+              [disabled]="captchasDomain.captchaSamplingSaving()"
+              [ngModel]="captchasDomain.captchaSamplingLimit()"
+              (ngModelChange)="captchasDomain.setCaptchaSamplingLimit($event)"
             />
             <small>
-              Incluye {{ shellDomain.captchaSamplingLimit() - 1 }} para entrenamiento y 1 final.
+              Incluye {{ captchasDomain.captchaSamplingLimit() - 1 }} para entrenamiento y 1 final.
             </small>
           </label>
         </div>
       } @else {
         <p class="empty compact-empty">
           No se agregarán capturas. Al volver a activar se conservará el total
-          {{ shellDomain.captchaSamplingLimit() }}.
+          {{ captchasDomain.captchaSamplingLimit() }}.
         </p>
       }
     </article>
   </div>
 
-  @if (shellDomain.captchaSamplingEnabled()) {
+  @if (captchasDomain.captchaSamplingEnabled()) {
     <div class="notice warn captcha-sampling-result" role="status">
       En la siguiente oportunidad se guardarán
-      <strong>{{ shellDomain.captchaSamplingLimit() - 1 }} muestras</strong> y quedará
+      <strong>{{ captchasDomain.captchaSamplingLimit() - 1 }} muestras</strong> y quedará
       <strong>1 CAPTCHA final</strong>. Si la fecha cumple las reglas, lo resolverá
-      <strong>{{ shellDomain.captchaAuthorityUsesV6() ? 'V6' : '2Captcha' }}</strong>.
+      <strong>{{ captchasDomain.captchaAuthorityUsesV6() ? 'V6' : '2Captcha' }}</strong>.
       Si no cumple, no se resolverá. Demora adicional estimada:
-      <strong>+{{ shellDomain.captchaSamplingEstimatedSeconds() }} s</strong>.
+      <strong>+{{ captchasDomain.captchaSamplingEstimatedSeconds() }} s</strong>.
     </div>
   } @else {
     <div class="notice good captcha-sampling-result" role="status">
@@ -575,7 +575,7 @@
     </div>
   }
 
-  @if (shellDomain.captchaAuthorityControl(); as authority) {
+  @if (captchasDomain.captchaAuthorityControl(); as authority) {
     <article
       class="captcha-authority-card"
       [class.is-open]="authority.circuit_state === 'open'"
@@ -584,10 +584,10 @@
       <div class="captcha-authority-copy">
         <p class="eyebrow">Autoridad del CAPTCHA final</p>
         <h3 id="captcha-authority-title">
-          {{ shellDomain.captchaAuthorityUsesV6() ? 'V6 con red de seguridad' : '2Captcha activo' }}
+          {{ captchasDomain.captchaAuthorityUsesV6() ? 'V6 con red de seguridad' : '2Captcha activo' }}
         </h3>
         <p>
-          @if (shellDomain.captchaAuthorityUsesV6()) {
+          @if (captchasDomain.captchaAuthorityUsesV6()) {
             V6 resuelve solo con confianza mínima
             {{ authority.min_char_confidence }} / {{ authority.sequence_confidence_product }}.
             Una baja confianza, timeout o circuito abierto deriva a 2Captcha.
@@ -624,16 +624,16 @@
       </div>
 
       <div class="captcha-authority-actions">
-        @if (shellDomain.captchaAuthorityUsesV6()) {
-          <button type="button" class="secondary" (click)="shellDomain.requestCaptchaAuthorityFallback()">
+        @if (captchasDomain.captchaAuthorityUsesV6()) {
+          <button type="button" class="secondary" (click)="captchasDomain.requestCaptchaAuthorityFallback()">
             Volver a 2Captcha
           </button>
         } @else if (authority.remaining_local_decisions === 0) {
-          <button type="button" class="secondary" (click)="shellDomain.requestCaptchaAuthorityFallback()">
+          <button type="button" class="secondary" (click)="captchasDomain.requestCaptchaAuthorityFallback()">
             Cerrar canario en 2Captcha
           </button>
         } @else {
-          <button type="button" class="primary" (click)="shellDomain.requestCaptchaAuthorityCanary()">
+          <button type="button" class="primary" (click)="captchasDomain.requestCaptchaAuthorityCanary()">
             {{ authority.circuit_state === 'open' ? 'Reactivar V6' : 'Activar V6' }}
           </button>
         }
@@ -645,15 +645,15 @@
   <dl class="summary-list compact captcha-sampling-facts">
     <div>
       <dt>Modo guardado</dt>
-      <dd>{{ shellDomain.captchaSamplingControl()?.enabled ? 'Recolección' : 'Normal' }}</dd>
+      <dd>{{ captchasDomain.captchaSamplingControl()?.enabled ? 'Recolección' : 'Normal' }}</dd>
     </div>
     <div>
       <dt>Cambio pendiente</dt>
-      <dd>{{ shellDomain.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
+      <dd>{{ captchasDomain.captchaSamplingDirty() ? 'Sí, falta guardar' : 'No' }}</dd>
     </div>
     <div>
       <dt>Resolutor guardado</dt>
-      <dd>{{ shellDomain.captchaAuthorityControl()?.mode === 'canary' ? 'V6 canario' : '2Captcha' }}</dd>
+      <dd>{{ captchasDomain.captchaAuthorityControl()?.mode === 'canary' ? 'V6 canario' : '2Captcha' }}</dd>
     </div>
     <div>
       <dt>Regla incompatible</dt>
@@ -661,7 +661,7 @@
     </div>
   </dl>
 
-  @if (shellDomain.captchaSamplingEnabled() && orderList.readyOrders() > 1) {
+  @if (captchasDomain.captchaSamplingEnabled() && orderList.readyOrders() > 1) {
     <div class="notice warn captcha-sampling-queue-warning" role="alert">
       Hay varias órdenes listas. Considera el modo normal para no retrasar la competencia por un
       cupo.
@@ -671,13 +671,13 @@
     <button
       type="button"
       class="primary"
-      [disabled]="!shellDomain.captchaSamplingDirty() || shellDomain.captchaSamplingSaving()"
-      (click)="shellDomain.saveCaptchaSamplingControl()"
+      [disabled]="!captchasDomain.captchaSamplingDirty() || captchasDomain.captchaSamplingSaving()"
+      (click)="captchasDomain.saveCaptchaSamplingControl()"
     >
       {{
-        shellDomain.captchaSamplingSaving()
+        captchasDomain.captchaSamplingSaving()
           ? 'Guardando...'
-          : shellDomain.captchaSamplingDirty()
+          : captchasDomain.captchaSamplingDirty()
             ? 'Guardar cambio'
             : 'Configuración guardada'
       }}

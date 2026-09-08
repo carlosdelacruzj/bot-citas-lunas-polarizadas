@@ -7,7 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DASHBOARD_INBOX_VIEW_SHELL } from '../../dashboard-domain.ports';
+import {
+  DASHBOARD_INBOX_VIEW_CAPTCHAS,
+  DASHBOARD_INBOX_VIEW_SHELL,
+} from '../../dashboard-domain.ports';
 
 import { ViewStateComponent } from '../../view-state/view-state.component';
 
@@ -21,6 +24,7 @@ import { ViewStateComponent } from '../../view-state/view-state.component';
 })
 export class InboxViewComponent {
   protected readonly shellDomain = inject(DASHBOARD_INBOX_VIEW_SHELL);
+  protected readonly captchasDomain = inject(DASHBOARD_INBOX_VIEW_CAPTCHAS);
 
   protected readonly taskSearch = signal('');
   protected readonly taskFilter = signal<'all' | 'access' | 'paused' | 'payment' | 'messages'>('all');

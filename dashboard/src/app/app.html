@@ -107,13 +107,13 @@
         </a>
       </section>
 
-      @if (captchaShadowEnabled()) {
+      @if (captchas.captchaShadowEnabled()) {
       <section class="sidebar-group">
         <p>Automatización</p>
         <a
           class="sidebar-link"
           routerLink="/captchas"
-          [queryParams]="{ mode: captchaWorkspaceMode() }"
+          [queryParams]="{ mode: captchas.captchaWorkspaceMode() }"
           [class.active]="activeView() === 'captchas'"
           [attr.aria-current]="activeView() === 'captchas' ? 'page' : null"
           title="CAPTCHA"

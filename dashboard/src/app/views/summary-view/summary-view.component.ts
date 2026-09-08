@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
+  DASHBOARD_SUMMARY_VIEW_CAPTCHAS,
   DASHBOARD_SUMMARY_VIEW_FINANCE,
   DASHBOARD_SUMMARY_VIEW_FOLLOWUPS,
   DASHBOARD_SUMMARY_VIEW_ORDERLIST,
@@ -22,5 +23,6 @@ export class SummaryViewComponent {
   protected readonly followupsDomain = inject(DASHBOARD_SUMMARY_VIEW_FOLLOWUPS);
   protected readonly shellDomain = inject(DASHBOARD_SUMMARY_VIEW_SHELL);
   protected readonly orderList = inject(DASHBOARD_SUMMARY_VIEW_ORDERLIST);
+  protected readonly captchasDomain = inject(DASHBOARD_SUMMARY_VIEW_CAPTCHAS);
 
 }
