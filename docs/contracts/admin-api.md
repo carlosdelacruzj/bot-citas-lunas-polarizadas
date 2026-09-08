@@ -3,7 +3,10 @@
 Estado: vigente. Ultima verificacion: `2026-08-31`.
 
 Codigo propietario: `src/appointment_bot/services/local_api.py` y
-`src/appointment_bot/services/api/`.
+`src/appointment_bot/services/api/`. El registro se divide en `get_routes.py`,
+`post_routes.py` y `put_routes.py`; `handlers/` adapta cada dominio a los
+payloads existentes y `routing.py` resuelve la primera coincidencia.
+`LocalApiHandler` conserva exclusivamente el transporte HTTP.
 
 Admin API es la unica frontera administrativa para dashboard, Telegram y n8n.
 No ejecuta el navegador de reservas: persiste comandos y datos para que el
@@ -64,7 +67,10 @@ El retiro exige la ventana de observacion y el cierre definidos en
 [`../operations/current-only-observation.md`](../operations/current-only-observation.md).
 
 No mantener aqui un inventario exhaustivo de URLs: debe verificarse en
-`local_api.py` y los routers antes de agregar o retirar una ruta.
+los registros GET/POST/PUT y los parsers de dominio antes de agregar o retirar
+una ruta. Un parser que devuelve `None` no coincide; una cadena vacia puede
+coincidir y producir un error despues de autenticar. No cambiar ese orden ni
+leer el body antes de las barreras existentes durante una extraccion.
 
 ## Bandeja del operador
 

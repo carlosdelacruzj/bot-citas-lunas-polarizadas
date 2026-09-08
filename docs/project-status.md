@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Estado verificado documentalmente: `2026-09-07`.
+Estado verificado documentalmente: `2026-09-08`.
 
 Este archivo responde solo **como funciona el sistema hoy**. El trabajo futuro
 y su prioridad viven exclusivamente en
@@ -48,7 +48,8 @@ cuentas de clientes exigen un expediente `PENDIENTE` unico o identificado exacta
 ### Admin API
 
 Telegram vive en `services/telegram/`, con transportes, polling, estado, router, conversaciones y presentacion separados; Telegram Control conserva el entrypoint y los imports compatibles.
-Admin API vive en `src/appointment_bot/services/api/` y es la frontera para
+Admin API declara GET, POST y PUT en `services/api/`, con handlers por dominio
+en `api/handlers/`; `LocalApiHandler` conserva solo transporte HTTP. Es la frontera para
 ordenes, preflight, pagos, finanzas, bandeja de pendientes, worker, controles,
 salud, citas, recordatorios, revision post-cita, plantillas y trabajos WhatsApp;
 altas, cobros y confirmaciones entran por casos de uso con transaccion explicita.

@@ -863,13 +863,24 @@ siendo independiente del cierre tecnico de esta fase.
 Ownership destino: transporte en `services/local_api.py` y handlers de dominio
 en `services/api/`.
 
-- [ ] Caracterizar metodo, patron, autenticacion, actor, limite JSON, errores y
+- [x] Caracterizar metodo, patron, autenticacion, actor, limite JSON, errores y
   headers de cada ruta.
-- [ ] Introducir un registro declarativo comun sin crear otro framework.
-- [ ] Migrar GET, POST y PUT en commits separados, reutilizando los handlers
+- [x] Introducir un registro declarativo comun sin crear otro framework.
+- [x] Migrar GET, POST y PUT en commits separados, reutilizando los handlers
   existentes.
-- [ ] Dejar `LocalApiHandler` limitado a transporte HTTP y retirar switches
+- [x] Dejar `LocalApiHandler` limitado a transporte HTTP y retirar switches
   solamente cuando todas sus rutas esten registradas.
+
+`get_routes.py`, `post_routes.py` y `put_routes.py` declaran 74 grupos de
+rutas sobre `routing.py`; `handlers/` conserva los adaptadores por dominio y
+reutiliza los payloads y parsers existentes. El transporte conserva JSON,
+errores, autenticacion y logging; `AdminApiHandler` mantiene dashboard y cookie.
+La comparacion aislada de 8,272 casos y el AST de los 74 handlers conservan
+respuestas, headers, actor, orden y barreras. La suite existente, cobertura
+critica y guardas pasan; no se agregaron tests ni se realizaron acciones reales.
+La [caracterizacion fechada](../../reports/architecture/admin-api-routing-2026-09-08.json)
+expone alcance y limites. No se retiraron contratos anteriores ni se cerraron
+aceptaciones naturales pendientes.
 
 #### 5.5.3 Registrar migraciones en secuencia
 
