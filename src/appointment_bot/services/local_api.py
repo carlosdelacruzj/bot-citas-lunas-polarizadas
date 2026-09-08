@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Sequence
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
@@ -9,81 +10,52 @@ from urllib.parse import parse_qs, urlparse
 
 from appointment_bot.manual_session.session import blocking_manual_sessions
 from appointment_bot.services.api.appointment_reminder_routes import (
-    appointment_reminders_payload,
     update_appointment_reminders_payload,
 )
 from appointment_bot.services.api.captcha_authority_routes import (
-    captcha_authority_control_payload,
     update_captcha_authority_control_payload,
 )
 from appointment_bot.services.api.captcha_sampling_routes import (
-    captcha_sampling_control_payload,
     update_captcha_sampling_control_payload,
 )
 from appointment_bot.services.api.captcha_shadow_routes import (
-    captcha_shadow_dataset_export_payload,
-    captcha_shadow_events_payload,
     captcha_shadow_human_label_event_id,
-    captcha_shadow_image_event_id,
-    captcha_shadow_image_payload,
-    captcha_shadow_quality_cases_payload,
-    captcha_shadow_quality_payload,
-    captcha_shadow_summary_payload,
     save_captcha_shadow_human_label_payload,
 )
 from appointment_bot.services.api.finance_routes import (
     create_finance_entry_payload,
-    finance_categories_payload,
-    finance_data_quality_payload,
-    finance_entries_payload,
     finance_entry_action_path,
-    finance_month_closure_payload,
     finance_payment_reconciliation_path,
-    finance_summary_payload,
     reconcile_payment_amount_payload,
     update_finance_entry_payload,
     upsert_finance_month_closure_payload,
     void_finance_entry_payload,
 )
+from appointment_bot.services.api.get_routes import GET_ROUTES
 from appointment_bot.services.api.http import (
     RequestBodyError,
     authenticated_actor,
     error_payload,
     read_json,
     require_authorized,
-    send_download,
-    send_image,
     send_json,
-    send_png,
 )
 from appointment_bot.services.api.manual_session_routes import (
     close_manual_session_payload,
-    list_manual_sessions_payload,
     open_manual_session_payload,
 )
-from appointment_bot.services.api.monthly_dashboard_routes import monthly_dashboard_payload
-from appointment_bot.services.api.monthly_dashboard_v2_routes import monthly_dashboard_v2_payload
-from appointment_bot.services.api.operator_inbox_routes import operator_inbox_payload
 from appointment_bot.services.api.opportunity_routes import (
-    opportunity_burst_id,
-    opportunity_burst_payload,
-    opportunity_bursts_payload,
-    opportunity_control_payload,
     update_opportunity_control_payload,
 )
 from appointment_bot.services.api.post_appointment_routes import (
-    post_appointment_followups_payload,
     post_appointment_review_order_id,
     review_post_appointment_payload,
 )
-from appointment_bot.services.api.run_routes import get_run_payload, list_runs_payload
+from appointment_bot.services.api.routing import ApiRequest, Route, dispatch
 from appointment_bot.services.api.service_order_routes import (
     apply_service_order_action,
     close_service_order_payload,
     create_service_order_payload,
-    get_service_order_credentials_payload,
-    get_service_order_payload,
-    list_service_orders_payload,
     mark_payment_paid_payload,
     payment_paid_path,
     payment_partial_path,
@@ -106,22 +78,16 @@ from appointment_bot.services.api.service_order_routes import (
     update_service_order_priority_payload,
     update_service_order_restrictions_payload,
 )
-from appointment_bot.services.api.service_package_routes import service_packages_payload
 from appointment_bot.services.api.whatsapp_message_template_routes import (
     preview_whatsapp_message_template_payload,
     update_whatsapp_message_template_payload,
     whatsapp_message_template_action_path,
-    whatsapp_message_templates_payload,
 )
 from appointment_bot.services.api.whatsapp_routes import (
-    attachment_payload,
-    followup_attachment_payload,
     mark_followup_sent_payload,
     mark_sent_payload,
     order_followup_prepare_path,
     order_prepare_path,
-    order_whatsapp_review_path,
-    payment_attachment_payload,
     prepare_followup_payload,
     prepare_followup_test_payload,
     prepare_followup_web_payload,
@@ -133,15 +99,11 @@ from appointment_bot.services.api.whatsapp_routes import (
     whatsapp_followup_message_path,
     whatsapp_message_path,
     whatsapp_review_job_path,
-    whatsapp_review_payload,
 )
 from appointment_bot.services.api.worker_routes import (
     enqueue_restart_with_safe_backoff_release_payload,
     enqueue_worker_command_payload,
-    health_payload,
-    list_worker_commands_payload,
     record_worker_control_audit,
-    worker_payload,
 )
 
 logger = logging.getLogger(__name__)
@@ -154,349 +116,7 @@ class LocalApiHandler(BaseHTTPRequestHandler):
     server_version = "AppointmentBotLocalApi/0.1"
 
     def do_GET(self) -> None:
-        parsed = urlparse(self.path)
-        path = parsed.path
-        query = parse_qs(parsed.query)
-        if path == "/health":
-            controller = getattr(self.server, "worker_controller", None)
-            healthy, payload = health_payload(controller)
-            self._send_json(HTTPStatus.OK if healthy else HTTPStatus.SERVICE_UNAVAILABLE, payload)
-            return
-
-        if path == "/api/v1/worker":
-            if not self._require_authorized(strict=True):
-                return
-            self._send_json(
-                HTTPStatus.OK,
-                worker_payload(getattr(self.server, "worker_controller", None)),
-            )
-            return
-
-        if path == "/api/v1/worker/commands":
-            if not self._require_authorized(strict=True):
-                return
-            self._send_json(HTTPStatus.OK, list_worker_commands_payload(query))
-            return
-
-        if path == "/api/v1/runtime-controls/captcha-sampling":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_sampling_control_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/runtime-controls/captcha-authority":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_authority_control_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/runtime-controls/opportunity":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = opportunity_control_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/opportunity-bursts":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = opportunity_bursts_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/appointment-reminders":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = appointment_reminders_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/whatsapp-message-templates":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = whatsapp_message_templates_payload()
-            self._send_json(status, payload)
-            return
-
-        burst_id = opportunity_burst_id(path)
-        if burst_id is not None:
-            if not self._require_authorized(strict=True):
-                return
-            if not burst_id:
-                self._send_json(
-                    HTTPStatus.NOT_FOUND,
-                    error_payload("not_found", "Rafaga no encontrada."),
-                )
-                return
-            status, payload = opportunity_burst_payload(burst_id)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/manual-sessions":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = list_manual_sessions_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/captcha-shadow/summary":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_summary_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/captcha-shadow/events":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_events_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/captcha-shadow/quality":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_quality_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/captcha-shadow/quality/cases":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_quality_cases_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/captcha-shadow/dataset/export":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_dataset_export_payload()
-            if isinstance(payload, dict):
-                self._send_json(status, payload)
-            else:
-                send_download(
-                    self,
-                    payload,
-                    filename="captcha-human-validated-dataset.zip",
-                    content_type="application/zip",
-                )
-            return
-
-        captcha_event_id = captcha_shadow_image_event_id(path)
-        if captcha_event_id is not None:
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = captcha_shadow_image_payload(captcha_event_id)
-            if isinstance(payload, dict):
-                self._send_json(status, payload)
-            else:
-                send_image(self, payload)
-            return
-
-        if path == "/api/v1/service-orders":
-            if not self._require_authorized(strict=True):
-                return
-            projection = str((query.get("projection") or ["full"])[0]).strip().lower()
-            if projection not in {"full", "dashboard"}:
-                self._send_json(
-                    HTTPStatus.BAD_REQUEST,
-                    {"error": "bad_request", "message": "Unsupported service-order projection."},
-                )
-                return
-            self._send_json(
-                HTTPStatus.OK,
-                list_service_orders_payload(projection=projection),
-            )
-            return
-
-        if path == "/api/v1/service-packages":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = service_packages_payload()
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/operator-inbox":
-            if not self._require_authorized(strict=True):
-                return
-            self._send_json(HTTPStatus.OK, operator_inbox_payload())
-            return
-
-        if path == "/api/v1/post-appointment-followups":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = post_appointment_followups_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/monthly-summary":
-            if not self._require_authorized(strict=True):
-                return
-            logger.warning(
-                "Deprecated API accessed: GET /api/v1/monthly-summary; "
-                "use /api/v2/monthly-summary"
-            )
-            status, payload = monthly_dashboard_payload(query)
-            self._send_json(
-                status,
-                payload,
-                headers={
-                    "Deprecation": "true",
-                    "Sunset": "Fri, 04 Sep 2026 05:00:00 GMT",
-                    "Link": '</api/v2/monthly-summary>; rel="successor-version"',
-                },
-            )
-            return
-
-        if path == "/api/v2/monthly-summary":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = monthly_dashboard_v2_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/finance/categories":
-            if not self._require_authorized(strict=True):
-                return
-            self._send_json(HTTPStatus.OK, finance_categories_payload())
-            return
-
-        if path == "/api/v1/finance/entries":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = finance_entries_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/finance/summary":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = finance_summary_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/finance/data-quality":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = finance_data_quality_payload(query)
-            self._send_json(status, payload)
-            return
-
-        if path == "/api/v1/finance/month-closure":
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = finance_month_closure_payload(query)
-            self._send_json(status, payload)
-            return
-
-        attachment_message_id = whatsapp_message_path(path, "attachment")
-        if attachment_message_id is not None:
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = attachment_payload(attachment_message_id)
-            if isinstance(payload, dict):
-                self._send_json(status, payload)
-            else:
-                send_png(self, payload)
-            return
-
-        payment_attachment_message_id = whatsapp_message_path(path, "payment-attachment")
-        if payment_attachment_message_id is not None:
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = payment_attachment_payload(payment_attachment_message_id)
-            if isinstance(payload, dict):
-                self._send_json(status, payload)
-            else:
-                send_image(self, payload)
-            return
-
-        if path.startswith("/api/v1/whatsapp-followup-messages/") and "/attachments/" in path:
-            if not self._require_authorized(strict=True):
-                return
-            parts = path.removeprefix("/api/v1/whatsapp-followup-messages/").split("/attachments/")
-            if len(parts) != 2:
-                self._send_json(
-                    HTTPStatus.NOT_FOUND,
-                    error_payload("not_found", "Adjunto no encontrado."),
-                )
-                return
-            message_id, suffix = parts
-            try:
-                step_text, attachment_text = suffix.split("/", 1)
-                step_index = int(step_text)
-                attachment_index = int(attachment_text)
-            except ValueError:
-                self._send_json(
-                    HTTPStatus.NOT_FOUND,
-                    error_payload("not_found", "Adjunto no encontrado."),
-                )
-                return
-            status, payload = followup_attachment_payload(
-                message_id,
-                step_index,
-                attachment_index,
-            )
-            if isinstance(payload, dict):
-                self._send_json(status, payload)
-            else:
-                send_image(self, payload)
-            return
-
-        if path.startswith("/api/v1/service-orders/"):
-            if not self._require_authorized(strict=True):
-                return
-            followup_review_order_id = order_whatsapp_review_path(
-                path, "whatsapp-followup"
-            )
-            if followup_review_order_id is not None:
-                status, payload = whatsapp_review_payload(
-                    followup_review_order_id,
-                    job_kind="post_payment_followup",
-                )
-                self._send_json(status, payload)
-                return
-            message_review_order_id = order_whatsapp_review_path(path, "whatsapp")
-            if message_review_order_id is not None:
-                status, payload = whatsapp_review_payload(
-                    message_review_order_id,
-                    job_kind="reservation_album",
-                )
-                self._send_json(status, payload)
-                return
-            credentials_result = get_service_order_credentials_payload(path)
-            if credentials_result is not None:
-                status, payload = credentials_result
-                self._send_json(status, payload)
-                return
-            result = get_service_order_payload(path)
-            if result is not None:
-                status, payload = result
-                self._send_json(status, payload)
-                return
-
-        if path == "/api/v1/runs":
-            if not self._require_authorized(strict=True):
-                return
-            self._send_json(HTTPStatus.OK, list_runs_payload(query))
-            return
-
-        if path.startswith("/api/v1/runs/"):
-            if not self._require_authorized(strict=True):
-                return
-            status, payload = get_run_payload(path, query)
-            self._send_json(status, payload)
-            return
-
-        self._send_json(
-            HTTPStatus.NOT_FOUND,
-            error_payload(
-                "not_found",
-                "Use GET /health or the /api/v1 endpoints.",
-            ),
-        )
+        self._dispatch(GET_ROUTES, "Use GET /health or the /api/v1 endpoints.")
 
     def do_POST(self) -> None:
         try:
@@ -1000,6 +620,15 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             requested_by=self._authenticated_actor(),
         )
         self._send_json(status, payload)
+
+    def _dispatch(self, routes: Sequence[Route], not_found_message: str) -> None:
+        parsed = urlparse(self.path)
+        request = ApiRequest(self, parsed.path, parse_qs(parsed.query))
+        if not dispatch(request, routes):
+            self._send_json(
+                HTTPStatus.NOT_FOUND,
+                error_payload("not_found", not_found_message),
+            )
 
     def log_message(self, format: str, *args) -> None:
         logger.info("%s - %s", self.address_string(), format % args)
