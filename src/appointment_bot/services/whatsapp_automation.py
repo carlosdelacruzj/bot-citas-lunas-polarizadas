@@ -6,7 +6,7 @@ from datetime import date, datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-from appointment_bot.browser.whatsapp_web import (
+from appointment_bot.browser.whatsapp.api import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
     send_whatsapp_web_appointment_reminder,

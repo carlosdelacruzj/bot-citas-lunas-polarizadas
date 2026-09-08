@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import unquote
 
-from appointment_bot.browser.whatsapp_web import (
+from appointment_bot.browser.whatsapp.api import (
     prepare_whatsapp_web_album,
     prepare_whatsapp_web_documents,
     prepare_whatsapp_web_draft,
