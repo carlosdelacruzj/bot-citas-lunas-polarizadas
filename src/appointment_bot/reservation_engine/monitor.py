@@ -1,0 +1,1320 @@
+from __future__ import annotations
+
+import logging
+import random
+import threading
+import time
+from collections.abc import Callable
+from contextvars import ContextVar, Token
+from dataclasses import dataclass, replace
+from pathlib import Path
+from uuid import uuid4
+
+from playwright.sync_api import Error as PlaywrightError
+
+from appointment_bot.configuration.captcha import CaptchaSettings
+from appointment_bot.configuration.evidence import EvidenceSettings
+from appointment_bot.configuration.reservation import ReservationSettings
+from appointment_bot.configuration.runtime import RuntimeSettings
+from appointment_bot.core.models import AvailabilityResult
+from appointment_bot.reservation_engine.appointment_contracts import (
+    APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+    AppointmentOptionsNotRefreshed,
+    AppointmentWorkflowCancelled,
+    AppointmentWorkflowUnavailable,
+    PortalContractChanged,
+)
+from appointment_bot.reservation_engine.appointment_reader import (
+    read_appointment_availability,
+)
+from appointment_bot.reservation_engine.appointment_selection import (
+    has_available_date_options,
+    select_available_appointment,
+)
+from appointment_bot.reservation_engine.appointments import (
+    open_appointment_panel,
+    select_available_site,
+)
+from appointment_bot.reservation_engine.ports import OpportunityControl, ReservationEnginePorts
+from appointment_bot.reservation_engine.programs import click_program_action
+from appointment_bot.reservation_engine.reservation_flow import (
+    capture_blocked_captcha_evidence,
+    complete_available_reservation,
+)
+from appointment_bot.reservation_engine.slot_evidence import (
+    CanonicalSlotCaptureError,
+    capture_canonical_selected_slot,
+)
+from appointment_bot.reservation_engine.timings import ReservationTiming
+from appointment_bot.utils.screenshots import (
+    save_centered_modal_screenshot,
+    save_result_screenshot,
+    save_screenshot,
+)
+
+logger = logging.getLogger(__name__)
+
+_OPPORTUNITY_EXECUTION_CONTEXT: ContextVar[dict[str, str] | None] = ContextVar(
+    "opportunity_execution_context",
+    default=None,
+)
+
+
+def set_opportunity_execution_context(
+    context: dict[str, str] | None,
+) -> Token[dict[str, str] | None]:
+    return _OPPORTUNITY_EXECUTION_CONTEXT.set(context)
+
+
+def reset_opportunity_execution_context(
+    token: Token[dict[str, str] | None],
+) -> None:
+    _OPPORTUNITY_EXECUTION_CONTEXT.reset(token)
+
+
+@dataclass
+class ReservationAttemptOutcome:
+    completed_result: tuple[AvailabilityResult, Path | None, list[Path]] | None = None
+    selected_result: AvailabilityResult | None = None
+
+
+def monitor_appointment_availability(
+    page,
+    process_stages_screenshot_path: Path | None,
+    cancel_event: threading.Event | None = None,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None = None,
+    is_allowed_appointment: Callable[[str, str], bool] | None = None,
+    can_submit: Callable[[], bool] | None = None,
+    can_solve_captcha: Callable[[], bool] | None = None,
+    on_submission_intent: Callable[[dict | None], None] | None = None,
+    on_submission_started: Callable[[dict | None], None] | None = None,
+    on_submission_resolved: Callable[[str, str | None, str | None], None] | None = None,
+    expected_person_name: str | None = None,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
+    run_id: str | None = None,
+    order_id: str | None = None,
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    ports: ReservationEnginePorts,
+):
+    deadline = time.monotonic() + reservation_settings.monitor_window_seconds
+    session_started = time.monotonic()
+    attempt = 1
+    screenshot_path = None
+    screenshot_paths = (
+        [process_stages_screenshot_path] if process_stages_screenshot_path is not None else []
+    )
+    site_refresh_history: list[dict] = []
+
+    while True:
+        if cancel_event is not None and cancel_event.is_set():
+            return (
+                AvailabilityResult(
+                    status="paused",
+                    message="La revision fue interrumpida por una pausa del trabajador.",
+                ),
+                screenshot_path,
+                screenshot_paths,
+            )
+        check_started = time.monotonic()
+        logger.info("Appointment availability check attempt %s", attempt)
+        site_toggle_probe = reservation_settings.monitor_site_toggle_enabled and attempt > 1
+        try:
+            page = select_available_site(
+                page,
+                required_site=runtime_settings.observer_required_site,
+                reset_first=site_toggle_probe,
+                timeout=reservation_settings.postback_timeout_seconds * 1_000,
+                telemetry_attempt=attempt,
+            )
+        except AppointmentOptionsNotRefreshed as exc:
+            result = AvailabilityResult(status="unknown", message=str(exc))
+            if on_check is not None:
+                on_check(result, attempt, None)
+            return result, screenshot_path, screenshot_paths
+        result = read_appointment_availability(
+            page,
+            timeout=reservation_settings.read_timeout_seconds * 1_000,
+        )
+        result, site_refresh_history = _with_accumulated_site_refresh_history(
+            result,
+            site_refresh_history,
+        )
+        result = with_monitor_diagnostics(
+            result,
+            reservation_settings=reservation_settings,
+            attempt=attempt,
+            session_age_seconds=time.monotonic() - session_started,
+            check_duration_seconds=time.monotonic() - check_started,
+            monitoring_mode="site_toggle" if site_toggle_probe else "normal",
+        )
+
+        should_reload_probe = (
+            not reservation_settings.monitor_site_toggle_enabled
+            or attempt == reservation_settings.monitor_reload_probe_after_attempt
+        )
+        if result.status == "unavailable" and should_reload_probe:
+            reload_started = time.monotonic()
+            reload_result = reload_and_recheck_appointment_availability(
+                page,
+                program_expediente=program_expediente,
+                program_plate=program_plate,
+                telemetry_attempt=attempt,
+                cancel_event=cancel_event,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+            )
+            if reload_result is None:
+                if reservation_settings.monitor_site_toggle_enabled:
+                    logger.warning(
+                        "Scheduled reload probe failed; continuing the light site probes"
+                    )
+                else:
+                    if on_check is not None:
+                        on_check(result, attempt, None)
+                    return result, screenshot_path, screenshot_paths
+            else:
+                reload_result, site_refresh_history = _with_accumulated_site_refresh_history(
+                    reload_result,
+                    site_refresh_history,
+                )
+                result = with_monitor_diagnostics(
+                    reload_result,
+                    reservation_settings=reservation_settings,
+                    attempt=attempt,
+                    session_age_seconds=time.monotonic() - session_started,
+                    check_duration_seconds=time.monotonic() - reload_started,
+                    monitoring_mode="reload_probe",
+                )
+
+        if result.status == "unknown":
+            if on_check is not None:
+                on_check(result, attempt, None)
+            result_screenshot_path = save_result_screenshot(
+                page,
+                "03-modal-reserva-citas-resultado-desconocido",
+                evidence_settings=evidence_settings,
+            )
+            screenshot_path = result_screenshot_path or process_stages_screenshot_path
+            return result, screenshot_path, screenshot_paths
+
+        reservation_timing = (
+            ReservationTiming() if result.status in {"available", "partial"} else None
+        )
+        result_screenshot_path = save_relevant_result_snapshot(
+            page, result.status, evidence_settings=evidence_settings
+        )
+        screenshot_path = result_screenshot_path or process_stages_screenshot_path
+
+        fetch_probe_candidate = bool((result.details or {}).get("fetch_probe"))
+        can_attempt_reservation = result.status == "available" or (
+            result.status == "partial"
+            and (fetch_probe_candidate or has_available_date_options(page))
+        )
+        if can_attempt_reservation:
+            reservation_outcome = _try_reservation_from_availability(
+                page,
+                result,
+                attempt,
+                session_started,
+                check_started,
+                screenshot_path,
+                screenshot_paths,
+                reservation_timing,
+                cancel_event,
+                on_check,
+                is_allowed_appointment,
+                can_submit,
+                can_solve_captcha,
+                on_submission_intent,
+                on_submission_started,
+                on_submission_resolved,
+                expected_person_name,
+                program_expediente,
+                program_plate,
+                run_id,
+                order_id,
+                ports,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
+                evidence_settings=evidence_settings,
+            )
+            if reservation_outcome.completed_result is not None:
+                return reservation_outcome.completed_result
+            if reservation_outcome.selected_result is not None:
+                result = reservation_outcome.selected_result
+
+        # Una disponibilidad parcial tambien se vuelve a comprobar dentro
+        # de la misma sesion; una fecha puede cargar sus horas en un intento posterior.
+        if result.status not in {"unavailable", "partial"}:
+            if on_check is not None:
+                on_check(result, attempt, None)
+            return result, screenshot_path, screenshot_paths
+
+        if (
+            reservation_settings.monitor_window_seconds <= 0
+            or attempt >= reservation_settings.monitor_max_attempts
+        ):
+            if on_check is not None:
+                on_check(result, attempt, None)
+            return result, screenshot_path, screenshot_paths
+
+        remaining_seconds = deadline - time.monotonic()
+        if remaining_seconds <= 0:
+            logger.info("Monitor window finished after %s attempts", attempt)
+            return result, screenshot_path, screenshot_paths
+
+        wait_seconds = min(
+            random.randint(
+                reservation_settings.monitor_interval_min_seconds,
+                reservation_settings.monitor_interval_max_seconds,
+            ),
+            max(1, int(remaining_seconds)),
+        )
+        logger.info(
+            "No appointment availability detected; waiting %s seconds before retry",
+            wait_seconds,
+        )
+        if on_check is not None:
+            on_check(result, attempt, wait_seconds)
+        if cancel_event is not None:
+            if cancel_event.wait(wait_seconds):
+                return (
+                    AvailabilityResult(
+                        status="paused",
+                        message="La revision fue interrumpida por una pausa del trabajador.",
+                    ),
+                    screenshot_path,
+                    screenshot_paths,
+                )
+        else:
+            page.wait_for_timeout(wait_seconds * 1_000)
+        if time.monotonic() >= deadline:
+            logger.info("Monitor window finished after %s attempts", attempt)
+            return result, screenshot_path, screenshot_paths
+        attempt += 1
+
+
+def _try_reservation_from_availability(
+    page,
+    result: AvailabilityResult,
+    attempt: int,
+    session_started: float,
+    check_started: float,
+    screenshot_path: Path | None,
+    screenshot_paths: list[Path],
+    reservation_timing: ReservationTiming | None,
+    cancel_event: threading.Event | None,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None,
+    is_allowed_appointment: Callable[[str, str], bool] | None,
+    can_submit: Callable[[], bool] | None,
+    can_solve_captcha: Callable[[], bool] | None,
+    on_submission_intent: Callable[[dict | None], None] | None,
+    on_submission_started: Callable[[dict | None], None] | None,
+    on_submission_resolved: Callable[[str, str | None, str | None], None] | None,
+    expected_person_name: str | None,
+    program_expediente: str | None,
+    program_plate: str | None,
+    run_id: str | None,
+    order_id: str | None,
+    ports: ReservationEnginePorts,
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+):
+    timing = reservation_timing or ReservationTiming()
+    probe_details = dict(result.details or {})
+    fetch_probe_candidate = bool(probe_details.get("fetch_probe"))
+    timing.mark("selection_started")
+    selected_result = select_available_appointment(
+        page,
+        is_allowed_appointment=is_allowed_appointment,
+        preferred_date=(
+            str(probe_details.get("fetch_probe_candidate_date") or "") or None
+            if fetch_probe_candidate
+            else None
+        ),
+        preferred_hour=(
+            str(probe_details.get("fetch_probe_candidate_hour") or "") or None
+            if fetch_probe_candidate
+            else None
+        ),
+        timeout=reservation_settings.postback_timeout_seconds * 1_000,
+    )
+    timing.mark("selection_finished")
+    if fetch_probe_candidate:
+        selected_details = dict(selected_result.details or {})
+        selected_slot_materialized = selected_result.status == "available" or bool(
+            selected_details.get("blocked_selected_for_evidence")
+        )
+        selected_details.update(
+            {
+                key: value
+                for key, value in probe_details.items()
+                if key.startswith("fetch_probe") or key == "modal_must_remain_open"
+            }
+        )
+        selected_details["fetch_probe_materialized"] = selected_slot_materialized
+        selected_details["fetch_probe_materialization_outcome"] = (
+            "visible_date_hour_selected"
+            if selected_slot_materialized
+            else selected_details.get(
+                "fetch_probe_materialization_outcome",
+                "candidate_not_reproduced",
+            )
+        )
+        selected_result = AvailabilityResult(
+            status=selected_result.status,
+            message=selected_result.message,
+            details=selected_details,
+        )
+    selected_result = with_monitor_diagnostics(
+        selected_result,
+        reservation_settings=reservation_settings,
+        attempt=attempt,
+        session_age_seconds=time.monotonic() - session_started,
+        check_duration_seconds=time.monotonic() - check_started,
+    )
+    selected_slot = selected_result.status == "available" or bool(
+        (selected_result.details or {}).get("blocked_selected_for_evidence")
+    )
+    if selected_slot:
+        try:
+            selected_result, selected_screenshot_path, _ = capture_canonical_selected_slot(
+                page,
+                selected_result,
+                phase=(
+                    "blocked_by_order_rule"
+                    if selected_result.status == "partial"
+                    else "initial_selection"
+                ),
+                evidence_settings=evidence_settings,
+            )
+        except CanonicalSlotCaptureError as exc:
+            failed_result = _slot_capture_failure_result(selected_result, exc)
+            if on_check is not None:
+                on_check(failed_result, attempt, None)
+            return ReservationAttemptOutcome(
+                completed_result=(failed_result, screenshot_path, screenshot_paths),
+                selected_result=selected_result,
+            )
+        screenshot_path = selected_screenshot_path
+        screenshot_paths = _unique_paths([selected_screenshot_path], screenshot_paths)
+        selected_result = replace(
+            selected_result,
+            details={**(selected_result.details or {}), "selected_slot_verified": True},
+        )
+        if on_check is not None:
+            on_check(selected_result, attempt, None)
+    if bool((selected_result.details or {}).get("blocked_selected_for_evidence")):
+        if on_check is not None:
+            on_check(selected_result, attempt, None)
+        captured_result, screenshot_path, screenshot_paths = capture_blocked_captcha_evidence(
+            page,
+            selected_result,
+            screenshot_path,
+            timing,
+            cancel_event,
+            can_submit,
+            can_solve_captcha,
+            expected_person_name,
+            run_id=run_id,
+            order_id=order_id,
+            captcha_authority=ports.captcha,
+            alert_sink=ports.alerts,
+            runtime_settings=runtime_settings,
+            reservation_settings=reservation_settings,
+            captcha_settings=captcha_settings,
+            evidence_settings=evidence_settings,
+        )
+        if on_check is not None:
+            on_check(captured_result, attempt, None)
+        return ReservationAttemptOutcome(
+            completed_result=(captured_result, screenshot_path, screenshot_paths),
+            selected_result=selected_result,
+        )
+    if not reservation_settings.auto_reserve:
+        if selected_result.status == "available":
+            if on_check is not None:
+                on_check(selected_result, attempt, None)
+            return ReservationAttemptOutcome(
+                completed_result=(
+                    AvailabilityResult(
+                        status="available",
+                        message=(
+                            "Se verificaron fecha y hora seleccionables. "
+                            "La reserva automatica esta desactivada."
+                        ),
+                        details=selected_result.details,
+                    ),
+                    screenshot_path,
+                    screenshot_paths,
+                ),
+                selected_result=selected_result,
+            )
+        return ReservationAttemptOutcome(selected_result=selected_result)
+    if selected_result.status == "available":
+        if cancel_event is not None and cancel_event.is_set():
+            return ReservationAttemptOutcome(
+                completed_result=(
+                    AvailabilityResult(
+                        status="paused",
+                        message=("La pausa se aplico antes de iniciar la reserva."),
+                    ),
+                    screenshot_path,
+                    screenshot_paths,
+                ),
+                selected_result=selected_result,
+            )
+        if on_check is not None:
+            on_check(selected_result, attempt, None)
+        try:
+            completed_result = complete_available_reservation(
+                page,
+                selected_result,
+                screenshot_path,
+                timing,
+                cancel_event,
+                can_submit,
+                can_solve_captcha,
+                on_submission_intent,
+                on_submission_started,
+                expected_person_name,
+                run_id=run_id,
+                order_id=order_id,
+                captcha_authority=ports.captcha,
+                alert_sink=ports.alerts,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+                captcha_settings=captcha_settings,
+                evidence_settings=evidence_settings,
+            )
+            if not _is_explicit_slot_lost(completed_result[0]):
+                return ReservationAttemptOutcome(
+                    completed_result=completed_result,
+                    selected_result=selected_result,
+                )
+            if not _reobservation_admission_allowed(
+                ports.opportunities, runtime_settings=runtime_settings
+            ):
+                return ReservationAttemptOutcome(
+                    completed_result=completed_result,
+                    selected_result=selected_result,
+                )
+            if on_submission_resolved is not None:
+                on_submission_resolved(
+                    "slot_lost",
+                    run_id,
+                    str(completed_result[1]) if completed_result[1] is not None else None,
+                )
+            return ReservationAttemptOutcome(
+                completed_result=_reobserve_after_slot_lost(
+                    page,
+                    completed_result,
+                    original_attempt=attempt,
+                    session_started=session_started,
+                    cancel_event=cancel_event,
+                    on_check=on_check,
+                    is_allowed_appointment=is_allowed_appointment,
+                    can_submit=can_submit,
+                    can_solve_captcha=can_solve_captcha,
+                    on_submission_intent=on_submission_intent,
+                    on_submission_started=on_submission_started,
+                    expected_person_name=expected_person_name,
+                    program_expediente=program_expediente,
+                    program_plate=program_plate,
+                    run_id=run_id,
+                    order_id=order_id,
+                    ports=ports,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
+                ),
+                selected_result=selected_result,
+            )
+        except AppointmentWorkflowCancelled as exc:
+            return ReservationAttemptOutcome(
+                completed_result=(
+                    AvailabilityResult(status="paused", message=str(exc)),
+                    screenshot_path,
+                    screenshot_paths,
+                ),
+                selected_result=selected_result,
+            )
+    return ReservationAttemptOutcome(selected_result=selected_result)
+
+
+def _is_explicit_slot_lost(result: AvailabilityResult) -> bool:
+    return (
+        result.status == "unavailable"
+        and str((result.details or {}).get("submission_outcome") or "") == "slot_lost"
+    )
+
+
+def _reobserve_after_slot_lost(
+    page,
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    captcha_settings: CaptchaSettings,
+    evidence_settings: EvidenceSettings,
+    original_attempt: int,
+    session_started: float,
+    cancel_event: threading.Event | None,
+    on_check: Callable[[AvailabilityResult, int, int | None], None] | None,
+    is_allowed_appointment: Callable[[str, str], bool] | None,
+    can_submit: Callable[[], bool] | None,
+    can_solve_captcha: Callable[[], bool] | None,
+    on_submission_intent: Callable[[dict | None], None] | None,
+    on_submission_started: Callable[[dict | None], None] | None,
+    expected_person_name: str | None,
+    program_expediente: str | None,
+    program_plate: str | None,
+    run_id: str | None,
+    order_id: str | None,
+    ports: ReservationEnginePorts,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    _, original_screenshot_path, _ = original_completed_result
+    reobservation_id = f"reobservation-{uuid4().hex}"
+    started_at = time.monotonic()
+    deadline = started_at + runtime_settings.slot_lost_reobservation_seconds
+    observations: list[dict] = []
+    reload_probe_used = False
+    if not _record_reobservation_event(
+        reobservation_id,
+        0,
+        "slot_lost_resolved",
+        order_id=order_id,
+        run_id=run_id,
+        outcome="slot_lost",
+        runtime_settings=runtime_settings,
+        opportunities=ports.opportunities,
+    ):
+        return original_completed_result
+    if not _record_reobservation_event(
+        reobservation_id,
+        1,
+        "started",
+        order_id=order_id,
+        run_id=run_id,
+        details={
+            "max_seconds": runtime_settings.slot_lost_reobservation_seconds,
+            "max_attempts": runtime_settings.slot_lost_reobservation_attempts,
+        },
+        runtime_settings=runtime_settings,
+        opportunities=ports.opportunities,
+    ):
+        return original_completed_result
+
+    logger.info(
+        "Starting slot_lost reobservation for up to %s seconds and %s attempts",
+        runtime_settings.slot_lost_reobservation_seconds,
+        runtime_settings.slot_lost_reobservation_attempts,
+    )
+    if not _appointment_panel_is_visible(page):
+        try:
+            page = open_appointment_panel(page, cancel_event=cancel_event)
+        except AppointmentWorkflowUnavailable as exc:
+            observations.append(
+                {
+                    "attempt": 0,
+                    "mode": "panel_reopen",
+                    "status": "panel_unavailable",
+                    "message": str(exc),
+                    "duration_seconds": round(time.monotonic() - started_at, 3),
+                }
+            )
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                observations,
+                started_at,
+                reload_probe_used,
+                reobservation_id=reobservation_id,
+                outcome="panel_unavailable",
+                opportunities=ports.opportunities,
+                runtime_settings=runtime_settings,
+            )
+
+    for reobservation_attempt in range(1, runtime_settings.slot_lost_reobservation_attempts + 1):
+        if cancel_event is not None and cancel_event.is_set():
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                observations,
+                started_at,
+                reload_probe_used,
+                reobservation_id=reobservation_id,
+                outcome="paused",
+                message="La reobservacion posterior a slot_lost fue interrumpida por una pausa.",
+                status="paused",
+                opportunities=ports.opportunities,
+                runtime_settings=runtime_settings,
+            )
+        if time.monotonic() >= deadline:
+            break
+
+        check_started = time.monotonic()
+        use_reload_probe = (
+            reobservation_attempt
+            == runtime_settings.slot_lost_reobservation_reload_probe_after_attempt
+        )
+        if use_reload_probe:
+            reload_probe_used = True
+            result = reload_and_recheck_appointment_availability(
+                page,
+                program_expediente=program_expediente,
+                program_plate=program_plate,
+                telemetry_attempt=reobservation_attempt,
+                cancel_event=cancel_event,
+                runtime_settings=runtime_settings,
+                reservation_settings=reservation_settings,
+            )
+            if result is None:
+                observations.append(
+                    {
+                        "attempt": reobservation_attempt,
+                        "mode": "reload_probe",
+                        "status": "reload_failed",
+                        "duration_seconds": round(time.monotonic() - check_started, 3),
+                    }
+                )
+                break
+            monitoring_mode = "reload_probe"
+        else:
+            page = select_available_site(
+                page,
+                required_site=runtime_settings.observer_required_site,
+                reset_first=True,
+                timeout=reservation_settings.postback_timeout_seconds * 1_000,
+                telemetry_attempt=reobservation_attempt,
+                telemetry_phase="slot_lost_reobservation",
+            )
+            result = read_appointment_availability(
+                page,
+                timeout=reservation_settings.read_timeout_seconds * 1_000,
+            )
+            monitoring_mode = "slot_lost_reobservation"
+
+        result = with_monitor_diagnostics(
+            result,
+            reservation_settings=reservation_settings,
+            attempt=original_attempt + reobservation_attempt,
+            session_age_seconds=time.monotonic() - session_started,
+            check_duration_seconds=time.monotonic() - check_started,
+            monitoring_mode=monitoring_mode,
+        )
+        observation = {
+            "attempt": reobservation_attempt,
+            "mode": monitoring_mode,
+            "status": result.status,
+            "duration_seconds": round(time.monotonic() - check_started, 3),
+        }
+        observations.append(observation)
+        event_recorded = _record_reobservation_event(
+            reobservation_id,
+            len(observations) + 1,
+            "observation",
+            order_id=order_id,
+            run_id=run_id,
+            attempt_number=reobservation_attempt,
+            mode=monitoring_mode,
+            observed_status=result.status,
+            duration_ms=int((time.monotonic() - check_started) * 1000),
+            details=observation,
+            runtime_settings=runtime_settings,
+            opportunities=ports.opportunities,
+        )
+        if not event_recorded:
+            return _finish_slot_lost_reobservation(
+                original_completed_result,
+                observations,
+                started_at,
+                reload_probe_used,
+                reobservation_id=reobservation_id,
+                outcome="telemetry_failed",
+                opportunities=ports.opportunities,
+                runtime_settings=runtime_settings,
+            )
+        if on_check is not None:
+            on_check(result, original_attempt + reobservation_attempt, None)
+
+        can_select = result.status == "available" or (
+            result.status == "partial" and has_available_date_options(page)
+        )
+        if can_select:
+            timing = ReservationTiming()
+            timing.mark("selection_started")
+            selected_result = select_available_appointment(
+                page,
+                is_allowed_appointment=is_allowed_appointment,
+                timeout=reservation_settings.postback_timeout_seconds * 1_000,
+            )
+            timing.mark("selection_finished")
+            selected_result = with_monitor_diagnostics(
+                selected_result,
+                reservation_settings=reservation_settings,
+                attempt=original_attempt + reobservation_attempt,
+                session_age_seconds=time.monotonic() - session_started,
+                check_duration_seconds=time.monotonic() - check_started,
+                monitoring_mode=monitoring_mode,
+            )
+            observation["selected_status"] = selected_result.status
+            if selected_result.status == "available":
+                try:
+                    selected_result, recovered_screenshot_path, _ = capture_canonical_selected_slot(
+                        page,
+                        selected_result,
+                        phase="slot_lost_reobservation",
+                        evidence_settings=evidence_settings,
+                    )
+                except CanonicalSlotCaptureError as exc:
+                    observation["canonical_slot_capture_error"] = str(exc)
+                    return _finish_slot_lost_reobservation(
+                        original_completed_result,
+                        observations,
+                        started_at,
+                        reload_probe_used,
+                        reobservation_id=reobservation_id,
+                        outcome="evidence_capture_failed",
+                        opportunities=ports.opportunities,
+                        runtime_settings=runtime_settings,
+                    )
+                if on_check is not None:
+                    on_check(
+                        selected_result,
+                        original_attempt + reobservation_attempt,
+                        None,
+                    )
+
+                def record_second_submission_intent(details: dict | None) -> None:
+                    if on_submission_intent is not None:
+                        on_submission_intent(details)
+                    if not _record_reobservation_event(
+                        reobservation_id,
+                        len(observations) + 2,
+                        "second_attempt_intent",
+                        order_id=order_id,
+                        run_id=run_id,
+                        outcome="intent",
+                        runtime_settings=runtime_settings,
+                        opportunities=ports.opportunities,
+                    ):
+                        raise RuntimeError(
+                            "Could not persist the second reservation attempt intent."
+                        )
+
+                recovered_completed_result = complete_available_reservation(
+                    page,
+                    selected_result,
+                    recovered_screenshot_path or original_screenshot_path,
+                    timing,
+                    cancel_event,
+                    can_submit,
+                    can_solve_captcha,
+                    record_second_submission_intent,
+                    on_submission_started,
+                    expected_person_name,
+                    run_id=run_id,
+                    order_id=order_id,
+                    captcha_event_context=reobservation_id,
+                    captcha_authority=ports.captcha,
+                    alert_sink=ports.alerts,
+                    runtime_settings=runtime_settings,
+                    reservation_settings=reservation_settings,
+                    captcha_settings=captcha_settings,
+                    evidence_settings=evidence_settings,
+                )
+                return _merge_recovered_reservation(
+                    original_completed_result,
+                    recovered_completed_result,
+                    observations,
+                    started_at,
+                    reload_probe_used,
+                    reobservation_id=reobservation_id,
+                    opportunities=ports.opportunities,
+                    runtime_settings=runtime_settings,
+                )
+
+        if result.status == "unknown":
+            break
+        if reobservation_attempt >= runtime_settings.slot_lost_reobservation_attempts:
+            break
+        remaining_seconds = deadline - time.monotonic()
+        if remaining_seconds <= 0:
+            break
+        wait_seconds = min(
+            random.randint(
+                runtime_settings.observer_site_toggle_interval_min_seconds,
+                runtime_settings.observer_site_toggle_interval_max_seconds,
+            ),
+            max(1, int(remaining_seconds)),
+        )
+        if cancel_event is not None:
+            if cancel_event.wait(wait_seconds):
+                return _finish_slot_lost_reobservation(
+                    original_completed_result,
+                    observations,
+                    started_at,
+                    reload_probe_used,
+                    reobservation_id=reobservation_id,
+                    outcome="paused",
+                    message=(
+                        "La reobservacion posterior a slot_lost fue interrumpida por una pausa."
+                    ),
+                    status="paused",
+                    opportunities=ports.opportunities,
+                    runtime_settings=runtime_settings,
+                )
+        else:
+            page.wait_for_timeout(wait_seconds * 1_000)
+
+    return _finish_slot_lost_reobservation(
+        original_completed_result,
+        observations,
+        started_at,
+        reload_probe_used,
+        reobservation_id=reobservation_id,
+        outcome="exhausted",
+        opportunities=ports.opportunities,
+        runtime_settings=runtime_settings,
+    )
+
+
+def _finish_slot_lost_reobservation(
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+    *,
+    runtime_settings: RuntimeSettings,
+    reobservation_id: str,
+    outcome: str,
+    message: str | None = None,
+    status: str | None = None,
+    opportunities: OpportunityControl,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    result, screenshot_path, screenshot_paths = original_completed_result
+    details = dict(result.details or {})
+    details["slot_lost_reobservation"] = _slot_lost_reobservation_details(
+        observations,
+        started_at,
+        reload_probe_used,
+        max_seconds=runtime_settings.slot_lost_reobservation_seconds,
+        max_attempts=runtime_settings.slot_lost_reobservation_attempts,
+        outcome=outcome,
+        recovered=False,
+    )
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 2,
+        "finished",
+        outcome=outcome,
+        observed_status=status or result.status,
+        duration_ms=int((time.monotonic() - started_at) * 1000),
+        details=details["slot_lost_reobservation"],
+        runtime_settings=runtime_settings,
+        opportunities=opportunities,
+    )
+    return (
+        AvailabilityResult(
+            status=status or result.status,
+            message=message or result.message,
+            details=details,
+        ),
+        screenshot_path,
+        screenshot_paths,
+    )
+
+
+def _merge_recovered_reservation(
+    original_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    recovered_completed_result: tuple[AvailabilityResult, Path | None, list[Path]],
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+    *,
+    runtime_settings: RuntimeSettings,
+    reobservation_id: str,
+    opportunities: OpportunityControl,
+) -> tuple[AvailabilityResult, Path | None, list[Path]]:
+    original_result, original_screenshot_path, original_screenshot_paths = original_completed_result
+    recovered_result, recovered_screenshot_path, recovered_screenshot_paths = (
+        recovered_completed_result
+    )
+    details = dict(recovered_result.details or {})
+    details["slot_lost_reobservation"] = _slot_lost_reobservation_details(
+        observations,
+        started_at,
+        reload_probe_used,
+        max_seconds=runtime_settings.slot_lost_reobservation_seconds,
+        max_attempts=runtime_settings.slot_lost_reobservation_attempts,
+        outcome="reservation_attempted",
+        recovered=True,
+    )
+    details["previous_submission_outcomes"] = [
+        {
+            "outcome": "slot_lost",
+            "sede": (original_result.details or {}).get("sede"),
+            "fecha": (original_result.details or {}).get("fecha"),
+            "hora": (original_result.details or {}).get("hora"),
+            "reservation_timing": (original_result.details or {}).get("reservation_timing"),
+        }
+    ]
+    unique_slot_evidence: list[dict[str, str]] = []
+    original_slot_screenshot = _first_slot_screenshot(
+        original_screenshot_paths,
+        original_screenshot_path,
+    )
+    if original_slot_screenshot is not None:
+        unique_slot_evidence.append(_slot_evidence(original_result, original_slot_screenshot))
+    recovered_slot_screenshot = _first_slot_screenshot(
+        recovered_screenshot_paths,
+        recovered_screenshot_path,
+    )
+    if recovered_slot_screenshot is not None:
+        unique_slot_evidence.append(_slot_evidence(recovered_result, recovered_slot_screenshot))
+    if unique_slot_evidence:
+        details["_unique_slot_evidence"] = unique_slot_evidence
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 3,
+        "second_attempt_resolved",
+        outcome=str((recovered_result.details or {}).get("submission_outcome") or ""),
+        observed_status=recovered_result.status,
+        runtime_settings=runtime_settings,
+        opportunities=opportunities,
+    )
+    _record_reobservation_event(
+        reobservation_id,
+        len(observations) + 4,
+        "finished",
+        outcome="reservation_attempted",
+        observed_status=recovered_result.status,
+        duration_ms=int((time.monotonic() - started_at) * 1000),
+        details=details["slot_lost_reobservation"],
+        runtime_settings=runtime_settings,
+        opportunities=opportunities,
+    )
+    screenshot_paths = _unique_paths(
+        original_screenshot_paths,
+        [original_screenshot_path] if original_screenshot_path is not None else [],
+        recovered_screenshot_paths,
+        [recovered_screenshot_path] if recovered_screenshot_path is not None else [],
+    )
+    return (
+        AvailabilityResult(
+            status=recovered_result.status,
+            message=recovered_result.message,
+            details=details,
+        ),
+        recovered_screenshot_path or original_screenshot_path,
+        screenshot_paths,
+    )
+
+
+def _slot_lost_reobservation_details(
+    observations: list[dict],
+    started_at: float,
+    reload_probe_used: bool,
+    *,
+    max_seconds: int,
+    max_attempts: int,
+    outcome: str,
+    recovered: bool,
+) -> dict:
+    return {
+        "enabled": True,
+        "max_seconds": max_seconds,
+        "max_attempts": max_attempts,
+        "attempts_completed": len(observations),
+        "reload_probe_used": reload_probe_used,
+        "elapsed_seconds": round(time.monotonic() - started_at, 3),
+        "outcome": outcome,
+        "recovered_availability": recovered,
+        "observations": observations,
+    }
+
+
+def _reobservation_admission_allowed(
+    opportunities: OpportunityControl, *, runtime_settings: RuntimeSettings
+) -> bool:
+    try:
+        return opportunities.admission_allowed("obs007", runtime_settings=runtime_settings)
+    except Exception:
+        logger.exception("Could not read OBS-007 admission control")
+        _trip_opportunity_breaker(
+            "persistence_failed", None, opportunities, runtime_settings=runtime_settings
+        )
+        return False
+
+
+def _record_reobservation_event(
+    reobservation_id: str,
+    sequence: int,
+    event_type: str,
+    *,
+    runtime_settings: RuntimeSettings,
+    order_id: str | None = None,
+    run_id: str | None = None,
+    attempt_number: int | None = None,
+    mode: str | None = None,
+    observed_status: str | None = None,
+    outcome: str | None = None,
+    duration_ms: int | None = None,
+    details: dict | None = None,
+    opportunities: OpportunityControl,
+) -> bool:
+    context = _OPPORTUNITY_EXECUTION_CONTEXT.get() or {}
+    burst_id = context.get("burst_id")
+    execution_id = context.get("execution_id")
+    try:
+        opportunities.record_event(
+            reobservation_id=reobservation_id,
+            sequence=sequence,
+            event_type=event_type,
+            burst_id=burst_id,
+            execution_id=execution_id,
+            order_id=order_id,
+            run_id=run_id,
+            original_attempt_id=context.get("original_attempt_id"),
+            second_attempt_id=context.get("second_attempt_id"),
+            attempt_number=attempt_number,
+            mode=mode,
+            observed_status=observed_status,
+            outcome=outcome,
+            duration_ms=duration_ms,
+            details=details,
+            event_key=f"{reobservation_id}:{sequence}:{event_type}",
+            runtime_settings=runtime_settings,
+        )
+        return True
+    except Exception:
+        logger.exception("Could not persist OBS-007 event %s", event_type)
+        _trip_opportunity_breaker(
+            "persistence_failed", burst_id, opportunities, runtime_settings=runtime_settings
+        )
+        return False
+
+
+def _trip_opportunity_breaker(
+    reason: str,
+    burst_id: str | None,
+    opportunities: OpportunityControl,
+    *,
+    runtime_settings: RuntimeSettings,
+) -> None:
+    try:
+        opportunities.trip_breaker(reason, burst_id, runtime_settings=runtime_settings)
+    except Exception:
+        logger.exception("Could not trip opportunity circuit breaker: %s", reason)
+
+
+def _unique_paths(*groups: list[Path]) -> list[Path]:
+    paths: list[Path] = []
+    seen: set[str] = set()
+    for group in groups:
+        for path in group:
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            paths.append(path)
+    return paths
+
+
+def _first_slot_screenshot(paths: list[Path], fallback: Path | None) -> Path | None:
+    candidates = _unique_paths(paths, [fallback] if fallback is not None else [])
+    return next(
+        (path for path in candidates if path.name.startswith(("cupo-", "observer-cupo-"))),
+        None,
+    )
+
+
+def _slot_evidence(result: AvailabilityResult, screenshot_path: Path) -> dict[str, str]:
+    details = result.details or {}
+    return {
+        "sede": str(details.get("sede") or ""),
+        "fecha": str(details.get("fecha") or ""),
+        "hora": str(details.get("hora") or ""),
+        "screenshot_path": str(screenshot_path),
+    }
+
+
+def _slot_capture_failure_result(
+    result: AvailabilityResult,
+    error: CanonicalSlotCaptureError,
+) -> AvailabilityResult:
+    details = dict(result.details or {})
+    details["canonical_slot_capture_failed"] = True
+    details["canonical_slot_capture_error"] = str(error)
+    return replace(
+        result,
+        status="partial" if result.status == "partial" else "error",
+        message=(
+            "Se detecto un cupo, pero la reserva se detuvo porque no pudo "
+            "preservarse su captura canonica."
+        ),
+        details=details,
+    )
+
+
+def _appointment_panel_is_visible(page) -> bool:
+    try:
+        site = page.locator("#MainContent_idUcitas_cbosede").first
+        return site.count() > 0 and site.is_visible(timeout=500)
+    except PlaywrightError:
+        return False
+
+
+def reload_and_recheck_appointment_availability(
+    page,
+    *,
+    runtime_settings: RuntimeSettings,
+    reservation_settings: ReservationSettings,
+    program_expediente: str | None = None,
+    program_plate: str | None = None,
+    telemetry_attempt: int | None = None,
+    cancel_event: threading.Event | None = None,
+) -> AvailabilityResult | None:
+    logger.info("No slots detected; reloading page before confirming unavailable result")
+    try:
+        page.reload(
+            wait_until="domcontentloaded",
+            timeout=reservation_settings.postback_timeout_seconds * 1_000,
+        )
+        page = click_program_action(
+            page,
+            program_expediente=program_expediente,
+            program_plate=program_plate,
+        )
+        page = open_appointment_panel(page, cancel_event=cancel_event)
+        page = select_available_site(
+            page,
+            required_site=runtime_settings.observer_required_site,
+            timeout=reservation_settings.postback_timeout_seconds * 1_000,
+            telemetry_attempt=telemetry_attempt,
+            telemetry_phase="reload_required_site",
+        )
+        result = read_appointment_availability(
+            page,
+            timeout=reservation_settings.read_timeout_seconds * 1_000,
+        )
+    except PortalContractChanged:
+        raise
+    except Exception:
+        logger.exception("Reload probe failed; keeping the previous unavailable result")
+        return None
+
+    details = dict(result.details or {})
+    details["reload_probe"] = True
+    message = result.message
+    if result.status != "unavailable":
+        message = f"{result.message} La disponibilidad fue detectada despues de recargar la pagina."
+    return AvailabilityResult(status=result.status, message=message, details=details)
+
+
+def _with_accumulated_site_refresh_history(
+    result: AvailabilityResult,
+    accumulated: list[dict],
+) -> tuple[AvailabilityResult, list[dict]]:
+    details = dict(result.details or {})
+    merged = list(accumulated)
+    known_event_ids = {
+        str(item.get("event_id"))
+        for item in merged
+        if isinstance(item, dict) and item.get("event_id")
+    }
+    for item in details.get("site_refresh_history") or []:
+        if not isinstance(item, dict):
+            continue
+        event_id = str(item.get("event_id") or "")
+        if event_id and event_id in known_event_ids:
+            continue
+        merged.append(dict(item))
+        if event_id:
+            known_event_ids.add(event_id)
+    details["site_refresh_history"] = merged
+    details["site_refresh_event_count"] = len(merged)
+    return AvailabilityResult(result.status, result.message, details), merged
+
+
+def with_monitor_diagnostics(
+    result: AvailabilityResult,
+    *,
+    reservation_settings: ReservationSettings,
+    attempt: int,
+    session_age_seconds: float,
+    check_duration_seconds: float,
+    monitoring_mode: str = "normal",
+) -> AvailabilityResult:
+    details = dict(result.details or {})
+    detection_origin = (
+        "fetch_probe"
+        if details.get("fetch_probe")
+        else (
+            monitoring_mode
+            if monitoring_mode in {"reload_probe", "site_toggle", "slot_lost_reobservation"}
+            else "normal"
+        )
+    )
+    details.update(
+        {
+            "observer_account": reservation_settings.safe_username,
+            "observer_attempt": attempt,
+            "monitoring_mode": monitoring_mode,
+            "detection_origin": detection_origin,
+            "session_age_seconds": round(session_age_seconds, 3),
+            "check_duration_seconds": round(check_duration_seconds, 3),
+        }
+    )
+    logger.info(
+        "Observer check: account=%s mode=%s attempt=%s status=%s site=%s "
+        "date_options=%s hour_options=%s origin=%s refresh_confirmed=%s "
+        "refresh_changed=%s post=%s http=%s refresh_events=%s "
+        "duration=%.3fs session_age=%.3fs",
+        reservation_settings.safe_username,
+        monitoring_mode,
+        attempt,
+        result.status,
+        details.get("sede"),
+        details.get("date_options"),
+        details.get("hour_options"),
+        detection_origin,
+        details.get("site_refresh_confirmed"),
+        details.get("site_refresh_changed"),
+        details.get("site_refresh_post_detected"),
+        details.get("site_refresh_post_status"),
+        details.get("site_refresh_event_count"),
+        check_duration_seconds,
+        session_age_seconds,
+    )
+    return AvailabilityResult(result.status, result.message, details)
+
+
+def save_relevant_result_snapshot(
+    page, status: str, *, evidence_settings: EvidenceSettings
+) -> Path | None:
+    if status != "partial":
+        return None
+
+    label_by_status = {
+        "partial": "03-modal-reserva-citas-disponibilidad-parcial",
+    }
+    centered_path = save_centered_modal_screenshot(
+        page,
+        label=label_by_status[status],
+        selectors=APPOINTMENT_PANEL_SCREENSHOT_SELECTORS,
+        evidence_settings=evidence_settings,
+    )
+    if centered_path is not None:
+        return centered_path
+
+    return save_screenshot(page, label=label_by_status[status], evidence_settings=evidence_settings)

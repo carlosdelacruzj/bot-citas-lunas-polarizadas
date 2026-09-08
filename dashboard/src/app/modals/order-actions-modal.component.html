@@ -1,0 +1,135 @@
+@if (uiDomain.activeModal() === 'order-actions') {
+  @if (ordersDomain.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="order-actions-title"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="order-actions-title">Acciones de orden</h2>
+            <p>{{ ordersDomain.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="uiDomain.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <dl class="summary-list">
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ presentationDomain.statusLabel(order.status) }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>{{ presentationDomain.statusLabel(order.reservation_status, 'Pendiente') }}</dd>
+          </div>
+          <div>
+            <dt>Cierre</dt>
+            <dd>{{ ordersDomain.closureDisplay(order) }}</dd>
+          </div>
+          <div>
+            <dt>Tramite</dt>
+            <dd>{{ order.program_expediente ?? order.program_plate ?? 'generica' }}</dd>
+          </div>
+          <div>
+            <dt>Padre</dt>
+            <dd>{{ order.parent_order_id ?? 'sin padre' }}</dd>
+          </div>
+        </dl>
+
+        <div class="modal-actions-grid">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="order.status !== 'ready'"
+            (click)="ordersDomain.requestOrderAction('pause', 'Pausar orden')"
+          >
+            Pausar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="order.status !== 'paused' || ordersDomain.hasActiveChildOrders(order)"
+            title="No se puede activar una orden padre con subordenes activas"
+            (click)="ordersDomain.requestOrderAction('activate', 'Activar orden')"
+          >
+            Activar
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="!order.charge_required || ordersDomain.isClosedOrder(order)"
+            (click)="ordersDomain.requestOrderAction('no-charge', 'Marcar sin cobro')"
+          >
+            Sin cobro
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="uiDomain.actionBusy()"
+            (click)="ordersDomain.requestManualSession()"
+          >
+            {{ ordersDomain.manualSessionActionLabel(order) }}
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="uiDomain.actionBusy()"
+            title="Abre el portal desde el inicio y registra el flujo sin guardar secretos"
+            (click)="ordersDomain.requestDiagnosticSession()"
+          >
+            Medir flujo manual
+          </button>
+        </div>
+
+        <section class="admin-block action-card">
+          <h3>Cerrar orden</h3>
+          <div class="form-grid">
+            <label>
+              Resultado
+              <select
+                name="modalClosureReason"
+                [ngModel]="ordersDomain.closureReason()"
+                (ngModelChange)="ordersDomain.setClosureReason($event)"
+              >
+                <option value="client_withdrew">Cliente retirado</option>
+                <option value="external_slot">Cupo por tercero</option>
+                <option value="family_no_charge">Familiar sin cobro</option>
+                <option value="duplicate">Duplicado</option>
+                <option value="not_serviceable">No gestionable</option>
+                <option value="uncollectible">Incobrable</option>
+                <option value="completed_by_us">Realizado por nosotros</option>
+              </select>
+            </label>
+            <label>
+              Nota
+              <input
+                name="modalClosureNote"
+                type="text"
+                placeholder="Ej. duplicado de order-xxxxx"
+                [ngModel]="ordersDomain.closureNote()"
+                (ngModelChange)="uiDomain.editField(ordersDomain.closureNote, $event)"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            class="danger"
+            [disabled]="ordersDomain.isClosedOrder(order)"
+            (click)="ordersDomain.requestCloseOrder()"
+          >
+            Cerrar con resultado
+          </button>
+        </section>
+      </div>
+    </section>
+  }
+}

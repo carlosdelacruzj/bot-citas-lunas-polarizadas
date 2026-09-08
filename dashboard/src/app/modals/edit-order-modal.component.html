@@ -1,0 +1,271 @@
+@if (uiDomain.activeModal() === 'edit-order') {
+  @if (ordersDomain.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-order-title"
+    >
+      <div class="modal wide-modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="edit-order-title">Editar orden</h2>
+            <p>{{ ordersDomain.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="uiDomain.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <section class="selected-detail" aria-label="Detalle de orden seleccionada">
+          <div>
+            <span>Estado</span>
+            <strong>{{ presentationDomain.statusLabel(order.status) }}</strong>
+            <small>{{ presentationDomain.statusLabel(order.reservation_status, 'Sin reserva') }}</small>
+          </div>
+          <div>
+            <span>Contacto actual</span>
+            <strong>{{ order.contact_name ?? 'sin contacto' }}</strong>
+            <small
+              >{{ order.contact_whatsapp_masked ?? order.contact_whatsapp_username_masked ?? 'sin WhatsApp' }} |
+              {{ order.contact_source ?? 'sin fuente' }}</small
+            >
+          </div>
+          <div>
+            <span>Pago</span>
+            <strong>{{ financeDomain.paymentLabel(order) }}</strong>
+            <small>{{
+              order.charge_required
+                ? (order.amount_paid ?? '0.00') +
+                  ' / ' +
+                  (order.amount_agreed ?? 'sin acordado')
+                : 'no requiere pago'
+            }}</small>
+          </div>
+        </section>
+
+        <div class="modal-grid">
+          @if (ordersDomain.editOrderSection() === 'program-resolution') {
+            <app-program-resolution-panel [order]="order" />
+          }
+
+          @if (ordersDomain.editOrderSection() === 'all' || ordersDomain.editOrderSection() === 'contact') {
+            <section class="admin-block action-card">
+              <h3>Contacto</h3>
+              @if (ordersDomain.orderDetailLoading()) {
+                <p class="muted">Cargando detalle protegido...</p>
+              }
+              <div class="form-grid">
+                <label>
+                  Nombre
+                  <input
+                    name="modalContactName"
+                    type="text"
+                    [disabled]="ordersDomain.orderDetailLoading()"
+                    [ngModel]="ordersDomain.contactName()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactName, $event)"
+                  />
+                </label>
+                <label>
+                  WhatsApp
+                  <input
+                    name="modalContactWhatsapp"
+                    type="text"
+                    [disabled]="ordersDomain.orderDetailLoading()"
+                    [placeholder]="ordersDomain.selectedOrderWhatsappPlaceholder()"
+                    [ngModel]="ordersDomain.contactWhatsapp()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactWhatsapp, $event)"
+                  />
+                </label>
+                <label>
+                  Usuario de WhatsApp
+                  <input
+                    name="modalContactWhatsappUsername"
+                    type="text"
+                    placeholder="@usuario"
+                    [disabled]="ordersDomain.orderDetailLoading()"
+                    [ngModel]="ordersDomain.contactWhatsappUsername()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactWhatsappUsername, $event)"
+                  />
+                  <small>El numero tiene prioridad cuando ambos estan registrados.</small>
+                </label>
+                <label>
+                  Fuente
+                  <input
+                    name="modalContactSource"
+                    type="text"
+                    [disabled]="ordersDomain.orderDetailLoading()"
+                    [ngModel]="ordersDomain.contactSource()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.contactSource, $event)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="ordersDomain.orderDetailLoading()"
+                (click)="ordersDomain.requestContactUpdate()"
+              >
+                Guardar contacto
+              </button>
+            </section>
+          }
+
+          @if (ordersDomain.editOrderSection() === 'all' || ordersDomain.editOrderSection() === 'credentials') {
+            <section class="admin-block action-card credential-card">
+              <div class="credential-card-heading">
+                <div>
+                  <h3>Acceso al portal</h3>
+                  <p class="muted">Corrige el usuario o reemplaza la contraseña.</p>
+                </div>
+                <span class="badge {{ presentationDomain.statusTone(order.preflight_status) }}">
+                  {{ presentationDomain.statusLabel(order.preflight_status) }}
+                </span>
+              </div>
+              @if (ordersDomain.orderDetailLoading()) {
+                <p class="muted">Cargando acceso protegido...</p>
+              }
+              <div class="form-grid credential-form">
+                <label>
+                  Tipo de documento
+                  <select
+                    name="modalOrderDocumentType"
+                    [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
+                    [ngModel]="ordersDomain.orderDocumentType()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.orderDocumentType, $event)"
+                  >
+                    <option value="dni">DNI</option>
+                    <option value="foreign_resident_card">Carné de Extranjería</option>
+                  </select>
+                </label>
+                <label>
+                  Usuario o documento
+                  <input
+                    name="modalOrderDocumentNumber"
+                    type="text"
+                    autocomplete="off"
+                    required
+                    [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
+                    [ngModel]="ordersDomain.orderDocumentNumber()"
+                    (ngModelChange)="uiDomain.editField(ordersDomain.orderDocumentNumber, $event)"
+                    aria-describedby="credentials-help dashboard-error"
+                  />
+                </label>
+                <label class="credential-password-field">
+                  Nueva contraseña
+                  <span class="credential-password-control">
+                    <input
+                      name="modalOrderPassword"
+                      [type]="ordersDomain.orderPasswordVisible() ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      required
+                      [disabled]="ordersDomain.orderDetailLoading() || ordersDomain.isClosedOrder(order)"
+                      [ngModel]="ordersDomain.orderPassword()"
+                      (ngModelChange)="uiDomain.editField(ordersDomain.orderPassword, $event)"
+                      aria-describedby="credentials-help dashboard-error"
+                    />
+                    <button
+                      type="button"
+                      class="secondary credential-password-toggle"
+                      [disabled]="!ordersDomain.orderPassword()"
+                      (click)="ordersDomain.toggleOrderPasswordVisibility()"
+                    >
+                      {{ ordersDomain.orderPasswordVisible() ? 'Ocultar' : 'Mostrar' }}
+                    </button>
+                  </span>
+                </label>
+              </div>
+              <p id="credentials-help" class="credential-help">
+                La contraseña actual nunca se muestra. Después de guardar, la cuenta permanecerá
+                pausada hasta que el portal valide el nuevo acceso.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="
+                  ordersDomain.orderDetailLoading() ||
+                  ordersDomain.isClosedOrder(order) ||
+                  !ordersDomain.orderDocumentNumber().trim() ||
+                  !ordersDomain.orderPassword()
+                "
+                (click)="ordersDomain.requestCredentialsUpdate()"
+              >
+                Guardar y validar acceso
+              </button>
+            </section>
+          }
+
+          @if (ordersDomain.editOrderSection() === 'all' || ordersDomain.editOrderSection() === 'restrictions') {
+            <section class="admin-block action-card">
+              <h3>Reglas de reserva</h3>
+              <app-reservation-rules-editor
+                controlPrefix="modal"
+                [disabled]="ordersDomain.isClosedOrder(order)"
+                [minimumDate]="ordersDomain.orderMinimumReservationDate()"
+                [maximumDate]="ordersDomain.orderMaximumReservationDate()"
+                [allowedWeekdays]="ordersDomain.orderAllowedWeekdays()"
+                [excludedDateRanges]="ordersDomain.orderExcludedDateRanges()"
+                [excludedDateStart]="ordersDomain.orderExcludedDateStart()"
+                [excludedDateEnd]="ordersDomain.orderExcludedDateEnd()"
+                (minimumDateChange)="uiDomain.editField(ordersDomain.orderMinimumReservationDate, $event)"
+                (maximumDateChange)="uiDomain.editField(ordersDomain.orderMaximumReservationDate, $event)"
+                (allowedWeekdaysChange)="uiDomain.editField(ordersDomain.orderAllowedWeekdays, $event)"
+                (excludedDateStartChange)="uiDomain.editField(ordersDomain.orderExcludedDateStart, $event)"
+                (excludedDateEndChange)="uiDomain.editField(ordersDomain.orderExcludedDateEnd, $event)"
+                (addExcludedDateRange)="ordersDomain.addOrderExcludedDateRange()"
+                (removeExcludedDateRange)="ordersDomain.removeOrderExcludedDateRange($event)"
+                (clearExcludedDateRanges)="ordersDomain.clearOrderExcludedDateRanges()"
+              />
+              <p class="muted">
+                Deja un campo vacío para quitar esa regla. Los cambios se aplican en la
+                siguiente selección de la cola.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="ordersDomain.isClosedOrder(order)"
+                (click)="ordersDomain.requestReservationRestrictionsUpdate()"
+              >
+                Continuar para guardar reglas
+              </button>
+            </section>
+
+            <section class="admin-block action-card">
+              <h3>Prioridad de búsqueda</h3>
+              <label>
+                Prioridad
+                <input
+                  name="modalOrderPriority"
+                  type="number"
+                  min="0"
+                  step="1"
+                  [disabled]="ordersDomain.isClosedOrder(order)"
+                  [ngModel]="ordersDomain.orderPriority()"
+                  (ngModelChange)="uiDomain.editField(ordersDomain.orderPriority, $event)"
+                />
+              </label>
+              <p class="muted">
+                0–99 mantiene la cola normal. 100–199 activa el enfoque prioritario.
+                200 activa el enfoque exclusivo: solo se revisará esa orden y cualquier
+                exclusivo anterior volverá a prioridad 100.
+              </p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="ordersDomain.isClosedOrder(order) || ordersDomain.orderPriority() === order.priority"
+                (click)="ordersDomain.requestPriorityUpdate()"
+              >
+                Continuar para guardar prioridad
+              </button>
+            </section>
+          }
+        </div>
+      </div>
+    </section>
+  }
+}

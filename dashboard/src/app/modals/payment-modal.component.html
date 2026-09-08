@@ -1,0 +1,124 @@
+@if (uiDomain.activeModal() === 'payment') {
+  @if (ordersDomain.modalOrder(); as order) {
+    <section
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-title"
+    >
+      <div class="modal compact-modal payment-modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="payment-title">Registrar pago</h2>
+            <p>{{ ordersDomain.orderLabel(order) }}</p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-modal-initial-focus
+            (click)="uiDomain.closeModal()"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <dl class="payment-summary">
+          <div>
+            <dt>Monto acordado</dt>
+            <dd>{{ presentationDomain.formatMoney(+financeDomain.paymentAmountAgreed()) }}</dd>
+          </div>
+          <div>
+            <dt>Registrado hasta ahora</dt>
+            <dd>{{ presentationDomain.formatMoney(+(order.amount_paid || 0)) }}</dd>
+          </div>
+          <div>
+            <dt>Reserva</dt>
+            <dd>
+              {{ presentationDomain.formatDate(order.reservation_date, 'sin fecha') }}
+              {{ presentationDomain.formatTime(order.reservation_hour) }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (order.service_package === 'integral') {
+          @if (ordersDomain.servicePackageDefinition(order.service_package); as servicePackage) {
+            <p class="required-help">
+              Paquete integral: {{ presentationDomain.formatMoney(+servicePackage.official_fee_amount) }} de tasa
+              oficial y {{ presentationDomain.formatMoney(+(servicePackage.management_fee_amount || 0)) }} de
+              gestión. Registra {{ presentationDomain.formatMoney(+(servicePackage.total_amount || 0)) }} cuando
+              hayas recibido el segundo abono de
+              {{ presentationDomain.formatMoney(+(servicePackage.balance_amount || 0)) }}.
+            </p>
+          }
+        }
+
+        <label>
+          Total recibido hasta hoy
+          <input
+            name="quickPaymentAmount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+            aria-describedby="payment-amount-help"
+            [ngModel]="financeDomain.paymentAmountPaid()"
+            (ngModelChange)="uiDomain.editField(financeDomain.paymentAmountPaid, $event)"
+          />
+        </label>
+        <p id="payment-amount-help" class="required-help">
+          Incluye los abonos anteriores. Por ejemplo, si recibiste S/40 y luego S/10,
+          escribe 50.
+        </p>
+        @if (+financeDomain.paymentAmountPaid() > 0 && +financeDomain.paymentAmountAgreed() > 0) {
+          <p class="required-help" aria-live="polite">
+            @if (+financeDomain.paymentAmountPaid() < +financeDomain.paymentAmountAgreed()) {
+              Quedarán pendientes
+              <strong>{{ presentationDomain.formatMoney(+financeDomain.paymentAmountAgreed() - +financeDomain.paymentAmountPaid()) }}</strong>.
+              No se enviará el postpago todavía.
+            } @else {
+              El pago quedará completo y se encolará el envío de postpago.
+            }
+          </p>
+        }
+        <div class="quick-amounts" aria-label="Montos rápidos">
+          <button type="button" class="secondary" (click)="financeDomain.setQuickPaymentAmount('40.00')">
+            S/40
+          </button>
+          @if (ordersDomain.standardPackageAmount(); as standardAmount) {
+            <button
+              type="button"
+              class="secondary"
+              (click)="financeDomain.setQuickPaymentAmount(standardAmount)"
+            >
+              {{ presentationDomain.formatMoney(+standardAmount) }}
+            </button>
+          }
+          @if (financeDomain.paymentAmountAgreed()) {
+            <button
+              type="button"
+              class="secondary"
+              (click)="financeDomain.setQuickPaymentAmount(financeDomain.paymentAmountAgreed())"
+            >
+              Total acordado
+            </button>
+          }
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="!financeDomain.paymentAmountPaid() || uiDomain.actionBusy()"
+            (click)="financeDomain.requestMarkPaid()"
+          >
+            @if (+financeDomain.paymentAmountPaid() > 0 && +financeDomain.paymentAmountAgreed() > 0) {
+              {{ +financeDomain.paymentAmountPaid() < +financeDomain.paymentAmountAgreed() ? 'Registrar abono' : 'Completar pago' }}
+            } @else {
+              Registrar pago
+            }
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+}

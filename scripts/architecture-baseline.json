@@ -1,0 +1,6 @@
+{
+  "inverse_dependencies": [
+    ["appointment_bot.services.api.worker_routes", "appointment_bot.worker.recovery"]
+  ],
+  "cycles": []
+}

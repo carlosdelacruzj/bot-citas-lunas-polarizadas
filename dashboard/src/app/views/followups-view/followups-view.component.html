@@ -1,0 +1,327 @@
+<app-load-status [section]="editor.followupsDomain.loads.appointments" />
+<app-load-status [section]="editor.reminderLoad" />
+<section class="panel followups-hero" aria-labelledby="followups-title">
+  <div>
+    <p class="eyebrow">Agenda operativa</p>
+    <h2 id="followups-title">Citas y recordatorios</h2>
+    <p>Encuentra una cita, revisa qué necesita atención y controla cuándo se envían los recordatorios.</p>
+  </div>
+  <div class="followups-privacy-note">
+    <span aria-hidden="true">i</span>
+    <p><strong>Vista interna</strong><span>Los contactos se muestran parcialmente ocultos.</span></p>
+  </div>
+</section>
+
+<nav class="followups-workspace-tabs" aria-label="Secciones de citas y recordatorios" role="tablist">
+  <button type="button" role="tab" id="tab-upcoming" aria-controls="panel-upcoming"
+    [class.active]="editor.followupWorkspace() === 'upcoming'" [attr.aria-selected]="editor.followupWorkspace() === 'upcoming'"
+    (click)="editor.setFollowupWorkspace('upcoming')">
+    <span>Próximas citas</span><strong>{{ editor.upcomingAppointments().length }}</strong>
+  </button>
+  <button type="button" role="tab" id="tab-review" aria-controls="panel-review"
+    [class.active]="editor.followupWorkspace() === 'post_appointment'" [attr.aria-selected]="editor.followupWorkspace() === 'post_appointment'"
+    (click)="editor.setFollowupWorkspace('post_appointment')">
+    <span>Necesitan revisión</span><strong>{{ editor.postAppointmentOperationalCount() }}</strong>
+  </button>
+  <button type="button" role="tab" id="tab-history" aria-controls="panel-history"
+    [class.active]="editor.followupWorkspace() === 'history'" [attr.aria-selected]="editor.followupWorkspace() === 'history'"
+    (click)="editor.setFollowupWorkspace('history')">
+    <span>Historial</span><strong>{{ editor.postAppointmentHistoryCount() }}</strong>
+  </button>
+</nav>
+
+@if (editor.followupsDomain.postAppointmentPayload(); as payload) {
+  @if (editor.followupWorkspace() === 'upcoming') {
+    <div id="panel-upcoming" role="tabpanel" aria-labelledby="tab-upcoming" class="followup-workspace">
+      @if (editor.reminderStatus(); as reminders) {
+        <section class="panel followups-controls" aria-label="Buscar y filtrar próximas citas">
+          <div class="search-and-settings">
+            <label class="followup-search">
+              <span>Buscar una cita</span>
+              <input name="reminderCandidateSearch" type="search" autocomplete="off"
+                placeholder="Nombre, orden, documento, placa, expediente o sede"
+                [ngModel]="editor.reminderCandidateSearch()" (ngModelChange)="editor.setReminderCandidateSearch($event)" />
+            </label>
+            <button type="button" class="secondary settings-button" (click)="openReminderEditor()">
+              <span aria-hidden="true">⚙</span> Configurar recordatorios
+            </button>
+          </div>
+          <div class="filter-and-sort-row">
+            <div class="quick-filters" aria-label="Filtrar próximas citas">
+              <button type="button" class="filter-chip" [class.active]="editor.reminderCandidateFilter() === 'all'"
+                [attr.aria-pressed]="editor.reminderCandidateFilter() === 'all'" (click)="editor.chooseReminderFilter('all')">Todas <span>{{ editor.reminderFilterCounts().all }}</span></button>
+              <button type="button" class="filter-chip" [class.active]="editor.reminderCandidateFilter() === 'pending'"
+                [attr.aria-pressed]="editor.reminderCandidateFilter() === 'pending'" (click)="editor.chooseReminderFilter('pending')">Pendientes <span>{{ editor.reminderFilterCounts().pending }}</span></button>
+              <button type="button" class="filter-chip" [class.active]="editor.reminderCandidateFilter() === 'missing_contact'"
+                [attr.aria-pressed]="editor.reminderCandidateFilter() === 'missing_contact'" (click)="editor.chooseReminderFilter('missing_contact')">Sin contacto <span>{{ editor.reminderFilterCounts().missing_contact }}</span></button>
+              <button type="button" class="filter-chip" [class.active]="editor.reminderCandidateFilter() === 'sent'"
+                [attr.aria-pressed]="editor.reminderCandidateFilter() === 'sent'" (click)="editor.chooseReminderFilter('sent')">Enviados <span>{{ editor.reminderFilterCounts().sent }}</span></button>
+            </div>
+            <label class="compact-select">Orden
+              <select name="reminderCandidateSort" [ngModel]="editor.reminderCandidateSort()" (ngModelChange)="editor.chooseReminderSort($event)">
+                <option value="soonest">Cita más próxima</option>
+                <option value="latest">Cita más lejana</option>
+                <option value="applicant">Nombre A–Z</option>
+                <option value="status">Estado</option>
+              </select>
+            </label>
+          </div>
+          <p class="followups-result-count" aria-live="polite">{{ editor.filteredReminderCandidates().length }} de {{ editor.upcomingAppointments().length }} citas</p>
+        </section>
+
+        <section class="panel reminder-status-strip" aria-label="Estado de recordatorios">
+          <div class="reminder-status-primary">
+            <span class="badge" [class.good]="reminders.control.mode === 'live'"
+              [class.warn]="reminders.control.mode === 'dry_run'"
+              [class.neutral]="reminders.control.mode === 'disabled'">
+              @if (reminders.control.mode === 'disabled') { Desactivados }
+              @else if (reminders.control.mode === 'dry_run') { Solo revisión }
+              @else { Activos }
+            </span>
+            <div><strong>{{ reminders.control.lead_days }} {{ reminders.control.lead_days === 1 ? 'día' : 'días' }} antes</strong>
+              <span>Hoy se revisan las citas del {{ editor.presentationDomain.formatDate(reminders.appointment_day) }} desde las {{ reminders.configuration.time }}.</span></div>
+          </div>
+          <small>Primero debe terminar el resumen diario · Evidencias: {{ reminders.day?.summary_status ?? 'pendientes' }}</small>
+        </section>
+
+        <section class="followups-metrics upcoming-metrics" aria-label="Resumen de recordatorios">
+          <article><span>Fecha que se trabaja hoy</span><strong class="metric-date">{{ editor.presentationDomain.formatDate(reminders.appointment_day) }}</strong></article>
+          <article class="followup-metric--warn"><span>En cola o espera</span><strong>{{ (reminders.job_counts['queued'] ?? 0) + (reminders.job_counts['blocked'] ?? 0) }}</strong></article>
+          <article class="followup-metric--good"><span>Enviados</span><strong>{{ reminders.job_counts['sent'] ?? 0 }}</strong></article>
+        </section>
+
+        @if (editor.filteredReminderCandidates().length === 0) {
+          <app-view-state state="empty" title="No encontramos citas con estos filtros" message="Prueba otra búsqueda o elige Todas para volver a ver la agenda." />
+        } @else {
+          <section class="upcoming-list" aria-label="Próximas citas">
+            @for (candidate of editor.reminderCandidates(); track candidate.order_id) {
+              <article class="panel upcoming-card">
+                <div class="upcoming-date">
+                  <span>{{ editor.presentationDomain.formatDate(candidate.appointment_day) }}</span>
+                  <strong>{{ candidate.appointment_hour || 'Sin hora' }}</strong>
+                </div>
+                <div class="upcoming-identity">
+                  <h3>{{ candidate.applicant_name || 'Nombre no registrado' }}</h3>
+                  <p>{{ candidate.site || 'Sede no registrada' }}</p>
+                  @if (candidate.program_expediente || candidate.program_plate) {
+                    <small>@if (candidate.program_expediente) { Exp. {{ candidate.program_expediente }} } @if (candidate.program_plate) { · Placa {{ candidate.program_plate }} }</small>
+                  }
+                </div>
+                <div class="upcoming-next-action">
+                  <span class="badge {{ candidate.status === 'eligible' || candidate.status === 'scheduled' ? 'good' : editor.presentationDomain.statusTone(candidate.status) }}">{{ editor.reminderCandidateStatusLabel(candidate.status) }}</span>
+                  <small>{{ editor.reminderCandidateNextAction(candidate.status) }}</small>
+                </div>
+                <details class="upcoming-details">
+                  <summary>Ver detalles</summary>
+                  <div>
+                    <span>Orden <strong>{{ candidate.order_id }}</strong></span>
+                    <span>Documento <strong>{{ candidate.document_number_masked || 'No disponible' }}</strong></span>
+                    <span>Contacto <strong>{{ candidate.recipient || 'Se mostrará cuando corresponda al recordatorio' }}</strong></span>
+                  </div>
+                </details>
+              </article>
+            }
+          </section>
+
+          <div class="order-table-footer">
+            <span aria-live="polite">{{ editor.reminderCandidatePageStart() }}–{{ editor.reminderCandidatePageEnd() }} de {{ editor.filteredReminderCandidates().length }} · Página {{ editor.currentReminderCandidatePage() }} de {{ editor.reminderCandidateTotalPages() }}</span>
+            <label class="filter">Citas por página
+              <select name="reminderCandidatePageSize" [ngModel]="editor.reminderCandidatePageSize()" (ngModelChange)="editor.changeReminderCandidatePageSize($event)">
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+              </select>
+            </label>
+          </div>
+          @if (editor.reminderCandidateTotalPages() > 1) {
+            <nav class="order-pagination" aria-label="Páginas de próximas citas">
+              <button type="button" class="secondary" [disabled]="editor.currentReminderCandidatePage() === 1" (click)="editor.goToReminderCandidatePage(editor.currentReminderCandidatePage() - 1)">Anterior</button>
+              @for (page of editor.reminderCandidatePageNumbers(); track page) {
+                <button type="button" class="page-button" [class.active]="page === editor.currentReminderCandidatePage()" [attr.aria-current]="page === editor.currentReminderCandidatePage() ? 'page' : null" [attr.aria-label]="'Página ' + page" (click)="editor.goToReminderCandidatePage(page)">{{ page }}</button>
+              }
+              <button type="button" class="secondary" [disabled]="editor.currentReminderCandidatePage() === editor.reminderCandidateTotalPages()" (click)="editor.goToReminderCandidatePage(editor.currentReminderCandidatePage() + 1)">Siguiente</button>
+            </nav>
+          }
+        }
+
+        <dialog #reminderDialog class="reminder-dialog" aria-labelledby="reminder-dialog-title" (close)="editor.handleReminderDialogClosed()">
+          <div class="reminder-dialog-header">
+            <div><p class="eyebrow">Control operativo</p><h3 id="reminder-dialog-title">Configurar recordatorios</h3><p>Decide cuándo se preparan y quiénes entran al envío.</p></div>
+            <button type="button" class="dialog-close" aria-label="Cerrar configuración" autofocus (click)="closeReminderEditor()">×</button>
+          </div>
+          <div class="reminder-dialog-body">
+            <fieldset class="lead-day-options">
+              <legend>Anticipación</legend>
+              <p>¿Cuántos días antes de la cita se debe enviar el recordatorio?</p>
+              <div>
+                @for (days of editor.reminderLeadDayOptions; track days) {
+                  <label [class.selected]="editor.reminderLeadDays() === days">
+                    <input type="radio" name="reminderLeadDays" [value]="days" [checked]="editor.reminderLeadDays() === days" (change)="editor.chooseReminderLeadDays(days)" />
+                    <strong>{{ days }}</strong><span>{{ days === 1 ? 'día antes' : 'días antes' }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+
+            <div class="target-date-example">
+              <span aria-hidden="true">→</span>
+              @if (editor.reminderDraftAppliesNextDay()) {
+                <p>El lote de hoy conserva las citas del <strong>{{ editor.presentationDomain.formatDate(reminders.appointment_day) }}</strong>. Desde el {{ editor.presentationDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán citas del <strong>{{ editor.presentationDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
+              } @else {
+                <p>El {{ editor.presentationDomain.formatDate(editor.reminderDraftServiceDate()) }} se prepararán recordatorios para las citas del <strong>{{ editor.presentationDomain.formatDate(editor.reminderTargetExample()) }}</strong>.</p>
+              }
+            </div>
+
+            <fieldset class="reminder-modes">
+              <legend>Modo de operación</legend>
+              <label [class.selected]="editor.reminderMode() === 'disabled'"><input type="radio" name="reminderMode" value="disabled" [ngModel]="editor.reminderMode()" (ngModelChange)="editor.chooseReminderMode($event)" /><strong>Desactivado</strong><span>No crea ni envía recordatorios.</span></label>
+              <label [class.selected]="editor.reminderMode() === 'dry_run'"><input type="radio" name="reminderMode" value="dry_run" [ngModel]="editor.reminderMode()" (ngModelChange)="editor.chooseReminderMode($event)" /><strong>Solo revisar</strong><span>Muestra elegibles sin encolarlos.</span></label>
+              <label [class.selected]="editor.reminderMode() === 'live'"><input type="radio" name="reminderMode" value="live" [ngModel]="editor.reminderMode()" (ngModelChange)="editor.chooseReminderMode($event)" /><strong>Activo</strong><span>Todos los elegibles, con límite diario.</span></label>
+            </fieldset>
+
+            <button type="button" class="text-button" (click)="openReminderMessageEditor()">Editar el texto en Mensajes</button>
+
+            @if (editor.reminderActivationReview()) {
+              <div class="reminder-confirmation" role="alert">
+                <div><strong>Confirma esta configuración</strong><span>Se aplicará {{ editor.reminderLeadDays() }} {{ editor.reminderLeadDays() === 1 ? 'día' : 'días' }} antes, en modo activo. Se revalidarán la cita y el contacto antes de abrir WhatsApp.</span></div>
+                <button type="button" class="primary" [disabled]="editor.reminderSaving()" (click)="editor.confirmReminderSave()">Confirmar y guardar</button>
+              </div>
+            }
+            @if (editor.reminderSaveError()) { <p class="reminder-feedback error" role="alert">{{ editor.reminderSaveError() }}</p> }
+            @if (editor.reminderSaveSuccess()) { <p class="reminder-feedback success" role="status">{{ editor.reminderSaveSuccess() }}</p> }
+          </div>
+          <div class="reminder-dialog-footer">
+            <span>Revisión {{ reminders.control.revision }} · los trabajos ya creados conservan su programación.</span>
+            <div><button type="button" class="secondary" (click)="closeReminderEditor()">Cancelar</button>
+              @if (!editor.reminderActivationReview()) { <button type="button" class="primary" [disabled]="editor.reminderSaving()" (click)="editor.requestReminderSave()">{{ editor.reminderSaving() ? 'Guardando…' : 'Guardar cambios' }}</button> }
+            </div>
+          </div>
+        </dialog>
+      } @else if (editor.reminderStatusLoading()) {
+        <app-view-state state="loading" title="Cargando próximas citas" message="Consultando la agenda y el estado de recordatorios." />
+      } @else if (editor.reminderStatusError()) {
+        <app-view-state state="error" title="No se pudieron cargar las próximas citas" message="Actualiza la pantalla para volver a consultar la agenda." />
+      }
+    </div>
+  } @else {
+    <div [id]="editor.followupWorkspace() === 'history' ? 'panel-history' : 'panel-review'" role="tabpanel"
+      [attr.aria-labelledby]="editor.followupWorkspace() === 'history' ? 'tab-history' : 'tab-review'" class="followup-workspace">
+      <section class="panel followups-controls" aria-label="Buscar y filtrar seguimientos">
+        <label class="followup-search"><span>Buscar una cita</span>
+          <input name="postAppointmentSearch" type="search" autocomplete="off"
+            placeholder="Nombre, orden, documento, placa, expediente o sede"
+            [ngModel]="editor.followupsDomain.postAppointmentSearch()" (ngModelChange)="editor.followupsDomain.setPostAppointmentSearch($event)" />
+        </label>
+        <div class="filter-and-sort-row">
+          @if (editor.followupWorkspace() === 'post_appointment') {
+            <div class="quick-filters" aria-label="Filtrar casos que necesitan revisión">
+              @for (filter of editor.followupsDomain.postAppointmentQuickFilters(); track filter.key) {
+                @if (filter.key !== 'access_lost') {
+                  <button type="button" class="filter-chip" [class.active]="editor.followupsDomain.postAppointmentFilter() === filter.key"
+                    [attr.aria-pressed]="editor.followupsDomain.postAppointmentFilter() === filter.key" (click)="editor.followupsDomain.setPostAppointmentFilter(filter.key)">{{ filter.key === 'active' ? 'Todos' : filter.label }} <span>{{ filter.count }}</span></button>
+                }
+              }
+            </div>
+          }
+          <label class="compact-select">Orden
+            <select name="postAppointmentSort" [ngModel]="editor.postAppointmentSort()" (ngModelChange)="editor.choosePostAppointmentSort($event)">
+              <option value="attention">Más urgente</option>
+              <option value="appointment_soonest">Cita más próxima</option>
+              <option value="recent">Actualizado recientemente</option>
+              <option value="applicant">Nombre A–Z</option>
+            </select>
+          </label>
+        </div>
+        <p class="followups-result-count" aria-live="polite">{{ payload.pagination.total }} resultados</p>
+      </section>
+
+      @if (editor.followupWorkspace() === 'post_appointment') {
+        <section class="panel automatic-review-strip" aria-label="Revisiones automáticas post-cita">
+          <div>
+            <span class="badge" [class.good]="payload.automation.enabled && !payload.automation.breaker_open"
+              [class.warn]="payload.automation.breaker_open" [class.neutral]="!payload.automation.enabled">
+              @if (payload.automation.breaker_open) { Revisión diaria pausada }
+              @else { {{ payload.automation.enabled ? 'Revisión diaria activa' : 'Revisión diaria desactivada' }} }
+            </span>
+            <p>
+              @if (payload.automation.breaker_open) {
+                El portal falló tres veces seguidas. El lote se detuvo y volverá a evaluarse mañana, sin reintentos hoy.
+              } @else if (payload.automation.enabled) {
+                El sistema revisa cada día a las {{ payload.automation.time }} hasta {{ payload.automation.daily_limit }} citas pasadas que siguen pendientes.
+              } @else {
+                Las citas pasadas solo se revisan manualmente mientras la automatización esté desactivada.
+              }
+            </p>
+          </div>
+          <small>{{ payload.automation.due_count }} pendientes hoy
+            @if (payload.automation.running) { · {{ payload.automation.running }} en revisión }
+            · {{ payload.automation.completed_today }} revisadas hoy
+            @if (payload.automation.failed_today) { · {{ payload.automation.failed_today }} con fallo }
+            @if (payload.automation.last_run_at) { · último ciclo {{ editor.presentationDomain.formatDateTime(payload.automation.last_run_at) }} }
+          </small>
+        </section>
+      }
+
+      <section class="followups-metrics" aria-label="Resumen de la sección">
+        @if (editor.followupWorkspace() === 'post_appointment') {
+          <article><span>En seguimiento</span><strong>{{ editor.postAppointmentOperationalCount() }}</strong></article>
+          <article class="followup-metric--warn"><span>Requieren atención</span><strong>{{ payload.summary.needs_attention }}</strong></article>
+          <article class="followup-metric--good"><span>Con avance</span><strong>{{ editor.followupsDomain.postAppointmentQuickFilters()[4].count }}</strong></article>
+        } @else {
+          <article><span>En historial</span><strong>{{ editor.postAppointmentHistoryCount() }}</strong></article>
+          <article class="followup-metric--good"><span>Completados</span><strong>{{ editor.postAppointmentCompletedCount() }}</strong></article>
+          <article class="followup-metric--muted"><span>Sin acceso</span><strong>{{ payload.summary.access_lost }}</strong></article>
+        }
+      </section>
+
+      @if (editor.followupsDomain.postAppointmentItems().length === 0) {
+        <app-view-state state="empty" title="No encontramos citas con estos filtros" message="Prueba otra búsqueda o cambia el filtro para volver a ver resultados." />
+      } @else {
+        <section class="followups-list" aria-label="Citas con seguimiento">
+          @for (item of editor.followupsDomain.paginatedPostAppointmentItems(); track item.order_id; let itemIndex = $index) {
+            <article class="panel followup-card">
+              <header class="followup-card-header">
+                <span class="followup-record-number" aria-label="Registro {{ editor.followupsDomain.postAppointmentItemNumber(itemIndex) }}">#{{ editor.followupsDomain.postAppointmentItemLabel(itemIndex) }}</span>
+                <div><div class="followup-identity"><h3>{{ item.applicant_name }}</h3><span>{{ item.document_number_masked }}</span></div>
+                  <p>Cita {{ editor.presentationDomain.formatDate(item.appointment_date) }} @if (item.appointment_hour) { · {{ item.appointment_hour }} } @if (item.site) { · {{ item.site }} }</p>
+                  @if (item.program_expediente || item.program_plate) { <p>@if (item.program_expediente) { Exp. {{ item.program_expediente }} } @if (item.program_plate) { · Placa {{ item.program_plate }} }</p> }
+                </div>
+                <div class="followup-status-block"><span class="badge {{ editor.presentationDomain.statusTone(editor.postAppointmentDisplayOutcome(item)) }}">{{ editor.presentationDomain.statusLabel(editor.postAppointmentDisplayOutcome(item)) }}</span><small>{{ editor.postAppointmentDisplayDetail(item) }}</small></div>
+              </header>
+
+              @if (item.stages.length) {
+                <details class="followup-stage-disclosure"><summary><span>Ver recorrido completo</span><small>{{ item.stages.length }} etapas registradas</small></summary>
+                  <ol class="stage-rail" aria-label="Etapas observadas en el portal">
+                    @for (stage of item.stages; track stage.stage_key; let stageIndex = $index) {
+                      <li class="{{ editor.followupsDomain.postAppointmentStageTone(item, stage) }}"><div class="stage-track" aria-hidden="true"><span class="stage-marker">{{ stageIndex + 1 }}</span></div>
+                        <div class="stage-copy"><strong>{{ stage.stage_label }}</strong><span>{{ stage.status_text || 'Sin estado' }} @if (stage.stage_date) { · {{ editor.presentationDomain.formatDate(stage.stage_date) }} } @if (stage.stage_hour) { {{ stage.stage_hour }} }</span>
+                          @if (stage.message_text) { <small class="{{ editor.followupsDomain.postAppointmentMessageTone(item, stage.message_class) }}">{{ stage.message_text }}</small> }</div></li>
+                    }
+                  </ol>
+                </details>
+              } @else {
+                <div class="followup-no-stages"><strong>Sin recorrido registrado</strong><span>Usa “Revisar ahora” para consultar el portal en una sesión aislada.</span></div>
+              }
+
+              <footer class="followup-card-footer"><div><span>Orden {{ item.order_id }}</span>
+                  <small class="review-freshness {{ editor.postAppointmentFreshnessTone(item) }}">{{ editor.postAppointmentFreshnessLabel(item) }}</small>
+                  @if (editor.postAppointmentNextReviewLabel(item); as nextReviewLabel) { <small class="next-automatic-review">{{ nextReviewLabel }}</small> }
+                  @if (item.error_message) { <small class="followup-error">{{ item.error_message }}</small> }</div>
+                @if (editor.followupWorkspace() === 'history' || item.outcome === 'access_lost') { <div class="followup-archive-state"><span>Historial</span><small>Sin acciones automáticas</small></div> }
+                @else { <button type="button" class="primary" [disabled]="editor.followupsDomain.isPostAppointmentReviewing(item.order_id)" (click)="editor.followupsDomain.reviewPostAppointment(item)">{{ editor.followupsDomain.isPostAppointmentReviewing(item.order_id) ? 'Revisando…' : 'Revisar ahora' }}</button> }
+              </footer>
+            </article>
+          }
+        </section>
+
+        <div class="order-table-footer"><span aria-live="polite">{{ editor.followupsDomain.postAppointmentPageStart() }}–{{ editor.followupsDomain.postAppointmentPageEnd() }} de {{ payload.pagination.total }} · Página {{ editor.followupsDomain.currentPostAppointmentPage() }} de {{ editor.followupsDomain.postAppointmentTotalPages() }}</span>
+          <label class="filter">Citas por página <select name="postAppointmentPageSize" [ngModel]="editor.followupsDomain.postAppointmentPageSize()" (ngModelChange)="editor.followupsDomain.changePostAppointmentPageSize($event)"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="20">20</option></select></label></div>
+        @if (editor.followupsDomain.postAppointmentTotalPages() > 1) {
+          <nav class="order-pagination" aria-label="Páginas de citas"><button type="button" class="secondary" [disabled]="editor.followupsDomain.currentPostAppointmentPage() === 1" (click)="editor.followupsDomain.goToPostAppointmentPage(editor.followupsDomain.currentPostAppointmentPage() - 1)">Anterior</button>
+            @for (page of editor.followupsDomain.postAppointmentPageNumbers(); track page) { <button type="button" class="page-button" [class.active]="page === editor.followupsDomain.currentPostAppointmentPage()" [attr.aria-current]="page === editor.followupsDomain.currentPostAppointmentPage() ? 'page' : null" [attr.aria-label]="'Página ' + page" (click)="editor.followupsDomain.goToPostAppointmentPage(page)">{{ page }}</button> }
+            <button type="button" class="secondary" [disabled]="editor.followupsDomain.currentPostAppointmentPage() === editor.followupsDomain.postAppointmentTotalPages()" (click)="editor.followupsDomain.goToPostAppointmentPage(editor.followupsDomain.currentPostAppointmentPage() + 1)">Siguiente</button></nav>
+        }
+      }
+    </div>
+  }
+}

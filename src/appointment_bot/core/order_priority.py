@@ -1,0 +1,4 @@
+from __future__ import annotations
+
+FOCUSED_PRIORITY_THRESHOLD = 100
+EXCLUSIVE_PRIORITY_THRESHOLD = 200

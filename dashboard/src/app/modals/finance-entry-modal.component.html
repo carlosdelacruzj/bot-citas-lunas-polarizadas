@@ -1,0 +1,229 @@
+@if (uiDomain.activeModal() === 'finance-entry') {
+  <section
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="finance-entry-title"
+  >
+    <div class="modal wide-modal">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Finanzas</p>
+          <h2 id="finance-entry-title">
+            {{ financeDomain.editingFinanceEntryId() ? 'Editar movimiento' : 'Nuevo movimiento' }}
+          </h2>
+          <p>Registra el importe original y su conversión real a soles cuando corresponda.</p>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          data-modal-initial-focus
+          (click)="uiDomain.closeModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <p id="finance-required-help" class="required-help">
+        Los campos marcados con * son obligatorios.
+      </p>
+
+      <div class="form-grid wide finance-form">
+        <label>
+          Fecha <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="financeOccurredOn"
+            type="date"
+            required
+            [ngModel]="financeDomain.financeOccurredOn()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeOccurredOn, $event)"
+          />
+        </label>
+        <label>
+          Tipo <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="financeEntryKind"
+            required
+            [ngModel]="financeDomain.financeEntryKind()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeEntryKind, $event)"
+          >
+            <option value="expense">Gasto directo</option>
+            <option value="prepaid_topup">Recarga prepagada</option>
+            <option value="prepaid_consumption">Consumo prepagado</option>
+            <option value="refund">Reembolso</option>
+          </select>
+        </label>
+        <label>
+          Categoría <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="financeCategoryCode"
+            required
+            [ngModel]="financeDomain.financeCategoryCode()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeCategoryCode, $event)"
+          >
+            @for (category of financeDomain.financeCategories(); track category.category_code) {
+              <option [value]="category.category_code">{{ category.display_name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Calidad del dato
+          <select
+            name="financeDataQuality"
+            [ngModel]="financeDomain.financeDataQuality()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeDataQuality, $event)"
+          >
+            <option value="actual">Real / comprobado</option>
+            <option value="estimated">Estimado</option>
+            <option value="pending">Pendiente de completar</option>
+          </select>
+        </label>
+        <label class="finance-description-field">
+          Descripción <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="financeDescription"
+            type="text"
+            required
+            [ngModel]="financeDomain.financeDescription()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeDescription, $event)"
+          />
+        </label>
+        <label>
+          Proveedor
+          <input
+            name="financeVendor"
+            type="text"
+            placeholder="2Captcha, TikTok..."
+            [ngModel]="financeDomain.financeVendor()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeVendor, $event)"
+          />
+        </label>
+        <label>
+          Importe original <span class="required-marker" aria-hidden="true">*</span>
+          <input
+            name="financeAmountOriginal"
+            type="number"
+            min="0.0001"
+            step="0.0001"
+            required
+            [ngModel]="financeDomain.financeAmountOriginal()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeAmountOriginal, $event)"
+          />
+        </label>
+        <label>
+          Moneda <span class="required-marker" aria-hidden="true">*</span>
+          <select
+            name="financeCurrency"
+            [ngModel]="financeDomain.financeCurrency()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeCurrency, $event)"
+          >
+            <option value="PEN">PEN — soles</option>
+            <option value="USD">USD — dólares</option>
+          </select>
+        </label>
+        <label>
+          Tipo de cambio a PEN
+          <input
+            name="financeExchangeRatePen"
+            type="number"
+            min="0.000001"
+            step="0.000001"
+            [disabled]="financeDomain.financeCurrency() === 'PEN'"
+            [ngModel]="financeDomain.financeExchangeRatePen()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeExchangeRatePen, $event)"
+          />
+          <small>Si falta en una moneda extranjera, el margen quedará incompleto.</small>
+        </label>
+        <label>
+          Cantidad
+          <input
+            name="financeQuantity"
+            type="number"
+            min="0.001"
+            step="0.001"
+            placeholder="50"
+            [ngModel]="financeDomain.financeQuantity()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeQuantity, $event)"
+          />
+        </label>
+        <label>
+          Unidad
+          <input
+            name="financeUnit"
+            type="text"
+            placeholder="captcha, hora, día..."
+            [ngModel]="financeDomain.financeUnit()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeUnit, $event)"
+          />
+        </label>
+        <label>
+          Canal
+          <input
+            name="financeChannel"
+            type="text"
+            placeholder="tiktok, whatsapp..."
+            [ngModel]="financeDomain.financeChannel()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeChannel, $event)"
+          />
+        </label>
+        <label>
+          Campaña
+          <input
+            name="financeCampaign"
+            type="text"
+            [ngModel]="financeDomain.financeCampaign()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeCampaign, $event)"
+          />
+        </label>
+        <label>
+          Orden relacionada
+          <select
+            name="financeOrderId"
+            [ngModel]="financeDomain.financeOrderId()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeOrderId, $event)"
+          >
+            <option value="">Sin orden específica</option>
+            @for (order of orderList.orders(); track order.order_id) {
+              <option [value]="order.order_id">
+                {{ order.applicant_name ?? order.document_number_masked }}
+              </option>
+            }
+          </select>
+        </label>
+        <label>
+          Referencia de evidencia
+          <input
+            name="financeEvidenceReference"
+            type="text"
+            placeholder="Recibo, panel o comprobante; nunca un secreto"
+            [ngModel]="financeDomain.financeEvidenceReference()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeEvidenceReference, $event)"
+          />
+        </label>
+        <label class="finance-notes-field">
+          Notas
+          <textarea
+            name="financeNotes"
+            rows="3"
+            [ngModel]="financeDomain.financeNotes()"
+            (ngModelChange)="uiDomain.editField(financeDomain.financeNotes, $event)"
+          ></textarea>
+        </label>
+      </div>
+
+      @if (financeDomain.financeEntryKind() === 'prepaid_topup') {
+        <p class="notice warn finance-form-notice">
+          Esta recarga afectará caja, pero no el costo reconocido. Registra después el consumo
+          real como “Consumo prepagado”.
+        </p>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="uiDomain.closeModal()">Cancelar</button>
+        <button type="button" class="primary" (click)="financeDomain.requestSaveFinanceEntry()">
+          {{ financeDomain.editingFinanceEntryId() ? 'Guardar cambios' : 'Registrar movimiento' }}
+        </button>
+      </div>
+    </div>
+  </section>
+}

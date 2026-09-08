@@ -1,0 +1,323 @@
+<main class="app-frame" [class.sidebar-collapsed]="navigation.sidebarCollapsed()">
+  <aside
+    id="dashboard-navigation"
+    class="app-sidebar"
+    [class.mobile-open]="navigation.mobileMenuOpen()"
+    aria-label="Navegación principal"
+  >
+    <div class="sidebar-brand">
+      <span class="brand-mark" aria-hidden="true">LP</span>
+      <div class="sidebar-brand-copy">
+        <strong>Lunas polarizadas</strong>
+        <small>Panel administrativo</small>
+      </div>
+      <button
+        type="button"
+        class="sidebar-mobile-close"
+        aria-label="Cerrar menú"
+        (click)="navigation.mobileMenuOpen.set(false)"
+      >
+        ×
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Secciones del dashboard">
+      <section class="sidebar-group">
+        <p>Operación</p>
+        <a
+          class="sidebar-link"
+          routerLink="/pendientes"
+          [class.active]="navigation.activeView() === 'inbox'"
+          [attr.aria-current]="navigation.activeView() === 'inbox' ? 'page' : null"
+          title="Pendientes"
+        >
+          <span class="nav-icon" aria-hidden="true">!</span>
+          <span class="nav-label">Pendientes</span>
+          @if (operations.inboxPendingTotal() > 0) {
+            <span class="nav-alert" [attr.aria-label]="operations.inboxPendingTotal() + ' pendientes'">
+              {{ operations.inboxPendingTotal() > 99 ? '99+' : operations.inboxPendingTotal() }}
+            </span>
+          }
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/resumen"
+          [queryParams]="{ month: finance.selectedMonth() }"
+          [class.active]="navigation.activeView() === 'summary'"
+          [attr.aria-current]="navigation.activeView() === 'summary' ? 'page' : null"
+          title="Resumen"
+        >
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          <span class="nav-label">Resumen</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/ordenes"
+          [class.active]="navigation.activeView() === 'orders'"
+          [attr.aria-current]="navigation.activeView() === 'orders' ? 'page' : null"
+          title="Órdenes"
+        >
+          <span class="nav-icon" aria-hidden="true">≡</span>
+          <span class="nav-label">Órdenes</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/actividad"
+          [class.active]="navigation.activeView() === 'runs'"
+          [attr.aria-current]="navigation.activeView() === 'runs' ? 'page' : null"
+          title="Runs"
+        >
+          <span class="nav-icon" aria-hidden="true">↻</span>
+          <span class="nav-label">Actividad</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/seguimiento"
+          [class.active]="navigation.activeView() === 'followups'"
+          [attr.aria-current]="navigation.activeView() === 'followups' ? 'page' : null"
+          title="Citas y recordatorios"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">SC</span>
+          <span class="nav-label">Citas y recordatorios</span>
+        </a>
+      </section>
+
+      <section class="sidebar-group">
+        <p>Administración</p>
+        <a
+          class="sidebar-link"
+          routerLink="/finanzas"
+          [queryParams]="{ month: finance.selectedMonth() }"
+          [class.active]="navigation.activeView() === 'finance'"
+          [attr.aria-current]="navigation.activeView() === 'finance' ? 'page' : null"
+          title="Finanzas"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">S/</span>
+          <span class="nav-label">Finanzas</span>
+        </a>
+        <a
+          class="sidebar-link"
+          routerLink="/mensajes"
+          [class.active]="navigation.activeView() === 'messageTemplates'"
+          [attr.aria-current]="navigation.activeView() === 'messageTemplates' ? 'page' : null"
+          title="Mensajes de WhatsApp"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">WA</span>
+          <span class="nav-label">Mensajes</span>
+        </a>
+      </section>
+
+      @if (captchas.captchaShadowEnabled()) {
+      <section class="sidebar-group">
+        <p>Automatización</p>
+        <a
+          class="sidebar-link"
+          routerLink="/captchas"
+          [queryParams]="{ mode: captchas.captchaWorkspaceMode() }"
+          [class.active]="navigation.activeView() === 'captchas'"
+          [attr.aria-current]="navigation.activeView() === 'captchas' ? 'page' : null"
+          title="CAPTCHA"
+        >
+          <span class="nav-icon text-icon" aria-hidden="true">A9</span>
+          <span class="nav-label">CAPTCHA</span>
+        </a>
+      </section>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-health">
+        <span class="health-dot" [class.online]="operations.health()?.status === 'ok'"></span>
+        <div>
+          <strong>{{ operations.health()?.status === 'ok' ? 'Sistema conectado' : 'Sin conexión' }}</strong>
+          <small>{{ operations.worker()?.worker_running ? 'Worker activo' : 'Worker sin confirmar' }}</small>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="sidebar-collapse"
+        [attr.aria-label]="navigation.sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+        [attr.title]="navigation.sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+        (click)="navigation.toggleSidebar()"
+      >
+        <span aria-hidden="true">{{ navigation.sidebarCollapsed() ? '»' : '«' }}</span>
+        <span class="nav-label">Contraer menú</span>
+      </button>
+    </div>
+  </aside>
+
+  @if (navigation.mobileMenuOpen()) {
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="Cerrar menú"
+      (click)="navigation.mobileMenuOpen.set(false)"
+    ></button>
+  }
+
+  <section class="workspace">
+    <header class="topbar" aria-label="Control principal">
+      <button
+        type="button"
+        class="mobile-menu-button"
+        aria-controls="dashboard-navigation"
+        [attr.aria-expanded]="navigation.mobileMenuOpen()"
+        (click)="navigation.mobileMenuOpen.set(true)"
+      >
+        <span aria-hidden="true">☰</span>
+        Menú
+      </button>
+
+      <div class="brand-block">
+        <p class="eyebrow">{{ navigation.activeViewGroup() }}</p>
+        <h1>{{ navigation.activeViewLabel() }}</h1>
+        <p class="subhead">
+          {{ operations.health()?.message ?? 'Cargando datos administrativos desde el admin API local.' }}
+        </p>
+      </div>
+
+      <div class="refresh-panel" aria-live="polite">
+        <span>Actualización</span>
+        <strong>{{
+          navigation.refreshingViewState() === navigation.activeView()
+            ? 'actualizando…'
+            : navigation.pageHidden()
+              ? 'pausada: pestaña oculta'
+              : navigation.autoRefreshPaused()
+                ? 'pausada'
+                : 'automática'
+        }}</strong>
+        <small>{{
+          navigation.lastUpdatedAt() ? 'Última: ' + navigation.lastUpdatedAt() : (operations.health()?.status ?? 'sin datos')
+        }}</small>
+        <button type="button" class="primary" (click)="navigation.refreshNow()">Actualizar</button>
+      </div>
+    </header>
+
+    @if (ui.errorMessage()) {
+      <section id="dashboard-error" class="notice bad" role="alert" aria-live="assertive">
+        {{ ui.errorMessage() }}
+      </section>
+    }
+
+    @if (ui.formDirty()) {
+      <section class="notice warn" role="status">
+        Auto-refresh pausado mientras editas. Usa Actualizar para descartar cambios locales y
+        recargar.
+      </section>
+    }
+
+    @if (orders.manualSessions().length) {
+      <section class="panel manual-sessions-panel" aria-label="Sesiones manuales abiertas">
+        <div class="panel-header">
+          <div>
+            <h2>Sesiones manuales</h2>
+            <p>{{ orders.manualSessions().length }} abiertas</p>
+          </div>
+          <button type="button" class="secondary" (click)="navigation.refreshNow()">Actualizar</button>
+        </div>
+
+        <div class="manual-session-list">
+          @for (session of orders.manualSessions(); track session.session_id) {
+            <article class="manual-session-row">
+              <div>
+                <strong>{{ orders.manualSessionOrderLabel(session) }}</strong>
+                <span>
+                  {{ orders.manualSessionTypeLabel(session) }} · {{ presentation.statusLabel(session.order_status) }}
+                </span>
+                <small>{{ session.session_id }}</small>
+                @if (session.status_message) {
+                  <small>{{ session.status_message }}</small>
+                }
+                @if (session.mode === 'diagnostic') {
+                  <small class="diagnostic-trace-status">
+                    {{ session.diagnostic_event_count }} eventos protegidos
+                    @if (session.diagnostic_submission_seen) {
+                      · POST de reserva observado
+                    }
+                    @if (session.diagnostic_honeypot_blocked) {
+                      · envio bloqueado por honeypot
+                    }
+                  </small>
+                  @if (session.diagnostic_report_path) {
+                    <small>{{ session.diagnostic_report_path }}</small>
+                  }
+                }
+              </div>
+              <span class="badge {{ presentation.statusTone(session.status) }}">{{
+                presentation.statusLabel(session.status)
+              }}</span>
+              <small>{{ presentation.formatDateTime(session.started_at, 'sin hora') }}</small>
+              <button
+                type="button"
+                class="danger"
+                [disabled]="orders.isManualSessionClosing(session.session_id) || session.close_requested"
+                (click)="orders.closeManualSession(session)"
+              >
+                {{ orders.isManualSessionClosing(session.session_id) ? 'Cerrando…' : 'Cerrar' }}
+              </button>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <details [open]="!!(operations.loads.health.error() || operations.loads.worker.error() || orders.loads.sessions.error() || orders.loads.catalog.error() || captchas.loads.pendingReview.error())">
+      <summary>Estado de servicios</summary>
+      <app-load-status [section]="operations.loads.health" />
+      <app-load-status [section]="operations.loads.worker" />
+      <app-load-status [section]="orders.loads.sessions" />
+      <app-load-status [section]="orders.loads.catalog" />
+      <app-load-status [section]="captchas.loads.pendingReview" />
+
+    </details>
+    @if (navigation.activeViewState(); as state) {
+      <app-view-state
+        [state]="state"
+        [compact]="state === 'stale'"
+        [title]="
+          state === 'loading'
+            ? 'Preparando ' + navigation.activeViewLabel().toLowerCase()
+            : state === 'stale'
+              ? 'Los datos visibles pueden estar desactualizados'
+              : 'No se pudo cargar ' + navigation.activeViewLabel().toLowerCase()
+        "
+        [message]="
+          state === 'stale'
+            ? navigation.viewLoadError() || 'Se conservaron los últimos datos disponibles.'
+            : state === 'error'
+              ? navigation.viewLoadError() || 'Comprueba que la API local esté disponible.'
+              : 'Esto solo tomará un momento.'
+        "
+        (retry)="navigation.refreshNow()"
+      />
+    }
+
+    <div [hidden]="navigation.activeViewState() === 'loading'">
+      <router-outlet />
+    </div>
+
+
+    @defer (when ui.activeModal() === 'whatsapp') {
+      <app-whatsapp-modal />
+    }
+    @defer (when ui.activeModal() === 'payment') {
+      <app-payment-modal />
+    }
+    @defer (when ui.activeModal() === 'edit-order') {
+      <app-edit-order-modal />
+    }
+    @defer (when ui.activeModal() === 'order-actions') {
+      <app-order-actions-modal />
+    }
+    @defer (when ui.activeModal() === 'create-order') {
+      <app-create-order-modal />
+    }
+    @defer (when ui.activeModal() === 'finance-entry') {
+      <app-finance-entry-modal />
+    }
+    @defer (when ui.activeModal() === 'worker-restart') {
+      <app-worker-restart-modal />
+    }
+  </section>
+</main>

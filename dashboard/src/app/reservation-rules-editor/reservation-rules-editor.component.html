@@ -1,0 +1,135 @@
+<div class="rule-presets" aria-label="Configuraciones rápidas de fecha">
+  <div class="rule-presets-heading">
+    <strong>¿Qué fechas puede reservar?</strong>
+    <small>Elige una base rápida y ajusta los detalles si lo necesitas.</small>
+  </div>
+  <div class="rule-preset-list">
+    <button type="button" [class.active]="presetIsActive('any')" [disabled]="disabled" (click)="applyPreset('any')">
+      Cualquier fecha
+    </button>
+    <button type="button" [class.active]="presetIsActive('saturdays')" [disabled]="disabled" (click)="applyPreset('saturdays')">
+      Solo sábados
+    </button>
+    <button type="button" [class.active]="presetIsActive('from-date')" [disabled]="disabled" (click)="applyPreset('from-date')">
+      Desde una fecha
+    </button>
+    <button type="button" [class.active]="presetIsActive('exclude-range')" [disabled]="disabled" (click)="applyPreset('exclude-range')">
+      Excepto un rango
+    </button>
+    <button type="button" [class.active]="presetIsActive('date-window')" [disabled]="disabled" (click)="applyPreset('date-window')">
+      Entre dos fechas
+    </button>
+  </div>
+</div>
+
+<div class="form-grid date-limits">
+  <label>
+    Buscar desde
+    <input
+      [name]="controlPrefix + 'MinimumDate'"
+      type="date"
+      [disabled]="disabled"
+      [ngModel]="minimumDate"
+      (ngModelChange)="minimumDateChange.emit($event)"
+    />
+  </label>
+  <label>
+    Buscar hasta
+    <input
+      [name]="controlPrefix + 'MaximumDate'"
+      type="date"
+      [disabled]="disabled"
+      [min]="minimumDate || null"
+      [ngModel]="maximumDate"
+      (ngModelChange)="maximumDateChange.emit($event)"
+    />
+    <small>La fecha final también se incluye.</small>
+  </label>
+</div>
+
+<fieldset class="weekday-picker" [disabled]="disabled">
+  <legend>Días permitidos</legend>
+  <div class="weekday-buttons" aria-label="Días permitidos para reservar">
+    @for (day of weekdays; track day.value) {
+      <button
+        type="button"
+        [class.active]="isWeekdaySelected(day.value)"
+        [attr.aria-pressed]="isWeekdaySelected(day.value)"
+        [attr.aria-label]="day.label"
+        [title]="day.label"
+        (click)="toggleWeekday(day.value)"
+      >
+        {{ day.short }}
+      </button>
+    }
+  </div>
+  <small>
+    {{ allowedWeekdays.length ? allowedWeekdays.length + ' día(s) seleccionados' : 'Todos los días están permitidos' }}
+  </small>
+</fieldset>
+
+<div class="date-exclusion-builder">
+  <div class="date-exclusion-heading">
+    <div>
+      <strong>Fechas excluidas</strong>
+      <small>El bot ignorará todo el rango, incluyendo el primer y último día.</small>
+    </div>
+    @if (excludedDateRanges.length > 0) {
+      <span>{{ excludedDateRanges.length }} rango(s)</span>
+    }
+  </div>
+  <div class="date-exclusion-row">
+    <label>
+      Desde
+      <input
+        [name]="controlPrefix + 'ExcludedDateStart'"
+        type="date"
+        [disabled]="disabled"
+        [ngModel]="excludedDateStart"
+        (ngModelChange)="excludedDateStartChange.emit($event)"
+      />
+    </label>
+    <label>
+      Hasta
+      <input
+        [name]="controlPrefix + 'ExcludedDateEnd'"
+        type="date"
+        [disabled]="disabled"
+        [min]="excludedDateStart || null"
+        [ngModel]="excludedDateEnd"
+        (ngModelChange)="excludedDateEndChange.emit($event)"
+      />
+    </label>
+    <button
+      type="button"
+      class="secondary"
+      [disabled]="disabled || !excludedDateStart || !excludedDateEnd"
+      (click)="addExcludedDateRange.emit()"
+    >
+      Agregar otro rango
+    </button>
+  </div>
+  @if (excludedDateRanges.length > 0) {
+    <div class="excluded-range-list" aria-label="Rangos de fechas excluidos">
+      @for (
+        range of excludedDateRanges;
+        track range.start_date + range.end_date;
+        let index = $index
+      ) {
+        <span class="excluded-range-chip">
+          {{ formatDateRange(range.start_date, range.end_date) }}
+          <button
+            type="button"
+            [disabled]="disabled"
+            [attr.aria-label]="
+              'Eliminar ' + formatDateRange(range.start_date, range.end_date)
+            "
+            (click)="removeExcludedDateRange.emit(index)"
+          >
+            ×
+          </button>
+        </span>
+      }
+    </div>
+  }
+</div>
