@@ -7,6 +7,7 @@ from appointment_bot.services.api.opportunity_routes import (
     opportunity_burst_payload,
     opportunity_bursts_payload,
     opportunity_control_payload,
+    update_opportunity_control_payload,
 )
 from appointment_bot.services.api.routing import ApiRequest
 
@@ -36,5 +37,15 @@ def get_opportunity_burst(request: ApiRequest) -> None:
         )
         return
     status, payload = opportunity_burst_payload(burst_id)
+    handler._send_json(status, payload)
+    return
+
+
+def post_update_opportunity_control(request: ApiRequest) -> None:
+    handler = request.transport
+    status, payload = update_opportunity_control_payload(
+        handler._read_json(),
+        requested_by=handler._authenticated_actor(),
+    )
     handler._send_json(status, payload)
     return

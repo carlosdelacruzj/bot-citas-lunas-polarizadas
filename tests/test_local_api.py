@@ -375,7 +375,7 @@ class LocalApiTests(unittest.TestCase):
         blocking = [{"session_id": "manual-session-test", "status": "close_timeout"}]
         with (
             patch(
-                "appointment_bot.services.local_api.blocking_manual_sessions",
+                "appointment_bot.services.api.handlers.worker.blocking_manual_sessions",
                 return_value=blocking,
             ),
             _running_server(restart_callback=restarted.set) as base_url,

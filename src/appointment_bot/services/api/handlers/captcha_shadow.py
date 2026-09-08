@@ -7,6 +7,7 @@ from appointment_bot.services.api.captcha_shadow_routes import (
     captcha_shadow_quality_cases_payload,
     captcha_shadow_quality_payload,
     captcha_shadow_summary_payload,
+    save_captcha_shadow_human_label_payload,
 )
 from appointment_bot.services.api.http import send_download, send_image
 from appointment_bot.services.api.routing import ApiRequest
@@ -65,4 +66,16 @@ def get_captcha_shadow_image(request: ApiRequest) -> None:
         handler._send_json(status, payload)
     else:
         send_image(handler, payload)
+    return
+
+
+def post_save_captcha_shadow_human_label(request: ApiRequest) -> None:
+    handler = request.transport
+    captcha_event_id = request.match
+    status, payload = save_captcha_shadow_human_label_payload(
+        captcha_event_id,
+        handler._read_json(),
+        reviewer=handler._authenticated_actor(),
+    )
+    handler._send_json(status, payload)
     return
