@@ -115,11 +115,9 @@ Cierre: cada diferencia tiene estado, responsable y evidencia.
 
 ## P3 - Deuda tecnica posterior
 
-Continuar en 5.5.3 del plan integral: registrar migraciones en secuencia,
-conservando literalmente el SQL historico y una responsabilidad por commit.
-Las fases 0 a 4, 5.1 a 5.4, 5.5.1 y 5.5.2 estan cerradas tecnicamente;
-las aceptaciones naturales de P0 siguen pendientes. Despues siguen
-configuracion y WhatsApp; las fases 6 a 8 cubren
+Continuar en 5.5.4 del plan integral: agrupar configuracion por dominio,
+conservando defaults, limites, aliases y nombres de entorno. Extraer parsers
+antes de migrar consumidores; despues sigue WhatsApp. Las fases 6 a 8 cubren
 dashboard por dominio, contratos, consultas y cierre. No combinar estas
 extracciones con cambios funcionales del portal.
 

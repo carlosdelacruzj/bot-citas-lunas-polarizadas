@@ -887,14 +887,23 @@ aceptaciones naturales pendientes.
 Ownership destino: orquestacion y version en `db/migrations.py`; pasos
 historicos inmutables en modulos `db/migration_steps/`.
 
-- [ ] Caracterizar base nueva, version minima soportada, orden, atomicidad y
+- [x] Caracterizar base nueva, version minima soportada, orden, atomicidad y
   rechazo de versiones desconocidas.
-- [ ] Extraer funciones `vNN_to_vNN` conservando literalmente SQL, parametros y
+- [x] Extraer funciones `vNN_to_vNN` conservando literalmente SQL, parametros y
   orden de cada migracion aplicada.
-- [ ] Registrar los pasos en una secuencia explicita sin saltos ni duplicados.
-- [ ] No corregir, formatear ni combinar SQL historico durante la extraccion.
-- [ ] Validar base nueva, cadena completa y restore aislado antes de retirar el
+- [x] Registrar los pasos en una secuencia explicita sin saltos ni duplicados.
+- [x] No corregir, formatear ni combinar SQL historico durante la extraccion.
+- [x] Validar base nueva, cadena completa y restore aislado antes de retirar el
   dispatcher anterior.
+
+Cierre tecnico: 60 pasos y 33 helpers extraidos; esquema requerido `v74`,
+actualizacion soportada desde `v14`. La reparacion historica autorizada
+quedo separada en `771d8c7`; la extraccion conserva esa base literalmente.
+Coinciden 62 trazas SQL (base nueva y versiones 14 a 74); pasan rollback,
+bloqueo transaccional, restore sintetico y 181 tests con 24 subtests.
+Cobertura agregada de migraciones: 67.31%, con umbral 45% conservado.
+Ver [contrato de migraciones](../architecture/database-migrations.md) y
+[evidencia fechada](../../reports/architecture/migration-chain-2026-09-08.json).
 
 #### 5.5.4 Agrupar configuracion por dominio
 

@@ -20,7 +20,7 @@ Estado general:
 
 - arquitectura `worker + Admin API + PostgreSQL + dashboard + Telegram`
   operativa, con locks, CI reproducible y cobertura critica por riesgo;
-- esquema PostgreSQL requerido por el codigo y base operativa: `v74`;
+- esquema PostgreSQL requerido por el codigo y base operativa: `v74`; [registro secuencial](architecture/database-migrations.md) con 60 pasos desde `v14`;
 - una sesion Playwright nueva por cliente, sin compartir cookies ni contexto;
 - propiedad exclusiva por cuenta entre worker, preflight, revision post-cita y
   sesiones manuales, con cierre visible hasta terminar Chromium;
